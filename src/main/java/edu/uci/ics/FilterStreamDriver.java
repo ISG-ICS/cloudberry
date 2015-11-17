@@ -18,6 +18,9 @@ import com.twitter.hbc.httpclient.auth.OAuth1;
 
 public class FilterStreamDriver {
 
+    static Client client;
+    volatile static boolean isConnected = false;
+
     public static void run(Config config)
             throws InterruptedException {
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
@@ -49,7 +52,7 @@ public class FilterStreamDriver {
                 config.getTokenSecret());
 
         // Create a new BasicClient. By default gzip is enabled.
-        Client client = new ClientBuilder()
+        client = new ClientBuilder()
                 .hosts(Constants.STREAM_HOST)
                 .endpoint(endpoint)
                 .authentication(auth)
@@ -60,9 +63,12 @@ public class FilterStreamDriver {
         try {
             client.connect();
 
+            isConnected = true;
             // Do whatever needs to be done with messages
-            String msg = queue.take();
-            System.out.println(msg);
+            while (true) {
+                String msg = queue.take();
+                System.out.println(msg);
+            }
         } finally {
             client.stop();
         }
@@ -85,6 +91,13 @@ public class FilterStreamDriver {
                 parser.printUsage(System.err);
                 System.err.println();
             }
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                public void run() {
+                    if (client != null && isConnected) {
+                        client.stop();
+                    }
+                }
+            });
             FilterStreamDriver.run(config);
         } catch (InterruptedException e) {
             System.out.println(e);
