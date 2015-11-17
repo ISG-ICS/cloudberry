@@ -1,3 +1,5 @@
+package edu.uci.ics;
+
 import java.util.ArrayList;
 
 import org.kohsuke.args4j.CmdLineException;
@@ -12,17 +14,17 @@ import com.twitter.hbc.core.endpoint.Location;
 
 public class Config {
 
-    @Option(name = "-ck", aliases = "--consumer-key", usage = "ConsumerKey for Twitter OAuth")
-    private String consumerKey = "";
+    @Option(required = true, name = "-ck", aliases = "--consumer-key", usage = "ConsumerKey for Twitter OAuth")
+    private String consumerKey = null;
 
-    @Option(name = "-cs", aliases = "--consumer-secret", usage = "Consumer Secret for Twitter OAuth")
-    private String consumerSecret = "";
+    @Option(required = true, name = "-cs", aliases = "--consumer-secret", usage = "Consumer Secret for Twitter OAuth")
+    private String consumerSecret = null;
 
-    @Option(name = "-tk", aliases = "--token", usage = "Token for Twitter OAuth")
-    private String token = "";
+    @Option(required = true, name = "-tk", aliases = "--token", usage = "Token for Twitter OAuth")
+    private String token = null;
 
-    @Option(name = "-ts", aliases = "--token-secret", usage = "Token secret for Twitter OAuth")
-    private String tokenSecret = "";
+    @Option(required = true, name = "-ts", aliases = "--token-secret", usage = "Token secret for Twitter OAuth")
+    private String tokenSecret = null;
 
     @Option(name = "-tr", aliases = "--tracker", handler = TermArrayOptionHandler.class, usage = "Tracked terms, separated by comma.")
     private String[] trackTerms = new String[] {};
