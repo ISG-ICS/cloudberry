@@ -55,15 +55,15 @@ public class FilterStreamDriver {
                 .build();
 
         // Establish a connection
-        client.connect();
+        try {
+            client.connect();
 
-        // Do whatever needs to be done with messages
-        for (int msgRead = 0; msgRead < 100; msgRead++) {
+            // Do whatever needs to be done with messages
             String msg = queue.take();
             System.out.println(msg);
+        } finally {
+            client.stop();
         }
-
-        client.stop();
 
     }
 
