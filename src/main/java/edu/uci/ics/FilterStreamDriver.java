@@ -67,7 +67,7 @@ public class FilterStreamDriver {
             // Do whatever needs to be done with messages
             while (true) {
                 String msg = queue.take();
-                System.out.println(msg);
+                System.out.print(msg);
             }
         } finally {
             client.stop();
