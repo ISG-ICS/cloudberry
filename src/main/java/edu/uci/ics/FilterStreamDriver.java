@@ -28,22 +28,22 @@ public class FilterStreamDriver {
         // add some track terms
 
         if (config.getTrackTerms().length != 0) {
-            System.out.print("set track terms are: ");
+            System.err.print("set track terms are: ");
             for (String term : config.getTrackTerms()) {
-                System.out.print(term);
-                System.out.print(" ");
+                System.err.print(term);
+                System.err.print(" ");
             }
-            System.out.println();
+            System.err.println();
             endpoint.trackTerms(Lists.newArrayList(config.getTrackTerms()));
         }
         if (config.getTrackLocation().length != 0) {
 
-            System.out.print("set track locations are:");
+            System.err.print("set track locations are:");
             for (Location location : config.getTrackLocation()) {
-                System.out.print(location);
-                System.out.print(" ");
+                System.err.print(location);
+                System.err.print(" ");
             }
-            System.out.println();
+            System.err.println();
 
             endpoint.locations(Lists.<Location>newArrayList(config.getTrackLocation()));
         }
@@ -100,7 +100,7 @@ public class FilterStreamDriver {
             });
             FilterStreamDriver.run(config);
         } catch (InterruptedException e) {
-            System.out.println(e);
+            System.err.println(e);
         }
     }
 }
