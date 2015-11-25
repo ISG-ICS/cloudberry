@@ -27,6 +27,11 @@
                                     <mainClass>edu.uci.ics.twitter.tracker.FilterStreamDriver</mainClass>
                                     <name>filterStreamRunner</name>
                                 </program>
+                                <program>
+                                    <mainClass>edu.uci.ics.twitter.asterix.convertor.TwitterStreamStatusToAsterixADM
+                                    </mainClass>
+                                    <name>twitterToADM</name>
+                                </program>
                             </programs>
                             <repositoryLayout>flat</repositoryLayout>
                             <repositoryName>lib</repositoryName>
