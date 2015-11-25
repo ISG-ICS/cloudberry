@@ -24,7 +24,7 @@
                         <configuration>
                             <programs>
                                 <program>
-                                    <mainClass>edu.uci.ics.FilterStreamDriver</mainClass>
+                                    <mainClass>edu.uci.ics.twitter.tracker.FilterStreamDriver</mainClass>
                                     <name>filterStreamRunner</name>
                                 </program>
                             </programs>
@@ -42,9 +42,24 @@
     </build>
     <dependencies>
         <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+        </dependency>
+        <dependency>
             <groupId>com.twitter</groupId>
             <artifactId>hbc-core</artifactId> <!-- or hbc-twitter4j -->
             <version>2.2.0</version> <!-- or whatever the latest version is -->
+        </dependency>
+        <dependency>
+            <groupId>org.twitter4j</groupId>
+            <artifactId>twitter4j-core</artifactId>
+            <version>4.0.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.twitter4j</groupId>
+            <artifactId>twitter4j-stream</artifactId>
+            <version>4.0.2</version>
         </dependency>
         <dependency>
             <groupId>args4j</groupId>

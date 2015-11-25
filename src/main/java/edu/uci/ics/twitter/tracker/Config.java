@@ -1,4 +1,4 @@
-package edu.uci.ics;
+package edu.uci.ics.twitter.tracker;
 
 import java.util.ArrayList;
 
