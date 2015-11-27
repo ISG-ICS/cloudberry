@@ -1,0 +1,80 @@
+drop dataverse twitter if exists;
+create dataverse twitter ;
+use dataverse twitter;
+
+create type type_us_county as closed{
+  id: int64,
+  CountyName: string,
+  State-County:string,
+  stateabbr:string,
+  StateAbbrUpper:string,
+  geometry:polygon,
+  value:string,
+  GEO_ID:string,
+  GEO_ID2:string,
+  GeographicName:string,
+  STATEnum:string,
+  COUNTYnum:string,
+  FIPSformula:string,
+  Has:string?
+};
+
+create dataset ds_us_county(type_us_county) primary key id;
+create index rtree_index on ds_us_county(geometry) type rtree;
+
+create type type_us_state as closed {
+  id: int64,
+  stateName: string,
+  abbr:string,
+  geometry:polygon
+};
+
+create dataset ds_us_state(type_us_state) primary key id;
+create index rtree_index on ds_us_state(geometry) type rtree;
+
+create type type_twitter_user as closed {
+    id: int64,
+    name: string,
+    screen_name : string,
+    lang : string,
+    location: string,
+    create_at: date,
+    description: string,
+    followers_count: int32,
+    friends_count: int32
+}
+
+create type type_twitter_place as closed {
+    country : string,
+    country_code : string,
+    full_name : string,
+    id : string,
+    name : string,
+    place_type : string,
+    bounding_box : rectangle
+}
+
+create type type_tweet as closed {
+    create_at : datetime,
+    id: int64,
+    text_msg : string,
+    in_reply_to_status : int64,
+    in_reply_to_user : int64,
+    favorite_count : int64,
+    geo_location : point?,
+    retweet_count : int64,
+    lang : string,
+    is_retweet: boolean,
+    hashtags : {{ string }} ?,
+    user_mentions : {{ int64 }} ? ,
+    user : type_twitter_user,
+    place : type_twitter_place
+}
+
+
+create dataset ds_tweets(type_tweet) primary key id with filter on create_at;
+create index text_idx on ds_tweets(text_msg) type fulltext;
+create index location_idx on ds_tweets(geo_location) type rtree;
+create index bounding_idx on ds_tweets(place.bounding_box) type rtree;
+create index time_idx on ds_tweets(create_at) type btree;
+

@@ -5,7 +5,7 @@ import twitter4j.Status;
 public class Tweet {
     public static String CREATE_AT = "create_at";
     public static String ID = "id";
-    public static String TEXT = "text";
+    public static String TEXT = "text_msg";
     public static String IN_REPLY_TO_STATUS = "in_reply_to_status";
     public static String IN_REPLY_TO_USER = "in_reply_to_user";
     public static String FAVORITE_COUNT = "favorite_count";
