@@ -51,7 +51,7 @@ public class ADM {
     }
 
     public static void keyValueToSb(StringBuilder sb, String key, String val) {
-        sb.append(mkQuote(key)).append(":").append(val);
+        sb.append(mkQuote(key)).append(":").append(val.replaceAll("\\s+", "\t"));
     }
 
     public static void keyValueToSbWithComma(StringBuilder sb, String key, String val) {
