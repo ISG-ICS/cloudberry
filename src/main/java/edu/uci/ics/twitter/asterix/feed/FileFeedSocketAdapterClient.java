@@ -74,7 +74,7 @@ public class FileFeedSocketAdapterClient {
             byte[] newLineBytes = "\n".getBytes();
 
             while ((nextRecord = br.readLine()) != null) {
-                b = nextRecord.replaceAll("\\s+", "\t").getBytes();
+                b = nextRecord.replaceAll("\\s+", " ").getBytes();
                 if (waitMillSecond > 0) {
                     Thread.currentThread().sleep(waitMillSecond);
                 }
