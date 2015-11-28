@@ -41,7 +41,8 @@ create type type_twitter_user as closed {
     create_at: date,
     description: string,
     followers_count: int32,
-    friends_count: int32
+    friends_count: int32,
+    statues_count: int64
 }
 
 create type type_twitter_place as closed {
@@ -72,8 +73,9 @@ create type type_tweet as closed {
 }
 
 
-create dataset ds_tweets(type_tweet) primary key id with filter on create_at;
-create index text_idx on ds_tweets(text_msg) type fulltext;
+create dataset ds_tweets(type_tweet) primary key id;
+ // with filter on create_at;
+create index text_idx on ds_tweets(text_msg) type ngram(3);
 create index location_idx on ds_tweets(geo_location) type rtree;
 create index bounding_idx on ds_tweets(place.bounding_box) type rtree;
 create index time_idx on ds_tweets(create_at) type btree;
