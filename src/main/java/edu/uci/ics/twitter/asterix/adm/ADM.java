@@ -41,6 +41,10 @@ public class ADM {
             throw new IllegalArgumentException("boundingBoxCoordinates is not a rectangle shape");
         }
 
+        if (boundingBoxCoordinates[0][0].getLongitude() > 0 || boundingBoxCoordinates[0][2].getLongitude() > 0){
+            throw new IllegalArgumentException("I found you!");
+        }
+
         sb.append("(\"").append(boundingBoxCoordinates[0][0].getLongitude()).append(',')
                 .append(boundingBoxCoordinates[0][0].getLatitude())
                 .append(' ')
