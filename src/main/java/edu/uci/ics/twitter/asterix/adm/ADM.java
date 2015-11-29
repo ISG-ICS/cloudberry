@@ -41,8 +41,15 @@ public class ADM {
             throw new IllegalArgumentException("boundingBoxCoordinates is not a rectangle shape");
         }
 
-        if (boundingBoxCoordinates[0][0].getLongitude() > 0 || boundingBoxCoordinates[0][2].getLongitude() > 0){
-            throw new IllegalArgumentException("I found you!");
+        if (boundingBoxCoordinates[0][0].getLongitude() > 0 || boundingBoxCoordinates[0][2].getLongitude() > 0) {
+            throw new IllegalArgumentException(
+                    "I found you!" + boundingBoxCoordinates[0][0] + " " + boundingBoxCoordinates[0][2]);
+        }
+
+        if (boundingBoxCoordinates[0][0].getLongitude() >= boundingBoxCoordinates[0][2].getLongitude() ||
+                boundingBoxCoordinates[0][0].getLatitude() >= boundingBoxCoordinates[0][2].getLatitude()) {
+            throw new IllegalArgumentException(
+                    "Not a good Rectangle: " + boundingBoxCoordinates[0][0] + " " + boundingBoxCoordinates[0][2]);
         }
 
         sb.append("(\"").append(boundingBoxCoordinates[0][0].getLongitude()).append(',')
