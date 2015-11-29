@@ -90,6 +90,38 @@ public class ADM {
     }
 
     public static String mkQuote(String str) {
-        return "\"" + str.replace('"',' ') + "\"";
+        StringBuilder sb = new StringBuilder();
+        sb.append('"');
+        for (char ch : str.toCharArray()) {
+            switch (ch) {
+                case '\b':
+                    sb.append('\\');
+                    sb.append('b');
+                    break;
+                case '\f':
+                    sb.append('\\');
+                    sb.append('f');
+                    break;
+                case '\n':
+                    sb.append('\\');
+                    sb.append('n');
+                    break;
+                case '\r':
+                    sb.append('\\');
+                    sb.append('r');
+                    break;
+                case '\t':
+                    sb.append('\\');
+                    sb.append('t');
+                    break;
+                case '\\':
+                case '"':
+                    sb.append('\\');
+                default:
+                    sb.append(ch);
+            }
+        }
+        sb.append('"');
+        return sb.toString();
     }
 }
