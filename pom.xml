@@ -32,6 +32,10 @@
                                     </mainClass>
                                     <name>twitterToADM</name>
                                 </program>
+                                <program>
+                                    <mainClass>edu.uci.ics.twitter.asterix.feed.FileFeedDriver</mainClass>
+                                    <name>feedFile</name>
+                                </program>
                             </programs>
                             <repositoryLayout>flat</repositoryLayout>
                             <repositoryName>lib</repositoryName>

@@ -81,6 +81,9 @@ public class FileFeedSocketAdapterClient {
                 out.write(b);
                 out.write(newLineBytes);
                 recordCount++;
+                if (recordCount % 10000 == 0) {
+                    System.err.println("send " + recordCount);
+                }
                 if (recordCount == maxCount) {
                     break;
                 }
