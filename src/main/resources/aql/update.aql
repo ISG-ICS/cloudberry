@@ -7,3 +7,12 @@ use dataverse twitter;
 load dataset ds_tweets
 using localfs
 (("path"="172.17.0.2:///data/twitter/Nov23-2015-us.adm"),("format"="adm"));
+
+use dataverse twitter;
+load dataset ds_us_county
+using localfs
+(("path"="172.17.0.2:///data/geo/us-counties-rm-inner.json"),("format"="adm"));
+
+load dataset ds_us_state
+using localfs
+(("path"="172.17.0.2:///data/geo/us-states.json"),("format"="adm"));

@@ -78,5 +78,16 @@ create dataset ds_tweets(type_tweet) primary key id;
 create index text_idx on ds_tweets(text_msg) type ngram(3);
 // create index location_idx on ds_tweets(geo_location) type rtree;
 create index bounding_idx on ds_tweets(place.bounding_box) type rtree;
-// create index time_idx on ds_tweets(create_at) type btree;
+create index time_idx on ds_tweets(create_at) type btree;
 
+create feed fd_tweets using socket_adapter
+(
+    ("sockets"="nc1:10001"),
+    ("address-type"="nc"),
+    ("type-name"="type_tweet"),
+    ("format"="adm"),
+    ("duration"="1200")
+);
+
+set wait-for-completion-feed "false";
+connect feed fd_tweets to dataset ds_tweets using policy AdvancedFT_Discard;

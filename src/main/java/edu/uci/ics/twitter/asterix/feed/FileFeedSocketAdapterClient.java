@@ -88,6 +88,7 @@ public class FileFeedSocketAdapterClient {
                     break;
                 }
             }
+            System.err.println("send " + recordCount);
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
