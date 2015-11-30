@@ -136,7 +136,6 @@ $(function () {
   markers = {};
   review_mode_tweetbooks = [];
 
-  getAllDataverseTweetbooks();
   initDemoUIButtonControls();
 
   google.maps.event.addListenerOnce(map, 'idle', function () {
@@ -146,6 +145,7 @@ $(function () {
 
   county_polygons = {};
   state_polygons = {};
+  city_polygons = {};
   drawCountyBoundry();
   drawStateBoundry();
 });
@@ -222,13 +222,13 @@ function initDemoUIButtonControls() {
   // Explore Mode - Query Builder Date Pickers
   var dateOptions = {
     dateFormat: "yy-mm-dd",
-    defaultDate: "2012-01-02",
+    defaultDate: "2015-11-11",
     navigationAsDateFormat: true,
     constrainInput: true
   };
   var start_dp = $("#start-date").datepicker(dateOptions);
   start_dp.val(dateOptions.defaultDate);
-  dateOptions['defaultDate'] = "2012-12-31";
+  dateOptions['defaultDate'] = new Date().toJSON().slice(0, 10);
   var end_dp = $("#end-date").datepicker(dateOptions);
   end_dp.val(dateOptions.defaultDate);
 
@@ -273,7 +273,7 @@ function initDemoUIButtonControls() {
     $('#city-button').data('clicked', false);
   });
 
-  $('#city-button').on('change', function (e){
+  $('#city-button').on('change', function (e) {
     $(this).data('clicked', true);
     $('#state-button').data('clicked', false);
     $('#county-button').data('clicked', false);
@@ -300,6 +300,8 @@ function initDemoUIButtonControls() {
     var level = 'state';
     if ($("#county-button").data('clicked')) {
       level = 'county';
+    } else if ($("#city-button").data('clicked')) {
+      level = 'city';
     }
     console.log('level:' + level)
 
@@ -430,49 +432,9 @@ function buildAQLQueryFromForm(parameters) {
       "with",
       "$t"
     );
-    aql = aql.ReturnClause({"cell": "$c", "count": "count($t)", "area" : "$t[0].place.bounding_box" });
+    aql = aql.ReturnClause({"cell": "$c", "count": "count($t)", "area": "$t[0].place.bounding_box"});
   }
   return aql;
-}
-
-/**
- * getAllDataverseTweetbooks
- *
- * Returns all datasets of type TweetbookEntry, populates review_mode_tweetbooks
- */
-function getAllDataverseTweetbooks(fn_tweetbooks) {
-
-  // This creates a query to the Metadata for datasets of type
-  // TweetBookEntry. Note that if we throw in a WhereClause (commented out below)
-  // there is an odd error. This is being fixed and will be removed from this demo.
-  var getTweetbooksQuery = new FLWOGRExpression()
-    .ForClause("$ds", new AExpression("dataset Metadata.Dataset"))
-    //.WhereClause(new AExpression('$ds.DataTypeName = "TweetbookEntry"'))
-    .ReturnClause({
-      "DataTypeName": "$ds.DataTypeName",
-      "DatasetName": "$ds.DatasetName"
-    });
-
-  // Now create a function that will be called when tweetbooks succeed.
-  // In this case, we want to parse out the results object from the Asterix
-  // REST API response.
-  var tweetbooksSuccess = function (r) {
-    // Parse tweetbook metadata results
-    $.each(r.results, function (i, data) {
-      if (data["DataTypeName"] == "TweetMessageType") {
-        review_mode_tweetbooks.push(data["DatasetName"]);
-      }
-    });
-
-    // Now, if any tweetbooks already exist, opulate review screen.
-    $('#review-tweetbook-titles').html('');
-    $.each(review_mode_tweetbooks, function (i, tweetbook) {
-      addTweetBookDropdownItem(tweetbook);
-    });
-  };
-
-  // Now, we are ready to run a query.
-  A.meta(getTweetbooksQuery.val(), tweetbooksSuccess);
 }
 
 /**
@@ -637,8 +599,10 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
     var polygons = state_polygons;
     if (level === 'county') {
       polygons = county_polygons;
+    } else if (level === 'city') {
+      polygons = city_polygons;
     }
-    triggerUIUpdate(res.results, maxWeight, minWeight, polygons);
+    triggerUIUpdate(res.results, maxWeight, minWeight, polygons, level);
   }
 }
 
@@ -647,7 +611,7 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
  * @param    [Array]     mapPlotData, an array of coordinate and weight objects
  * @param    [Array]     plotWeights, a list of weights of the spatial cells - e.g., number of tweets
  */
-function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons) {
+function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
   /** Clear anything currently on the map **/
   console.time("query_aql_draw");
   mapWidgetClearMap();
@@ -663,7 +627,32 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons) {
 
   $.each(mapPlotData, function (m) {
 
+
     var cp = polygons[mapPlotData[m].cell];
+    if (!cp) {
+      if (level === "city") {
+        var coordinate_list = [];
+        var rectangle = mapPlotData[m].area;
+        if (rectangle) {
+          coordinate_list.push({lat: rectangle[0][1], lng: rectangle[0][0]});
+          coordinate_list.push({lat: rectangle[1][1], lng: rectangle[0][0]});
+          coordinate_list.push({lat: rectangle[1][1], lng: rectangle[1][0]});
+          coordinate_list.push({lat: rectangle[0][1], lng: rectangle[1][0]});
+          coordinate_list.push({lat: rectangle[0][1], lng: rectangle[0][0]});
+        }
+
+        polygons[mapPlotData[m].cell] = new google.maps.Polygon({
+          paths: coordinate_list,
+          strokeColor: 'black',
+          strokeOpacity: 0.8,
+          strokeWeight: 0.5,
+          fillColor: 'blue',
+          fillOpacity: 0.4
+        });
+        cp = polygons[mapPlotData[m].cell];
+      }
+    }
+
     if (cp) {
       cp.fillColor = "#" + rainbow.colourAt(Math.ceil(100 * (mapPlotData[m].count / maxWeight)));
       cp.fillOpacity = 0.8;
@@ -1260,6 +1249,9 @@ function mapWidgetClearMap() {
     state_polygons[cName].fillColor = 'blue';
     state_polygons[cName].fillOpacity = 0.4;
     state_polygons[cName].setMap(null);
+  }
+  for (var poly in city_polygons){
+    city_polygons[poly].setMap(null);
   }
 }
 
