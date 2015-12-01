@@ -392,6 +392,7 @@ function buildAQLQueryFromForm(parameters) {
       .WhereClause().and(
         new AExpression().set('$t.place.country = "United States"'),
         new AExpression().set('$t.place.place_type = "city"'),
+        new AExpression('spatial-area($t.place.bounding_box) < 30'), // remove the invalid area
         new FunctionExpression('spatial-intersect', '$t.place.bounding_box', '$region'),
         new AExpression().set('$t.create_at > datetime("' + parameters["startdt"] + '")'),
         new AExpression().set('$t.create_at < datetime("' + parameters["enddt"] + '")'),
@@ -402,6 +403,7 @@ function buildAQLQueryFromForm(parameters) {
       .WhereClause().and(
         new AExpression().set('$t.place.country = "United States"'),
         new AExpression().set('$t.place.place_type = "city"'),
+        new AExpression('spatial-area($t.place.bounding_box) < 30'), // remove the invalid area
         new FunctionExpression('spatial-intersect', '$t.place.bounding_box', '$region'),
         new AExpression().set('$t.create_at > datetime("' + parameters["startdt"] + '")'),
         new AExpression().set('$t.create_at < datetime("' + parameters["enddt"] + '")')
