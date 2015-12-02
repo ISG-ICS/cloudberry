@@ -32,6 +32,15 @@ create type type_us_state as closed {
 create dataset ds_us_state(type_us_state) primary key id;
 create index rtree_index on ds_us_state(geometry) type rtree;
 
+create type t_zip as closed {
+  zip: string,
+  city: string,
+  state:string,
+  county: string?
+}
+
+create dataset ds_zip(t_zip) primary key zip;
+
 create type type_twitter_user as closed {
     id: int64,
     name: string,

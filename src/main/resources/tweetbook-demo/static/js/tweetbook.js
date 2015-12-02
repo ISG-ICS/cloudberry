@@ -18,6 +18,18 @@
  */
 $(function () {
 
+  if (!String.prototype.format) {
+    String.prototype.format = function () {
+      var args = arguments;
+      return this.replace(/{(\d+)}/g, function (match, number) {
+        return typeof args[number] != 'undefined'
+          ? args[number]
+          : match
+          ;
+      });
+    };
+  }
+
   // Initialize connection to AsterixDB. Just one connection is needed and contains
   // logic for connecting to each API endpoint. This object A is reused throughout the
   // code but does not store information about any individual API call.
@@ -303,7 +315,6 @@ function initDemoUIButtonControls() {
     } else if ($("#city-button").data('clicked')) {
       level = 'city';
     }
-    console.log('level:' + level)
 
     var formData = {
       "keyword": kwterm,
@@ -338,18 +349,18 @@ function initDemoUIButtonControls() {
     var f = buildAQLQueryFromForm(formData);
 
     APIqueryTracker = {
-      "query": "use dataverse ;\n" + f.val(),
+      "query": "use dataverse " + A._properties['dataverse'] + ";\n" + f,
       "data": formData
     };
 
 
-    reportUserMessage(f.val(), true, "report-message");
+    reportUserMessage(APIqueryTracker.query, true, "report-query");
 
     if (build_tweetbook_mode == "synchronous") {
       console.time("query_aql_get_result");
-      A.query(f.val(), tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
+      A.query(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
     } else {
-      A.query(f.val(), tweetbookQueryAsyncCallback, build_tweetbook_mode);
+      A.query(f, tweetbookQueryAsyncCallback, build_tweetbook_mode);
     }
 
     // Clears selection rectangle on query execution, rather than waiting for another clear call.
@@ -365,78 +376,55 @@ function initDemoUIButtonControls() {
  */
 function buildAQLQueryFromForm(parameters) {
 
+  var level = parameters["level"];
+
   var bounds = {
     "ne": {"lat": parameters["neLat"], "lng": -1 * parameters["neLng"]},
     "sw": {"lat": parameters["swLat"], "lng": -1 * parameters["swLng"]}
   };
 
-  var rectangle =
-    new FunctionExpression("create-rectangle",
-      new FunctionExpression("create-point", bounds["sw"]["lng"], bounds["sw"]["lat"]),
-      new FunctionExpression("create-point", bounds["ne"]["lng"], bounds["ne"]["lat"]));
+  var aql = [];
+  aql.push('let $region := create-rectangle(create-point({0},{1}), create-point({2},{3}))'.format(bounds['sw']['lng'],
+    bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat']));
+  aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
+  aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
 
-  // You can chain these all together, but let's take them one at a time.
-  // Let's start with a ForClause. Here we go through each tweet $t in the
-  // dataset TweetMessageShifted.
-  var aql = new FLWOGRExpression()
-    .ForClause("$t", new AExpression("dataset ds_tweets"));
+  var ds_for = 'for $t in dataset ds_tweets ';
+  var ds_predicate = 'where $t.place.country = "United States" and $t.place.place_type = "city" ' +
+    'and spatial-area($t.place.bounding_box) < 5 ' +
+    'and $t.create_at >= $ts_start and $t.create_at < $ts_end ' +
+    'and spatial-intersect($t.place.bounding_box, $region) ';
 
-  // We know we have bounds for our region, so we can add that LetClause next.
-  aql = aql.LetClause("$region", rectangle);
-
-  // Now, let's change it up. The keyword term doesn't always show up, so it might be blank.
-  // We'll attach a new let clause for it, and then a WhereClause.
   if (parameters["keyword"].length > 0) {
-    aql = aql
-      .LetClause("$keyword", new AExpression('"' + parameters["keyword"] + '"'))
-      .WhereClause().and(
-        new AExpression().set('$t.place.country = "United States"'),
-        new AExpression().set('$t.place.place_type = "city"'),
-        new AExpression('spatial-area($t.place.bounding_box) < 30'), // remove the invalid area
-        new FunctionExpression('spatial-intersect', '$t.place.bounding_box', '$region'),
-        new AExpression().set('$t.create_at > datetime("' + parameters["startdt"] + '")'),
-        new AExpression().set('$t.create_at < datetime("' + parameters["enddt"] + '")'),
-        new FunctionExpression('contains', '$t.text_msg', '$keyword')
-      );
-  } else {
-    aql = aql
-      .WhereClause().and(
-        new AExpression().set('$t.place.country = "United States"'),
-        new AExpression().set('$t.place.place_type = "city"'),
-        new AExpression('spatial-area($t.place.bounding_box) < 30'), // remove the invalid area
-        new FunctionExpression('spatial-intersect', '$t.place.bounding_box', '$region'),
-        new AExpression().set('$t.create_at > datetime("' + parameters["startdt"] + '")'),
-        new AExpression().set('$t.create_at < datetime("' + parameters["enddt"] + '")')
-      );
+    ds_predicate = 'let $keyword := {0}\n'.format(parameters['keyword']) + ds_predicate +
+      'and contains($t.text_msg, $keyword ';
   }
 
-  // Finally, we'll group our results into spatial cells.
-  if (parameters['level'] === "county") {
-    aql = aql.GroupClause(
-      "$c",
-      //TODO check the city to county mapping
-      new AExpression('$t.place.full_name'),
-      "with",
-      "$t"
-    );
-  } else if (parameters['level'] === "state") {
-    aql = aql.GroupClause(
-      "$c",
-      new AExpression('substring-after($t.place.full_name, ", ")'),
-      "with",
-      "$t"
-    );
-    aql = aql.ReturnClause({"cell": "$c", "count": "count($t)"});
-  } else if (parameters['level'] === "city") {
-    aql = aql.GroupClause(
-      "$c",
-      new AExpression('$t.place.full_name'),
-      "with",
-      "$t"
-    );
-    aql = aql.ReturnClause({"cell": "$c", "count": "count($t)", "area": "$t[0].place.bounding_box"});
+  if (level === 'county') {
+    aql.push('let $join := {0}'.format(ds_for));
+    aql.push(ds_predicate);
+    aql.push('return { "place": $t.place,\n\
+      "county": (for $city in dataset ds_zip\n\
+      where substring-before($t.place.full_name, ",") = $city.city \
+      and substring-after($t.place.full_name, ", ") = $city.state \
+      and not(is-null($city.state)) \
+      and not(is-null($city.county))\n\
+      return string-concat([$city.state, "-", $city.county]) )[0]}\n\
+    for $county in $join\n\
+      group by $c := $county.county with $county return { "cell" : $c, "count" : count($county)}');
+  } else {
+    aql.push(ds_for);
+    aql.push(ds_predicate);
+    if (parameters['level'] === "state") {
+      aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
+      aql.push('return { "cell":$c, "count" : count($t) };');
+    } else if (parameters['level'] === "city") {
+      aql.push('group by $c := $t.place.full_name with $t');
+      aql.push('return {"cell":$c, "count" : count($t), "area": $t[0].place.bounding_box };');
+    }
   }
-  return aql;
+
+  return aql.join('\n');
 }
 
 /**
@@ -1252,7 +1240,7 @@ function mapWidgetClearMap() {
     state_polygons[cName].fillOpacity = 0.4;
     state_polygons[cName].setMap(null);
   }
-  for (var poly in city_polygons){
+  for (var poly in city_polygons) {
     city_polygons[poly].setMap(null);
   }
 }

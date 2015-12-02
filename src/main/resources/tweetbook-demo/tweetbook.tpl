@@ -211,6 +211,7 @@
             </div><!-- end Review Mode Column -->
 
             <!-- Container to hold success/error messages -->
+            <div id="report-query"></div>
             <div id="report-message"></div>
           </div><!-- End Left Column -->
 
