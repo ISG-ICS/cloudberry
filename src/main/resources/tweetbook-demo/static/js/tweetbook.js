@@ -146,6 +146,7 @@ $(function () {
   map_cells = [];
   map_tweet_markers = [];
   markers = {};
+  samples = {};
   review_mode_tweetbooks = [];
 
   initDemoUIButtonControls();
@@ -187,7 +188,7 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
       var county_geometry = polygon_results[c][geometry_name];
 
       var coordinate_list = [];
-      for (point = 0; point < county_geometry.length; point++) {
+      for (var point = 0; point < county_geometry.length; point++) {
         var coordinate = {lat: county_geometry[point][1], lng: county_geometry[point][0]};
         coordinate_list.push(coordinate);
       }
@@ -384,43 +385,51 @@ function buildAQLQueryFromForm(parameters) {
   };
 
   var aql = [];
-  aql.push('let $region := create-rectangle(create-point({0},{1}), create-point({2},{3}))'.format(bounds['sw']['lng'],
+  aql.push('let $region := create-rectangle(create-point({0},{1}),\n create-point({2},{3}))'.format(bounds['sw']['lng'],
     bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat']));
   aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
   aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
 
   var ds_for = 'for $t in dataset ds_tweets ';
-  var ds_predicate = 'where $t.place.country = "United States" and $t.place.place_type = "city" ' +
-    'and spatial-area($t.place.bounding_box) < 5 ' +
-    'and $t.create_at >= $ts_start and $t.create_at < $ts_end ' +
-    'and spatial-intersect($t.place.bounding_box, $region) ';
+  var ds_predicate = 'where $t.place.country = "United States" and $t.place.place_type = "city" \n' +
+    'and spatial-area($t.place.bounding_box) < 5 \n' +
+    'and $t.create_at >= $ts_start and $t.create_at < $ts_end \n' +
+    'and spatial-intersect($t.place.bounding_box, $region) \n';
 
   if (parameters["keyword"].length > 0) {
-    ds_predicate = 'let $keyword := {0}\n'.format(parameters['keyword']) + ds_predicate +
-      'and contains($t.text_msg, $keyword ';
+    ds_predicate = 'let $keyword := "{0}"\n'.format(parameters['keyword']) + ds_predicate +
+      'and contains($t.text_msg, $keyword) \n';
+  }
+
+  var sample = '';
+  for (var i=0; i < 1; i++){
+    if (i> 0){
+      sample += ',';
+    }
+    sample += ' "s{0}":$t[{1}].text_msg'.format(i,i);
   }
 
   if (level === 'county') {
     aql.push('let $join := {0}'.format(ds_for));
     aql.push(ds_predicate);
-    aql.push('return { "place": $t.place,\n\
+    aql.push('return { "text_msg": $t.text_msg,\n\
       "county": (for $city in dataset ds_zip\n\
-      where substring-before($t.place.full_name, ",") = $city.city \
-      and substring-after($t.place.full_name, ", ") = $city.state \
-      and not(is-null($city.state)) \
+      where substring-before($t.place.full_name, ",") = $city.city \n\
+      and substring-after($t.place.full_name, ", ") = $city.state \n\
       and not(is-null($city.county))\n\
       return string-concat([$city.state, "-", $city.county]) )[0]}\n\
-    for $county in $join\n\
-      group by $c := $county.county with $county return { "cell" : $c, "count" : count($county)}');
+    for $t in $join\n\
+      group by $c := $t.county with $t \n\
+    return { "cell" : $c, "count" : count($t), {0} }'.format(sample));
   } else {
     aql.push(ds_for);
     aql.push(ds_predicate);
     if (parameters['level'] === "state") {
       aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
-      aql.push('return { "cell":$c, "count" : count($t) };');
+      aql.push('return { "cell":$c, "count" : count($t), {0} };'.format(sample));
     } else if (parameters['level'] === "city") {
       aql.push('group by $c := $t.place.full_name with $t');
-      aql.push('return {"cell":$c, "count" : count($t), "area": $t[0].place.bounding_box };');
+      aql.push('return {"cell":$c, "count" : count($t), "area": $t[0].place.bounding_box, {0} };'.format(sample));
     }
   }
 
@@ -685,6 +694,14 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
         if (markers[mapPlotData[m].cell]) {
           markers[mapPlotData[m].cell].setVisible(false);
         }
+      });
+
+      google.maps.event.addListener(cp, 'click', function(event) {
+        var sample = '';
+        for (var i = 0; i < 1; i++) {
+          sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
+        }
+        reportUserMessage(sample,true, 'report-sample');
       });
 
       polygons[mapPlotData[m].cell] = cp;

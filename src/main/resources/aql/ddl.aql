@@ -41,7 +41,7 @@ create type t_zip as closed {
 
 create dataset ds_zip(t_zip) primary key zip;
 
-create type type_twitter_user as closed {
+create type type_twitter_user as open{
     id: int64,
     name: string,
     screen_name : string,
@@ -54,7 +54,7 @@ create type type_twitter_user as closed {
     statues_count: int64
 }
 
-create type type_twitter_place as closed {
+create type type_twitter_place as open{
     country : string,
     country_code : string,
     full_name : string,
@@ -64,7 +64,7 @@ create type type_twitter_place as closed {
     bounding_box : rectangle
 }
 
-create type type_tweet as closed {
+create type type_tweet as open{
     create_at : datetime,
     id: int64,
     text_msg : string,
