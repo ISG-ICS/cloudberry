@@ -4,11 +4,6 @@ use dataverse twitter;
 insert into dataset ds_tweets ({"create_at":datetime("2015-11-23T16:14:03.000"),"id":int64("668945640508911616"),"text_msg":"I know    that    I       let     you     down.   Is      it      too     late   now      to      say     sorry?","in_reply_to_status":int64("-1"),"in_reply_to_user":int64("-1"),"favorite_count":int64("0"),"retweet_count":int64("0"),"lang":"en","is_retweet":false,"user":{"id":int64("285176507"),"name":"NINA      XELYN","screen_name":"nxelyn","lang":"en","location":"Norway/CA","create_at":date("2011-04-20"),"description":"sc:     nxelyn   |       gemini  |       sjsu","followers_count":232,"friends_count":64,"statues_count":1332},"place":{"country":"United States","country_code":"United  States","full_name":"San        Jose,   CA","id":"7d62cffe6f98f349","name":"San Jose","place_type":"city","bounding_box":rectangle("-122.035311,37.193164       -121.71215,37.469154")}})
 
 use dataverse twitter;
-load dataset ds_tweets
-using localfs
-(("path"="172.17.0.2:///data/twitter/Nov23-2015-us.adm"),("format"="adm"));
-
-use dataverse twitter;
 load dataset ds_us_county
 using localfs
 (("path"="172.17.0.2:///data/geo/us-counties-rm-inner.json"),("format"="adm"));
@@ -16,3 +11,8 @@ using localfs
 load dataset ds_us_state
 using localfs
 (("path"="172.17.0.2:///data/geo/us-states.json"),("format"="adm"));
+
+use dataverse twitter;
+load dataset ds_zip
+using localfs
+(("path"="172.17.0.2:///data/geo/zip_code_database.simple.tsv"),("format"="delimited-text"),("delimiter"="\t"),("header"="true"));

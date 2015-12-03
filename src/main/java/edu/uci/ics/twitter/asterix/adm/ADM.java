@@ -1,7 +1,11 @@
 package edu.uci.ics.twitter.asterix.adm;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import org.apache.commons.lang.StringEscapeUtils;
 
 import twitter4j.GeoLocation;
 import twitter4j.HashtagEntity;
@@ -102,37 +106,7 @@ public class ADM {
 
     public static String mkQuote(String str) {
         StringBuilder sb = new StringBuilder();
-        sb.append('"');
-        for (char ch : str.toCharArray()) {
-            switch (ch) {
-                case '\b':
-                    sb.append('\\');
-                    sb.append('b');
-                    break;
-                case '\f':
-                    sb.append('\\');
-                    sb.append('f');
-                    break;
-                case '\n':
-                    sb.append('\\');
-                    sb.append('n');
-                    break;
-                case '\r':
-                    sb.append('\\');
-                    sb.append('r');
-                    break;
-                case '\t':
-                    sb.append('\\');
-                    sb.append('t');
-                    break;
-                case '\\':
-                case '"':
-                    sb.append('\\');
-                default:
-                    sb.append(ch);
-            }
-        }
-        sb.append('"');
+        sb.append('"').append(StringEscapeUtils.escapeJava(str)).append('"');
         return sb.toString();
     }
 }
