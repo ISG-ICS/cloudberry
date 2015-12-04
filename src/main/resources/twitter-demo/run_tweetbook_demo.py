@@ -16,7 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import tweetbook_bootstrap
 from urllib2 import URLError, urlopen
 from urllib import urlencode
 from json import loads, dumps

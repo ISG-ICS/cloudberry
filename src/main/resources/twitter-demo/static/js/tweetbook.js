@@ -89,7 +89,7 @@ $(function () {
 
   // UI Elements - Creates Map, Location Auto-Complete, Selection Rectangle
   var mapOptions = {
-    center: new google.maps.LatLng(39.5, -100.35),
+    center: new google.maps.LatLng(39.5, -96.35),
     zoom: 4,
     mapTypeId: google.maps.MapTypeId.ROADMAP,
     streetViewControl: false,
@@ -146,7 +146,32 @@ $(function () {
   asyncQueryManager = {};
   map_cells = [];
   map_tweet_markers = [];
-  markers = {};
+  label_marker = new MarkerWithLabel({
+    position: new google.maps.LatLng(0, 0),
+    draggable: false,
+    raiseOnDrag: false,
+    map: map,
+    labelContent: "A",
+    labelAnchor: new google.maps.Point(30, 20),
+    labelClass: "labels", // the CSS class for the label
+    labelStyle: {opacity: 1.0},
+    icon: "http://placehold.it/1x1",
+    visible: false
+  });
+
+  sample_marker = new MarkerWithLabel({
+    position: new google.maps.LatLng(0, 0),
+    draggable: false,
+    raiseOnDrag: false,
+    map: map,
+    labelContent: "tweet",
+    labelAnchor: new google.maps.Point(30, 20),
+    labelClass: "tweet-labels", // the CSS class for the label
+    labelStyle: {opacity: 1.0},
+    icon: "http://placehold.it/3x3",
+    visible: false
+  });
+
   samples = {};
   review_mode_tweetbooks = [];
 
@@ -616,15 +641,6 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
   console.time("query_aql_draw");
   mapWidgetClearMap();
 
-  // Initialize info windows.
-  // markers = {};
-  for (var key in markers) {
-    var mark = markers[key];
-    if (mark) {
-      mark.setVisible(false);
-    }
-  }
-
   $.each(mapPlotData, function (m) {
 
 
@@ -657,22 +673,6 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
       cp.fillColor = "#" + rainbow.colourAt(Math.ceil(100 * (mapPlotData[m].count / maxWeight)));
       cp.fillOpacity = 0.8;
 
-      if (markers[mapPlotData[m].cell]) {
-        markers[mapPlotData[m].cell].labelContent = mapPlotData[m].cell + ":" + mapPlotData[m].count + " tweets";
-      } else {
-        markers[mapPlotData[m].cell] = new MarkerWithLabel({
-          position: new google.maps.LatLng(0, 0),
-          draggable: false,
-          raiseOnDrag: false,
-          map: map,
-          labelContent: mapPlotData[m].cell + ":" + mapPlotData[m].count + " tweets",
-          labelAnchor: new google.maps.Point(30, 20),
-          labelClass: "labels", // the CSS class for the label
-          labelStyle: {opacity: 1.0},
-          icon: "http://placehold.it/1x1",
-          visible: false
-        });
-      }
 
       // Clicking on a circle drills down map to that value, hovering over it displays a count
       // of tweets at that location.
@@ -684,17 +684,16 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
       //});
 
       google.maps.event.addListener(cp, 'mousemove', function (event) {
-        if (markers[mapPlotData[m].cell]) {
-          markers[mapPlotData[m].cell].setPosition(event.latLng);
-          markers[mapPlotData[m].cell].setVisible(true);
-        }
+        label_marker.setPosition(event.latLng);
+        label_marker.labelContent = mapPlotData[m].cell + ":" + mapPlotData[m].count + " tweets";
+        label_marker.label.draw();
+        label_marker.setVisible(true);
+
       });
 
       google.maps.event.addListener(cp, 'mouseout', function (event) {
-
-        if (markers[mapPlotData[m].cell]) {
-          markers[mapPlotData[m].cell].setVisible(false);
-        }
+        label_marker.setVisible(false);
+        //sample_marker.setVisible(false);
       });
 
       google.maps.event.addListener(cp, 'click', function (event) {
@@ -702,6 +701,23 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
         for (var i = 0; i < 1; i++) {
           sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
         }
+        var bounds = map.getBounds();
+        var lat = bounds.getNorthEast().lat();
+        var lng = bounds.getSouthWest().lng();
+        var lat_range = Math.abs(bounds.getNorthEast().lat() - bounds.getSouthWest().lat());
+        var lng_range = Math.abs(bounds.getNorthEast().lng() - bounds.getSouthWest().lng());
+        lat = lat - lat_range / 10;
+        lng = lng + lng_range / 10;
+
+        var boundary = 100;
+        if (sample.length > boundary) {
+          sample = sample.substr(0, boundary) + "<br>" + sample.substr(boundary);
+        }
+        sample_marker.setPosition({lat: lat, lng: lng});
+        //sample_marker.setPosition(map.getCenter());
+        sample_marker.labelContent = sample;
+        sample_marker.label.draw();
+        sample_marker.setVisible(true);
         reportUserMessage(sample, true, 'report-sample');
       });
 
@@ -717,8 +733,82 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
   });
 
   console.timeEnd("query_aql_draw");
+
+  drawChart(mapPlotData);
 }
 
+function drawChart(cell_count) {
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 800 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom;
+
+  var x = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .1);
+
+  var y = d3.scale.linear()
+    .range([height, 0]);
+
+  var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+  var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+  var area = d3.svg.area()
+    .x(function (d) {
+      return x(d.cell);
+    })
+    .y0(height)
+    .y1(function (d) {
+      return y(d.count);
+    });
+
+  d3.select("svg").remove();
+  var svg = d3.select("#dashboard").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  x.domain(cell_count.map(function (d) {
+    return d.cell;
+  }));
+  y.domain([0, d3.max(cell_count, function (d) {
+    return d.count;
+  })]);
+
+  svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+  svg.append("g")
+    .attr("class", "y axis")
+    .call(yAxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 6)
+    .attr("dy", ".71em")
+    .style("text-anchor", "end")
+    .text("Count");
+
+  svg.selectAll(".bar")
+    .data(cell_count)
+    .enter().append("rect")
+    .attr("class", "bar")
+    .attr("x", function (d) {
+      return x(d.cell);
+    })
+    .attr("width", x.rangeBand())
+    .attr("y", function (d) {
+      return y(d.count);
+    })
+    .attr("height", function (d) {
+      return height - y(d.count);
+    });
+}
 /**
  * prepares an Asterix API query to drill down in a rectangular spatial zone
  *
@@ -1226,10 +1316,7 @@ function mapWidgetClearMap() {
   }
   map_cells = [];
 
-  $.each(markers, function (i) {
-    markers[i].setMap(null);
-  });
-  markers = {};
+  label_marker.setVisible(false);
 
   for (m in map_tweet_markers) {
     map_tweet_markers[m].setMap(null);
