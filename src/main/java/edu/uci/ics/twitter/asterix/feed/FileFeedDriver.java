@@ -13,8 +13,11 @@ public class FileFeedDriver {
     @Option(required = true, name = "-p", aliases = "--port", usage = "port of the feed socket")
     private int port;
 
-    @Option(name = "-w", aliases = "--wait", usage = "waiting seconds per record, default 0")
+    @Option(name = "-w", aliases = "--wait", usage = "waiting milliseconds per record, default 0")
     private int waitMillSecPerRecord = 0;
+
+    @Option(name = "-b", aliases = "--batch", usage = "batchsize per waiting periods, default 1")
+    private int batchSize = 1;
 
     @Option(name = "-c", aliases = "--count", usage = "maximum number to feed, default unlimited")
     private int maxCount = Integer.MAX_VALUE;
@@ -36,7 +39,7 @@ public class FileFeedDriver {
             }
 
             FileFeedSocketAdapterClient client = new FileFeedSocketAdapterClient(adapterUrl, port, sourceFilePath,
-                    waitMillSecPerRecord, maxCount);
+                    batchSize, waitMillSecPerRecord, maxCount);
             try {
                 client.initialize();
                 client.ingest();

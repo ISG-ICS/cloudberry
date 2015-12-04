@@ -1,0 +1,13 @@
+<assembly>
+    <id>twitter-demo-binary-assembly</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <fileSets>
+        <fileSet>
+            <directory>src/main/resources/twitter-demo</directory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+    </fileSets>
+</assembly>

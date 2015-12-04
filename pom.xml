@@ -47,6 +47,24 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.2-beta-5</version>
+                <executions>
+                    <execution>
+                        <id>twitter-demo-binary-assembly</id>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <finalName>twitter-demo</finalName>
+                            <descriptor>src/main/assembly/twitter-demo-binary-assembly.xml</descriptor>
+                        </configuration>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <dependencies>

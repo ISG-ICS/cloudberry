@@ -30,6 +30,7 @@ $(function () {
     };
   }
 
+
   // Initialize connection to AsterixDB. Just one connection is needed and contains
   // logic for connecting to each API endpoint. This object A is reused throughout the
   // code but does not store information about any individual API call.
@@ -402,11 +403,11 @@ function buildAQLQueryFromForm(parameters) {
   }
 
   var sample = '';
-  for (var i=0; i < 1; i++){
-    if (i> 0){
+  for (var i = 0; i < 1; i++) {
+    if (i > 0) {
       sample += ',';
     }
-    sample += ' "s{0}":$t[{1}].text_msg'.format(i,i);
+    sample += ' "s{0}":$t[{1}].text_msg'.format(i, i);
   }
 
   if (level === 'county') {
@@ -696,12 +697,12 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
         }
       });
 
-      google.maps.event.addListener(cp, 'click', function(event) {
+      google.maps.event.addListener(cp, 'click', function (event) {
         var sample = '';
         for (var i = 0; i < 1; i++) {
           sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
         }
-        reportUserMessage(sample,true, 'report-sample');
+        reportUserMessage(sample, true, 'report-sample');
       });
 
       polygons[mapPlotData[m].cell] = cp;
@@ -1183,6 +1184,7 @@ function reportUserMessage(message, isPositiveMessage, target) {
     alertType = "alert-danger";
   }
 
+  console.log(message);
   // Append the appropriate message
   $('<div/>')
     .attr("class", "alert " + alertType)

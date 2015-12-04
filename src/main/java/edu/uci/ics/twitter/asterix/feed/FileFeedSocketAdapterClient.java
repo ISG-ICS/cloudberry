@@ -32,17 +32,18 @@ public class FileFeedSocketAdapterClient {
     private int port;
     private Socket socket;
     private String sourceFilePath;
-    private int recordCount;
+    private int batchSize;
     private int maxCount;
     private OutputStream out = null;
 
-    public FileFeedSocketAdapterClient(String adapterUrl, int port, String sourceFilePath, int waitMillSecPerRecord,
-            int maxCount) {
+    public FileFeedSocketAdapterClient(String adapterUrl, int port, String sourceFilePath, int batchSize,
+            int waitMillSecPerRecord, int maxCount) {
         this.adapterUrl = adapterUrl;
         this.port = port;
         this.sourceFilePath = sourceFilePath;
         this.maxCount = maxCount;
         this.waitMillSecond = waitMillSecPerRecord;
+        this.batchSize = batchSize;
     }
 
     public void initialize() {
@@ -64,7 +65,7 @@ public class FileFeedSocketAdapterClient {
     }
 
     public void ingest() {
-        recordCount = 0;
+        int recordCount = 0;
         BufferedReader br = null;
         try {
             out = socket.getOutputStream();
@@ -75,13 +76,13 @@ public class FileFeedSocketAdapterClient {
 
             while ((nextRecord = br.readLine()) != null) {
                 b = nextRecord.replaceAll("\\s+", " ").getBytes();
-                if (waitMillSecond > 0) {
+                if (waitMillSecond > 1 && recordCount % batchSize == 0) {
                     Thread.currentThread().sleep(waitMillSecond);
                 }
                 out.write(b);
                 out.write(newLineBytes);
                 recordCount++;
-                if (recordCount % 10000 == 0) {
+                if (recordCount % 100000 == 0) {
                     System.err.println("send " + recordCount);
                 }
                 if (recordCount == maxCount) {

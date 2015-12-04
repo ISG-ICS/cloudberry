@@ -86,11 +86,4 @@ def run_asterix_ddl():
 def run_asterix_update():
     return (build_response("update", dict(request.query)))
 
-@route('/bootstrap')
-def run_bootstrap():
-    if tweetbook_bootstrap.bootstrap():
-        return u"Successfully load tweetbook dataset."
-    else:
-        return u"Error when loading tweetbook dataset."
-
 run(host='0.0.0.0', port=8080, debug=True)

@@ -20,7 +20,7 @@
 <html style="width: 100%; height: 100%;">
 <head>
     <title>ASTERIX Demo</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="shortcut icon" type="image/png" href="static/img/hyrax.png">
 
@@ -34,6 +34,9 @@
             type="text/javascript"></script>
     <script src="http://google-maps-utility-library-v3.googlecode.com/svn/tags/markerwithlabel/1.1.5/src/markerwithlabel_packed.js"
             type="text/javascript"></script>
+
+    <!-- D3 -->
+    <script src="//d3js.org/d3.v3.min.js" charset="utf-8"></script>
 
     <script src="http://code.jquery.com/jquery.min.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
