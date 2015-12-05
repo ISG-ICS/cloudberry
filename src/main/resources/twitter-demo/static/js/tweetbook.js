@@ -446,15 +446,21 @@ function buildAQLQueryFromForm(parameters) {
       return string-concat([$city.state, "-", $city.county]) )[0]}\n\
     for $t in $join\n\
       group by $c := $t.county with $t \n\
-    return { "cell" : $c, "count" : count($t), {0} }'.format(sample));
+      let $count := count($t) \n\
+      order by $count desc \n\
+    return { "cell" : $c, "count" : $count, {0} }'.format(sample));
   } else {
     aql.push(ds_for);
     aql.push(ds_predicate);
     if (parameters['level'] === "state") {
       aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
+      aql.push('let $count := count($t)');
+      aql.push('order by $count desc');
       aql.push('return { "cell":$c, "count" : count($t), {0} };'.format(sample));
     } else if (parameters['level'] === "city") {
       aql.push('group by $c := $t.place.full_name with $t');
+      aql.push('let $count := count($t)');
+      aql.push('order by $count desc');
       aql.push('return {"cell":$c, "count" : count($t), "area": $t[0].place.bounding_box, {0} };'.format(sample));
     }
   }
@@ -734,7 +740,12 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
 
   console.timeEnd("query_aql_draw");
 
+  updateDashBoard(mapPlotData.slice(0, 50));
+}
+
+function updateDashBoard(mapPlotData) {
   drawChart(mapPlotData);
+  drawPie(mapPlotData);
 }
 
 function drawChart(cell_count) {
@@ -765,8 +776,9 @@ function drawChart(cell_count) {
       return y(d.count);
     });
 
-  d3.select("svg").remove();
+  d3.select("#svg-chart").remove();
   var svg = d3.select("#dashboard").append("svg")
+    .attr("id", "svg-chart")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
     .append("g")
@@ -778,6 +790,13 @@ function drawChart(cell_count) {
   y.domain([0, d3.max(cell_count, function (d) {
     return d.count;
   })]);
+
+  var tip = d3.tip()
+    .attr('class', 'd3-tip')
+    .offset([-10, 0])
+    .html(function (d) {
+      return "<span style='color:red'>" + d.cell + ":" + d.count + "</span>";
+    });
 
   svg.append("g")
     .attr("class", "x axis")
@@ -794,10 +813,14 @@ function drawChart(cell_count) {
     .style("text-anchor", "end")
     .text("Count");
 
-  svg.selectAll(".bar")
+  svg.call(tip);
+
+  var bars = svg.selectAll(".bar")
     .data(cell_count)
-    .enter().append("rect")
-    .attr("class", "bar")
+    .enter().append("g")
+    .attr("class", "bar");
+
+  bars.append("rect")
     .attr("x", function (d) {
       return x(d.cell);
     })
@@ -807,6 +830,78 @@ function drawChart(cell_count) {
     })
     .attr("height", function (d) {
       return height - y(d.count);
+    })
+    .on('mouseover', tip.show)
+    .on('mouseout', tip.hide);
+
+
+}
+
+
+function drawPie(cell_count) {
+  var sum = d3.sum(cell_count, function (d) {
+    return d.count
+  });
+  var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 800 - margin.left - margin.right,
+    height = 300 - margin.top - margin.bottom,
+    radius = Math.min(width, height) / 2;
+
+  var color = d3.scale.ordinal()
+    .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+  var arc = d3.svg.arc()
+    .outerRadius(radius - 10)
+    .innerRadius(0);
+
+  var labelArc = d3.svg.arc()
+    .outerRadius(radius - 40)
+    .innerRadius(radius - 40);
+
+  var pie = d3.layout.pie()
+    .sort(null)
+    .value(function (d) {
+      return d.count;
+    });
+
+  var tip = d3.tip()
+    .attr('class', 'd3-tip')
+    .offset([-10, 0])
+    .html(function (d) {
+      return "<span style='color:red'>" + d.data.cell + ":" + (100 * d.data.count / sum).toFixed(2) + "%" + "</span>";
+    });
+
+  d3.select("#svg-pie").remove();
+  var svg = d3.select("#dashboard").append("svg")
+    .attr("id", "svg-pie")
+    .attr("width", width)
+    .attr("height", height)
+    .append("g")
+    .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+  svg.call(tip);
+
+  var g = svg.selectAll(".arc")
+    .data(pie(cell_count))
+    .enter().append("g")
+    .attr("class", "arc")
+
+  g.append("path")
+    .attr("d", arc)
+    .style("fill", function (d) {
+      return color(d.data.cell);
+    })
+    .on('mouseover', tip.show)
+    .on('mouseout', tip.hide);
+
+  g.append("text")
+    .attr("transform", function (d) {
+      return "translate(" + labelArc.centroid(d) + ")";
+    })
+    .attr("dy", ".35em")
+    .text(function (d) {
+      return "";
+      //return d.data.cell + ((100 * d.data.count)/sum).toFixed(2) + "%";
     });
 }
 /**
