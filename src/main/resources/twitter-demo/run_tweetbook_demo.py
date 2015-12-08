@@ -48,7 +48,10 @@ def build_response(endpoint, data):
             if not chunk: break
             urlresult += chunk
         # Create JSON dump of resulting response
-        return dumps(dict(results=loads(urlresult)))
+        # TODO create a json array to parse the multiple results
+        possibleMultiResults = '[' + urlresult.replace('\n ]\n[', '\n ],\n[') + ']'
+
+        return dumps(dict(results=loads(possibleMultiResults)))
 
     except ValueError, e:
         pass

@@ -19,6 +19,7 @@
 
 # Tweetbook Demo
 Author: Eugenia Gabrielova (genia.likes.science@gmail.com)
+        Jianfeng Jia (jianfeng.jia@gmail.com)
 
 ## Dependencies
 1. Python Requests library: [http://docs.python-requests.org/en/latest/user/install/](http://docs.python-requests.org/en/latest/user/install/)

@@ -208,7 +208,7 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
   return function (polygon_results) {
     console.timeEnd("initial_polygon_aql_get_result");
     console.time("initial_polygon_drawing");
-    polygon_results = polygon_results.results;
+    polygon_results = polygon_results.results[0];
     for (c = 0; c < polygon_results.length; c++) {
       var key = polygon_results[c][key_name];
       var county_geometry = polygon_results[c][geometry_name];
@@ -435,6 +435,7 @@ function buildAQLQueryFromForm(parameters) {
     sample += ' "s{0}":$t[{1}].text_msg'.format(i, i);
   }
 
+  // TODO create temporary dataset
   if (level === 'county') {
     aql.push('let $join := {0}'.format(ds_for));
     aql.push(ds_predicate);
@@ -448,7 +449,7 @@ function buildAQLQueryFromForm(parameters) {
       group by $c := $t.county with $t \n\
       let $count := count($t) \n\
       order by $count desc \n\
-    return { "cell" : $c, "count" : $count, {0} }'.format(sample));
+    return { "cell" : $c, "count" : $count, {0} };'.format(sample));
   } else {
     aql.push(ds_for);
     aql.push(ds_predicate);
@@ -456,14 +457,26 @@ function buildAQLQueryFromForm(parameters) {
       aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
       aql.push('let $count := count($t)');
       aql.push('order by $count desc');
-      aql.push('return { "cell":$c, "count" : count($t), {0} };'.format(sample));
+      aql.push('return { "cell":$c, "count" : $count, {0} };'.format(sample));
     } else if (parameters['level'] === "city") {
       aql.push('group by $c := $t.place.full_name with $t');
       aql.push('let $count := count($t)');
       aql.push('order by $count desc');
-      aql.push('return {"cell":$c, "count" : count($t), "area": $t[0].place.bounding_box, {0} };'.format(sample));
+      aql.push('return {"cell":$c, "count" : $count, "area": $t[0].place.bounding_box, {0} };'.format(sample));
     }
   }
+
+  aql.push('let $region := create-rectangle(create-point({0},{1}),\n create-point({2},{3}))'.format(bounds['sw']['lng'],
+    bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat']));
+  aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
+  aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
+  aql.push(ds_for);
+  aql.push(ds_predicate);
+  aql.push('group by $c := print-datetime($t.create_at, "YYYYMMDD-hh") with $t ');
+  aql.push('let $count := count($t)');
+  aql.push('order by $c ');
+  aql.push('return {"minute":$c, "count" : $count };');
+  // add the groupby time query
 
   return aql.join('\n');
 }
@@ -617,7 +630,7 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
 
     // Parse resulting JSON objects. Here is an example record:
     // { "cell": rectangle("21.5,-98.5 24.5,-95.5"), "count": 78i64 }
-    $.each(res.results, function (i, data) {
+    $.each(res.results[0], function (i, data) {
 
       // We need to clean the JSON a bit to parse it properly in javascript
 
@@ -633,7 +646,7 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
     } else if (level === 'city') {
       polygons = city_polygons;
     }
-    triggerUIUpdate(res.results, maxWeight, minWeight, polygons, level);
+    triggerUIUpdate(res.results[0], maxWeight, minWeight, polygons, level);
   }
 }
 
