@@ -38,8 +38,8 @@ def build_response(endpoint, data):
         # Encode data into url string
         urlresponse = urlopen(api_endpoint + '?' + urlencode(data))
 
-        # There are some weird bits passed in from the Asterix JSON. 
-        # We will remove them here before we pass the result string 
+        # There are some weird bits passed in from the Asterix JSON.
+        # We will remove them here before we pass the result string
         # back to the frontend.
         urlresult = ""
         CHUNK = 16 * 1024
@@ -67,11 +67,15 @@ def build_response(endpoint, data):
             print 'The server couldn\'t fulfill the request.'
             print 'Error code: ', e.code
 
-# API Endpoints    
+# API Endpoints
 @route('/query')
 def run_asterix_query():
     return (build_response("query", dict(request.query)))
-    
+
+@route('/aql')
+def run_asterix_mix_query():
+    return (build_response("aql", dict(request.query)))
+
 @route('/query/status')
 def run_asterix_query_status():
     return (build_response("query/status", dict(request.query)))

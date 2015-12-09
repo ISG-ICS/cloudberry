@@ -124,6 +124,39 @@ AsterixDBConnection.prototype.query = function(statements, successFn, mode) {
 };
 
 /**
+* query (http://asterix.ics.uci.edu/documentation/api.html#QueryApi)
+*
+* @param statements, statements of an AQL query
+* @param successFn, a function to execute if this query is run successfully
+* @param mode, a string either "synchronous" or "asynchronous", depending on preferred
+*               execution mode.
+*/
+AsterixDBConnection.prototype.aql= function(statements, successFn, mode) {
+
+    if ( typeof statements === 'string') {
+        statements = [ statements ];
+    }
+
+    var m = typeof mode ? mode : "synchronous";
+
+    // DEBUG
+    //alert(statements.join("\n"));
+
+    var query = "use dataverse " + this._properties["dataverse"] + ";\n" + statements.join("\n");
+
+    this._api(
+        {
+            "aql" : query,
+            "mode"  : m
+        },
+        successFn,
+        "aql"
+    );
+
+    return this;
+};
+
+/**
 * query_status (http://asterix.ics.uci.edu/documentation/api.html#QueryStatusApi)
 * 
 * @param handle, a json object of the form {"handle" : handleObject}, where

@@ -18,6 +18,7 @@
  */
 $(function () {
 
+  // Add a format function to String
   if (!String.prototype.format) {
     String.prototype.format = function () {
       var args = arguments;
@@ -385,9 +386,9 @@ function initDemoUIButtonControls() {
 
     if (build_tweetbook_mode == "synchronous") {
       console.time("query_aql_get_result");
-      A.query(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
+      A.aql(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
     } else {
-      A.query(f, tweetbookQueryAsyncCallback, build_tweetbook_mode);
+      A.aql(f, tweetbookQueryAsyncCallback, build_tweetbook_mode);
     }
 
     // Clears selection rectangle on query execution, rather than waiting for another clear call.
@@ -398,19 +399,17 @@ function initDemoUIButtonControls() {
   });
 }
 
-/**
- * Builds AsterixDB REST Query from explore mode form.
- */
-function buildAQLQueryFromForm(parameters) {
-
-  var level = parameters["level"];
-
+function buildTemporaryDataset(parameters) {
   var bounds = {
     "ne": {"lat": parameters["neLat"], "lng": -1 * parameters["neLng"]},
     "sw": {"lat": parameters["swLat"], "lng": -1 * parameters["swLng"]}
   };
 
   var aql = [];
+
+  aql.push('drop dataset tmp_tweets if exists;');
+  aql.push('create temporary dataset tmp_tweets(type_tweet) primary key id; ');
+  aql.push('insert into dataset tmp_tweets (');
   aql.push('let $region := create-rectangle(create-point({0},{1}),\n create-point({2},{3}))'.format(bounds['sw']['lng'],
     bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat']));
   aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
@@ -421,11 +420,25 @@ function buildAQLQueryFromForm(parameters) {
     'and spatial-area($t.place.bounding_box) < 5 \n' +
     'and $t.create_at >= $ts_start and $t.create_at < $ts_end \n' +
     'and spatial-intersect($t.place.bounding_box, $region) \n';
-
   if (parameters["keyword"].length > 0) {
     ds_predicate = 'let $keyword := "{0}"\n'.format(parameters['keyword']) + ds_predicate +
       'and contains($t.text_msg, $keyword) \n';
   }
+  aql.push(ds_for);
+  aql.push(ds_predicate);
+  aql.push('return $t')
+  aql.push(');');
+  return aql;
+}
+
+/**
+ * Builds AsterixDB REST Query from explore mode form.
+ */
+function buildAQLQueryFromForm(parameters) {
+
+  var level = parameters["level"];
+
+  var aql = buildTemporaryDataset(parameters);
 
   var sample = '';
   for (var i = 0; i < 1; i++) {
@@ -435,10 +448,10 @@ function buildAQLQueryFromForm(parameters) {
     sample += ' "s{0}":$t[{1}].text_msg'.format(i, i);
   }
 
-  // TODO create temporary dataset
+  var ds_for = 'for $t in dataset tmp_tweets ';
+
   if (level === 'county') {
     aql.push('let $join := {0}'.format(ds_for));
-    aql.push(ds_predicate);
     aql.push('return { "text_msg": $t.text_msg,\n\
       "county": (for $city in dataset ds_zip\n\
       where substring-before($t.place.full_name, ",") = $city.city \n\
@@ -452,7 +465,6 @@ function buildAQLQueryFromForm(parameters) {
     return { "cell" : $c, "count" : $count, {0} };'.format(sample));
   } else {
     aql.push(ds_for);
-    aql.push(ds_predicate);
     if (parameters['level'] === "state") {
       aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
       aql.push('let $count := count($t)');
@@ -466,17 +478,11 @@ function buildAQLQueryFromForm(parameters) {
     }
   }
 
-  aql.push('let $region := create-rectangle(create-point({0},{1}),\n create-point({2},{3}))'.format(bounds['sw']['lng'],
-    bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat']));
-  aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
-  aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
   aql.push(ds_for);
-  aql.push(ds_predicate);
-  aql.push('group by $c := print-datetime($t.create_at, "YYYYMMDD-hh") with $t ');
+  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh:mm") with $t ');
   aql.push('let $count := count($t)');
   aql.push('order by $c ');
-  aql.push('return {"minute":$c, "count" : $count };');
-  // add the groupby time query
+  aql.push('return {"slice":$c, "count" : $count };');
 
   return aql.join('\n');
 }
@@ -647,6 +653,9 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
       polygons = city_polygons;
     }
     triggerUIUpdate(res.results[0], maxWeight, minWeight, polygons, level);
+    if (res.results[1]) {
+      drawTimeSerialBrush(res.results[1]);
+    }
   }
 }
 
@@ -916,6 +925,124 @@ function drawPie(cell_count) {
       return "";
       //return d.data.cell + ((100 * d.data.count)/sum).toFixed(2) + "%";
     });
+}
+
+function drawTimeSerialBrush(slice_count) {
+
+  var margin = {top: 10, right: 10, bottom: 100, left: 40},
+    margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+    width = 800 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom,
+    height2 = 500 - margin2.top - margin2.bottom;
+
+  var parseDate = d3.time.format("%m-%d %H:%M").parse;
+
+  var x = d3.time.scale().range([0, width]),
+    x2 = d3.time.scale().range([0, width]),
+    y = d3.scale.linear().range([height, 0]),
+    y2 = d3.scale.linear().range([height2, 0]);
+
+  var xAxis = d3.svg.axis().scale(x).orient("bottom"),
+    xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
+    yAxis = d3.svg.axis().scale(y).orient("left");
+
+  var brush = d3.svg.brush()
+    .x(x2)
+    .on("brush", brushed);
+
+  var area = d3.svg.area()
+    .interpolate("monotone")
+    .x(function (d) {
+      return x(d.slice);
+    })
+    .y0(height)
+    .y1(function (d) {
+      return y(d.count);
+    });
+
+  var area2 = d3.svg.area()
+    .interpolate("monotone")
+    .x(function (d) {
+      return x2(d.slice);
+    })
+    .y0(height2)
+    .y1(function (d) {
+      return y2(d.count);
+    });
+
+  d3.select("#svg-time").remove();
+  var svg = d3.select("#dashboard").append("svg")
+    .attr("id", "svg-time")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom);
+
+  svg.append("defs").append("clipPath")
+    .attr("id", "clip")
+    .append("rect")
+    .attr("width", width)
+    .attr("height", height);
+
+  var focus = svg.append("g")
+    .attr("class", "focus")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  var context = svg.append("g")
+    .attr("class", "context")
+    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
+
+  slice_count.forEach(type);
+  x.domain(d3.extent(slice_count.map(function (d) {
+    return d.slice;
+  })));
+  y.domain([0, d3.max(slice_count.map(function (d) {
+    return d.count;
+  }))]);
+  x2.domain(x.domain());
+  y2.domain(y.domain());
+
+  focus.append("path")
+    .datum(slice_count)
+    .attr("class", "area")
+    .attr("d", area);
+
+  focus.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xAxis);
+
+  focus.append("g")
+    .attr("class", "y axis")
+    .call(yAxis);
+
+  context.append("path")
+    .datum(slice_count)
+    .attr("class", "area")
+    .attr("d", area2);
+
+  context.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + height2 + ")")
+    .call(xAxis2);
+
+  context.append("g")
+    .attr("class", "x brush")
+    .call(brush)
+    .selectAll("rect")
+    .attr("y", -6)
+    .attr("height", height2 + 7);
+
+  function brushed() {
+    x.domain(brush.empty() ? x2.domain() : brush.extent());
+    focus.select(".area").attr("d", area);
+    focus.select(".x.axis").call(xAxis);
+  }
+
+  function type(d) {
+    d.slice = parseDate(d.slice);
+    d.count = +d.count;
+    return d;
+  }
+
 }
 /**
  * prepares an Asterix API query to drill down in a rectangular spatial zone

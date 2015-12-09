@@ -164,6 +164,19 @@
       top: 100%;
       left: 0;
     }
+
+    /* brush for time serial context */
+    .brush .extent {
+      stroke: #fff;
+      fill-opacity: .125;
+      shape-rendering: crispEdges;
+    }
+    /* time serial area */
+    .area {
+      fill: steelblue;
+      clip-path: url(#clip);
+    }
+
   </style>
 </head>
 <body style="width: 100%; height: 100%;">
