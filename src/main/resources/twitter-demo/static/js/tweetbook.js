@@ -399,7 +399,14 @@ function initDemoUIButtonControls() {
   });
 }
 
+function declareRectangle(bounds) {
+  return 'let $region := create-rectangle(create-point({0},{1}),\n create-point({2},{3}))'.format(bounds['sw']['lng'],
+    bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat'])
+}
+
+
 function buildTemporaryDataset(parameters) {
+
   var bounds = {
     "ne": {"lat": parameters["neLat"], "lng": -1 * parameters["neLng"]},
     "sw": {"lat": parameters["swLat"], "lng": -1 * parameters["swLng"]}
@@ -410,8 +417,7 @@ function buildTemporaryDataset(parameters) {
   aql.push('drop dataset tmp_tweets if exists;');
   aql.push('create temporary dataset tmp_tweets(type_tweet) primary key id; ');
   aql.push('insert into dataset tmp_tweets (');
-  aql.push('let $region := create-rectangle(create-point({0},{1}),\n create-point({2},{3}))'.format(bounds['sw']['lng'],
-    bounds['sw']['lat'], bounds['ne']['lng'], bounds['ne']['lat']));
+  aql.push(declareRectangle(bounds));
   aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
   aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
 
@@ -429,6 +435,33 @@ function buildTemporaryDataset(parameters) {
   aql.push('return $t')
   aql.push(');');
   return aql;
+}
+
+function declarePolygon(polygon) {
+  var region = 'let $region := create-polygon([';
+
+  var vertices = polygon.getPath();
+  for (var i = 0; i < vertices.getLength(); i++) {
+    var xy = vertices.getAt(i);
+    if (i > 0) {
+      region += ',';
+    }
+    region += '{0},{1}'.format(xy.lng(), xy.lat());
+  }
+  region += '])';
+  return region;
+}
+
+function buildClickPolygonQuery(polygon) {
+  var aql = [];
+  aql.push(declarePolygon(polygon));
+  aql.push('for $t in dataset tmp_tweets ');
+  aql.push('where spatial-intersect($t.place.bounding_box, $region)');
+  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh:mm") with $t ');
+  aql.push('let $count := count($t)');
+  aql.push('order by $c ');
+  aql.push('return {"slice":$c, "count" : $count };');
+  return aql.join('\n');
 }
 
 /**
@@ -529,89 +562,6 @@ function asynchronousQueryGetAPIQueryStatus(handle, handle_id) {
       }
     }
   );
-}
-
-/**
- * On-success callback after async API query
- * @param    {object}    res, a result object containing an opaque result handle to Asterix
- */
-function tweetbookQueryAsyncCallback(res) {
-
-  // Parse handle, handle id and query from async call result
-  var handle_query = APIqueryTracker["query"];
-  var handle = res;
-  var handle_id = res["handle"].toString().split(',')[0];
-
-  // Add to stored map of existing handles
-  asyncQueryManager[handle_id] = {
-    "handle": handle,
-    "query": handle_query, // This will show up when query control button is clicked.
-    "data": APIqueryTracker["data"]
-  };
-
-  // Create a container for this async query handle
-  $('<div/>')
-    .css("margin-left", "1em")
-    .css("margin-bottom", "1em")
-    .css("display", "block")
-    .attr({
-      "class": "btn-group",
-      "id": "async_container_" + handle_id
-    })
-    .appendTo("#async-handle-controls");
-
-  // Adds the main button for this async handle
-  var handle_action_button = '<button class="btn btn-disabled" id="handle_' + handle_id + '">Handle ' + handle_id + '</button>';
-  $('#async_container_' + handle_id).append(handle_action_button);
-  $('#handle_' + handle_id).prop('disabled', true);
-  $('#handle_' + handle_id).on('click', function (e) {
-
-    // make sure query is ready to be run
-    if (asyncQueryManager[handle_id]["ready"]) {
-
-      APIqueryTracker = {
-        "query": asyncQueryManager[handle_id]["query"],
-        "data": asyncQueryManager[handle_id]["data"]
-      };
-
-      if (!asyncQueryManager[handle_id].hasOwnProperty("result")) {
-        // Generate new Asterix Core API Query
-        A.query_result(
-          {"handle": JSON.stringify(asyncQueryManager[handle_id]["handle"])},
-          function (res) {
-            asyncQueryManager[handle_id]["result"] = res;
-
-            var resultTransform = {
-              "results": res.results
-            };
-
-            tweetbookQuerySyncCallback(resultTransform);
-          }
-        );
-      } else {
-
-        var resultTransform = {
-          "results": asyncQueryManager[handle_id]["result"].results
-        };
-
-        tweetbookQuerySyncCallback(resultTransform);
-      }
-    }
-  });
-
-  // Adds a removal button for this async handle
-  var asyncDeleteButton = addDeleteButton(
-    "trashhandle_" + handle_id,
-    "async_container_" + handle_id,
-    function (e) {
-      $('#async_container_' + handle_id).remove();
-      delete asyncQueryManager[handle_id];
-    }
-  );
-
-  $('#async_container_' + handle_id).append('<br/>');
-
-  $("#submit-button").attr("disabled", false);
 }
 
 function tweetbookQuerySyncCallbackWithLevel(level) {
@@ -729,24 +679,14 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
         for (var i = 0; i < 1; i++) {
           sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
         }
-        var bounds = map.getBounds();
-        var lat = bounds.getNorthEast().lat();
-        var lng = bounds.getSouthWest().lng();
-        var lat_range = Math.abs(bounds.getNorthEast().lat() - bounds.getSouthWest().lat());
-        var lng_range = Math.abs(bounds.getNorthEast().lng() - bounds.getSouthWest().lng());
-        lat = lat - lat_range / 10;
-        lng = lng + lng_range / 10;
 
-        var boundary = 100;
-        if (sample.length > boundary) {
-          sample = sample.substr(0, boundary) + "<br>" + sample.substr(boundary);
-        }
-        sample_marker.setPosition({lat: lat, lng: lng});
-        //sample_marker.setPosition(map.getCenter());
-        sample_marker.labelContent = sample;
-        sample_marker.label.draw();
-        sample_marker.setVisible(true);
+        var aql = buildClickPolygonQuery(cp);
+        A.aql(aql, function (res) {
+          return drawTimeSerialBrush(res.results[0]);
+        }, "synchronous");
+
         reportUserMessage(sample, true, 'report-sample');
+        reportUserMessage("use dataverse " + A._properties['dataverse'] + ";\n" + aql, true, 'report-query');
       });
 
       polygons[mapPlotData[m].cell] = cp;
@@ -1043,390 +983,8 @@ function drawTimeSerialBrush(slice_count) {
     return d;
   }
 
-}
-/**
- * prepares an Asterix API query to drill down in a rectangular spatial zone
- *
- * @params {object} marker_borders a set of bounds for a region from a previous api result
- */
-function onMapPointDrillDown(marker_borders) {
-
-  var zoneData = APIqueryTracker["data"];
-
-  var zswBounds = new google.maps.LatLng(marker_borders.latSW, marker_borders.lngSW);
-  var zneBounds = new google.maps.LatLng(marker_borders.latNE, marker_borders.lngNE);
-
-  var zoneBounds = new google.maps.LatLngBounds(zswBounds, zneBounds);
-  zoneData["swLat"] = zoneBounds.getSouthWest().lat();
-  zoneData["swLng"] = zoneBounds.getSouthWest().lng();
-  zoneData["neLat"] = zoneBounds.getNorthEast().lat();
-  zoneData["neLng"] = zoneBounds.getNorthEast().lng();
-  var zB = {
-    "sw": {
-      "lat": zoneBounds.getSouthWest().lat(),
-      "lng": zoneBounds.getSouthWest().lng()
-    },
-    "ne": {
-      "lat": zoneBounds.getNorthEast().lat(),
-      "lng": zoneBounds.getNorthEast().lng()
-    }
-  };
-
-  mapWidgetClearMap();
-
-  var customBounds = new google.maps.LatLngBounds();
-  var zoomSWBounds = new google.maps.LatLng(zoneData["swLat"], zoneData["swLng"]);
-  var zoomNEBounds = new google.maps.LatLng(zoneData["neLat"], zoneData["neLng"]);
-  customBounds.extend(zoomSWBounds);
-  customBounds.extend(zoomNEBounds);
-  map.fitBounds(customBounds);
-
-  var df = getDrillDownQuery(zoneData, zB);
-
-  APIqueryTracker = {
-    "query_string": "use dataverse geo;\n" + df.val(),
-    "marker_path": "static/img/mobile2.png"
-  };
-
-  A.query(df.val(), onTweetbookQuerySuccessPlot);
-}
-
-/**
- * Generates an aql query for zooming on a spatial cell and obtaining tweets contained therein.
- * @param parameters, the original query parameters
- * @param bounds, the bounds of the zone to zoom in on.
- */
-function getDrillDownQuery(parameters, bounds) {
-
-  var zoomRectangle = new FunctionExpression("create-rectangle",
-    new FunctionExpression("create-point", bounds["sw"]["lat"], bounds["sw"]["lng"]),
-    new FunctionExpression("create-point", bounds["ne"]["lat"], bounds["ne"]["lng"]));
-
-  var drillDown = new FLWOGRExpression()
-    .ForClause("$t", new AExpression("dataset TweetsAddress"))
-    .LetClause("$region", zoomRectangle);
-
-  if (parameters["keyword"].length == 0) {
-    drillDown = drillDown
-      .WhereClause().and(
-        new AExpression().set('$t.place.country = "United States"'),
-        new AExpression().set('$t.place.place_type = "city"'),
-        new FunctionExpression('spatial-intersect', '$t.place.bounding_box', '$region'),
-        new AExpression().set('$t.create_at > datetime("' + parameters["startdt"] + '")'),
-        new AExpression().set('$t.create_at < datetime("' + parameters["enddt"] + '")')
-      );
-  } else {
-    drillDown = drillDown
-      .LetClause("$keyword", new AExpression('"' + parameters["keyword"] + '"'))
-      .WhereClause().and(
-        new AExpression().set('$t.place.country = "United States"'),
-        new AExpression().set('$t.place.place_type = "city"'),
-        new FunctionExpression('spatial-intersect', '$t.place.bounding_box', '$region'),
-        new AExpression().set('$t.create_at > datetime("' + parameters["startdt"] + '")'),
-        new AExpression().set('$t.create_at < datetime("' + parameters["enddt"] + '")'),
-        new FunctionExpression('contains', '$t.text_msg', '$keyword')
-      );
-  }
-
-  drillDown = drillDown
-    .ReturnClause({
-      "tweetId": "$t.tid",
-      "tweetText": "$t.message-text",
-      "tweetLoc": "$t.sender-location"
-    });
-
-  return drillDown;
-}
-
-/**
- * Given a location where a tweet exists, opens a modal to examine or update a tweet's content.
- * @param t0, a tweetobject that has a location, text, id, and optionally a comment.
- */
-function onDrillDownAtLocation(tO) {
-
-  var tweetId = tO["tweetEntryId"];
-  var tweetText = tO["tweetText"];
-
-  // First, set tweet in drilldown modal to be this tweet's text
-  $('#modal-body-tweet').html('Tweet #' + tweetId + ": " + tweetText);
-
-  // Next, empty any leftover tweetbook comments or error/success messages
-  $("#modal-body-add-to").val('');
-  $("#modal-body-add-note").val('');
-  $("#modal-body-message-holder").html("");
-
-  // Next, if there is an existing tweetcomment reported, show it.
-  if (tO.hasOwnProperty("tweetComment")) {
-
-    // Show correct panel
-    $("#modal-existing-note").show();
-    $("#modal-save-tweet-panel").hide();
-
-    // Fill in existing tweet comment
-    $("#modal-body-tweet-note").val(tO["tweetComment"]);
-
-    // Change Tweetbook Badge
-    $("#modal-current-tweetbook").val(APIqueryTracker["active_tweetbook"]);
-
-    // Add deletion functionality
-    $("#modal-body-trash-icon").on('click', function () {
-      // Send comment deletion to asterix
-      var deleteTweetCommentOnId = '"' + tweetId + '"';
-      var toDelete = new DeleteStatement(
-        "$mt",
-        APIqueryTracker["active_tweetbook"],
-        new AExpression("$mt.tid = " + deleteTweetCommentOnId.toString())
-      );
-      A.update(
-        toDelete.val()
-      );
-
-      // Hide comment from map
-      $('#drilldown_modal').modal('hide');
-
-      // Replot tweetbook
-      onPlotTweetbook(APIqueryTracker["active_tweetbook"]);
-    });
-
-  } else {
-    // Show correct panel
-    $("#modal-existing-note").hide();
-    $("#modal-save-tweet-panel").show();
-
-    // Now, when adding a comment on an available tweet to a tweetbook
-    $('#save-comment-tweetbook-modal').unbind('click');
-    $("#save-comment-tweetbook-modal").on('click', function (e) {
-
-      // Stuff to save about new comment
-      var save_metacomment_target_tweetbook = $("#modal-body-add-to").val();
-      var save_metacomment_target_comment = '"' + $("#modal-body-add-note").val() + '"';
-      var save_metacomment_target_tweet = '"' + tweetId + '"';
-
-      // Make sure content is entered, and then save this comment.
-      if ($("#modal-body-add-note").val() == "") {
-
-        reportUserMessage("Please enter a comment about the tweet", false, "report-message");
-
-      } else if ($("#modal-body-add-to").val() == "") {
-
-        reportUserMessage("Please enter a tweetbook.", false, "report-message");
-
-      } else {
-
-        // Check if tweetbook exists. If not, create it.
-        if (!(existsTweetbook(save_metacomment_target_tweetbook))) {
-          onCreateNewTweetBook(save_metacomment_target_tweetbook);
-        }
-
-        var toInsert = new InsertStatement(
-          save_metacomment_target_tweetbook,
-          {
-            "tid": save_metacomment_target_tweet.toString(),
-            "comment-text": save_metacomment_target_comment
-          }
-        );
-
-        A.update(toInsert.val(), function () {
-          var successMessage = "Saved comment on <b>Tweet #" + tweetId +
-            "</b> in dataset <b>" + save_metacomment_target_tweetbook + "</b>.";
-          reportUserMessage(successMessage, true, "report-message");
-
-          $("#modal-body-add-to").val('');
-          $("#modal-body-add-note").val('');
-          $('#save-comment-tweetbook-modal').unbind('click');
-
-          // Close modal
-          $('#drilldown_modal').modal('hide');
-        });
-      }
-    });
-  }
-}
-
-/**
- * Adds a new tweetbook entry to the menu and creates a dataset of type TweetbookEntry.
- */
-function onCreateNewTweetBook(tweetbook_title) {
-
-  var tweetbook_title = tweetbook_title.split(' ').join('_');
-
-  A.ddl(
-    "create dataset " + tweetbook_title + "(TweetbookEntry) primary key tid;",
-    function () {
-    }
-  );
-
-  if (!(existsTweetbook(tweetbook_title))) {
-    review_mode_tweetbooks.push(tweetbook_title);
-    addTweetBookDropdownItem(tweetbook_title);
-  }
-}
-
-/**
- * Removes a tweetbook from both demo and from
- * dataverse metadata.
- */
-function onDropTweetBook(tweetbook_title) {
-
-  // AQL Call
-  A.ddl(
-    "drop dataset " + tweetbook_title + " if exists;",
-    function () {
-    }
-  );
-
-  // Removes tweetbook from review_mode_tweetbooks
-  var remove_position = $.inArray(tweetbook_title, review_mode_tweetbooks);
-  if (remove_position >= 0) review_mode_tweetbooks.splice(remove_position, 1);
-
-  // Clear UI with review tweetbook titles
-  $('#review-tweetbook-titles').html('');
-  for (r in review_mode_tweetbooks) {
-    addTweetBookDropdownItem(review_mode_tweetbooks[r]);
-  }
-}
-
-/**
- * Adds a tweetbook action button to the dropdown box in review mode.
- * @param tweetbook, a string representing a tweetbook
- */
-function addTweetBookDropdownItem(tweetbook) {
-  // Add placeholder for this tweetbook
-  $('<div/>')
-    .attr({
-      "class": "btn-group",
-      "id": "rm_holder_" + tweetbook
-    }).appendTo("#review-tweetbook-titles");
-
-  // Add plotting button for this tweetbook
-  var plot_button = '<button class="btn btn-default" id="rm_plotbook_' + tweetbook + '">' + tweetbook + '</button>';
-  $("#rm_holder_" + tweetbook).append(plot_button);
-  $("#rm_plotbook_" + tweetbook).width("200px");
-  $("#rm_plotbook_" + tweetbook).on('click', function (e) {
-    onPlotTweetbook(tweetbook);
-  });
-
-  // Add trash button for this tweetbook
-  var onTrashTweetbookButton = addDeleteButton(
-    "rm_trashbook_" + tweetbook,
-    "rm_holder_" + tweetbook,
-    function (e) {
-      onDropTweetBook(tweetbook);
-    }
-  );
-}
-
-/**
- * Generates AsterixDB query to plot existing tweetbook commnets
- * @param tweetbook, a string representing a tweetbook
- */
-function onPlotTweetbook(tweetbook) {
-
-  // Clear map for this one
-  mapWidgetClearMap();
-
-  var plotTweetQuery = new FLWOGRExpression()
-    .ForClause("$t", new AExpression("dataset TweetsAddress"))
-    .ForClause("$m", new AExpression("dataset " + tweetbook))
-    .WhereClause(new AExpression("$m.tid = $t.tid"))
-    .ReturnClause({
-      "tweetId": "$m.tid",
-      "tweetText": "$t.message-text",
-      "tweetCom": "$m.comment-text",
-      "tweetLoc": "$t.sender-location"
-    });
-
-  APIqueryTracker = {
-    "query_string": "use dataverse geo;\n" + plotTweetQuery.val(),
-    "marker_path": "static/img/mobile_green2.png",
-    "active_tweetbook": tweetbook
-  };
-
-  A.query(plotTweetQuery.val(), onTweetbookQuerySuccessPlot);
-}
-
-/**
- * Given an output response set of tweet data,
- * prepares markers on map to represent individual tweets.
- * @param res, a JSON Object
- */
-function onTweetbookQuerySuccessPlot(res) {
-
-  // First, we check if any results came back in.
-  // If they didn't, return.
-  if (!res.hasOwnProperty("results")) {
-    reportUserMessage("Oops, no data matches this query.", false, "report-message");
-    return;
-  }
-
-  // Parse out tweet Ids, texts, and locations
-  var tweets = [];
-  var al = 1;
-
-  $.each(res.results, function (i, data) {
-
-    // First, clean up the data
-    //{ "tweetId": "100293", "tweetText": " like at&t the touch-screen is amazing", "tweetLoc": ["31.59,-84.23"]) }
-    // We need to turn the point object at the end into a string
-
-    // Now, we construct a tweet object
-    var tweetData = {
-      "tweetEntryId": parseInt(data.tweetId),
-      "tweetText": data.tweetText,
-      "tweetLat": data.tweetLoc[0],
-      "tweetLng": data.tweetLoc[1]
-    };
-
-    // If we are parsing out tweetbook data with comments, we need to check
-    // for those here as well.
-    if (data.hasOwnProperty("tweetCom")) {
-      tweetData["tweetComment"] = data.tweetCom;
-    }
-
-    tweets.push(tweetData)
-  });
-
-  // Create a marker for each tweet
-  $.each(tweets, function (i, t) {
-    // Create a phone marker at tweet's position
-    var map_tweet_m = new google.maps.Marker({
-      position: new google.maps.LatLng(tweets[i]["tweetLat"], tweets[i]["tweetLng"]),
-      map: map,
-      icon: APIqueryTracker["marker_path"],
-      clickable: true,
-    });
-    map_tweet_m["test"] = t;
-
-    // Open Tweet exploration window on click
-    google.maps.event.addListener(map_tweet_m, 'click', function (event) {
-      onClickTweetbookMapMarker(map_tweet_markers[i]["test"]);
-    });
-
-    // Add marker to index of tweets
-    map_tweet_markers.push(map_tweet_m);
-  });
-
-}
-
-/**
- * Checks if a tweetbook exists
- * @param tweetbook, a String
- */
-function existsTweetbook(tweetbook) {
-  if (parseInt($.inArray(tweetbook, review_mode_tweetbooks)) == -1) {
-    return false;
-  } else {
-    return true;
-  }
-}
-
-/**
- * When a marker is clicked on in the tweetbook, it will launch a modal
- * view to examine or edit the appropriate tweet
- */
-function onClickTweetbookMapMarker(t) {
-  onDrillDownAtLocation(t)
-  $('#drilldown_modal').modal();
+  alert('finished refining query');
+  console.log('time serial updated');
 }
 
 /**
@@ -1476,21 +1034,6 @@ function initDemoPrepareTabs() {
 
   // Does some alignment necessary for the map canvas
   onOpenExploreMap();
-}
-
-/**
- * Creates a delete icon button using default trash icon
- * @param    {String}    id, id for this element
- * @param    {String}    attachTo, id string of an element to which I can attach this button.
- * @param    {Function}  onClick, a function to fire when this icon is clicked
- */
-function addDeleteButton(iconId, attachTo, onClick) {
-
-  var trashIcon = '<button class="btn btn-default" id="' + iconId + '"><span class="glyphicon glyphicon-trash"></span></button>';
-  $('#' + attachTo).append(trashIcon);
-
-  // When this trash button is clicked, the function is called.
-  $('#' + iconId).on('click', onClick);
 }
 
 /**
