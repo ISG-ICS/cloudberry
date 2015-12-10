@@ -239,28 +239,6 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
 
 function initDemoUIButtonControls() {
 
-  // Explore Mode - Update Sliders
-  //var updateSliderDisplay = function (event, ui) {
-  //    if (event.target.id == "grid-lat-slider") {
-  //        $("#gridlat").text("" + ui.value);
-  //    } else {
-  //        $("#gridlng").text("" + ui.value);
-  //    }
-  //};
-  //sliderOptions = {
-  //    max: 10,
-  //    min: 2.0,
-  //    step: .1,
-  //    value: 3.0,
-  //    slidechange: updateSliderDisplay,
-  //    slide: updateSliderDisplay,
-  //    start: updateSliderDisplay,
-  //    stop: updateSliderDisplay
-  //};
-  //$("#gridlat").text("" + sliderOptions.value);
-  //$("#gridlng").text("" + sliderOptions.value);
-  //$(".grid-slider").slider(sliderOptions);
-
   // Explore Mode - Query Builder Date Pickers
   var dateOptions = {
     dateFormat: "yy-mm-dd",
@@ -386,6 +364,20 @@ function initDemoUIButtonControls() {
 
     reportUserMessage(APIqueryTracker.query, true, "report-query");
 
+    if (selectionRectangle) {
+      map.setCenter(selectionRectangle.getBounds().getCenter());
+      switch (level) {
+        case 'state':
+          map.setZoom(4);
+          break;
+        case 'county':
+          map.setZoom(6);
+          break;
+        case 'city':
+          map.setZoom(8);
+          break;
+      }
+    }
     if (build_tweetbook_mode == "synchronous") {
       console.time("query_aql_get_result");
       A.aql(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
@@ -1013,8 +1005,7 @@ function drawTimeSerialBrush(slice_count) {
     return d;
   }
 
-  alert('finished refining query');
-  console.log('time serial updated');
+  console.log('finished refining query');
 }
 
 function drawWordCloud(tag_count) {
