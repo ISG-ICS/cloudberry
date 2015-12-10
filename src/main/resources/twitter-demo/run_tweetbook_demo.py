@@ -49,7 +49,6 @@ def build_response(endpoint, data):
             urlresult += chunk
         # Create JSON dump of resulting response
         possibleMultiResults = '[' + urlresult.replace('\n ]\n[', '\n ],\n[') + ']'
-        print possibleMultiResults
 
         return dumps(dict(results=loads(possibleMultiResults)))
 

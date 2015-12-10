@@ -226,7 +226,9 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
         strokeOpacity: 0.8,
         strokeWeight: 0.5,
         fillColor: 'blue',
-        fillOpacity: 0.4
+        fillOpacity: 0.4,
+        level: key_name,
+        key: key
       });
 
       polygonStores[key].setMap(targetMap);
@@ -432,47 +434,49 @@ function buildTemporaryDataset(parameters) {
   }
   aql.push(ds_for);
   aql.push(ds_predicate);
-  aql.push('return $t')
-  aql.push(');');
+  aql.push('return { \
+      "create_at" : $t.create_at,\
+      "id": $t.id,\
+      "text_msg" : $t.text_msg,\
+      "in_reply_to_status" : $t.in_reply_to_status,\
+      "in_reply_to_user" : $t.in_reply_to_user,\
+      "favorite_count" : $t.favorite_count,\
+      "geo_location" : $t.geo_location,\
+      "retweet_count" : $t.retweet_count,\
+      "lang" : $t.lang,\
+      "is_retweet": $t.is_retweet,\
+      "hashtags" : $t.hashtags,\
+      "user_mentions" : $t.user_mentions ,\
+      "user" : $t.user,\
+      "place" : $t.place,\
+      "county": (for $city in dataset ds_zip\
+      where substring-before($t.place.full_name, ",") = $city.city \
+      and substring-after($t.place.full_name, ", ") = $city.state \
+      and not(is-null($city.county))\
+      return string-concat([$city.state, "-", $city.county]) )[0]}\n');
+  aql.push(')'); // end of insert
   return aql;
 }
 
-function declarePolygon(polygon) {
-  var region = 'let $region := create-polygon([';
-
-  var vertices = polygon.getPath();
-  for (var i = 0; i < vertices.getLength(); i++) {
-    var xy = vertices.getAt(i);
-    if (i > 0) {
-      region += ',';
-    }
-    region += '{0},{1}'.format(xy.lng(), xy.lat());
+function selectAreaByPolygon(polygon) {
+  switch (polygon.level) {
+    case 'state':
+      return 'substring-after($t.place.full_name, ", ") = "{0}" '.format(polygon.key);
+    case 'county':
+      return '$t.county = "{0}"'.format(polygon.key);
+    case 'city':
+      return '$t.place.full_name = "{0}" '.format(polygon.key);
+    default:
+      alert('unknown polygon level');
   }
-  region += '])';
-  return region;
-}
-
-function buildClickPolygonQuery(polygon) {
-  var aql = [];
-  aql.push(declarePolygon(polygon));
-  aql.push('for $t in dataset tmp_tweets ');
-  aql.push('where spatial-intersect($t.place.bounding_box, $region)');
-  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh:mm") with $t ');
-  aql.push('let $count := count($t)');
-  aql.push('order by $c ');
-  aql.push('return {"slice":$c, "count" : $count };');
-  return aql.join('\n');
 }
 
 function buildHashTagCountQuery(polygon) {
   var aql = [];
-  if (polygon) {
-    aql.push(declarePolygon(polygon));
-  }
   aql.push('for $t in dataset tmp_tweets ');
   aql.push('where not(is-null($t.hashtags))');
   if (polygon) {
-    aql.push('and spatial-intersect($t.place.bounding_box, $region)');
+    aql.push('and ' + selectAreaByPolygon(polygon));
   }
   aql.push('for $h in $t.hashtags');
   aql.push('group by $tag := $h with $h');
@@ -482,6 +486,18 @@ function buildHashTagCountQuery(polygon) {
   return aql.join('\n');
 }
 
+function buildTimeGroupby(polygon) {
+  var aql = [];
+  aql.push('for $t in dataset tmp_tweets ');
+  if (polygon) {
+    aql.push('where ' + selectAreaByPolygon(polygon));
+  }
+  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh:mm") with $t ');
+  aql.push('let $count := count($t)');
+  aql.push('order by $c ');
+  aql.push('return {"slice":$c, "count" : $count };');
+  return aql.join('\n');
+}
 /**
  * Builds AsterixDB REST Query from explore mode form.
  */
@@ -501,21 +517,13 @@ function buildAQLQueryFromForm(parameters) {
 
   var ds_for = 'for $t in dataset tmp_tweets ';
 
+  aql.push(ds_for);
   if (level === 'county') {
-    aql.push('let $join := {0}'.format(ds_for));
-    aql.push('return { "text_msg": $t.text_msg,\n\
-      "county": (for $city in dataset ds_zip\n\
-      where substring-before($t.place.full_name, ",") = $city.city \n\
-      and substring-after($t.place.full_name, ", ") = $city.state \n\
-      and not(is-null($city.county))\n\
-      return string-concat([$city.state, "-", $city.county]) )[0]}\n\
-    for $t in $join\n\
-      group by $c := $t.county with $t \n\
+    aql.push('group by $c := $t.county with $t \
       let $count := count($t) \n\
       order by $count desc \n\
     return { "cell" : $c, "count" : $count, {0} };'.format(sample));
   } else {
-    aql.push(ds_for);
     if (parameters['level'] === "state") {
       aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
       aql.push('let $count := count($t)');
@@ -529,11 +537,7 @@ function buildAQLQueryFromForm(parameters) {
     }
   }
 
-  aql.push(ds_for);
-  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh:mm") with $t ');
-  aql.push('let $count := count($t)');
-  aql.push('order by $c ');
-  aql.push('return {"slice":$c, "count" : $count };');
+  aql.push(buildTimeGroupby());
   aql.push(buildHashTagCountQuery());
   return aql.join('\n');
 }
@@ -661,7 +665,9 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
           strokeOpacity: 0.8,
           strokeWeight: 0.5,
           fillColor: 'blue',
-          fillOpacity: 0.4
+          fillOpacity: 0.4,
+          level: "city",
+          key: mapPlotData[m].cell
         });
         cp = polygons[mapPlotData[m].cell];
       }
@@ -700,13 +706,13 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
           sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
         }
 
-        var aql = buildClickPolygonQuery(cp) +
+        var aql = buildTimeGroupby(cp) +
           buildHashTagCountQuery(cp);
 
-        A.aql(aql, function (res){
+        A.aql(aql, function (res) {
           drawTimeSerialBrush(res.results[0]);
           drawWordCloud(res.results[1]);
-          return ;
+          return;
         }, "synchronous");
 
         reportUserMessage(sample, true, 'report-sample');
@@ -1024,7 +1030,7 @@ function drawWordCloud(tag_count) {
     }))])
     .range([10, 60]);
 
-  d3.layout.cloud().size([850, 350])
+  d3.layout.cloud().size([850, 550])
     .words(tag_count)
     .rotate(0)
     .fontSize(function (d) {
@@ -1038,7 +1044,7 @@ function drawWordCloud(tag_count) {
     d3.select("#dashboard").append("svg")
       .attr("id", "svg-word-cloud")
       .attr("width", 850)
-      .attr("height", 350)
+      .attr("height", 550)
       .attr("class", "wordcloud")
       .append("g")
       // without the transform, words words would get cutoff to the left and top, they would
