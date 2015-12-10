@@ -43,6 +43,7 @@
   <script src="http://code.jquery.com/jquery.min.js"></script>
   <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
   <script src="static/js/bootstrap.min.js"></script>
+  <script src="static/js/d3.layout.cloud.js"></script>
   <script src="static/js/asterix-sdk-stable.js"></script>
   <script src="static/js/rainbowvis.js"></script>
   <script src="static/js/tweetbook.js"></script>

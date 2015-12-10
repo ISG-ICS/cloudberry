@@ -464,6 +464,24 @@ function buildClickPolygonQuery(polygon) {
   return aql.join('\n');
 }
 
+function buildHashTagCountQuery(polygon) {
+  var aql = [];
+  if (polygon) {
+    aql.push(declarePolygon(polygon));
+  }
+  aql.push('for $t in dataset tmp_tweets ');
+  aql.push('where not(is-null($t.hashtags))');
+  if (polygon) {
+    aql.push('and spatial-intersect($t.place.bounding_box, $region)');
+  }
+  aql.push('for $h in $t.hashtags');
+  aql.push('group by $tag := $h with $h');
+  aql.push('let $c := count($h) ');
+  aql.push('order by $c desc ');
+  aql.push('return { "tag": $tag, "count": $c};');
+  return aql.join('\n');
+}
+
 /**
  * Builds AsterixDB REST Query from explore mode form.
  */
@@ -516,7 +534,7 @@ function buildAQLQueryFromForm(parameters) {
   aql.push('let $count := count($t)');
   aql.push('order by $c ');
   aql.push('return {"slice":$c, "count" : $count };');
-
+  aql.push(buildHashTagCountQuery());
   return aql.join('\n');
 }
 
@@ -566,7 +584,6 @@ function asynchronousQueryGetAPIQueryStatus(handle, handle_id) {
 
 function tweetbookQuerySyncCallbackWithLevel(level) {
 
-
   /**
    * A spatial data cleaning and mapping call
    * @param    {Object}    res, a result object from a tweetbook geospatial query
@@ -605,6 +622,9 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
     triggerUIUpdate(res.results[0], maxWeight, minWeight, polygons, level);
     if (res.results[1]) {
       drawTimeSerialBrush(res.results[1]);
+    }
+    if (res.results[2]) {
+      drawWordCloud(res.results[2]);
     }
   }
 }
@@ -680,9 +700,13 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
           sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
         }
 
-        var aql = buildClickPolygonQuery(cp);
-        A.aql(aql, function (res) {
-          return drawTimeSerialBrush(res.results[0]);
+        var aql = buildClickPolygonQuery(cp) +
+          buildHashTagCountQuery(cp);
+
+        A.aql(aql, function (res){
+          drawTimeSerialBrush(res.results[0]);
+          drawWordCloud(res.results[1]);
+          return ;
         }, "synchronous");
 
         reportUserMessage(sample, true, 'report-sample');
@@ -987,6 +1011,56 @@ function drawTimeSerialBrush(slice_count) {
   console.log('time serial updated');
 }
 
+function drawWordCloud(tag_count) {
+
+  tag_count = tag_count.slice(0, 50);
+  var color = d3.scale.linear()
+    .domain([0, 1, 2, 3, 4, 5, 6, 10, 15, 20, 100])
+    .range(["#ddd", "#ccc", "#bbb", "#aaa", "#999", "#888", "#777", "#666", "#555", "#444", "#333", "#222"]);
+
+  var size = d3.scale.linear()
+    .domain([0, d3.max(tag_count.map(function (t) {
+      return t.count
+    }))])
+    .range([10, 60]);
+
+  d3.layout.cloud().size([850, 350])
+    .words(tag_count)
+    .rotate(0)
+    .fontSize(function (d) {
+      return size(d.count);
+    })
+    .on("end", draw)
+    .start();
+
+  function draw(words) {
+    d3.select("#svg-word-cloud").remove();
+    d3.select("#dashboard").append("svg")
+      .attr("id", "svg-word-cloud")
+      .attr("width", 850)
+      .attr("height", 350)
+      .attr("class", "wordcloud")
+      .append("g")
+      // without the transform, words words would get cutoff to the left and top, they would
+      // appear outside of the SVG area
+      .attr("transform", "translate(350,200)")
+      .selectAll("text")
+      .data(words)
+      .enter().append("text")
+      .style("font-size", function (d) {
+        return size(d.count) + "px";
+      })
+      .style("fill", function (d, i) {
+        return color(i);
+      })
+      .attr("transform", function (d) {
+        return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")";
+      })
+      .text(function (d) {
+        return d.tag;
+      });
+  }
+}
 /**
  * Explore mode: Initial map creation and screen alignment
  */
@@ -1010,9 +1084,9 @@ function initDemoPrepareTabs() {
 
   // Tab behavior for About, Explore, and Demo
   $('#mode-tabs a').click(function (e) {
-    e.preventDefault()
+    e.preventDefault();
     $(this).tab('show')
-  })
+  });
 
   // Explore mode should show explore-mode query-builder UI
   $('#explore-mode').click(function (e) {
