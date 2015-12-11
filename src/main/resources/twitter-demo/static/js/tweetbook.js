@@ -380,6 +380,9 @@ function initDemoUIButtonControls() {
     }
     if (build_tweetbook_mode == "synchronous") {
       console.time("query_aql_get_result");
+      // Due to the feed + tmp dataset bug, we can not drop the dataset with the query.
+      // However, we can excute it seprately.
+      A.aql('drop dataset tmp_tweets if exists;', function(){}, build_tweetbook_mode);
       A.aql(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
     } else {
       A.aql(f, tweetbookQueryAsyncCallback, build_tweetbook_mode);
@@ -408,7 +411,6 @@ function buildTemporaryDataset(parameters) {
 
   var aql = [];
 
-  aql.push('drop dataset tmp_tweets if exists;');
   aql.push('create temporary dataset tmp_tweets(type_tweet) primary key id; ');
   aql.push('insert into dataset tmp_tweets (');
   aql.push(declareRectangle(bounds));
