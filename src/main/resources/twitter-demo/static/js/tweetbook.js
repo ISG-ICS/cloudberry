@@ -233,7 +233,7 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
 
     }
 
-    for (var k in polygonStores ) {
+    for (var k in polygonStores) {
       polygonStores[k].setMap(targetMap);
     }
     console.timeEnd("initial_polygon_drawing");
@@ -241,6 +241,29 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
 }
 
 function initDemoUIButtonControls() {
+  $("#grid").jqGrid({
+    datatype: "local",
+    autowidth: true,
+    shrinkToFit: false,
+    height: 600,
+    viewreords: true,
+    rowNum: 60,
+    pager: "#grid_pgr",
+    colNames: ['User Name', 'Tweet Text'],
+    colModel: [
+      {
+        name: 'uname', index: 'uname', width: 100, align: "left", cellattr: function (rowId, tv, rawObject, cm, rdata) {
+        return 'style="white-space: normal;"'
+      }
+      },
+      {
+        name: 'tweet', index: 'tweet', width: 260, align: "left", cellattr: function (rowId, tv, rawObject, cm, rdata) {
+        return 'style="white-space: normal;"'
+      }
+      }
+    ]
+  });
+  $("#tweets-table").hide();
 
   // Explore Mode - Query Builder Date Pickers
   var dateOptions = {
@@ -486,7 +509,7 @@ function buildHashTagCountQuery(polygon) {
   aql.push('group by $tag := $h with $h');
   aql.push('let $c := count($h) ');
   aql.push('order by $c desc ');
-  aql.push('return { "tag": $tag, "count": $c};');
+  aql.push('return { "tag": $tag, "count": $c};\n');
   return aql.join('\n');
 }
 
@@ -496,12 +519,24 @@ function buildTimeGroupby(polygon) {
   if (polygon) {
     aql.push('where ' + selectAreaByPolygon(polygon));
   }
-  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh:mm") with $t ');
+  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh") with $t ');
   aql.push('let $count := count($t)');
   aql.push('order by $c ');
-  aql.push('return {"slice":$c, "count" : $count };');
+  aql.push('return {"slice":$c, "count" : $count };\n');
   return aql.join('\n');
 }
+
+function buildTweetSample(polygon) {
+  var aql = [];
+  aql.push('for $t in dataset tmp_tweets ');
+  if (polygon) {
+    aql.push('where ' + selectAreaByPolygon(polygon));
+  }
+  aql.push('limit 100');
+  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg};\n')
+  return aql.join('\n');
+}
+
 /**
  * Builds AsterixDB REST Query from explore mode form.
  */
@@ -526,23 +561,24 @@ function buildAQLQueryFromForm(parameters) {
     aql.push('group by $c := $t.county with $t \
       let $count := count($t) \n\
       order by $count desc \n\
-    return { "cell" : $c, "count" : $count, {0} };'.format(sample));
+    return { "cell" : $c, "count" : $count};');
   } else {
     if (parameters['level'] === "state") {
       aql.push('group by $c := substring-after($t.place.full_name, ", ") with $t');
       aql.push('let $count := count($t)');
       aql.push('order by $count desc');
-      aql.push('return { "cell":$c, "count" : $count, {0} };'.format(sample));
+      aql.push('return { "cell":$c, "count" : $count };');
     } else if (parameters['level'] === "city") {
       aql.push('group by $c := $t.place.full_name with $t');
       aql.push('let $count := count($t)');
       aql.push('order by $count desc');
-      aql.push('return {"cell":$c, "count" : $count, "area": $t[0].place.bounding_box, {0} };'.format(sample));
+      aql.push('return {"cell":$c, "count" : $count, "area": $t[0].place.bounding_box };');
     }
   }
 
   aql.push(buildTimeGroupby());
   aql.push(buildHashTagCountQuery());
+  aql.push(buildTweetSample());
   return aql.join('\n');
 }
 
@@ -634,6 +670,9 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
     if (res.results[2]) {
       drawWordCloud(res.results[2]);
     }
+    if (res.results[3]) {
+      drawTable(res.results[3]);
+    }
   }
 }
 
@@ -712,15 +751,16 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
         }
 
         var aql = buildTimeGroupby(cp) +
-          buildHashTagCountQuery(cp);
+          buildHashTagCountQuery(cp) +
+          buildTweetSample(cp);
 
         A.aql(aql, function (res) {
           drawTimeSerialBrush(res.results[0]);
           drawWordCloud(res.results[1]);
+          drawTable(res.results[2]);
           return;
         }, "synchronous");
 
-        reportUserMessage(sample, true, 'report-sample');
         reportUserMessage("use dataverse " + A._properties['dataverse'] + ";\n" + aql, true, 'report-query');
       });
 
@@ -831,7 +871,6 @@ function drawChart(cell_count) {
     .on('mouseover', tip.show)
     .on('mouseout', tip.hide);
 
-
 }
 
 
@@ -910,7 +949,7 @@ function drawTimeSerialBrush(slice_count) {
     height = 500 - margin.top - margin.bottom,
     height2 = 500 - margin2.top - margin2.bottom;
 
-  var parseDate = d3.time.format("%m-%d %H:%M").parse;
+  var parseDate = d3.time.format("%m-%d %H").parse;
 
   var x = d3.time.scale().range([0, width]),
     x2 = d3.time.scale().range([0, width]),
@@ -1071,6 +1110,15 @@ function drawWordCloud(tag_count) {
       });
   }
 }
+
+function drawTable(message) {
+  $("#tweets-table").show();
+  $("#grid").jqGrid('clearGridData');
+  for (var i = 0; i < message.length; i++) {
+    $("#grid").jqGrid('addRowData', undefined , message[i]);
+  }
+}
+
 /**
  * Explore mode: Initial map creation and screen alignment
  */
@@ -1172,11 +1220,11 @@ function mapWidgetResetMap() {
 function clearReport() {
   $('#report-query').html('');
   $('#report-message').html('');
-  $('#report-sample').html('');
 }
 
 function clearD3() {
   $("#dashboard").html('');
+  $("#grid").html('');
 }
 
 
@@ -1225,6 +1273,7 @@ function mapWidgetClearMap() {
   for (var poly in city_polygons) {
     city_polygons[poly].setMap(null);
   }
+  $("#tweets-table").hide();
 }
 
 /**

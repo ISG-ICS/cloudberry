@@ -28,6 +28,7 @@
   <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet"
         type="text/css"/>
   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+  <link href="static/css/ui.jqgrid-bootstrap.css" rel="stylesheet" type="text/css">
 
   <!-- Bootstrap Javascript -->
   <script src="http://maps.googleapis.com/maps/api/js?sensor=false&libraries=places,drawing,geometry"
@@ -46,6 +47,8 @@
   <script src="static/js/d3.layout.cloud.js"></script>
   <script src="static/js/asterix-sdk-stable.js"></script>
   <script src="static/js/rainbowvis.js"></script>
+  <script src="static/js/grid.locale-en.js"></script>
+  <script src="static/js/jquery.jqGrid.min.js"></script>
   <script src="static/js/tweetbook.js"></script>
 
   <style type="text/css">
@@ -319,6 +322,10 @@
             <!-- Container to hold success/error messages -->
             <div class="report" id="report-query"></div>
             <div class="report" id="report-message"></div>
+            <div class="tweets" id="tweets-table">
+              <table id="grid"></table>
+              <div id="grid_pgr"></div>
+            </div>
           </div><!-- End Left Column -->
 
           <!-- Right column holds map & legend -->
@@ -341,7 +348,6 @@
               </div>
             </div><!-- End Legend Container -->
             <div id='dashboard'></div>
-            <div class="report" id="report-sample"></div>
           </div><!-- End Right Column -->
         </div><!-- End Row -->
       </div><!-- End Extra Row -->
