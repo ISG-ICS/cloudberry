@@ -191,14 +191,14 @@ $(function () {
 });
 
 function drawCountyBoundry() {
-  var geo_query_all_counties = 'for $x in dataset ds_us_county return { "county":$x.State-County, "geometry":$x.geometry};';
+  var geo_query_all_counties = 'for $x in dataset ds_us_county order by spatial-area($x.geometry) return { "county":$x.State-County, "geometry":$x.geometry};';
   var drawCountyHandler = drawBoundry('county', 'geometry', county_polygons, null);
   console.time("initial_polygon_aql_get_result");
   A.query(geo_query_all_counties, drawCountyHandler, "synchronous");
 }
 
 function drawStateBoundry() {
-  var geo_query_all_counties = 'for $x in dataset ds_us_state return { "state":$x.abbr, "geometry":$x.geometry};';
+  var geo_query_all_counties = 'for $x in dataset ds_us_state order by spatial-area($x.geometry) return { "state":$x.abbr, "geometry":$x.geometry};';
   var drawCountyHandler = drawBoundry('state', 'geometry', state_polygons, map);
   console.time("initial_polygon_aql_get_result");
   A.query(geo_query_all_counties, drawCountyHandler, "synchronous");
@@ -231,7 +231,10 @@ function drawBoundry(key_name, geometry_name, polygonStores, targetMap) {
         key: key
       });
 
-      polygonStores[key].setMap(targetMap);
+    }
+
+    for (var k in polygonStores ) {
+      polygonStores[k].setMap(targetMap);
     }
     console.timeEnd("initial_polygon_drawing");
   }
@@ -306,7 +309,6 @@ function initDemoUIButtonControls() {
 
   // Explore Mode: Query Submission
   $("#submit-button").on("click", function () {
-
     $("#report-message").html('');
     $("#submit-button").attr("disabled", true);
     rectangleManager.setDrawingMode(null);
@@ -382,12 +384,15 @@ function initDemoUIButtonControls() {
       console.time("query_aql_get_result");
       // Due to the feed + tmp dataset bug, we can not drop the dataset with the query.
       // However, we can excute it seprately.
-      A.aql('drop dataset tmp_tweets if exists;', function(){}, build_tweetbook_mode);
+      A.aql('drop dataset tmp_tweets if exists;', function () {
+      }, build_tweetbook_mode);
       A.aql(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
     } else {
       A.aql(f, tweetbookQueryAsyncCallback, build_tweetbook_mode);
     }
 
+    mapWidgetClearMap();
+    clearD3();
     // Clears selection rectangle on query execution, rather than waiting for another clear call.
     if (selectionRectangle) {
       selectionRectangle.setMap(null);
@@ -423,8 +428,13 @@ function buildTemporaryDataset(parameters) {
     'and $t.create_at >= $ts_start and $t.create_at < $ts_end \n' +
     'and spatial-intersect($t.place.bounding_box, $region) \n';
   if (parameters["keyword"].length > 0) {
-    ds_predicate = 'let $keyword := "{0}"\n'.format(parameters['keyword']) + ds_predicate +
-      'and contains($t.text_msg, $keyword) \n';
+    var tokens = parameters["keyword"].split(/\s+/g);
+    for (var i = 0; i < tokens.length; i++) {
+      ds_predicate = 'let $keyword{0} := "{1}"\n'.format(i, tokens[i]) + ds_predicate;
+    }
+    for (var i = 0; i < tokens.length; i++) {
+      ds_predicate += 'and contains($t.text_msg, $keyword{0}) \n'.format(i);
+    }
   }
   aql.push(ds_for);
   aql.push(ds_predicate);
@@ -695,6 +705,7 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
       });
 
       google.maps.event.addListener(cp, 'click', function (event) {
+        clearD3();
         var sample = '';
         for (var i = 0; i < 1; i++) {
           sample += mapPlotData[m]['s{0}'.format(i)] + '\n';
@@ -1119,6 +1130,7 @@ function reportUserMessage(message, isPositiveMessage, target) {
   // Clear out any existing messages
   $('#' + target).html('');
 
+  message = message.replace(/\r\n?|\n/g, '<br />');
   // Select appropriate alert-type
   var alertType = "alert-success";
   if (!isPositiveMessage) {
@@ -1143,9 +1155,11 @@ function reportUserMessage(message, isPositiveMessage, target) {
 function mapWidgetResetMap() {
 
   mapWidgetClearMap();
+  clearReport();
+  clearD3();
 
   // Reset map center and zoom
-  map.setCenter(new google.maps.LatLng(39.5, -100.35));
+  map.setCenter(new google.maps.LatLng(39.5, -96.35));
   map.setZoom(4);
 
   // Selection button
@@ -1154,6 +1168,16 @@ function mapWidgetResetMap() {
   rectangleManager.setMap(map);
   rectangleManager.setDrawingMode(google.maps.drawing.OverlayType.RECTANGLE);
 }
+
+function clearReport() {
+  $('#report-query').html('');
+  $('#report-message').html('');
+}
+
+function clearD3() {
+  $("#dashboard").html('');
+}
+
 
 /**
  * mapWidgetClearMap
