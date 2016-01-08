@@ -755,9 +755,17 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, polygons, level) {
           buildTweetSample(cp);
 
         A.aql(aql, function (res) {
-          drawTimeSerialBrush(res.results[0]);
-          drawWordCloud(res.results[1]);
-          drawTable(res.results[2]);
+          if (res.results) {
+            if (res.results[0]) {
+              drawTimeSerialBrush(res.results[0]);
+            }
+            if (res.results[1]) {
+              drawWordCloud(res.results[1]);
+            }
+            if (res.results[2]) {
+              drawTable(res.results[2]);
+            }
+          }
           return;
         }, "synchronous");
 
