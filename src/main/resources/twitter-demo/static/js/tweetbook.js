@@ -1172,6 +1172,7 @@ function mapWidgetResetMap() {
 function clearReport() {
   $('#report-query').html('');
   $('#report-message').html('');
+  $('#report-sample').html('');
 }
 
 function clearD3() {
