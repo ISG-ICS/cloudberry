@@ -21,6 +21,12 @@ from urllib import urlencode
 from json import loads, dumps
 from bottle import route, run, template, static_file, request
 
+import sys
+if len(sys.argv)==1:
+    asterix_server = "localhost:19002"
+else:
+    asterix_server = sys.argv[1]
+
 # Core Routing
 @route('/')
 def jsontest():
@@ -32,7 +38,7 @@ def send_static(filename):
 
 # API Helpers
 def build_response(endpoint, data):
-    api_endpoint = "http://ipubmed2.ics.uci.edu:19002/" + endpoint
+    api_endpoint = asterix_server + "/" + endpoint
 
     try:
         # Encode data into url string
@@ -48,7 +54,7 @@ def build_response(endpoint, data):
             if not chunk: break
             urlresult += chunk
         # Create JSON dump of resulting response
-        possibleMultiResults = '[' + urlresult.replace('\n ]\n[', '\n ],\n[') + ']'
+        possibleMultiResults = '[' + urlresult.replace(' ]\n[', ' ],\n[') + ']'
 
         return dumps(dict(results=loads(possibleMultiResults)))
 

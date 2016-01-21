@@ -18,8 +18,9 @@
  !-->
 
 # Tweetbook Demo
-Author: Eugenia Gabrielova (genia.likes.science@gmail.com)
-        Jianfeng Jia (jianfeng.jia@gmail.com)
+Authors: 
+Eugenia Gabrielova (genia.likes.science@gmail.com)
+Jianfeng Jia (jianfeng.jia@gmail.com)
 
 ## Dependencies
 1. Python Requests library: [http://docs.python-requests.org/en/latest/user/install/](http://docs.python-requests.org/en/latest/user/install/)
@@ -29,6 +30,6 @@ Author: Eugenia Gabrielova (genia.likes.science@gmail.com)
 
 0. With your current working directory as the top level of this demo's hierarchy, execute:
 
-        $ python run_tweetbook_demo.py
+        $ python run_tweetbook_demo.py $AsterixInstanceRESTURL_PORT
 
 1. Visit http://localhost:8080/ in your browser.
