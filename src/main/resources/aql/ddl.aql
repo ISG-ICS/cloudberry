@@ -85,7 +85,7 @@ create type type_tweet as open{
 create dataset ds_tweets(type_tweet) primary key id;
 //with filter on create_at;
 create index text_idx on ds_tweets(text_msg) type ngram(3);
-create index location_idx on ds_tweets(geo_location) type rtree;
+// create index location_idx on ds_tweets(geo_location) type rtree;
 create index bounding_idx on ds_tweets(place.bounding_box) type rtree;
 create index time_idx on ds_tweets(create_at) type btree;
 

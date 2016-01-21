@@ -2,13 +2,13 @@
 use dataverse twitter;
 load dataset ds_us_county
 using localfs
-(("path"="172.17.0.2:///data/geo/us-counties-rm-inner.json"),("format"="adm"));
+(("path"="$ncip:///data/us-counties-rm-inner.json"),("format"="adm"));
 
 load dataset ds_us_state
 using localfs
-(("path"="172.17.0.2:///data/geo/us-states.json"),("format"="adm"));
+(("path"="$ncip:///data/us-states.json"),("format"="adm"));
 
 use dataverse twitter;
 load dataset ds_zip
 using localfs
-(("path"="172.17.0.2:///data/geo/zip_code_database.simple.tsv"),("format"="delimited-text"),("delimiter"="\t"),("header"="true"));
+(("path"="$ncip:///data/zip_code_database.simple.tsv"),("format"="delimited-text"),("delimiter"="\t"),("header"="true"));
