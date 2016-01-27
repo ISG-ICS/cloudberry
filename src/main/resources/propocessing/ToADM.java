@@ -60,7 +60,7 @@ public class ToADM {
 						sb.append(" ");
 					sb.append(temps[i].trim().replaceAll(" ", ","));
 				}
-				return mkADMConstructor(geometryType, sb.toString());
+				return  "{{"+mkADMConstructor(geometryType, sb.toString())+"}}";
 			}
 		}
 		if ("multipolygon".equalsIgnoreCase(geometryType)) {
