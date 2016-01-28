@@ -268,7 +268,7 @@ function initDemoUIButtonControls() {
   // Explore Mode - Query Builder Date Pickers
   var dateOptions = {
     dateFormat: "yy-mm-dd",
-    defaultDate: "2015-11-11",
+    defaultDate: "2015-12-17",
     navigationAsDateFormat: true,
     constrainInput: true
   };
@@ -519,7 +519,7 @@ function buildTimeGroupby(polygon) {
   if (polygon) {
     aql.push('where ' + selectAreaByPolygon(polygon));
   }
-  aql.push('group by $c := print-datetime($t.create_at, "MM-DD hh") with $t ');
+  aql.push('group by $c := print-datetime($t.create_at, "YYYY-MM-DD hh") with $t ');
   aql.push('let $count := count($t)');
   aql.push('order by $c ');
   aql.push('return {"slice":$c, "count" : $count };\n');
@@ -957,7 +957,7 @@ function drawTimeSerialBrush(slice_count) {
     height = 500 - margin.top - margin.bottom,
     height2 = 500 - margin2.top - margin2.bottom;
 
-  var parseDate = d3.time.format("%m-%d %H").parse;
+  var parseDate = d3.time.format("%Y-%m-%d %H").parse;
 
   var x = d3.time.scale().range([0, width]),
     x2 = d3.time.scale().range([0, width]),
