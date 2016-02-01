@@ -182,6 +182,12 @@
       clip-path: url(#clip);
     }
 
+    .tab-pane{
+      height:597px;
+      overflow: auto;
+    }
+
+
   </style>
 </head>
 <body style="width: 100%; height: 100%;">
