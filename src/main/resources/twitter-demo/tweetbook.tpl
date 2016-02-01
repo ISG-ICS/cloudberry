@@ -340,24 +340,34 @@
 
           <!-- Right column holds map & legend -->
           <div class="col-md-8">
-            <!-- Map Container -->
-            <div class="container well" id="right-col">
-              <div id="map_canvas" style="max-width: 100%; height: auto;"></div>
-            </div>
+                <!-- Tab Builder -->
+              <ul class="nav nav-tabs" role="tablist">
+                  <li role="presentation" class="active"><a href="#map-tab" role="tab" data-toggle="tab">Map</a></li>
+                  <li role="presentation"><a href="#dashboard" role="tab" data-toggle="tab">Dashboard</a></li>
+             </ul>
+             <div class="tab-content">
+              <!-- Map tab -->
+              <div id = "map-tab" class="tab-pane fade in active">
+                <!-- Map Container -->
+                <div class="container well" id="right-col">
+                  <div id="map_canvas" style="max-width: 100%; height: auto;"></div>
+                </div>
 
-            <!-- Legend Container -->
-            <div id="rainbow-legend-container" class="container well" style="display:none;">
-              <div class="row">
-                <div class="col-md-4 col-md-offset-4" style="text-align: center;"># Tweets</div>
-              </div>
+                <!-- Legend Container -->
+                <div id="rainbow-legend-container" class="container well" style="display:none;">
+                  <div class="row">
+                    <div class="col-md-4 col-md-offset-4" style="text-align: center;"># Tweets</div>
+                  </div>
 
-              <div class="row">
-                <div id="legend-min" class="col-md-2 col-md-offset-1" style="text-align:right;"></div>
-                <div id="legend-gradient" class="col-md-5" style="text-align: center;"></div>
-                <div id="legend-max" class="col-md-2"></div>
+                  <div class="row">
+                    <div id="legend-min" class="col-md-2 col-md-offset-1" style="text-align:right;"></div>
+                    <div id="legend-gradient" class="col-md-5" style="text-align: center;"></div>
+                    <div id="legend-max" class="col-md-2"></div>
+                  </div>
+                </div><!-- End Legend Container -->
               </div>
-            </div><!-- End Legend Container -->
-            <div id='dashboard'></div>
+              <div id='dashboard' class="tab-pane fade"></div>
+            <div>
           </div><!-- End Right Column -->
         </div><!-- End Row -->
       </div><!-- End Extra Row -->
