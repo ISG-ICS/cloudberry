@@ -50,8 +50,8 @@ public class ADM {
                     "I found you!" + boundingBoxCoordinates[0][0] + " " + boundingBoxCoordinates[0][2]);
         }
 
-        if (boundingBoxCoordinates[0][0].getLongitude() >= boundingBoxCoordinates[0][2].getLongitude() ||
-                boundingBoxCoordinates[0][0].getLatitude() >= boundingBoxCoordinates[0][2].getLatitude()) {
+        if (boundingBoxCoordinates[0][0].getLongitude() > boundingBoxCoordinates[0][2].getLongitude() ||
+                boundingBoxCoordinates[0][0].getLatitude() > boundingBoxCoordinates[0][2].getLatitude()) {
             throw new IllegalArgumentException(
                     "Not a good Rectangle: " + boundingBoxCoordinates[0][0] + " " + boundingBoxCoordinates[0][2]);
         }
