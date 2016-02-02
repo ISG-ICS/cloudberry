@@ -349,7 +349,10 @@
                 <!-- Tab Builder -->
               <ul class="nav nav-tabs" role="tablist">
                   <li role="presentation" class="active"><a href="#map-tab" role="tab" data-toggle="tab">Map</a></li>
-                  <li role="presentation"><a href="#dashboard" role="tab" data-toggle="tab">Dashboard</a></li>
+                  <li role="presentation"><a href="#chart" role="tab" data-toggle="tab" >Chart</a></li>
+                  <li role="presentation"><a href="#pie" role="tab" data-toggle="tab" >Pie</a></li>
+                  <li role="presentation"><a href="#timeseries" role="tab" data-toggle="tab" >Time Series</a></li>
+                  <li role="presentation"><a href="#wordcloud" role="tab" data-toggle="tab" >Word Cloud</a></li>
              </ul>
              <div class="tab-content">
               <!-- Map tab -->
@@ -372,7 +375,10 @@
                   </div>
                 </div><!-- End Legend Container -->
               </div>
-              <div id='dashboard' class="tab-pane fade"></div>
+              <div id='chart' class="tab-pane fade"></div>
+              <div id='pie' class="tab-pane fade"></div>
+              <div id='timeseries' class="tab-pane fade"></div>
+              <div id='wordcloud' class="tab-pane fade"></div>
             <div>
           </div><!-- End Right Column -->
         </div><!-- End Row -->

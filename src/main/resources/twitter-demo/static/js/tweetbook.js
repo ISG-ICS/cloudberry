@@ -822,7 +822,7 @@ function drawChart(cell_count) {
     });
 
   d3.select("#svg-chart").remove();
-  var svg = d3.select("#dashboard").append("svg")
+  var svg = d3.select("#chart").append("svg")
     .attr("id", "svg-chart")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
@@ -921,7 +921,7 @@ function drawPie(cell_count) {
     });
 
   d3.select("#svg-pie").remove();
-  var svg = d3.select("#dashboard").append("svg")
+  var svg = d3.select("#pie").append("svg")
     .attr("id", "svg-pie")
     .attr("width", width)
     .attr("height", height)
@@ -998,7 +998,7 @@ function drawTimeSerialBrush(slice_count) {
     });
 
   d3.select("#svg-time").remove();
-  var svg = d3.select("#dashboard").append("svg")
+  var svg = d3.select("#timeseries").append("svg")
     .attr("id", "svg-time")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom);
@@ -1097,7 +1097,7 @@ function drawWordCloud(tag_count) {
 
   function draw(words) {
     d3.select("#svg-word-cloud").remove();
-    d3.select("#dashboard").append("svg")
+    d3.select("#wordcloud").append("svg")
       .attr("id", "svg-word-cloud")
       .attr("width", 850)
       .attr("height", 550)
@@ -1236,7 +1236,10 @@ function clearReport() {
 }
 
 function clearD3() {
-  $("#dashboard").html('');
+  $("#chart").html('');
+  $("#pie").html('');
+  $("#timeseries").html('');
+  $("#wordcloud").html('');
   $("#grid").html('');
 }
 
