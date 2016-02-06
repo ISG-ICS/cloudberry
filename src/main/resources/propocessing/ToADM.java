@@ -45,7 +45,18 @@ public class ToADM {
 	public static void keyValueToSbWithComma(StringBuilder sb, String key,
 			String val) {
 		keyValueToSb(sb, key, val);
-		sb.append(",");
+		sb.append(", ");
+	}
+
+	public static String[] splitGeometry(String geometry) {
+		String[] ss = geometry.split("\\)\\)(,?)");
+		StringBuilder sb = null;
+		for (int i = 0; i < ss.length; i++) {
+			sb = new StringBuilder();
+			String s = ss[i].replaceAll("\\(", "");
+			ss[i] = sb.append("(").append(s.trim()).append(")").toString();
+		}
+		return ss;
 	}
 
 	public static String mkGeoConstructor(String geometry, String geometryType) {
@@ -60,7 +71,7 @@ public class ToADM {
 						sb.append(" ");
 					sb.append(temps[i].trim().replaceAll(" ", ","));
 				}
-				return  "{{"+mkADMConstructor(geometryType, sb.toString())+"}}";
+				return mkADMConstructor(geometryType, sb.toString());
 			}
 		}
 		if ("multipolygon".equalsIgnoreCase(geometryType)) {
