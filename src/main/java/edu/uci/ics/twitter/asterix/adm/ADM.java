@@ -3,6 +3,8 @@ package edu.uci.ics.twitter.asterix.adm;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -38,29 +40,35 @@ public class ADM {
         if (boundingBoxCoordinates.length != 1 || boundingBoxCoordinates[0].length != 4) {
             throw new IllegalArgumentException("unknown boundingBoxCoordinates");
         }
-        if (boundingBoxCoordinates[0][0].getLongitude() != boundingBoxCoordinates[0][1].getLongitude()
-                || boundingBoxCoordinates[0][1].getLatitude() != boundingBoxCoordinates[0][2].getLatitude()
-                || boundingBoxCoordinates[0][2].getLongitude() != boundingBoxCoordinates[0][3].getLongitude()
-                || boundingBoxCoordinates[0][3].getLatitude() != boundingBoxCoordinates[0][0].getLatitude()) {
-            throw new IllegalArgumentException("boundingBoxCoordinates is not a rectangle shape");
-        }
+        // Twitter has some wield format historically, though it still rectangle, but it is not always
+        // in (sw, se, ne,nw) order
+        double swLog = Collections.min(Arrays.asList(boundingBoxCoordinates[0][0].getLongitude(),
+                boundingBoxCoordinates[0][1].getLongitude(),
+                boundingBoxCoordinates[0][2].getLongitude(),
+                boundingBoxCoordinates[0][3].getLongitude()));
+        double swLat = Collections.min(Arrays.asList(boundingBoxCoordinates[0][0].getLatitude(),
+                boundingBoxCoordinates[0][1].getLatitude(),
+                boundingBoxCoordinates[0][2].getLatitude(),
+                boundingBoxCoordinates[0][3].getLatitude()));
+        double neLog = Collections.max(Arrays.asList(boundingBoxCoordinates[0][0].getLongitude(),
+                boundingBoxCoordinates[0][1].getLongitude(),
+                boundingBoxCoordinates[0][2].getLongitude(),
+                boundingBoxCoordinates[0][3].getLongitude()));
+        double neLat = Collections.max(Arrays.asList(boundingBoxCoordinates[0][0].getLatitude(),
+                boundingBoxCoordinates[0][1].getLatitude(),
+                boundingBoxCoordinates[0][2].getLatitude(),
+                boundingBoxCoordinates[0][3].getLatitude()));
 
-        if (boundingBoxCoordinates[0][0].getLongitude() > 0 || boundingBoxCoordinates[0][2].getLongitude() > 0) {
+        if (swLog >= neLog || swLat >= neLat) {
             throw new IllegalArgumentException(
-                    "I found you!" + boundingBoxCoordinates[0][0] + " " + boundingBoxCoordinates[0][2]);
+                    "Not a good Rectangle: " + "sw:" + swLog + "," + swLat + ", ne:" + neLog + "," + neLat);
         }
 
-        if (boundingBoxCoordinates[0][0].getLongitude() > boundingBoxCoordinates[0][2].getLongitude() ||
-                boundingBoxCoordinates[0][0].getLatitude() > boundingBoxCoordinates[0][2].getLatitude()) {
-            throw new IllegalArgumentException(
-                    "Not a good Rectangle: " + boundingBoxCoordinates[0][0] + " " + boundingBoxCoordinates[0][2]);
-        }
-
-        sb.append("(\"").append(boundingBoxCoordinates[0][0].getLongitude()).append(',')
-                .append(boundingBoxCoordinates[0][0].getLatitude())
+        sb.append("(\"").append(swLog).append(',')
+                .append(swLat)
                 .append(' ')
-                .append(boundingBoxCoordinates[0][2].getLongitude()).append(',')
-                .append(boundingBoxCoordinates[0][2].getLatitude())
+                .append(neLog).append(',')
+                .append(neLat)
                 .append("\")");
         return sb.toString();
     }
