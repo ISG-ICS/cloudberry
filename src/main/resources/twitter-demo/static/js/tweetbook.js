@@ -332,15 +332,20 @@ function initDemoUIButtonControls() {
 
   // Explore Mode: Query Submission
   $("#submit-button").on("click", function () {
-    $("#report-message").html('');
-    $("#submit-button").attr("disabled", true);
-    rectangleManager.setDrawingMode(null);
 
     var kwterm = $("#keyword-textbox").val();
+    if (kwterm.trim().length < 3) {
+      alert("Keyword longer than three is required")
+      return;
+    }
     var startdp = $("#start-date").datepicker("getDate");
     var enddp = $("#end-date").datepicker("getDate");
     var startdt = $.datepicker.formatDate("yy-mm-dd", startdp) + "T00:00:00Z";
     var enddt = $.datepicker.formatDate("yy-mm-dd", enddp) + "T23:59:59Z";
+
+    $("#report-message").html('');
+    $("#submit-button").attr("disabled", true);
+    rectangleManager.setDrawingMode(null);
 
     var level = 'state';
     if ($("#county-button").data('clicked')) {
