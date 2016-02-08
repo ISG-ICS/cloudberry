@@ -31,6 +31,7 @@ $(function () {
     };
   }
 
+  TempDSName = "temp_" + Math.random().toString(36).substr(2, 9);
 
   // Initialize connection to AsterixDB. Just one connection is needed and contains
   // logic for connecting to each API endpoint. This object A is reused throughout the
@@ -412,7 +413,7 @@ function initDemoUIButtonControls() {
       console.time("query_aql_get_result");
       // Due to the feed + tmp dataset bug, we can not drop the dataset with the query.
       // However, we can excute it seprately.
-      A.aql('drop dataset tmp_tweets if exists;', function () {
+      A.aql('drop dataset {0} if exists;'.format(TempDSName), function () {
       }, build_tweetbook_mode);
       A.aql(f, tweetbookQuerySyncCallbackWithLevel(level), build_tweetbook_mode);
     } else {
@@ -444,8 +445,8 @@ function buildTemporaryDataset(parameters) {
 
   var aql = [];
 
-  aql.push('create temporary dataset tmp_tweets(type_tweet) primary key id; ');
-  aql.push('insert into dataset tmp_tweets (');
+  aql.push('create temporary dataset {0}(type_tweet) primary key id; '.format(TempDSName));
+  aql.push('insert into dataset {0} ('.format(TempDSName));
   aql.push(declareRectangle(bounds));
   aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
   aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
@@ -505,7 +506,7 @@ function selectAreaByPolygon(polygon) {
 
 function buildHashTagCountQuery(polygon) {
   var aql = [];
-  aql.push('for $t in dataset tmp_tweets ');
+  aql.push('for $t in dataset {0}'.format(TempDSName));
   aql.push('where not(is-null($t.hashtags))');
   if (polygon) {
     aql.push('and ' + selectAreaByPolygon(polygon));
@@ -520,7 +521,7 @@ function buildHashTagCountQuery(polygon) {
 
 function buildTimeGroupby(polygon) {
   var aql = [];
-  aql.push('for $t in dataset tmp_tweets ');
+  aql.push('for $t in dataset {0}'.format(TempDSName));
   if (polygon) {
     aql.push('where ' + selectAreaByPolygon(polygon));
   }
@@ -533,7 +534,7 @@ function buildTimeGroupby(polygon) {
 
 function buildTweetSample(polygon) {
   var aql = [];
-  aql.push('for $t in dataset tmp_tweets ');
+  aql.push('for $t in dataset {0}'.format(TempDSName));
   if (polygon) {
     aql.push('where ' + selectAreaByPolygon(polygon));
   }
@@ -559,7 +560,7 @@ function buildAQLQueryFromForm(parameters) {
     sample += ' "s{0}":$t[{1}].text_msg'.format(i, i);
   }
 
-  var ds_for = 'for $t in dataset tmp_tweets ';
+  var ds_for = 'for $t in dataset {0} '.format(TempDSName);
 
   aql.push(ds_for);
   if (level === 'county') {
