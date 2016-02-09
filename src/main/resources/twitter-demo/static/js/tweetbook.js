@@ -962,119 +962,69 @@ function drawPie(cell_count) {
 
 function drawTimeSerialBrush(slice_count) {
 
-  var margin = {top: 10, right: 10, bottom: 100, left: 40},
-    margin2 = {top: 430, right: 10, bottom: 20, left: 40},
+  var margin = {top: 10, right: 10, bottom: 30, left: 40},
+    margin2 = {top: 0, right: 10, bottom: 20, left: 40},
     width = 800 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom,
-    height2 = 500 - margin2.top - margin2.bottom;
+    height = 450 - margin.top - margin.bottom,
+    height2 = 100 - margin2.top - margin2.bottom;
 
-  var parseDate = d3.time.format("%Y-%m-%d %H").parse;
+function print_filter(filter){
+  var f=eval(filter);
+  if (typeof(f.length) != "undefined") {}else{}
+  if (typeof(f.top) != "undefined") {f=f.top(Infinity);}else{}
+  if (typeof(f.dimension) != "undefined") {f=f.dimension(function(d) { return "";}).top(Infinity);}else{}
+  console.log(filter+"("+f.length+") = "+JSON.stringify(f).replace("[","[\n\t").replace(/}\,/g,"},\n\t").replace("]","\n]"));
+} 
+ print_filter(slice_count);
 
-  var x = d3.time.scale().range([0, width]),
-    x2 = d3.time.scale().range([0, width]),
-    y = d3.scale.linear().range([height, 0]),
-    y2 = d3.scale.linear().range([height2, 0]);
 
-  var xAxis = d3.svg.axis().scale(x).orient("bottom"),
-    xAxis2 = d3.svg.axis().scale(x2).orient("bottom"),
-    yAxis = d3.svg.axis().scale(y).orient("left");
+  var focusChart = dc.lineChart("#focus-chart");
+  var selectChart = dc.lineChart("#select-chart");
 
-  var brush = d3.svg.brush()
-    .x(x2)
-    .on("brush", brushed);
+var parseDate = d3.time.format("%Y-%m-%d %H").parse;
 
-  var area = d3.svg.area()
-    .interpolate("monotone")
-    .x(function (d) {
-      return x(d.slice);
-    })
-    .y0(height)
-    .y1(function (d) {
-      return y(d.count);
+
+slice_count.forEach(function (d){
+  d.slice = parseDate(d.slice);
+  d.count = +d.count;
+});
+  var ndx = crossfilter(slice_count);
+  var timeDimension = ndx.dimension(function (d){ return d.slice;})
+  var timeGroup = timeDimension.group().reduceSum(function (d) {
+        return d.count;
     });
 
-  var area2 = d3.svg.area()
-    .interpolate("monotone")
-    .x(function (d) {
-      return x2(d.slice);
-    })
-    .y0(height2)
-    .y1(function (d) {
-      return y2(d.count);
-    });
+  var minDate = timeDimension.bottom(1)[0].slice;
+  var maxDate = timeDimension.top(1)[0].slice;
 
-  d3.select("#svg-time").remove();
-  var svg = d3.select("#timeseries").append("svg")
-    .attr("id", "svg-time")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom);
+  focusChart
+    .renderArea(true)
+    .width(width)
+    .height(height)
+    // .transitionDuration(1000)
+    .margins(margin)
+    .dimension(timeDimension)
+    .group(timeGroup)
+    .rangeChart(selectChart)
+    .x(d3.time.scale().domain([minDate,maxDate]))
+    .mouseZoomable(true)
+    // .elasticY(true)
+    .renderHorizontalGridLines(true)
+    .legend(dc.legend().x(800).y(10).itemHeight(13).gap(5))
+    .brushOn(false)
+    ;
 
-  svg.append("defs").append("clipPath")
-    .attr("id", "clip")
-    .append("rect")
-    .attr("width", width)
-    .attr("height", height);
+selectChart
+  .renderArea(true)
+  .width(width)
+  .height(height2)
+  .margins(margin2)
+  .dimension(timeDimension)
+  .group(timeGroup)
+  .x(d3.time.scale().domain([minDate,maxDate]))
+  ;
 
-  var focus = svg.append("g")
-    .attr("class", "focus")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-  var context = svg.append("g")
-    .attr("class", "context")
-    .attr("transform", "translate(" + margin2.left + "," + margin2.top + ")");
-
-  slice_count.forEach(type);
-  x.domain(d3.extent(slice_count.map(function (d) {
-    return d.slice;
-  })));
-  y.domain([0, d3.max(slice_count.map(function (d) {
-    return d.count;
-  }))]);
-  x2.domain(x.domain());
-  y2.domain(y.domain());
-
-  focus.append("path")
-    .datum(slice_count)
-    .attr("class", "area")
-    .attr("d", area);
-
-  focus.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height + ")")
-    .call(xAxis);
-
-  focus.append("g")
-    .attr("class", "y axis")
-    .call(yAxis);
-
-  context.append("path")
-    .datum(slice_count)
-    .attr("class", "area")
-    .attr("d", area2);
-
-  context.append("g")
-    .attr("class", "x axis")
-    .attr("transform", "translate(0," + height2 + ")")
-    .call(xAxis2);
-
-  context.append("g")
-    .attr("class", "x brush")
-    .call(brush)
-    .selectAll("rect")
-    .attr("y", -6)
-    .attr("height", height2 + 7);
-
-  function brushed() {
-    x.domain(brush.empty() ? x2.domain() : brush.extent());
-    focus.select(".area").attr("d", area);
-    focus.select(".x.axis").call(xAxis);
-  }
-
-  function type(d) {
-    d.slice = parseDate(d.slice);
-    d.count = +d.count;
-    return d;
-  }
+dc.renderAll();
 
   console.log('finished refining query');
 }
@@ -1244,7 +1194,8 @@ function clearReport() {
 function clearD3() {
   $("#chart").html('');
   $("#pie").html('');
-  $("#timeseries").html('');
+  $("#focus-chart").html('');
+  $("#select-chart").html("");
   $("#wordcloud").html('');
   $("#grid").html('');
 }
