@@ -957,19 +957,10 @@ function drawPie(cell_count) {
 function drawTimeSerialBrush(slice_count) {
 
   var margin = {top: 10, right: 10, bottom: 30, left: 40},
-    margin2 = {top: 0, right: 10, bottom: 20, left: 40},
+    margin2 = {top: 10, right: 10, bottom: 20, left: 40},
     width = 800 - margin.left - margin.right,
     height = 450 - margin.top - margin.bottom,
     height2 = 100 - margin2.top - margin2.bottom;
-
-function print_filter(filter){
-  var f=eval(filter);
-  if (typeof(f.length) != "undefined") {}else{}
-  if (typeof(f.top) != "undefined") {f=f.top(Infinity);}else{}
-  if (typeof(f.dimension) != "undefined") {f=f.dimension(function(d) { return "";}).top(Infinity);}else{}
-  console.log(filter+"("+f.length+") = "+JSON.stringify(f).replace("[","[\n\t").replace(/}\,/g,"},\n\t").replace("]","\n]"));
-} 
- print_filter(slice_count);
 
 
   var focusChart = dc.lineChart("#focus-chart");
@@ -983,13 +974,14 @@ slice_count.forEach(function (d){
   d.count = +d.count;
 });
   var ndx = crossfilter(slice_count);
-  var timeDimension = ndx.dimension(function (d){ return d.slice;})
+  var timeDimension = ndx.dimension(function (d){ if(d.slice!=null) return d.slice;})
   var timeGroup = timeDimension.group().reduceSum(function (d) {
         return d.count;
     });
 
   var minDate = timeDimension.bottom(1)[0].slice;
   var maxDate = timeDimension.top(1)[0].slice;
+  console.log(timeDimension.bottom(3))
 
   focusChart
     .renderArea(true)
