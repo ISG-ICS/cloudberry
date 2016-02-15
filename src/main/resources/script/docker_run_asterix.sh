@@ -20,13 +20,13 @@
 
 
 if [ -z "$1" ]; then
-  tag="master"
+  tag="kiwi"
 else
   tag="$1"
 fi
 
 if [ -z "$2" ]; then
-  ncs=1
+  ncs=2
 else
   ncs=$2
 fi
@@ -53,15 +53,17 @@ docker run -d --name=cc-${tag} \
 ccip=`docker inspect cc-${tag} | grep IPAddress | grep -o '[0-9.]*' | head -1`
 
 sleep 2s
+work_dir="$HOME/.asterix"
+mkdir -p $work_dir
+
 #myhost=`hostname -I | cut -d' ' -f1`
 for ((n=1; $n <= $ncs; n=$n+1 ))
 do
-   docker run -v $PWD/../data:/data -d \
+    ncdir=$work_dir/nc${n}
+    mkdir -p $ncdir 
+   docker run -v $PWD/../data:/data -v $ncdir:/nc${n} -d \
      --name "nc-${tag}-${n}" \
-      -p 1000${n}:1000${n} -p 1001${n}:1001${n} \
-       -p 500${n}:500${n} -p 501${n}:501${n} \
-         -p 502${n}:502${n} -p 503${n}:503${n} \
-           jianfeng/asterix-nc:${tag} ${n} $ccip ${ncs}
+       jianfeng/asterix-nc:${tag} ${n} $ccip ${ncs}
 done
 
 docker logs -f cc-${tag} > cc-${tag}.log 2>&1 &
