@@ -269,7 +269,7 @@ function initDemoUIButtonControls() {
   // Explore Mode - Query Builder Date Pickers
   var dateOptions = {
     dateFormat: "yy-mm-dd",
-    defaultDate: "2015-12-17",
+    defaultDate: "2012-01-01",
     navigationAsDateFormat: true,
     constrainInput: true
   };
@@ -337,7 +337,7 @@ function initDemoUIButtonControls() {
     var kwterm = $("#keyword-textbox").val();
     if (kwterm.trim().length < 3) {
       alert("Keyword longer than three is required")
-      return;
+      //return;
     }
     var startdp = $("#start-date").datepicker("getDate");
     var enddp = $("#end-date").datepicker("getDate");
