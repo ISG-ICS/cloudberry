@@ -24,11 +24,12 @@
 
   <link rel="shortcut icon" type="image/png" href="static/img/hyrax.png">
 
-  <!-- Bootstrap & jQuery Styles -->
+  <!-- Bootstrap & jQuery & dc Styles -->
   <link href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.9.2/themes/base/jquery-ui.css" rel="stylesheet"
         type="text/css"/>
   <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" type="text/css">
   <link href="static/css/ui.jqgrid-bootstrap.css" rel="stylesheet" type="text/css">
+  <link href="static/css/dc.css" rel="stylesheet" type="text/css">
 
   <!-- Bootstrap Javascript -->
   <script src="http://maps.googleapis.com/maps/api/js?sensor=false&libraries=places,drawing,geometry"
@@ -49,8 +50,11 @@
   <script src="static/js/rainbowvis.js"></script>
   <script src="static/js/grid.locale-en.js"></script>
   <script src="static/js/jquery.jqGrid.min.js"></script>
-  <script src="static/js/tweetbook.js"></script>
   <script src="static/js/d3plus.min.js"></script>
+  <script src="static/js/crossfilter.min.js"></script>
+  <script src="static/js/dc.min.js"></script>
+  <script src="static/js/tweetbook.js"></script>
+
 
   <style type="text/css">
 
@@ -377,7 +381,10 @@
               </div>
               <div id='chart' class="tab-pane fade"></div>
               <div id='pie' class="tab-pane fade"></div>
-              <div id='timeseries' class="tab-pane fade"></div>
+              <div id='timeseries' class="tab-pane fade">
+                  <div id="focus-chart"><strong>Focus-Chart</strong></div>
+                  <div id="select-chart"><strong>Select-Chart</strong></div>
+              </div>
               <div id='wordcloud' class="tab-pane fade"></div>
             <div>
           </div><!-- End Right Column -->
