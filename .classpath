@@ -1,0 +1,30 @@
+
+<classpath>
+	<classpathentry including="**/*.java" kind="src" output="target/test-classes" path="src/test/java"/>
+	<classpathentry excluding="**/*.java" kind="src" output="target/test-classes" path="src/test/resources"/>
+	<classpathentry including="**/*.java" kind="src" path="src/main/java"/>
+	<classpathentry excluding="**/*.java" kind="src" path="src/main/resources"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="var" path="M2_REPO/junit/junit/4.11/junit-4.11.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/twitter/hbc-core/2.2.0/hbc-core-2.2.0.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpclient/4.2.5/httpclient-4.2.5.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/apache/httpcomponents/httpcore/4.2.4/httpcore-4.2.4.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-codec/commons-codec/1.6/commons-codec-1.6.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/google/guava/guava/14.0.1/guava-14.0.1.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.5/slf4j-api-1.7.5.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/twitter/joauth/6.0.2/joauth-6.0.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/google/code/findbugs/jsr305/1.3.9/jsr305-1.3.9.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/twitter4j/twitter4j-core/4.0.3/twitter4j-core-4.0.3.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/twitter4j/twitter4j-stream/4.0.2/twitter4j-stream-4.0.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/args4j/args4j/2.0.12/args4j-2.0.12.jar"/>
+	<classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-log4j12/1.7.5/slf4j-log4j12-1.7.5.jar"/>
+	<classpathentry kind="var" path="M2_REPO/log4j/log4j/1.2.17/log4j-1.2.17.jar"/>
+	<classpathentry kind="var" path="M2_REPO/commons-lang/commons-lang/2.6/commons-lang-2.6.jar"/>
+	<classpathentry kind="lib" path="/mnt/hgfs/linuxShare/org.json.jar"/>
+	<classpathentry kind="lib" path="/home/maimuderizi/Desktop/linuxShare/geotools-13.5-bin/geotools-13.5/gt-feature-aggregate-13.5.jar"/>
+	<classpathentry kind="lib" path="/home/maimuderizi/Desktop/linuxShare/geotools-13.5-bin/geotools-13.5/gt-geojson-13.5.jar"/>
+	<classpathentry kind="lib" path="/home/maimuderizi/Desktop/linuxShare/geotools-13.5-bin/geotools-13.5/gt-geometry-13.5.jar"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>
