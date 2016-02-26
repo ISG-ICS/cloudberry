@@ -1,11 +1,11 @@
 #!/bin/bash -
 #===============================================================================
 #
-#          FILE: docker_run_asterix.sh
+#          FILE: docker_run.sh
 #
-#         USAGE: ./docker_run_asterix.sh tag ncs
+#         USAGE: ./docker_run.sh tag ncs
 #
-#   DESCRIPTION: Run Asterix Docker image
+#   DESCRIPTION: Run Asterix Docker containers
 #
 #       OPTIONS:    tag: master or specific versions, default is master
 #                   ncs: number of nc. default is 2
@@ -33,18 +33,6 @@ fi
 
 set -o nounset                              # Treat unset variables as an error
 
-echo "stop the existing container"
-docker stop cc-${tag}
-for ((i=1; $i <= $ncs; i=$i+1 )) do
-docker stop "nc-${tag}-${i}"
-done
-
-echo "remove the existing container"
-docker rm cc-${tag}
-for ((i=1; $i <= $ncs; i=$i+1 )) do
-docker rm "nc-${tag}-${i}"
-done
-
 echo "build the new container"
 docker run -d --name=cc-${tag} \
    -p 19000:19000 -p 19001:19001 -p 19002:19002 \
@@ -60,26 +48,10 @@ mkdir -p $work_dir
 for ((n=1; $n <= $ncs; n=$n+1 ))
 do
     ncdir=$work_dir/nc${n}
-    mkdir -p $ncdir 
-   docker run -v $PWD/../data:/data -v $ncdir:/nc${n} -d \
-     --name "nc-${tag}-${n}" \
-       jianfeng/asterix-nc:${tag} ${n} $ccip ${ncs}
+    mkdir -p $ncdir
+    docker run -v $PWD/../data:/data -v $ncdir:/nc${n} -d \
+      --name "nc-${tag}-${n}" \
+        jianfeng/asterix-nc:${tag} ${n} $ccip ${ncs}
 done
 
-docker logs -f cc-${tag} > cc-${tag}.log 2>&1 &
-
-for ((i=1; $i <= $ncs; i=$i+1 ))
-do
-  docker logs -f nc-${tag}-${i} > nc-${tag}-${i}.log 2>&1 &
-done
-
-sleep 2s
-echo "initial the twitter data"
-host="http://localhost:19002"
-
-ncip=`docker inspect nc-${tag}-1 | grep IPAddress | grep -o '[0-9.]*' | head -1`
-echo "declare data type"
-curl -XPOST --data-binary @../aql/ddl.aql $host/aql
-echo "upload meta data"
-sed "s/\$ncip/$ncip/g" ../aql/update.aql | curl -XPOST --data-binary @- $host/aql
 
