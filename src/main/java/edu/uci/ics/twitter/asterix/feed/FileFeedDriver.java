@@ -51,11 +51,11 @@ public class FileFeedDriver {
         try {
             parser.parseArgument(args);
             if (sourceFilePath == null) {
-                throw new CmdLineException("No source file is given");
+                System.err.println("Read from stdin");
             }
 
             InputStreamReader reader;
-            if (sourceFilePath.equals("-")) {
+            if (sourceFilePath == null) {
                 reader = new InputStreamReader(System.in);
             } else {
                 reader = new FileReader(sourceFilePath);
