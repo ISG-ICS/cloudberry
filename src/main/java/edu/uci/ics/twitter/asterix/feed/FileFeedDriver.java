@@ -50,7 +50,7 @@ public class FileFeedDriver {
 
         try {
             parser.parseArgument(args);
-            if (sourceFilePath == null) {
+            if (sourceFilePath == null || sourceFilePath.length() == 0) {
                 System.err.println("Read from stdin");
             }
 
