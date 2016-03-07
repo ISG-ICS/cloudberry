@@ -981,7 +981,6 @@ slice_count.forEach(function (d){
 
   var minDate = timeDimension.bottom(1)[0].slice;
   var maxDate = timeDimension.top(1)[0].slice;
-  console.log(timeDimension.bottom(3))
 
   focusChart
     .renderArea(true)
