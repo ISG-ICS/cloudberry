@@ -68,41 +68,7 @@ $(function () {
     }
   });
 
-  // This little bit of code manages period checks of the asynchronous query manager,
-  // which holds onto handles asynchornously received. We can set the handle update
-  // frequency using seconds, and it will let us know when it is ready.
-  var intervalID = setInterval(
-    function () {
-      asynchronousQueryIntervalUpdate();
-    },
-    asynchronousQueryGetInterval()
-  );
-
   // UI-Elements: create map and add controls
-  // Using mapbox map
-  // mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
-  // map = new mapboxgl.Map({
-  //     container: 'map', // container id
-  //     style: 'mapbox://styles/jeremyli/cikymhym100k798km20kdzkfh', //stylesheet location
-  //     center: [ -96.35,39.5], // starting position
-  //     zoom: 3 // starting zoom
-  // });
-
-  // // Add zoom and rotation controls to the mapbox map.
-  // map.addControl(new mapboxgl.Navigation());
-
-// L.mapbox.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw'
-// map = L.mapbox.map('map', 'mapbox://styles/jeremyli/cikymhym100k798km20kdzkfh')
-//   .setView([39.5, -96.35], 3);
-
-
-  // map.eachLayer(function (layer){
-  //   console.log(layer);
-  // });
-
-    // rainbow = new Rainbow();
-    // rainbow.setSpectrum("blue", "aqua", "green", "yellow", "red");
-
   map = L.map('map').setView([39.5,-96.35,], 4);
   L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
       attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
@@ -111,39 +77,28 @@ $(function () {
       accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw'
   }).addTo(map);
 
-  // Inlitialize UI
-  initDemoUIButtonControls();
-
-  // Initialize data structures
+  //  Query data structure
   APIqueryTracker = {};
-  asyncQueryManager = {};
 
-  county_polygons = {};
-  state_polygons = {};
-  city_polygons = {};
-  // global control
-  state_queried = false;
-  county_queried = false;
-  state_max = null;
-  state_min = null;
-  state_results = null;
-  county_max = null;
-  county_min = null;
-  county_results = null;
+  // UI components
+  county_polygons = null;
+  state_polygons = null;
+  city_polygons = null;
+
+  // status
   init = true;
   zoom_level = 4;
   logic_level = 'state';
- colors = [ '#053061','#2166ac','#4393c3','#92c5de','#d1e5f0' ,'#f7f7f7' ,'#fddbc7','#f4a582','#d6604d', '#b2182b','#67001f' ];
-  bounds = map.getBounds();
-  swLat = Math.abs(bounds.getSouthWest().lat);
-  swLng = Math.abs(bounds.getSouthWest().lng);
-  neLat = Math.abs(bounds.getNorthEast().lat);
-  neLng = Math.abs(bounds.getNorthEast().lng);
+
+  // const
+  colors = [ '#053061','#2166ac','#4393c3','#92c5de','#d1e5f0' ,'#f7f7f7' ,'#fddbc7','#f4a582','#d6604d', '#b2182b','#67001f' ];
   start_date = "2015-12-17T00:00:00.000Z";
   end_date = "2016-02-13T23:59:59.000Z";
-  // brush_event = false;
 
-  // set style
+  // data
+  timeSeries_date = null
+
+  // style
     stateStyle = {
         fillColor: '#f7f7f7',
         weight: 2,
@@ -151,7 +106,7 @@ $(function () {
         color: '#92c5de',
         dashArray: '3',
         fillOpacity: 0.2
-  }
+    }
 
     countyStyle = {
         fillColor: '#f7f7f7',
@@ -159,8 +114,9 @@ $(function () {
         opacity: 1,
         color: '#92c5de',
         fillOpacity: 0.2
-  }
-  // add interaction
+    }
+
+  // Interaction function
   function highlightFeature(e) {
     var layer = e.target;
 
@@ -182,7 +138,10 @@ $(function () {
       style =  {weight: 2, fillOpacity: 0.5, color:'white'};
     else
       style = {weight: 1, fillOpacity: 0.2, color:'#92c5de'}
-    current_layer.setStyle(style);
+    if(logic_level=="state")
+      state_polygons.setStyle(style);
+    else
+      county_polygons.setStyle(style);
     info.update();
   }
   function zoomToFeature(e) {
@@ -207,7 +166,7 @@ $(function () {
 
   // method that we will use to update the control based on feature properties passed
   info.update = function (props) {
-      this._div.innerHTML = '<h4>Count by State</h4>' +  (props ?
+      this._div.innerHTML = '<h4>Count by ' + logic_level +'</h4>' +  (props ?
           '<b>' + props.NAME + '</b><br />' + 'Count: ' + (props.count?props.count:0)
           : 'Hover over a state');
   };
@@ -229,7 +188,6 @@ $(function () {
         onEachFeature: onEachFeature
     });
     state_polygons.addTo(map);
-    current_layer = state_polygons;
   });
 
   county = {}
@@ -239,73 +197,56 @@ $(function () {
       style: countyStyle,
       onEachFeature: onEachFeature
     });
-    // county_polygons.addTo(map);
   });
 
 
     // add  zoom event  listener
     map.on('zoomend', function() {
-        start_date = "2015-12-17T00:00:00.000Z";
-        end_date = "2016-02-13T23:59:59.000Z";
       zoom_level = map.getZoom();
       if(zoom_level > 5 && logic_level == 'state')  {
         logic_level = 'county';
-        if(init){
-          map.removeLayer(state_polygons);
+        if(!init){
+          queryWrapper('zoom');
         }
-        else{
-          if(state_queried)
-            map.removeLayer(state_polygons);
-          if(!county_queried){
-            query();
-            county_queried = true;
-          }
-          else{
-            triggerUIUpdate(county_results,county_max, county_min, logic_level);
-          }
-        }
+        map.removeLayer(state_polygons);
         map.addLayer(county_polygons);
-        current_layer = county_polygons;
       }
       else if(zoom_level <=5 && logic_level=='county'){
         logic_level = 'state';
-        if(init){
-          map.removeLayer(county_polygons);
+        if(!init){
+          if(!state_polygons)
+            queryWrapper("zoom");
         }
-        else{
-          if(county_queried)
-            map.removeLayer(county_polygons);
-          if(!state_queried){
-            query();
-            state_queried = true;
-          }
-          else{
-            triggerUIUpdate(state_results,state_max,state_min,logic_level);
-          }
-        }
+        map.removeLayer(county_polygons);
         map.addLayer(state_polygons);
-        current_layer = state_polygons;
       }
     });
 
-
+    // submit button
+    $("#submit-button").on("click",  function() {
+        init = false;
+        queryWrapper("submit");
+    });
 });
 
 
-function query(){
-
+function queryWrapper(type){
    $("#report-message").html('');
-
     var kwterm = $("#keyword-textbox").val();
-
-
-
     var formData = {
       "keyword": kwterm,
-      "startdt": start_date,
-      "enddt": end_date,
       "level": logic_level
     };
+
+    // Set time
+    if(type=="time"){
+      formData.startdt = brush_start;
+      formData.enddt = brush_end;
+    }
+    else{
+      formData.startdt = start_date;
+      formData.enddt =  end_date;
+    }
 
     //Get Map Bounds
     var  bounds = map.getBounds();
@@ -320,9 +261,7 @@ function query(){
     formData["neLat"] = Math.max(swLat, neLat);
     formData["neLng"] = Math.min(swLng, neLng);
 
-    var build_tweetbook_mode = "synchronous";
-    console.log(formData);
-    var f = buildAQLQueryFromForm(formData);
+    var f = buildAQLQueryFromForm(formData, type);
 
     APIqueryTracker = {
       "query": "use dataverse " + A._properties['dataverse'] + ";\n" + f,
@@ -330,51 +269,8 @@ function query(){
     };
 
     reportUserMessage(APIqueryTracker.query, true, "report-query");
-
-    if (build_tweetbook_mode == "synchronous") {
-      console.time("query_aql_get_result");
-      // Due to the feed + tmp dataset bug, we can not drop the dataset with the query.
-      // However, we can excute it seprately.
-      // A.aql('drop dataset tmp_tweets if exists;', function () { }, build_tweetbook_mode);
-      A.aql('drop dataset tmp_tweets if exists;', function () { }, build_tweetbook_mode);
-      A.aql(f, tweetbookQuerySyncCallbackWithLevel(logic_level), build_tweetbook_mode);
-    } else {
-      A.aql(f, tweetbookQueryAsyncCallback, build_tweetbook_mode);
-    }
-}
-
-function initDemoUIButtonControls() {
-
-  console.log("initDemoUIButtonControls");
-  // query();
-  //   var aql = buildTimeGroupby() ;
-  //   A.aql(aql, function (res) {
-  //     if (res.results) {
-  //       if (res.results[0]) {
-  //         drawTimeSerialBrush(res.results[0]);
-  //       }
-  //     }
-  //     return;
-  //   }, "synchronous");
-
-  // Explore Mode: Query Submission
-  $("#submit-button").on("click",  function() {
-    init = false;
-  start_date = "2015-12-17T00:00:00.000Z";
-  end_date = "2016-02-13T23:59:59.000Z";
-    if(logic_level == 'state'){
-      if(county_queried)
-        county_queried = false;
-      state_queried = true;
-    }
-    else{
-      if(state_queried)
-        state_queried = false;
-      county_queried = true;
-    }
-// brush_event = false;
-    query();
-  });
+    A.aql('drop dataset tmp_tweets if exists;', function () { }, "synchronous");
+    A.aql(f, queryCallbackWrapper(type),"synchronous");
 }
 
 function declareRectangle(bounds) {
@@ -438,13 +334,17 @@ function buildTemporaryDataset(parameters) {
 }
 
 /**
- * Builds AsterixDB REST Query from explore mode form.
+ * Builds AsterixDB REST Query from the form.
  */
-function buildAQLQueryFromForm(parameters) {
+function buildAQLQueryFromForm(parameters,type) {
 
   var level = parameters["level"];
 
-  var aql = buildTemporaryDataset(parameters);
+  var aql 
+  if(type != "time")
+    aql = buildTemporaryDataset(parameters);
+  else
+    aql = [];
 
   var sample = '';
   for (var i = 0; i < 1; i++) {
@@ -453,10 +353,18 @@ function buildAQLQueryFromForm(parameters) {
     }
     sample += ' "s{0}":$t[{1}].text_msg'.format(i, i);
   }
+    if(type=="time"){
+      aql.push('let $ts_start := datetime("{0}")'.format(parameters['startdt']));
+      aql.push('let $ts_end := datetime("{0}")'.format(parameters['enddt']));
+    }
 
   var ds_for = 'for $t in dataset tmp_tweets ';
 
   aql.push(ds_for);
+
+  if(type=="time"){
+   aql.push('where $t.create_at >= $ts_start and $t.create_at < $ts_end') ;
+  }
   if (level === 'county') {
     aql.push('group by $c := $t.county with $t \
       let $count := count($t) \n\
@@ -475,101 +383,41 @@ function buildAQLQueryFromForm(parameters) {
       aql.push('return {"cell":$c, "count" : $count, "area": $t[0].place.bounding_box };');
     }
   }
-
-  // aql.push(buildTimeGroupby());
-  // aql.push(buildHashTagCountQuery());
-  // aql.push(buildTweetSample());
+  aql.push(buildTimeGroupby());
+  aql.push(buildHashTagCountQuery());
+  aql.push(buildTweetSample());
   return aql.join('\n');
 }
 
-/**
- * Checks through each asynchronous query to see if they are ready yet
- */
-function asynchronousQueryIntervalUpdate() {
-  for (var handle_key in asyncQueryManager) {
-    if (!asyncQueryManager[handle_key].hasOwnProperty("ready")) {
-      asynchronousQueryGetAPIQueryStatus(asyncQueryManager[handle_key]["handle"], handle_key);
-    }
-  }
-}
 
-/**
- * Returns current time interval to check for asynchronous query readiness
- * @returns  {number}    milliseconds between asychronous query checks
- */
-function asynchronousQueryGetInterval() {
-  var seconds = 10;
-  return seconds * 1000;
-}
-
-/**
- * Retrieves status of an asynchronous query, using an opaque result handle from API
- * @param    {Object}    handle, an object previously returned from an async call
- * @param    {number}    handle_id, the integer ID parsed from the handle object
- */
-function asynchronousQueryGetAPIQueryStatus(handle, handle_id) {
-
-  A.query_status(
-    {
-      "handle": JSON.stringify(handle)
-    },
-    function (res) {
-      if (res["status"] == "SUCCESS") {
-        // We don't need to check if this one is ready again, it's not going anywhere...
-        // Unless the life cycle of handles has changed drastically
-        asyncQueryManager[handle_id]["ready"] = true;
-
-        // Indicate success.
-        $('#handle_' + handle_id).removeClass("btn-disabled").prop('disabled', false).addClass("btn-success");
-      }
-    }
-  );
-}
-
-function tweetbookQuerySyncCallbackWithLevel(level) {
-
+function queryCallbackWrapper(type) {
   /**
    * A spatial data cleaning and mapping call
    * @param    {Object}    res, a result object from a tweetbook geospatial query
    */
-  return function tweetbookQuerySyncCallback(res) {
+  return function queryCallback(res) {
     // First, we check if any results came back in.
     // If they didn't, return.
-
     console.timeEnd("query_aql_get_result");
     if (!res.hasOwnProperty("results")) {
       reportUserMessage("Oops, no results found for those parameters.", false, "report-message");
       return;
     }
-
-    var maxWeight = 0;
-    var minWeight = Number.MAX_VALUE;
-
-    // Parse resulting JSON objects. Here is an example record:
-    // { "cell": rectangle("21.5,-98.5 24.5,-95.5"), "count": 78i64 }
-    $.each(res.results[0], function (i, data) {
-
-      // We need to clean the JSON a bit to parse it properly in javascript
-
-      // We track the minimum and maximum weight to support our legend.
-      if(data.cell){
-      maxWeight = Math.max(data.count, maxWeight);
-      minWeight = Math.min(data.count, minWeight);
+    // update map
+    if(res.results[0])
+      drawMap(res.results[0]);
+    // update time series
+    if (res.results[0] && type!="time" ) {
+      drawTimeSerialBrush(res.results[0]);
     }
-
-    });
-
-    if (level === 'state') {
-      state_max = maxWeight;
-      state_min = minWeight;
-      state_results = res.results[0];
-    } else if (level === 'county') {
-      county_max = maxWeight;
-      county_min = minWeight;
-      county_results = res.results[0];
+    // update hashtag
+    if(res.results[1]){
+      drawHashtag(res.results[1]);
     }
-    triggerUIUpdate(res.results[0], maxWeight, minWeight,level);
-
+    // update tweet table
+    if(res.results[2]){
+      drawTweets(res.results[2]);
+    }
   }
 }
 
@@ -578,22 +426,13 @@ function tweetbookQuerySyncCallbackWithLevel(level) {
  * @param    [Array]     mapPlotData, an array of coordinate and weight objects
  * @param    [Array]     plotWeights, a list of weights of the spatial cells - e.g., number of tweets
  */
-function triggerUIUpdate(mapPlotData, maxWeight, minWeight, level) {
+function drawMap(mapPlotData) {
   /** Clear anything currently on the map **/
-  console.time("query_aql_draw");
-  // console.log(mapPlotData);
-  // console.log(polygons);
-  // set all initial polygon to unvisible
-
-  // draw new polygons
-  // $.each(mapPlotData, function (m) {
-  //   var cp = polygons[mapPlotData[m].cell];
-  //   if (cp) {
-  //     cp.setStyle({ "color":  "#" + rainbow.colourAt(Math.ceil(100 * (mapPlotData[m].count / maxWeight))),"fillOpacity": 0.4,"opacity":0.8})
-  //     }
-  //   });
-
+    console.time("query_aql_draw");
     var range = maxWeight - minWeight
+    var maxWeight = 0;
+    var minWeight = Number.MAX_VALUE;
+
     function getColor(d) {
       return d > minWeight+range*0.9 ? colors[10] :
              d > minWeight+range*0.8  ? colors[9]  :
@@ -606,8 +445,7 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, level) {
                d > minWeight+range*0.1   ? colors[2]  :
                d > minWeight ?colors[1] :
                        colors[0] ;
-}
-
+      }
 
   function style(feature) {
       return {
@@ -621,8 +459,8 @@ function triggerUIUpdate(mapPlotData, maxWeight, minWeight, level) {
   }
 
   // add legend
-if($('.legend'))
-  $('.legend').remove();
+  if($('.legend'))
+    $('.legend').remove();
 
   var legend = L.control({position: 'bottomright'});
 
@@ -649,18 +487,22 @@ if($('.legend'))
 
 
   // draw geojson polygons
-  if(level == "state"){
-    $.each(mapPlotData, function(m){
+  if(logic_level == "state"){
+    // transfer to geohash
+    $.each(mapPlotData, function(m,data){
       for(var hash in state_hash){
         if(state_hash.hasOwnProperty(hash)){
           if(hash == mapPlotData[m].cell){
             var val = state_hash[hash];
             mapPlotData[m].cell = val;
+            maxWeight = Math.max(mapPlotData[m].count, maxWeight);
+            minWeight = Math.min(mapPlotData[m].count, minWeight);
           }
         }
       }
     });
 
+    // update states count
     $.each(state.features, function(i,d){
       if(d.properties.count)
         d.properties.count = 0;
@@ -669,11 +511,12 @@ if($('.legend'))
           d.properties.count = mapPlotData[m].count;
       }
     });
-      state_polygons.setStyle(style);
+    
+    // draw state polygons
+    state_polygons.setStyle(style);
     }
-  else if(level == "county"){
-          console.log(mapPlotData);
-
+  else if(logic_level == "county"){
+    // update county's count
      $.each(county.features, function(i,d){
         if(d.properties.count)
           d.properties.count = 0;
@@ -682,25 +525,10 @@ if($('.legend'))
             d.properties.count = mapPlotData[m].count;
         }
       });
+
+     // draw county polygons
       county_polygons.setStyle(style);
     }
-
-    var aql = buildTimeGroupby() + buildHashTagCountQuery() + buildTweetSample();
-    A.aql(aql, function (res) {
-      if (res.results) {
-        if (res.results[0] ) {
-          drawTimeSerialBrush(res.results[0]);
-          // brush_event = true;
-        }
-        if(res.results[1]){
-          displayHashtag(res.results[1]);
-        }
-        if(res.results[2]){
-          displayTweets(res.results[2]);
-        }
-      }
-      return;
-    }, "synchronous");
 
   console.timeEnd("query_aql_draw");
   // update dashboard
@@ -748,18 +576,18 @@ function drawTimeSerialBrush(slice_count) {
   timeBrush = timeSeries.brush();
   timeBrush.on('brushend',function(e){
     var extent = timeBrush.extent();
-    start_date = $.datepicker.formatDate("yy-mm-dd", extent[0]) + "T00:00:00Z";
-    end_date =$.datepicker.formatDate("yy-mm-dd", extent[1]) + "T00:00:00Z";
-    query();
+    brush_start = $.datepicker.formatDate("yy-mm-dd", extent[0]) + "T00:00:00Z";
+    brush_end =$.datepicker.formatDate("yy-mm-dd", extent[1]) + "T00:00:00Z";
+    queryWrapper('time');
   });
 
-var parseDate = d3.time.format("%Y-%m-%d %H").parse;
+  var parseDate = d3.time.format("%Y-%m-%d %H").parse;
 
 
-slice_count.forEach(function (d){
-  d.slice = parseDate(d.slice);
-  d.count = +d.count;
-});
+  slice_count.forEach(function (d){
+    d.slice = parseDate(d.slice);
+    d.count = +d.count;
+  });
   var ndx = crossfilter(slice_count);
   var timeDimension = ndx.dimension(function (d){ if(d.slice!=null) return d.slice;})
   var timeGroup = timeDimension.group().reduceSum(function (d) {
@@ -769,49 +597,32 @@ slice_count.forEach(function (d){
   var minDate = timeDimension.bottom(1)[0].slice;
   var maxDate = timeDimension.top(1)[0].slice;
 
-height = 
-timeSeries
-  .renderArea(true)
-  .width(width)
-  .height(height)
-  .margins(margin)
-  .dimension(timeDimension)
-  .group(timeGroup)
-  .x(d3.time.scale().domain([minDate,maxDate]))
-  ;
+  timeSeries
+    .renderArea(true)
+    .width(width)
+    .height(height)
+    .margins(margin)
+    .dimension(timeDimension)
+    .group(timeGroup)
+    .x(d3.time.scale().domain([minDate,maxDate]))
+    ;
 
-dc.renderAll();
+  dc.renderAll();
 
   console.log('finished refining query');
 }
 
-function displayHashtag(tag_count){
+function drawHashtag(tag_count){
   $.each(tag_count, function (i,d){
     $('#hashcount tr:last').after('<tr><td>'+d.tag+'</td><td>'+d.count+'</td></tr>');
   });
 }
 
-function displayTweets(message){
+function drawTweets(message){
   // console.log(message)
   $.each(message, function (i,d){
     $('#tweets tr:last').after('<tr><td>'+d.uname+'</td><td>'+d.tweet+'</td></tr>');
   });
-}
-
-/**
-  * Draw dashboard
-  * @param  {object}  data, data generated from query
-  */
-function drawDashBoard(data) {
-
-}
-
-/**
-  * Update dashboard
-  * @param  {object}  data, data generated from query
-  */
-function updateDashBoard(data) {
-
 }
 
 /**
@@ -839,11 +650,6 @@ function reportUserMessage(message, isPositiveMessage, target) {
     .appendTo('#' + target);
 }
 
-/**
-  * Clean up the map and dashboard
-  */
-function clean(){
-  }
 
 
 
