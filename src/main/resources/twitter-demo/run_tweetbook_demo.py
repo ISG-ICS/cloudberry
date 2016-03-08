@@ -30,8 +30,7 @@ else:
 # Core Routing
 @route('/')
 def jsontest():
-    # return template('tweetbook')
-    return template('newTweetBook')
+    return template('tweetbook')
 
 @route('/static/<filename:path>')
 def send_static(filename):
