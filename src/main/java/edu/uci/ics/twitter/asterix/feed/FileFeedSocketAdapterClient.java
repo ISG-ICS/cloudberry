@@ -22,6 +22,7 @@ package edu.uci.ics.twitter.asterix.feed;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 
@@ -31,16 +32,16 @@ public class FileFeedSocketAdapterClient {
     private String adapterUrl;
     private int port;
     private Socket socket;
-    private String sourceFilePath;
+    private InputStreamReader inputReader;
     private int batchSize;
     private int maxCount;
     private OutputStream out = null;
 
-    public FileFeedSocketAdapterClient(String adapterUrl, int port, String sourceFilePath, int batchSize,
+    public FileFeedSocketAdapterClient(String adapterUrl, int port, InputStreamReader reader, int batchSize,
             int waitMillSecPerRecord, int maxCount) {
         this.adapterUrl = adapterUrl;
         this.port = port;
-        this.sourceFilePath = sourceFilePath;
+        this.inputReader = reader;
         this.maxCount = maxCount;
         this.waitMillSecond = waitMillSecPerRecord;
         this.batchSize = batchSize;
@@ -69,7 +70,7 @@ public class FileFeedSocketAdapterClient {
         BufferedReader br = null;
         try {
             out = socket.getOutputStream();
-            br = new BufferedReader(new FileReader(sourceFilePath));
+            br = new BufferedReader(inputReader);
             String nextRecord;
             byte[] b;
             byte[] newLineBytes = "\n".getBytes();
