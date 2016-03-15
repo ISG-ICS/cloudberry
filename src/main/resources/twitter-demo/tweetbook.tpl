@@ -37,7 +37,7 @@
             top: 0;
             bottom: 0;
             left: 80%;
-            width: 25%;
+            width: 20%;
             height: 700px;
             overflow: auto;
         }
