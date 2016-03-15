@@ -29,14 +29,6 @@ $(function () {
     };
   }
 
-  function getCurrentDate() {
-    var date = new Date();
-    var month = date.getMonth() + 1
-    var day = date.getDay();
-    return date.getFullYear() + "-" + (month < 10 ? '0' + month : month) + "-" +
-      (day < 10 ? '0' + day : day);
-  }
-
   TempDSName = "temp_" + Math.random().toString(36).substr(2, 9);
 
   // Initialize connection to AsterixDB. Just one connection is needed and contains
@@ -165,6 +157,32 @@ $(function () {
     }
   });
 });
+
+function getCurrentDate() {
+  var date = new Date();
+  return toAQLDate(date);
+}
+
+function padding(integer) {
+  return integer < 10 ? "0" + integer : integer;
+}
+
+function toAQLDate(date) {
+  var month = date.getMonth() + 1
+  var day = date.getDate();
+  return date.getFullYear() + "-" + padding(month) + "-" + padding(day);
+}
+
+function toAQLTime(time) {
+  var hours = time.getHours();
+  var minus = time.getMinutes();
+  var seconds = time.getSeconds();
+  return padding(hours) + ":" + padding(minus) + ":" + padding(seconds);
+}
+
+function toAQLDateTime(dateTime) {
+  return toAQLDate(dateTime) + "T" + toAQLTime(dateTime) + "Z";
+}
 
 function setInfoControl(map) {
   // Interaction function
@@ -684,8 +702,9 @@ function drawTimeSerialBrush(slice_count) {
   timeBrush = timeSeries.brush();
   timeBrush.on('brushend', function (e) {
     var extent = timeBrush.extent();
-    brush_start = $.datepicker.formatDate("yy-mm-dd", extent[0]) + "T00:00:00Z";
-    brush_end = $.datepicker.formatDate("yy-mm-dd", extent[1]) + "T00:00:00Z";
+
+    brush_start = toAQLDateTime(extent[0]);
+    brush_end = toAQLDateTime(extent[1]);
     queryWrapper('time');
   });
 
