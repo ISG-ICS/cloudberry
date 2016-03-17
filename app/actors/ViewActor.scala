@@ -1,7 +1,9 @@
 package actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.util.Timeout
 import models.QueryResult
+import play.api.libs.concurrent.Execution.Implicits._
 import play.libs.Akka
 
 /**
@@ -11,17 +13,17 @@ import play.libs.Akka
 class ViewActor(val keyword: String) extends Actor with ActorLogging {
   def answerAsMuchAsICan(q: Any): QueryResult = ???
 
-  def splitQuery(q: Any) = ???
+  def splitQuery(q: Any): Option[Any] = ???
 
   def updateView(dbQuery: Any) = {
-    //sync the data from db to view.
+    //send the m
   }
 
   def answerFromDB(dbQuery: Any, cachedAnswer: QueryResult, sender: ActorRef): Unit = {
     import akka.pattern.ask
 
     import scala.concurrent.duration._
-    implicit val timeout = 5.seconds
+    implicit val timeout = Timeout(5.seconds)
 
     (ViewsActor.viewsActor ? dbQuery).mapTo[QueryResult] onSuccess {
       case viewAnswer => {

@@ -17,6 +17,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-testkit" % "2.3.11" % Test,
   "org.webjars" % "bootstrap" % "2.3.2",
   "org.webjars" % "flot" % "0.8.0",
+  "org.webjars" % "angularjs" % "1.5.0",
   "com.esri.geometry" % "esri-geometry-api" % "1.2.1",
   "com.github.nscala-time" %% "nscala-time" % "2.10.0"
 )

@@ -2,25 +2,29 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import actors.{Knowledge, CachesActor, RESTFulQuery, UserActor}
+import actors.{CachesActor, Knowledge, RESTFulQuery, UserActor}
 import akka.actor.ActorSystem
+import akka.util.Timeout
+import play.api.Play.current
+import play.api.Play.materializer
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 
 @Singleton
-class PlayApp @Inject()(wsClient: WSClient, system: ActorSystem) extends Controller {
+class Application @Inject()(wsClient: WSClient, system: ActorSystem) extends Controller {
 
   Knowledge.loadFromDB
 
-  import scala.concurrent.duration._
   import akka.pattern.ask
 
-  implicit val timeout = 5.seconds
+  import scala.concurrent.duration._
+
+  implicit val timeout = Timeout(5.seconds)
 
   def index = Action {
-    Ok("Hello world")
+    Ok(views.html.index("Cloudberry"))
   }
 
   def hello(name: String) = Action(parse.json) { request =>

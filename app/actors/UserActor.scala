@@ -1,40 +1,34 @@
 package actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.ask
+import akka.util.Timeout
 import com.esri.core.geometry.Polygon
-import models.QueryResult
 import org.joda.time.Interval
-import play.Play
 import play.api.libs.json.{JsValue, Json}
 
-import scala.collection.JavaConversions._
 import scala.concurrent.duration._
-import scala.util.{Failure, Success}
 
 /**
   * Each user is an actor.
   */
 class UserActor(out: ActorRef) extends Actor with ActorLogging {
-  val list: Seq[String] = Play.application().configuration().getStringList("default.stocks")
-  list.foreach(StocksActor.stocksActor ! WatchStock(_))
 
-  implicit val query = Json.reads[RESTFulQuery]
+  implicit val timeout = Timeout(5.seconds)
 
-  implicit val timeout = 5.seconds
 
   def parseQuery(rESTFulQuery: RESTFulQuery) = {
     val entities = Knowledge.geoTag(new Polygon(), rESTFulQuery.level)
     ParsedQuery(rESTFulQuery.keyword, new Interval(rESTFulQuery.timeStart, rESTFulQuery.timeEnd), entities)
   }
 
-  def receive(): Unit = {
+  def receive() = {
     case json: JsValue =>
-      val parsedQuery = parseQuery(json.as[RESTFulQuery])
-      (CachesActor.cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
-        case Success(result) => sender ! result
-        case Failure(t) => sender ! t
-      }
+      out ! Json.toJson(Seq(Map("text" -> "fake one"), Map("text" -> "fake two")))
+    //val parsedQuery = parseQuery(json.as[RESTFulQuery](RESTFulQuery.restfulQueryFormat))
+    //(CachesActor.cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
+    //  case Success(result) => sender ! result
+    //  case Failure(t) => sender ! t
+    //}
     case other =>
       log.info("received:" + other)
   }
@@ -53,5 +47,10 @@ case class RESTFulQuery(keyword: String,
                         rightTopLat: Double,
                         level: Int
                        )
+
+object RESTFulQuery {
+  implicit val restfulQueryWriter = Json.writes[RESTFulQuery]
+  implicit val restfulQueryFormat = Json.format[RESTFulQuery]
+}
 
 case class ParsedQuery(keyword: String, timeRange: Interval, entities: Seq[String])
