@@ -25,11 +25,15 @@ case class Query(keywordPredicate: KeywordPredicate,
 
 
 case class QueryResult(level: Int, aggResult: Map[String, Number]) {
-  def +(r2: QueryResult): QueryResult = ???
+  def +(r2: QueryResult): QueryResult = {
+    QueryResult(level, aggResult ++ r2.aggResult)
+  }
 }
 
 object QueryResult {
-  val Sample = QueryResult(1, Map("CA" -> 1340, "NV" -> 560, "AZ" -> 2))
+  val SampleCache = QueryResult(1, Map("CA" -> 1340, "NV" -> 560))
+  val SampleView = QueryResult(1, Map("AZ" -> 2))
+  val Failure = QueryResult(-1, Map("Null" -> 0))
 
   implicit val mapFormatter: Format[Map[String, Number]] = {
     new Format[Map[String, Number]] {

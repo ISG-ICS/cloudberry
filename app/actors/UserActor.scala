@@ -5,12 +5,17 @@ import akka.util.Timeout
 import com.esri.core.geometry.Polygon
 import models.QueryResult
 import org.joda.time.{DateTime, Interval}
+import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
+
+import scala.util.{Failure, Success}
 
 /**
   * Each user is an actor.
   */
 class UserActor(out: ActorRef) extends Actor with ActorLogging {
+
+  import akka.pattern.ask
 
   import scala.concurrent.duration._
 
@@ -25,12 +30,12 @@ class UserActor(out: ActorRef) extends Actor with ActorLogging {
 
   def receive() = {
     case json: JsValue =>
-      out ! Json.toJson(QueryResult.Sample)
-    //      val parsedQuery = parseQuery(json)
-    //      (CachesActor.cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
-    //        case Success(result) => out ! result
-    //        case Failure(t) => out ! t
-    //      }
+      //      out ! Json.toJson(QueryResult.Sample)
+      val parsedQuery = parseQuery(json)
+      (CachesActor.cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
+        case Success(result) => out ! Json.toJson(result)
+        case Failure(t) => out ! Json.toJson(QueryResult.Failure)
+      }
     case other =>
       log.info("received:" + other)
   }
@@ -67,3 +72,8 @@ object RESTFulQuery {
 
 
 case class ParsedQuery(keyword: String, timeRange: Interval, entities: Seq[String])
+
+object ParsedQuery {
+  val Sample = ParsedQuery("rain", new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis(), DateTime.now().getMillis)
+    , Seq("CA", "AZ", "NV"))
+}
