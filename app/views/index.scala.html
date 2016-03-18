@@ -32,7 +32,10 @@
         <div class="container">
             <div ng-controller="TweetsCtrl">
                 <ul>
-                    <li ng-repeat="tweet in tweets">{{tweet.text}}</li>
+                    <li> level is : {{result.level}} </li>
+                </ul>
+                <ul>
+                    <li ng-repeat="(k,v) in result.aggResult">{{k}}: {{v}}</li>
                 </ul>
             </div>
 

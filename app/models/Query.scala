@@ -2,6 +2,7 @@ package models
 
 import com.esri.core.geometry.Polygon
 import org.joda.time.Interval
+import play.api.libs.json._
 
 trait Predicate {}
 
@@ -23,7 +24,31 @@ case class Query(keywordPredicate: KeywordPredicate,
                  aggregateQuery: AggregateQuery)
 
 
-case class QueryResult(groupLevel: Int, map: Map[String, Number]) {
+case class QueryResult(level: Int, aggResult: Map[String, Number]) {
   def +(r2: QueryResult): QueryResult = ???
 }
+
+object QueryResult {
+  val Sample = QueryResult(1, Map("CA" -> 1340, "NV" -> 560, "AZ" -> 2))
+
+  implicit val mapFormatter: Format[Map[String, Number]] = {
+    new Format[Map[String, Number]] {
+      override def writes(m: Map[String, Number]): JsValue = {
+        val fields: Seq[(String, JsValue)] = m.map {
+          case (k, v) => k -> JsNumber(v.doubleValue())
+        }(collection.breakOut)
+        JsObject(fields)
+      }
+
+      override def reads(json: JsValue): JsResult[Map[String, Number]] = {
+        json.validate[Map[String, Number]].map(_.map {
+          case (key, value) => key -> value
+        })
+      }
+
+    }
+  }
+  implicit val writer = Json.format[QueryResult]
+}
+
 

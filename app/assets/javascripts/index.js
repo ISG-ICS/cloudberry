@@ -3,7 +3,7 @@ var app = angular.module('cloudberry', []);
 app.factory('Asterix', function ($http, $timeout) {
     var ws = new WebSocket("ws://localhost:9000/ws");
     var asterixService = {
-        tweets: [],
+        result: {},
         query: function (query) {
             ws.send(JSON.stringify({query: query}));
         }
@@ -11,7 +11,7 @@ app.factory('Asterix', function ($http, $timeout) {
 
     ws.onmessage = function (event) {
         $timeout(function () {
-            asterixService.tweets = JSON.parse(event.data);
+            asterixService.result = JSON.parse(event.data);
         });
     };
 
@@ -25,15 +25,15 @@ app.controller('SearchCtrl', function ($scope, $http, $timeout, Asterix) {
 });
 
 app.controller('TweetsCtrl', function ($scope, $http, $timeout, Asterix) {
-    $scope.tweets = [];
+    $scope.result = {};
 
     $scope.$watch(
         function () {
-            return Asterix.tweets;
+            return Asterix.result;
         },
 
-        function (tweets) {
-            $scope.tweets = tweets;
+        function (result) {
+            $scope.result = result;
         }
     );
 });

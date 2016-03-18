@@ -11,6 +11,7 @@ import play.libs.Akka
   * There is one cache per keyword
   */
 class CacheActor(val keyword: String) extends Actor with ActorLogging {
+
   @volatile
   var timeRange: Interval = Interval.parse("")
 
