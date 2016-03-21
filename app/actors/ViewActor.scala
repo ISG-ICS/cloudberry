@@ -1,10 +1,13 @@
 package actors
 
+import javax.inject.Singleton
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
-import models.QueryResult
+import models.{AQL, QueryResult}
+import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
-import play.libs.Akka
+import play.api.libs.ws.WSClient
 
 import scala.concurrent.Future
 
@@ -12,45 +15,63 @@ import scala.concurrent.Future
   * View service is provided globally (across different node).
   * The original table is an special view
   */
-class ViewActor(val keyword: String) extends Actor with ActorLogging {
+class ViewActor(val keyword: String)(implicit val ws: WSClient,
+                                     implicit val config: Configuration) extends Actor with ActorLogging {
 
-  def splitQuery(q: Any): (Any, Any) = (ParsedQuery.Sample, ParsedQuery.Sample)
+  import ViewActor._
 
-  def updateView(dbQuery: Any) = {
+  def prepareAQLForViewAndDB(q: ParsedQuery): (AQL, Option[AQL]) = {
+    (AQL.translateQueryToAQL(q), None)
+  }
+
+  def upsertView(dbQuery: AQL) = {
     //send the m
   }
 
-  def dbQuery(aql: Any): Future[QueryResult] = Future {
-    QueryResult.SampleView
+  def dbQuery(aql: AQL): Future[QueryResult] = {
+    ws.url(config.getString(AsterixURL).get).post(aql.statement).map { response =>
+      log.info(response.body)
+      QueryResult.SampleView
+    }
   }
 
-  def mergeAnswerFromDB(viewAQL: Any, dbAQL: Any, sender: ActorRef): Unit = {
+  def mergeAnswerFromDB(viewAQL: AQL, dbAQL: Option[AQL], sender: ActorRef): Unit = {
 
     import scala.concurrent.duration._
     implicit val timeout = Timeout(5.seconds)
 
     val aggResults = for {
       viewResult <- dbQuery(viewAQL)
-      dbResult <- dbQuery(dbAQL)
+      dbResult <- dbAQL match {
+        case Some(query) => dbQuery(query)
+        case None => Future {
+          QueryResult.Empty
+        }
+      }
     } yield (viewResult, dbResult)
 
     aggResults.onSuccess {
       case (viewResult, dbResult) => {
         val merged = viewResult + dbResult
         sender ! merged
-        updateView(dbAQL)
+        dbAQL.map(upsertView)
       }
     }
   }
 
   def receive = {
     case q: ParsedQuery =>
-      val (viewAql, dbAQL) = splitQuery(q)
+      val (viewAql, dbAQL) = prepareAQLForViewAndDB(q)
       mergeAnswerFromDB(viewAql, dbAQL, sender)
   }
 }
 
-class ViewsActor extends Actor with ActorLogging {
+object ViewActor {
+  val AsterixURL = "asterixdb.url"
+}
+
+@Singleton
+class ViewsActor(implicit val ws: WSClient, implicit val config: Configuration) extends Actor with ActorLogging {
 
   import scala.concurrent.duration._
 
@@ -63,10 +84,6 @@ class ViewsActor extends Actor with ActorLogging {
       } forward q
   }
 
-}
-
-object ViewsActor {
-  lazy val viewsActor: ActorRef = Akka.system.actorOf(Props(classOf[ViewsActor]), "views")
 }
 
 // This should be an remote service which will accept the update query for every different servers

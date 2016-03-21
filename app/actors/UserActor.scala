@@ -13,7 +13,7 @@ import scala.util.{Failure, Success}
 /**
   * Each user is an actor.
   */
-class UserActor(out: ActorRef) extends Actor with ActorLogging {
+class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor with ActorLogging {
 
   import akka.pattern.ask
 
@@ -32,7 +32,7 @@ class UserActor(out: ActorRef) extends Actor with ActorLogging {
     case json: JsValue =>
       //      out ! Json.toJson(QueryResult.Sample)
       val parsedQuery = parseQuery(json)
-      (CachesActor.cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
+      (cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
         case Success(result) => out ! Json.toJson(result)
         case Failure(t) => out ! Json.toJson(QueryResult.Failure)
       }
@@ -42,7 +42,7 @@ class UserActor(out: ActorRef) extends Actor with ActorLogging {
 }
 
 object UserActor {
-  def props(out: ActorRef) = Props(new UserActor(out))
+  def props(out: ActorRef)(implicit cachesActor: ActorRef) = Props(new UserActor(out))
 }
 
 case class RESTFulQuery(keyword: String,
@@ -71,6 +71,7 @@ object RESTFulQuery {
 }
 
 
+// only one keyword consideraing so far
 case class ParsedQuery(keyword: String, timeRange: Interval, entities: Seq[String])
 
 object ParsedQuery {

@@ -28,9 +28,17 @@ case class QueryResult(level: Int, aggResult: Map[String, Number]) {
   def +(r2: QueryResult): QueryResult = {
     QueryResult(level, aggResult ++ r2.aggResult)
   }
+
+  def +(r2 : Option[QueryResult]): QueryResult = {
+    r2 match {
+      case Some(r) => this + r
+      case None => this
+    }
+  }
 }
 
 object QueryResult {
+  val Empty = QueryResult(1, Map())
   val SampleCache = QueryResult(1, Map("CA" -> 1340, "NV" -> 560))
   val SampleView = QueryResult(1, Map("AZ" -> 2))
   val Failure = QueryResult(-1, Map("Null" -> 0))

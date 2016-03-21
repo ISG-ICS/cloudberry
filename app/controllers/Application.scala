@@ -2,20 +2,24 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import actors.{CachesActor, Knowledge, RESTFulQuery, UserActor}
-import akka.actor.ActorSystem
+import actors._
+import akka.actor.{ActorSystem, Props}
 import akka.util.Timeout
-import play.api.Play.current
-import play.api.Play.materializer
+import play.api.Configuration
+import play.api.Play.{current, materializer}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 
 @Singleton
-class Application @Inject()(wsClient: WSClient, system: ActorSystem) extends Controller {
+class Application @Inject()(system: ActorSystem,
+                            implicit val wsClient: WSClient,
+                            implicit val config: Configuration) extends Controller {
 
   Knowledge.loadFromDB
+  lazy val viewsActor = system.actorOf(Props(classOf[ViewsActor], wsClient, config), "views")
+  lazy val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor), "caches")
 
   import akka.pattern.ask
 
@@ -33,11 +37,11 @@ class Application @Inject()(wsClient: WSClient, system: ActorSystem) extends Con
   }
 
   def ws = WebSocket.acceptWithActor[JsValue, JsValue] { request => out =>
-    UserActor.props(out)
+    UserActor.props(out)(cachesActor)
   }
 
   def search(query: JsValue) = Action.async {
-    (CachesActor.cachesActor ? query.as[RESTFulQuery]).mapTo[JsValue].map { answer =>
+    (cachesActor ? query.as[RESTFulQuery]).mapTo[JsValue].map { answer =>
       Ok(answer)
     }
   }

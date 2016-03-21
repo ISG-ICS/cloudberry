@@ -1,18 +1,18 @@
 package actors
 
+import javax.inject.Singleton
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import models.QueryResult
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
-import play.libs.Akka
 
 /**
   * There is one cache per keyword
   */
-class CacheActor(val keyword: String) extends Actor with ActorLogging {
+class CacheActor(val keyword: String)(implicit val viewsActor: ActorRef) extends Actor with ActorLogging {
 
-  @volatile
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
   def answerAsMuchAsICan(q: ParsedQuery): QueryResult = {
@@ -21,17 +21,17 @@ class CacheActor(val keyword: String) extends Actor with ActorLogging {
 
   def splitQuery(q: ParsedQuery): Option[ParsedQuery] = Some(q)
 
-  def mergeAnswerFromView(viewQuery: ParsedQuery, cachedAnswer: QueryResult, sender: ActorRef) = {
+  def mergeAnswerFromView(parsed: ParsedQuery, cachedAnswer: QueryResult, sender: ActorRef) = {
 
     import akka.pattern.ask
 
     import scala.concurrent.duration._
     implicit val timeout = Timeout(5.seconds)
 
-    (ViewsActor.viewsActor ? viewQuery).mapTo[QueryResult] onSuccess {
+    (viewsActor ? parsed).mapTo[QueryResult] onSuccess {
       case viewAnswer => {
         sender ! (cachedAnswer + viewAnswer)
-        updateCache(viewQuery, viewAnswer)
+        updateCache(parsed, viewAnswer)
       }
     }
   }
@@ -52,8 +52,8 @@ class CacheActor(val keyword: String) extends Actor with ActorLogging {
   }
 }
 
-class CachesActor extends Actor with ActorLogging {
-
+@Singleton
+class CachesActor(implicit val viewsActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     case q: ParsedQuery => {
       context.child(q.keyword).getOrElse {
@@ -63,6 +63,3 @@ class CachesActor extends Actor with ActorLogging {
   }
 }
 
-object CachesActor {
-  lazy val cachesActor: ActorRef = Akka.system.actorOf(Props(classOf[CachesActor]), "caches")
-}
