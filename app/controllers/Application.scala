@@ -21,11 +21,6 @@ class Application @Inject()(system: ActorSystem,
   lazy val viewsActor = system.actorOf(Props(classOf[ViewsActor], wsClient, config), "views")
   lazy val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor), "caches")
 
-  import akka.pattern.ask
-
-  import scala.concurrent.duration._
-
-  implicit val timeout = Timeout(5.seconds)
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
@@ -41,6 +36,11 @@ class Application @Inject()(system: ActorSystem,
   }
 
   def search(query: JsValue) = Action.async {
+    import akka.pattern.ask
+
+    import scala.concurrent.duration._
+    implicit val timeout = Timeout(5.seconds)
+
     (cachesActor ? query.as[RESTFulQuery]).mapTo[JsValue].map { answer =>
       Ok(answer)
     }

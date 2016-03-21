@@ -58,26 +58,27 @@ object AQL {
          |let $$count := count($$t)
          |order by $$count desc
          |return { $$c : $$count };
-         |
-         |for $$t in dataset temp_v5os5udpr
-         |group by $$c := print-datetime($$t.create_at, "YYYY-MM-DD hh") with $$t
-         |let $$count := count($$t)
-         |order by $$c
-         |return {$$c : $$count };
-         |
-         |for $$t in dataset temp_v5os5udpr
-         |where not(is-null($$t.hashtags))
-         |for $$h in $$t.hashtags
-         |group by $$tag := $$h with $$h
-         |let $$c := count($$h)
-         |order by $$c desc
-         |limit 50
-         |return { $$tag : $$c};
-         |
-         |for $$t in dataset temp_v5os5udpr
-         |limit 100
-         |return {$$t.user.screen_name : $$t.text_msg};
-         |
+
       """.stripMargin)
+//    |
+//         |for $$t in dataset temp_v5os5udpr
+//         |group by $$c := print-datetime($$t.create_at, "YYYY-MM-DD hh") with $$t
+//         |let $$count := count($$t)
+//         |order by $$c
+//         |return {$$c : $$count };
+//         |
+//         |for $$t in dataset temp_v5os5udpr
+//         |where not(is-null($$t.hashtags))
+//         |for $$h in $$t.hashtags
+//         |group by $$tag := $$h with $$h
+//         |let $$c := count($$h)
+//         |order by $$c desc
+//         |limit 50
+//         |return { $$tag : $$c};
+//         |
+//         |for $$t in dataset temp_v5os5udpr
+//         |limit 100
+//         |return {$$t.user.screen_name : $$t.text_msg};
+//         |
   }
 }

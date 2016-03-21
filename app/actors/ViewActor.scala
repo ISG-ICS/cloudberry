@@ -7,6 +7,7 @@ import akka.util.Timeout
 import models.{AQL, QueryResult}
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.{JsArray, JsObject, JsPath}
 import play.api.libs.ws.WSClient
 
 import scala.concurrent.Future
@@ -30,8 +31,9 @@ class ViewActor(val keyword: String)(implicit val ws: WSClient,
 
   def dbQuery(aql: AQL): Future[QueryResult] = {
     ws.url(config.getString(AsterixURL).get).post(aql.statement).map { response =>
-      log.info(response.body)
-      QueryResult.SampleView
+      log.info(response.json.toString())
+      import QueryResult._
+      QueryResult(1, (response.json).as[Map[String,Integer]])
     }
   }
 
