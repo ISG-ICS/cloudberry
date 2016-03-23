@@ -16,17 +16,9 @@ import scala.util.{Failure, Success}
 class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor with ActorLogging {
 
   import akka.pattern.ask
-
   import scala.concurrent.duration._
 
   implicit val timeout = Timeout(5.seconds)
-
-  def parseQuery(json: JsValue) = {
-    //    val rESTFulQuery = json.as[RESTFulQuery]
-    val rESTFulQuery = RESTFulQuery.Sample
-    val entities = Knowledge.geoTag(new Polygon(), rESTFulQuery.level)
-    ParsedQuery(rESTFulQuery.keyword, new Interval(rESTFulQuery.timeStart, rESTFulQuery.timeEnd), entities)
-  }
 
   def receive() = {
     case json: JsValue =>
@@ -39,6 +31,14 @@ class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor
     case other =>
       log.info("received:" + other)
   }
+
+  def parseQuery(json: JsValue) = {
+    //    val rESTFulQuery = json.as[RESTFulQuery]
+    val rESTFulQuery = RESTFulQuery.Sample
+    val entities = Knowledge.geoTag(new Polygon(), rESTFulQuery.level)
+    ParsedQuery(rESTFulQuery.keyword, new Interval(rESTFulQuery.timeStart, rESTFulQuery.timeEnd), entities)
+  }
+
 }
 
 object UserActor {
@@ -70,11 +70,3 @@ object RESTFulQuery {
   implicit val restfulQueryFormat = Json.format[RESTFulQuery]
 }
 
-
-// only one keyword consideraing so far
-case class ParsedQuery(keyword: String, timeRange: Interval, entities: Seq[String])
-
-object ParsedQuery {
-  val Sample = ParsedQuery("rain", new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis(), DateTime.now().getMillis)
-    , Seq("CA", "AZ", "NV"))
-}

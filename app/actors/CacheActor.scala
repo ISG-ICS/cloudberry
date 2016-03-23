@@ -4,19 +4,32 @@ import javax.inject.Singleton
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
-import models.QueryResult
+import models.{DataSet, QueryResult}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
 
 /**
   * There is one cache per keyword
   */
-class CacheActor(val keyword: String)(implicit val viewsActor: ActorRef) extends Actor with ActorLogging {
+class CacheActor(val dataSet: DataSet, val keyword: String)(implicit val viewsActor: ActorRef) extends Actor with ActorLogging {
 
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
+  def receive = {
+    case q: ParsedQuery =>
+      val cachedAnswer: QueryResult = answerAsMuchAsICan(q)
+      splitQuery(q) match {
+        case Some(viewQuery) =>
+          mergeAnswerFromView(viewQuery, cachedAnswer, sender)
+        case None =>
+          sender ! cachedAnswer
+      }
+    case update: Interval =>
+      timeRange = update
+  }
+
   def answerAsMuchAsICan(q: ParsedQuery): QueryResult = {
-    QueryResult.SampleCache
+    QueryResult.Empty
   }
 
   def splitQuery(q: ParsedQuery): Option[ParsedQuery] = Some(q)
@@ -37,27 +50,28 @@ class CacheActor(val keyword: String)(implicit val viewsActor: ActorRef) extends
   }
 
   def updateCache(q: ParsedQuery, viewAnswer: QueryResult) = {
-    timeRange = q.timeRange
+    self ! q.timeRange
   }
+}
 
-  def receive = {
-    case q: ParsedQuery =>
-      val cachedAnswer: QueryResult = answerAsMuchAsICan(q)
-      splitQuery(q) match {
-        case Some(viewQuery) =>
-          mergeAnswerFromView(viewQuery, cachedAnswer, sender)
-        case None =>
-          sender ! cachedAnswer
-      }
-  }
+// only one keyword consideraing so far
+case class ParsedQuery(dataSet: DataSet, keyword: String, timeRange: Interval, entities: Seq[String]) {
+  val key = dataSet.name + keyword
+}
+
+object ParsedQuery {
+  val Sample = ParsedQuery(DataSet.Twitter,
+    "rain",
+    new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis(), DateTime.now().getMillis),
+    Seq("CA", "AZ", "NV"))
 }
 
 @Singleton
 class CachesActor(implicit val viewsActor: ActorRef) extends Actor with ActorLogging {
   def receive = {
     case q: ParsedQuery => {
-      context.child(q.keyword).getOrElse {
-        context.actorOf(Props(new CacheActor(q.keyword)), q.keyword)
+      context.child(q.key).getOrElse {
+        context.actorOf(Props(new CacheActor(q.dataSet, q.keyword)), q.key)
       } forward q
     }
   }

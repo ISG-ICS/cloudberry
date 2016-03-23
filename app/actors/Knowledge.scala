@@ -13,5 +13,8 @@ object Knowledge {
     return Seq("CA-LA", "CA-Orange County")
   }
 
+  // dataset information
+  // dataverse
+  // field to indexed on . etc.
 }
 

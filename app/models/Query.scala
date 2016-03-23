@@ -1,7 +1,7 @@
 package models
 
 import com.esri.core.geometry.Polygon
-import org.joda.time.Interval
+import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
 
 trait Predicate {}
@@ -24,7 +24,7 @@ case class Query(keywordPredicate: KeywordPredicate,
                  aggregateQuery: AggregateQuery)
 
 
-case class QueryResult(level: Int, aggResult: Map[String, Integer]) {
+case class QueryResult(level: Int, aggResult: Map[String, Int]) {
   def +(r2: QueryResult): QueryResult = {
     QueryResult(level, aggResult ++ r2.aggResult)
   }
@@ -43,20 +43,20 @@ object QueryResult {
   val SampleView = QueryResult(1, Map("AZ" -> 2))
   val Failure = QueryResult(-1, Map("Null" -> 0))
 
-  implicit val mapFormatter: Format[Map[String, Integer]] = {
-    new Format[Map[String, Integer]] {
-      override def writes(m: Map[String, Integer]): JsValue = {
+  implicit val mapFormatter: Format[Map[String, Int]] = {
+    new Format[Map[String, Int]] {
+      override def writes(m: Map[String, Int]): JsValue = {
         val fields: Seq[(String, JsValue)] = m.map {
           case (k, v) => k -> JsNumber(v.intValue())
         }(collection.breakOut)
         JsObject(fields)
       }
 
-      override def reads(json: JsValue): JsResult[Map[String, Integer]] = {
+      override def reads(json: JsValue): JsResult[Map[String, Int]] = {
         JsSuccess {
           json.asOpt[JsArray] match {
             case Some(array) => {
-              val builder = Map.newBuilder[String, Integer]
+              val builder = Map.newBuilder[String, Int]
               array.value.foreach { pair =>
                 pair.asOpt[JsObject] match {
                   case Some(obj) => {
@@ -73,7 +73,7 @@ object QueryResult {
               }
               builder.result()
             }
-            case None => Map.empty[String, Integer]
+            case None => Map.empty[String, Int]
           }
         }
       }
@@ -83,4 +83,8 @@ object QueryResult {
   implicit val writer = Json.format[QueryResult]
 }
 
+case class ViewMetaRecord(dataSetName: String, keyword:String, timeStart: DateTime, timeEnd: DateTime)
 
+object ViewMetaRecord {
+
+}

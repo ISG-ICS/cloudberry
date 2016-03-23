@@ -19,7 +19,9 @@ libraryDependencies ++= Seq(
   "org.webjars" % "flot" % "0.8.0",
   "org.webjars" % "angularjs" % "1.5.0",
   "com.esri.geometry" % "esri-geometry-api" % "1.2.1",
-  "com.github.nscala-time" %% "nscala-time" % "2.10.0"
+  "com.github.nscala-time" %% "nscala-time" % "2.10.0",
+  "org.scalactic" %% "scalactic" % "2.2.6",
+  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
 )
 
 routesGenerator := InjectedRoutesGenerator

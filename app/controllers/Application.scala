@@ -26,11 +26,6 @@ class Application @Inject()(system: ActorSystem,
     Ok(views.html.index("Cloudberry"))
   }
 
-  def hello(name: String) = Action(parse.json) { request =>
-    val json = request.body.validate[String]
-    Ok("Hello " + name)
-  }
-
   def ws = WebSocket.acceptWithActor[JsValue, JsValue] { request => out =>
     UserActor.props(out)(cachesActor)
   }
