@@ -1,9 +1,12 @@
 package actors
 
 import com.esri.core.geometry.Polygon
+import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.concurrent.Future
 
 object Knowledge {
-  def loadFromDB = {}
+  def loadFromDB = Future {}
 
   def geoTag(polygon: Polygon, level: Int): Seq[String] = {
     return Seq("CA", "NV", "AZ")

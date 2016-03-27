@@ -3,7 +3,7 @@ package actors
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import com.esri.core.geometry.Polygon
-import models.QueryResult
+import models.{DataSet, QueryResult}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
@@ -16,6 +16,7 @@ import scala.util.{Failure, Success}
 class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor with ActorLogging {
 
   import akka.pattern.ask
+
   import scala.concurrent.duration._
 
   implicit val timeout = Timeout(5.seconds)
@@ -36,7 +37,7 @@ class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor
     //    val rESTFulQuery = json.as[RESTFulQuery]
     val rESTFulQuery = RESTFulQuery.Sample
     val entities = Knowledge.geoTag(new Polygon(), rESTFulQuery.level)
-    ParsedQuery(rESTFulQuery.keyword, new Interval(rESTFulQuery.timeStart, rESTFulQuery.timeEnd), entities)
+    ParsedQuery(DataSet.Twitter, rESTFulQuery.keyword, new Interval(rESTFulQuery.timeStart, rESTFulQuery.timeEnd), entities)
   }
 
 }

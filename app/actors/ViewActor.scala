@@ -3,11 +3,10 @@ package actors
 import javax.inject.Singleton
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
-import models.{AQL, DataSet, QueryResult}
+import models._
 import org.joda.time.{DateTime, Interval}
-import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.json.JsArray
 
 import scala.concurrent.Future
 
@@ -16,88 +15,125 @@ import scala.concurrent.Future
   * The original table is an special view
   * TODO think about the scalable case
   */
-class ViewActor(val dataSet: DataSet, val keyword: String, var timeRange: Interval = ViewActor.DefaultInterval)
-               (implicit val ws: WSClient, implicit val config: Configuration)
-  extends Actor with ActorLogging with Stash{
+class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTimeRange: Interval = ViewActor.DefaultInterval)
+               (implicit val conn: AQLConnection)
+  extends Actor with ActorLogging with Stash {
 
   import ViewActor._
 
-  val AsterixURL = config.getString(ConfigKeyAsterixURL).get
-
-  object DonePrepare
+  @volatile
+  var toBeUpdatedTimeRange: Interval = _
 
   override def preStart(): Unit = {
-    // check if table exist by asking the views meta table.
-    // create if not exist
-    // append if not covered
-    ws.url(AsterixURL).post(AQL.lookupView)
-    ws.url(AsterixURL).post(AQL.updateView(dataSet, dataSet.name + keyword, keyword, timeRange).statement) onSuccess {
-      case respond : WSResponse => self ! DonePrepare
+    def findView(name: String, keyword: String): Future[Option[ViewMetaRecord]] = {
+      conn.post(AQL.getView(dataSet.name, keyword)).map { respond =>
+        log.info("findView: " + respond.body)
+        val results = respond.json.as[JsArray]
+        if (results.value.length == 0) {
+          None
+        } else {
+          Some(results.value(0).as[ViewMetaRecord])
+        }
+      }
+    }
+
+    val result = findView(dataSet.name, keyword).flatMap {
+      case Some(viewMetaRecord) => {
+        getTimeRangeDifference(viewMetaRecord.interval, curTimeRange) match {
+          case Some(missingInterval) =>
+            appendView(viewMetaRecord.interval, missingInterval)
+          case None =>
+            Future {
+              curTimeRange = viewMetaRecord.interval
+            }
+        }
+      }
+      case None => {
+        createView(curTimeRange)
+      }
+    }
+
+    result onSuccess {
+      case span: Interval => {
+        curTimeRange = span
+        updateViewMeta(span)
+        self ! DoneInitializing
+      }
+    }
+
+    result onFailure {
+      case e: Throwable => {
+        log.error(e, "view actor initializing failed")
+        throw e
+      }
     }
   }
 
-  def preparing : Receive = {
-    case DonePrepare =>
+  def receive = initializing
+
+  def initializing: Receive = {
+    case DoneInitializing =>
       unstashAll()
-      context.become(prepared)
+      context.become(initialized)
     case msg => stash()
   }
 
-  def prepared : Receive = {
+  def initialized: Receive = {
     case q: ParsedQuery =>
-      val (optAppendAQL, aggrAQL, optUpdateMetaAQL, newInterval) = parseToAQL(q)
-
-      optAppendAQL match {
-        case Some(aql: AQL) =>
-          updateViewAndThenSearch(aql, aggrAQL, optUpdateMetaAQL.get, newInterval.get, sender())
+      val optMissingInterval = getTimeRangeDifference(curTimeRange, q.timeRange)
+      optMissingInterval match {
+        case Some(interval) =>
+          getTimeRangeDifference(toBeUpdatedTimeRange, interval).map { diffWithTobe: Interval =>
+            appendView(toBeUpdatedTimeRange, diffWithTobe).map {
+              case newInterval: Interval =>
+                updateViewMeta(newInterval)
+                self ! UpdatedCurrentRange(newInterval)
+            }
+          }
+          self forward q // Can not solve this query now.
         case None =>
-          askView(aggrAQL, sender())
+          askView(q, sender())
       }
-    case update: UpdateMsg =>
-      timeRange = update.newInterval
+    case update: UpdatedCurrentRange =>
+      curTimeRange = update.newInterval
   }
 
-  def receive = preparing
-
-  def updateViewAndThenSearch(appendAQL: AQL, aggrAQL: AQL, updateMetaAQL: AQL, newInterval: Interval, sender: ActorRef) = {
-    dbManipulate(appendAQL) andThen {
-      case wsRespond: WSResponse => {
-        log.info(wsRespond.body)
-        askView(aggrAQL, sender)
-        updateMeta(updateMetaAQL, newInterval)
-      }
-    }
-  }
-
-  def updateMeta(updateMetaAQL: AQL, newInterval: Interval): Unit = {
-    (dbManipulate(updateMetaAQL)) onSuccess {
-      case wsRespond: WSResponse => {
-        log.info(wsRespond.body)
-        self ! UpdateMsg(newInterval)
+  def appendView(actual: Interval, missing: Interval): Future[Interval] = {
+    val futureInterval = new Interval(Math.min(actual.getStartMillis, missing.getStartMillis),
+      Math.max(actual.getEndMillis, missing.getEndMillis))
+    toBeUpdatedTimeRange = futureInterval
+    conn.post(AQL.appendView(dataSet, keyword, missing)).map {
+      case respond => {
+        log.info("append view:" + respond.body)
+        futureInterval
       }
     }
   }
 
-  def askView(aggrAQL: AQL, sender: ActorRef): Unit = {
-    (dbQuery(aggrAQL)).onSuccess {
+  def createView(initialTimeSpan: Interval): Future[Interval] = {
+    conn.post(AQL.createView(dataSet, keyword, initialTimeSpan)) map {
+      case respond => {
+        log.info("create view:" + respond.body)
+        initialTimeSpan
+      }
+    }
+  }
+
+  def updateViewMeta(newInterval: Interval): Unit = {
+    conn.post(AQL.updateViewMeta(dataSet.name, keyword, newInterval).statement)
+  }
+
+  def askView(q: ParsedQuery, sender: ActorRef): Unit = {
+    (dbQuery(AQL.translateQueryToAQL(q))).onSuccess {
       case viewResult => {
         sender ! viewResult
       }
     }
   }
 
-  def parseToAQL(q: ParsedQuery): (Option[AQL], AQL, Option[AQL], Option[Interval]) = {
-    // may need update query, but should not need to create query.
-    (None, AQL.translateQueryToAQL(q), None, None)
-  }
-
-  def dbManipulate(aql: AQL): Future[WSResponse] = {
-    ws.url(AsterixURL).post(aql.statement)
-  }
-
   def dbQuery(aql: AQL): Future[QueryResult] = {
-    ws.url(AsterixURL).post(aql.statement).map { response =>
-      log.info(response.json.toString())
+    conn.post(aql.statement).map { response =>
+      log.info("dbQuery:" + response.json.toString())
       import QueryResult._
       QueryResult(1, (response.json).as[Map[String, Int]])
     }
@@ -105,41 +141,34 @@ class ViewActor(val dataSet: DataSet, val keyword: String, var timeRange: Interv
 }
 
 object ViewActor {
-  val ConfigKeyAsterixURL = "asterixdb.url"
-
   val DefaultInterval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
-  case class UpdateMsg(newInterval: Interval)
+  object DoneInitializing
+
+  case class UpdatedCurrentRange(newInterval: Interval)
+
+  def getTimeRangeDifference(actual: Interval, expected: Interval): Option[Interval] = {
+    if (actual.contains(expected)) {
+      None
+    } else {
+      // may need update query, but should not need to create query.
+      Some(
+        if (actual.getStartMillis < expected.getStartMillis) (new Interval(actual.getEnd, expected.getEnd))
+        else (new Interval(expected.getStart, actual.getStart))
+      )
+    }
+  }
 
 }
 
 @Singleton
-class ViewsActor(implicit val ws: WSClient, implicit val config: Configuration) extends Actor with ActorLogging with Stash {
+class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
 
   import scala.concurrent.duration._
 
   implicit val timeout = 5.seconds
 
-  val AsterixURL = config.getString(ViewActor.ConfigKeyAsterixURL).get
-
-  object Done
-
-  override def preStart(): Unit = {
-    ws.url(AsterixURL).post(AQL.createViewMetaTable.statement) onSuccess {
-      case wsRespond: WSResponse =>
-        log.info(wsRespond.body)
-        self ! Done
-    }
-  }
-
-  def initializing: Receive = {
-    case Done =>
-      unstashAll()
-      context.become(initialized)
-    case _ => stash()
-  }
-
-  def initialized: Receive = {
+  def receive = {
     case q: ParsedQuery =>
       context.child(q.key).getOrElse {
         context.actorOf(Props(new ViewActor(q.dataSet, q.keyword, superRange(q.timeRange, ViewActor.DefaultInterval))),
@@ -147,15 +176,13 @@ class ViewsActor(implicit val ws: WSClient, implicit val config: Configuration) 
       } forward q
   }
 
-  def receive = initializing
-
   def superRange(interval1: Interval, interval2: Interval): Interval = {
     new Interval(Math.min(interval1.getStartMillis, interval2.getStartMillis),
       Math.max(interval1.getEndMillis, interval2.getEndMillis))
   }
 }
 
-// This should be an remote service which will accept the update query for every different servers
+// This should be an remote service which will accept the update query for every different servers in the scale up case
 object ViewUpdater {
 
 }

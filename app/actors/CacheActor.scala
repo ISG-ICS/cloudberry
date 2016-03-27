@@ -13,6 +13,7 @@ import play.api.libs.concurrent.Execution.Implicits._
   */
 class CacheActor(val dataSet: DataSet, val keyword: String)(implicit val viewsActor: ActorRef) extends Actor with ActorLogging {
 
+  @volatile
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
   def receive = {
@@ -56,7 +57,7 @@ class CacheActor(val dataSet: DataSet, val keyword: String)(implicit val viewsAc
 
 // only one keyword consideraing so far
 case class ParsedQuery(dataSet: DataSet, keyword: String, timeRange: Interval, entities: Seq[String]) {
-  val key = dataSet.name + keyword
+  val key = dataSet.name + '_' + keyword
 }
 
 object ParsedQuery {

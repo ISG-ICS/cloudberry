@@ -80,11 +80,16 @@ object QueryResult {
 
     }
   }
-  implicit val writer = Json.format[QueryResult]
+  implicit val formatter = Json.format[QueryResult]
 }
 
-case class ViewMetaRecord(dataSetName: String, keyword:String, timeStart: DateTime, timeEnd: DateTime)
+case class ViewMetaRecord(dataset: String, keyword:String, timeStart: DateTime, timeEnd: DateTime) {
+  val interval = new Interval(timeStart, timeEnd)
+}
 
 object ViewMetaRecord {
-
+  val timeFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+  implicit val jodaTimeReaders = Reads.jodaDateReads(timeFormat)
+  implicit val jodaTimeWriters = Writes.jodaDateWrites(timeFormat)
+  implicit val formatter = Json.format[ViewMetaRecord]
 }
