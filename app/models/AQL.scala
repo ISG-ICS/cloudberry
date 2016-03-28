@@ -79,10 +79,12 @@ object AQL {
 
   def translateQueryToAQL(query: ParsedQuery): AQL = {
     val viewName = query.key
+    val entityPredicate = query.entities.foldLeft("")( (pre, e) => pre + s"""or $$t.state = "$e" """)
     new AQL(
       s"""
          |use dataverse $Dataverse
          |for $$t in dataset $viewName
+         |where ${entityPredicate.substring(3)}
          |group by $$c := $$t.state with $$t
          |let $$count := count($$t)
          |order by $$count desc
