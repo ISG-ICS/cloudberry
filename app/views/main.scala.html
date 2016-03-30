@@ -1,0 +1,25 @@
+@(title: String)(body: Html)
+
+<!DOCTYPE html>
+<html ng-app="cloudberry">
+
+<head>
+  <title>@title</title>
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel='shortcut icon' type='image/png' href='@routes.Assets.versioned("images/hyrax.png")'>
+
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
+
+  <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/leaflet/leaflet.js")'></script>
+
+  <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
+
+  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/index.js")'></script>
+
+</head>
+
+<body>
+@body
+</body>
+</html>

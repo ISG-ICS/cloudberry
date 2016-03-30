@@ -1,0 +1,60 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+#map {
+  position: absolute;
+  top: 10;
+  bottom: 0;
+  width: 80%;
+  /*z-index: -1;*/
+}
+#sidebar {
+  position: relative;
+  top: 0;
+  bottom: 0;
+  left: 80%;
+  width: 20%;
+  height: 700px;
+  overflow: auto;
+}
+#time-series {
+  position: absolute;
+  top: 82%;
+  left: 2.5%;
+  width: 80%;
+  height: 15%;
+}
+#input {
+  position: absolute;
+  left: 20%;
+  top: 2%;
+  width: 50%;
+}
+#input-group {
+  position: relative;
+  width: 80%;
+}
+.info {
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  background: white;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  border-radius: 5px;
+}
+.info h4 {
+  margin: 0 0 5px;
+  color: #777;
+}
+.legend {
+  line-height: 18px;
+  color: #555;
+}
+.legend i {
+  width: 18px;
+  height: 18px;
+  float: left;
+  margin-right: 8px;
+  opacity: 0.7;
+}
