@@ -106,7 +106,7 @@ object AQL {
        |use dataverse $Dataverse
        |for $$t in dataset $viewName
        |where $predicate
-       |group by $$c := print-datetime($$t.create_at, "YYYY-MM-DD hh") with $$t
+       |group by $$c := print-datetime($$t.create_at, "YYYY-MM") with $$t
        |let $$count := count($$t)
        |order by $$count desc
        |return { $$c : $$count };
