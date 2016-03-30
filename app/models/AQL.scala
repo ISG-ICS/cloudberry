@@ -77,40 +77,62 @@ object AQL {
        """.stripMargin
   }
 
-  def translateQueryToAQL(query: ParsedQuery): AQL = {
+  def aggregateByMapEntity(query: ParsedQuery): AQL = {
     val viewName = query.key
-    val entityPredicate = query.entities.foldLeft("")( (pre, e) => pre + s"""or $$t.state = "$e" """)
-    new AQL(
-      s"""
-         |use dataverse $Dataverse
-         |for $$t in dataset $viewName
-         |where ${entityPredicate.substring(3)}
-         |group by $$c := $$t.state with $$t
-         |let $$count := count($$t)
-         |order by $$count desc
-         |return { $$c : $$count };
-      """.stripMargin)
-    //    |
-    //         |for $$t in dataset temp_v5os5udpr
-    //         |group by $$c := print-datetime($$t.create_at, "YYYY-MM-DD hh") with $$t
-    //         |let $$count := count($$t)
-    //         |order by $$c
-    //         |return {$$c : $$count };
-    //         |
-    //         |for $$t in dataset temp_v5os5udpr
-    //         |where not(is-null($$t.hashtags))
-    //         |for $$h in $$t.hashtags
-    //         |group by $$tag := $$h with $$h
-    //         |let $$c := count($$h)
-    //         |order by $$c desc
-    //         |limit 50
-    //         |return { $$tag : $$c};
-    //         |
-    //         |for $$t in dataset temp_v5os5udpr
-    //         |limit 100
-    //         |return {$$t.user.screen_name : $$t.text_msg};
-    //         |
+    val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
+    new AQL(aggregateByEntityAQL(viewName, entityPredicate.substring(3)))
   }
+
+  def aggregateByTime(query: ParsedQuery): AQL = {
+    val viewName = query.key
+    val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
+    new AQL(aggregateByTimeAQL(viewName, entityPredicate.substring(3)))
+  }
+
+  def aggregateByEntityAQL(viewName: String, predicate: String): String = {
+    s"""
+       |use dataverse $Dataverse
+       |for $$t in dataset $viewName
+       |where $predicate
+       |group by $$c := $$t.state with $$t
+       |let $$count := count($$t)
+       |order by $$count desc
+       |return { $$c : $$count };
+      """.stripMargin
+  }
+
+  def aggregateByTimeAQL(viewName: String, predicate: String): String = {
+    s"""
+       |use dataverse $Dataverse
+       |for $$t in dataset $viewName
+       |where $predicate
+       |group by $$c := print-datetime($$t.create_at, "YYYY-MM-DD hh") with $$t
+       |let $$count := count($$t)
+       |order by $$count desc
+       |return { $$c : $$count };
+      """.stripMargin
+  }
+
+  //    |
+  //         |for $$t in dataset temp_v5os5udpr
+  //         |group by $$c := print-datetime($$t.create_at, "YYYY-MM-DD hh") with $$t
+  //         |let $$count := count($$t)
+  //         |order by $$c
+  //         |return {$$c : $$count };
+  //         |
+  //         |for $$t in dataset temp_v5os5udpr
+  //         |where not(is-null($$t.hashtags))
+  //         |for $$h in $$t.hashtags
+  //         |group by $$tag := $$h with $$h
+  //         |let $$c := count($$h)
+  //         |order by $$c desc
+  //         |limit 50
+  //         |return { $$tag : $$c};
+  //         |
+  //         |for $$t in dataset temp_v5os5udpr
+  //         |limit 100
+  //         |return {$$t.user.screen_name : $$t.text_msg};
+  //         |
 
   def getView(name: String, keyword: String): String = {
     s"""

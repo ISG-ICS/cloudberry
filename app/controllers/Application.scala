@@ -45,6 +45,7 @@ class Application @Inject()(system: ActorSystem,
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
+//    Ok(views.html.indexfull("Cloudberry"))
   }
 
   def ws = WebSocket.acceptWithActor[JsValue, JsValue] { request => out =>

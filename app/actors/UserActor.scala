@@ -9,6 +9,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{JsValue, Json}
 
 import scala.util.{Failure, Success}
+import scala.concurrent.duration._
 
 /**
   * Each user is an actor.
@@ -17,13 +18,10 @@ class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor
 
   import akka.pattern.ask
 
-  import scala.concurrent.duration._
-
   implicit val timeout = Timeout(5.seconds)
 
   def receive() = {
     case json: JsValue =>
-      //      out ! Json.toJson(QueryResult.Sample)
       val parsedQuery = parseQuery(json)
       (cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
         case Success(result) => out ! Json.toJson(result)
@@ -35,7 +33,7 @@ class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor
 
   def parseQuery(json: JsValue) = {
     //    val rESTFulQuery = json.as[RESTFulQuery]
-    val rESTFulQuery = RESTFulQuery.Sample
+    val rESTFulQuery = RESTFulQuery.Sample.copy(keyword = (json \ "keyword").as[String])
     val entities = Knowledge.geoTag(new Polygon(), rESTFulQuery.level)
     ParsedQuery(DataSet.Twitter, rESTFulQuery.keyword, new Interval(rESTFulQuery.timeStart, rESTFulQuery.timeEnd), entities)
   }
@@ -46,19 +44,21 @@ object UserActor {
   def props(out: ActorRef)(implicit cachesActor: ActorRef) = Props(new UserActor(out))
 }
 
-case class RESTFulQuery(keyword: String,
+case class RESTFulQuery(dataset: String,
+                        keyword: String,
                         timeStart: Long,
                         timeEnd: Long,
                         leftBottomLog: Double,
                         leftBottomLat: Double,
                         rightTopLog: Double,
                         rightTopLat: Double,
-                        level: Int
+                        level: Int,
+                        seconds: Long = 5
                        )
 
 object RESTFulQuery {
 
-  val Sample = RESTFulQuery("rain",
+  val Sample = RESTFulQuery(DataSet.Twitter.name, "rain",
     new DateTime(2012, 1, 1, 0, 0).getMillis(),
     new DateTime(2016, 3, 1, 0, 0).getMillis(),
     -146.95312499999997,

@@ -124,18 +124,27 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
   }
 
   def askView(q: ParsedQuery, sender: ActorRef): Unit = {
-    (dbQuery(AQL.translateQueryToAQL(q))).onSuccess {
+    dbQuery(q, "map").onSuccess {
       case viewResult => {
         sender ! viewResult
       }
     }
+    dbQuery(q, "time").onSuccess {
+      case viewResult => {
+//        sender ! viewResult
+      }
+    }
   }
 
-  def dbQuery(aql: AQL): Future[QueryResult] = {
+  def dbQuery(q: ParsedQuery, aggType: String): Future[QueryResult] = {
+    val aql = aggType match {
+      case "map" => AQL.aggregateByMapEntity(q)
+      case "time" => AQL.aggregateByTime(q)
+    }
     conn.post(aql.statement).map { response =>
       log.info("dbQuery:" + response.json.toString())
       import QueryResult._
-      QueryResult(1, (response.json).as[Map[String, Int]])
+      QueryResult(aggType, q.dataSet.name, q.keyword, (response.json).as[Map[String, Int]])
     }
   }
 }

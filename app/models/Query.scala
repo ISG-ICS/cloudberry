@@ -24,9 +24,17 @@ case class Query(keywordPredicate: KeywordPredicate,
                  aggregateQuery: AggregateQuery)
 
 
-case class QueryResult(level: Int, aggResult: Map[String, Int]) {
+case class QueryResult(aggType: String, dataset: String, keyword:String, result: Map[String, Int]) {
   def +(r2: QueryResult): QueryResult = {
-    QueryResult(level, aggResult ++ r2.aggResult)
+    if (this == QueryResult.Empty) {
+      return r2
+    } else if (r2 == QueryResult.Empty){
+      return this
+    }
+    if (this.aggType != r2.aggType || this.dataset != r2.dataset || this.keyword != r2.keyword){
+      throw new IllegalArgumentException
+    }
+    this.copy(result = result ++ r2.result)
   }
 
   def +(r2: Option[QueryResult]): QueryResult = {
@@ -38,10 +46,10 @@ case class QueryResult(level: Int, aggResult: Map[String, Int]) {
 }
 
 object QueryResult {
-  val Empty = QueryResult(1, Map())
-  val SampleCache = QueryResult(1, Map("CA" -> 1340, "NV" -> 560))
-  val SampleView = QueryResult(1, Map("AZ" -> 2))
-  val Failure = QueryResult(-1, Map("Null" -> 0))
+  val Empty = QueryResult("null", "null", "null", Map())
+  val SampleCache = QueryResult("map", DataSet.Twitter.name, "rain", Map("CA" -> 1340, "NV" -> 560))
+  val SampleView = SampleCache.copy(result= Map("AZ" -> 2))
+  val Failure = Empty
 
   implicit val mapFormatter: Format[Map[String, Int]] = {
     new Format[Map[String, Int]] {
