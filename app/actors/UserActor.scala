@@ -23,10 +23,14 @@ class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor
   def receive() = {
     case json: JsValue =>
       val parsedQuery = parseQuery(json)
-      (cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
-        case Success(result) => out ! Json.toJson(result)
-        case Failure(t) => out ! Json.toJson(QueryResult.Failure)
-      }
+      cachesActor ! parsedQuery
+    //      (cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
+    //        case Success(result) => out ! Json.toJson(result)
+    //        case Failure(t) => out ! Json.toJson(QueryResult.Failure)
+    //      }
+    case result: QueryResult =>
+      log.info("send to out:" + result)
+      out ! Json.toJson(result)
     case other =>
       log.info("received:" + other)
   }

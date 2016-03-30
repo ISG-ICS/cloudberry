@@ -124,14 +124,25 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
   }
 
   def askView(q: ParsedQuery, sender: ActorRef): Unit = {
-    dbQuery(q, "map").onSuccess {
-      case viewResult => {
-        sender ! viewResult
-      }
-    }
-    dbQuery(q, "time").onSuccess {
-      case viewResult => {
-//        sender ! viewResult
+    //    dbQuery(q, "map").onSuccess {
+    //      case viewResult => {
+    //        sender ! viewResult
+    //      }
+    //    }
+    //    dbQuery(q, "time").onSuccess {
+    //      case viewResult => {
+    ////        sender ! viewResult
+    //      }
+    //    }
+    //
+    val both = for {
+      mapResult <- dbQuery(q, "map")
+      timeResult <- dbQuery(q, "time")
+    } yield (mapResult, timeResult)
+    both.onSuccess {
+      case (rMap: QueryResult, tMap: QueryResult) => {
+        log.debug("view send to cache:" + rMap + tMap)
+        sender ! Seq[QueryResult](rMap, tMap)
       }
     }
   }

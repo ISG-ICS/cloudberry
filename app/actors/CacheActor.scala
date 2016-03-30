@@ -7,6 +7,7 @@ import akka.util.Timeout
 import models.{DataSet, QueryResult}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json
 
 /**
   * There is one cache per keyword
@@ -42,10 +43,13 @@ class CacheActor(val dataSet: DataSet, val keyword: String)(implicit val viewsAc
     import scala.concurrent.duration._
     implicit val timeout = Timeout(5.seconds)
 
-    (viewsActor ? parsed).mapTo[QueryResult] onSuccess {
-      case viewAnswer => {
-        sender ! (cachedAnswer + viewAnswer)
-        updateCache(parsed, viewAnswer)
+    (viewsActor ? parsed).mapTo[Seq[QueryResult]] onSuccess {
+      case viewAnswer: Seq[QueryResult] => {
+        viewAnswer.foreach { vr =>
+          log.debug("cache send to user:" + vr)
+          sender ! (cachedAnswer + vr)
+          updateCache(parsed, vr)
+        }
       }
     }
   }
