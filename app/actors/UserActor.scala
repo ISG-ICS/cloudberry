@@ -14,25 +14,36 @@ import scala.concurrent.duration._
 /**
   * Each user is an actor.
   */
-class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor with ActorLogging {
+class UserActor(out: ActorRef, cachesActor: ActorRef) extends Actor with ActorLogging {
 
   import akka.pattern.ask
 
   implicit val timeout = Timeout(5.seconds)
 
   def receive() = {
-    case json: JsValue =>
+    case json: JsValue => {
       val parsedQuery = parseQuery(json)
-      cachesActor ! parsedQuery
-    //      (cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
-    //        case Success(result) => out ! Json.toJson(result)
-    //        case Failure(t) => out ! Json.toJson(QueryResult.Failure)
-    //      }
+      cachesActor.tell(parsedQuery, self)
+      log.info("this user is:" + self)
+      //      (cachesActor ? parsedQuery).mapTo[QueryResult] onComplete {
+      //        case Success(result) => out ! Json.toJson(result)
+      //        case Failure(t) => out ! Json.toJson(QueryResult.Failure)
+    }
     case result: QueryResult =>
       log.info("send to out:" + result)
       out ! Json.toJson(result)
     case other =>
       log.info("received:" + other)
+  }
+
+  @scala.throws[Exception](classOf[Exception])
+  override def preStart(): Unit = {
+    log.info("user start:" + self)
+  }
+
+  @scala.throws[Exception](classOf[Exception])
+  override def postStop(): Unit = {
+    log.info("user stop:" + self)
   }
 
   def parseQuery(json: JsValue) = {
@@ -45,7 +56,7 @@ class UserActor(out: ActorRef)(implicit val cachesActor: ActorRef) extends Actor
 }
 
 object UserActor {
-  def props(out: ActorRef)(implicit cachesActor: ActorRef) = Props(new UserActor(out))
+  def props(out: ActorRef)(cachesActor: ActorRef) = Props(new UserActor(out, cachesActor))
 }
 
 case class RESTFulQuery(dataset: String,

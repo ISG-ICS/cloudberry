@@ -3,13 +3,15 @@ package controllers
 import javax.inject.{Inject, Singleton}
 
 import actors._
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
+import akka.stream.Materializer
 import akka.util.Timeout
 import migration.Migration_20160324
 import models.AQLConnection
 import play.api.Play.{current, materializer}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
+import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc._
 import play.api.{Configuration, Logger}
@@ -19,9 +21,10 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 @Singleton
-class Application @Inject()(system: ActorSystem,
+class Application @Inject()(implicit val system: ActorSystem,
                             implicit val wsClient: WSClient,
-                            implicit val config: Configuration) extends Controller {
+                            implicit val config: Configuration,
+                            implicit val materializer: Materializer) extends Controller {
 
   val AsterixURL = config.getString("asterixdb.url").get
   val AQLConnection = new AQLConnection(wsClient, AsterixURL)
@@ -36,20 +39,22 @@ class Application @Inject()(system: ActorSystem,
   Logger.logger.info("I'm initializing")
   Await.ready(waitForIt, 2 seconds) onComplete {
     case Success((first, second: WSResponse)) => Logger.logger.info(second.body)
-    case Failure(ex) => Logger.logger.error(ex.getMessage);throw ex
+    case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
-  lazy val viewsActor = system.actorOf(Props(classOf[ViewsActor], AQLConnection), "views")
-  lazy val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor), "caches")
+  val viewsActor = system.actorOf(Props(classOf[ViewsActor], AQLConnection), "views")
+  val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor), "caches")
 
+  val listener = system.actorOf(Props(classOf[Listener], this))
+  system.eventStream.subscribe(listener, classOf[DeadLetter])
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
-//    Ok(views.html.indexfull("Cloudberry"))
+    //    Ok(views.html.indexfull("Cloudberry"))
   }
 
-  def ws = WebSocket.acceptWithActor[JsValue, JsValue] { request => out =>
-    UserActor.props(out)(cachesActor)
+  def ws = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef(out => UserActor.props(out)(cachesActor))
   }
 
   def search(query: JsValue) = Action.async {
@@ -60,6 +65,12 @@ class Application @Inject()(system: ActorSystem,
 
     (cachesActor ? query.as[RESTFulQuery]).mapTo[JsValue].map { answer =>
       Ok(answer)
+    }
+  }
+
+  class Listener extends Actor {
+    def receive = {
+      case d: DeadLetter => println(d)
     }
   }
 
