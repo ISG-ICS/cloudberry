@@ -5,6 +5,7 @@ import javax.inject.Singleton
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import models._
 import org.joda.time.{DateTime, Interval}
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.JsArray
 
@@ -39,9 +40,9 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
 
     val result = findView(dataSet.name, keyword).flatMap {
       case Some(viewMetaRecord) => {
-        getTimeRangeDifference(viewMetaRecord.interval, curTimeRange) match {
-          case Some(missingInterval) =>
-            appendView(viewMetaRecord.interval, missingInterval)
+        getTimeRangeDifference(viewMetaRecord.interval, Seq(curTimeRange)) match {
+          case Some(missingIntervals) =>
+            appendView(viewMetaRecord.interval, missingIntervals)
           case None =>
             Future {
               curTimeRange = viewMetaRecord.interval
@@ -80,10 +81,10 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
 
   def initialized: Receive = {
     case q: ParsedQuery =>
-      val optMissingInterval = getTimeRangeDifference(curTimeRange, q.timeRange)
+      val optMissingInterval = getTimeRangeDifference(curTimeRange, Seq(q.timeRange))
       optMissingInterval match {
         case Some(interval) =>
-          getTimeRangeDifference(toBeUpdatedTimeRange, interval).map { diffWithTobe: Interval =>
+          getTimeRangeDifference(toBeUpdatedTimeRange, interval).map { diffWithTobe: Seq[Interval] =>
             appendView(toBeUpdatedTimeRange, diffWithTobe).map {
               case newInterval: Interval =>
                 updateViewMeta(newInterval)
@@ -98,9 +99,9 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
       curTimeRange = update.newInterval
   }
 
-  def appendView(actual: Interval, missing: Interval): Future[Interval] = {
-    val futureInterval = new Interval(Math.min(actual.getStartMillis, missing.getStartMillis),
-      Math.max(actual.getEndMillis, missing.getEndMillis))
+  def appendView(actual: Interval, missing: Seq[Interval]): Future[Interval] = {
+    val futureInterval = new Interval(Math.min(actual.getStartMillis, missing.map(_.getStartMillis).reduceLeft(_ min _)),
+      Math.max(actual.getEndMillis, missing.map(_.getEndMillis).reduceLeft(_ max _)))
     toBeUpdatedTimeRange = futureInterval
     conn.post(AQL.appendView(dataSet, keyword, missing)).map {
       case respond => {
@@ -124,15 +125,35 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
   }
 
   def askView(q: ParsedQuery, sender: ActorRef): Unit = {
-    dbQuery(q, "map").onSuccess {
-      case viewResult => {
-        sender ! viewResult
+    //    dbQuery(q, "map").onSuccess {
+    //      case viewResult => {
+    //        sender ! viewResult
+    //      }
+    //    }
+    //    dbQuery(q, "time").onSuccess {
+    //      case viewResult => {
+    ////        sender ! viewResult
+    //      }
+    //    }
+    //
+    log.info("sender:" + sender)
+    val fmap = dbQuery(q, "map")
+    val ftime = dbQuery(q, "time")
+    val both = for {
+      mapResult <- fmap
+      timeResult <- ftime
+    } yield (Seq[QueryResult](mapResult, timeResult))
+    both onSuccess {
+      case result: Seq[QueryResult] => {
+        log.info("view send to cache:" + result)
+        sender ! result
       }
+      case _ =>
+        log.info("ViewActor failed to wait for result")
     }
-    dbQuery(q, "time").onSuccess {
-      case viewResult => {
-//        sender ! viewResult
-      }
+
+    both onFailure {
+      case e => log.error(e, "askView Failed")
     }
   }
 
@@ -156,21 +177,28 @@ object ViewActor {
 
   case class UpdatedCurrentRange(newInterval: Interval)
 
-  def getTimeRangeDifference(actual: Interval, expected: Interval): Option[Interval] = {
-    if (actual.contains(expected)) {
+  def getTimeRangeDifference(actual: Interval, expected: Seq[Interval]): Option[Seq[Interval]] = {
+    Logger.logger.debug(s"actual: $actual, expected: $expected")
+    if (expected.forall(actual.contains)) {
       None
     } else {
       // may need update query, but should not need to create query.
-      Some(
-        if (actual.getStartMillis < expected.getStartMillis) (new Interval(actual.getEnd, expected.getEnd))
-        else (new Interval(expected.getStart, actual.getStart))
-      )
+      import scala.collection.mutable.ArrayBuffer
+      val futureInterval = new Interval(Math.min(actual.getStartMillis, expected.map(_.getStartMillis).reduceLeft(_ min _)),
+        Math.max(actual.getEndMillis, expected.map(_.getEndMillis).reduceLeft(_ max _)))
+      val intervals = ArrayBuffer.empty[Interval]
+      if (futureInterval.getStartMillis < actual.getStartMillis) {
+        intervals += new Interval(futureInterval.getStartMillis, actual.getStartMillis)
+      }
+      if (actual.getEndMillis < futureInterval.getEndMillis) {
+        intervals += new Interval(actual.getEndMillis, futureInterval.getEndMillis)
+      }
+      Some(intervals)
     }
   }
 
 }
 
-@Singleton
 class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
 
   import scala.concurrent.duration._

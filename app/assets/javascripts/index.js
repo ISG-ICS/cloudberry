@@ -51,7 +51,7 @@ app.factory('Asterix', function($http, $timeout) {
 
 app.controller('SearchCtrl', function($scope, $window, Asterix) {
   $scope.search = function() {
-//    Asterix.keyword = $scope.query.trim().split(/\s+/)
+    //    Asterix.keyword = $scope.query.trim().split(/\s+/)
     Asterix.keyword = $scope.query
     Asterix.query(Asterix.keyword, Asterix.mapBoundary, Asterix.timeRange);
   };
@@ -60,18 +60,27 @@ app.controller('SearchCtrl', function($scope, $window, Asterix) {
 app.controller('MapCtrl', function($scope, $window, Asterix) {
   $scope.result = {};
   $scope.$watch(
-        function () {
-            return Asterix.mapResult;
-        },
+    function() {
+      return Asterix.mapResult;
+    },
 
-        function (newResult) {
-            $scope.result = newResult;
-        }
-    );
+    function(newResult) {
+      $scope.result = newResult;
+    }
+  );
 });
 
 app.controller('TimeCtrl', function($scope, $window, Asterix) {
   $scope.result = {};
+  $scope.$watch(
+    function() {
+      return Asterix.timeResult;
+    },
+
+    function(newResult) {
+      $scope.result = newResult;
+    }
+  );
 });
 
 app.controller('D3Ctrl', function($scope, $http, $timeout, Asterix) {

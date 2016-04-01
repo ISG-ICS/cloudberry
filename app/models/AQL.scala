@@ -28,7 +28,7 @@ object AQL {
          |use dataverse $Dataverse
          |create dataset $viewName($TweetsType) if not exists primary key id;
      """.stripMargin
-    createStatement + appendView(fromDataSet, keyword, initialTimeSpan)
+    createStatement + appendView(fromDataSet, keyword, Seq(initialTimeSpan))
   }
 
 
@@ -38,17 +38,20 @@ object AQL {
 
   def toSpatialSelection(query: Any): AQL = ???
 
-  def appendView(fromDataset: DataSet, keyword: String, interval: Interval): String = {
+  def appendView(fromDataset: DataSet, keyword: String, intervals: Seq[Interval]): String = {
     val viewName = fromDataset.name + '_' + keyword
+    val predicate = intervals.map(interval =>
+      s"""
+         |$$t.create_at >= datetime("${TimeFormat.print(interval.getStart)}")
+         |and $$t.create_at < datetime("${TimeFormat.print(interval.getEnd)}")
+       """.stripMargin).mkString(" or ")
     s"""
        |use dataverse $Dataverse
        |insert into dataset $viewName(
-       |let $$ts_start := datetime("${TimeFormat.print(interval.getStart)}")
-       |let $$ts_end := datetime("${TimeFormat.print(interval.getEnd)}")
        |for $$t in dataset ${fromDataset.name}
        |let $$keyword0 := "$keyword"
        |where $$t.place.place_type = "city"
-       |and $$t.create_at >= $$ts_start and $$t.create_at < $$ts_end
+       |and ($predicate)
        |and contains($$t.text_msg, $$keyword0)
        |return {
        |  "create_at" : $$t.create_at,
