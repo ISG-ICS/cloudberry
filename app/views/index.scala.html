@@ -1,44 +1,50 @@
-@(title: String)
-
-@main(title){
-<div class="container">
+@(title: String) @main(title){
+<div class="container" xmlns="http://www.w3.org/1999/html">
   <div class="container" id='input' ng-controller="SearchCtrl">
-    <form novalidate class="form-horizontal" ng-submit="search()">
+    <form class="form-horizontal" ng-submit="search()" ng-init="init()">
       <div class="control-group">
         <label class="control-label">Keywords</label>
         <div class="controls">
-          <input type="text" ng-model="query" required/>
+          <input type="text" ng-model="keyword" required/>
         </div>
       </div>
       <div class="control-group">
         <label class="control-label">TimeRange</label>
         <div class="controls">
-          <input type="date" ng-model="time.start" placeholder="yyyy-MM-dd"/>
-          <input type="date" ng-model="time.end" placeholder="yyyy-MM-dd"/>
+          <input type="date" ng-model="time.start" />
+          <input type="date" ng-model="time.end"/>
         </div>
       </div>
       <div class="control-group">
         <label class="control-label">Area</label>
         <div class="controls">
-          <input type="number" ng-model="area.lbLat" placeholder="left bottom latitude"/>
-          <input type="number" ng-model="area.lbLog" placeholder="left bottom longitude"/>
-          <input type="number" ng-model="area.rtLat" placeholder="right top latitude"/>
-          <input type="number" ng-model="area.rtLog" placeholder="right top longitude"/>
+          <label>leftBottom</label><br>
+          <label>Latitude</label>
+          <input type="number" ng-model="area.leftBottomLat" min="-90" , max="90" placeholder="left bottom latitude" />
+          <label>Longitude</label>
+          <input type="number" ng-model="area.leftBottomLog" min="-180" , max="180" placeholder="left bottom longitude" />
+          <br/><label>rightTop</label><br/>
+          <label>Latitude</label>
+          <input type="number" ng-model="area.rightTopLat" min="-90" , max="90" placeholder="right top latitude" />
+          <label>Longitude</label>
+          <input type="number" ng-model="area.rightTopLog" min="-180" , max="180" placeholder="right top longitude" />
         </div>
       </div>
       <div class="control-group">
         <label class="control-label">Level</label>
-        <div class="controls">
-          <label class="col-xs-2"><input type="radio" ng-model="level" value="state"> State</label>
-          <label class="col-xs-2"><input type="radio" ng-model="level" value="county"> County </label>
-          <label class="col-xs-2"><input type="radio" ng-model="level" value="city"> City</label>
+        <div class="controls" ng-init='level="state"'>
+          <label class="col-xs-2">
+            <input type="radio" ng-model="level" value="state"> State</label>
+          <label class="col-xs-2">
+            <input type="radio" ng-model="level" value="county"> County </label>
+          <label class="col-xs-2">
+            <input type="radio" ng-model="level" value="city"> City</label>
         </div>
       </div>
-      <div class="control-group">
-        <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
-      </div>
+      <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
     </form>
-  <pre>
+    <pre>
+    dataset : {{dataset}} <br/>
     keyword:{{query}} <br/>
     time: {{time.start | date: "yyyy-MM-dd" }} {{time.end   | date: "yyyy-MM-dd" }} <br/>
     area : {{ area | json }} <br/>
@@ -46,15 +52,22 @@
   </pre>
   </div>
 
-  <div class="container col-sm-6" ng-controller="MapCtrl">
-    spatial:
+  <div class="container col-sm-4" ng-controller="MapCtrl">
+    SpatialAggregation:
     <ul>
       <li ng-repeat="(k,v) in result">{{k}}: {{v}}</li>
     </ul>
   </div>
 
-  <div class="container col-sm-6" ng-controller="TimeCtrl">
-    time:
+  <div class="container col-sm-4" ng-controller="TimeCtrl">
+    TimeAggregation:
+    <ul>
+      <li ng-repeat="(k,v) in result">{{k}}: {{v}}</li>
+    </ul>
+  </div>
+
+  <div class="container col-sm-4" ng-controller="HashTagCtrl">
+    HashTags:
     <ul>
       <li ng-repeat="(k,v) in result">{{k}}: {{v}}</li>
     </ul>

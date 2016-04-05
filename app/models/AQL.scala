@@ -1,6 +1,6 @@
 package models
 
-import actors.ParsedQuery
+import actors.SetQuery
 import migration.Migration_20160324
 import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
@@ -80,13 +80,13 @@ object AQL {
        """.stripMargin
   }
 
-  def aggregateByMapEntity(query: ParsedQuery): AQL = {
+  def aggregateByMapEntity(query: SetQuery): AQL = {
     val viewName = query.key
     val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
     new AQL(aggregateByEntityAQL(viewName, entityPredicate.substring(3)))
   }
 
-  def aggregateByTime(query: ParsedQuery): AQL = {
+  def aggregateByTime(query: SetQuery): AQL = {
     val viewName = query.key
     val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
     new AQL(aggregateByTimeAQL(viewName, entityPredicate.substring(3)))

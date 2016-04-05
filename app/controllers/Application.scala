@@ -37,7 +37,7 @@ class Application @Inject()(implicit val system: ActorSystem,
   } yield (fKnowledge, fViews)
 
   Logger.logger.info("I'm initializing")
-  Await.ready(waitForIt, 2 seconds) onComplete {
+  Await.ready(waitForIt, 4 seconds) onComplete {
     case Success((first, second: WSResponse)) => Logger.logger.info(second.body)
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
@@ -63,7 +63,7 @@ class Application @Inject()(implicit val system: ActorSystem,
     import scala.concurrent.duration._
     implicit val timeout = Timeout(5.seconds)
 
-    (cachesActor ? query.as[RESTFulQuery]).mapTo[JsValue].map { answer =>
+    (cachesActor ? query.as[UserQuery]).mapTo[JsValue].map { answer =>
       Ok(answer)
     }
   }

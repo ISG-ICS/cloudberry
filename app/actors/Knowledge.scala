@@ -1,6 +1,7 @@
 package actors
 
 import com.esri.core.geometry.Polygon
+import models.Rectangular
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future
@@ -8,7 +9,7 @@ import scala.concurrent.Future
 object Knowledge {
   def loadFromDB = Future {}
 
-  def geoTag(polygon: Polygon, level: Int): Seq[String] = {
+  def geoTag(area: Rectangular, level: String): Seq[String] = {
     return Seq(
       "AL",
       "AK",

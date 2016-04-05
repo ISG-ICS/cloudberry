@@ -1,7 +1,5 @@
 package actors
 
-import javax.inject.Singleton
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import models._
 import org.joda.time.{DateTime, Interval}
@@ -80,7 +78,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
   }
 
   def initialized: Receive = {
-    case q: ParsedQuery =>
+    case q: SetQuery =>
       val optMissingInterval = getTimeRangeDifference(curTimeRange, Seq(q.timeRange))
       optMissingInterval match {
         case Some(interval) =>
@@ -124,7 +122,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
     conn.post(AQL.updateViewMeta(dataSet.name, keyword, newInterval).statement)
   }
 
-  def askView(q: ParsedQuery, sender: ActorRef): Unit = {
+  def askView(q: SetQuery, sender: ActorRef): Unit = {
     //    dbQuery(q, "map").onSuccess {
     //      case viewResult => {
     //        sender ! viewResult
@@ -157,7 +155,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
     }
   }
 
-  def dbQuery(q: ParsedQuery, aggType: String): Future[QueryResult] = {
+  def dbQuery(q: SetQuery, aggType: String): Future[QueryResult] = {
     val aql = aggType match {
       case "map" => AQL.aggregateByMapEntity(q)
       case "time" => AQL.aggregateByTime(q)
@@ -199,6 +197,9 @@ object ViewActor {
 
 }
 
+/**
+  * you should also take care of the communictaion with DB. e.g. heartbeat check with db, failure recovery, etc.
+ */
 class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
 
   import scala.concurrent.duration._
@@ -206,7 +207,7 @@ class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with A
   implicit val timeout = 5.seconds
 
   def receive = {
-    case q: ParsedQuery =>
+    case q: SetQuery =>
       context.child(q.key).getOrElse {
         context.actorOf(Props(new ViewActor(q.dataSet, q.keyword, superRange(q.timeRange, ViewActor.DefaultInterval))),
           q.key)

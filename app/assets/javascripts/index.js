@@ -4,24 +4,40 @@ app.factory('Asterix', function($http, $timeout) {
   var ws = new WebSocket("ws://localhost:9000/ws");
   var asterixService = {
 
-    level: "state",
-
-    mapBoundary: {},
-    timeRange: {},
-    keyword: null,
+    parameters: {
+      dataset: "twitter",
+      keyword: null,
+      area: {
+        leftBottomLog: -146,
+        leftBottomLat: 8,
+        rightTopLog: -100,
+        rightTopLat: 50
+      },
+      time: {
+        start: new Date(2012, 1, 1, 0, 0, 0, 0),
+        end: new Date()
+      },
+      level: "state",
+      repeatDuration: 0
+    },
 
     mapResult: {},
     timeResult: {},
     hashTagResult: {},
 
-    query: function(keyword, mapBoundary, timeRange) {
-      //TODO compose the query
-      var query = null;
-      ws.send(JSON.stringify({
-        keyword: keyword,
-        mapBoundary: mapBoundary,
-        timeRange: timeRange
+    query: function(parameters) {
+      var json = (JSON.stringify({
+        dataset: parameters.dataset,
+        keyword: parameters.keyword,
+        area: parameters.area,
+        timeRange: {
+          start: Date.parse(parameters.time.start),
+          end: Date.parse(parameters.time.end)
+        },
+        level: parameters.level,
+        repeatDuration : parameters.repeatDuration
       }));
+      ws.send(json);
     }
   };
 
@@ -50,10 +66,23 @@ app.factory('Asterix', function($http, $timeout) {
 });
 
 app.controller('SearchCtrl', function($scope, $window, Asterix) {
+  $scope.init = function(){
+    $scope.time = Asterix.parameters.time;
+    $scope.area = Asterix.parameters.area;
+    $scope.level = Asterix.parameters.level;
+  };
   $scope.search = function() {
-    //    Asterix.keyword = $scope.query.trim().split(/\s+/)
-    Asterix.keyword = $scope.query
-    Asterix.query(Asterix.keyword, Asterix.mapBoundary, Asterix.timeRange);
+    if ($scope.dataset)
+      Asterix.parameters.dataset = $scope.dataset;
+    if ($scope.keyword)
+      Asterix.parameters.keyword = $scope.keyword;
+    if ($scope.area)
+      Asterix.parameters.area = $scope.area;
+    if ($scope.time)
+      Asterix.parameters.time = $scope.time;
+    if ($scope.level)
+      Asterix.parameters.level = $scope.level;
+    Asterix.query(Asterix.parameters);
   };
 });
 
@@ -75,6 +104,19 @@ app.controller('TimeCtrl', function($scope, $window, Asterix) {
   $scope.$watch(
     function() {
       return Asterix.timeResult;
+    },
+
+    function(newResult) {
+      $scope.result = newResult;
+    }
+  );
+});
+
+app.controller('HashTagCtrl', function($scope, $window, Asterix) {
+  $scope.result = {};
+  $scope.$watch(
+    function() {
+      return Asterix.hashTagResult;
     },
 
     function(newResult) {

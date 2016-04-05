@@ -24,14 +24,14 @@ case class Query(keywordPredicate: KeywordPredicate,
                  aggregateQuery: AggregateQuery)
 
 
-case class QueryResult(aggType: String, dataset: String, keyword:String, result: Map[String, Int]) {
+case class QueryResult(aggType: String, dataset: String, keyword: String, result: Map[String, Int]) {
   def +(r2: QueryResult): QueryResult = {
     if (this == QueryResult.Empty) {
       return r2
-    } else if (r2 == QueryResult.Empty){
+    } else if (r2 == QueryResult.Empty) {
       return this
     }
-    if (this.aggType != r2.aggType || this.dataset != r2.dataset || this.keyword != r2.keyword){
+    if (this.aggType != r2.aggType || this.dataset != r2.dataset || this.keyword != r2.keyword) {
       throw new IllegalArgumentException
     }
     this.copy(result = result ++ r2.result)
@@ -48,7 +48,7 @@ case class QueryResult(aggType: String, dataset: String, keyword:String, result:
 object QueryResult {
   val Empty = QueryResult("null", "null", "null", Map())
   val SampleCache = QueryResult("map", DataSet.Twitter.name, "rain", Map("CA" -> 1340, "NV" -> 560))
-  val SampleView = SampleCache.copy(result= Map("AZ" -> 2))
+  val SampleView = SampleCache.copy(result = Map("AZ" -> 2))
   val Failure = Empty
 
   implicit val mapFormatter: Format[Map[String, Int]] = {
@@ -91,7 +91,7 @@ object QueryResult {
   implicit val formatter = Json.format[QueryResult]
 }
 
-case class ViewMetaRecord(dataset: String, keyword:String, timeStart: DateTime, timeEnd: DateTime) {
+case class ViewMetaRecord(dataset: String, keyword: String, timeStart: DateTime, timeEnd: DateTime) {
   val interval = new Interval(timeStart, timeEnd)
 }
 
@@ -101,3 +101,10 @@ object ViewMetaRecord {
   implicit val jodaTimeWriters = Writes.jodaDateWrites(timeFormat)
   implicit val formatter = Json.format[ViewMetaRecord]
 }
+
+case class Rectangular(leftBottomLog: Double, leftBottomLat: Double, rightTopLog: Double, rightTopLat: Double)
+
+object Rectangular {
+  implicit val rectangularFormat = Json.format[Rectangular]
+}
+
