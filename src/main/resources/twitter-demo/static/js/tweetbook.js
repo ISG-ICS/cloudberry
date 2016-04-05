@@ -790,6 +790,6 @@ function reportUserMessage(message, isPositiveMessage, target) {
  **/
 function clearSidebar() {
   $('#hashcount tr').html('');
-  $('#tweets tr').html('');
+  $('#tweet').html('');
   $('#aql tr').html('');
 }
