@@ -29,18 +29,30 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 80%;
-            /*z-index: -1;*/
+            width: 100%;
+            height: 100%;
         }
+
 
         #sidebar {
             position: relative;
             top: 0;
             bottom: 0;
-            left: 80%;
+            left: 100%;
             width: 20%;
             height: 700px;
             overflow: auto;
+            margin-left: -20%;
+            -webkit-transition: all 0.5s ease;
+            -moz-transition: all 0.5s ease;
+            -o-transition: all 0.5s ease;
+            transition: all 0.5s ease;
+            background-color: white;
+            opacity: 0.8;
+        }
+
+        #sidebar.toggled {
+            margin-left: 0;
         }
 
         #time-series {
@@ -55,7 +67,7 @@
             position: absolute;
             left: 20%;
             top: 2%;
-            width: 50%;
+            width: 55%;
         }
 
         #input-group {
@@ -110,6 +122,7 @@
             <input type="text" class="form-control " id="keyword-textbox" placeholder="Key words">
         </div>
         <button type="button" class="btn btn-primary" id="submit-button">Submit</button>
+        <button type="button" class="btn btn-primary" id="menu-button">Menu</button>
     </form>
 </div>
 <div id='time-series'></div>
@@ -145,7 +158,6 @@
             </table>
         </div>
     </div>
-</div>
 </div>
 </body>
 </html>

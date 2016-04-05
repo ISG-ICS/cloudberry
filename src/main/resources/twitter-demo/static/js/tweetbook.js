@@ -150,11 +150,18 @@ $(function () {
     queryWrapper("submit");
   });
 
+  // press enter to submit
   $(document).keypress(function (e) {
     if (e.which == 13) {
       e.preventDefault();
       $("#submit-button").click();
     }
+  });
+
+  // menu-button
+  $("#menu-button").click(function(e) {
+    e.preventDefault();
+    $("#sidebar").toggleClass("toggled");
   });
 });
 
@@ -244,6 +251,8 @@ function setInfoControl(map) {
     this._div.innerHTML = '<h4>Count by ' + logicLevel + '</h4>' + (props ?
       '<b>' + props.NAME + '</b><br />' + 'Count: ' + (props.count ? props.count : 0) : 'Hover over a state');
   };
+
+  info.options = { position: 'topleft' };
 
   info.addTo(map);
 
@@ -652,7 +661,7 @@ function drawMap(mapPlotData) {
     $('.legend').remove();
 
   var legend = L.control({
-    position: 'bottomright'
+    position: 'topleft'
   });
 
   legend.onAdd = function (map) {
