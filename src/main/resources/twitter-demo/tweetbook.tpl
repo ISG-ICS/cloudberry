@@ -18,6 +18,7 @@
     <script src="static/js/dc.min.js"></script>
     <script src="static/js/tweetbook.js"></script>
     <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+    <script src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
     <style>
         body {
             margin: 0;
