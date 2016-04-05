@@ -23,7 +23,7 @@ from bottle import route, run, template, static_file, request
 
 import sys
 if len(sys.argv)==1:
-    asterix_server = "http://localhost:19002"
+    asterix_server = "http://kiwi.ics.uci.edu:19002"
 else:
     asterix_server = sys.argv[1]
 

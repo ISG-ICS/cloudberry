@@ -755,7 +755,7 @@ function drawHashtag(tag_count) {
  **/
 function drawTweets(message) {
   $.each(message, function (i, d) {
-    $('#tweets tr:last').after('<tr><td>' + d.uname + '<br/>' + d.tweet + '</td></tr>');
+    $('#tweet').append('<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">'+d.tweet+'</p>&mdash;'+d.uname+'</blockquote> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>');
   });
 }
 

@@ -88,6 +88,16 @@
             margin-right: 8px;
             opacity: 0.7;
         }
+
+        blockquote{
+            padding: 5px 10px;
+            margin: 0 0 10px;
+            font-size: 12px;
+        }
+
+        blockquote p{
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -121,15 +131,6 @@
             </table>
         </div>
         <div id="tweet" class="tab-pane">
-            <table class="table" id="tweets">
-                <thead>
-                <tr>
-                    <th>Tweets</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
         </div>
         <div id="aql" class="tab-pane">
             <table class="table" id="tweets">
