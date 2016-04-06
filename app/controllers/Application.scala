@@ -14,22 +14,23 @@ import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc._
-import play.api.{Configuration, Logger}
+import play.api.{Configuration, Environment, Logger}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 @Singleton
-class Application @Inject()(implicit val system: ActorSystem,
-                            implicit val wsClient: WSClient,
-                            implicit val config: Configuration,
-                            implicit val materializer: Materializer) extends Controller {
+class Application @Inject()(val wsClient: WSClient,
+                            val config: Configuration,
+                            val environment: Environment,
+                            implicit val system: ActorSystem
+                           ) extends Controller {
 
   val AsterixURL = config.getString("asterixdb.url").get
   val AQLConnection = new AQLConnection(wsClient, AsterixURL)
 
-  val loadKnowledge = Knowledge.loadFromDB
+  val loadKnowledge = Knowledge.loadResources(environment)
   val checkViewStatus = new Migration_20160324(AQLConnection).up()
   val waitForIt = for {
     fKnowledge <- loadKnowledge

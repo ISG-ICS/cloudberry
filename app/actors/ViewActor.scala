@@ -137,11 +137,13 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
     log.info("sender:" + sender)
     val fmap = dbQuery(q, "map")
     val ftime = dbQuery(q, "time")
-    val both = for {
+    val ftag = dbQuery(q, "hashtag")
+    val all = for {
       mapResult <- fmap
       timeResult <- ftime
-    } yield (Seq[QueryResult](mapResult, timeResult))
-    both onSuccess {
+      hashTagResult <- ftag
+    } yield (Seq[QueryResult](mapResult, timeResult, hashTagResult))
+    all onSuccess {
       case result: Seq[QueryResult] => {
         log.info("view send to cache:" + result)
         sender ! result
@@ -150,16 +152,14 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
         log.info("ViewActor failed to wait for result")
     }
 
-    both onFailure {
+    all onFailure {
       case e => log.error(e, "askView Failed")
     }
   }
 
   def dbQuery(q: SetQuery, aggType: String): Future[QueryResult] = {
-    val aql = aggType match {
-      case "map" => AQL.aggregateByMapEntity(q)
-      case "time" => AQL.aggregateByTime(q)
-    }
+    val aql = AQL.aggregateBy(q, aggType)
+
     conn.post(aql.statement).map { response =>
       log.info("dbQuery:" + response.json.toString())
       import QueryResult._
@@ -199,7 +199,7 @@ object ViewActor {
 
 /**
   * you should also take care of the communictaion with DB. e.g. heartbeat check with db, failure recovery, etc.
- */
+  */
 class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
 
   import scala.concurrent.duration._

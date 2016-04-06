@@ -80,16 +80,27 @@ object AQL {
        """.stripMargin
   }
 
-  def aggregateByMapEntity(query: SetQuery): AQL = {
-    val viewName = query.key
-    val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
-    new AQL(aggregateByEntityAQL(viewName, entityPredicate.substring(3)))
+
+  def formTimePredicate(interval: Interval): String = {
+    s"""
+       | $$t.create_at >= datetime("${TimeFormat.print(interval.getStart)}")
+       | and $$t.create_at < datetime("${TimeFormat.print(interval.getEnd)}")
+    """.stripMargin
   }
 
-  def aggregateByTime(query: SetQuery): AQL = {
+  def aggregateBy(query: SetQuery, groupField: String): AQL = {
     val viewName = query.key
     val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
-    new AQL(aggregateByTimeAQL(viewName, entityPredicate.substring(3)))
+    val timePredicate = formTimePredicate(query.timeRange)
+    val predicate = s"$timePredicate and (${entityPredicate.substring(3)})"
+    groupField.toLowerCase match {
+      case "map" =>
+        new AQL(aggregateByEntityAQL(viewName, predicate))
+      case "time" =>
+        new AQL(aggregateByTimeAQL(viewName, predicate))
+      case "hashtag" =>
+        new AQL(aggregateByHashTag(viewName, predicate))
+    }
   }
 
   def aggregateByEntityAQL(viewName: String, predicate: String): String = {
@@ -99,7 +110,6 @@ object AQL {
        |where $predicate
        |group by $$c := $$t.state with $$t
        |let $$count := count($$t)
-       |order by $$count desc
        |return { $$c : $$count };
       """.stripMargin
   }
@@ -111,10 +121,25 @@ object AQL {
        |where $predicate
        |group by $$c := print-datetime($$t.create_at, "YYYY-MM") with $$t
        |let $$count := count($$t)
-       |order by $$count desc
        |return { $$c : $$count };
       """.stripMargin
   }
+
+  def aggregateByHashTag(viewName: String, predicate: String): String = {
+    s"""
+       |use dataverse $Dataverse
+       |for $$t in dataset $viewName
+       |where $predicate
+       |and not(is-null($$t.hashtags))
+       |for $$h in $$t.hashtags
+       |group by $$tag := $$h with $$h
+       |let $$c := count($$h)
+       |order by $$c desc
+       |limit 50
+       |return { $$tag : $$c};
+      """.stripMargin
+  }
+
 
   //    |
   //         |for $$t in dataset temp_v5os5udpr

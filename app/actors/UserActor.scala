@@ -21,8 +21,12 @@ class UserActor(out: ActorRef, cachesActor: ActorRef) extends Actor with ActorLo
       val setQuery = parseQuery(json)
       // why tell instead of ask? because we want to send the query continuously.
       // The ask model is answered once, the rest of responds will be send to dead letter unless we send the out to msg
-      cachesActor.tell(setQuery, self)
-      log.info("this user is:" + self)
+      log.info("query is:" + setQuery)
+      if (setQuery.entities.length > 0) {
+        cachesActor.tell(setQuery, self)
+      } else {
+        out ! Json.obj("aggType" -> "error", "errorMessage" -> "no spatial area covered in this area")
+      }
     }
     case result: QueryResult =>
       out ! Json.toJson(result)

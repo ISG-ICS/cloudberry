@@ -1,6 +1,6 @@
 package models
 
-import com.esri.core.geometry.Polygon
+import com.vividsolutions.jts.geom.{Envelope, Polygon}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
 
@@ -102,7 +102,9 @@ object ViewMetaRecord {
   implicit val formatter = Json.format[ViewMetaRecord]
 }
 
-case class Rectangular(leftBottomLog: Double, leftBottomLat: Double, rightTopLog: Double, rightTopLat: Double)
+case class Rectangular(leftBottomLog: Double, leftBottomLat: Double, rightTopLog: Double, rightTopLat: Double) {
+  def toEnvelop : Envelope = new Envelope(leftBottomLog, rightTopLog, leftBottomLat, rightTopLat)
+}
 
 object Rectangular {
   implicit val rectangularFormat = Json.format[Rectangular]

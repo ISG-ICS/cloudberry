@@ -18,7 +18,7 @@ class CacheActor(val viewsActor: ActorRef)(val dataSet: DataSet, val keyword: St
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
   def receive = {
-    case q: SetQuery =>
+    case q: SetQuery if q.entities.size > 0 =>
       val cachedAnswer: QueryResult = answerAsMuchAsICan(q)
       splitQuery(q) match {
         case Some(viewQuery) =>
@@ -41,7 +41,7 @@ class CacheActor(val viewsActor: ActorRef)(val dataSet: DataSet, val keyword: St
     import akka.pattern.ask
 
     import scala.concurrent.duration._
-    implicit val timeout = Timeout(3.seconds)
+    implicit val timeout = Timeout(5.seconds)
 
     (viewsActor ? parsed).mapTo[Seq[QueryResult]] onComplete {
       case Success(viewAnswer: Seq[QueryResult]) => {

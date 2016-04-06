@@ -1,5 +1,4 @@
 import org.junit.Test;
-import utils.FakeStockQuote;
 
 import java.util.Random;
 

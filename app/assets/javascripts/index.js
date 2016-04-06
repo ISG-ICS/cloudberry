@@ -24,6 +24,7 @@ app.factory('Asterix', function($http, $timeout) {
     mapResult: {},
     timeResult: {},
     hashTagResult: {},
+    errorMessage: null,
 
     query: function(parameters) {
       var json = (JSON.stringify({
@@ -52,8 +53,11 @@ app.factory('Asterix', function($http, $timeout) {
         case "time":
           asterixService.timeResult = result.result;
           break;
-        case "hashTag":
+        case "hashtag":
           asterixService.hashTagResult = result.result;
+          break;
+        case "error":
+          asterixService.errorMessage = result.errorMessage;
           break;
         default:
           console.log("ws get unknown data: " + result);
@@ -121,6 +125,19 @@ app.controller('HashTagCtrl', function($scope, $window, Asterix) {
 
     function(newResult) {
       $scope.result = newResult;
+    }
+  );
+});
+
+app.controller('ExceptionCtrl', function($scope, $window, Asterix) {
+  $scope.$watch(
+    function() {
+      return Asterix.errorMessage;
+    },
+
+    function(newMsg) {
+      if (newMsg) $window.alert(newMsg);
+      Asterix.errorMessage = null;
     }
   );
 });
