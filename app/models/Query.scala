@@ -103,7 +103,7 @@ object ViewMetaRecord {
 }
 
 case class Rectangular(leftBottomLog: Double, leftBottomLat: Double, rightTopLog: Double, rightTopLat: Double) {
-  def toEnvelop : Envelope = new Envelope(leftBottomLog, rightTopLog, leftBottomLat, rightTopLat)
+  def getEnvelopInternal : Envelope = new Envelope(leftBottomLog, rightTopLog, leftBottomLat, rightTopLat)
 }
 
 object Rectangular {

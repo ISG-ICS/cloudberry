@@ -38,7 +38,7 @@ class Application @Inject()(val wsClient: WSClient,
   } yield (fKnowledge, fViews)
 
   Logger.logger.info("I'm initializing")
-  Await.ready(waitForIt, 4 seconds) onComplete {
+  Await.ready(waitForIt,  10 minute) onComplete {
     case Success((first, second: WSResponse)) => Logger.logger.info(second.body)
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }

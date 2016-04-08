@@ -1,13 +1,14 @@
 package actors
 
-import java.io.InputStream
+import java.io._
+import java.nio.charset.{Charset, CodingErrorAction}
 
 import com.vividsolutions.jts.geom.Geometry
 import com.vividsolutions.jts.index.strtree.STRtree
 import models.Rectangular
 import org.wololo.geojson.{Feature, FeatureCollection, GeoJSONFactory}
 import org.wololo.jts2geojson.GeoJSONReader
-import play.api.Environment
+import play.api.{Environment, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json._
 import utils.Profile
@@ -21,20 +22,24 @@ object Knowledge {
   val StateShapePath = "public/data/state.shape.20m.json"
   val CountyShapePath = "public/data/county.shape.20m.json"
   val StateAbbrPath = "public/data/states_hash.json"
-  val StateIndex = new STRtree()
-  val CountyIndex = new STRtree()
+  val CitiesPath = "public/data/cities"
+  val IndexState = new STRtree()
+  val IndexCounty = new STRtree()
+  val IndexCities = new STRtree()
   var StateAbbrMap = Map.empty[String, String]
-  var ArrayStateProp: ArrayBuffer[GeoJSONProperty] = null
-  var ArrayCountyProp: ArrayBuffer[GeoJSONProperty] = null
+  var ArrayStateProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](60)
+  var ArrayCountyProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](3230)
+  var ArrayCityProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](60000)
 
-  def loadShape(inputStream: InputStream, index: STRtree): ArrayBuffer[GeoJSONProperty] = {
+  def loadShape(inputStream: InputStream, index: STRtree, buffer: ArrayBuffer[GeoJSONProperty]) = {
     val geoJSONReader = new GeoJSONReader()
-    val textJson = scala.io.Source.fromInputStream(inputStream, "UTF-8").getLines().mkString("\n")
+    val decoder = Charset.forName("UTF-8").newDecoder()
+    decoder.onMalformedInput(CodingErrorAction.IGNORE)
+    val textJson = scala.io.Source.fromInputStream(inputStream)(decoder).getLines().mkString("\n")
     val featureCollection: FeatureCollection = GeoJSONFactory.create(textJson).asInstanceOf[FeatureCollection]
-    val buffer = new ArrayBuffer[GeoJSONProperty](featureCollection.getFeatures.length)
     featureCollection.getFeatures.foreach { f: Feature =>
       val geometry: Geometry = geoJSONReader.read(f.getGeometry)
-      buffer += GeoJSONProperty(f.getProperties.asScala.toMap)
+      buffer += GeoJSONProperty(f.getProperties.asScala.toMap, geometry)
       index.insert(geometry.getEnvelopeInternal, buffer.size - 1)
     }
     buffer
@@ -46,26 +51,57 @@ object Knowledge {
 
   def loadResources(playENV: Environment): Future[Unit] = Future {
     StateAbbrMap = loadStringMapping(playENV.resourceAsStream(StateAbbrPath).get).map(_.swap)
-    ArrayStateProp = Profile.profile("load state shape")(loadShape(playENV.resourceAsStream(StateShapePath).get, StateIndex))
-    ArrayCountyProp = Profile.profile("load county shape")(loadShape(playENV.resourceAsStream(CountyShapePath).get, CountyIndex))
+    Profile.profile("load state shape")(loadShape(playENV.resourceAsStream(StateShapePath).get, IndexState, ArrayStateProp))
+    Profile.profile("load county shape")(loadShape(playENV.resourceAsStream(CountyShapePath).get, IndexCounty, ArrayCountyProp))
+
+    Profile.profile("load cities") {
+      playENV.getFile(CitiesPath).list.filter(_.endsWith(".json")).foreach { path: String =>
+        loadShape(playENV.resourceAsStream(CitiesPath + "/" + path).get, IndexCities, ArrayCityProp)
+      }
+    }
+
+    writeGeoProperty("state.json", ArrayStateProp)
+    writeGeoProperty("county.json", ArrayCountyProp)
+    writeGeoProperty("cities.json", ArrayCityProp)
+  }
+
+  def writeGeoProperty(filePath: String, arrayBuffer: ArrayBuffer[GeoJSONProperty]): Unit = {
+    val file = new File(filePath)
+    val bw = new BufferedWriter(new FileWriter(file))
+    val jsons = arrayBuffer.sortBy(_.geoID).map(_.toJson)
+    bw.write("[ " + jsons.head.toString)
+    jsons.tail.foreach { json =>
+      bw.newLine()
+      bw.write("," + json.toString)
+    }
+    bw.newLine()
+    bw.write(']')
+    bw.close()
   }
 
   def geoTag(area: Rectangular, level: String): Seq[String] = {
     val (index: STRtree, array: ArrayBuffer[GeoJSONProperty]) =
       level.toLowerCase match {
-        case "state" => (StateIndex, ArrayStateProp)
-        case "county" => (CountyIndex, ArrayCountyProp)
+        case "state" => (IndexState, ArrayStateProp)
+        case "county" => (IndexCounty, ArrayCountyProp)
         case other => throw new UnknownSpatialLevelException(other)
       }
     // it may returns some false positives, but it should be fine in our application.
     // in which case it just fetch more results.
-    index.query(area.toEnvelop).asScala.map(item => array(item.asInstanceOf[Int]).getAsterixKey)
+    index.query(area.getEnvelopInternal).asScala.map(item => array(item.asInstanceOf[Int]).getAsterixKey)
+  }
+
+  def geoTag(geometry: Geometry, index: STRtree, array: ArrayBuffer[GeoJSONProperty]): Seq[GeoJSONProperty] = {
+    index.query(geometry.getEnvelopeInternal).asScala
+      .map(item => array(item.asInstanceOf[Int])).filter(_.geometry.intersects(geometry))
   }
 
   class UnknownSpatialLevelException(level: String) extends IllegalArgumentException(s"unknown spatial level: $level")
 
   sealed trait GeoJSONProperty {
     def getAsterixKey: String
+
+    def getKey: Long
 
     def geoID: String
 
@@ -76,6 +112,10 @@ object Knowledge {
     def LSAD: String
 
     def area: Double
+
+    def geometry: Geometry
+
+    def toJson: JsObject
 
     override def hashCode(): Int = geoID.hashCode
 
@@ -90,36 +130,120 @@ object Knowledge {
     val LSAD = "LSAD"
     val AREA = "CENSUSAREA"
     val COUNTY = "COUNTY"
+    val PLACEEFP = "PLACEFP"
 
-    def apply(map: Map[String, AnyRef]): GeoJSONProperty = {
-      map.get(COUNTY) match {
-        case Some(obj) => CountyProperty(
-          geoID = map.get(GEO_ID).get.asInstanceOf[String],
-          stateID = map.get(STATE).get.asInstanceOf[String].toInt,
-          countyID = map.get(COUNTY).get.asInstanceOf[String].toInt,
-          name = map.get(NAME).get.asInstanceOf[String],
-          LSAD = map.get(LSAD).get.asInstanceOf[String],
-          area = map.get(AREA).get.asInstanceOf[Double]
-        )
-        case None => StateProperty(
-          geoID = map.get(GEO_ID).get.asInstanceOf[String],
-          stateID = map.get(STATE).get.asInstanceOf[String].toInt,
-          name = map.get(NAME).get.asInstanceOf[String],
-          LSAD = map.get(LSAD).get.asInstanceOf[String],
-          area = map.get(AREA).get.asInstanceOf[Double]
-        )
+    def findCounty(stateID: Int, geometry: Geometry): Int = {
+      val counties: Seq[CountyProperty] =
+        geoTag(geometry, IndexCounty, ArrayCountyProp).filter(_.stateID == stateID).map(_.asInstanceOf[CountyProperty])
+      var id = 0
+      var maxIntersectArea = 0.0
+      counties.foreach { county =>
+        if (county.geometry.contains(geometry)) return county.countyID
+        val intersectArea = county.geometry.intersection(geometry).getArea
+        if (maxIntersectArea < intersectArea) {
+          maxIntersectArea = intersectArea
+          id = county.countyID
+        }
+      }
+      id
+    }
+
+    def apply(map: Map[String, AnyRef], geometry: Geometry): GeoJSONProperty = {
+      map.get(PLACEEFP) match {
+        case Some(obj) =>
+          import CityProperty._
+          CityProperty(
+            geoID = map.get(GEOID).get.asInstanceOf[String],
+            stateID = map.get(STATEFP).get.asInstanceOf[String].toInt,
+            countyID = findCounty(map.get(STATEFP).get.asInstanceOf[String].toInt, geometry),
+            cityID = map.get(CITYID).get.asInstanceOf[String].toInt,
+            name = map.get(NAME).get.asInstanceOf[String],
+            LSAD = map.get(LSAD).get.asInstanceOf[String],
+            landArea = map.get(ALADN).get.asInstanceOf[Double],
+            waterArea = map.get(AWATER).get.asInstanceOf[Double],
+            geometry
+          )
+        case None =>
+          map.get(COUNTY) match {
+            case Some(obj) =>
+              CountyProperty(
+                geoID = map.get(GEO_ID).get.asInstanceOf[String],
+                stateID = map.get(STATE).get.asInstanceOf[String].toInt,
+                countyID = map.get(COUNTY).get.asInstanceOf[String].toInt,
+                name = map.get(NAME).get.asInstanceOf[String],
+                LSAD = map.get(LSAD).get.asInstanceOf[String],
+                area = map.get(AREA).get.asInstanceOf[Double],
+                geometry
+              )
+            case None => StateProperty(
+              geoID = map.get(GEO_ID).get.asInstanceOf[String],
+              stateID = map.get(STATE).get.asInstanceOf[String].toInt,
+              name = map.get(NAME).get.asInstanceOf[String],
+              LSAD = map.get(LSAD).get.asInstanceOf[String],
+              area = map.get(AREA).get.asInstanceOf[Double],
+              geometry
+            )
+          }
       }
     }
+
   }
 
-  case class StateProperty(geoID: String, stateID: Int, name: String, LSAD: String, area: Double) extends GeoJSONProperty {
+  case class StateProperty(geoID: String,
+                           stateID: Int,
+                           name: String,
+                           LSAD: String,
+                           area: Double,
+                           geometry: Geometry) extends GeoJSONProperty {
     val abbr = StateAbbrMap.getOrElse(name, "UN")
     override val getAsterixKey: String = abbr
+    override val getKey: Long = stateID
+
+    override def toJson: JsObject =
+      Json.obj("geoID" -> geoID, "stateID" -> stateID, "name" -> name, "LSAD" -> LSAD, "area" -> area)
   }
 
-  case class CountyProperty(geoID: String, stateID: Int, countyID: Int, name: String, LSAD: String, area: Double) extends GeoJSONProperty {
-    val stateName = ArrayStateProp.filter(_.stateID == stateID).apply(0).name
+  case class CountyProperty(geoID: String,
+                            stateID: Int,
+                            countyID: Int,
+                            name: String, LSAD:
+                            String, area: Double,
+                            geometry: Geometry) extends GeoJSONProperty {
+    val stateName: String = ArrayStateProp.filter(_.stateID == stateID).headOption.map(_.name).getOrElse("Unknown")
     override val getAsterixKey: String = stateName + "-" + name
+    override val getKey: Long = stateID * 1000 + countyID
+
+    override def toJson: JsObject =
+      Json.obj("geoID" -> geoID, "stateID" -> stateID, "stateName" -> stateName, "countyID" -> countyID,
+               "name" -> name, "LSAD" -> LSAD, "area" -> area)
+  }
+
+  case class CityProperty(geoID: String, stateID: Int, countyID: Int, cityID: Int, name: String, LSAD: String,
+                          landArea: Double, waterArea: Double, geometry: Geometry) extends GeoJSONProperty {
+    val area = landArea + waterArea
+    val stateName: String = ArrayStateProp.filter(_.stateID == stateID).headOption.map(_.name).getOrElse("Unknown")
+    val countyName: String = {
+      if (countyID <= 0) "Unknown"
+      else ArrayCountyProp.filter(prop => {
+        val cp = prop.asInstanceOf[CountyProperty]
+        cp.countyID == countyID && cp.stateID == stateID
+      }).apply(0).name
+    }
+    override val getAsterixKey: String = s"$stateName-$countyName-$name"
+    override val getKey: Long = stateID * 1000 * 100000 + countyID * 100000 + cityID
+
+    override def toJson: JsObject =
+      Json.obj("geoID" -> geoID, "stateID" -> stateID, "stateName" -> stateName, "countyID" -> countyID,
+               "countyName" -> countyName, "cityID" -> cityID, "name" -> name, "LSAD" -> LSAD, "area" -> area)
+  }
+
+  object CityProperty {
+    val STATEFP = "STATEFP"
+    val PLACEEFP = "PLACEEFP"
+    val GEOID = "AFFGEOID"
+    val CITYID = "GEOID"
+    val ALADN = "ALAND"
+    val AWATER = "AWATER"
   }
 
   def decompose(entity: String): Seq[String] = {
