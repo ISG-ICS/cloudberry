@@ -463,7 +463,7 @@ function buildTweetSample(type, parameters) {
     aql.push('where $t.create_at >= $ts_start and $t.create_at < $ts_end');
   }
   aql.push('limit 100');
-  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg};\n')
+  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg, "id": $t.id, "hashtags": $t.hashtags, "user_mentions": $t.user_mentions};\n')
   return aql.join('\n');
 }
 
@@ -543,7 +543,6 @@ function queryCallbackWrapper(type) {
       reportUserMessage("Oops, no results found for those parameters.", false, "aql");
       return;
     }
-    console.log(res)
     // update map
     if (res.results[0])
       drawMap(res.results[0]);
@@ -763,8 +762,19 @@ function drawHashtag(tag_count) {
  * @ param {object}  tweets query results
  **/
 function drawTweets(message) {
+  console.log(message)
   $.each(message, function (i, d) {
-    $('#tweet').append('<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">'+d.tweet+'</p>&mdash;'+d.uname+'</blockquote> ');
+    var url = "https://api.twitter.com/1/statuses/oembed.json?id=" + d.id;
+    $.ajax({
+      url: url,
+      dataType: "jsonp",
+      success: function (data) {
+        $('#tweet').append(data.html);
+      }
+    });
+    // $('#tweet').append('<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">'+d.tweet+'</p>&mdash;'+d.uname+'</blockquote> ');
+    // $('#tweet').append(" <blockquote class='twitter-tweet' ><a href = 'https://twitter.com/" + d.uname+ "/status/" + d.id + " '></a> </blockquote><script src='http://platform.twitter.com/widgets.js' charset='utf-8'></script>")
+    // $('#tweet').append('<blockquote class="twitter-tweet" data-lang="en"><p lang="en" dir="ltr">These two paired up tonight in what was an amazing evening. Thank you <a href="https://twitter.com/hashtag/NXTConcord?src=hash">#NXTConcord</a> see you soon! <a href="https://twitter.com/wwebalor">@wwebalor</a> <a href="https://twitter.com/ShinsukeN">@ShinsukeN</a> <a href="https://t.co/Y4dIhZ7Js6">https://t.co/Y4dIhZ7Js6</a></p>&mdash; WWE NXT (@WWENXT) <a href="https://twitter.com/WWENXT/status/718266437362663425">April 8, 2016</a></blockquote> <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>')
   });
 }
 
