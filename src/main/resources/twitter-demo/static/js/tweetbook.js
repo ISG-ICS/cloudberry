@@ -454,7 +454,7 @@ function buildTweetSample(type, parameters) {
     aql.push('where $t.create_at >= $ts_start and $t.create_at < $ts_end');
   }
   aql.push('limit 100');
-  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg};\n')
+  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg, "id":$t.id};\n')
   return aql.join('\n');
 }
 
@@ -755,7 +755,15 @@ function drawHashtag(tag_count) {
  **/
 function drawTweets(message) {
   $.each(message, function (i, d) {
-    $('#tweets tr:last').after('<tr><td>' + d.uname + '<br/>' + d.tweet + '</td></tr>');
+    // Using JSONP
+    var url = "https://api.twitter.com/1/statuses/oembed.json?id=" + d.id;
+    $.ajax({
+      url: url,
+      dataType: "jsonp",
+      success: function (data) {
+        $('#tweet').append(data.html);
+      }
+    });
   });
 }
 
@@ -790,6 +798,6 @@ function reportUserMessage(message, isPositiveMessage, target) {
  **/
 function clearSidebar() {
   $('#hashcount tr').html('');
-  $('#tweets tr').html('');
+  $('#tweet').html('');
   $('#aql tr').html('');
 }
