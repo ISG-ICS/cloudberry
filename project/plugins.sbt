@@ -1,3 +1,5 @@
+val playVersion = "2.5.0"
+
 // Comment to get more information during initialization
 logLevel := Level.Warn
 
@@ -5,7 +7,7 @@ logLevel := Level.Warn
 resolvers += Resolver.typesafeRepo("releases")
 
 // Use the Play sbt plugin for Play projects
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.0")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % playVersion)
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.1.0")
 

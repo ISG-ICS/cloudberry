@@ -1,32 +1,15 @@
-name := """cloudberry"""
+import Dependencies._
 
-version := "1.0-SNAPSHOT"
+name := "cloudberry"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val web = (project in file("web")).
+  settings(Commons.playSettings: _*).
+  settings(
+    libraryDependencies ++= webDependencies
+  ).enablePlugins(PlayScala)
 
-scalaVersion := "2.11.7"
-
-// scalaz-bintray resolver needed for specs2 library
-resolvers ++= Seq(
-  "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
-  "ossrh" at "https://oss.sonatype.org/content/repositories/releases"
-)
-
-libraryDependencies ++= Seq(
-  ws, // Play's web services module
-  specs2 % Test,
-  "org.specs2" %% "specs2-matcher-extra" % "3.6" % Test,
-  "org.easytesting" % "fest-assert" % "1.4" % Test,
-  "com.typesafe.akka" %% "akka-testkit" % "2.3.11" % Test,
-  "org.webjars" % "bootstrap" % "3.3.6",
-  "org.webjars" % "flot" % "0.8.0",
-  "org.webjars" % "angularjs" % "1.5.0",
-  "org.webjars" % "leaflet" % "0.7.7",
-  "com.vividsolutions" % "jts" % "1.13",
-  "org.wololo" % "jts2geojson" % "0.7.0",
-  "com.github.nscala-time" %% "nscala-time" % "2.10.0",
-  "org.scalactic" %% "scalactic" % "2.2.6",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
-)
-
-routesGenerator := InjectedRoutesGenerator
+lazy val feed = (project in file("feed")).
+  settings(Commons.settings: _*).
+  settings(
+    libraryDependencies ++= feedDependencies
+  )

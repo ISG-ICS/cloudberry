@@ -8,10 +8,6 @@ import com.vividsolutions.jts.index.strtree.STRtree
 import models.Rectangular
 import org.wololo.geojson.{Feature, FeatureCollection, GeoJSONFactory}
 import org.wololo.jts2geojson.GeoJSONReader
-import play.api.{Environment, Logger}
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.libs.json._
-import utils.Profile
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -29,7 +25,7 @@ object Knowledge {
   var StateAbbrMap = Map.empty[String, String]
   var ArrayStateProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](60)
   var ArrayCountyProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](3230)
-  var ArrayCityProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](60000)
+  var ArrayCityProp: ArrayBuffer[GeoJSONProperty] = new ArrayBuffer[GeoJSONProperty](30000)
 
   def loadShape(inputStream: InputStream, index: STRtree, buffer: ArrayBuffer[GeoJSONProperty]) = {
     val geoJSONReader = new GeoJSONReader()
@@ -47,22 +43,6 @@ object Knowledge {
 
   def loadStringMapping(inputStream: InputStream): Map[String, String] = {
     Json.parse(inputStream).as[Map[String, String]](mapFormatter)
-  }
-
-  def loadResources(playENV: Environment): Future[Unit] = Future {
-    StateAbbrMap = loadStringMapping(playENV.resourceAsStream(StateAbbrPath).get).map(_.swap)
-    Profile.profile("load state shape")(loadShape(playENV.resourceAsStream(StateShapePath).get, IndexState, ArrayStateProp))
-    Profile.profile("load county shape")(loadShape(playENV.resourceAsStream(CountyShapePath).get, IndexCounty, ArrayCountyProp))
-
-    Profile.profile("load cities") {
-      playENV.getFile(CitiesPath).list.filter(_.endsWith(".json")).foreach { path: String =>
-        loadShape(playENV.resourceAsStream(CitiesPath + "/" + path).get, IndexCities, ArrayCityProp)
-      }
-    }
-
-    writeGeoProperty("state.json", ArrayStateProp)
-    writeGeoProperty("county.json", ArrayCountyProp)
-    writeGeoProperty("cities.json", ArrayCityProp)
   }
 
   def writeGeoProperty(filePath: String, arrayBuffer: ArrayBuffer[GeoJSONProperty]): Unit = {
@@ -84,6 +64,7 @@ object Knowledge {
       level.toLowerCase match {
         case "state" => (IndexState, ArrayStateProp)
         case "county" => (IndexCounty, ArrayCountyProp)
+        case "city" => (IndexCities, ArrayCityProp)
         case other => throw new UnknownSpatialLevelException(other)
       }
     // it may returns some false positives, but it should be fine in our application.
@@ -218,8 +199,15 @@ object Knowledge {
                "name" -> name, "LSAD" -> LSAD, "area" -> area)
   }
 
-  case class CityProperty(geoID: String, stateID: Int, countyID: Int, cityID: Int, name: String, LSAD: String,
-                          landArea: Double, waterArea: Double, geometry: Geometry) extends GeoJSONProperty {
+  case class CityProperty(geoID: String,
+                          stateID: Int,
+                          countyID: Int,
+                          cityID: Int,
+                          name: String,
+                          LSAD: String,
+                          landArea: Double,
+                          waterArea: Double,
+                          geometry: Geometry) extends GeoJSONProperty {
     val area = landArea + waterArea
     val stateName: String = ArrayStateProp.filter(_.stateID == stateID).headOption.map(_.name).getOrElse("Unknown")
     val countyName: String = {
