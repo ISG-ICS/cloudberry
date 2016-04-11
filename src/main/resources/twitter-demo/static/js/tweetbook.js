@@ -156,6 +156,16 @@ $(function () {
       $("#submit-button").click();
     }
   });
+
+  $('#sidebar').click(function(e){
+    e.preventDefault();
+    if($("#sidebar").attr("class")!="toggled")
+      $("#sidebar").toggleClass("toggled");
+    else{
+      if($(e.target).attr("id")=="sidebar")
+        $("#sidebar").toggleClass("toggled");
+}
+  });
 });
 
 function getCurrentDate() {
@@ -244,6 +254,8 @@ function setInfoControl(map) {
     this._div.innerHTML = '<h4>Count by ' + logicLevel + '</h4>' + (props ?
       '<b>' + props.NAME + '</b><br />' + 'Count: ' + (props.count ? props.count : 0) : 'Hover over a state');
   };
+
+  info.options = { position: 'topleft' };
 
   info.addTo(map);
 
@@ -652,7 +664,7 @@ function drawMap(mapPlotData) {
     $('.legend').remove();
 
   var legend = L.control({
-    position: 'bottomright'
+    position: 'topleft'
   });
 
   legend.onAdd = function (map) {
