@@ -756,12 +756,15 @@ function drawHashtag(tag_count) {
 function drawTweets(message) {
   $.each(message, function (i, d) {
     // Using JSONP
-    var url = "https://api.twitter.com/1/statuses/oembed.json?id=" + d.id;
+    var url = "query/tweet/" + d.id;
     $.ajax({
       url: url,
-      dataType: "jsonp",
+      dataType: "json",
       success: function (data) {
         $('#tweet').append(data.html);
+      },
+      error: function(data) {
+        // do nothing
       }
     });
   });
