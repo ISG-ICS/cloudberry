@@ -35,7 +35,7 @@ class UserActor(out: ActorRef, cachesActor: ActorRef) extends Actor with ActorLo
 
   def parseQuery(json: JsValue) = {
     val userQuery = json.as[UserQuery]
-    val entities = Knowledge.geoTag(userQuery.area, userQuery.level)
+    val entities = USHierarchyBuilder.geoTag(userQuery.area, userQuery.level)
     SetQuery(DataSet.Twitter, userQuery.keyword, userQuery.timeRange, entities, (userQuery.repeatDuration).seconds)
   }
 

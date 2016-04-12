@@ -1,10 +1,18 @@
 import sbt._
-import Keys._
 import play.sbt.PlayImport._
 
 object Dependencies {
+  val playVersion = "2.5.0"
+  val mockitoAll = "org.mockito" % "mockito-all" % "1.10.19" % Test
+  val scalatest = "org.scalatest" %% "scalatest" % "2.2.6" % Test
+  val easytest = "org.easytesting" % "fest-assert" % "1.4" % Test
+  val testDeps = Seq(
+    scalatest,
+    easytest,
+    mockitoAll
+  )
 
-  val webDependencies: Seq[ModuleID] = Seq(
+  val neoDependencies: Seq[ModuleID] = Seq(
     ws, // Play's web services module
     specs2 % Test,
     "org.specs2" %% "specs2-matcher-extra" % "3.6" % Test,
@@ -17,10 +25,22 @@ object Dependencies {
     "com.vividsolutions" % "jts" % "1.13",
     "org.wololo" % "jts2geojson" % "0.7.0",
     "com.github.nscala-time" %% "nscala-time" % "2.10.0",
-    "org.scalactic" %% "scalactic" % "2.2.6",
-    "org.scalatest" %% "scalatest" % "2.2.6" % "test")
+    "org.scalactic" %% "scalactic" % "2.2.6"
+  ) ++ testDeps
 
-  val feedDependencies: Seq[ModuleID] = Seq(
+  val noahDependencies: Seq[ModuleID] = Seq(
+  )
+
+  val utilDependencies: Seq[ModuleID] = Seq(
+    "com.typesafe.play" %% "play-logback" % playVersion
+  ) ++ testDeps
+
+  val oracleDependencies: Seq[ModuleID] = Seq(
+    "org.scalactic" %% "scalactic" % "2.2.6",
+    "org.scalatest" %% "scalatest" % "2.2.6" % Test,
+    "org.easytesting" % "fest-assert" % "1.4" % Test,
+    "com.typesafe.play" %% "play-json" % playVersion,
     "com.vividsolutions" % "jts" % "1.13",
-    "org.wololo" % "jts2geojson" % "0.7.0")
+    "org.wololo" % "jts2geojson" % "0.7.0"
+  ) ++ testDeps
 }

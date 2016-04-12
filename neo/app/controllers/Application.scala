@@ -30,7 +30,7 @@ class Application @Inject()(val wsClient: WSClient,
   val AsterixURL = config.getString("asterixdb.url").get
   val AQLConnection = new AQLConnection(wsClient, AsterixURL)
 
-  val loadKnowledge = Knowledge.loadResources(environment)
+  val loadKnowledge = USHierarchyBuilder.loadResources(environment)
   val checkViewStatus = new Migration_20160324(AQLConnection).up()
   val waitForIt = for {
     fKnowledge <- loadKnowledge
