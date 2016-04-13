@@ -156,6 +156,16 @@ $(function () {
       $("#submit-button").click();
     }
   });
+
+  $('#sidebar').click(function(e){
+    e.preventDefault();
+    if($("#sidebar").attr("class")!="toggled")
+      $("#sidebar").toggleClass("toggled");
+    else{
+      if($(e.target).attr("id")=="sidebar")
+        $("#sidebar").toggleClass("toggled");
+}
+  });
 });
 
 function getCurrentDate() {
@@ -244,6 +254,8 @@ function setInfoControl(map) {
     this._div.innerHTML = '<h4>Count by ' + logicLevel + '</h4>' + (props ?
       '<b>' + props.NAME + '</b><br />' + 'Count: ' + (props.count ? props.count : 0) : 'Hover over a state');
   };
+
+  info.options = { position: 'topleft' };
 
   info.addTo(map);
 
@@ -465,8 +477,6 @@ function buildTweetSample(type, parameters) {
  * @ param string  query type: {"submit", "zoom", "time", "drag"}
  **/
 function queryWrapper(type) {
-  // clear
-  clearSidebar();
   $("#aql").html('');
 
   // build form data
@@ -536,18 +546,18 @@ function queryCallbackWrapper(type) {
     }
     console.log(res)
     // update map
-    if (res.results[0])
+    if (res.results[0] && res.results[0].length>0)
       drawMap(res.results[0]);
     // update time series
-    if (res.results[1] && type != "time") {
+    if (res.results[1] && type != "time" && res.results[1].length>0) {
       drawTimeSerialBrush(res.results[1]);
     }
     // update hashtag
-    if (res.results[2]) {
+    if (res.results[2] && res.results[2].length>0) {
       drawHashtag(res.results[2]);
     }
     // update tweet table
-    if (res.results[3]) {
+    if (res.results[3] && res.results[3].length>0) {
       drawTweets(res.results[3]);
     }
   }
@@ -652,7 +662,7 @@ function drawMap(mapPlotData) {
     $('.legend').remove();
 
   var legend = L.control({
-    position: 'bottomright'
+    position: 'topleft'
   });
 
   legend.onAdd = function (map) {
@@ -744,8 +754,9 @@ function drawTimeSerialBrush(slice_count) {
  * @ param {object}  hashtag query results
  **/
 function drawHashtag(tag_count) {
+  $('#hashcount tr').html('');
   $.each(tag_count, function (i, d) {
-    $('#hashcount tr:last').after('<tr><td>' + d.tag + '<br/>' + d.count + '</td></tr>');
+    $('#hashcount tr:last').after('<tr><td>' + "#" + d.tag + '<br/>' + d.count + '</td></tr>');
   });
 }
 
@@ -754,8 +765,8 @@ function drawHashtag(tag_count) {
  * @ param {object}  tweets query results
  **/
 function drawTweets(message) {
+  $('#tweet').html('');
   $.each(message, function (i, d) {
-    // Using JSONP
     var url = "query/tweet/" + d.id;
     $.ajax({
       url: url,
@@ -796,11 +807,3 @@ function reportUserMessage(message, isPositiveMessage, target) {
     .appendTo('#' + target);
 }
 
-/**
- * clear sidebar before query
- **/
-function clearSidebar() {
-  $('#hashcount tr').html('');
-  $('#tweet').html('');
-  $('#aql tr').html('');
-}

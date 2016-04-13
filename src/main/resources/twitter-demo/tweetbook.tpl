@@ -9,6 +9,8 @@
     <link href="static/css/dc.css" rel="stylesheet" type="text/css">
     <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css"/>
     <link href='https://api.mapbox.com/mapbox.js/v2.3.0/mapbox.css' rel='stylesheet'/>
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css">
+    <link rel="stylesheet" href="static/css/bootstrap.vertical-tabs.css">
     <script src="static/js/asterix-sdk-stable.js"></script>
     <script src="http://code.jquery.com/jquery.min.js"></script>
     <script src="static/js/bootstrap.min.js"></script>
@@ -28,7 +30,7 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            width: 80%;
+            width: 100%;
             /*z-index: -1;*/
         }
 
@@ -36,23 +38,34 @@
             position: relative;
             top: 0;
             bottom: 0;
-            left: 80%;
-            width: 20%;
+            left: 96%;
+            width: 24%;
             height: 700px;
             overflow: auto;
+            margin-left: 0%;
+            -webkit-transition: all 0.5s ease;
+            -moz-transition: all 0.5s ease;
+            -o-transition: all 0.5s ease;
+            transition: all 0.5s ease;
+            background-color: white;
+            opacity: 0.8;
         }
+
+        #sidebar.toggled {
+            margin-left: -20%;
+        }               
 
         #time-series {
             position: absolute;
             top: 82%;
             left: 2.5%;
-            width: 80%;
+            width: 100%;
             height: 15%;
         }
 
         #input {
             position: absolute;
-            left: 20%;
+            left: 27%;
             top: 2%;
             width: 50%;
         }
@@ -88,6 +101,26 @@
             margin-right: 8px;
             opacity: 0.7;
         }
+        .fa-2x {
+            font-size: 2em;
+        }
+        .fa {
+            position: relative;
+            display: table-cell;
+            width: 60px;
+            height: 36px;
+            text-align: center;
+            vertical-align: middle;
+            font-size:20px;
+        }
+        .col-xs-2{
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .col-xs-10{
+            padding-left: 0;
+            padding-right: 0;
+        }
     </style>
 </head>
 <body>
@@ -103,37 +136,39 @@
 </div>
 <div id='time-series'></div>
 <div id='sidebar'>
-    <ul class="nav nav-pills nav-justified ">
-        <li role="presentation" class="active"><a href="#hashtag" data-toggle="pill">Hashtag</a></li>
-        <li role="presentation"><a href="#tweet" data-toggle="pill">Tweets</a></li>
-        <li role="presentation"><a href="#aql" data-toggle="pill">AQL</a></li>
-    </ul>
-    <div class="tab-content">
-        <div id="hashtag" class="tab-pane active">
-            <table class="table" id="hashcount">
-                <thead>
-                <tr>
-                    <th>Hashtag</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-        <div id="tweet" class="tab-pane">
-            <table class="table" id="tweets">
-            </table>
-        </div>
-        <div id="aql" class="tab-pane">
-            <table class="table" id="tweets">
-                <thead>
-                <tr>
-                    <th>AQL</th>
-                </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+    <div class="col-xs-2">
+        <ul class="nav nav-tabs tabs-left">
+            <li role="presentation" class="active"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" ></i></a></li>
+            <li role="presentation"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" ></i></a></li>
+            <li role="presentation"><a href="#aql" data-toggle="tab"><i class="fa fa-code fa-2x"></i></a></li>
+        </ul>
+    </div>
+    <div class="col-xs-10">
+        <div class="tab-content">
+            <div id="hashtag" class="tab-pane active">
+                <table class="table" id="hashcount">
+                    <thead>
+                    <tr>
+                        <th>Hashtag</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
+            <div id="tweet" class="tab-pane">
+            </div>
+            <div id="aql" class="tab-pane">
+                <table class="table" id="tweets">
+                    <thead>
+                    <tr>
+                        <th>AQL</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
