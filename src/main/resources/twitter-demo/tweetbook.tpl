@@ -157,15 +157,6 @@
                 </table>
             </div>
             <div id="tweet" class="tab-pane">
-                <table class="table" id="tweets">
-                    <thead>
-                    <tr>
-                        <th>Tweets</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    </tbody>
-                </table>
             </div>
             <div id="aql" class="tab-pane">
                 <table class="table" id="tweets">

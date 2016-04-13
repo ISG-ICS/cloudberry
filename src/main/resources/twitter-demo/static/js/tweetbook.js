@@ -466,7 +466,7 @@ function buildTweetSample(type, parameters) {
     aql.push('where $t.create_at >= $ts_start and $t.create_at < $ts_end');
   }
   aql.push('limit 100');
-  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg};\n')
+  aql.push('return {"uname": $t.user.screen_name, "tweet":$t.text_msg, "id":$t.id};\n')
   return aql.join('\n');
 }
 
@@ -756,7 +756,7 @@ function drawTimeSerialBrush(slice_count) {
 function drawHashtag(tag_count) {
   $('#hashcount tr').html('');
   $.each(tag_count, function (i, d) {
-    $('#hashcount tr:last').after('<tr><td>' + d.tag + '<br/>' + d.count + '</td></tr>');
+    $('#hashcount tr:last').after('<tr><td>' + "#" + d.tag + '<br/>' + d.count + '</td></tr>');
   });
 }
 
@@ -765,9 +765,19 @@ function drawHashtag(tag_count) {
  * @ param {object}  tweets query results
  **/
 function drawTweets(message) {
-  $('#tweets tr').html('');
+  $('#tweet').html('');
   $.each(message, function (i, d) {
-    $('#tweets tr:last').after('<tr><td>' + d.uname + '<br/>' + d.tweet + '</td></tr>');
+    var url = "query/tweet/" + d.id;
+    $.ajax({
+      url: url,
+      dataType: "json",
+      success: function (data) {
+        $('#tweet').append(data.html);
+      },
+      error: function(data) {
+        // do nothing
+      }
+    });
   });
 }
 
@@ -796,3 +806,4 @@ function reportUserMessage(message, isPositiveMessage, target) {
     .html('<button type="button" class="close" data-dismiss="alert">&times;</button>' + message)
     .appendTo('#' + target);
 }
+

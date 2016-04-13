@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from urllib2 import URLError, urlopen
+from urllib2 import URLError, urlopen, HTTPError
 from urllib import urlencode
 from json import loads, dumps
 from bottle import route, run, template, static_file, request
@@ -96,5 +96,14 @@ def run_asterix_ddl():
 @route('/update')
 def run_asterix_update():
     return (build_response("update", dict(request.query)))
+
+@route('/query/tweet/<id>')
+def get_tweet(id):
+    url = "https://api.twitter.com/1/statuses/oembed.json?id="+id
+    try:
+        content = urlopen(url).read()
+        return content
+    except HTTPError, e:
+        pass
 
 run(host='0.0.0.0', port=8080, debug=True)
