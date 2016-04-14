@@ -572,14 +572,14 @@ function queryCallbackWrapper(type) {
 function drawMap(mapPlotData) {
   /** Clear anything currently on the map **/
   console.time("query_aql_draw");
-  var maxWeight = 0;
-  var minWeight = Number.MAX_VALUE;
+  var maxWeight = 10; 
+  var minWeight = 0;
 
   // find max/min weight
   $.each(mapPlotData, function (i, data) {
     if (data.count) {
       maxWeight = Math.max(data.count, maxWeight);
-      minWeight = Math.min(data.count, minWeight);
+      //minWeight = Math.min(data.count, minWeight);
     }
   });
 
@@ -588,6 +588,9 @@ function drawMap(mapPlotData) {
     range = 0
     maxWeight = 0
     minWeight = 0
+  }
+  if (range < 10){
+      range = 10
   }
 
   colors = ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'];
@@ -670,9 +673,9 @@ function drawMap(mapPlotData) {
       grades = [0],
       labels = [];
 
-    for (var i = 0; i < 10; i++) {
+    for (var i = 1; i < 10; i++) {
       var value = Math.floor((i * 1.0 / 10) * range + minWeight);
-      if (value > grades[i]) {
+      if (value > grades[i-1]) {
         grades.push(value);
       }
     }
