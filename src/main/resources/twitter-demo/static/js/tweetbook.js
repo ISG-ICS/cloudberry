@@ -481,8 +481,8 @@ function queryWrapper(type) {
 
   // build form data
   var kwterm = $("#keyword-textbox").val();
-  if (kwterm.trim().length < 3) {
-    alert("please provide at least one keyword of length at least three letters")
+  if (kwterm.trim().length < 1) {
+    alert("please provide at least one keyword")
     return;
   }
   var formData = {
