@@ -700,7 +700,7 @@ function drawMap(mapPlotData) {
  * @ param {object}  time series query results
  **/
 function drawTimeSerialBrush(slice_count) {
-
+  $("#time-series").html("");
   var margin = {
       top: 10,
       right: 10,
