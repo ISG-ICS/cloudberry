@@ -705,7 +705,7 @@ function drawTimeSerialBrush(slice_count) {
       top: 10,
       right: 10,
       bottom: 30,
-      left: 20
+      left: 50
     },
     width = 962 - margin.left - margin.right,
     height = 150 - margin.top - margin.bottom;
