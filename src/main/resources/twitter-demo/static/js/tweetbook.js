@@ -332,7 +332,7 @@ function buildTemporaryDataset(parameters) {
       ds_predicate = 'let $keyword{0} := "{1}"\n'.format(i, tokens[i]) + ds_predicate;
     }
     for (var i = 0; i < tokens.length; i++) {
-      ds_predicate += 'and contains($t.text_msg, $keyword{0}) \n'.format(i);
+      ds_predicate += 'and similarity-jaccard(word-tokens($t.text_msg), word-tokens($keyword{0})) > 0.0 \n'.format(i);
     }
   }
   aql.push(ds_for);
@@ -481,8 +481,8 @@ function queryWrapper(type) {
 
   // build form data
   var kwterm = $("#keyword-textbox").val();
-  if (kwterm.trim().length < 3) {
-    alert("please provide at least one keyword of length at least three letters")
+  if (kwterm.trim().length < 1) {
+    alert("please provide at least one keyword")
     return;
   }
   var formData = {
