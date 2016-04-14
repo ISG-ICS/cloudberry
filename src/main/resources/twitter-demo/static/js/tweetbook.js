@@ -738,6 +738,8 @@ function drawTimeSerialBrush(slice_count) {
   var minDate = timeDimension.bottom(1)[0].slice;
   var maxDate = timeDimension.top(1)[0].slice;
 
+  $('#time-series').append('<text style="font:12px sans-serif">'+minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate()+'</text>');
+
   timeSeries
     .renderArea(true)
     .width(width)
@@ -748,6 +750,8 @@ function drawTimeSerialBrush(slice_count) {
     .x(d3.time.scale().domain([minDate, maxDate]));
 
   dc.renderAll();
+
+  $('#time-series').append('<text style="font:12px sans-serif">'+maxDate.getFullYear()+"-"+(maxDate.getMonth()+1)+"-"+maxDate.getDate()+'</text>');
 
   console.log('finished refining query');
 }
