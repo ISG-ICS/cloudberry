@@ -332,7 +332,7 @@ function buildTemporaryDataset(parameters) {
       ds_predicate = 'let $keyword{0} := "{1}"\n'.format(i, tokens[i]) + ds_predicate;
     }
     for (var i = 0; i < tokens.length; i++) {
-      ds_predicate += 'and contains($t.text_msg, $keyword{0}) \n'.format(i);
+      ds_predicate += 'and similarity-jaccard(word-tokens($t.text_msg), word-tokens($keyword{0})) > 0.0 \n'.format(i);
     }
   }
   aql.push(ds_for);
