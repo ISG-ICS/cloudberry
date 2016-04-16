@@ -3,6 +3,7 @@ import play.sbt.PlayImport._
 
 object Dependencies {
   val playVersion = "2.5.0"
+  val twitter4jVersion = "4.0.3"
   val mockitoAll = "org.mockito" % "mockito-all" % "1.10.19" % Test
   val scalatest = "org.scalatest" %% "scalatest" % "2.2.6" % Test
   val easytest = "org.easytesting" % "fest-assert" % "1.4" % Test
@@ -29,13 +30,16 @@ object Dependencies {
   ) ++ testDeps
 
   val noahDependencies: Seq[ModuleID] = Seq(
+    "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
+    "com.twitter" % "hbc-core" % "2.2.0"
   )
 
   val utilDependencies: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-logback" % playVersion
   ) ++ testDeps
 
-  val oracleDependencies: Seq[ModuleID] = Seq(
+  val gnosisDependencies: Seq[ModuleID] = Seq(
     "org.scalactic" %% "scalactic" % "2.2.6",
     "org.scalatest" %% "scalatest" % "2.2.6" % Test,
     "org.easytesting" % "fest-assert" % "1.4" % Test,

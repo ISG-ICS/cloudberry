@@ -1,16 +1,15 @@
-package edu.uci.ics.cloudberry.oracle
+package edu.uci.ics.cloudberry.gnosis
 
 import java.io._
-import java.nio.charset.{Charset, CodingErrorAction}
 
-import edu.uci.ics.cloudberry.oracle.USGeoRelationResolver._
+import edu.uci.ics.cloudberry.gnosis.USAnnotationHelper.HelperProp
 import edu.uci.ics.cloudberry.util.Profile._
 import play.api.libs.json.{JsObject, Json}
 
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 
 object USHierarchyBuilder {
+
 
   val StateJsonPath = "StatePath"
   val CountyJsonPath = "CountyPath"
@@ -34,13 +33,11 @@ object USHierarchyBuilder {
   }
 
   type OptionMap = mutable.Map[String, Any]
-  val arrayStateProp: ArrayBuffer[StateProp] = new ArrayBuffer(60)
-  val arrayCountyProp: ArrayBuffer[CountyProp] = new ArrayBuffer(3230)
-  val arrayCityProp: ArrayBuffer[CityProp] = new ArrayBuffer(30000)
 
-  val stateIndex = new USGeoJSONIndex(arrayStateProp)
-  val countyIndex = new USGeoJSONIndex(arrayCountyProp)
-  val cityIndex = new USGeoJSONIndex(arrayCityProp)
+  val stateIndex = new USGeoJSONIndex()
+  val countyIndex = new USGeoJSONIndex()
+  val cityIndex = new USGeoJSONIndex()
+  val cityToCountyMap = mutable.Map.empty[Int, Int]
 
   def main(args: Array[String]) = {
     val config: OptionMap = mutable.Map.empty[String, Any]
@@ -51,51 +48,24 @@ object USHierarchyBuilder {
   }
 
   def loadShapes(config: OptionMap): Unit = {
-    Seq((StateJsonPath, stateIndex), (CountyJsonPath, countyIndex), (CityJsonPath, cityIndex)).foreach {
+    Seq((StateJsonPath, stateIndex),
+        (CountyJsonPath, countyIndex),
+        (CityJsonPath, cityIndex)).foreach {
       case (key: String, index: USGeoJSONIndex) => config.get(key) match {
         case Some(path: String) =>
-          val file = new File(path)
-          if (file.isDirectory) {
-            file.list.filter(_.endsWith(".json")).foreach { fileName =>
-              loadShape(file.getAbsolutePath + File.separator + fileName, index)
-            }
-          } else {
-            loadShape(path, index)
-          }
+          USGeoGnosis.loadShape(path, index, Seq.empty[HelperProp])
         case _ => System.err.print(usage); throw new IllegalArgumentException(s"$key is missing")
       }
     }
   }
 
-  def loadShape(fileName: String, index: USGeoJSONIndex) {
-    profile("load shape: " + fileName) {
-      val decoder = Charset.forName("UTF-8").newDecoder()
-      decoder.onMalformedInput(CodingErrorAction.IGNORE)
-      val textJson = scala.io.Source.fromFile(fileName)(decoder).getLines().mkString("\n")
-      index.loadShape(textJson)
-    }
-  }
 
   def parseRelation(): Unit = {
-    profile("parse state") {
-      stateIndex.entities.foreach(entity => {
-        val state = entity.asInstanceOf[USStateEntity]
-        arrayStateProp.append(StateProp(state.geoID, state.stateID, state.name))
-      })
-    }
-
-    profile("parse county") {
-      countyIndex.entities.foreach(entity => {
-        val county = entity.asInstanceOf[USCountyEntity]
-        arrayCountyProp.append(CountyProp(county.geoID, county.stateID, county.countyID, county.name))
-      })
-    }
-
     profile("parse city") {
       cityIndex.entities.foreach(entity => {
         val city = entity.asInstanceOf[USCityEntity]
         val countyID = findCounty(city)
-        arrayCityProp.append(CityProp(city.geoID, city.stateID, countyID, city.cityID, city.name))
+        cityToCountyMap += city.cityID -> countyID
       })
     }
   }
@@ -133,7 +103,7 @@ object USHierarchyBuilder {
                  "LSAD" -> e.LSAD,
                  "area" -> e.area)
       case e: USCityEntity =>
-        val countyID: Int = arrayCityProp.find(_.cityID == e.cityID).map(_.countyID).getOrElse(0)
+        val countyID: Int = cityToCountyMap.get(e.cityID).getOrElse(0)
         Json.obj("geoID" -> e.geoID,
                  "stateID" -> e.stateID,
                  "stateName" -> getStateName(e.stateID),

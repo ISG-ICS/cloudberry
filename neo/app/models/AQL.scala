@@ -10,6 +10,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future
 
+//TODO generalize the API to make this DB agnostic
 class AQL(val statement: String) {
 
 }

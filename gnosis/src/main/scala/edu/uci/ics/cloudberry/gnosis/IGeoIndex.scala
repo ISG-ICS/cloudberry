@@ -1,8 +1,7 @@
-package edu.uci.ics.cloudberry.oracle
+package edu.uci.ics.cloudberry.gnosis
 
 import com.vividsolutions.jts.geom.{Envelope, Geometry}
 import com.vividsolutions.jts.index.strtree.STRtree
-import edu.uci.ics.cloudberry.oracle.USGeoRelationResolver.USHierarchyProp
 import org.wololo.geojson.{Feature, FeatureCollection, GeoJSONFactory}
 import org.wololo.jts2geojson.GeoJSONReader
 
@@ -11,14 +10,12 @@ import scala.collection.mutable.ArrayBuffer
 
 trait IGeoIndex {
 
-  def loadShape(geoJsonString: String): Unit
-
   def search(geometry: Geometry): Seq[IGeoJSONEntity]
 
   def search(envelope: Envelope): Seq[IGeoJSONEntity]
 }
 
-class USGeoJSONIndex(val props: Seq[USHierarchyProp]) extends IGeoIndex {
+class USGeoJSONIndex() extends IGeoIndex {
   private val index: STRtree = new STRtree()
   val entities: ArrayBuffer[IUSGeoJSONEntity] = new ArrayBuffer[IUSGeoJSONEntity]()
 
@@ -27,7 +24,7 @@ class USGeoJSONIndex(val props: Seq[USHierarchyProp]) extends IGeoIndex {
     *
     * @param geoJsonString
     */
-  override def loadShape(geoJsonString: String): Unit = {
+  def loadShape(geoJsonString: String, props: Seq[USAnnotationHelper.HelperProp]): Unit = {
     val geoJSONReader = new GeoJSONReader()
     val featureCollection: FeatureCollection = GeoJSONFactory.create(geoJsonString).asInstanceOf[FeatureCollection]
     featureCollection.getFeatures.foreach { f: Feature =>

@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.oracle
+package edu.uci.ics.cloudberry.gnosis
 
 import org.scalatest.{FlatSpec, Matchers}
 

@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.oracle
+package edu.uci.ics.cloudberry.gnosis
 
 trait IEntity {
 
@@ -7,7 +7,13 @@ trait IEntity {
     *
     * @return
     */
-  def level: Int
+  def level: TypeLevel
+
+  /**
+    * The level of the parent entity. Some of the entity may go to the grandparent directly.
+    * @return
+    */
+  def parentLevel: TypeLevel
 
   def key: Long
 
