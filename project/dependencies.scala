@@ -32,8 +32,9 @@ object Dependencies {
   val noahDependencies: Seq[ModuleID] = Seq(
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
     "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
-    "com.twitter" % "hbc-core" % "2.2.0"
-  )
+    "com.twitter" % "hbc-core" % "2.2.0",
+    "org.apache.commons" % "commons-lang3" % "3.4"
+  ) ++ testDeps
 
   val utilDependencies: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-logback" % playVersion

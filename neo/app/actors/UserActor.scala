@@ -3,6 +3,7 @@ package actors
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
 import akka.util.Timeout
+import edu.uci.ics.cloudberry.gnosis.USHierarchyBuilder
 import models.{DataSet, QueryResult, Rectangular}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
@@ -35,7 +36,7 @@ class UserActor(out: ActorRef, cachesActor: ActorRef) extends Actor with ActorLo
 
   def parseQuery(json: JsValue) = {
     val userQuery = json.as[UserQuery]
-    val entities = USHierarchyBuilder.geoTag(userQuery.area, userQuery.level)
+    val entities = Knowledge.geoTag(userQuery.area, userQuery.level)
     SetQuery(DataSet.Twitter, userQuery.keyword, userQuery.timeRange, entities, (userQuery.repeatDuration).seconds)
   }
 

@@ -2,10 +2,11 @@ package edu.uci.ics.cloudberry.gnosis
 
 import java.io.File
 
+import com.vividsolutions.jts.geom.{Coordinate, Envelope}
 import edu.uci.ics.cloudberry.gnosis.USAnnotationHelper.{CityProp, CountyProp, StateProp}
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.{JsArray, JsObject, Json, Writes}
 
-private class USGeoGnosis(levelPropPathMap: Map[TypeLevel, String], levelGeoPathMap: Map[TypeLevel, String]) {
+class USGeoGnosis(levelPropPathMap: Map[TypeLevel, String], levelGeoPathMap: Map[TypeLevel, String]) {
 
   import USGeoGnosis._
 
@@ -15,7 +16,7 @@ private class USGeoGnosis(levelPropPathMap: Map[TypeLevel, String], levelGeoPath
     OrderedLevels.map(level => {
       val index = new USGeoJSONIndex()
       val jsArrays = Json.parse(loadSmallJSONFile(propMap.get(level).get)).asInstanceOf[JsArray].value
-      index.loadShape(shapeMap.get(level).get, level match {
+      loadShape(shapeMap.get(level).get, index, level match {
         case StateLevel => jsArrays.map(_.as[StateProp])
         case CountyLevel => jsArrays.map(_.as[CountyProp])
         case CityLevel => jsArrays.map(_.as[CityProp])
@@ -24,14 +25,55 @@ private class USGeoGnosis(levelPropPathMap: Map[TypeLevel, String], levelGeoPath
     }).toMap
   }
 
-  def tagNeighborhood(cityName: String, rectangle: Rectangle): USGeoTagInfo = ???
+  lazy val states: Seq[USStateEntity] = {
+    levelShapeMap.get(StateLevel).get.entities.map(_.asInstanceOf[USStateEntity])
+  }
+
+  lazy val counties: Seq[USCountyEntity] = {
+    levelShapeMap.get(CountyLevel).get.entities.map(_.asInstanceOf[USCountyEntity])
+  }
+
+  lazy val cities: Seq[USCityEntity] = {
+    levelShapeMap.get(CityLevel).get.entities.map(_.asInstanceOf[USCityEntity])
+  }
+
+  lazy val stateShapes: IGeoIndex = levelShapeMap.get(StateLevel).get
+  lazy val countyShapes: IGeoIndex = levelShapeMap.get(CountyLevel).get
+  lazy val cityShapes: IGeoIndex = levelShapeMap.get(CityLevel).get
+
+  def tagNeighborhood(cityName: String, rectangle: Rectangle): Option[USGeoTagInfo] = {
+    val box = new Envelope(rectangle.swLog, rectangle.neLog, rectangle.swLat, rectangle.neLat)
+    cities.find(city => city.name == cityName && city.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_))
+    //TODO continue to county, state level
+  }
+
+  def tagPoint(longitude: Double, latitude: Double): Option[USGeoTagInfo] = {
+    val box = new Envelope(new Coordinate(longitude, latitude))
+    cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
+    //TODO ditto
+  }
+
+  def tagCity(cityName: String, stateAbbr: String): Option[USGeoTagInfo] = {
+    cities.find(city => city.name == cityName &&
+      city.stateName == StateAbbr2FullNameMap.get(stateAbbr).getOrElse("")).map(USGeoTagInfo(_))
+  }
 }
 
 object USGeoGnosis {
 
   case class USGeoTagInfo(stateID: Int, stateName: String,
                           countyID: Int, countyName: String,
-                          cityID: Int, cityName: String)
+                          cityID: Int, cityName: String) {
+    override def toString: String = Json.toJson(this).asInstanceOf[JsObject].toString()
+  }
+
+  object USGeoTagInfo {
+    implicit val writer: Writes[USGeoTagInfo] = Json.writes[USGeoTagInfo]
+
+    def apply(city: USCityEntity): USGeoTagInfo = {
+      USGeoTagInfo(city.stateID, city.stateName, city.countyID, city.countyName, city.cityID, city.name)
+    }
+  }
 
   def loadShape(filePath: String, index: USGeoJSONIndex, prop: Seq[USAnnotationHelper.HelperProp]) {
     val file = new File(filePath)

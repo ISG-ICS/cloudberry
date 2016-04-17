@@ -12,6 +12,7 @@ public class Tweet {
     public static String IN_REPLY_TO_USER = "in_reply_to_user";
     public static String FAVORITE_COUNT = "favorite_count";
     public static String GEO_TAG = "geo_tag";
+    public static String GEO_LOCATION = "geo_location";
     public static String RETWEET_COUNT = "retweet_count";
     public static String LANG = "lang";
     public static String IS_RETWEET = "is_retweet";
@@ -46,35 +47,41 @@ public class Tweet {
         ADM.keyValueToSbWithComma(sb, USER, User.toADM(status.getUser()));
 
         ADM.keyValueToSbWithComma(sb, PLACE, Place.toADM(status.getPlace()));
+        if (status.getGeoLocation() != null) {
+            ADM.keyValueToSbWithComma(sb, GEO_LOCATION, ADM.mkPoint(status.getGeoLocation()));
+        } else if (status.getPlace() != null && status.getPlace().getPlaceType().equals("poi")) {
+            ADM.keyValueToSbWithComma(sb, GEO_LOCATION, ADM.mkPoint(status.getPlace().getBoundingBoxCoordinates()[0][0]));
+        }
 
         ADM.keyValueToSb(sb, GEO_TAG, geoTags);
         sb.append("}");
         return sb.toString();
     }
 
-    public static String GEO_LOCATION = "geo_location";
-    public static String CITY_ID = "city_id";
-    public static String CITY_NAME = "city_name";
-    public static String COUNTY_ID = "county_id";
-    public static String COUNTY_NAME = "county_name";
-    public static String STATE_ID = "state_id";
-    public static String STATE_NAME = "state_name";
-    public static String UNKNOWN = "unknown";
-
     public static String geoTag(Status status, USGeoGnosis gnosis) {
         StringBuilder sb = new StringBuilder();
-        GeoLocation location = status.getGeoLocation();
         if (textMatchPlace(sb, status, gnosis)) {
-
-        } else if (exactPointLookup(sb, location, gnosis)) {
-        } else {
-            System.err.println("unknown place:" + status);
+            return sb.toString();
         }
+        GeoLocation location = status.getGeoLocation();
+        if (exactPointLookup(sb, location, gnosis)) {
+            return sb.toString();
+        }
+        System.err.println("unknown place:" + status.getPlace());
         return sb.toString();
     }
 
     private static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
-        return false;
+        if (location == null) {
+            return false;
+        }
+
+        scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(location.getLongitude(), location.getLatitude());
+        if (info.isEmpty()) {
+            return false;
+        }
+        sb.append(info.get().toString());
+        return true;
     }
 
     private static boolean textMatchPlace(StringBuilder sb, Status status, USGeoGnosis gnosis) {
@@ -83,34 +90,50 @@ public class Tweet {
             return false;
         }
         String country = place.getCountry();
-        if (("United States").equals(country)){
+        if (!("United States").equals(country)) {
             return false;
         }
+        scala.Option<USGeoGnosis.USGeoTagInfo> info;
         String type = place.getPlaceType();
         switch (type) {
             case "country":
                 return false;
             case "admin": // state level
-                break;
+                return false;
             case "city":
-                break;
-            case "neighborhood": // e.g. "The Las Vegas Strip, Paradise"
                 int index = place.getFullName().indexOf(',');
-                if (index < 0){
-                    System.err.println("unknown neighborhood:"  + place.getFullName());
+                if (index < 0) {
+                    System.err.println("unknown neighborhood:" + place.getFullName());
                     return false;
                 }
-                String cityName = place.getFullName().substring(index+1);
-                USGeoGnosis.USGeoTagInfo info = gnosis.tagNeighborhood(cityName,
+                String stateAbbr = place.getFullName().substring(index + 1).trim();
+                String cityName = place.getName();
+                info = gnosis.tagCity(cityName, stateAbbr);
+                break;
+            case "neighborhood": // e.g. "The Las Vegas Strip, Paradise"
+                index = place.getFullName().indexOf(',');
+                if (index < 0) {
+                    System.err.println("unknown neighborhood:" + place.getFullName());
+                    return false;
+                }
+                cityName = place.getFullName().substring(index + 1).trim();
+                info = gnosis.tagNeighborhood(cityName,
                         ADM.coordinates2Rectangle(place.getBoundingBoxCoordinates()));
                 break;
             case "poi": // a point
+                info = gnosis.tagPoint(place.getGeometryCoordinates()[0][0].getLongitude(),
+                        place.getGeometryCoordinates()[0][0].getLatitude());
                 break;
             default:
                 System.err.println("unknown place type:" + type + status.toString());
                 return false;
         }
-        return false;
+
+        if (info == null || info.isEmpty()) {
+            return false;
+        }
+        sb.append(info.get().toString());
+        return true;
     }
 
 }

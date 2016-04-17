@@ -7,6 +7,3 @@ trait IRelationResolver {
   def getParent(entity: IEntity): Option[IEntity]
 }
 
-object USGeoRelationResolver {
-
-}
