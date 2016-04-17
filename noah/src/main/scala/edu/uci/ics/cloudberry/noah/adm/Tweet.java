@@ -12,7 +12,7 @@ public class Tweet {
     public static String IN_REPLY_TO_USER = "in_reply_to_user";
     public static String FAVORITE_COUNT = "favorite_count";
     public static String GEO_TAG = "geo_tag";
-    public static String GEO_LOCATION = "geo_location";
+    public static String GEO_COORDINATE = "coordinate";
     public static String RETWEET_COUNT = "retweet_count";
     public static String LANG = "lang";
     public static String IS_RETWEET = "is_retweet";
@@ -46,11 +46,13 @@ public class Tweet {
         }
         ADM.keyValueToSbWithComma(sb, USER, User.toADM(status.getUser()));
 
-        ADM.keyValueToSbWithComma(sb, PLACE, Place.toADM(status.getPlace()));
+        if (status.getPlace() != null) {
+            ADM.keyValueToSbWithComma(sb, PLACE, Place.toADM(status.getPlace()));
+        }
         if (status.getGeoLocation() != null) {
-            ADM.keyValueToSbWithComma(sb, GEO_LOCATION, ADM.mkPoint(status.getGeoLocation()));
+            ADM.keyValueToSbWithComma(sb, GEO_COORDINATE, ADM.mkPoint(status.getGeoLocation()));
         } else if (status.getPlace() != null && status.getPlace().getPlaceType().equals("poi")) {
-            ADM.keyValueToSbWithComma(sb, GEO_LOCATION, ADM.mkPoint(status.getPlace().getBoundingBoxCoordinates()[0][0]));
+            ADM.keyValueToSbWithComma(sb, GEO_COORDINATE, ADM.mkPoint(status.getPlace().getBoundingBoxCoordinates()[0][0]));
         }
 
         ADM.keyValueToSb(sb, GEO_TAG, geoTags);
@@ -121,8 +123,9 @@ public class Tweet {
                         ADM.coordinates2Rectangle(place.getBoundingBoxCoordinates()));
                 break;
             case "poi": // a point
-                info = gnosis.tagPoint(place.getGeometryCoordinates()[0][0].getLongitude(),
-                        place.getGeometryCoordinates()[0][0].getLatitude());
+                double longitude = (place.getBoundingBoxCoordinates())[0][0].getLongitude();
+                double latitude = (place.getBoundingBoxCoordinates())[0][0].getLatitude();
+                info = gnosis.tagPoint(longitude, latitude);
                 break;
             default:
                 System.err.println("unknown place type:" + type + status.toString());

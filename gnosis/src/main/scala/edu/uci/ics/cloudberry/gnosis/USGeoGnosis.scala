@@ -44,13 +44,13 @@ class USGeoGnosis(levelPropPathMap: Map[TypeLevel, String], levelGeoPathMap: Map
   def tagNeighborhood(cityName: String, rectangle: Rectangle): Option[USGeoTagInfo] = {
     val box = new Envelope(rectangle.swLog, rectangle.neLog, rectangle.swLat, rectangle.neLat)
     cities.find(city => city.name == cityName && city.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_))
-    //TODO continue to county, state level
   }
 
   def tagPoint(longitude: Double, latitude: Double): Option[USGeoTagInfo] = {
     val box = new Envelope(new Coordinate(longitude, latitude))
-    cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
-    //TODO ditto
+    val cityOpt = cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
+    if (cityOpt.isDefined) cityOpt
+    countyShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCountyEntity]))
   }
 
   def tagCity(cityName: String, stateAbbr: String): Option[USGeoTagInfo] = {
@@ -72,6 +72,12 @@ object USGeoGnosis {
 
     def apply(city: USCityEntity): USGeoTagInfo = {
       USGeoTagInfo(city.stateID, city.stateName, city.countyID, city.countyName, city.cityID, city.name)
+    }
+
+    def apply(county: USCountyEntity): USGeoTagInfo = {
+      USGeoTagInfo(stateID = county.stateID, stateName = county.stateName,
+                   countyID = county.countyID, countyName = county.name,
+                   cityID = 0, cityName = "")
     }
   }
 
