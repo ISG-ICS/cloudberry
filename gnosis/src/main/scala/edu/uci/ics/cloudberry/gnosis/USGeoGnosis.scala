@@ -49,7 +49,7 @@ class USGeoGnosis(levelPropPathMap: Map[TypeLevel, String], levelGeoPathMap: Map
   def tagPoint(longitude: Double, latitude: Double): Option[USGeoTagInfo] = {
     val box = new Envelope(new Coordinate(longitude, latitude))
     val cityOpt = cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
-    if (cityOpt.isDefined) cityOpt
+    if (cityOpt.isDefined) return cityOpt
     countyShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCountyEntity]))
   }
 
@@ -63,7 +63,7 @@ object USGeoGnosis {
 
   case class USGeoTagInfo(stateID: Int, stateName: String,
                           countyID: Int, countyName: String,
-                          cityID: Int, cityName: String) {
+                          cityID: Option[Int], cityName: Option[String]) {
     override def toString: String = Json.toJson(this).asInstanceOf[JsObject].toString()
   }
 
@@ -71,13 +71,13 @@ object USGeoGnosis {
     implicit val writer: Writes[USGeoTagInfo] = Json.writes[USGeoTagInfo]
 
     def apply(city: USCityEntity): USGeoTagInfo = {
-      USGeoTagInfo(city.stateID, city.stateName, city.countyID, city.countyName, city.cityID, city.name)
+      USGeoTagInfo(city.stateID, city.stateName, city.countyID, city.countyName, Some(city.cityID), Some(city.name))
     }
 
     def apply(county: USCountyEntity): USGeoTagInfo = {
       USGeoTagInfo(stateID = county.stateID, stateName = county.stateName,
                    countyID = county.countyID, countyName = county.name,
-                   cityID = 0, cityName = "")
+                   cityID = None, cityName = None)
     }
   }
 

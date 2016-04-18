@@ -3,7 +3,6 @@ package actors
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
 import akka.util.Timeout
-import edu.uci.ics.cloudberry.gnosis.USHierarchyBuilder
 import models.{DataSet, QueryResult, Rectangular}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._

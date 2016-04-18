@@ -38,7 +38,8 @@ object TwitterJSONTagToADM {
 
   def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = {
     try {
-      println(Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis))
+      val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis)
+      if (adm.length > 0) println(adm)
     } catch {
       case e: Throwable => {
         e.printStackTrace(System.err)
