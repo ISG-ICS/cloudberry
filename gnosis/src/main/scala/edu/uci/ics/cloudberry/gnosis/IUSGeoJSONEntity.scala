@@ -3,7 +3,6 @@ package edu.uci.ics.cloudberry.gnosis
 import com.vividsolutions.jts.geom.Geometry
 import edu.uci.ics.cloudberry.gnosis.USAnnotationHelper.{CityProp, CountyProp}
 import play.api.libs.json.{JsObject, Json}
-import USGeoGnosis._
 
 sealed trait IUSGeoJSONEntity extends IGeoJSONEntity {
   def geometry: Geometry

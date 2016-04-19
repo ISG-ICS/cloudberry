@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry
 
+import java.io.File
 import java.nio.charset.{Charset, CodingErrorAction}
 
 package object gnosis {
@@ -7,11 +8,16 @@ package object gnosis {
   class UnknownEntityException(entity: IEntity) extends RuntimeException("unknown entity:" + entity)
 
   type TypeLevel = Int
+  val StateLevel: TypeLevel = 1
+  val CountyLevel: TypeLevel = 2
+  val CityLevel: TypeLevel = 3
 
-  def loadSmallJSONFile(fileName: String): String = {
+  val OrderedLevels: Seq[TypeLevel] = Seq(StateLevel, CountyLevel, CityLevel)
+
+  def loadSmallJSONFile(file: File): String = {
     val decoder = Charset.forName("UTF-8").newDecoder()
     decoder.onMalformedInput(CodingErrorAction.IGNORE)
-    scala.io.Source.fromFile(fileName)(decoder).getLines().mkString("\n")
+    scala.io.Source.fromFile(file)(decoder).getLines().mkString("\n")
   }
 
 }

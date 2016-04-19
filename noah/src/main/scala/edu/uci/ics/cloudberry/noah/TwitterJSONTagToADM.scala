@@ -1,7 +1,8 @@
 package edu.uci.ics.cloudberry.noah
 
-import edu.uci.ics.cloudberry.gnosis.USGeoGnosis._
-import edu.uci.ics.cloudberry.gnosis.{TypeLevel, USGeoGnosis}
+import java.io.File
+
+import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.noah.adm.Tweet
 import edu.uci.ics.cloudberry.util.Profile._
 import twitter4j.TwitterObjectFactory
@@ -48,10 +49,11 @@ object TwitterJSONTagToADM {
     }
   }
 
+  //TODO make a parallel version of this one
   def main(args: Array[String]): Unit = {
     parseOption(args.toList)
     val usGeoGnosis = profile("loading resource") {
-      new USGeoGnosis(propMap.toMap, shapeMap.toMap)
+      new USGeoGnosis(propMap.mapValues(new File(_)).toMap, shapeMap.mapValues(new File(_)).toMap)
     }
     for (ln <- scala.io.Source.stdin.getLines()) {
       tagOneTweet(ln, usGeoGnosis)

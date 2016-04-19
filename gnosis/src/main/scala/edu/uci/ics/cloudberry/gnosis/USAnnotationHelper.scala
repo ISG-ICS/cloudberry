@@ -1,13 +1,12 @@
 package edu.uci.ics.cloudberry.gnosis
 
-import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 
 class USAnnotationHelper(levelMap: Map[TypeLevel, String]) {
 
   import USAnnotationHelper._
-  import USGeoGnosis._
 
   val stateProps: Seq[StateProp] = loadJSON(levelMap.get(StateLevel).get).map(_.as[StateProp])
   val countyProp: Seq[CountyProp] = loadJSON(levelMap.get(CountyLevel).get).map(_.as[CountyProp])

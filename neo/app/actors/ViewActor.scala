@@ -78,7 +78,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
   }
 
   def initialized: Receive = {
-    case q: SetQuery =>
+    case q: CacheQuery =>
       val optMissingInterval = getTimeRangeDifference(curTimeRange, Seq(q.timeRange))
       optMissingInterval match {
         case Some(interval) =>
@@ -122,19 +122,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
     conn.post(AQL.updateViewMeta(dataSet.name, keyword, newInterval).statement)
   }
 
-  def askView(q: SetQuery, sender: ActorRef): Unit = {
-    //    dbQuery(q, "map").onSuccess {
-    //      case viewResult => {
-    //        sender ! viewResult
-    //      }
-    //    }
-    //    dbQuery(q, "time").onSuccess {
-    //      case viewResult => {
-    ////        sender ! viewResult
-    //      }
-    //    }
-    //
-    log.info("sender:" + sender)
+  def askView(q: CacheQuery, sender: ActorRef): Unit = {
     val fmap = dbQuery(q, "map")
     val ftime = dbQuery(q, "time")
     val ftag = dbQuery(q, "hashtag")
@@ -157,7 +145,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
     }
   }
 
-  def dbQuery(q: SetQuery, aggType: String): Future[QueryResult] = {
+  def dbQuery(q: CacheQuery, aggType: String): Future[QueryResult] = {
     val aql = AQL.aggregateBy(q, aggType)
 
     conn.post(aql.statement).map { response =>
@@ -207,7 +195,7 @@ class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with A
   implicit val timeout = 5.seconds
 
   def receive = {
-    case q: SetQuery =>
+    case q: CacheQuery =>
       context.child(q.key).getOrElse {
         context.actorOf(Props(new ViewActor(q.dataSet, q.keyword, superRange(q.timeRange, ViewActor.DefaultInterval))),
           q.key)

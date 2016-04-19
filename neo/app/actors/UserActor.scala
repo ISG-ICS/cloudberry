@@ -3,7 +3,8 @@ package actors
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
 import akka.util.Timeout
-import models.{DataSet, QueryResult, Rectangular}
+import edu.uci.ics.cloudberry.gnosis._
+import models.{DataSet, QueryResult}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
 
@@ -12,7 +13,7 @@ import scala.concurrent.duration._
 /**
   * Each user is an actor.
   */
-class UserActor(out: ActorRef, cachesActor: ActorRef) extends Actor with ActorLogging {
+class UserActor(val out: ActorRef, val cachesActor: ActorRef, val usGeoGnosis: USGeoGnosis) extends Actor with ActorLogging {
 
   implicit val timeout = Timeout(5.seconds)
 
@@ -33,38 +34,52 @@ class UserActor(out: ActorRef, cachesActor: ActorRef) extends Actor with ActorLo
     case other =>
   }
 
-  def parseQuery(json: JsValue) = {
+  def parseQuery(json: JsValue) :CacheQuery= {
+    import UserActor._
     val userQuery = json.as[UserQuery]
-    val entities = Knowledge.geoTag(userQuery.area, userQuery.level)
-    SetQuery(DataSet.Twitter, userQuery.keyword, userQuery.timeRange, entities, (userQuery.repeatDuration).seconds)
+    val level = matchLevel(userQuery.level)
+    val entities = usGeoGnosis.tagRectangle(level, userQuery.area)
+    CacheQuery(DataSet.Twitter, userQuery.keyword, userQuery.timeRange, level, entities, (userQuery.repeatDuration).seconds)
   }
 
 }
 
 object UserActor {
-  def props(out: ActorRef)(cachesActor: ActorRef) = Props(new UserActor(out, cachesActor))
+  def props(out: ActorRef, cachesActor: ActorRef, gnosis: USGeoGnosis) = Props(new UserActor(out, cachesActor, gnosis))
+
+  def matchLevel(levelString: String): TypeLevel = {
+    levelString.toLowerCase match {
+      case "state" => StateLevel
+      case "county" => CountyLevel
+      case "city" => CityLevel
+      case _ => StateLevel
+    }
+  }
+
+  def matchDataSet(dataset: String): DataSet = {
+    dataset.toLowerCase match {
+      case "twitter" => DataSet.Twitter
+      case _ => DataSet.Twitter
+    }
+  }
 }
 
 //TODO add the aggregation requirement parameters. Currently we calculate all the registered aggregation functions.
 case class UserQuery(dataset: String,
                      keyword: String,
                      timeRange: Interval,
-                     area: Rectangular,
+                     area: Rectangle,
                      level: String,
                      repeatDuration: Long = 0
                     )
 
 object UserQuery {
 
-  val Sample = UserQuery(DataSet.Twitter.name, "rain",
-    new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis(), new DateTime(2016, 3, 1, 0, 0).getMillis()),
-    Rectangular(
-      -146.95312499999997,
-      7.798078531355303,
-      -45.703125,
-      61.3546135846894),
-    level = "state"
-  )
+  val Sample = UserQuery(DataSet.Twitter.name,
+                         "rain",
+                         new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis(), new DateTime(2016, 3, 1, 0, 0).getMillis()),
+                         Rectangle(-146.95312499999997, 7.798078531355303, -45.703125, 61.3546135846894),
+                         level = "state")
 
   implicit val intervalFormat: Format[Interval] = {
     new Format[Interval] {

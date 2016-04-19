@@ -4,8 +4,8 @@ import javax.inject.{Inject, Singleton}
 
 import actors._
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
-import akka.stream.Materializer
 import akka.util.Timeout
+import edu.uci.ics.cloudberry.gnosis.USGeoGnosis
 import migration.Migration_20160324
 import models.AQLConnection
 import play.api.Play.{current, materializer}
@@ -30,21 +30,17 @@ class Application @Inject()(val wsClient: WSClient,
   val AsterixURL = config.getString("asterixdb.url").get
   val AQLConnection = new AQLConnection(wsClient, AsterixURL)
 
-  val loadKnowledge = Knowledge.loadResources(environment)
-  val checkViewStatus = new Migration_20160324(AQLConnection).up()
-  val waitForIt = for {
-    fKnowledge <- loadKnowledge
-    fViews <- checkViewStatus
-  } yield (fKnowledge, fViews)
-
   Logger.logger.info("I'm initializing")
-  Await.ready(waitForIt,  10 minute) onComplete {
-    case Success((first, second: WSResponse)) => Logger.logger.info(second.body)
+  val checkViewStatus = Migration_20160324(AQLConnection).up()
+  val USGeoGnosis = Knowledge.buildUSKnowledge(environment)
+
+  Await.ready(checkViewStatus, 10 minute) onComplete {
+    case Success(response: WSResponse) => Logger.logger.info(response.body)
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
   val viewsActor = system.actorOf(Props(classOf[ViewsActor], AQLConnection), "views")
-  val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor), "caches")
+  val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor, USGeoGnosis), "caches")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
@@ -55,7 +51,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => UserActor.props(out)(cachesActor))
+    ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
   }
 
   def search(query: JsValue) = Action.async {

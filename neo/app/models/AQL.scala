@@ -1,12 +1,14 @@
 package models
 
-import actors.SetQuery
+import actors.CacheQuery
 import migration.Migration_20160324
 import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.libs.concurrent.Execution.Implicits._
+
+import edu.uci.ics.cloudberry.gnosis._
 
 import scala.concurrent.Future
 
@@ -19,7 +21,7 @@ object AQL {
 
   import Migration_20160324._
 
-  val TweetsType = "type_tweet"
+  val TweetsType = "typeTweet"
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
   def createView(fromDataSet: DataSet, keyword: String, initialTimeSpan: Interval): String = {
@@ -42,61 +44,58 @@ object AQL {
   def appendView(fromDataset: DataSet, keyword: String, intervals: Seq[Interval]): String = {
     val viewName = fromDataset.name + '_' + keyword
     val predicate = intervals.map(interval =>
-      s"""
-         |$$t.create_at >= datetime("${TimeFormat.print(interval.getStart)}")
-         |and $$t.create_at < datetime("${TimeFormat.print(interval.getEnd)}")
+                                    s"""
+                                       |$$t.create_at >= datetime("${TimeFormat.print(interval.getStart)}")
+                                       |and $$t.create_at < datetime("${TimeFormat.print(interval.getEnd)}")
        """.stripMargin).mkString(" or ")
     s"""
        |use dataverse $Dataverse
+       |create dataset $viewName($TweetsType) if not exists primary key id;
        |insert into dataset $viewName(
        |for $$t in dataset ${fromDataset.name}
        |let $$keyword0 := "$keyword"
-       |where $$t.place.place_type = "city"
-       |and ($predicate)
-       |and contains($$t.text_msg, $$keyword0)
-       |return {
-       |  "create_at" : $$t.create_at,
-       |  "id": $$t.id,
-       |  "text_msg" : $$t.text_msg,
-       |  "in_reply_to_status" : $$t.in_reply_to_status,
-       |  "in_reply_to_user" : $$t.in_reply_to_user,
-       |  "favorite_count" : $$t.favorite_count,
-       |  "geo_location": $$t.geo_location,
-       |  "retweet_count" : $$t.retweet_count,
-       |  "lang" : $$t.lang,
-       |  "is_retweet": $$t.is_retweet,
-       |  "hashtags" :$$t.hashtags,
-       |  "user_mentions" : $$t.user_mentions ,
-       |  "user" : $$t.user,
-       |  "place" : $$t.place,
-       |  "state" : substring-after($$t.place.full_name, ", "),
-       |  "city" : substring-before($$t.place.full_name, ","),
-       |  "county": (for $$city in dataset ds_zip
-       |              where substring-before($$t.place.full_name, ",") = $$city.city
-       |              and substring-after($$t.place.full_name, ", ") = $$city.state
-       |              and not(is-null($$city.county))
-       |              return string-concat([$$city.state, "-", $$city.county]) )[0]}
-       |)
-       |
+       |where ($predicate)
+       |and similarity-jaccard(word-tokens($$t."text"), word-tokens($$keyword0)) > 0.0
+       |return $$t)
        """.stripMargin
   }
 
 
-  def formTimePredicate(interval: Interval): String = {
+  private def formTimePredicate(interval: Interval): String = {
     s"""
        | $$t.create_at >= datetime("${TimeFormat.print(interval.getStart)}")
        | and $$t.create_at < datetime("${TimeFormat.print(interval.getEnd)}")
     """.stripMargin
   }
 
-  def aggregateBy(query: SetQuery, groupField: String): AQL = {
+  val GeoTag = "geo_tag"
+
+  private def getGeoIDName(level: TypeLevel): String = {
+    val field = level match {
+      case StateLevel => "stateID"
+      case CountyLevel => "countyID"
+      case CityLevel => "cityID"
+    }
+    s"$GeoTag.$field"
+  }
+
+  private def extracEntityPredicate(level: TypeLevel, entity: IEntity, variable: String): String = {
+    val field = s"$$$variable.${getGeoIDName(level)}"
+    level match {
+      case StateLevel => s"""$field = ${entity.asInstanceOf[USStateEntity].stateID} """
+      case CountyLevel => s"""$field = ${entity.asInstanceOf[USCountyEntity].countyID} """
+      case CityLevel => s"""$field = ${entity.asInstanceOf[USCityEntity].cityID} """
+    }
+  }
+
+  def aggregateBy(query: CacheQuery, groupField: String): AQL = {
     val viewName = query.key
-    val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or $$t.state = "$e" """)
+    val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or ${extracEntityPredicate(query.level, e, "t")} """)
     val timePredicate = formTimePredicate(query.timeRange)
     val predicate = s"$timePredicate and (${entityPredicate.substring(3)})"
     groupField.toLowerCase match {
       case "map" =>
-        new AQL(aggregateByEntityAQL(viewName, predicate))
+        new AQL(aggregateByEntityAQL(query.level, viewName, predicate))
       case "time" =>
         new AQL(aggregateByTimeAQL(viewName, predicate))
       case "hashtag" =>
@@ -104,14 +103,24 @@ object AQL {
     }
   }
 
-  def aggregateByEntityAQL(viewName: String, predicate: String): String = {
+  private def groupbyField(level: TypeLevel, variable: String): String = {
+    level match {
+      case StateLevel => s"$$$variable.$GeoTag.stateName"
+      case CountyLevel => s""" string-concat([$$$variable.$GeoTag.stateName, "-", $$$variable.$GeoTag.countyName]) """
+      case CityLevel => s""" string-concat([$$$variable.$GeoTag.stateName, "-", $$$variable.$GeoTag.countyName, "-", $$$variable.$GeoTag.cityName]) """
+    }
+  }
+
+  //TODO make three aggregation as one query
+  def aggregateByEntityAQL(level: TypeLevel, viewName: String, predicate: String): String = {
     s"""
        |use dataverse $Dataverse
        |for $$t in dataset $viewName
        |where $predicate
-       |group by $$c := $$t.state with $$t
-       |let $$count := count($$t)
-       |return { $$c : $$count };
+       |let $$cat := ${groupbyField(level, "t")}
+       |/* +hash */
+       |group by $$c := $$cat with $$t
+       |return { $$c : count($$t) };
       """.stripMargin
   }
 

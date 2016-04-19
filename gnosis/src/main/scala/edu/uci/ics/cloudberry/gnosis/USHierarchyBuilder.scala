@@ -53,7 +53,7 @@ object USHierarchyBuilder {
         (CityJsonPath, cityIndex)).foreach {
       case (key: String, index: USGeoJSONIndex) => config.get(key) match {
         case Some(path: String) =>
-          USGeoGnosis.loadShape(path, index, Seq.empty[HelperProp])
+          USGeoGnosis.loadShape(new File(path), index, Seq.empty[HelperProp])
         case _ => System.err.print(usage); throw new IllegalArgumentException(s"$key is missing")
       }
     }

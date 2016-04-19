@@ -8,10 +8,10 @@ app.factory('Asterix', function($http, $timeout) {
       dataset: "twitter",
       keyword: null,
       area: {
-        leftBottomLog: -146,
-        leftBottomLat: 8,
-        rightTopLog: -100,
-        rightTopLat: 50
+        swLog: -146,
+        swLat: 8,
+        neLog: -100,
+        neLat: 50
       },
       time: {
         start: new Date(2012, 1, 1, 0, 0, 0, 0),

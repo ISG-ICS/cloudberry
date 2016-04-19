@@ -19,7 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-sbt "set logLevel := Level.Warn" "project noah" "run -state neo/public/data/state.shape.20m.json\
+sbt --error 'set showSuccess := false' "project noah" "run -state neo/public/data/state.shape.20m.json\
     -county neo/public/data/county.shape.20m.json \
     -city neo/public/data/cities \
     -helpstate neo/public/data/hierarchy/state.json \

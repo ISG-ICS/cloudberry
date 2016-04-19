@@ -101,12 +101,3 @@ object ViewMetaRecord {
   implicit val jodaTimeWriters = Writes.jodaDateWrites(timeFormat)
   implicit val formatter = Json.format[ViewMetaRecord]
 }
-
-case class Rectangular(leftBottomLog: Double, leftBottomLat: Double, rightTopLog: Double, rightTopLat: Double) {
-  def getEnvelopInternal : Envelope = new Envelope(leftBottomLog, rightTopLog, leftBottomLat, rightTopLat)
-}
-
-object Rectangular {
-  implicit val rectangularFormat = Json.format[Rectangular]
-}
-
