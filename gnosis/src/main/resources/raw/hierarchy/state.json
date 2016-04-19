@@ -1,0 +1,53 @@
+[ {"geoID":"0400000US01","stateID":1,"name":"Alabama","LSAD":"","area":50645.326}
+,{"geoID":"0400000US02","stateID":2,"name":"Alaska","LSAD":"","area":570640.95}
+,{"geoID":"0400000US04","stateID":4,"name":"Arizona","LSAD":"","area":113594.084}
+,{"geoID":"0400000US05","stateID":5,"name":"Arkansas","LSAD":"","area":52035.477}
+,{"geoID":"0400000US06","stateID":6,"name":"California","LSAD":"","area":155779.22}
+,{"geoID":"0400000US08","stateID":8,"name":"Colorado","LSAD":"","area":103641.888}
+,{"geoID":"0400000US09","stateID":9,"name":"Connecticut","LSAD":"","area":4842.355}
+,{"geoID":"0400000US10","stateID":10,"name":"Delaware","LSAD":"","area":1948.543}
+,{"geoID":"0400000US11","stateID":11,"name":"District of Columbia","LSAD":"","area":61.048}
+,{"geoID":"0400000US12","stateID":12,"name":"Florida","LSAD":"","area":53624.759}
+,{"geoID":"0400000US13","stateID":13,"name":"Georgia","LSAD":"","area":57513.485}
+,{"geoID":"0400000US15","stateID":15,"name":"Hawaii","LSAD":"","area":6422.628}
+,{"geoID":"0400000US16","stateID":16,"name":"Idaho","LSAD":"","area":82643.117}
+,{"geoID":"0400000US17","stateID":17,"name":"Illinois","LSAD":"","area":55518.93}
+,{"geoID":"0400000US18","stateID":18,"name":"Indiana","LSAD":"","area":35826.109}
+,{"geoID":"0400000US19","stateID":19,"name":"Iowa","LSAD":"","area":55857.13}
+,{"geoID":"0400000US20","stateID":20,"name":"Kansas","LSAD":"","area":81758.717}
+,{"geoID":"0400000US21","stateID":21,"name":"Kentucky","LSAD":"","area":39486.338}
+,{"geoID":"0400000US22","stateID":22,"name":"Louisiana","LSAD":"","area":43203.905}
+,{"geoID":"0400000US23","stateID":23,"name":"Maine","LSAD":"","area":30842.923}
+,{"geoID":"0400000US24","stateID":24,"name":"Maryland","LSAD":"","area":9707.241}
+,{"geoID":"0400000US25","stateID":25,"name":"Massachusetts","LSAD":"","area":7800.058}
+,{"geoID":"0400000US26","stateID":26,"name":"Michigan","LSAD":"","area":56538.901}
+,{"geoID":"0400000US27","stateID":27,"name":"Minnesota","LSAD":"","area":79626.743}
+,{"geoID":"0400000US28","stateID":28,"name":"Mississippi","LSAD":"","area":46923.274}
+,{"geoID":"0400000US29","stateID":29,"name":"Missouri","LSAD":"","area":68741.522}
+,{"geoID":"0400000US30","stateID":30,"name":"Montana","LSAD":"","area":145545.801}
+,{"geoID":"0400000US31","stateID":31,"name":"Nebraska","LSAD":"","area":76824.171}
+,{"geoID":"0400000US32","stateID":32,"name":"Nevada","LSAD":"","area":109781.18}
+,{"geoID":"0400000US33","stateID":33,"name":"New Hampshire","LSAD":"","area":8952.651}
+,{"geoID":"0400000US34","stateID":34,"name":"New Jersey","LSAD":"","area":7354.22}
+,{"geoID":"0400000US35","stateID":35,"name":"New Mexico","LSAD":"","area":121298.148}
+,{"geoID":"0400000US36","stateID":36,"name":"New York","LSAD":"","area":47126.399}
+,{"geoID":"0400000US37","stateID":37,"name":"North Carolina","LSAD":"","area":48617.905}
+,{"geoID":"0400000US38","stateID":38,"name":"North Dakota","LSAD":"","area":69000.798}
+,{"geoID":"0400000US39","stateID":39,"name":"Ohio","LSAD":"","area":40860.694}
+,{"geoID":"0400000US40","stateID":40,"name":"Oklahoma","LSAD":"","area":68594.921}
+,{"geoID":"0400000US41","stateID":41,"name":"Oregon","LSAD":"","area":95988.013}
+,{"geoID":"0400000US42","stateID":42,"name":"Pennsylvania","LSAD":"","area":44742.703}
+,{"geoID":"0400000US44","stateID":44,"name":"Rhode Island","LSAD":"","area":1033.814}
+,{"geoID":"0400000US45","stateID":45,"name":"South Carolina","LSAD":"","area":30060.696}
+,{"geoID":"0400000US46","stateID":46,"name":"South Dakota","LSAD":"","area":75811}
+,{"geoID":"0400000US47","stateID":47,"name":"Tennessee","LSAD":"","area":41234.896}
+,{"geoID":"0400000US48","stateID":48,"name":"Texas","LSAD":"","area":261231.711}
+,{"geoID":"0400000US49","stateID":49,"name":"Utah","LSAD":"","area":82169.62}
+,{"geoID":"0400000US50","stateID":50,"name":"Vermont","LSAD":"","area":9216.657}
+,{"geoID":"0400000US51","stateID":51,"name":"Virginia","LSAD":"","area":39490.086}
+,{"geoID":"0400000US53","stateID":53,"name":"Washington","LSAD":"","area":66455.521}
+,{"geoID":"0400000US54","stateID":54,"name":"West Virginia","LSAD":"","area":24038.21}
+,{"geoID":"0400000US55","stateID":55,"name":"Wisconsin","LSAD":"","area":54157.805}
+,{"geoID":"0400000US56","stateID":56,"name":"Wyoming","LSAD":"","area":97093.141}
+,{"geoID":"0400000US72","stateID":72,"name":"Puerto Rico","LSAD":"","area":3423.775}
+]

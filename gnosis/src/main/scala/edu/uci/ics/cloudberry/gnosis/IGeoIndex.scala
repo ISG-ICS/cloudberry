@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.gnosis
 import com.vividsolutions.jts.geom.{Envelope, Geometry}
 import com.vividsolutions.jts.index.strtree.STRtree
 import org.wololo.geojson.{Feature, FeatureCollection, GeoJSONFactory}
-import org.wololo.jts2geojson.GeoJSONReader
+import org.wololo.jts2geojson.{GeoJSONReader, GeoJSONWriter}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -24,12 +24,12 @@ class USGeoJSONIndex() extends IGeoIndex {
     *
     * @param geoJsonString
     */
-  def loadShape(geoJsonString: String, props: Seq[USAnnotationHelper.HelperProp]): Unit = {
+  def loadShape(geoJsonString: String)(implicit builder: (Map[String, AnyRef], Geometry) => IUSGeoJSONEntity): Unit = {
     val geoJSONReader = new GeoJSONReader()
     val featureCollection: FeatureCollection = GeoJSONFactory.create(geoJsonString).asInstanceOf[FeatureCollection]
     featureCollection.getFeatures.foreach { f: Feature =>
       val geometry: Geometry = geoJSONReader.read(f.getGeometry)
-      entities += IUSGeoJSONEntity(props, f.getProperties.asScala.toMap, geometry)
+      entities += builder(f.getProperties.asScala.toMap, geometry)
       index.insert(geometry.getEnvelopeInternal, entities.size - 1)
     }
   }

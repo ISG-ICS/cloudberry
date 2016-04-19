@@ -2,25 +2,19 @@ package edu.uci.ics.cloudberry.gnosis
 
 import java.io.{File, FilenameFilter}
 
-import com.vividsolutions.jts.geom.{Coordinate, Envelope}
-import edu.uci.ics.cloudberry.gnosis.USAnnotationHelper.{CityProp, CountyProp, StateProp}
-import play.api.libs.json.{JsArray, JsObject, Json, Writes}
+import com.vividsolutions.jts.geom.{Coordinate, Envelope, Geometry}
+import play.api.libs.json.{JsObject, Json, Writes}
 
-class USGeoGnosis(levelPropPathMap: Map[TypeLevel, File], levelGeoPathMap: Map[TypeLevel, File]) {
+class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
 
   import USGeoGnosis._
 
-  val levelShapeMap: Map[TypeLevel, USGeoJSONIndex] = load(levelPropPathMap, levelGeoPathMap)
+  val levelShapeMap: Map[TypeLevel, USGeoJSONIndex] = load(levelGeoPathMap)
 
-  private def load(propMap: Map[TypeLevel, File], shapeMap: Map[TypeLevel, File]): Map[TypeLevel, USGeoJSONIndex] = {
+  private def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, USGeoJSONIndex] = {
     OrderedLevels.map(level => {
       val index = new USGeoJSONIndex()
-      val jsArrays = Json.parse(loadSmallJSONFile(propMap.get(level).get)).asInstanceOf[JsArray].value
-      loadShape(shapeMap.get(level).get, index, level match {
-        case StateLevel => jsArrays.map(_.as[StateProp])
-        case CountyLevel => jsArrays.map(_.as[CountyProp])
-        case CityLevel => jsArrays.map(_.as[CityProp])
-      })
+      loadShape(shapeMap.get(level).get, index)(IUSGeoJSONEntity.apply)
       level -> index
     }).toMap
   }
@@ -90,16 +84,16 @@ object USGeoGnosis {
     }
   }
 
-  def loadShape(file: File, index: USGeoJSONIndex, prop: Seq[USAnnotationHelper.HelperProp]) {
+  def loadShape(file: File, index: USGeoJSONIndex)(builder: (Map[String, AnyRef], Geometry) => IUSGeoJSONEntity): Unit = {
     if (file.isDirectory) {
       file.listFiles(new FilenameFilter {
         override def accept(dir: File, name: String): Boolean = name.endsWith(".json")
       }).foreach { file =>
-        loadShape(file, index, prop)
+        loadShape(file, index)(builder)
       }
     } else {
       val textJson = loadSmallJSONFile(file)
-      index.loadShape(textJson, prop)
+      index.loadShape(textJson)(builder)
     }
   }
 

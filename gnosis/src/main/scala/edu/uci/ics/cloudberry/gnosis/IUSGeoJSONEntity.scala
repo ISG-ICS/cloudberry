@@ -1,40 +1,55 @@
 package edu.uci.ics.cloudberry.gnosis
 
 import com.vividsolutions.jts.geom.Geometry
-import edu.uci.ics.cloudberry.gnosis.USAnnotationHelper.{CityProp, CountyProp}
 import play.api.libs.json.{JsObject, Json}
 
 sealed trait IUSGeoJSONEntity extends IGeoJSONEntity {
   def geometry: Geometry
 
-  def toJson: JsObject
-
   def stateID: Int
 
   def name: String
 
-  def LSAD: String
-
   def area: Double
+
+  def toJson: JsObject
+
+  /**
+    * Used to output the GeoJson format
+    *
+    * @return
+    */
+  def toPropertyMap: Map[String, AnyRef]
+
 }
 
 case class USStateEntity(geoID: String,
                          stateID: Int,
                          name: String,
-                         LSAD: String,
                          area: Double,
                          geometry: Geometry
                         ) extends IUSGeoJSONEntity {
   override def toJson: JsObject =
-    Json.obj("geoID" -> geoID, "stateID" -> stateID, "name" -> name, "LSAD" -> LSAD, "area" -> area)
+    Json.obj("geoID" -> geoID, "stateID" -> stateID, "name" -> name, "area" -> area)
 
-  override def level: TypeLevel = StateLevel
+  override val level: TypeLevel = StateLevel
 
-  override def parentLevel: TypeLevel = StateLevel
+  override val parentLevel: TypeLevel = StateLevel
 
-  override def key: Long = stateID.toLong
+  override val key: Long = stateID.toLong
 
-  override def parentKey: Long = stateID.toLong
+  override val parentKey: Long = stateID.toLong
+
+  /**
+    * Used to output the GeoJson format
+    *
+    * @return
+    */
+  override def toPropertyMap: Map[String, AnyRef] = Map[String, AnyRef](
+    "geoID" -> geoID,
+    "stateID" -> Int.box(stateID),
+    "name" -> name,
+    "area" -> Double.box(area))
 }
 
 case class USCountyEntity(geoID: String,
@@ -42,19 +57,26 @@ case class USCountyEntity(geoID: String,
                           stateName: String,
                           countyID: Int,
                           name: String,
-                          LSAD: String,
                           area: Double,
                           geometry: Geometry) extends IUSGeoJSONEntity {
   override def toJson: JsObject =
-    Json.obj("geoID" -> geoID, "stateID" -> stateID, "countyID" -> countyID, "name" -> name, "LSAD" -> LSAD, "area" -> area)
+    Json.obj("geoID" -> geoID, "stateID" -> stateID, "countyID" -> countyID, "name" -> name, "area" -> area)
 
-  override def level: TypeLevel = CountyLevel
+  override val level: TypeLevel = CountyLevel
 
-  override def parentLevel: TypeLevel = StateLevel
+  override val parentLevel: TypeLevel = StateLevel
 
-  override def key: Long = stateID * 1000l + countyID
+  override val key: Long = countyID
 
-  override def parentKey: Long = stateID
+  override val parentKey: Long = stateID
+
+  override def toPropertyMap: Map[String, AnyRef] = Map[String, AnyRef](
+    "geoID" -> geoID,
+    "stateID" -> Int.box(stateID),
+    "stateName" -> stateName,
+    "countyID" -> Int.box(countyID),
+    "name" -> name,
+    "area" -> Double.box(area))
 }
 
 case class USCityEntity(geoID: String,
@@ -64,7 +86,6 @@ case class USCityEntity(geoID: String,
                         countyName: String,
                         cityID: Int,
                         name: String,
-                        LSAD: String,
                         landArea: Double,
                         waterArea: Double,
                         geometry: Geometry
@@ -72,80 +93,63 @@ case class USCityEntity(geoID: String,
   val area = landArea + waterArea
 
   override def toJson: JsObject =
-    Json.obj("geoID" -> geoID, "stateID" -> stateID, "cityID" -> cityID, "name" -> name, "LSAD" -> LSAD, "area" -> area)
+    Json.obj("geoID" -> geoID, "stateID" -> stateID, "cityID" -> cityID, "name" -> name, "area" -> area)
 
-  override def level: TypeLevel = CityLevel
+  override val level: TypeLevel = CityLevel
 
-  override def parentLevel: TypeLevel = if (countyID != 0) CountyLevel else StateLevel
+  override val parentLevel: TypeLevel = if (countyID != 0) CountyLevel else StateLevel
 
-  override def key: Long = cityID
+  override val key: Long = cityID
 
-  override def parentKey: Long = if (countyID != 0) stateID * 1000l + countyID else stateID.toLong
-}
+  override val parentKey: Long = if (countyID != 0) countyID.toLong else stateID.toLong
 
-object USCityEntity {
-  val STATEFP = "STATEFP"
-  val PLACEEFP = "PLACEEFP"
-  val GEOID = "AFFGEOID"
-  val CITYID = "GEOID"
-  val ALADN = "ALAND"
-  val AWATER = "AWATER"
+
+  override def toPropertyMap: Map[String, AnyRef] = Map[String, AnyRef](
+    "geoID" -> geoID,
+    "stateID" -> Int.box(stateID),
+    "stateName" -> stateName,
+    "countyID" -> Int.box(countyID),
+    "countyName" -> countyName,
+    "cityID" -> Int.box(cityID),
+    "name" -> name,
+    "landArea" -> Double.box(landArea),
+    "waterArea" -> Double.box(waterArea))
 }
 
 object IUSGeoJSONEntity {
-  val GEO_ID = "GEO_ID"
-  val STATE = "STATE"
-  val NAME = "NAME"
-  val LSAD = "LSAD"
-  val AREA = "CENSUSAREA"
-  val COUNTY = "COUNTY"
-  val PLACEEFP = "PLACEFP"
-  val Unknown = "unknown"
 
-  def apply(props: Seq[USAnnotationHelper.HelperProp], map: Map[String, AnyRef], geometry: Geometry): IUSGeoJSONEntity = {
-    map.get(PLACEEFP) match {
+  def apply(map: Map[String, AnyRef], geometry: Geometry): IUSGeoJSONEntity = {
+    map.get("cityID") match {
       case Some(obj) =>
-        import USCityEntity._
-        val cityID = map.get(CITYID).get.asInstanceOf[String].toInt
-        val cityPropOpt = props.map(_.asInstanceOf[CityProp]).find(_.cityID == cityID)
-        val countyID = cityPropOpt.map(_.countyID).getOrElse(0)
-        val countyName: String = cityPropOpt.map(_.countyName).getOrElse(Unknown)
-        val stateName = cityPropOpt.map(_.stateName).getOrElse(Unknown)
         USCityEntity(
-          geoID = map.get(GEOID).get.asInstanceOf[String],
-          stateID = map.get(STATEFP).get.asInstanceOf[String].toInt,
-          stateName = stateName,
-          countyID = countyID,
-          countyName = countyName,
-          cityID = cityID,
-          name = map.get(NAME).get.asInstanceOf[String],
-          LSAD = map.get(LSAD).get.asInstanceOf[String],
-          landArea = map.get(ALADN).get.asInstanceOf[Double],
-          waterArea = map.get(AWATER).get.asInstanceOf[Double],
+          geoID = map.get("geoID").get.asInstanceOf[String],
+          stateID = map.get("stateID").get.asInstanceOf[Int],
+          stateName = map.get("stateName").get.asInstanceOf[String],
+          countyID = map.get("countyID").get.asInstanceOf[Int],
+          countyName = map.get("countyName").get.asInstanceOf[String],
+          cityID = map.get("cityID").get.asInstanceOf[Int],
+          name = map.get("name").get.asInstanceOf[String],
+          landArea = map.get("landArea").get.asInstanceOf[Double],
+          waterArea = map.get("waterArea").get.asInstanceOf[Double],
           geometry
         )
       case None =>
-        map.get(COUNTY) match {
+        map.get("countyID") match {
           case Some(obj) =>
-            val geoID = map.get(GEO_ID).get.asInstanceOf[String]
-            val countyPropOpt = props.map(_.asInstanceOf[CountyProp]).find(_.geoID == geoID)
-            val stateName = countyPropOpt.map(_.stateName).getOrElse(Unknown)
             USCountyEntity(
-              geoID = geoID,
-              stateID = map.get(STATE).get.asInstanceOf[String].toInt,
-              stateName = stateName,
-              countyID = map.get(COUNTY).get.asInstanceOf[String].toInt,
-              name = map.get(NAME).get.asInstanceOf[String],
-              LSAD = map.get(LSAD).get.asInstanceOf[String],
-              area = map.get(AREA).get.asInstanceOf[Double],
+              geoID = map.get("geoID").get.asInstanceOf[String],
+              stateID = map.get("stateID").get.asInstanceOf[Int],
+              stateName = map.get("stateName").get.asInstanceOf[String],
+              countyID = map.get("countyID").get.asInstanceOf[Int],
+              name = map.get("name").get.asInstanceOf[String],
+              area = map.get("area").get.asInstanceOf[Double],
               geometry
             )
           case None => USStateEntity(
-            geoID = map.get(GEO_ID).get.asInstanceOf[String],
-            stateID = map.get(STATE).get.asInstanceOf[String].toInt,
-            name = map.get(NAME).get.asInstanceOf[String],
-            LSAD = map.get(LSAD).get.asInstanceOf[String],
-            area = map.get(AREA).get.asInstanceOf[Double],
+            geoID = map.get("geoID").get.asInstanceOf[String],
+            stateID = map.get("stateID").get.asInstanceOf[Int],
+            name = map.get("name").get.asInstanceOf[String],
+            area = map.get("area").get.asInstanceOf[Double],
             geometry
           )
         }
