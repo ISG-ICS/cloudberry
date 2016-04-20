@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.noah
 
 import java.io.File
+import java.util.concurrent.Executors
 
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.noah.adm.Tweet
@@ -8,6 +9,8 @@ import edu.uci.ics.cloudberry.util.Profile._
 import twitter4j.TwitterObjectFactory
 
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 object TwitterJSONTagToADM {
   // TODO reserve all the fields and just replace the date and geo location to different part.
@@ -21,10 +24,12 @@ object TwitterJSONTagToADM {
       |It will read the status from stdIn, geoTag city/county/state information, and then convert it to ADM format
     """.stripMargin
 
+  var parallel = 4
   def parseOption(list: List[String]) {
     list match {
       case Nil =>
       case "-h" :: tail => System.err.println(usage); System.exit(0)
+      case "-p" :: value :: tail => parallel = value.toInt; parseOption(tail)
       case "-state" :: value :: tail => shapeMap += StateLevel -> value; parseOption(tail)
       case "-county" :: value :: tail => shapeMap += CountyLevel -> value; parseOption(tail)
       case "-city" :: value :: tail => shapeMap += CityLevel -> value; parseOption(tail)
@@ -50,8 +55,12 @@ object TwitterJSONTagToADM {
     val usGeoGnosis = profile("loading resource") {
       new USGeoGnosis(shapeMap.mapValues(new File(_)).toMap)
     }
-    for (ln <- scala.io.Source.stdin.getLines()) {
-      tagOneTweet(ln, usGeoGnosis)
-    }
+    implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(parallel))
+    val run = Future.sequence(scala.io.Source.stdin.getLines().map { ln =>
+      Future {
+        tagOneTweet(ln, usGeoGnosis)
+      }
+    })
+    Await.result(run, Duration.Inf)
   }
 }

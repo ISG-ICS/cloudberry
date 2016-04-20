@@ -19,9 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-sbt --error 'set showSuccess := false' "project noah" "run -state neo/public/data/state.shape.20m.json\
-    -county neo/public/data/county.shape.20m.json \
-    -city neo/public/data/cities \
-    -helpstate neo/public/data/hierarchy/state.json \
-    -helpcounty neo/public/data/hierarchy/county.json \
-    -helpcity neo/public/data/hierarchy/cities.json"
+sbt --error 'set showSuccess := false' "project noah" "run -state neo/public/data/state.json\
+    -county neo/public/data/county.json \
+    -city neo/public/data/city.json 
+    -p 4 "
