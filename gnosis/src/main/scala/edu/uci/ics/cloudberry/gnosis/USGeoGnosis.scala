@@ -5,6 +5,8 @@ import java.io.{File, FilenameFilter}
 import com.vividsolutions.jts.geom.{Coordinate, Envelope, Geometry}
 import play.api.libs.json.{JsObject, Json, Writes}
 
+import scala.collection.mutable
+
 class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
 
   import USGeoGnosis._
@@ -31,6 +33,12 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
     levelShapeMap.get(CityLevel).get.entities.map(_.asInstanceOf[USCityEntity])
   }
 
+  lazy val cityByNameList: Map[String, List[USCityEntity]] = {
+    val map = mutable.Map.empty[String, List[USCityEntity]]
+    cities.foreach(city => map += (city.name -> (city :: (map.getOrElse(city.name, Nil)))))
+    map.toMap
+  }
+
   lazy val stateShapes: IGeoIndex = levelShapeMap.get(StateLevel).get
   lazy val countyShapes: IGeoIndex = levelShapeMap.get(CountyLevel).get
   lazy val cityShapes: IGeoIndex = levelShapeMap.get(CityLevel).get
@@ -42,7 +50,7 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
   // used in geo tag
   def tagNeighborhood(cityName: String, rectangle: Rectangle): Option[USGeoTagInfo] = {
     val box = new Envelope(rectangle.swLog, rectangle.neLog, rectangle.swLat, rectangle.neLat)
-    cities.find(city => city.name == cityName && city.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_))
+    cityByNameList.get(cityName).flatMap(list => list.find(_.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_)))
   }
 
   // used in geo tag
@@ -55,8 +63,8 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
 
   // used in geo tag
   def tagCity(cityName: String, stateAbbr: String): Option[USGeoTagInfo] = {
-    cities.find(city => city.name == cityName &&
-      city.stateName == StateAbbr2FullNameMap.get(stateAbbr).getOrElse("")).map(USGeoTagInfo(_))
+    cityByNameList.get(cityName).flatMap(
+      list => list.find(_.stateName == StateAbbr2FullNameMap.get(stateAbbr).getOrElse("")).map(USGeoTagInfo(_)))
   }
 }
 

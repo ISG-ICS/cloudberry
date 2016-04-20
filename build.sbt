@@ -17,6 +17,7 @@ lazy val gnosis = (project in file("gnosis")).
 lazy val noah = (project in file("noah")).
   settings(Commons.settings: _*).
   settings(
+//    mainClass := Some("edu.uci.ics.cloudberry.noah.TwitterJSONTagToADM"),
     libraryDependencies ++= noahDependencies
   ).dependsOn(gnosis, util)
 
