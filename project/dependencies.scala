@@ -44,7 +44,7 @@ object Dependencies {
     "org.scalactic" %% "scalactic" % "2.2.6",
     "org.scalatest" %% "scalatest" % "2.2.6" % Test,
     "org.easytesting" % "fest-assert" % "1.4" % Test,
-    "com.typesafe.play" %% "play-json" % playVersion,
+    ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
     "com.vividsolutions" % "jts" % "1.13",
     "org.wololo" % "jts2geojson" % "0.7.0"
   ) ++ testDeps
