@@ -79,27 +79,32 @@ object AQL {
     s"$GeoTag.$field"
   }
 
-  private def extracEntityPredicate(level: TypeLevel, entity: IEntity, variable: String): String = {
-    val field = s"$$$variable.${getGeoIDName(level)}"
+  private def extractEntityID(level: TypeLevel, entity: IEntity): String = {
     level match {
-      case StateLevel => s"""$field = ${entity.asInstanceOf[USStateEntity].stateID} """
-      case CountyLevel => s"""$field = ${entity.asInstanceOf[USCountyEntity].countyID} """
-      case CityLevel => s"""$field = ${entity.asInstanceOf[USCityEntity].cityID} """
+      case StateLevel => s""" ${entity.asInstanceOf[USStateEntity].stateID} """
+      case CountyLevel => s""" ${entity.asInstanceOf[USCountyEntity].countyID} """
+      case CityLevel => s"""${entity.asInstanceOf[USCityEntity].cityID} """
     }
+  }
+
+  private def joinHash(level: TypeLevel, entities: Seq[IEntity]): String = {
+    val head = s"for $$eid in [  ${extractEntityID(level, entities.head)}"
+    entities.tail.foldLeft(head)((pre, e) => pre + s""", ${extractEntityID(level, e)}""") + " ]"
   }
 
   def aggregateBy(query: CacheQuery, groupField: String): AQL = {
     val viewName = query.key
-    val entityPredicate = query.entities.foldLeft("")((pre, e) => pre + s"""or ${extracEntityPredicate(query.level, e, "t")} """)
+    val joins = joinHash(query.level, query.entities)
+    val entityPredicate = s" $$t.${getGeoIDName(query.level)} = $$eid"
     val timePredicate = formTimePredicate(query.timeRange)
-    val predicate = s"$timePredicate and (${entityPredicate.substring(3)})"
+    val predicate = s"$timePredicate and ($entityPredicate)"
     groupField.toLowerCase match {
       case "map" =>
-        new AQL(aggregateByEntityAQL(query.level, viewName, predicate))
+        new AQL(aggregateByEntityAQL(query.level, viewName, joins, predicate))
       case "time" =>
-        new AQL(aggregateByTimeAQL(viewName, predicate))
+        new AQL(aggregateByTimeAQL(viewName, joins, predicate))
       case "hashtag" =>
-        new AQL(aggregateByHashTag(viewName, predicate))
+        new AQL(aggregateByHashTag(viewName, joins, predicate))
     }
   }
 
@@ -112,10 +117,11 @@ object AQL {
   }
 
   //TODO make three aggregation as one query
-  def aggregateByEntityAQL(level: TypeLevel, viewName: String, predicate: String): String = {
+  def aggregateByEntityAQL(level: TypeLevel, viewName: String, joins: String, predicate: String): String = {
     s"""
        |use dataverse $Dataverse
        |for $$t in dataset $viewName
+       |$joins
        |where $predicate
        |let $$cat := ${groupbyField(level, "t")}
        |/* +hash */
@@ -124,10 +130,11 @@ object AQL {
       """.stripMargin
   }
 
-  def aggregateByTimeAQL(viewName: String, predicate: String): String = {
+  def aggregateByTimeAQL(viewName: String, joins: String, predicate: String): String = {
     s"""
        |use dataverse $Dataverse
        |for $$t in dataset $viewName
+       |$joins
        |where $predicate
        |group by $$c := print-datetime($$t.create_at, "YYYY-MM") with $$t
        |let $$count := count($$t)
@@ -135,10 +142,11 @@ object AQL {
       """.stripMargin
   }
 
-  def aggregateByHashTag(viewName: String, predicate: String): String = {
+  def aggregateByHashTag(viewName: String, joins: String, predicate: String): String = {
     s"""
        |use dataverse $Dataverse
        |for $$t in dataset $viewName
+       |$joins
        |where $predicate
        |and not(is-null($$t.hashtags))
        |for $$h in $$t.hashtags

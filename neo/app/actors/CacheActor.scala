@@ -17,6 +17,7 @@ import scala.util.{Failure, Success}
 class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
                 (val dataSet: DataSet, val keyword: String)
   extends Actor with ActorLogging {
+  import CacheActor._
 
   @volatile
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
@@ -44,9 +45,6 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
 
     import akka.pattern.ask
 
-    import scala.concurrent.duration._
-    implicit val timeout = Timeout(5.seconds)
-
     (viewsActor ? setQuery).mapTo[Seq[QueryResult]] onComplete {
       case Success(viewAnswer: Seq[QueryResult]) => {
         viewAnswer.foreach { vr =>
@@ -64,6 +62,10 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
   def updateCache(q: CacheQuery, viewAnswer: QueryResult) = {
     self ! q.timeRange
   }
+}
+
+object CacheActor{
+  implicit val timeout = Timeout(5.seconds)
 }
 
 // only one keyword considered so far

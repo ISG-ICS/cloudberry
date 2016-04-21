@@ -186,7 +186,7 @@ object ViewActor {
 }
 
 /**
-  * you should also take care of the communictaion with DB. e.g. heartbeat check with db, failure recovery, etc.
+  * TODO you should also take care of the communicataion with DB. e.g. heartbeat check with db, failure recovery, etc.
   */
 class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
 
