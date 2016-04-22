@@ -1,6 +1,6 @@
 package migration
 
-import models.AQLConnection
+import db.{AQLConnection, Migration_20160324}
 import org.specs2.mock._
 import org.specs2.mutable._
 

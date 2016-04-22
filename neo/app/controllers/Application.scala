@@ -5,9 +5,8 @@ import javax.inject.{Inject, Singleton}
 import actors._
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.util.Timeout
+import db.{AQLConnection, Migration_20160324}
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis
-import migration.Migration_20160324
-import models.AQLConnection
 import play.api.Play.{current, materializer}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
@@ -39,7 +38,7 @@ class Application @Inject()(val wsClient: WSClient,
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
-  val viewsActor = system.actorOf(Props(classOf[ViewsActor], AQLConnection), "views")
+  val viewsActor = system.actorOf(Props(classOf[DBViewsActor], AQLConnection), "views")
   val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor, USGeoGnosis), "caches")
 
   val listener = system.actorOf(Props(classOf[Listener], this))

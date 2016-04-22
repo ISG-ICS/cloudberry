@@ -1,12 +1,11 @@
-package migration
+package db
 
-import models.AQLConnection
 import play.api.Logger
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
 
-private[migration] class Migration_20160324(val connection: AQLConnection) {
+private[db] class Migration_20160324(val connection: AQLConnection) {
 
   import Migration_20160324._
 
@@ -20,19 +19,19 @@ private[migration] class Migration_20160324(val connection: AQLConnection) {
     post(dropDataTable + dropViewTable + dropDataverse)
   }
 
-  private[migration] def createDataverse(): String = {
+  private[db] def createDataverse(): String = {
     s"""
        |create dataverse $Dataverse if not exists;
     """.stripMargin
   }
 
-  private[migration] def dropDataverse(): String = {
+  private[db] def dropDataverse(): String = {
     s"""
        |drop dataverse $Dataverse if exists;
     """.stripMargin
   }
 
-  private[migration] def createViewTable(): String = {
+  private[db] def createViewTable(): String = {
     s"""
        |use dataverse $Dataverse
        |
@@ -48,7 +47,7 @@ private[migration] class Migration_20160324(val connection: AQLConnection) {
     """.stripMargin
   }
 
-  private[migration] def dropViewTable(): String = {
+  private[db] def dropViewTable(): String = {
     s"""
        |use dataverse $Dataverse
        |
@@ -56,7 +55,7 @@ private[migration] class Migration_20160324(val connection: AQLConnection) {
       """.stripMargin
   }
 
-  private[migration] def createDataTable(): String = {
+  private[db] def createDataTable(): String = {
     s"""
        |use dataverse $Dataverse
        |
@@ -133,7 +132,7 @@ private[migration] class Migration_20160324(val connection: AQLConnection) {
     """.stripMargin
   }
 
-  private[migration] def dropDataTable(): String = {
+  private[db] def dropDataTable(): String = {
     s"""
        |use dataverse $Dataverse
        |

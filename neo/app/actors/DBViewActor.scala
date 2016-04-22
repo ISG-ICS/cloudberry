@@ -1,6 +1,7 @@
 package actors
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import db.{AQL, AQLConnection}
 import models._
 import org.joda.time.{DateTime, Interval}
 import play.api.Logger
@@ -14,11 +15,11 @@ import scala.concurrent.Future
   * The original table is an special view
   * TODO think about the scalable case
   */
-class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTimeRange: Interval = ViewActor.DefaultInterval)
-               (implicit val conn: AQLConnection)
+class DBViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTimeRange: Interval = DBViewActor.DefaultInterval)
+                 (implicit val conn: AQLConnection)
   extends Actor with ActorLogging with Stash {
 
-  import ViewActor._
+  import DBViewActor._
 
   @volatile
   var toBeUpdatedTimeRange: Interval = _
@@ -91,7 +92,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
           }
           self forward q // Can not solve this query now.
         case None =>
-          askView(q, sender())
+          askViewAllInOne(q, sender())
       }
     case update: UpdatedCurrentRange =>
       curTimeRange = update.newInterval
@@ -99,7 +100,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
 
   def appendView(actual: Interval, missing: Seq[Interval]): Future[Interval] = {
     val futureInterval = new Interval(Math.min(actual.getStartMillis, missing.map(_.getStartMillis).reduceLeft(_ min _)),
-      Math.max(actual.getEndMillis, missing.map(_.getEndMillis).reduceLeft(_ max _)))
+                                      Math.max(actual.getEndMillis, missing.map(_.getEndMillis).reduceLeft(_ max _)))
     toBeUpdatedTimeRange = futureInterval
     conn.post(AQL.appendView(dataSet, keyword, missing)).map {
       case respond => {
@@ -122,16 +123,8 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
     conn.post(AQL.updateViewMeta(dataSet.name, keyword, newInterval).statement)
   }
 
-  def askView(q: CacheQuery, sender: ActorRef): Unit = {
-    val fmap = dbQuery(q, "map")
-    val ftime = dbQuery(q, "time")
-    val ftag = dbQuery(q, "hashtag")
-    val all = for {
-      mapResult <- fmap
-      timeResult <- ftime
-      hashTagResult <- ftag
-    } yield (Seq[QueryResult](mapResult, timeResult, hashTagResult))
-    all onSuccess {
+  private def responseHandler(future: Future[Seq[QueryResult]], sender: ActorRef): Unit = {
+    future onSuccess {
       case result: Seq[QueryResult] => {
         log.info("view send to cache:" + result)
         sender ! result
@@ -140,9 +133,37 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
         log.info("ViewActor failed to wait for result")
     }
 
-    all onFailure {
+    future onFailure {
       case e => log.error(e, "askView Failed")
     }
+  }
+
+  private val keyMap = "map"
+  private val keyTime = "time"
+  private val keyHashtag = "hashtag"
+
+  def askViewAllInOne(q: CacheQuery, sender: ActorRef): Unit = {
+    val aql = AQL.aggregateByAllInOne(q)
+    val f = conn.post(aql.statement).map { response =>
+      log.info("dbQuery:" + response.json.toString())
+      import QueryResult._
+      Seq(keyMap, keyTime, keyHashtag).map { key =>
+        QueryResult(key, q.dataSet.name, q.keyword, (response.json(0) \ key).as[Map[String, Int]])
+      }
+    }
+    responseHandler(f, sender)
+  }
+
+  def askViewEach(q: CacheQuery, sender: ActorRef): Unit = {
+    val fmap = dbQuery(q, keyMap)
+    val ftime = dbQuery(q, keyTime)
+    val ftag = dbQuery(q, keyHashtag)
+    val all = for {
+      mapResult <- fmap
+      timeResult <- ftime
+      hashTagResult <- ftag
+    } yield (Seq[QueryResult](mapResult, timeResult, hashTagResult))
+    responseHandler(all, sender)
   }
 
   def dbQuery(q: CacheQuery, aggType: String): Future[QueryResult] = {
@@ -156,7 +177,7 @@ class ViewActor(val dataSet: DataSet, val keyword: String, @volatile var curTime
   }
 }
 
-object ViewActor {
+object DBViewActor {
   val DefaultInterval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
   object DoneInitializing
@@ -171,7 +192,7 @@ object ViewActor {
       // may need update query, but should not need to create query.
       import scala.collection.mutable.ArrayBuffer
       val futureInterval = new Interval(Math.min(actual.getStartMillis, expected.map(_.getStartMillis).reduceLeft(_ min _)),
-        Math.max(actual.getEndMillis, expected.map(_.getEndMillis).reduceLeft(_ max _)))
+                                        Math.max(actual.getEndMillis, expected.map(_.getEndMillis).reduceLeft(_ max _)))
       val intervals = ArrayBuffer.empty[Interval]
       if (futureInterval.getStartMillis < actual.getStartMillis) {
         intervals += new Interval(futureInterval.getStartMillis, actual.getStartMillis)
@@ -188,7 +209,7 @@ object ViewActor {
 /**
   * TODO you should also take care of the communicataion with DB. e.g. heartbeat check with db, failure recovery, etc.
   */
-class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
+class DBViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with ActorLogging {
 
   import scala.concurrent.duration._
 
@@ -197,18 +218,18 @@ class ViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with A
   def receive = {
     case q: CacheQuery =>
       context.child(q.key).getOrElse {
-        context.actorOf(Props(new ViewActor(q.dataSet, q.keyword, superRange(q.timeRange, ViewActor.DefaultInterval))),
-          q.key)
+        context.actorOf(Props(new DBViewActor(q.dataSet, q.keyword, superRange(q.timeRange, DBViewActor.DefaultInterval))),
+                        q.key)
       } forward q
   }
 
   def superRange(interval1: Interval, interval2: Interval): Interval = {
     new Interval(Math.min(interval1.getStartMillis, interval2.getStartMillis),
-      Math.max(interval1.getEndMillis, interval2.getEndMillis))
+                 Math.max(interval1.getEndMillis, interval2.getEndMillis))
   }
 }
 
 // This should be an remote service which will accept the update query for every different servers in the scale up case
-object ViewUpdater {
+object DBViewUpdater {
 
 }

@@ -1,14 +1,13 @@
-package models
+package db
 
 import actors.CacheQuery
-import migration.Migration_20160324
+import edu.uci.ics.cloudberry.gnosis._
+import models.DataSet
 import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
-import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.libs.concurrent.Execution.Implicits._
-
-import edu.uci.ics.cloudberry.gnosis._
+import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.Future
 
@@ -18,6 +17,7 @@ class AQL(val statement: String) {
 }
 
 object AQL {
+  def apply(statement: String): AQL = new AQL(statement)
 
   import Migration_20160324._
 
@@ -92,19 +92,58 @@ object AQL {
     entities.tail.foldLeft(head)((pre, e) => pre + s""", ${extractEntityID(level, e)}""") + " ]"
   }
 
-  def aggregateBy(query: CacheQuery, groupField: String): AQL = {
-    val viewName = query.key
-    val joins = joinHash(query.level, query.entities)
+  private def getPredicate(query: CacheQuery): String = {
     val entityPredicate = s" $$t.${getGeoIDName(query.level)} = $$eid"
     val timePredicate = formTimePredicate(query.timeRange)
-    val predicate = s"$timePredicate and ($entityPredicate)"
+    s"$timePredicate and ($entityPredicate)"
+  }
+
+  //TODO make three aggregation as one query
+  def aggregateByAllInOne(query: CacheQuery): AQL = {
+    val joins = joinHash(query.level, query.entities)
+    val predicate = getPredicate(query)
+    val viewName = query.key
+    AQL(
+      s"""
+       |use dataverse $Dataverse
+       |let $$common := (
+       |for $$t in dataset $viewName
+       |$joins
+       |where $predicate
+       |return $$t
+       |)
+       |
+       |let $$map := (
+       |for $$t in $$common
+       |${byMap(query.level)}
+       |)
+       |
+       |let $$time := (
+       |for $$t in $$common
+       |${byTime()}
+       |)
+       |
+       |let $$hashtag := (
+       |for $$t in $$common
+       |where not(is-null($$t.hashtags))
+       |${byHashTag()}
+       |)
+       |
+       |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
+     """.stripMargin)
+  }
+
+  def aggregateBy(query: CacheQuery, groupField: String): AQL = {
+    val joins = joinHash(query.level, query.entities)
+    val predicate = getPredicate(query)
+    val viewName = query.key
     groupField.toLowerCase match {
       case "map" =>
-        new AQL(aggregateByEntityAQL(query.level, viewName, joins, predicate))
+        AQL(aggregateByEntityAQL(query.level, viewName, joins, predicate))
       case "time" =>
-        new AQL(aggregateByTimeAQL(viewName, joins, predicate))
+        AQL(aggregateByTimeAQL(viewName, joins, predicate))
       case "hashtag" =>
-        new AQL(aggregateByHashTag(viewName, joins, predicate))
+        AQL(aggregateByHashTag(viewName, joins, predicate))
     }
   }
 
@@ -116,18 +155,23 @@ object AQL {
     }
   }
 
-  //TODO make three aggregation as one query
   def aggregateByEntityAQL(level: TypeLevel, viewName: String, joins: String, predicate: String): String = {
     s"""
        |use dataverse $Dataverse
        |for $$t in dataset $viewName
        |$joins
        |where $predicate
-       |let $$cat := ${groupbyField(level, "t")}
-       |/* +hash */
-       |group by $$c := $$cat with $$t
+       |${byMap(level)}
        |return { $$c : count($$t) };
       """.stripMargin
+  }
+
+  private def byMap(level: TypeLevel): String = {
+    s"""
+       |let $$cat := ${groupbyField(level, "t")}
+       |group by $$c := $$cat with $$t
+       |return { $$c : count($$t) }
+     """.stripMargin
   }
 
   def aggregateByTimeAQL(viewName: String, joins: String, predicate: String): String = {
@@ -136,10 +180,16 @@ object AQL {
        |for $$t in dataset $viewName
        |$joins
        |where $predicate
+       |${byTime}
+      """.stripMargin
+  }
+
+  private def byTime(): String = {
+    s"""
        |group by $$c := print-datetime($$t.create_at, "YYYY-MM") with $$t
        |let $$count := count($$t)
-       |return { $$c : $$count };
-      """.stripMargin
+       |return { $$c : $$count }
+    """.stripMargin
   }
 
   def aggregateByHashTag(viewName: String, joins: String, predicate: String): String = {
@@ -149,13 +199,19 @@ object AQL {
        |$joins
        |where $predicate
        |and not(is-null($$t.hashtags))
+       |${byHashTag()}
+      """.stripMargin
+  }
+
+  private def byHashTag(): String = {
+    s"""
        |for $$h in $$t.hashtags
        |group by $$tag := $$h with $$h
        |let $$c := count($$h)
        |order by $$c desc
        |limit 50
-       |return { $$tag : $$c};
-      """.stripMargin
+       |return { $$tag : $$c}
+     """.stripMargin
   }
 
   def getView(name: String, keyword: String): String = {
