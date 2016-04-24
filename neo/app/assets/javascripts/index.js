@@ -1,4 +1,4 @@
-var app = angular.module('cloudberry', []);
+var app = angular.module('cloudberry', ['leaflet-directive']);
 
 app.factory('Asterix', function($http, $timeout) {
   var ws = new WebSocket("ws://localhost:9000/ws");
@@ -92,6 +92,24 @@ app.controller('SearchCtrl', function($scope, $window, Asterix) {
 
 app.controller('MapCtrl', function($scope, $window, Asterix) {
   $scope.result = {};
+  // map setting
+  angular.extend($scope, {
+    center: {
+      lat:  39.5,
+      lng:  -96.35,
+      zoom: 4
+    },
+    tiles: {
+      name: 'Mapbox',
+      url: 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
+      type: 'xyz',
+      options: {
+        accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
+        id: 'jeremyli.p6f712pj'
+      }
+    },
+  });
+
   $scope.$watch(
     function() {
       return Asterix.mapResult;
