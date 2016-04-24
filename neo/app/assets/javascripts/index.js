@@ -90,7 +90,7 @@ app.controller('SearchCtrl', function($scope, $window, Asterix) {
   };
 });
 
-app.controller('MapCtrl', function($scope, $window, Asterix) {
+app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
   $scope.result = {};
   // map setting
   angular.extend($scope, {
@@ -108,7 +108,49 @@ app.controller('MapCtrl', function($scope, $window, Asterix) {
         id: 'jeremyli.p6f712pj'
       }
     },
+    geojson: {
+
+    },
+    legend: {
+      colors: [],
+      labels: []
+    },
+    status :{
+      initialize: 0,
+      searched: 1
+    }
   });
+
+  // initialize
+  $scope.init = function () {
+    loadGeoJsonFiles();
+  };
+
+  // load geoJson
+  function loadGeoJsonFiles() {
+    $http.get("../../../public/data/state.json")
+      .success(function (data) {
+        $scope.geojson.state = data;
+      })
+      .error(function (data) {
+        console.log("Load state data failure");
+      });
+    $http.get("../../../public/data/county.json")
+      .success(function (data) {
+        $scope.geojson.county = data;
+      })
+      .error(function (data) {
+        console.log("Load county data failure");
+      });
+    $http.get("../../../public/data/city.json")
+      .success(function (data) {
+        $scope.geojson.city = data;
+      })
+      .error(function (data) {
+        console.log("Load city data failure");
+      });
+
+  }
 
   $scope.$watch(
     function() {
