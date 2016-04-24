@@ -8,6 +8,10 @@ object Dependencies {
   val scalatest = "org.scalatest" %% "scalatest" % "2.2.6" % Test
   val easytest = "org.easytesting" % "fest-assert" % "1.4" % Test
   val testDeps = Seq(
+    specs2 % Test,
+    "org.specs2" %% "specs2-matcher-extra" % "3.6" % Test,
+    "org.easytesting" % "fest-assert" % "1.4" % Test,
+    "com.typesafe.akka" %% "akka-testkit" % "2.3.11" % Test,
     scalatest,
     easytest,
     mockitoAll
@@ -15,16 +19,10 @@ object Dependencies {
 
   val neoDependencies: Seq[ModuleID] = Seq(
     ws, // Play's web services module
-    specs2 % Test,
-    "org.specs2" %% "specs2-matcher-extra" % "3.6" % Test,
-    "org.easytesting" % "fest-assert" % "1.4" % Test,
-    "com.typesafe.akka" %% "akka-testkit" % "2.3.11" % Test,
     "org.webjars" % "bootstrap" % "3.3.6",
     "org.webjars" % "flot" % "0.8.0",
     "org.webjars" % "angularjs" % "1.5.0",
     "org.webjars" % "leaflet" % "0.7.7",
-    "com.vividsolutions" % "jts" % "1.13",
-    "org.wololo" % "jts2geojson" % "0.7.0",
     "com.github.nscala-time" %% "nscala-time" % "2.10.0",
     "org.scalactic" %% "scalactic" % "2.2.6"
   ) ++ testDeps
@@ -42,10 +40,13 @@ object Dependencies {
 
   val gnosisDependencies: Seq[ModuleID] = Seq(
     "org.scalactic" %% "scalactic" % "2.2.6",
-    "org.scalatest" %% "scalatest" % "2.2.6" % Test,
-    "org.easytesting" % "fest-assert" % "1.4" % Test,
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
     "com.vividsolutions" % "jts" % "1.13",
     "org.wololo" % "jts2geojson" % "0.7.0"
   ) ++ testDeps
+
+  val zionDependencies: Seq[ModuleID] = Seq(
+    "joda-time" % "joda-time" % "2.9.3"
+  ) ++ testDeps
+
 }
