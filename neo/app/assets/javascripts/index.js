@@ -108,16 +108,36 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
         id: 'jeremyli.p6f712pj'
       }
     },
-    geojson: {
-
-    },
+    geojson: {},
     legend: {
       colors: [],
       labels: []
     },
-    status :{
+    status: {
       initialize: 0,
       searched: 1
+    },
+    styles: {
+      initStyle: {
+        weight: 2,
+        fillOpacity: 0.5,
+        color: 'white'
+      },
+      stateStyle: {
+        fillColor: '#f7f7f7',
+        weight: 2,
+        opacity: 1,
+        color: '#92c5de',
+        dashArray: '3',
+        fillOpacity: 0.2
+      },
+      countyStyle: {
+        fillColor: '#f7f7f7',
+        weight: 1,
+        opacity: 1,
+        color: '#92c5de',
+        fillOpacity: 0.2
+      }
     }
   });
 
@@ -128,27 +148,30 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
 
   // load geoJson
   function loadGeoJsonFiles() {
-    $http.get("../../../public/data/state.json")
+    $http.get("assets/data/state.json")
       .success(function (data) {
-        $scope.geojson.state = data;
+        $scope.geojson.state = {
+          data: data,
+          style: $scope.styles.stateStyle
+        };
       })
       .error(function (data) {
         console.log("Load state data failure");
       });
-    $http.get("../../../public/data/county.json")
-      .success(function (data) {
-        $scope.geojson.county = data;
-      })
-      .error(function (data) {
-        console.log("Load county data failure");
-      });
-    $http.get("../../../public/data/city.json")
-      .success(function (data) {
-        $scope.geojson.city = data;
-      })
-      .error(function (data) {
-        console.log("Load city data failure");
-      });
+    // $http.get("../../../public/data/county.json")
+    //   .success(function (data) {
+    //     $scope.geojson.county = data;
+    //   })
+    //   .error(function (data) {
+    //     console.log("Load county data failure");
+    //   });
+    // $http.get("../../../public/data/city.json")
+    //   .success(function (data) {
+    //     $scope.geojson.city = data;
+    //   })
+    //   .error(function (data) {
+    //     console.log("Load city data failure");
+    //   });
 
   }
 
