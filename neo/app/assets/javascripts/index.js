@@ -110,12 +110,13 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
     },
     geojson: {},
     legend: {
-      colors: [],
+      colors: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
       labels: []
     },
     status: {
-      initialize: 0,
-      searched: 1
+      init: true,
+      zoomLevel: 4,
+      logicLevel: 'state'
     },
     styles: {
       initStyle: {
@@ -175,6 +176,72 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
 
   }
 
+  /**
+   * Update map based on a set of spatial query result cells
+   * @param    [Array]     mapPlotData, an array of coordinate and weight objects
+   */
+  function drawMap(result) {
+    var maxWeight = 10;
+    var minWeight = 0;
+
+    // find max/min weight
+    angular.forEach(result, function (value, key) {
+      maxWeight = Math.max(maxWeight, value);
+    });
+
+    var range = maxWeight - minWeight;
+    if (range < 0) {
+      range = 0
+      maxWeight = 0
+      minWeight = 0
+    }
+    if (range < 10){
+      range = 10
+    }
+
+    var colors = $scope.legend.colors;
+
+    function getColor(d) {
+      return d > minWeight + range * 0.9 ? colors[10] :
+        d > minWeight + range * 0.8 ? colors[9] :
+          d > minWeight + range * 0.7 ? colors[8] :
+            d > minWeight + range * 0.6 ? colors[7] :
+              d > minWeight + range * 0.5 ? colors[6] :
+                d > minWeight + range * 0.4 ? colors[5] :
+                  d > minWeight + range * 0.3 ? colors[4] :
+                    d > minWeight + range * 0.2 ? colors[3] :
+                      d > minWeight + range * 0.1 ? colors[2] :
+                        d > minWeight ? colors[1] :
+                          colors[0];
+    }
+
+    function style(feature) {
+      return {
+        fillColor: getColor(feature.properties.count),
+        weight: 2,
+        opacity: 1,
+        color: 'white',
+        dashArray: '3',
+        fillOpacity: 0.5
+      };
+    }
+
+    // update states count
+    if($scope.geojson.hasOwnProperty('state')) {
+      angular.forEach($scope.geojson.state.data.features, function (d) {
+        if (d.properties.count)
+          d.properties.count = 0;
+        for (var k in result) {
+          if (k == d.properties.name)
+            d.properties.count = result[k];
+        }
+      });
+
+      // draw
+      $scope.geojson.state.style = style;
+    }
+  }
+
   $scope.$watch(
     function() {
       return Asterix.mapResult;
@@ -182,6 +249,8 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
 
     function(newResult) {
       $scope.result = newResult;
+      if(Object.keys($scope.result).length != 0)
+        drawMap($scope.result);
     }
   );
 });
