@@ -90,7 +90,8 @@ app.controller('SearchCtrl', function($scope, $window, Asterix) {
   };
 });
 
-app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
+
+app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
   $scope.result = {};
   // map setting
   angular.extend($scope, {
@@ -107,6 +108,9 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
         accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
         id: 'jeremyli.p6f712pj'
       }
+    },
+    controls: {
+      custom: []
     },
     geojson: {},
     legend: {
@@ -145,7 +149,8 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
         dashArray: '',
         fillOpacity: 0.7
       }
-    }
+    },
+
   });
 
   // initialize
@@ -160,6 +165,7 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
       var layer = leafletEvent.target;
       layer.setStyle($scope.styles.hoverStyle);
       layer.bringToFront();
+      $scope.selectedPlace = feature;
     }
     
     function resetHeight(leafletEvent) {
@@ -191,6 +197,24 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
     $scope.$on("leafletDirectiveGeoJson.mouseout",function(ev, leafletPayload){
       resetHeight(leafletPayload.leafletEvent);
     });
+
+    // add info control
+    var info = L.control();
+
+    info.onAdd = function () {
+      this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+      this._div.innerHTML = [
+        '<h4>Count by {{ status.logicLevel }}</h4>',
+        '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+        '<br/>',
+        'Count: {{ selectedPlace.properties.count || "0" }}'
+      ].join('');
+      $compile(this._div)($scope);
+      return this._div;
+    };
+
+    info.options = { position: 'topleft' };
+    $scope.controls.custom.push(info);
   }
 
   // load geoJson
