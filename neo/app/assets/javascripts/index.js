@@ -186,8 +186,11 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
         leafletEvent.target.setStyle(style);
     }
 
-    function zoomToFeature() {
-      
+    function zoomToFeature(leafletEvent) {
+      leafletData.getMap().then(function(map) {
+        if(leafletEvent)
+          map.fitBounds(leafletEvent.target.getBounds());
+      });
     }
 
     $scope.$on("leafletDirectiveGeoJson.mouseover",function(ev, leafletPayload){
@@ -196,6 +199,10 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
 
     $scope.$on("leafletDirectiveGeoJson.mouseout",function(ev, leafletPayload){
       resetHeight(leafletPayload.leafletEvent);
+    });
+
+    $scope.$on("leafletDirectiveGeoJson.click",function (ev, leafletPayload) {
+      zoomToFeature(leafletPayload.leafletEvent);
     });
 
     // add info control
