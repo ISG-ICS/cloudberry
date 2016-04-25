@@ -155,8 +155,20 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
 
   // initialize
   $scope.init = function () {
+    leafletData.getMap().then(function(map) {
+      $scope.map = map;
+    });
     setInfoControl();
     loadGeoJsonFiles();
+    $scope.$on("leafletDirectiveMap.zoomend", function () {
+      if($scope.map)
+        $scope.status.zoomLevel = $scope.map.getZoom();
+      if ($scope.status.zoomLevel > 5) {
+        $scope.status.logicLevel = 'county';
+      } else if ($scope.status.zoomLevel <= 5) {
+        $scope.status.logicLevel = 'state';
+      }
+    });
   };
 
   function setInfoControl() {
@@ -236,20 +248,16 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
       .error(function (data) {
         console.log("Load state data failure");
       });
-    // $http.get("../../../public/data/county.json")
-    //   .success(function (data) {
-    //     $scope.geojson.county = data;
-    //   })
-    //   .error(function (data) {
-    //     console.log("Load county data failure");
-    //   });
-    // $http.get("../../../public/data/city.json")
-    //   .success(function (data) {
-    //     $scope.geojson.city = data;
-    //   })
-    //   .error(function (data) {
-    //     console.log("Load city data failure");
-    //   });
+    $http.get("assets/data/county.json")
+      .success(function (data) {
+        $scope.geojson.county = {
+          data: data,
+          style: $scope.styles.countyStyle
+        };
+      })
+      .error(function (data) {
+        console.log("Load county data failure");
+      });
 
   }
 
