@@ -138,14 +138,60 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
         opacity: 1,
         color: '#92c5de',
         fillOpacity: 0.2
+      },
+      hoverStyle: {
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
       }
     }
   });
 
   // initialize
   $scope.init = function () {
+    setInfoControl();
     loadGeoJsonFiles();
   };
+
+  function setInfoControl() {
+    // Interaction function
+    function highlightFeature(feature, leafletEvent) {
+      var layer = leafletEvent.target;
+      layer.setStyle($scope.styles.hoverStyle);
+      layer.bringToFront();
+    }
+    
+    function resetHeight(leafletEvent) {
+      var style;
+      if (!$scope.status.init)
+        style = {
+          weight: 2,
+          fillOpacity: 0.5,
+          color: 'white'
+        };
+      else
+        style = {
+          weight: 1,
+          fillOpacity: 0.2,
+          color: '#92c5de'
+        }
+      if(leafletEvent)
+        leafletEvent.target.setStyle(style);
+    }
+
+    function zoomToFeature() {
+      
+    }
+
+    $scope.$on("leafletDirectiveGeoJson.mouseover",function(ev, leafletPayload){
+      highlightFeature(leafletPayload.leafletObject.feature, leafletPayload.leafletEvent);
+    });
+
+    $scope.$on("leafletDirectiveGeoJson.mouseout",function(ev, leafletPayload){
+      resetHeight(leafletPayload.leafletEvent);
+    });
+  }
 
   // load geoJson
   function loadGeoJsonFiles() {
@@ -249,8 +295,10 @@ app.controller('MapCtrl', function($scope, $window, $http, Asterix) {
 
     function(newResult) {
       $scope.result = newResult;
-      if(Object.keys($scope.result).length != 0)
+      if(Object.keys($scope.result).length != 0) {
+        $scope.status.init = false;
         drawMap($scope.result);
+      }
     }
   );
 });
