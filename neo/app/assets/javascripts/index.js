@@ -114,10 +114,6 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
     },
     geojsonData: {},
     polygons: {},
-    legend: {
-      colors: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
-      labels: []
-    },
     status: {
       init: true,
       zoomLevel: 4,
@@ -149,7 +145,8 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
         color: '#666',
         dashArray: '',
         fillOpacity: 0.7
-      }
+      },
+      colors: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
     },
 
   });
@@ -291,7 +288,7 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
       range = 10
     }
 
-    var colors = $scope.legend.colors;
+    var colors = $scope.styles.colors;
 
     function getColor(d) {
       return d > minWeight + range * 0.9 ? colors[10] :
@@ -345,6 +342,35 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
       // draw
       $scope.polygons.countyPolygons.setStyle(style);
     }
+    // add legend
+    if ($('.legend'))
+      $('.legend').remove();
+
+    $scope.legend = L.control({
+      position: 'topleft'
+    });
+
+    $scope.legend.onAdd = function (map) {
+      var div = L.DomUtil.create('div', 'info legend'), grades = [0]
+
+      for (var i = 1; i < 10; i++) {
+        var value = Math.floor((i * 1.0 / 10) * range + minWeight);
+        if (value > grades[i-1]) {
+          grades.push(value);
+        }
+      }
+
+      // loop through our density intervals and generate a label with a colored square for each interval
+      for (var i = 0; i < grades.length; i++) {
+        div.innerHTML +=
+          '<i style="background:' + getColor(grades[i]) + '"></i> ' +
+          grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+      }
+
+      return div;
+    };
+    if($scope.map)
+      $scope.legend.addTo($scope.map);
   }
 
   $scope.$watch(
