@@ -112,7 +112,8 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
     controls: {
       custom: []
     },
-    geojson: {},
+    geojsonData: {},
+    polygons: {},
     legend: {
       colors: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
       labels: []
@@ -159,28 +160,34 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
       $scope.map = map;
     });
     setInfoControl();
-    loadGeoJsonFiles();
     $scope.$on("leafletDirectiveMap.zoomend", function () {
-      if($scope.map)
+      if($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
-      if ($scope.status.zoomLevel > 5) {
-        $scope.status.logicLevel = 'county';
-      } else if ($scope.status.zoomLevel <= 5) {
-        $scope.status.logicLevel = 'state';
+        if ($scope.status.zoomLevel > 5) {
+          $scope.status.logicLevel = 'county';
+          $scope.map.removeLayer($scope.polygons.statePolygons);
+          $scope.map.addLayer($scope.polygons.countyPolygons);
+        } else if ($scope.status.zoomLevel <= 5) {
+          $scope.status.logicLevel = 'state';
+          $scope.map.removeLayer($scope.polygons.countyPolygons);
+          $scope.map.addLayer($scope.polygons.statePolygons);
+        }
       }
     });
   };
 
   function setInfoControl() {
     // Interaction function
-    function highlightFeature(feature, leafletEvent) {
+    function highlightFeature(leafletEvent) {
       var layer = leafletEvent.target;
       layer.setStyle($scope.styles.hoverStyle);
-      layer.bringToFront();
-      $scope.selectedPlace = feature;
+      if (!L.Browser.ie && !L.Browser.opera) {
+        layer.bringToFront();
+      }
+      $scope.selectedPlace = layer.feature;
     }
     
-    function resetHeight(leafletEvent) {
+    function resetHighlight(leafletEvent) {
       var style;
       if (!$scope.status.init)
         style = {
@@ -199,24 +206,18 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
     }
 
     function zoomToFeature(leafletEvent) {
-      leafletData.getMap().then(function(map) {
-        if(leafletEvent)
-          map.fitBounds(leafletEvent.target.getBounds());
-      });
+      if(leafletEvent)
+        $scope.map.fitBounds(leafletEvent.target.getBounds());
     }
 
-    $scope.$on("leafletDirectiveGeoJson.mouseover",function(ev, leafletPayload){
-      highlightFeature(leafletPayload.leafletObject.feature, leafletPayload.leafletEvent);
-    });
-
-    $scope.$on("leafletDirectiveGeoJson.mouseout",function(ev, leafletPayload){
-      resetHeight(leafletPayload.leafletEvent);
-    });
-
-    $scope.$on("leafletDirectiveGeoJson.click",function (ev, leafletPayload) {
-      zoomToFeature(leafletPayload.leafletEvent);
-    });
-
+    function onEachFeature(feature, layer) {
+      layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomToFeature
+      });
+    }
+    
     // add info control
     var info = L.control();
 
@@ -234,26 +235,32 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
 
     info.options = { position: 'topleft' };
     $scope.controls.custom.push(info);
+
+    loadGeoJsonFiles(onEachFeature);
+
   }
 
   // load geoJson
-  function loadGeoJsonFiles() {
+  function loadGeoJsonFiles(onEachFeature) {
     $http.get("assets/data/state.json")
       .success(function (data) {
-        $scope.geojson.state = {
-          data: data,
-          style: $scope.styles.stateStyle
-        };
+        $scope.geojsonData.state = data;
+        $scope.polygons.statePolygons = L.geoJson(data, {
+          style: $scope.styles.stateStyle,
+          onEachFeature: onEachFeature
+        });
+        $scope.polygons.statePolygons.addTo($scope.map);
       })
       .error(function (data) {
         console.log("Load state data failure");
       });
     $http.get("assets/data/county.json")
       .success(function (data) {
-        $scope.geojson.county = {
-          data: data,
-          style: $scope.styles.countyStyle
-        };
+        $scope.geojsonData.county = data;
+        $scope.polygons.countyPolygons = L.geoJson(data, {
+          style: $scope.styles.countyStyle,
+          onEachFeature: onEachFeature
+        });
       })
       .error(function (data) {
         console.log("Load county data failure");
@@ -311,9 +318,9 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
       };
     }
 
-    // update states count
-    if($scope.geojson.hasOwnProperty('state')) {
-      angular.forEach($scope.geojson.state.data.features, function (d) {
+    // update count
+    if($scope.status.logicLevel == "state" && $scope.geojsonData.state) {
+      angular.forEach($scope.geojsonData.state.features, function (d) {
         if (d.properties.count)
           d.properties.count = 0;
         for (var k in result) {
@@ -323,7 +330,20 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
       });
 
       // draw
-      $scope.geojson.state.style = style;
+      $scope.polygons.statePolygons.setStyle(style);
+    }
+    else if($scope.status.logicLevel == "county" && $scope.geojsonData.county) {
+      angular.forEach($scope.geojsonData.county.features, function (d) {
+        if (d.properties.count)
+          d.properties.count = 0;
+        for (var k in result) {
+          if (k == d.properties.stateName+"-"+d.properties.name)
+            d.properties.count = result[k];
+        }
+      });
+
+      // draw
+      $scope.polygons.countyPolygons.setStyle(style);
     }
   }
 
