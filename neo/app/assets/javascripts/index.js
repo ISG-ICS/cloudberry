@@ -8,10 +8,10 @@ app.factory('Asterix', function($http, $timeout) {
       dataset: "twitter",
       keyword: null,
       area: {
-        swLog: -146,
-        swLat: 8,
-        neLog: -100,
-        neLat: 50
+        swLog: -46.23046874999999,
+        swLat: 53.85252660044951,
+        neLog:  -146.42578125,
+        neLat: 21.453068633086783
       },
       time: {
         start: new Date(2012, 1, 1, 0, 0, 0, 0),
@@ -91,7 +91,7 @@ app.controller('SearchCtrl', function($scope, $window, Asterix) {
 });
 
 
-app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
+app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, leafletBoundsHelpers) {
   $scope.result = {};
   // map setting
   angular.extend($scope, {
@@ -155,23 +155,56 @@ app.controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, le
   $scope.init = function () {
     leafletData.getMap().then(function(map) {
       $scope.map = map;
+      $scope.bounds = map.getBounds();
     });
+
     setInfoControl();
     $scope.$on("leafletDirectiveMap.zoomend", function () {
       if($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
+        $scope.bounds = $scope.map.getBounds();
         if ($scope.status.zoomLevel > 5) {
           $scope.status.logicLevel = 'county';
+          if(!$scope.status.init){
+            Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
+            Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
+            Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
+            Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+            Asterix.parameters.level = 'county'
+            Asterix.query(Asterix.parameters);
+          }
+
           $scope.map.removeLayer($scope.polygons.statePolygons);
           $scope.map.addLayer($scope.polygons.countyPolygons);
         } else if ($scope.status.zoomLevel <= 5) {
           $scope.status.logicLevel = 'state';
+          if(!$scope.status.init){
+            Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
+            Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
+            Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
+            Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+            Asterix.parameters.level = 'state'
+            Asterix.query(Asterix.parameters);
+          }
           $scope.map.removeLayer($scope.polygons.countyPolygons);
           $scope.map.addLayer($scope.polygons.statePolygons);
         }
       }
     });
+
+    $scope.$on("leafletDirectiveMap.dragend", function () {
+        if(!$scope.status.init){
+          $scope.bounds = $scope.map.getBounds();
+          Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
+          Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
+          Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
+          Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+          Asterix.parameters.level = $scope.status.logicLevel;
+          Asterix.query(Asterix.parameters);
+        }
+    });
   };
+
 
   function setInfoControl() {
     // Interaction function
