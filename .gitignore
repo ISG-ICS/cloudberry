@@ -4,6 +4,8 @@ project/target
 target
 tmp
 .history
+.sbtserver
+.sbtserver.*
 dist
 /.idea
 /*.iml
