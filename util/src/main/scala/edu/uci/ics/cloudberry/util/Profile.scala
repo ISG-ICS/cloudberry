@@ -1,14 +1,13 @@
 package edu.uci.ics.cloudberry.util
 
-import play.api.Logger
 
-object Profile {
+object Profile extends Logging {
 
-  def profile[R](tag: String)(block: => R) : R = {
+  def profile[R](tag: String)(block: => R): R = {
     val tick = System.currentTimeMillis()
     val result = block
     val tock = System.currentTimeMillis()
-    Logger.logger.info(s"$tag time: ${tock - tick} ms" )
+    log.info(s"$tag time: ${tock - tick} ms")
     result
   }
 }
