@@ -20,14 +20,14 @@
         <div class="controls">
           <label>leftBottom</label><br>
           <label>Latitude</label>
-          <input type="number" ng-model="area.swLat" min="-90" , max="90" placeholder="left bottom latitude" />
+          <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.swLat" placeholder="left bottom latitude" />
           <label>Longitude</label>
-          <input type="number" ng-model="area.swLog" min="-180" , max="180" placeholder="left bottom longitude" />
+          <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.swLog" placeholder="left bottom longitude" />
           <br/><label>rightTop</label><br/>
           <label>Latitude</label>
-          <input type="number" ng-model="area.neLat" min="-90" , max="90" placeholder="right top latitude" />
+          <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.neLat" placeholder="right top latitude" />
           <label>Longitude</label>
-          <input type="number" ng-model="area.neLog" min="-180" , max="180" placeholder="right top longitude" />
+          <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.neLog" placeholder="right top longitude" />
         </div>
       </div>
       <div class="control-group">
@@ -43,13 +43,6 @@
       </div>
       <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
     </form>
-    <pre>
-    dataset : {{dataset}} <br/>
-    keyword:{{keyword}} <br/>
-    time: {{time.start | date: "yyyy-MM-dd" }} {{time.end   | date: "yyyy-MM-dd" }} <br/>
-    area : {{ area | json }} <br/>
-    level : {{ level }} <br/>
-  </pre>
   </div>
 
   <div class="container col-sm-4" ng-controller="MapCtrl">

@@ -23,6 +23,7 @@ object Dependencies {
     "org.webjars" % "flot" % "0.8.0",
     "org.webjars" % "angularjs" % "1.5.0",
     "org.webjars" % "leaflet" % "0.7.7",
+    "org.webjars" % "angular-leaflet-directive" % "0.8.2",
     "com.github.nscala-time" %% "nscala-time" % "2.10.0",
     "org.scalactic" %% "scalactic" % "2.2.6"
   ) ++ testDeps
