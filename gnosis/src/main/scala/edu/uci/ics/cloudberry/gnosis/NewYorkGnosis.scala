@@ -5,13 +5,13 @@ import java.io.{File, FilenameFilter}
 import com.vividsolutions.jts.geom.{Coordinate, Envelope, Geometry}
 import play.api.libs.json.{JsObject, Json, Writes}
 
-class NewYorkGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
+class NewYorkGnosis(levelGeoPathMap: Map[TypeLevel, File]) extends IGnosis{
 
   import NewYorkGnosis._
 
-  val levelShapeMap: Map[TypeLevel, NYGeoJSONIndex] = load(levelGeoPathMap)
+  lazy val levelShapeMap = load(levelGeoPathMap)
 
-  private def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, NYGeoJSONIndex] = {
+  override def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, NYGeoJSONIndex] = {
     NYLevels.map(level => {
       val index = new NYGeoJSONIndex()
       loadShape(shapeMap.get(level).get, index)(INYGeoJSONEntity.apply)
@@ -26,7 +26,7 @@ class NewYorkGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
   lazy val neighborShapes: IGeoIndex = levelShapeMap.get(NeighborLevel).get
 
   // used in geo tag
-  def tagPoint(longitude: Double, latitude: Double): Option[NYGeoTagInfo] = {
+  override def tagPoint(longitude: Double, latitude: Double): Option[NYGeoTagInfo] = {
     val box = new Envelope(new Coordinate(longitude, latitude))
     neighborShapes.search(box).headOption.map(entity => NYGeoTagInfo(entity.asInstanceOf[NYNeighborEntity]))
   }
@@ -36,7 +36,7 @@ class NewYorkGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
 object NewYorkGnosis {
 
   case class NYGeoTagInfo(neighborID: Int, neighborName: String,
-                          boroCode: Int, boroName: String) {
+                          boroCode: Int, boroName: String) extends IGeoTagInfo{
     override def toString: String = Json.toJson(this).asInstanceOf[JsObject].toString()
   }
 

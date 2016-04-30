@@ -58,7 +58,7 @@ public class TaxiTrip {
                 sb.append("{");
                 String[] cols = line.split(COMMA);
                 ADM.keyValueToSbWithComma(sb, VENDOR_ID, ADM.mkInt8Constructor(cols[VENDOR_ID_INDEX]));
-                DateFormat formatter = new SimpleDateFormat("M/d/y H:m:s");
+                DateFormat formatter = new SimpleDateFormat("y-M-d H:m:s");
                 Date pickup_date = formatter.parse(cols[PICKUP_DATETIME_INDEX]);
                 ADM.keyValueToSbWithComma(sb, PICKUP_DATETIME, ADM.mkDateTimeConstructor(pickup_date));
                 Date dropoff_date = formatter.parse(cols[DROPOFF_DATETIME_INDEX]);
