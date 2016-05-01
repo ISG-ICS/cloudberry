@@ -1,4 +1,4 @@
-var app = angular.module('cloudberry', ['cloudberry.map']);
+var app = angular.module('cloudberry', ['cloudberry.map','cloudberry.timeseries']);
 
 app.controller('SearchCtrl', function($scope, $window, Asterix) {
   $scope.init = function(){
@@ -17,7 +17,8 @@ app.controller('SearchCtrl', function($scope, $window, Asterix) {
       Asterix.parameters.time = $scope.time;
     if ($scope.level)
       Asterix.parameters.level = $scope.level;
-    Asterix.query(Asterix.parameters);
+    Asterix.queryType = 'search';
+    Asterix.query(Asterix.parameters, Asterix.queryType);
   };
 });
 
@@ -33,6 +34,7 @@ app.controller('TimeCtrl', function($scope, $window, Asterix) {
     }
   );
 });
+
 
 app.controller('HashTagCtrl', function($scope, $window, Asterix) {
   $scope.result = {};

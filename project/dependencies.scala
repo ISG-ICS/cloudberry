@@ -25,7 +25,10 @@ object Dependencies {
     "org.webjars" % "leaflet" % "0.7.7",
     "org.webjars" % "angular-leaflet-directive" % "0.8.2",
     "com.github.nscala-time" %% "nscala-time" % "2.10.0",
-    "org.scalactic" %% "scalactic" % "2.2.6"
+    "org.scalactic" %% "scalactic" % "2.2.6",
+    "org.webjars.bower" % "crossfilter" % "1.3.11",
+    "org.webjars.bower" % "dc.js" % "1.7.5",
+    "org.webjars" % "d3js" % "3.5.16"
   ) ++ testDeps
 
   val noahDependencies: Seq[ModuleID] = Seq(
