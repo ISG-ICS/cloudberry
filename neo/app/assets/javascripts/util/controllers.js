@@ -1,6 +1,5 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, Asterix) {
-    $scope.keyword = "cao";
     $scope.search = function() {
       if ($scope.keyword)
         Asterix.parameters.keyword = $scope.keyword;
@@ -11,10 +10,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .directive('searchBar', function () {
     return {
       restrict: "E",
-      scope: {
-        keyword: "=",
-        search: "="
-      },
+      scope: false,
       template: [
         '<form class="form-inline" id="input-form" ng-submit="search()" >',
           '<div class="form-group" id="input-group">',
@@ -25,4 +21,28 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         '</form>'
       ].join('')
     };
+  })
+  .controller('ExceptionCtrl', function($scope, $window, Asterix) {
+    $scope.$watch(
+      function() {
+        return Asterix.errorMessage;
+      },
+  
+      function(newMsg) {
+        if (newMsg) $window.alert(newMsg);
+        Asterix.errorMessage = null;
+      }
+    );
+  })
+  .directive('exceptionBar', function () {
+    return {
+      restrict: "E",
+      directive: false,
+      template: [
+        '<p> {{ newMsg }}</p>'
+      ].join('')
+    }
+  })
+  .controller('D3Ctrl', function($scope, $http, $timeout, Asterix) {
+
   });

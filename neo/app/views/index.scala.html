@@ -1,21 +1,22 @@
 @(title: String) @main(title){
 <div class="container" xmlns="http://www.w3.org/1999/html">
   <div class="container" id='input' ng-controller="SearchCtrl">
-    <search-bar keyword="keyword" search="search"></search-bar>
-  </div>
-
-  <div ng-controller="ExceptionCtrl">
+    <search-bar></search-bar>
   </div>
 
   <div id="Map"  ng-controller="MapCtrl" ng-init="init()">
     <leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="480px"></leaflet>
   </div>
+
   <div ng-controller="TimeSeriesCtrl">
     <time-series id="chart" val="result"></time-series>
   </div>
 
   <div id="hashtag" ng-controller="HashTagCtrl">
     <hash-tag></hash-tag>
+  </div>
+
+  <div ng-controller="ExceptionCtrl">
   </div>
 
 </div>
