@@ -1,4 +1,4 @@
-var app = angular.module('cloudberry', ['cloudberry.map','cloudberry.timeseries']);
+var app = angular.module('cloudberry', ['cloudberry.map','cloudberry.timeseries','cloudberry.sidebar']);
 
 app.controller('SearchCtrl', function($scope, $window, Asterix) {
   $scope.init = function(){
