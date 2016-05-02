@@ -11,8 +11,12 @@ import org.joda.time.Interval
   * @param curTimeRange
   * @param conn
   */
-class DBSTCubeActor(val dataSet: DataSet, @volatile var curTimeRange: Interval = DBViewActor.DefaultInterval)
-                   (implicit val conn: AQLConnection) {
+class DBSnapshotActor(override val dataSet: DataSet, @volatile override var curTimeRange: Interval = DBViewActor.DefaultInterval)
+                     (implicit override val conn: AQLConnection)
+  extends DBViewActor(dataSet, "", curTimeRange){
 
+  // prepare the table if not exists
+  def prepare = ???
 
+  def answer = ???
 }

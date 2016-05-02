@@ -2,7 +2,7 @@ package db
 
 import actors.CacheQuery
 import edu.uci.ics.cloudberry.gnosis._
-import models.DataSet
+import models.{DataSet, Predicate}
 import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
@@ -17,6 +17,7 @@ class AQL(val statement: String) {
 }
 
 object AQL {
+
   def apply(statement: String): AQL = new AQL(statement)
 
   import Migration_20160324._
@@ -105,30 +106,30 @@ object AQL {
     val viewName = query.key
     AQL(
       s"""
-       |use dataverse $Dataverse
-       |let $$common := (
-       |for $$t in dataset $viewName
-       |$joins
-       |where $predicate
-       |return $$t
-       |)
-       |
+         |use dataverse $Dataverse
+         |let $$common := (
+         |for $$t in dataset $viewName
+         |$joins
+         |where $predicate
+         |return $$t
+         |)
+         |
        |let $$map := (
-       |for $$t in $$common
-       |${byMap(query.level)}
-       |)
-       |
+         |for $$t in $$common
+         |${byMap(query.level)}
+         |)
+         |
        |let $$time := (
-       |for $$t in $$common
-       |${byTime()}
-       |)
-       |
+         |for $$t in $$common
+         |${byTime()}
+         |)
+         |
        |let $$hashtag := (
-       |for $$t in $$common
-       |where not(is-null($$t.hashtags))
-       |${byHashTag()}
-       |)
-       |
+         |for $$t in $$common
+         |where not(is-null($$t.hashtags))
+         |${byHashTag()}
+         |)
+         |
        |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
      """.stripMargin)
   }
@@ -237,6 +238,40 @@ object AQL {
        """.stripMargin
     )
   }
+
+  //TODO make this general!
+  def generateSnapshot(snapshot: ISummary, predicate: Predicate): AQL = {
+    new AQL(
+      s"""
+         |use dataverse $Dataverse
+         |insert into dataset ${snapshot.dataSet.name}
+         |(for $$t in dataset ${snapshot.source.name}
+         |  ${predicate}
+         |  group by
+         |  $$state := $$t.geo_tag.stateID,
+         |  $$county := $$t.geo_tag.countyID,
+         |  $$timeBin := interval-bin($$t.create_at, datetime("2012-01-01T00:00:00"), day-time-duration("P1D")) with $$t
+         |  return {
+         |    "stateID": $$state,
+         |    "countyID": $$county,
+         |    "timeBin": $$timeBin,
+         |    "tweetCount": count($$t),
+         |    "retweetCount": count(for $$tt in $$t where $$tt.is_retweet return $$tt),
+         |    "users": (for $$tt in $$t group by $$uid := $$tt.user.id with $$tt return $$uid),
+         |    "topHashTags": (for $$tt in $$t
+         |                      where not(is-null($$tt.hashtags))
+         |                      for $$h in $$tt.hashtags
+         |                      group by $$tag := $$h with $$h
+         |                      let $$c := count($$h)
+         |                      order by $$c desc
+         |                      limit 50
+         |                      return { "tag": $$tag, "count": $$c})
+         |  }
+         |)
+     """.stripMargin
+    )
+  }
+
 }
 
 class AQLConnection(wSClient: WSClient, url: String) {

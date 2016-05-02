@@ -47,7 +47,10 @@ object Dependencies {
   ) ++ testDeps
 
   val zionDependencies: Seq[ModuleID] = Seq(
-    "joda-time" % "joda-time" % "2.9.3"
+    "joda-time" % "joda-time" % "2.9.3",
+    "com.typesafe.akka" %% "akka-actor" % "2.4.4",
+    ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
+    ("com.typesafe.play" %% "play-ws" % playVersion)
   ) ++ testDeps
 
 }

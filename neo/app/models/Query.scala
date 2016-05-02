@@ -1,24 +1,44 @@
 package models
 
 import com.vividsolutions.jts.geom.{Envelope, Polygon}
+import db.AQL
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
 
-trait Predicate {}
+trait Predicate {
+  def toAQLString(variable: String, fieldName: String): String
+}
+
+object NoPredicate extends Predicate {
+  override def toAQLString(variable: String, fieldName: String): String = ""
+}
 
 // Only working on AND relation so far
-case class KeywordPredicate(val keywords: Seq[String]) extends Predicate
-
-// Only working on Intersection relation so far
-case class SpatialPredicate(val area: Polygon) extends Predicate
+case class KeywordPredicate(val keywords: Seq[String]) extends Predicate {
+  override def toAQLString(variable: String, fieldName: String): String =
+    keywords.map(
+      keyword =>
+        s"""
+           |where similarity-jaccard(word-tokens($${$variable}."${fieldName}"), word-tokens("${keyword}")) > 0.0
+           |""".stripMargin
+    ).mkString("\n")
+}
 
 // Only working on Contains relation so far
-case class TimeIntervalPredicate(val timeInterval: Interval) extends Predicate
+case class TimeIntervalPredicate(val interval: Interval) extends Predicate {
+
+  import AQL._
+
+  override def toAQLString(variable: String, fieldName: String): String =
+    s"""
+       |where $${$variable}."${fieldName}">= datetime("${TimeFormat.print(interval.getStart)}")
+       |and $${$variable}."${fieldName}" < datetime("${TimeFormat.print(interval.getEnd)}")
+     """.stripMargin
+}
 
 case class AggregateQuery(val aggrFunction: AggregationFunction, val fields: Seq[String])
 
 case class Query(keywordPredicate: KeywordPredicate,
-                 spatialPredicate: SpatialPredicate,
                  timeIntervalPredicate: TimeIntervalPredicate,
                  groupLevel: Int,
                  aggregateQuery: AggregateQuery)

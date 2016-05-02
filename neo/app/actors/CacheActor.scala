@@ -3,7 +3,7 @@ package actors
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
-import edu.uci.ics.cloudberry.gnosis.{IEntity, IUSGeoJSONEntity, TypeLevel, USGeoGnosis}
+import edu.uci.ics.cloudberry.gnosis._
 import models.{DataSet, QueryResult}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
@@ -70,12 +70,12 @@ object CacheActor{
 
 // only one keyword considered so far
 case class CacheQuery(dataSet: DataSet,
-                      keyword: String,
+                      keyword: Option[String],
                       timeRange: Interval,
                       level: TypeLevel,
                       entities: Seq[IEntity],
                       repeatDuration: Duration = 0.seconds) {
-  val key = dataSet.name + '_' + keyword
+  val key = dataSet.name + '_' + keyword.getOrElse("")
   override val toString = s"dataset:${dataSet.name},keyword:$keyword,timeRange:$timeRange," +
     s"level:$level,entities:${entities.map(e => USGeoTagInfo.apply(e.asInstanceOf[IUSGeoJSONEntity]))}"
 }

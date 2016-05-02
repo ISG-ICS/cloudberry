@@ -13,7 +13,7 @@ Prerequisites: scala, sbt
 
 ### Run projects
 ```
- sbt "run neo"
+ sbt ";project neo; run "
 ```
 
 You can replace the `neo` to other sub-project to run specific project.

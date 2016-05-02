@@ -218,8 +218,11 @@ class DBViewsActor(implicit val aQLConnection: AQLConnection) extends Actor with
   def receive = {
     case q: CacheQuery =>
       context.child(q.key).getOrElse {
-        context.actorOf(Props(new DBViewActor(q.dataSet, q.keyword, superRange(q.timeRange, DBViewActor.DefaultInterval))),
-                        q.key)
+        if (q.keyword.isDefined) {
+          context.actorOf(Props(new DBViewActor(q.dataSet, q.keyword.get, superRange(q.timeRange, DBViewActor.DefaultInterval))), q.key)
+        } else {
+          context.actorOf(Props(new DBSnapshotActor(q.dataSet, q.timeRange)), q.key)
+        }
       } forward q
   }
 

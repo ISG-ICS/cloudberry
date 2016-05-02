@@ -33,4 +33,4 @@ lazy val zion = (project in file("zion")).
   settings(Commons.settings: _*).
   settings(
     libraryDependencies ++= zionDependencies
-  )
+  ).dependsOn(util)
