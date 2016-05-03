@@ -1,5 +1,7 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout) {
+    var startDate = new Date(2012, 1, 1, 0, 0, 0, 0);
+    var endDate = new Date();
     var ws = new WebSocket("ws://localhost:9000/ws");
     var asterixService = {
 
@@ -13,26 +15,28 @@ angular.module('cloudberry.common', [])
           neLat: 21.453068633086783
         },
         time: {
-          start: new Date(2012, 1, 1, 0, 0, 0, 0),
-          end: new Date()
+          start: startDate,
+          end: endDate
         },
         level: "state",
         repeatDuration: 0
       },
+
+      queryType: "search",
 
       mapResult: {},
       timeResult: {},
       hashTagResult: {},
       errorMessage: null,
 
-      query: function(parameters) {
+      query: function(parameters, queryType) {
         var json = (JSON.stringify({
           dataset: parameters.dataset,
           keyword: parameters.keyword,
           area: parameters.area,
-          timeRange: {
-            start: Date.parse(parameters.time.start),
-            end: Date.parse(parameters.time.end)
+          timeRange : {
+            start: queryType=='time'?Date.parse(parameters.time.start):Date.parse(startDate),
+            end: queryType=='time'?Date.parse(parameters.time.end):Date.parse(endDate)
           },
           level: parameters.level,
           repeatDuration: parameters.repeatDuration

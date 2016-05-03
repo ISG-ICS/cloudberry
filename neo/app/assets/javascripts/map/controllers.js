@@ -1,5 +1,5 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, leafletBoundsHelpers) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
     $scope.result = {};
     // map setting
     angular.extend($scope, {
@@ -79,8 +79,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
               Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
               Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
-              Asterix.parameters.level = 'county'
-              Asterix.query(Asterix.parameters);
+              Asterix.parameters.level = 'county';
+              Asterix.queryType = 'zoom';
+              Asterix.query(Asterix.parameters, Asterix.queryType);
             }
 
             $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -92,8 +93,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
               Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
               Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
-              Asterix.parameters.level = 'state'
-              Asterix.query(Asterix.parameters);
+              Asterix.parameters.level = 'state';
+              Asterix.queryType = 'zoom';
+              Asterix.query(Asterix.parameters, Asterix.queryType);
             }
             $scope.map.removeLayer($scope.polygons.countyPolygons);
             $scope.map.addLayer($scope.polygons.statePolygons);
@@ -109,7 +111,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
           Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
           Asterix.parameters.level = $scope.status.logicLevel;
-          Asterix.query(Asterix.parameters);
+          Asterix.queryType = 'drag';
+          Asterix.query(Asterix.parameters, Asterix.queryType);
         }
       });
     };
@@ -330,4 +333,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
       }
     );
+  })
+  .directive("map", function () {
+    return {
+      restrict: 'E',
+      controller: 'MapCtrl',
+      template:[
+        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet>'
+      ].join('')
+    };
   });
