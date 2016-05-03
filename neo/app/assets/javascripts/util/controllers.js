@@ -10,12 +10,12 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .directive('searchBar', function () {
     return {
       restrict: "E",
-      scope: false,
+      controller: 'SearchCtrl',
       template: [
         '<form class="form-inline" id="input-form" ng-submit="search()" >',
-          '<div class="form-group" id="input-group">',
+          '<div class="form-group" style="width: 80%">',
             '<label class="sr-only">Keywords</label>',
-            '<input type="text" class="form-control " id="keyword-textbox" placeholder="Keywords" ng-model="keyword" required/>',
+            '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Keywords" ng-model="keyword" required/>',
           '</div>',
           '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
         '</form>'
@@ -37,7 +37,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .directive('exceptionBar', function () {
     return {
       restrict: "E",
-      directive: false,
+      controller: 'ExceptionCtrl',
       template: [
         '<p> {{ newMsg }}</p>'
       ].join('')

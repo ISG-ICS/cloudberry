@@ -333,4 +333,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
       }
     );
+  })
+  .directive("map", function () {
+    return {
+      restrict: 'E',
+      controller: 'MapCtrl',
+      template:[
+        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet>'
+      ].join('')
+    };
   });

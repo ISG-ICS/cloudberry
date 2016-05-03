@@ -10,13 +10,14 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       }
     );
   })
-  .directive('hashTag', function () {
+  .directive('hashtag', function () {
     return {
       restrict: 'E',
+      controller: 'HashTagCtrl',
       template: [
-        '<table class="table" id="hashcount" ng-repeat="(k,v) in result">',
+        '<table class="table" id="hashcount">',
           '<thead>',
-            '<tr><td># {{k}}</td><br/><td>{{v}}</td></tr>',
+            '<tr ng-repeat="(k,v) in result"><td># {{k}}</td><br/><td>{{v}}</td></tr>',
           '</thead>',
         '</table>'
       ].join('')

@@ -1,6 +1,7 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
   .controller('TimeSeriesCtrl', function ($scope, $window, Asterix) {
-    $scope.result = [];
+    $scope.result = {};
+    $scope.resultArray = [];
     $scope.d3 = $window.d3;
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
@@ -22,7 +23,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       function(newResult) {
         if(newResult && Asterix.queryType != 'time') {
           $scope.result = newResult;
-          $scope.result = $scope.preProcess($scope.result);
+          $scope.resultArray = $scope.preProcess(newResult);
         }
       }
     );
@@ -38,12 +39,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     var height = 150 - margin.top - margin.bottom;
       return {
         restrict: "E",
-        scope : {
-          val: '='
-        },
+        controller: 'TimeSeriesCtrl',
         link: function ($scope, $element, $attrs) {
           var chart = d3.select($element[0]);
-          $scope.$watch('val', function (newVal, oldVal) {
+          $scope.$watch('resultArray', function (newVal, oldVal) {
             if(newVal.length == 0)
               return;
             chart.selectAll('*').remove();

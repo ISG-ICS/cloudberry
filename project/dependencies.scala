@@ -30,7 +30,7 @@ object Dependencies {
     "org.webjars.bower" % "dc.js" % "1.7.5",
     "org.webjars" % "d3js" % "3.5.16",
     // sidebar module
-    "org.webjars" % "font-awesome" % "4.6.1",
+    "org.webjars" % "font-awesome" % "4.5.0",
     "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
     // other module
     "com.github.nscala-time" %% "nscala-time" % "2.10.0",

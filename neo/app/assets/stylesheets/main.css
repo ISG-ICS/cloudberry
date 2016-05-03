@@ -2,28 +2,46 @@ body {
   margin: 0;
   padding: 0;
 }
-#map {
+map {
   position: absolute;
-  top: 5%;
+  top: 0;
   bottom: 0;
-  width: 80%;
-  /*z-index: -1;*/
+  width: 100%;
 }
 #sidebar {
   position: relative;
   top: 0;
   bottom: 0;
-  left: 80%;
-  width: 20%;
+  left: 96%;
+  width: 24%;
   height: 700px;
   overflow: auto;
+  margin-left: 0%;
+  -webkit-transition: all 0.5s ease;
+  -moz-transition: all 0.5s ease;
+  -o-transition: all 0.5s ease;
+  transition: all 0.5s ease;
+  background-color: white;
+  opacity: 0.8;
 }
-#time-series {
+
+#sidebar.toggled {
+  margin-left: -20%;
+}
+
+time-series {
   position: absolute;
   top: 82%;
   left: 2.5%;
   width: 80%;
   height: 15%;
+}
+
+search-bar {
+  position: absolute;
+  left: 27%;
+  top: 2%;
+  width: 50%;
 }
 
 .info {
@@ -50,8 +68,25 @@ body {
   opacity: 0.7;
 }
 
-.form-horizontal .control-label{
-  /* text-align:right; */
-  text-align:left;
-  background-color:#ffa;
+.fa {
+  position: relative;
+  display: table-cell;
+  width: 60px;
+  height: 36px;
+  text-align: center;
+  vertical-align: middle;
+  font-size:20px;
+}
+
+.fa-2x {
+  font-size: 2em;
+}
+
+.col-xs-2{
+  padding-left: 0;
+  padding-right: 0;
+}
+.col-xs-10{
+  padding-left: 0;
+  padding-right: 0;
 }
