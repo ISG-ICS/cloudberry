@@ -23,7 +23,15 @@ public class ADM {
     public static String mkInt64Constructor(long value) {
         return mkADMConstructor("int64", String.valueOf(value));
     }
-
+    public static String mkInt8Constructor(String value) {
+        return mkADMConstructor("int8", value);
+    }
+    public static String mkInt32Constructor(String value) {
+        return mkADMConstructor("int32", value);
+    }
+    public static String mkFloatConstructor(String value) {
+        return mkADMConstructor("float", (Float.toString(Float.parseFloat(value))) + "f");
+    }
     public static String mkDateConstructor(Date jdate) {
         return "date(\"" + ADMDateFormat.format(jdate) + "\")";
     }
@@ -94,6 +102,9 @@ public class ADM {
         return "point(\"" + geoLocation.getLongitude() + "," + geoLocation.getLatitude() + "\")";
     }
 
+    public static String mkPoint(String lng, String lat) {
+        return "point(\"" + lng + "," + lat + "\")";
+    }
     public static String mkStringSet(HashtagEntity[] hashtagEntities) {
         StringBuilder sb = new StringBuilder();
         sb.append("{{");

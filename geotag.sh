@@ -19,6 +19,7 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-sbt -mem 2048 --error 'set showSuccess := false' "project noah" "run -state neo/public/data/state.json\
+sbt -mem 2048 --error 'set showSuccess := false' "project noah" "run-main edu.uci.ics.cloudberry.noah.TwitterJSONTagToADM\
+    -state neo/public/data/state.json\
     -county neo/public/data/county.json \
     -city neo/public/data/city.json "
