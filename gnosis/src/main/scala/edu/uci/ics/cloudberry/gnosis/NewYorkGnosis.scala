@@ -9,7 +9,7 @@ class NewYorkGnosis(levelGeoPathMap: Map[TypeLevel, File]) extends IGnosis{
 
   import NewYorkGnosis._
 
-  lazy val levelShapeMap = load(levelGeoPathMap)
+  val levelShapeMap = load(levelGeoPathMap)
 
   override def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, NYGeoJSONIndex] = {
     NYLevels.map(level => {

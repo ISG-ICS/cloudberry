@@ -1,4 +1,4 @@
-use dataverse test;
+use dataverse tripdata;
 load dataset tripdata
 using localfs
 (("path"="localhost:///home/sony/Data/taxi.adm"),("format"="adm")) pre-sorted;

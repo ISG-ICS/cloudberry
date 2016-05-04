@@ -11,7 +11,7 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) extends IGnosis{
 
   import USGeoGnosis._
 
-  lazy val levelShapeMap: Map[TypeLevel, USGeoJSONIndex] = load(levelGeoPathMap)
+  val levelShapeMap: Map[TypeLevel, USGeoJSONIndex] = load(levelGeoPathMap)
 
   override def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, USGeoJSONIndex] = {
     OrderedLevels.map(level => {
