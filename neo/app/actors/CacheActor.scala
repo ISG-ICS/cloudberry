@@ -4,9 +4,11 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
 import edu.uci.ics.cloudberry.gnosis._
+import edu.uci.ics.cloudberry.zion.model.KeyCountPair
 import models.{DataSet, QueryResult}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.{Format, Json}
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -15,7 +17,7 @@ import scala.util.{Failure, Success}
   * There is one cache per keyword
   */
 class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
-                (val dataSet: DataSet, val keyword: String)
+                (val dataSet: String, val keyword: String)
   extends Actor with ActorLogging {
 
   @volatile
@@ -69,14 +71,14 @@ object CacheActor{
 }
 
 // only one keyword considered so far
-case class CacheQuery(dataSet: DataSet,
+case class CacheQuery(dataSet: String,
                       keyword: Option[String],
                       timeRange: Interval,
                       level: TypeLevel,
                       entities: Seq[IEntity],
                       repeatDuration: Duration = 0.seconds) {
-  val key = dataSet.name + '_' + keyword.getOrElse("")
-  override val toString = s"dataset:${dataSet.name},keyword:$keyword,timeRange:$timeRange," +
+  val key = dataSet + '_' + keyword.getOrElse("")
+  override val toString = s"dataset:${dataSet},keyword:$keyword,timeRange:$timeRange," +
     s"level:$level,entities:${entities.map(e => USGeoTagInfo.apply(e.asInstanceOf[IUSGeoJSONEntity]))}"
 }
 
@@ -91,5 +93,11 @@ class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis) extend
     case other =>
       log.info("Caches:" + self + "receive:" + other + " from : " + sender())
   }
+}
+
+case class QueryResult(aggType :String, results: Seq[KeyCountPair])
+
+object QueryResult{
+  implicit val format : Format[QueryResult] = Json.format[QueryResult]
 }
 

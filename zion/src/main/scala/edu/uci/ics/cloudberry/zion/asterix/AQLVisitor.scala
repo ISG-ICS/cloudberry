@@ -1,16 +1,16 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import edu.uci.ics.cloudberry.zion.api._
+import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 
-class AQLVisitor(dataStore: DataStore) extends XQLVisitor {
+class AQLVisitor(dataStore: String) extends XQLVisitor {
 
   val aqlBuilder: StringBuilder = StringBuilder.newBuilder
 
   override def visit(query: DBQuery): Unit = {
     val varName = "t"
-    aqlBuilder ++= s"for $$${varName} in dataset ${dataStore.name}\n"
+    aqlBuilder ++= s"for $$${varName} in dataset ${dataStore}\n"
     aqlBuilder ++= query.predicates.map(p => visitPredicate(varName, p)).mkString("\n")
   }
 
@@ -74,5 +74,5 @@ class AQLVisitor(dataStore: DataStore) extends XQLVisitor {
 }
 
 object AQLVisitor {
-  def apply(dataStore: DataStore): AQLVisitor = new AQLVisitor(dataStore)
+  def apply(dataStore: String): AQLVisitor = new AQLVisitor(dataStore)
 }

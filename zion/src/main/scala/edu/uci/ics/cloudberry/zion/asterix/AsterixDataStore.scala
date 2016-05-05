@@ -1,20 +1,21 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import edu.uci.ics.cloudberry.zion.api.{DBQuery, DBUpdateQuery, DataStore, Response}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
+import edu.uci.ics.cloudberry.zion.model.{DBQuery, DBUpdateQuery, Response}
 import play.api.libs.ws.WSResponse
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-abstract class AsterixDataStore(val name: String, val aqlConn: AsterixConnection) extends DataStore {
+abstract class AsterixDataStoreActor(override val name: String, val aqlConn: AsterixConnection)
+                                    (implicit ec: ExecutionContext)
+  extends DataStoreActor(name) {
 
   override def query(query: DBQuery): Future[Response] = {
-    val aqlVisitor = new AQLVisitor(this)
+    val aqlVisitor = new AQLVisitor(name)
     query.accept(aqlVisitor)
     val wsResponse = aqlConn.post(aqlVisitor.aqlBuilder.toString())
     wsResponse.map(handleWSResponse(_))
   }
-
-  override def update(query: DBUpdateQuery): Future[WSResponse] = ???
 
   def handleWSResponse(wsResponse: WSResponse): Response
 }

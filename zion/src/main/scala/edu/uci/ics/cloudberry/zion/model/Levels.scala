@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.zion.api
+package edu.uci.ics.cloudberry.zion.model
 
 object SpatialLevels extends Enumeration {
   val Country, State, County, City, Point = Value

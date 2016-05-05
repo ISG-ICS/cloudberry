@@ -66,7 +66,7 @@ object UserActor {
 
 //TODO add the aggregation requirement parameters. Currently we calculate all the registered aggregation functions.
 case class UserQuery(dataset: String,
-                     keyword: String,
+                     keyword: Option[String],
                      timeRange: Interval,
                      area: Rectangle,
                      level: String,
@@ -76,7 +76,7 @@ case class UserQuery(dataset: String,
 object UserQuery {
 
   val Sample = UserQuery(DataSet.Twitter.name,
-                         "rain",
+                         Some("rain"),
                          new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis(), new DateTime(2016, 3, 1, 0, 0).getMillis()),
                          Rectangle(-146.95312499999997, 7.798078531355303, -45.703125, 61.3546135846894),
                          level = "state")

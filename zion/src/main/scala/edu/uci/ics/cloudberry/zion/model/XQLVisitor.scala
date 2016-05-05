@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.zion.api
+package edu.uci.ics.cloudberry.zion.model
 
 trait XQLVisitor {
   def visit(query: DBQuery): Unit

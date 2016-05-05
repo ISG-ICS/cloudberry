@@ -1,37 +1,34 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import edu.uci.ics.cloudberry.zion.api._
-import org.joda.time.{DateTime, Interval}
+import akka.actor.ActorRef
+import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
+import edu.uci.ics.cloudberry.zion.model._
+import org.joda.time.Interval
 
-import scala.concurrent.Future
-import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 class TwitterCountyDaySummaryView(val conn: AsterixConnection,
-                                  val source: TwitterDataStore,
                                   val queryTemplate: DBQuery,
-                                  val startTime: DateTime,
-                                  var lastVisitTime: DateTime,
-                                  var lastUpdateTime: DateTime,
-                                  var visitTimes: Int,
-                                  val updateCycle: Duration = 1 hours
-                                 ) extends AbstractTwitterView with SummaryView {
-  override val summaryLevel: SummaryLevel = SummaryLevel(SpatialLevels.County, TimeLevels.Day)
-
-  override val name: String = source.name + "_"
-
+                                  override val sourceActor: ActorRef,
+                                  fViewStore: Future[ViewMetaRecord]
+                                 )(implicit ec: ExecutionContext)  extends ViewActor(sourceActor, fViewStore) {
   import TwitterCountyDaySummaryView._
 
-  override def update(query: DBUpdateQuery): Future[Response] = ???
-
-  override def query(query: DBQuery): Future[Response] = {
-    if (this.summaryLevel.isFinerThan(query.summaryLevel)) {
-      super[AbstractTwitterView].query(query)
-    } else {
-      source.query(query)
-    }
+  override def mergeResult(viewResponse: Response, sourceResponse: Response): Response = {
+    val viewCount = viewResponse.asInstanceOf[SpatialTimeCount]
+    val sourceCount = sourceResponse.asInstanceOf[SpatialTimeCount]
+    mergeResult(viewCount, sourceCount)
   }
 
-  override protected def usingViewOnly(query: DBQuery): Future[Response] = {
+  override def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery = {
+    import TwitterDataStoreActor._
+    val newTimes = TimePredicate(FieldCreateAt, unCovered)
+    initQuery.copy(predicates = Seq(newTimes))
+  }
+
+  override def updateView(): Future[Unit] = ???
+
+  override def askViewOnly(query: DBQuery): Future[Response] = {
     val aql = generateAQL(query)
     conn.post(aql).map(wsResponse => wsResponse.json.as[SpatialTimeCount])
   }
@@ -59,12 +56,8 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
      """.stripMargin
   }
 
-  override protected def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery = {
-    import TwitterDataStore._
-    val newTimes = TimePredicate(FieldCreateAt, unCovered)
-    initQuery.copy(predicates = Seq(newTimes))
-  }
 }
+
 
 object TwitterCountyDaySummaryView {
   val DataVerse = "twitter"
@@ -76,7 +69,7 @@ object TwitterCountyDaySummaryView {
   val FieldReTweetCount = "retweetCount"
   val FieldUserSet = "users"
   val FieldTopHashTag = "topHashTags"
-
+  val SummaryLevel = new SummaryLevel(SpatialLevels.County, TimeLevels.Day)
   import SpatialLevels._
   import TimeLevels._
 

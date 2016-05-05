@@ -11,12 +11,12 @@ private[db] class Migration_20160324(val connection: AQLConnection) {
 
   def up(): Future[WSResponse] = {
     Logger.logger.info("Migration create table")
-    post(createDataverse + createViewTable + createEventDataTable + createSnapshotTable)
+    post(createDataverse + createViewTable + createEventDataTable )
   }
 
   def down(): Future[WSResponse] = {
     Logger.logger.info("Migration destroy table")
-    post(dropSnapshotTable + dropEventTable + dropViewTable + dropDataverse)
+    post(dropEventTable + dropViewTable + dropDataverse)
   }
 
   private[db] def createDataverse(): String = {
@@ -130,39 +130,6 @@ private[db] class Migration_20160324(val connection: AQLConnection) {
        |//set wait-for-completion-feed "false";
        |//connect feed fd_tweets to dataset $TweetDataSet using policy AdvancedFT_Discard;
     """.stripMargin
-  }
-
-  private[db] def createSnapshotTable(): String = {
-    s"""
-       |use dataverse $Dataverse
-       |
-       |create type typeHashTags if not exists as open {
-       |  "tag": string,
-       |  count: int32
-       |}
-       |
-       |create type typeSnapshots if not exists as open {
-       |  stateID: int32,
-       |  countyID : int32,
-       |  timeBin: interval,
-       |  tweetCount: int32,
-       |  retweetCount: int32,
-       |  users: [int64],
-       |  top50HashTags: [typeHashTags]
-       |}
-       |
-       |create dataset $SnapshotDataSet(typeSnapshots) if not exists primary key countyID, timeBin;
-       |
-     """.stripMargin
-  }
-
-  private[db] def dropSnapshotTable(): String = {
-    s"""
-       |use dataverse $Dataverse
-       |
-       |drop dataset $SnapshotDataSet if exists;
-       |drop type typeSnapshots if exists;
-     """.stripMargin
   }
 
   private[db] def dropEventTable(): String = {
