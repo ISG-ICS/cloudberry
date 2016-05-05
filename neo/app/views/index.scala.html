@@ -52,21 +52,21 @@
   <div class="container col-sm-4" ng-controller="MapCtrl">
     SpatialAggregation:
     <ul>
-      <li ng-repeat="(k,v) in result">{{k}}: {{v}}</li>
+      <li ng-repeat="r in result">{{r.key}}: {{r.count}}</li>
     </ul>
   </div>
 
   <div class="container col-sm-4" ng-controller="TimeCtrl">
     TimeAggregation:
     <ul>
-      <li ng-repeat="(k,v) in result">{{k}}: {{v}}</li>
+      <li ng-repeat="r in result">{{r.key}}: {{r.count}}</li>
     </ul>
   </div>
 
   <div class="container col-sm-4" ng-controller="HashTagCtrl">
     HashTags:
     <ul>
-      <li ng-repeat="(k,v) in result">{{k}}: {{v}}</li>
+      <li ng-repeat="r in result">{{r.key}}: {{r.count}}</li>
     </ul>
   </div>
 

@@ -4,8 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
 import edu.uci.ics.cloudberry.gnosis._
-import edu.uci.ics.cloudberry.zion.model.KeyCountPair
-import models.{DataSet, QueryResult}
+import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{Format, Json}
@@ -17,10 +16,9 @@ import scala.util.{Failure, Success}
   * There is one cache per keyword
   */
 class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
-                (val dataSet: String, val keyword: String)
+                (val dataSet: String, val keyword: Option[String])
   extends Actor with ActorLogging {
 
-  @volatile
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
 
   def receive = {
@@ -47,13 +45,21 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
     import akka.pattern.ask
     import CacheActor.timeout
 
-    (viewsActor ? setQuery).mapTo[Seq[QueryResult]] onComplete {
-      case Success(viewAnswer: Seq[QueryResult]) => {
-        viewAnswer.foreach { vr =>
-          log.info("cache send" + vr + " to user:" + sender)
-          sender ! cachedAnswer + vr
-          updateCache(setQuery, vr)
-        }
+    //FIXME hard code now
+    val dbQuery: DBQuery =
+      if (keyword.isDefined) {
+        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), Seq[Predicate](new KeywordPredicate("", Seq(keyword.get))))
+      } else {
+        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), Seq.empty[Predicate])
+      }
+    (viewsActor ? dbQuery).mapTo[SpatialTimeCount] onComplete {
+      case Success(viewAnswer) => {
+        sender ! QueryResult("map", viewAnswer.map)
+        sender ! QueryResult("time", viewAnswer.time)
+        sender ! QueryResult("hashtag", viewAnswer.hashtag)
+
+//          sender ! cachedAnswer + vr
+//          updateCache(setQuery, vr)
       }
       case Failure(e: Throwable) => {
         log.error(e, "cache failed")
@@ -66,7 +72,7 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
   }
 }
 
-object CacheActor{
+object CacheActor {
   implicit val timeout: Timeout = Timeout(5.seconds)
 }
 
@@ -95,9 +101,10 @@ class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis) extend
   }
 }
 
-case class QueryResult(aggType :String, results: Seq[KeyCountPair])
+case class QueryResult(aggType: String, result: Seq[KeyCountPair])
 
-object QueryResult{
-  implicit val format : Format[QueryResult] = Json.format[QueryResult]
+object QueryResult {
+  val Empty = QueryResult("", Seq.empty[KeyCountPair])
+  implicit val format: Format[QueryResult] = Json.format[QueryResult]
 }
 

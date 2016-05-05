@@ -4,11 +4,10 @@ import javax.inject.{Inject, Singleton}
 
 import actors._
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
+import akka.stream.Materializer
 import akka.util.Timeout
-import db.{AQLConnection, Migration_20160324}
-import edu.uci.ics.cloudberry.gnosis.USGeoGnosis
-import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
-import play.api.Play.{current, materializer}
+import db.Migration_20160324
+import edu.uci.ics.cloudberry.zion.asterix.{AsterixConnection, TwitterDataStoreActor, TwitterViewsManagerActor}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
@@ -24,7 +23,8 @@ import scala.util.{Failure, Success}
 class Application @Inject()(val wsClient: WSClient,
                             val config: Configuration,
                             val environment: Environment,
-                            implicit val system: ActorSystem
+                            implicit val system: ActorSystem,
+                            implicit val materializer: Materializer
                            ) extends Controller {
 
   val AsterixURL = config.getString("asterixdb.url").get
@@ -39,8 +39,9 @@ class Application @Inject()(val wsClient: WSClient,
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
-  val viewsActor = system.actorOf(Props(classOf[TwitterViewsManagerActor], asterixConn), "views")
-  val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor, USGeoGnosis), "caches")
+  val twitterActor = system.actorOf(Props(new TwitterDataStoreActor(asterixConn)), "twitter")
+  val viewsActor = system.actorOf(Props(new TwitterViewsManagerActor(asterixConn, twitterActor)), "views")
+  val cachesActor = system.actorOf(Props(new CachesActor(viewsActor, USGeoGnosis)), "caches")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])

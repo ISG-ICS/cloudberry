@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model
 
+import play.api.libs.json.{Format, Json}
+
 import scala.collection.mutable
 
 case class KeyCountPair(key: String, count: Int)
@@ -14,4 +16,6 @@ object KeyCountPair {
     })
     map.toSeq.map(e => KeyCountPair(e._1, e._2))
   }
+
+  implicit val format: Format[KeyCountPair] = Json.format[KeyCountPair]
 }

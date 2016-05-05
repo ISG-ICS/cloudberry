@@ -1,22 +1,23 @@
 package db
 
+import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
 import play.api.Logger
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.Future
 
-private[db] class Migration_20160324(val connection: AQLConnection) {
+private[db] class Migration_20160324(val connection: AsterixConnection) {
 
   import Migration_20160324._
 
   def up(): Future[WSResponse] = {
     Logger.logger.info("Migration create table")
-    post(createDataverse + createViewTable + createEventDataTable )
+    post(createDataverse + createEventDataTable)
   }
 
   def down(): Future[WSResponse] = {
     Logger.logger.info("Migration destroy table")
-    post(dropEventTable + dropViewTable + dropDataverse)
+    post(dropEventTable + dropDataverse)
   }
 
   private[db] def createDataverse(): String = {
@@ -29,30 +30,6 @@ private[db] class Migration_20160324(val connection: AQLConnection) {
     s"""
        |drop dataverse $Dataverse if exists;
     """.stripMargin
-  }
-
-  private[db] def createViewTable(): String = {
-    s"""
-       |use dataverse $Dataverse
-       |
-       |create type type$ViewMetaDataset if not exists as open {
-       | "dataset": string,
-       | "keyword": string,
-       | "timeStart": datetime,
-       | "timeEnd": datetime
-       |}
-       |
-       |create dataset $ViewMetaDataset(type$ViewMetaDataset) if not exists primary key "dataset","keyword";
-       |
-    """.stripMargin
-  }
-
-  private[db] def dropViewTable(): String = {
-    s"""
-       |use dataverse $Dataverse
-       |
-       |drop dataset $ViewMetaDataset if exists;
-      """.stripMargin
   }
 
   private[db] def createEventDataTable(): String = {
@@ -149,9 +126,7 @@ private[db] class Migration_20160324(val connection: AQLConnection) {
 
 object Migration_20160324 {
   val Dataverse = "twitter"
-  val ViewMetaDataset = "viewMeta"
   val TweetDataSet = "ds_tweet"
-  val SnapshotDataSet = "snapshot"
 
-  def apply(connection: AQLConnection): Migration_20160324 = new Migration_20160324(connection)
+  def apply(connection: AsterixConnection): Migration_20160324 = new Migration_20160324(connection)
 }
