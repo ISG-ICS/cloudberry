@@ -45,12 +45,12 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
     import akka.pattern.ask
     import CacheActor.timeout
 
-    //FIXME hard code now
+    val predicates = Seq[Predicate](TimePredicate("", Seq(setQuery.timeRange)), IdSetPredicate("", setQuery.entities.map(_.key.toInt)))
     val dbQuery: DBQuery =
       if (keyword.isDefined) {
-        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), Seq[Predicate](new KeywordPredicate("", Seq(keyword.get))))
+        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), predicates ++ Seq[Predicate](new KeywordPredicate("", Seq(keyword.get))))
       } else {
-        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), Seq.empty[Predicate])
+        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), predicates)
       }
     (viewsActor ? dbQuery).mapTo[SpatialTimeCount] onComplete {
       case Success(viewAnswer) => {
@@ -58,8 +58,8 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
         sender ! QueryResult("time", viewAnswer.time)
         sender ! QueryResult("hashtag", viewAnswer.hashtag)
 
-//          sender ! cachedAnswer + vr
-//          updateCache(setQuery, vr)
+        //          sender ! cachedAnswer + vr
+        //          updateCache(setQuery, vr)
       }
       case Failure(e: Throwable) => {
         log.error(e, "cache failed")

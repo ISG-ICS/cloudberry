@@ -13,15 +13,19 @@ sealed trait Predicate extends Statement {
 
 // Only working on AND relation so far
 case class KeywordPredicate(val fieldName: String, keywords: Seq[String]) extends Predicate {
+  require(keywords.length > 0)
   require(keywords.forall(_.length > 0))
 }
 
 // Only working on Contains relation so far
 case class TimePredicate(val fieldName: String, intervals: Seq[Interval]) extends Predicate {
+  require(intervals.length > 0)
 }
 
 // Only use work on the int id so far.
-case class IdSetPredicate(val fieldName: String, idSets: Seq[Int]) extends Predicate
+case class IdSetPredicate(val fieldName: String, idSets: Seq[Int]) extends Predicate{
+  require(idSets.length > 0)
+}
 
 
 case class GroupOn(val fieldNames: String, level: SummaryLevel) extends Statement
