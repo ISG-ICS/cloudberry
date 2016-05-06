@@ -9,7 +9,7 @@ class TwitterDataStoreActorTest extends Specification with TestData {
     "generateAQL" in {
 
       val dbQuery = DBQuery(TwitterCountyDaySummaryView.SummaryLevel, Seq(idPredicate, keywordPredicate2, timePredicate2))
-      val str = TwitterDataStoreActor.generateAQL("twitter", dbQuery)
+      val str = TwitterDataStoreActor.generateAQL("ds_tweet", dbQuery)
       str.trim must_==("""
                     |use dataverse twitter
                     |let $common := (
