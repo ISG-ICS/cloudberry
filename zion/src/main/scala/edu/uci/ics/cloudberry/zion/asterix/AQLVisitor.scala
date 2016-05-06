@@ -5,7 +5,7 @@ import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 
 class AQLVisitor(dataStore: String) extends XQLVisitor {
-
+  import AQLVisitor._
   val aqlBuilder: StringBuilder = StringBuilder.newBuilder
 
   override def visit(query: DBQuery): Unit = {
@@ -13,8 +13,6 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
     aqlBuilder ++= s"for $$${varName} in dataset ${dataStore}\n"
     aqlBuilder ++= query.predicates.map(p => visitPredicate(varName, p)).mkString("\n")
   }
-
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
   def visitPredicate(variable: String, predicate: Predicate): String = {
     predicate match {
@@ -71,4 +69,6 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
 
 object AQLVisitor {
   def apply(dataStore: String): AQLVisitor = new AQLVisitor(dataStore)
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+
 }

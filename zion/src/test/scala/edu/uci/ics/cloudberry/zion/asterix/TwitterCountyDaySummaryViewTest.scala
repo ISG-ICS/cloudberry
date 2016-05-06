@@ -9,23 +9,23 @@ class TwitterCountyDaySummaryViewTest extends Specification with TestData {
     "generateAQL" in {
       val dbQuery = DBQuery(TwitterCountyDaySummaryView.SummaryLevel, Seq(idPredicate, keywordPredicate2, timePredicate2))
       val aql = TwitterCountyDaySummaryView.generateAQL(dbQuery)
-      aql.trim must_== ("""
-                          |use dataverse twitter
+      aql.trim must_== ("""use dataverse twitter
                           |let $common := (
                           |for $t in dataset ds_tweet_
                           |
                           |let $set := [ 1,2,3 ]
                           |for $sid in $set
-                          |where $t."countyID" = $sid
+                          |where $t.countyID = $sid
+                          |
                           |
                           |
                           |where
                           |
-                          |($t."create_at">= datetime("2012-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2012-01-08T00:00:00.000Z"))
+                          |(get-interval-start($t.timeBin) >= datetime("2012-01-01T00:00:00.000Z")
+                          |and get-interval-start($t.timeBin) < datetime("2012-01-08T00:00:00.000Z"))
                           |or
-                          |($t."create_at">= datetime("2016-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2016-01-15T00:00:00.000Z"))
+                          |(get-interval-start($t.timeBin) >= datetime("2016-01-01T00:00:00.000Z")
+                          |and get-interval-start($t.timeBin) < datetime("2016-01-15T00:00:00.000Z"))
                           |
                           |
                           |return $t
@@ -43,7 +43,7 @@ class TwitterCountyDaySummaryViewTest extends Specification with TestData {
                           |for $t in $common
                           |
                           |group by $c := print-datetime(get-interval-start($t.timeBin), "YYYY-MM-DD") with $t
-                          |return { "key" : $c  "count": sum(for $x in $t return $x.tweetCount)}
+                          |return { "key" : $c, "count": sum(for $x in $t return $x.tweetCount)}
                           |
                           |)
                           |

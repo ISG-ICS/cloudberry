@@ -55,17 +55,36 @@ object TwitterCountyDaySummaryView {
   val SpatialLevelsMap = Map[SpatialLevels.Value, String](State -> FieldStateID, County -> FieldCountyID)
   val TimeFormatMap = Map[TimeLevels.Value, String](Year -> "YYYY", Month -> "YYYY-MM", Day -> "YYYY-MM-DD")
 
+  //TODO temporary solution
+  def visitPredicate(variable: String, predicate: Predicate): String = {
+    import AQLVisitor.TimeFormat
+    val spID = SpatialLevelsMap.get(SummaryLevel.spatialLevel).get
+    predicate match {
+      case p: KeywordPredicate => ""
+      case p: TimePredicate =>
+        def formatInterval(interval: Interval): String = {
+          s"""
+             |(get-interval-start($$$variable.$FieldTimeBin) >= datetime("${TimeFormat.print(interval.getStart)}")
+             |and get-interval-start($$$variable.$FieldTimeBin) < datetime("${TimeFormat.print(interval.getEnd)}"))
+             |""".stripMargin
+        }
+        s"""
+           |where
+           |${p.intervals.map(formatInterval).mkString("or")}
+           |""".stripMargin
+      case p: IdSetPredicate =>
+        s"""
+           |let $$set := [ ${p.idSets.mkString(",")} ]
+           |for $$sid in $$set
+           |where $$$variable.$spID = $$sid
+           |""".stripMargin
+    }
+
+  }
+
   def generateAQL(query: DBQuery): String = {
-    val aqlVisitor = AQLVisitor(DataSet)
-    val matchedPredicates = query.predicates.filter(p => !p.isInstanceOf[KeywordPredicate])
-    val resetPredicates = matchedPredicates.map(p => {
-      p match {
-        case pr: IdSetPredicate => IdSetPredicate(SpatialLevelsMap.get(SummaryLevel.spatialLevel).get, pr.idSets)
-        case other => other
-      }
-    })
-    val cleanedQuery = DBQuery(SummaryLevel, resetPredicates)
-    val predicate = cleanedQuery.predicates.map(p => aqlVisitor.visitPredicate("t", p)).mkString("\n")
+
+    val predicate = query.predicates.map(visitPredicate("t", _)).mkString("\n")
     s"""
        |use dataverse $DataVerse
        |let $$common := (
@@ -104,7 +123,7 @@ object TwitterCountyDaySummaryView {
   private def byTime(level: TimeLevels.Value): String = {
     s"""
        |group by $$c := print-datetime(get-interval-start($$t.$FieldTimeBin), "${TimeFormatMap.getOrElse(level, "YYYY-MM-DD")}") with $$t
-       |return { "key" : $$c  "count": sum(for $$x in $$t return $$x.$FieldTweetCount)}
+       |return { "key" : $$c, "count": sum(for $$x in $$t return $$x.$FieldTweetCount)}
        |""".stripMargin
   }
 
