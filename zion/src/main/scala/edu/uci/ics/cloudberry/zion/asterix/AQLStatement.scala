@@ -20,7 +20,7 @@ object AQLStatement {
 class AsterixConnection(wSClient: WSClient, url: String)(implicit ec: ExecutionContext) extends Logging {
 
   def post(aql: String): Future[WSResponse] = {
-    log.debug("AQL:" + aql)
+    log.info("AQL:" + aql)
     val f = wSClient.url(url).post(aql)
     f.onFailure(failureHandler(aql))
     f

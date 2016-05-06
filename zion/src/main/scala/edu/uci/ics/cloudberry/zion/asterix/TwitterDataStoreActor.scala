@@ -59,7 +59,7 @@ object TwitterDataStoreActor {
     s"""
        |use dataverse $DataVerse
        |let $$common := (
-       |for $$t in dataset $DataSet
+       |for $$t in dataset $name
        |$predicate
        |return $$t
        |)

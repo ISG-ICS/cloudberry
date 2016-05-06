@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, Props}
 import edu.uci.ics.cloudberry.zion.actor.{ViewMetaRecord, ViewsManagerActor}
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.DateTime
@@ -23,10 +23,16 @@ class TwitterViewsManagerActor(val conn: AsterixConnection,
 
   override def flushInterval: FiniteDuration = 1 hours
 
-  override def createViewActor(query: DBQuery, fView: Future[ViewMetaRecord]): Actor = {
+  override def createViewActor(key: String, query: DBQuery, fView: Future[ViewMetaRecord]): ActorRef = {
     query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate]) match {
-      case Some(x) => new TwitterKeywordViewActor(conn, keywordViewTemplate(x.keywords.head), x.keywords.head, sourceActor, fView)
-      case None => new TwitterCountyDaySummaryView(conn, summaryViewTemplate(TwitterCountyDaySummaryView.SummaryLevel), sourceActor, fView)
+      case Some(x) =>
+        context.actorOf(Props(classOf[TwitterKeywordViewActor],
+                              conn, keywordViewTemplate(x.keywords.head), x.keywords.head, sourceActor, fView, ec),
+                        key)
+      case None =>
+        context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
+                              conn, summaryViewTemplate(TwitterCountyDaySummaryView.SummaryLevel), sourceActor, fView, ec),
+                        key)
     }
   }
 

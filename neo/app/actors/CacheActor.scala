@@ -23,6 +23,7 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
 
   def receive = {
     case q: CacheQuery if q.entities.size > 0 =>
+      log.info("Cache:" + self + " get query " + q + " from : " + sender())
       val cachedAnswer: QueryResult = answerAsMuchAsICan(q)
       splitQuery(q) match {
         case Some(viewQuery) =>
@@ -80,7 +81,7 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
 }
 
 object CacheActor {
-  implicit val timeout: Timeout = Timeout(5.seconds)
+  implicit val timeout: Timeout = Timeout(10 minutes)
 }
 
 // only one keyword considered so far

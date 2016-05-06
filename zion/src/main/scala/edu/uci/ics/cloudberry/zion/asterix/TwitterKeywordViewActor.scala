@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import akka.actor.ActorRef
+import akka.actor.{ActorRef, Props}
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.Interval
@@ -11,8 +11,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
                               val queryTemplate: DBQuery,
                               val keyword: String,
                               override val sourceActor: ActorRef,
-                              fViewStore: Future[ViewMetaRecord]
-                             )(implicit ec: ExecutionContext) extends ViewActor(sourceActor, fViewStore) {
+                              fViewStore: Future[ViewMetaRecord])(implicit ec: ExecutionContext) extends ViewActor(sourceActor, fViewStore) {
 
   import TwitterDataStoreActor._
 
@@ -36,3 +35,5 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
 
 }
 
+object TwitterKeywordViewActor {
+}

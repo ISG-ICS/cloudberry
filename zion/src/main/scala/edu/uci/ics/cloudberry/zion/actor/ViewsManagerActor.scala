@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import edu.uci.ics.cloudberry.zion.actor.ViewActor.DoneInitializing
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.DateTime
@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
 
 // One ViewManager per store
 abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorRef)(implicit ec: ExecutionContext)
-  extends Actor with Stash {
+  extends Actor with Stash with ActorLogging{
 
   protected val viewMeta = mutable.Map.empty[String, ViewMetaRecord]
 
@@ -22,7 +22,7 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
 
   def createViewStore(query: DBQuery): Future[ViewMetaRecord]
 
-  def createViewActor(query: DBQuery, fView: Future[ViewMetaRecord]): Actor
+  def createViewActor(key: String, query: DBQuery, fView: Future[ViewMetaRecord]): ActorRef
 
   def loadMetaStore: Future[Seq[ViewMetaRecord]]
 
@@ -52,6 +52,7 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
     case ViewsManagerActor.flushMetaMsg => flushMeta()
     case query: DBQuery => {
       //TODO a little awkward implementation. we need the key before the view
+      log.info(self + " get query " + query + " from : " + sender())
       val key = getViewKey(query)
       context.child(key).getOrElse {
         val viewRecord = viewMeta.get(key)
@@ -60,7 +61,7 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
         } else {
           Future(viewRecord.get)
         }
-        context.actorOf(Props(createViewActor(query, fView)), key)
+        createViewActor(key, query, fView)
       } forward (query)
     }
     case (key: String, viewRecord: ViewMetaRecord) => {

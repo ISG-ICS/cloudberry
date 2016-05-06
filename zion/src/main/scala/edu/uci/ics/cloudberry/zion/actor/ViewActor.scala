@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorRef, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Stash}
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Interval}
 
@@ -11,7 +11,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaRecord])(implicit ec: ExecutionContext)
-  extends Actor with Stash {
+  extends Actor with Stash with ActorLogging{
 
   import ViewActor._
 
@@ -83,6 +83,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
 
   private def routine: Receive = {
     case query: DBQuery => {
+      log.info(self + " get query " + query + " from : " + sender())
       val thisSender = sender()
       if (summaryLevel.isFinerThan(query.summaryLevel)) {
         this.query(query).map(thisSender ! _)
