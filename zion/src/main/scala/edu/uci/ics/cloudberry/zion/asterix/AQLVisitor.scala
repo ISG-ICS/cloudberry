@@ -21,25 +21,25 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
       case p: KeywordPredicate =>
         p.keywords.map(
           keyword =>
-            s"""where similarity-jaccard(word-tokens($$$variable."${p.fieldName}"), word-tokens("$keyword")) > 0.0 """
+            s"""where similarity-jaccard(word-tokens($$$variable."${p.fieldName}"), word-tokens("$keyword")) > 0.0"""
         ).mkString("\n")
       case p: TimePredicate =>
         def formatInterval(interval: Interval): String = {
           s"""
              |($$$variable."${p.fieldName}">= datetime("${TimeFormat.print(interval.getStart)}")
              |and $$$variable."${p.fieldName}" < datetime("${TimeFormat.print(interval.getEnd)}"))
-           """.stripMargin
+             |""".stripMargin
         }
         s"""
            |where
-           |${p.intervals.map(formatInterval).mkString(" or")}
-         """.stripMargin
+           |${p.intervals.map(formatInterval).mkString("or")}
+           |""".stripMargin
       case p: IdSetPredicate =>
         s"""
            |let $$set := [ ${p.idSets.mkString(",")} ]
            |for $$sid in $$set
            |where $$$variable."${p.fieldName}" = $$sid
-         """.stripMargin
+           |""".stripMargin
     }
   }
 

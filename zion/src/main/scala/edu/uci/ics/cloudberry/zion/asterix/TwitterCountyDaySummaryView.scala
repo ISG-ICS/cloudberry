@@ -11,7 +11,8 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
                                   val queryTemplate: DBQuery,
                                   override val sourceActor: ActorRef,
                                   fViewStore: Future[ViewMetaRecord]
-                                 )(implicit ec: ExecutionContext)  extends ViewActor(sourceActor, fViewStore) {
+                                 )(implicit ec: ExecutionContext) extends ViewActor(sourceActor, fViewStore) {
+
   import TwitterCountyDaySummaryView._
 
   override def mergeResult(viewResponse: Response, sourceResponse: Response): Response = {
@@ -33,29 +34,6 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
     conn.post(aql).map(wsResponse => wsResponse.json.as[SpatialTimeCount])
   }
 
-  //TODO don't care about the predicate so far, always return all the result for simplicity
-  def generateAQL(query: DBQuery): String = {
-    s"""
-       |use dataverse $DataVerse
-       |let $$map := (
-       |for $$t in dataset $DataSet
-       |${byMap(query.summaryLevel.spatialLevel)}
-       |)
-       |
-       |let $$time := (
-       |for $$t in dataset $DataSet
-       |${byTime(query.summaryLevel.timeLevel)}
-       |)
-       |
-       |let $$hashtag := (
-       |for $$t in dataset $DataSet
-       |${byHashTag()}
-       |)
-       |
-       |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
-     """.stripMargin
-  }
-
 }
 
 
@@ -70,25 +48,64 @@ object TwitterCountyDaySummaryView {
   val FieldUserSet = "users"
   val FieldTopHashTag = "topHashTags"
   val SummaryLevel = new SummaryLevel(SpatialLevels.County, TimeLevels.Day)
+
   import SpatialLevels._
   import TimeLevels._
 
   val SpatialLevelsMap = Map[SpatialLevels.Value, String](State -> FieldStateID, County -> FieldCountyID)
   val TimeFormatMap = Map[TimeLevels.Value, String](Year -> "YYYY", Month -> "YYYY-MM", Day -> "YYYY-MM-DD")
 
+  def generateAQL(query: DBQuery): String = {
+    val aqlVisitor = AQLVisitor(DataSet)
+    val matchedPredicates = query.predicates.filter(p => !p.isInstanceOf[KeywordPredicate])
+    val resetPredicates = matchedPredicates.map(p => {
+      p match {
+        case pr: IdSetPredicate => IdSetPredicate(SpatialLevelsMap.get(SummaryLevel.spatialLevel).get, pr.idSets)
+        case other => other
+      }
+    })
+    val cleanedQuery = DBQuery(SummaryLevel, resetPredicates)
+    val predicate = cleanedQuery.predicates.map(p => aqlVisitor.visitPredicate("t", p)).mkString("\n")
+    s"""
+       |use dataverse $DataVerse
+       |let $$common := (
+       |for $$t in dataset $DataSet
+       |$predicate
+       |return $$t
+       |)
+       |
+       |let $$map := (
+       |for $$t in $$common
+       |${byMap(query.summaryLevel.spatialLevel)}
+       |)
+       |
+       |let $$time := (
+       |for $$t in $$common
+       |${byTime(query.summaryLevel.timeLevel)}
+       |)
+       |
+       |let $$hashtag := (
+       |for $$t in $$common
+       |${byHashTag()}
+       |)
+       |
+       |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
+       |""".stripMargin
+  }
+
   //TODO move this hacking code to visitor
   private def byMap(level: SpatialLevels.Value): String = {
     s"""
        |group by $$c := $$t.${SpatialLevelsMap.getOrElse(level, FieldStateID)} with $$t
        |return { "key": $$c , "count": sum(for $$x in $$t return $$x.$FieldTweetCount) }
-     """.stripMargin
+       |""".stripMargin
   }
 
   private def byTime(level: TimeLevels.Value): String = {
     s"""
        |group by $$c := print-datetime(get-interval-start($$t.$FieldTimeBin), "${TimeFormatMap.getOrElse(level, "YYYY-MM-DD")}") with $$t
        |return { "key" : $$c  "count": sum(for $$x in $$t return $$x.$FieldTweetCount)}
-    """.stripMargin
+       |""".stripMargin
   }
 
   private def byHashTag(): String = {
@@ -99,7 +116,7 @@ object TwitterCountyDaySummaryView {
        |order by $$c desc
        |limit 50
        |return { "key": $$tag, "count" : $$c}
-     """.stripMargin
+       |""".stripMargin
   }
 
 }

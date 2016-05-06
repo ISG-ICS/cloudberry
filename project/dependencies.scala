@@ -50,7 +50,8 @@ object Dependencies {
     "joda-time" % "joda-time" % "2.9.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.4",
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
-    ("com.typesafe.play" %% "play-ws" % playVersion)
+    ("com.typesafe.play" %% "play-ws" % playVersion),
+    ("com.typesafe.play" %% "play" % playVersion % "test") // use it to test the web client
   ) ++ testDeps
 
 }

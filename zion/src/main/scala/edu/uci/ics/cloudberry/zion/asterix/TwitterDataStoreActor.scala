@@ -81,7 +81,7 @@ object TwitterDataStoreActor {
        |)
        |
        |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
-      """.stripMargin
+       |""".stripMargin
   }
 
   //TODO move this hacking code to visitor
@@ -89,15 +89,15 @@ object TwitterDataStoreActor {
     s"""
        |group by $$c := $$t.${SpatialLevelMap.getOrElse(level, FieldStateID)} with $$t
        |return { "key": $$c , "count": count($$t) }
-     """.stripMargin
+       |""".stripMargin
   }
 
   private def byTime(level: TimeLevels.Value): String = {
     s"""
        |group by $$c := print-datetime($$t.create_at, "${TimeFormatMap.getOrElse(level, "YYYY-MM-DD")}") with $$t
        |let $$count := count($$t)
-       |return { "key" : $$c  "count": $$count }
-    """.stripMargin
+       |return { "key" : $$c , "count": $$count }
+       |""".stripMargin
   }
 
   private def byHashTag(): String = {
@@ -108,7 +108,7 @@ object TwitterDataStoreActor {
        |order by $$c desc
        |limit 50
        |return { "key": $$tag, "count" : $$c}
-     """.stripMargin
+       |""".stripMargin
   }
 
 }
