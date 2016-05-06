@@ -7,13 +7,13 @@ import play.api.libs.json.{JsObject, Json, Writes}
 
 import scala.collection.mutable
 
-class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
+class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) extends IGnosis{
 
   import USGeoGnosis._
 
   val levelShapeMap: Map[TypeLevel, USGeoJSONIndex] = load(levelGeoPathMap)
 
-  private def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, USGeoJSONIndex] = {
+  override def load(shapeMap: Map[TypeLevel, File]): Map[TypeLevel, USGeoJSONIndex] = {
     OrderedLevels.map(level => {
       val index = new USGeoJSONIndex()
       loadShape(shapeMap.get(level).get, index)(IUSGeoJSONEntity.apply)
@@ -43,10 +43,6 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
   lazy val countyShapes: IGeoIndex = levelShapeMap.get(CountyLevel).get
   lazy val cityShapes: IGeoIndex = levelShapeMap.get(CityLevel).get
 
-  def tagRectangle(level: TypeLevel, rectangle: Rectangle): Seq[IUSGeoJSONEntity] = {
-    levelShapeMap.get(level).get.search(rectangle.getEnvelopInternal)
-  }
-
   // used in geo tag
   def tagNeighborhood(cityName: String, rectangle: Rectangle): Option[USGeoTagInfo] = {
     val box = new Envelope(rectangle.swLog, rectangle.neLog, rectangle.swLat, rectangle.neLat)
@@ -54,7 +50,7 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) {
   }
 
   // used in geo tag
-  def tagPoint(longitude: Double, latitude: Double): Option[USGeoTagInfo] = {
+  override def tagPoint(longitude: Double, latitude: Double): Option[USGeoTagInfo] = {
     val box = new Envelope(new Coordinate(longitude, latitude))
     val cityOpt = cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
     if (cityOpt.isDefined) return cityOpt
@@ -72,7 +68,7 @@ object USGeoGnosis {
 
   case class USGeoTagInfo(stateID: Int, stateName: String,
                           countyID: Option[Int], countyName: Option[String],
-                          cityID: Option[Int], cityName: Option[String]) {
+                          cityID: Option[Int], cityName: Option[String]) extends IGeoTagInfo{
     override def toString: String = Json.toJson(this).asInstanceOf[JsObject].toString()
   }
 
