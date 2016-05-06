@@ -116,7 +116,7 @@ object TwitterCountyDaySummaryView {
   private def byMap(level: SpatialLevels.Value): String = {
     s"""
        |group by $$c := $$t.${SpatialLevelsMap.getOrElse(level, FieldStateID)} with $$t
-       |return { "key": $$c , "count": sum(for $$x in $$t return $$x.$FieldTweetCount) }
+       |return { "key": string($$c) , "count": sum(for $$x in $$t return $$x.$FieldTweetCount) }
        |""".stripMargin
   }
 

@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
 import edu.uci.ics.cloudberry.gnosis._
+import edu.uci.ics.cloudberry.zion.asterix.TwitterDataStoreActor
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
@@ -53,10 +54,13 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
       case CityLevel => SpatialLevels.City
     }
 
-    val predicates = Seq[Predicate](TimePredicate("", Seq(setQuery.timeRange)), IdSetPredicate("", setQuery.entities.map(_.key.toInt)))
+    val predicates = Seq[Predicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
+                                    IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
+                                                   setQuery.entities.map(_.key.toInt)))
+    val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, Seq(keyword.get))
     val dbQuery: DBQuery =
       if (keyword.isDefined) {
-        DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates ++ Seq[Predicate](KeywordPredicate("", Seq(keyword.get))))
+        DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), keywordPredicate +: predicates)
       } else {
         DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates)
       }

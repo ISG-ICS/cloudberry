@@ -36,7 +36,7 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
         s"""
            |let $$set := [ ${p.idSets.mkString(",")} ]
            |for $$sid in $$set
-           |where $$$variable."${p.fieldName}" = $$sid
+           |where $$$variable.${p.fieldName} = $$sid
            |""".stripMargin
     }
   }

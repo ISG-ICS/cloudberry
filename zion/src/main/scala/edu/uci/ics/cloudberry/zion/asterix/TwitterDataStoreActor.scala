@@ -2,6 +2,8 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
 import edu.uci.ics.cloudberry.zion.model._
+import play.api.Logger
+import play.api.libs.json.JsArray
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -50,7 +52,7 @@ object TwitterDataStoreActor {
   }
 
   def handleWSResponse(wsResponse: WSResponse): Response = {
-    wsResponse.json.as[SpatialTimeCount]
+    wsResponse.json.asInstanceOf[JsArray].apply(0).as[SpatialTimeCount]
   }
 
   def generateAQL(name: String, query: DBQuery): String = {
@@ -88,7 +90,7 @@ object TwitterDataStoreActor {
   private def byMap(level: SpatialLevels.Value): String = {
     s"""
        |group by $$c := $$t.${SpatialLevelMap.getOrElse(level, FieldStateID)} with $$t
-       |return { "key": $$c , "count": count($$t) }
+       |return { "key": string($$c) , "count": count($$t) }
        |""".stripMargin
   }
 

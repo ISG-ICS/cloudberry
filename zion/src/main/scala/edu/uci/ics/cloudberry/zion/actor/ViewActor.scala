@@ -11,7 +11,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 
 abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaRecord])(implicit ec: ExecutionContext)
-  extends Actor with Stash with ActorLogging{
+  extends Actor with Stash with ActorLogging {
 
   import ViewActor._
 
@@ -86,7 +86,10 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       log.info(self + " get query " + query + " from : " + sender())
       val thisSender = sender()
       if (summaryLevel.isFinerThan(query.summaryLevel)) {
-        this.query(query).map(thisSender ! _)
+        this.query(query).onComplete {
+          case Success(response) => thisSender ! response
+          case Failure(exception) => log.error(exception.getMessage)
+        }
         lastVisitTime = new DateTime()
         visitTimes += 1
         updateMetaRecord()

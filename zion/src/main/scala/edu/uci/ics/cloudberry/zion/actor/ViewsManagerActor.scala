@@ -14,7 +14,7 @@ import scala.util.{Failure, Success}
 
 // One ViewManager per store
 abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorRef)(implicit ec: ExecutionContext)
-  extends Actor with Stash with ActorLogging{
+  extends Actor with Stash with ActorLogging {
 
   protected val viewMeta = mutable.Map.empty[String, ViewMetaRecord]
 
@@ -49,7 +49,9 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
   }
 
   private def routine: Receive = {
-    case ViewsManagerActor.flushMetaMsg => flushMeta()
+    case ViewsManagerActor.flushMetaMsg =>
+      log.info(self + " get query flushMeta " + " from : " + sender())
+      flushMeta()
     case query: DBQuery => {
       //TODO a little awkward implementation. we need the key before the view
       log.info(self + " get query " + query + " from : " + sender())
@@ -65,7 +67,8 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
       } forward (query)
     }
     case (key: String, viewRecord: ViewMetaRecord) => {
-      if (viewMeta.get(key).isDefined){
+      log.info(self + " get view" + key + " " + viewRecord + " from : " + sender())
+      if (viewMeta.get(key).isDefined) {
         viewMeta.update(key, viewRecord)
       } else {
         viewMeta.update(key, viewRecord)
