@@ -51,6 +51,10 @@ class Application @Inject()(val wsClient: WSClient,
     //    Ok(views.html.indexfull("Cloudberry"))
   }
 
+  def debug = Action {
+    Ok(views.html.debug("Debug"))
+  }
+
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
   }

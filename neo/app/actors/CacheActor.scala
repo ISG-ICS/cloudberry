@@ -50,8 +50,9 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
     //TODO make a common package to unify the level spread in Gnosis and the Zion
     val spatialLevel = setQuery.level match {
       case StateLevel => SpatialLevels.State
-      case CountyLevel => SpatialLevels.Country
+      case CountyLevel => SpatialLevels.County
       case CityLevel => SpatialLevels.City
+      case _ => SpatialLevels.Point
     }
 
     val predicates = Seq[Predicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
