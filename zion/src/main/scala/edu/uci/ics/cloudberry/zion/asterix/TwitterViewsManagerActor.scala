@@ -62,11 +62,11 @@ object TwitterViewsManagerActor {
   val ViewMetaCreateAQL =
     s"""
        |use dataverse ${TwitterDataStoreActor.DataVerse}
-       |create type typeViewMeta if not exists as open {
+       |create type typeViewMeta2 if not exists as open {
        |  sourceName: string,
        |  viewKey: string
        |}
-       |create dataset $ViewMetaDataSetName (typeViewMeta) if not exists primary key viewKey
+       |create dataset $ViewMetaDataSetName (typeViewMeta2) if not exists primary key viewKey
        |""".stripMargin
 
   def loadFromMetaStore(source: String, conn: AsterixConnection)(implicit ec: ExecutionContext): Future[Seq[ViewMetaRecord]] = {

@@ -52,11 +52,11 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
       Await.result(faql.mapTo[String], 100 millisecond).trim must_== (
         """
           |use dataverse twitter
-          |create type typeViewMeta if not exists as open {
+          |create type typeViewMeta2 if not exists as open {
           |  sourceName: string,
           |  viewKey: string
           |}
-          |create dataset twitter.viewMeta (typeViewMeta) if not exists primary key viewKey
+          |create dataset twitter.viewMeta (typeViewMeta2) if not exists primary key viewKey
           |
           |upsert into dataset twitter.viewMeta (
           |[ {

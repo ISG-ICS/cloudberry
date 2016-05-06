@@ -45,12 +45,19 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
     import akka.pattern.ask
     import CacheActor.timeout
 
+    //TODO make a common package to unify the level spread in Gnosis and the Zion
+    val spatialLevel = setQuery.level match {
+      case StateLevel => SpatialLevels.State
+      case CountyLevel => SpatialLevels.Country
+      case CityLevel => SpatialLevels.City
+    }
+
     val predicates = Seq[Predicate](TimePredicate("", Seq(setQuery.timeRange)), IdSetPredicate("", setQuery.entities.map(_.key.toInt)))
     val dbQuery: DBQuery =
       if (keyword.isDefined) {
-        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), predicates ++ Seq[Predicate](new KeywordPredicate("", Seq(keyword.get))))
+        DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates ++ Seq[Predicate](KeywordPredicate("", Seq(keyword.get))))
       } else {
-        DBQuery(SummaryLevel(SpatialLevels.State, TimeLevels.Day), predicates)
+        DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates)
       }
     (viewsActor ? dbQuery).mapTo[SpatialTimeCount] onComplete {
       case Success(viewAnswer) => {
