@@ -63,7 +63,14 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
         context.actorOf(Props(createViewActor(query, fView)), key)
       } forward (query)
     }
-    case (key: String, viewRecord: ViewMetaRecord) => viewMeta.update(key, viewRecord)
+    case (key: String, viewRecord: ViewMetaRecord) => {
+      if (viewMeta.get(key).isDefined){
+        viewMeta.update(key, viewRecord)
+      } else {
+        viewMeta.update(key, viewRecord)
+        self ! ViewsManagerActor.flushMetaMsg
+      }
+    }
   }
 
 
