@@ -17,6 +17,8 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
 
   def queryTemplate: DBQuery
 
+  def updateInterval = 30 minutes
+
   var key: String = null
   var sourceName: String = null
   var summaryLevel: SummaryLevel = null
@@ -106,7 +108,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
     }
   }
 
-  context.system.scheduler.schedule(30 minutes, 30 minutes, self, UpdateViewMsg)
+  context.system.scheduler.schedule(updateInterval, updateInterval, self, UpdateViewMsg)
 }
 
 object ViewActor {
