@@ -24,7 +24,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
   override def mergeResult(viewResponse: Response, sourceResponse: Response): Response = {
     val viewCount = viewResponse.asInstanceOf[SpatialTimeCount]
     val sourceCount = sourceResponse.asInstanceOf[SpatialTimeCount]
-    mergeResult(viewCount, sourceCount)
+    TwitterDataStoreActor.mergeResult(viewCount, sourceCount)
   }
 
   override def updateView(): Future[Unit] = ???

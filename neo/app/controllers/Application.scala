@@ -48,7 +48,6 @@ class Application @Inject()(val wsClient: WSClient,
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
-    //    Ok(views.html.indexfull("Cloudberry"))
   }
 
   def debug = Action {

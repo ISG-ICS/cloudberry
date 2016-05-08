@@ -18,7 +18,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
   override def mergeResult(viewResponse: Response, sourceResponse: Response): Response = {
     val viewCount = viewResponse.asInstanceOf[SpatialTimeCount]
     val sourceCount = sourceResponse.asInstanceOf[SpatialTimeCount]
-    mergeResult(viewCount, sourceCount)
+    TwitterDataStoreActor.mergeResult(viewCount, sourceCount)
   }
 
   override def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery = {
@@ -31,7 +31,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
     val aql = generateAQL(query)
-    conn.post(aql).map(wsResponse => wsResponse.json.as[SpatialTimeCount])
+    conn.post(aql).map(TwitterDataStoreActor.handleWSResponse)
   }
 
 }

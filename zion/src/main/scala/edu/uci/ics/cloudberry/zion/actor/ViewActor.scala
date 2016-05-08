@@ -47,11 +47,11 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       return fViewResponse
     } else {
       val sourceQuery = createSourceQuery(query, unCovered)
-      val fSource = sourceActor ? sourceQuery
+      val fSourceResponse = sourceActor ? sourceQuery
       for {
         viewResponse <- fViewResponse
-        sourceResponse <- fSource.mapTo[Response]
-      } yield mergeResult(viewResponse, sourceResponse)
+        sourceResponse <- fSourceResponse
+      } yield mergeResult(viewResponse, sourceResponse.asInstanceOf[Response])
     }
   }
 
@@ -94,7 +94,6 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
         }
         lastVisitTime = new DateTime()
         visitTimes += 1
-        updateMetaRecord()
       } else {
         sourceActor.forward(query)
       }
