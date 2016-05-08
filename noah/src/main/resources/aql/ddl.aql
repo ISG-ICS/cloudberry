@@ -53,6 +53,7 @@ create type typeTweet if not exists as open{
 
 create dataset ds_tweet(typeTweet) if not exists primary key id;
 //with filter on create_at;
+//"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
 create index text_idx if not exists on ds_tweet("text") type keyword;
 create index location_idx if not exists on ds_tweet(coordinate) type rtree;
 create index time_idx if not exists on ds_tweet(create_at) type btree;

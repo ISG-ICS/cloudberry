@@ -4,10 +4,10 @@ import javax.inject.{Inject, Singleton}
 
 import actors._
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
+import akka.stream.Materializer
 import akka.util.Timeout
-import db.{AQLConnection, Migration_20160324}
-import edu.uci.ics.cloudberry.gnosis.USGeoGnosis
-import play.api.Play.{current, materializer}
+import db.Migration_20160324
+import edu.uci.ics.cloudberry.zion.asterix.{AsterixConnection, TwitterDataStoreActor, TwitterViewsManagerActor}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
@@ -23,14 +23,15 @@ import scala.util.{Failure, Success}
 class Application @Inject()(val wsClient: WSClient,
                             val config: Configuration,
                             val environment: Environment,
-                            implicit val system: ActorSystem
+                            implicit val system: ActorSystem,
+                            implicit val materializer: Materializer
                            ) extends Controller {
 
   val AsterixURL = config.getString("asterixdb.url").get
-  val AQLConnection = new AQLConnection(wsClient, AsterixURL)
+  val asterixConn = new AsterixConnection(wsClient, AsterixURL)
 
   Logger.logger.info("I'm initializing")
-  val checkViewStatus = Migration_20160324(AQLConnection).up()
+  val checkViewStatus = Migration_20160324(asterixConn).up()
   val USGeoGnosis = Knowledge.buildUSKnowledge(environment)
 
   Await.ready(checkViewStatus, 10 minute) onComplete {
@@ -38,15 +39,19 @@ class Application @Inject()(val wsClient: WSClient,
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
-  val viewsActor = system.actorOf(Props(classOf[DBViewsActor], AQLConnection), "views")
-  val cachesActor = system.actorOf(Props(classOf[CachesActor], viewsActor, USGeoGnosis), "caches")
+  val twitterActor = system.actorOf(Props(new TwitterDataStoreActor(asterixConn)), "twitter")
+  val viewsActor = system.actorOf(Props(new TwitterViewsManagerActor(asterixConn, twitterActor)), "views")
+  val cachesActor = system.actorOf(Props(new CachesActor(viewsActor, USGeoGnosis)), "caches")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
-    //    Ok(views.html.indexfull("Cloudberry"))
+  }
+
+  def debug = Action {
+    Ok(views.html.debug("Debug"))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>

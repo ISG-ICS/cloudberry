@@ -6,11 +6,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
     $scope.preProcess = function (result) {
-      var parseDate = d3.time.format("%Y-%m").parse;
+      // TODO make the pattern can be changed by the returned result parameters
+      var parseDate = d3.time.format("%Y-%m-%d").parse;
       var result_array = [];
       angular.forEach(result, function (value, key) {
-        key = parseDate(key);
-        value = +value;
+        key = parseDate(value.key);
+        value = +value.count;
         result_array.push({'time':key, 'count':value});
       });
       return result_array;

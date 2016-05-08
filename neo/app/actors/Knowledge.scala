@@ -4,6 +4,7 @@ import edu.uci.ics.cloudberry.gnosis._
 import play.api.Environment
 import utils.Profile
 
+//TODO nothing is thread-safe, make this knowledge as an Actor
 object Knowledge {
 
   val shapePathMap = Map[TypeLevel, String](StateLevel -> "public/data/state.json",

@@ -222,7 +222,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       // find max/min weight
       angular.forEach(result, function(value, key) {
-        maxWeight = Math.max(maxWeight, value);
+        maxWeight = Math.max(maxWeight, value.count);
       });
 
       var range = maxWeight - minWeight;
@@ -268,8 +268,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if (d.properties.count)
             d.properties.count = 0;
           for (var k in result) {
-            if (k == d.properties.name)
-              d.properties.count = result[k];
+          //TODO make a hash map from ID to make it faster
+            if (result[k].key == d.properties.stateID)
+              d.properties.count = result[k].count;
           }
         });
 
@@ -280,8 +281,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if (d.properties.count)
             d.properties.count = 0;
           for (var k in result) {
-            if (k == d.properties.stateName + "-" + d.properties.name)
-              d.properties.count = result[k];
+          //TODO make a hash map from ID to make it faster
+            if (result[k].key == d.properties.countyID)
+              d.properties.count = result[k].count;
           }
         });
 

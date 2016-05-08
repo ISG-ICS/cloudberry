@@ -1,19 +1,19 @@
-package migration
+package db
 
-import db.{AQLConnection, Migration_20160324}
+import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
 import org.specs2.mock._
 import org.specs2.mutable._
 
 class Migration_20160324Test extends Specification with Mockito {
-  val mockConnection = mock[AQLConnection]
+  val mockConnection = mock[AsterixConnection]
 
   val migration_20160324 = Migration_20160324.apply(mockConnection)
   "Migration#createDataSet" should {
     "succeed to print out the valid AQL" in {
       println(migration_20160324.createDataverse().trim)
       migration_20160324.createDataverse().trim must equalTo("create dataverse twitter if not exists;")
-      println(migration_20160324.createDataTable().trim)
-      migration_20160324.createDataTable().trim must equalTo(
+      println(migration_20160324.createEventDataTable().trim)
+      migration_20160324.createEventDataTable().trim must equalTo(
         """
           |use dataverse twitter
           |
@@ -88,7 +88,7 @@ class Migration_20160324Test extends Specification with Mockito {
           |//set wait-for-completion-feed "false";
           |//connect feed fd_tweets to dataset ds_tweet using policy AdvancedFT_Discard;
         """.stripMargin.trim())
-      migration_20160324.dropDataTable().trim() must equalTo(
+      migration_20160324.dropEventTable().trim() must equalTo(
         """
           |use dataverse twitter
           |
