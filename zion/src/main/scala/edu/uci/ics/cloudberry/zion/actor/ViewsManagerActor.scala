@@ -41,14 +41,14 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
 
   override def receive: Receive = initializing
 
-  private def initializing: Receive = {
+  protected def initializing: Receive = {
     case DoneInitializing =>
       unstashAll()
       context.become(routine)
     case msg => stash()
   }
 
-  private def routine: Receive = {
+  protected def routine: Receive = {
     case ViewsManagerActor.flushMetaMsg =>
       log.info(self + " get query flushMeta " + " from : " + sender())
       flushMeta()
@@ -59,14 +59,18 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
       context.child(key).getOrElse {
         val viewRecord = viewMeta.get(key)
         val fView = if (viewRecord.isEmpty) {
-          createViewStore(query)
+          createViewStore(query).map(vr => {
+            self ! vr // update self store
+            vr
+          })
         } else {
           Future(viewRecord.get)
         }
         createViewActor(key, query, fView)
       } forward (query)
     }
-    case (key: String, viewRecord: ViewMetaRecord) => {
+    case viewRecord: ViewMetaRecord => {
+      val key = viewRecord.viewKey
       log.info(self + " get view" + key + " " + viewRecord + " from : " + sender())
       if (viewMeta.get(key).isDefined) {
         viewMeta.update(key, viewRecord)

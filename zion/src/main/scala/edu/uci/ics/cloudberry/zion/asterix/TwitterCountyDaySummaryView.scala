@@ -27,7 +27,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
     initQuery.copy(predicates = Seq(newTimes))
   }
 
-  override def updateView(): Future[Unit] = ???
+  override def updateView(): Future[Unit] = Future() //TODO
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
     val aql = generateAQL(query)

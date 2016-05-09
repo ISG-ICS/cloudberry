@@ -17,7 +17,7 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                     |
                     |let $set := [ 1,2,3 ]
                     |for $sid in $set
-                    |where $t."geo_tag.stateID" = $sid
+                    |where $t.geo_tag.stateID = $sid
                     |
                     |where similarity-jaccard(word-tokens($t."text"), word-tokens("trump")) > 0.0
                     |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
@@ -38,7 +38,7 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                     |for $t in $common
                     |
                     |group by $c := $t.geo_tag.countyID with $t
-                    |return { "key": $c , "count": count($t) }
+                    |return { "key": string($c) , "count": count($t) }
                     |
                     |)
                     |

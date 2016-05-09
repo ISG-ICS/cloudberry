@@ -1,8 +1,8 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import akka.actor.{Actor, Props}
+import akka.actor.{Actor, ActorRef, Props}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.{MockConnClient, ProbeWrapper, TestkitExample, ViewMetaRecord}
+import edu.uci.ics.cloudberry.zion.actor._
 import edu.uci.ics.cloudberry.zion.model.{DBQuery, SpatialTimeCount}
 import org.joda.time.{DateTime, Duration}
 import org.specs2.matcher.MatchResult
@@ -20,7 +20,6 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
   sequential
 
   val queryUpdateTemp: DBQuery = DBQuery(SummaryLevel, Seq.empty)
-  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val viewRecord = ViewMetaRecord("twitter", "rain", SummaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
   val fViewRecord = Future(viewRecord)
 
@@ -68,20 +67,23 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       val actualMessage = probeSender.receiveOne(500 millis)
       actualMessage must_== byCountyMonthResult
     }
-    "return the view record to parent when it is created successfully" in {
+    "return the view record to parent when receive the update msg" in {
       val conn: AsterixConnection = null // it shall not be touched
       val proxy = new TestProbe(system)
       val parent = system.actorOf(Props(new Actor {
         val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                                             conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+
         def receive = {
           case x if sender == viewActor => proxy.ref forward x
           case x => viewActor forward x
         }
       }))
-      proxy.send(parent, finerQuery)
-      proxy.expectMsg(viewRecord)
-      ok
+      proxy.send(parent, ViewActor.UpdateViewMsg)
+      val actualMsg = proxy.receiveOne(100 millis).asInstanceOf[ViewMetaRecord]
+      // except the updateTime everything should be equal
+      val unifyTime = new DateTime()
+      actualMsg.copy(lastUpdateTime = unifyTime) must_==(viewRecord.copy(lastUpdateTime = unifyTime))
     }
   }
 
