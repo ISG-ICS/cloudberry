@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import akka.actor.Props
+import akka.actor.{Actor, Props}
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.{MockConnClient, ProbeWrapper, TestkitExample, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model.{DBQuery, SpatialTimeCount}
@@ -21,7 +21,8 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
 
   val queryUpdateTemp: DBQuery = DBQuery(SummaryLevel, Seq.empty)
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
-  val fViewRecord = Future(ViewMetaRecord("twitter", "rain", SummaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle))
+  val viewRecord = ViewMetaRecord("twitter", "rain", SummaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
+  val fViewRecord = Future(viewRecord)
 
   "TwitterCountyDaySummaryView" should {
 
@@ -58,7 +59,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       }
     }
     "ask the source directly if the summary level does not fit" in {
-      val conn : AsterixConnection = null // it shall not be touched
+      val conn: AsterixConnection = null // it shall not be touched
       val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                            conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
       probeSender.send(viewActor, finerQuery)
@@ -66,6 +67,21 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       probeSource.reply(byCountyMonthResult)
       val actualMessage = probeSender.receiveOne(500 millis)
       actualMessage must_== byCountyMonthResult
+    }
+    "return the view record to parent when it is created successfully" in {
+      val conn: AsterixConnection = null // it shall not be touched
+      val proxy = new TestProbe(system)
+      val parent = system.actorOf(Props(new Actor {
+        val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
+                                             conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+        def receive = {
+          case x if sender == viewActor => proxy.ref forward x
+          case x => viewActor forward x
+        }
+      }))
+      proxy.send(parent, finerQuery)
+      proxy.expectMsg(viewRecord)
+      ok
     }
   }
 

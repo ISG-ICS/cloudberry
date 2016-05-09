@@ -10,8 +10,7 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class TwitterViewsManagerActor(val conn: AsterixConnection,
-                               override val sourceActor: ActorRef
+class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceActor: ActorRef
                               )(implicit ec: ExecutionContext) extends ViewsManagerActor(TwitterDataStoreActor.Name, sourceActor) {
 
   import TwitterViewsManagerActor._
