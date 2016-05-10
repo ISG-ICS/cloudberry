@@ -6,6 +6,7 @@ import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 import play.api.libs.ws.{WSClient, WSResponse}
 
+import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
 class AQLStatement() {
@@ -21,7 +22,7 @@ class AsterixConnection(wSClient: WSClient, url: String)(implicit ec: ExecutionC
 
   def post(aql: String): Future[WSResponse] = {
     log.info("AQL:" + aql)
-    val f = wSClient.url(url).post(aql)
+    val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
     f.onFailure(failureHandler(aql))
     f
   }

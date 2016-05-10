@@ -32,7 +32,6 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
 
   "A TwitterViewsManagerActor" should {
     "load meta store after start " in {
-
       ok
     }
     "create a store if it is a new view " in {
@@ -41,7 +40,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
     "forward the query to children viewActor " in {
       ok
     }
-    "flush the meta store when stops " in {
+    "update the meta store when reviece the request" in {
       ok
     }
   }

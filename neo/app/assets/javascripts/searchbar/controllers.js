@@ -15,7 +15,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         '<form class="form-inline" id="input-form" ng-submit="search()" >',
           '<div class="form-group" style="width: 80%">',
             '<label class="sr-only">Keywords</label>',
-            '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Keywords" ng-model="keyword" required/>',
+            '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Keywords" ng-model="keyword"/>',
           '</div>',
           '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
         '</form>'

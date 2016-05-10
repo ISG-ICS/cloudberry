@@ -39,7 +39,7 @@ class AQLVisitorTest extends Specification with TestData {
         """
           |let $set := [ 1,2,3 ]
           |for $sid in $set
-          |where $t."geo_tag.stateID" = $sid
+          |where $t.geo_tag.stateID = $sid
           |""".stripMargin.trim
       )
     }

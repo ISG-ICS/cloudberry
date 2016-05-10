@@ -67,7 +67,6 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
         lastUpdateTime = store.lastUpdateTime
         visitTimes = store.visitTimes
         self ! DoneInitializing
-        updateMetaRecord()
       }
       case Failure(t) => "error happens: " + t.getMessage
     }

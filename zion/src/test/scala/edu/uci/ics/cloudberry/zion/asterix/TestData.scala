@@ -4,9 +4,11 @@ import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Duration, Interval, Weeks}
 import play.api.libs.json.{JsArray, JsObject, Json}
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 trait TestData {
+  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   val startTime1 = new DateTime(2012, 1, 1, 0, 0)
   val interval1 = new Interval(startTime1, Weeks.weeks(1))
 
@@ -52,4 +54,7 @@ trait TestData {
 
   // Create a finner summary level db query
   val finerQuery = DBQuery(SummaryLevel(SpatialLevels.City, TimeLevels.Second), Seq(timePredicate1))
+
+  // Create a keyword query
+  val keywordQuery = DBQuery(StateDaySummary, Seq(keywordPredicate1, timePredicate1, idPredicate))
 }

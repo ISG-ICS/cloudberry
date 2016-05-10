@@ -10,8 +10,7 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class TwitterViewsManagerActor(val conn: AsterixConnection,
-                               override val sourceActor: ActorRef
+class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceActor: ActorRef
                               )(implicit ec: ExecutionContext) extends ViewsManagerActor(TwitterDataStoreActor.Name, sourceActor) {
 
   import TwitterViewsManagerActor._
@@ -50,7 +49,7 @@ class TwitterViewsManagerActor(val conn: AsterixConnection,
     } else {
       conn.post(generateSummaryViewAQL(sourceName, query.summaryLevel)).map { ws =>
         if (ws.status != 200) throw new IllegalStateException(ws.body)
-        ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.Country, TimeLevels.Day),
+        ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.County, TimeLevels.Day),
                        startTime = new DateTime(0l), lastVisitTime = new DateTime(), lastUpdateTime = new DateTime(),
                        visitTimes = 0, updateCycle = flushInterval)
       }
