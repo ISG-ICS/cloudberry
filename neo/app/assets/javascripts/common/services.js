@@ -35,8 +35,8 @@ angular.module('cloudberry.common', [])
           keyword: parameters.keyword,
           area: parameters.area,
           timeRange : {
-            start: queryType=='time'?Date.parse(parameters.time.start):Date.parse(startDate),
-            end: queryType=='time'?Date.parse(parameters.time.end):Date.parse(endDate)
+            start: queryType=='time' ? Date.parse(parameters.time.start) : Date.parse(startDate),
+            end: queryType=='time' ? Date.parse(parameters.time.end) : Date.parse(endDate)
           },
           level: parameters.level,
           repeatDuration: parameters.repeatDuration

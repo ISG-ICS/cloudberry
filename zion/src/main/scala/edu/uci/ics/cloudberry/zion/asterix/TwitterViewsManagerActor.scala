@@ -49,7 +49,7 @@ class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceA
     } else {
       conn.post(generateSummaryViewAQL(sourceName, query.summaryLevel)).map { ws =>
         if (ws.status != 200) throw new IllegalStateException(ws.body)
-        ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.Country, TimeLevels.Day),
+        ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.County, TimeLevels.Day),
                        startTime = new DateTime(0l), lastVisitTime = new DateTime(), lastUpdateTime = new DateTime(),
                        visitTimes = 0, updateCycle = flushInterval)
       }

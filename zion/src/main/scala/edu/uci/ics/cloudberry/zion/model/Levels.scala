@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model
 
 object SpatialLevels extends Enumeration {
-  val Country, State, County, City, Point = Value
+  val State, County, City, Point = Value
 }
 
 object TimeLevels extends Enumeration {
