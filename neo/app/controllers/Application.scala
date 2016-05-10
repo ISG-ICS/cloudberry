@@ -54,6 +54,10 @@ class Application @Inject()(val wsClient: WSClient,
     Ok(views.html.debug("Debug"))
   }
 
+  def dashboard = Action {
+    Ok(views.html.dashboard("Dashboard"))
+  }
+
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
   }

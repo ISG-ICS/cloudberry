@@ -4,6 +4,7 @@
 
 GET        /                         controllers.Application.index
 GET        /debug                    controllers.Application.debug
+GET        /dashboard                controllers.Application.dashboard
 GET        /ws                       controllers.Application.ws
 
 # Map static resources from the /public folder to the /assets URL path

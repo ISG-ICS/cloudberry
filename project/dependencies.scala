@@ -32,6 +32,10 @@ object Dependencies {
     // sidebar module
     "org.webjars" % "font-awesome" % "4.5.0",
     "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
+    // dashboard module
+    "org.webjars.bower" % "angular-dashboard-framework" % "0.11.0",
+    "org.webjars.bower" % "angular-bootstrap" % "1.3.2",
+    "org.webjars.bower" % "sortable.js" % "1.2.0",
     // other module
     "com.github.nscala-time" %% "nscala-time" % "2.10.0",
     "org.scalactic" %% "scalactic" % "2.2.6"
