@@ -58,9 +58,9 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
     val predicates = Seq[Predicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
                                     IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
                                                    setQuery.entities.map(_.key.toInt)))
-    val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, Seq(keyword.get))
     val dbQuery: DBQuery =
       if (keyword.isDefined) {
+        val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, Seq(keyword.get))
         DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), keywordPredicate +: predicates)
       } else {
         DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates)

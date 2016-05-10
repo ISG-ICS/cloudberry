@@ -82,6 +82,7 @@ object TwitterCountyDaySummaryView {
 
   }
 
+  //FIXME this method will have the big record problem.
   def generateAQL(query: DBQuery): String = {
 
     val predicate = query.predicates.map(visitPredicate("t", _)).mkString("\n")
