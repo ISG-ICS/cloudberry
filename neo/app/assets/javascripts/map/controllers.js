@@ -4,11 +4,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     // map setting
     angular.extend($scope, {
       // TODO make this center and level as parameters to make it general
-      center: {
-        lat: 39.5,
-        lng: -96.35,
-        zoom: 4
-      },
+      // center: {
+      //   lat: 39.5,
+      //   lng: -96.35,
+      //   zoom: 4
+      // },
       tiles: {
         name: 'Mapbox',
         url: 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
@@ -65,6 +65,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
+        map.setView([$scope.lat, $scope.lng],$scope.zoom);
       });
 
       setInfoControl();
@@ -83,9 +84,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               Asterix.queryType = 'zoom';
               Asterix.query(Asterix.parameters, Asterix.queryType);
             }
-
-            $scope.map.removeLayer($scope.polygons.statePolygons);
-            $scope.map.addLayer($scope.polygons.countyPolygons);
+            if($scope.polygons.statePolygons) {
+              $scope.map.removeLayer($scope.polygons.statePolygons);
+              $scope.map.addLayer($scope.polygons.countyPolygons);
+            }
           } else if ($scope.status.zoomLevel <= 5) {
             $scope.status.logicLevel = 'state';
             if (!$scope.status.init) {
@@ -97,8 +99,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               Asterix.queryType = 'zoom';
               Asterix.query(Asterix.parameters, Asterix.queryType);
             }
-            $scope.map.removeLayer($scope.polygons.countyPolygons);
-            $scope.map.addLayer($scope.polygons.statePolygons);
+            if($scope.polygons.countyPolygons) {
+              $scope.map.removeLayer($scope.polygons.countyPolygons);
+              $scope.map.addLayer($scope.polygons.statePolygons);
+            }
           }
         }
       });
@@ -339,6 +343,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .directive("map", function () {
     return {
       restrict: 'E',
+      scope: {
+        lat: "=",
+        lng: "=",
+        zoom: "="
+      },
       controller: 'MapCtrl',
       template:[
         '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet>'
