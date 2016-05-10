@@ -47,9 +47,6 @@
 
         function(newResult) {
           $scope.result = newResult;
-          if (Object.keys($scope.result).length != 0) {
-            $scope.status.init = false;
-          }
         }
       );
     });
@@ -76,6 +73,20 @@
 
         function(newResult) {
           $scope.result = newResult;
+        }
+      );
+    });
+
+    app.controller('ExceptionCtrl', function($scope, $window, Asterix) {
+      $scope.$watch(
+        function() {
+          return Asterix.errorMessage;
+        },
+
+        function(newMsg) {
+          if (newMsg)
+            $window.alert(newMsg);
+          Asterix.errorMessage = null;
         }
       );
     });
