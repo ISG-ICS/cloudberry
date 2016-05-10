@@ -92,11 +92,11 @@ class Migration_20160324Test extends Specification with Mockito {
         """
           |use dataverse twitter
           |
+          |drop dataset ds_tweet if exists;
           |drop type typeTweet if exists;
           |drop type typeGeoTag if exists;
           |drop type typePlace if exists;
           |drop type typeUser if exists;
-          |drop dataset ds_tweet if exists;
         """.stripMargin.trim()
       )
     }
