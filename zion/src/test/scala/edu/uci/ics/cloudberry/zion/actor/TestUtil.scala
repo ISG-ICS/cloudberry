@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
 import play.api.Play
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import play.api.test.WsTestClient
 import play.api.routing.sird._
@@ -46,6 +46,20 @@ trait MockConnClient extends Mockito {
     val mockResponse = mock[WSResponse]
     mockResponse.status returns (200)
     mockResponse.json returns (expectedResponse)
+    when(mockConn.post(any[String])).thenAnswer(new Answer[Future[WSResponse]] {
+      override def answer(invocation: InvocationOnMock): Future[WSResponse] = {
+        println(invocation.getArguments.head.asInstanceOf[String])
+        Future(mockResponse)
+      }
+    })
+    block(mockConn)
+  }
+
+  def withAsterixBugConn[T](multipleResults: JsArray)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    val mockResponse = mock[WSResponse]
+    mockResponse.status returns (200)
+    mockResponse.body returns (multipleResults.value.map("[ " + _.toString() + "\n ]").mkString("\n"))
     when(mockConn.post(any[String])).thenAnswer(new Answer[Future[WSResponse]] {
       override def answer(invocation: InvocationOnMock): Future[WSResponse] = {
         println(invocation.getArguments.head.asInstanceOf[String])

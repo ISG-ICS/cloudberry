@@ -14,7 +14,7 @@ class TwitterDataStoreActor(conn: AsterixConnection)(implicit ec: ExecutionConte
 
   // TODO use the Visitor pattern to generate the AQL instead of this hacking code
   override def query(query: DBQuery): Future[Response] = {
-    conn.post(generateAQL(name, query)).map(handleWSResponse)
+    conn.post(generateAQL(name, query)).map(handleAllInOneWSResponse)
   }
 
   override def update(query: DBUpdateQuery): Future[Response] = ???
@@ -51,8 +51,12 @@ object TwitterDataStoreActor {
     )
   }
 
-  def handleWSResponse(wsResponse: WSResponse): Response = {
+  def handleAllInOneWSResponse(wsResponse: WSResponse): Response = {
     wsResponse.json.asInstanceOf[JsArray].apply(0).as[SpatialTimeCount]
+  }
+
+  def handleKeyCountResponse(jsArray: JsArray): Seq[KeyCountPair] = {
+    jsArray.apply(0).as[Seq[KeyCountPair]]
   }
 
   def generateAQL(name: String, query: DBQuery): String = {

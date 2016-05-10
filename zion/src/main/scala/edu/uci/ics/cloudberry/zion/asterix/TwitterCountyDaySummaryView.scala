@@ -4,6 +4,7 @@ import akka.actor.ActorRef
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.Interval
+import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,8 +31,11 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
   override def updateView(): Future[Unit] = Future() //TODO
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    val aql = generateAQL(query)
-    conn.post(aql).map{ response => log.info(response.body); TwitterDataStoreActor.handleWSResponse(response) }
+    conn.post(generateAQL(query)).map { response =>
+      //TODO This is an Asterix bug!!
+      val seq = Json.parse(response.body.replaceAll(" \\]\n\\[", " ,\n")).as[Seq[Seq[KeyCountPair]]]
+      SpatialTimeCount(seq(0), seq(1), seq(2))
+    }
   }
 
 }
@@ -82,12 +86,12 @@ object TwitterCountyDaySummaryView {
 
   }
 
-  //FIXME this method will have the big record problem.
   def generateAQL(query: DBQuery): String = {
 
     val predicate = query.predicates.map(visitPredicate("t", query.summaryLevel, _)).mkString("\n")
     val common =
       s"""
+         |use dataverse $DataVerse
          |let $$common := (
          |for $$t in dataset $DataSet
          |$predicate
@@ -95,8 +99,6 @@ object TwitterCountyDaySummaryView {
          |)
          |""".stripMargin
     s"""
-       |use dataverse $DataVerse
-       |
        |$common
        |let $$map := (
        |for $$t in $$common
