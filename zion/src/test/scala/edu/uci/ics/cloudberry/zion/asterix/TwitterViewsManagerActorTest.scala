@@ -62,7 +62,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
           |  "sourceName" : "twitter",
           |  "viewKey" : "twitter_",
           |  "summaryLevel" : {
-          |    "spatialLevel" : 2,
+          |    "spatialLevel" : 1,
           |    "timeLevel" : 3
           |  },
           |  "startTime" : "1969-12-31T16:00:00.000Z",
@@ -74,7 +74,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
           |  "sourceName" : "twitter",
           |  "viewKey" : "twitter_trump",
           |  "summaryLevel" : {
-          |    "spatialLevel" : 2,
+          |    "spatialLevel" : 1,
           |    "timeLevel" : 3
           |  },
           |  "startTime" : "1969-12-31T16:00:00.000Z",
@@ -86,7 +86,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
           |  "sourceName" : "twitter",
           |  "viewKey" : "twitter_rain",
           |  "summaryLevel" : {
-          |    "spatialLevel" : 2,
+          |    "spatialLevel" : 1,
           |    "timeLevel" : 3
           |  },
           |  "startTime" : "1969-12-31T16:00:00.000Z",
