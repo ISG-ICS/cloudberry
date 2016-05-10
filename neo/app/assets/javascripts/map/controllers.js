@@ -65,7 +65,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
-        map.setView([39.5, -96.35],4);
+        map.setView([$scope.lat, $scope.lng],$scope.zoom);
       });
 
       setInfoControl();
@@ -343,6 +343,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .directive("map", function () {
     return {
       restrict: 'E',
+      scope: {
+        lat: "=",
+        lng: "=",
+        zoom: "="
+      },
       controller: 'MapCtrl',
       template:[
         '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet>'
