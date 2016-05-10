@@ -31,7 +31,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
     val aql = generateAQL(query)
-    conn.post(aql).map(TwitterDataStoreActor.handleWSResponse)
+    conn.post(aql).map{ response => log.info(response.body); TwitterDataStoreActor.handleWSResponse(response) }
   }
 
 }
@@ -56,9 +56,9 @@ object TwitterCountyDaySummaryView {
   val TimeFormatMap = Map[TimeLevels.Value, String](Year -> "YYYY", Month -> "YYYY-MM", Day -> "YYYY-MM-DD")
 
   //TODO temporary solution
-  def visitPredicate(variable: String, predicate: Predicate): String = {
+  def visitPredicate(variable: String, summaryLevel: SummaryLevel, predicate: Predicate): String = {
     import AQLVisitor.TimeFormat
-    val spID = SpatialLevelsMap.get(SummaryLevel.spatialLevel).get
+    val spID = SpatialLevelsMap.get(summaryLevel.spatialLevel).get
     predicate match {
       case p: KeywordPredicate => ""
       case p: TimePredicate =>
@@ -84,31 +84,38 @@ object TwitterCountyDaySummaryView {
 
   def generateAQL(query: DBQuery): String = {
 
-    val predicate = query.predicates.map(visitPredicate("t", _)).mkString("\n")
+    val predicate = query.predicates.map(visitPredicate("t", query.summaryLevel, _)).mkString("\n")
+    val common =
+      s"""
+         |let $$common := (
+         |for $$t in dataset $DataSet
+         |$predicate
+         |return $$t
+         |)
+         |""".stripMargin
     s"""
        |use dataverse $DataVerse
-       |let $$common := (
-       |for $$t in dataset $DataSet
-       |$predicate
-       |return $$t
-       |)
        |
+       |$common
        |let $$map := (
        |for $$t in $$common
        |${byMap(query.summaryLevel.spatialLevel)}
        |)
+       |return $$map;
        |
+       |$common
        |let $$time := (
        |for $$t in $$common
        |${byTime(query.summaryLevel.timeLevel)}
        |)
+       |return $$time
        |
+       |$common
        |let $$hashtag := (
        |for $$t in $$common
        |${byHashTag()}
        |)
-       |
-       |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
+       |return $$hashtag
        |""".stripMargin
   }
 
