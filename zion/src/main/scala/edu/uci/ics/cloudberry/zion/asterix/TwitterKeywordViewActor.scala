@@ -30,7 +30,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
   override def updateView(): Future[Unit] = ???
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    conn.post(generateAQL(key, query)).map(handleWSResponse)
+    conn.post(generateAQL(key, query)).map(handleAllInOneWSResponse)
   }
 
 }

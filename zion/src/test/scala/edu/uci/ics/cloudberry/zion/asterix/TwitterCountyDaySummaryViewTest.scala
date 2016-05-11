@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.zion.model.{DBQuery, SpatialTimeCount}
 import org.joda.time.{DateTime, Duration}
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.SpecificationLike
-import play.api.libs.json.{JsObject, JsValue}
+import play.api.libs.json.{JsArray, JsObject, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
@@ -28,9 +28,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
     val probeSender = new TestProbe(system)
     val probeSource = new TestProbe(system)
 
-    def runSummaryView(dbQuery: DBQuery, wsResponse: JsValue, result: SpatialTimeCount): MatchResult[Any] = {
+    def runSummaryView(dbQuery: DBQuery, wsResponse: JsArray, result: SpatialTimeCount): MatchResult[Any] = {
 
-      withLightWeightConn(wsResponse) { conn =>
+      withAsterixBugConn(wsResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
         probeSender.send(viewActor, dbQuery)
@@ -47,7 +47,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       runSummaryView(byCountyMonthQuery, byCountyMonthResponse, byCountyMonthResult)
     }
     "split the query to ask the source if can not answer by view only" in {
-      withLightWeightConn(byStateByDayResponse) { conn =>
+      withAsterixBugConn(byStateByDayResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
         probeSender.send(viewActor, partialQuery)
@@ -83,7 +83,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       val actualMsg = proxy.receiveOne(100 millis).asInstanceOf[ViewMetaRecord]
       // except the updateTime everything should be equal
       val unifyTime = new DateTime()
-      actualMsg.copy(lastUpdateTime = unifyTime) must_==(viewRecord.copy(lastUpdateTime = unifyTime))
+      actualMsg.copy(lastUpdateTime = unifyTime) must_== (viewRecord.copy(lastUpdateTime = unifyTime))
     }
   }
 
@@ -120,6 +120,30 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |return { "key": string($c) , "count": sum(for $x in $t return $x.tweetCount) }
                           |
                           |)
+                          |return $map;
+                          |
+                          |
+                          |use dataverse twitter
+                          |let $common := (
+                          |for $t in dataset ds_tweet_
+                          |
+                          |let $set := [ 1,2,3 ]
+                          |for $sid in $set
+                          |where $t.countyID = $sid
+                          |
+                          |
+                          |
+                          |where
+                          |
+                          |(get-interval-start($t.timeBin) >= datetime("2012-01-01T00:00:00.000Z")
+                          |and get-interval-start($t.timeBin) < datetime("2012-01-08T00:00:00.000Z"))
+                          |or
+                          |(get-interval-start($t.timeBin) >= datetime("2016-01-01T00:00:00.000Z")
+                          |and get-interval-start($t.timeBin) < datetime("2016-01-15T00:00:00.000Z"))
+                          |
+                          |
+                          |return $t
+                          |)
                           |
                           |let $time := (
                           |for $t in $common
@@ -127,6 +151,30 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |group by $c := print-datetime(get-interval-start($t.timeBin), "YYYY-MM-DD") with $t
                           |return { "key" : $c, "count": sum(for $x in $t return $x.tweetCount)}
                           |
+                          |)
+                          |return $time
+                          |
+                          |
+                          |use dataverse twitter
+                          |let $common := (
+                          |for $t in dataset ds_tweet_
+                          |
+                          |let $set := [ 1,2,3 ]
+                          |for $sid in $set
+                          |where $t.countyID = $sid
+                          |
+                          |
+                          |
+                          |where
+                          |
+                          |(get-interval-start($t.timeBin) >= datetime("2012-01-01T00:00:00.000Z")
+                          |and get-interval-start($t.timeBin) < datetime("2012-01-08T00:00:00.000Z"))
+                          |or
+                          |(get-interval-start($t.timeBin) >= datetime("2016-01-01T00:00:00.000Z")
+                          |and get-interval-start($t.timeBin) < datetime("2016-01-15T00:00:00.000Z"))
+                          |
+                          |
+                          |return $t
                           |)
                           |
                           |let $hashtag := (
@@ -140,9 +188,8 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |return { "key": $tag, "count" : $c}
                           |
                           |)
-                          |
-                          |return {"map": $map, "time": $time, "hashtag": $hashtag }
-                          | """.stripMargin.trim)
+                          |return $hashtag
+                          |""".stripMargin.trim)
     }
 
   }

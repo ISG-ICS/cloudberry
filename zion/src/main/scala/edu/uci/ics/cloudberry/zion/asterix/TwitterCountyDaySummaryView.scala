@@ -4,6 +4,7 @@ import akka.actor.ActorRef
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.Interval
+import play.api.libs.json.Json
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -30,8 +31,11 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
   override def updateView(): Future[Unit] = Future() //TODO
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    val aql = generateAQL(query)
-    conn.post(aql).map(TwitterDataStoreActor.handleWSResponse)
+    conn.post(generateAQL(query)).map { response =>
+      //TODO This is an Asterix bug!!
+      val seq = Json.parse(response.body.replaceAll(" \\]\n\\[", " ,\n")).as[Seq[Seq[KeyCountPair]]]
+      SpatialTimeCount(seq(0), seq(1), seq(2))
+    }
   }
 
 }
@@ -56,9 +60,9 @@ object TwitterCountyDaySummaryView {
   val TimeFormatMap = Map[TimeLevels.Value, String](Year -> "YYYY", Month -> "YYYY-MM", Day -> "YYYY-MM-DD")
 
   //TODO temporary solution
-  def visitPredicate(variable: String, predicate: Predicate): String = {
+  def visitPredicate(variable: String, summaryLevel: SummaryLevel, predicate: Predicate): String = {
     import AQLVisitor.TimeFormat
-    val spID = SpatialLevelsMap.get(SummaryLevel.spatialLevel).get
+    val spID = SpatialLevelsMap.get(summaryLevel.spatialLevel).get
     predicate match {
       case p: KeywordPredicate => ""
       case p: TimePredicate =>
@@ -82,34 +86,39 @@ object TwitterCountyDaySummaryView {
 
   }
 
-  //FIXME this method will have the big record problem.
   def generateAQL(query: DBQuery): String = {
 
-    val predicate = query.predicates.map(visitPredicate("t", _)).mkString("\n")
+    val predicate = query.predicates.map(visitPredicate("t", query.summaryLevel, _)).mkString("\n")
+    val common =
+      s"""
+         |use dataverse $DataVerse
+         |let $$common := (
+         |for $$t in dataset $DataSet
+         |$predicate
+         |return $$t
+         |)
+         |""".stripMargin
     s"""
-       |use dataverse $DataVerse
-       |let $$common := (
-       |for $$t in dataset $DataSet
-       |$predicate
-       |return $$t
-       |)
-       |
+       |$common
        |let $$map := (
        |for $$t in $$common
        |${byMap(query.summaryLevel.spatialLevel)}
        |)
+       |return $$map;
        |
+       |$common
        |let $$time := (
        |for $$t in $$common
        |${byTime(query.summaryLevel.timeLevel)}
        |)
+       |return $$time
        |
+       |$common
        |let $$hashtag := (
        |for $$t in $$common
        |${byHashTag()}
        |)
-       |
-       |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
+       |return $$hashtag
        |""".stripMargin
   }
 
