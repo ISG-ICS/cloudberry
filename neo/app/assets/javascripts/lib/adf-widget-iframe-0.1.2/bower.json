@@ -1,0 +1,33 @@
+{
+  "name": "adf-widget-iframe",
+  "version": "0.1.2",
+  "main": [
+    "dist/adf-widget-iframe.js",
+    "dist/adf-widget-iframe.css"
+  ],
+  "ignore": [
+    "bower.json",
+    ".bowerrc",
+    ".jshintrc",
+    ".gitignore",
+    "gulpfile.js",
+    "node_modules",
+    "package.json",
+    "components",
+    "src"
+  ],
+  "keywords": [
+    "dashboard",
+    "widget",
+    "adf",
+    "adf-widget",
+    "iframe"
+  ],
+  "description": "IFrame widget for the angular-dashboard-framework",
+  "dependencies": {
+    "angular-dashboard-framework": "0.8.0"
+  },
+  "devDependencies": {
+    "angular-local-storage": "0.1.5"
+  }
+}

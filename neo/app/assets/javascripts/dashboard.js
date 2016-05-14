@@ -36,6 +36,7 @@ angular.module('dashboard', ['cloudberry.dashboard'])
     data.forEach(function(d) {
       d.date = parseDate(d.date);
       d.total= d.http_404+d.http_200+d.http_302;
+      d.Year=d.date.getFullYear();
     });
     var dateDim = ndx.dimension(function(d) {return d.date;});
     var hits = dateDim.group().reduceSum(function(d) {return d.total;});
@@ -57,7 +58,18 @@ angular.module('dashboard', ['cloudberry.dashboard'])
       group: hits,
       scale: d3.time.scale().domain([minDate,maxDate]),
       renderArea: true,
-      watch: false
+    };
+
+    var yearDim  = ndx.dimension(function(d) {return +d.Year;});
+    var year_total = yearDim.group().reduceSum(function(d) {return d.http_200+d.http_302;});
+
+    $scope.piechartConf = {
+      data: data,
+      width: 150,
+      height: 150,
+      dimension: yearDim,
+      group: year_total,
+      innerRadius: 30
     };
   })
   ;

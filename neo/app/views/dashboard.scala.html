@@ -8,6 +8,7 @@
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/angular-dashboard-framework/dist/angular-dashboard-framework.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("javascripts/lib/adf-widget-iframe-0.1.2/dist/adf-widget-iframe.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/dc.js/dc.min.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
 
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/Sortable/Sortable.js")'></script>
@@ -27,6 +28,7 @@
 </head>
 <body ng-app="dashboard" ng-controller="dashboardCtrl">
   @*<adf-dashboard name="mydashboard" collapsible="true" structure="6-6" adf-model="model" />*@
+  <pie-chart id="piechart" config="piechartConf"></pie-chart>
   <line-chart id = "linechart" config="linechartConf"></line-chart>
 </body>
 </html>
