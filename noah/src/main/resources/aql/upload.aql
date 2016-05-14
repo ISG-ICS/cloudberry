@@ -1,3 +1,3 @@
 // TODO should be replaced by feed
 use dataverse twitter;
-load dataset ds_tweet using localfs (("path"="172.17.0.3:///data/sample.adm"),("format"="adm"));
+load dataset ds_tweet using localfs (("path"="172.17.0.3:///data/ucla/CleanTweets.adm"),("format"="adm"));

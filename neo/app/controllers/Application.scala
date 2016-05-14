@@ -8,6 +8,7 @@ import akka.stream.Materializer
 import akka.util.Timeout
 import db.Migration_20160324
 import edu.uci.ics.cloudberry.zion.asterix.{AsterixConnection, TwitterDataStoreActor, TwitterViewsManagerActor}
+import models.UserQuery
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow

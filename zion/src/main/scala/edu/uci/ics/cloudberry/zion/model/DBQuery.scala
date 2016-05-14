@@ -1,8 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model
 
-import edu.uci.ics.cloudberry.zion.asterix.AQLVisitor
-import org.joda.time.{DateTime, Interval}
-import play.api.libs.json._
+import org.joda.time.Interval
 
 sealed trait Statement
 

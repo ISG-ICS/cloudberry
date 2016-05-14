@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.noah.adm;
 
-import edu.uci.ics.cloudberry.gnosis.Rectangle;
+import edu.uci.ics.cloudberry.util.Rectangle;
 import org.apache.commons.lang3.StringEscapeUtils;
 import twitter4j.GeoLocation;
 import twitter4j.HashtagEntity;

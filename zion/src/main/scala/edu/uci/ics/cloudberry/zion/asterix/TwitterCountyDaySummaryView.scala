@@ -60,7 +60,7 @@ object TwitterCountyDaySummaryView {
   val TimeFormatMap = Map[TimeLevels.Value, String](Year -> "YYYY", Month -> "YYYY-MM", Day -> "YYYY-MM-DD")
 
   //TODO temporary solution
-  def visitPredicate(variable: String, summaryLevel: SummaryLevel, predicate: Predicate): String = {
+  def visitPredicate(variable: String, summaryLevel: SummaryLevel, predicate: NPredicate): String = {
     import AQLVisitor.TimeFormat
     val spID = SpatialLevelsMap.get(summaryLevel.spatialLevel).get
     predicate match {

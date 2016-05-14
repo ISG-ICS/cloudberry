@@ -6,6 +6,7 @@ import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.zion.asterix.TwitterDataStoreActor
 import edu.uci.ics.cloudberry.zion.model._
+import models.QueryResult
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{Format, Json}
@@ -55,8 +56,8 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
       case _ => SpatialLevels.Point
     }
 
-    val predicates = Seq[Predicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
-                                    IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
+    val predicates = Seq[NPredicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
+                                     IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
                                                    setQuery.entities.map(_.key.toInt)))
     val dbQuery: DBQuery =
       if (keyword.isDefined) {
@@ -113,11 +114,3 @@ class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis) extend
       log.info("Caches:" + self + "receive:" + other + " from : " + sender())
   }
 }
-
-case class QueryResult(aggType: String, result: Seq[KeyCountPair])
-
-object QueryResult {
-  val Empty = QueryResult("", Seq.empty[KeyCountPair])
-  implicit val format: Format[QueryResult] = Json.format[QueryResult]
-}
-
