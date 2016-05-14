@@ -7,6 +7,7 @@
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/angular-dashboard-framework/dist/angular-dashboard-framework.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("javascripts/lib/adf-widget-iframe-0.1.2/dist/adf-widget-iframe.min.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/dc.js/dc.min.css")'>
 
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/Sortable/Sortable.js")'></script>
@@ -16,10 +17,16 @@
   <script src='@routes.Assets.versioned("lib/angular-dashboard-framework/dist/angular-dashboard-framework.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/adf-structures-base-0.1.1/dist/adf-structures-base.min.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/adf-widget-iframe-0.1.2/dist/adf-widget-iframe.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/dashboard/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/dashboard.js")'></script>
 
 </head>
-<body ng-app="dashboard">
-  <adf-dashboard name="mydashboard" collapsible="true" structure="6-6" adf-model="model" />
+<body ng-app="dashboard" ng-controller="dashboardCtrl">
+  @*<adf-dashboard name="mydashboard" collapsible="true" structure="6-6" adf-model="model" />*@
+  <line-chart id = "linechart" config="linechartConf"></line-chart>
 </body>
 </html>
