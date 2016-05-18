@@ -153,7 +153,7 @@
             <li role="presentation"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" ></i></a></li>
             <li role="presentation"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" ></i></a></li>
             <li role="presentation"><a href="#aql" data-toggle="tab"><i class="fa fa-code fa-2x"></i></a></li>
-            <li role="presentation" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-cog fa-2x"></i></a></li>
+            <li role="presentation" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
         </ul>
     </div>
     <div class="col-xs-10">
