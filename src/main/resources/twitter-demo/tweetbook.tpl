@@ -65,15 +65,14 @@
 
         #input {
             position: absolute;
-            left: 24%;
+            left: 27%;
             top: 2%;
-            width: 52%;
+            width: 50%;
         }
 
         #input-group {
             position: relative;
-            width: 65%;
-            margin-bottom:7px;
+            width: 80%;
         }
 
         .info {
@@ -122,23 +121,12 @@
             padding-left: 0;
             padding-right: 0;
         }
-        #logo{
-            display: inline-block;
-            margin-right: 10px;
-            color: #428bca;
-            font-family: 'Raleway',sans-serif;
-            font-size: 27px;
-            font-weight: 600;
-            line-height: 42px;
-            text-align: center;
-        }
     </style>
 </head>
 <body>
 <div id='map'></div>
 <div id='input'>
     <form class="form-inline" id="input-form">
-        <div id="logo">Cloudberry</div>
         <div class="form-group" id="input-group">
             <label class="sr-only">Key words</label>
             <input type="text" class="form-control " id="keyword-textbox" placeholder="Type keywords here, e.g. 'trump'">
