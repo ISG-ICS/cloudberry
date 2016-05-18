@@ -65,14 +65,15 @@
 
         #input {
             position: absolute;
-            left: 27%;
+            left: 24%;
             top: 2%;
-            width: 50%;
+            width: 52%;
         }
 
         #input-group {
             position: relative;
-            width: 80%;
+            width: 65%;
+            margin-bottom:7px;
         }
 
         .info {
@@ -121,31 +122,43 @@
             padding-left: 0;
             padding-right: 0;
         }
+        #logo{
+            display: inline-block;
+            margin-right: 10px;
+            color: #428bca;
+            font-family: 'Raleway',sans-serif;
+            font-size: 27px;
+            font-weight: 600;
+            line-height: 42px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 <div id='map'></div>
 <div id='input'>
     <form class="form-inline" id="input-form">
+        <div id="logo">Cloudberry</div>
         <div class="form-group" id="input-group">
             <label class="sr-only">Key words</label>
-            <input type="text" class="form-control " id="keyword-textbox" placeholder="Key words">
+            <input type="text" class="form-control " id="keyword-textbox" placeholder="Type keywords here, e.g. 'trump'">
         </div>
-        <button type="button" class="btn btn-primary" id="submit-button">Submit</button>
+        <button type="button" class="btn btn-primary" id="submit-button" style="margin-bottom: 7px">Submit</button>
     </form>
 </div>
 <div id='time-series'></div>
 <div id='sidebar'>
     <div class="col-xs-2">
         <ul class="nav nav-tabs tabs-left">
-            <li role="presentation" class="active"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" ></i></a></li>
+            <li role="presentation"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" ></i></a></li>
             <li role="presentation"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" ></i></a></li>
             <li role="presentation"><a href="#aql" data-toggle="tab"><i class="fa fa-code fa-2x"></i></a></li>
+            <li role="presentation" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-cog fa-2x"></i></a></li>
         </ul>
     </div>
     <div class="col-xs-10">
         <div class="tab-content">
-            <div id="hashtag" class="tab-pane active">
+            <div id="hashtag" class="tab-pane">
                 <table class="table" id="hashcount">
                     <thead>
                     <tr>
@@ -168,6 +181,19 @@
                     <tbody>
                     </tbody>
                 </table>
+            </div>
+            <div id="about" class="tab-pane active">
+                <h1> About </h1>
+                <p><b>Cloudberry</b> is a research prototype to support interactive analytics and visualization of large amounts of spatial-temporal data. </p>
+                <p> Basic Information: </p>
+                <ul>
+                    <li>Data set: Tweets</li>
+                    <li>Number of records: 18,953,055</li>
+                    <li>Collection period: From 2016-03-31 to 2016-04-07</li>
+                    <li>Total data size: 17G bytes</li>
+                    <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
+                </ul>
+                <p>The backend is running the big data management system <b>Apache AsterixDB</b> to support large compute clusters. For questions and comments, please contact <b>cloudberry@ics.uci.edu</b></p>
             </div>
         </div>
     </div>
