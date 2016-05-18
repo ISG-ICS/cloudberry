@@ -188,12 +188,12 @@
                 <p> Basic Information: </p>
                 <ul>
                     <li>Data set: Tweets</li>
-                    <li>Number of records: ???</li>
-                    <li>Collection period: [START TIME, END TIME]</li>
-                    <li>Total data size: ???</li>
+                    <li>Number of records: 18,953,055</li>
+                    <li>Collection period: From 2016-03-31 to 2016-04-07</li>
+                    <li>Total data size: 17G bytes</li>
                     <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
                 </ul>
-                <p>The backend is running the big data management system Apache AsterixDB to support large compute clusters. For questions and comments, please contact <b>cloudberry@ics.uci.edu</b></p>
+                <p>The backend is running the big data management system <b>Apache AsterixDB</b> to support large compute clusters. For questions and comments, please contact <b>cloudberry@ics.uci.edu</b></p>
             </div>
         </div>
     </div>
