@@ -5,9 +5,8 @@ import akka.event.LoggingReceive
 import akka.util.Timeout
 import db.Migration_20160324
 import edu.uci.ics.cloudberry.gnosis._
-import edu.uci.ics.cloudberry.zion.model.SampleTweet
+import edu.uci.ics.cloudberry.zion.model.{SampleList, SampleTweet}
 import models.{QueryResult, UserQuery}
-import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
 
 import scala.concurrent.duration._
@@ -33,8 +32,8 @@ class UserActor(val out: ActorRef, val cachesActor: ActorRef, val usGeoGnosis: U
     }
     case result: QueryResult =>
       out ! Json.toJson(result)
-    case samples: Seq[SampleTweet] =>
-      out ! Json.obj("aggType" -> "sample", "result" -> Json.toJson(samples))
+    case samples: SampleList =>
+      out ! Json.toJson(samples)
     case other =>
   }
 

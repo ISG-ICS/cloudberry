@@ -59,6 +59,11 @@ class Application @Inject()(val wsClient: WSClient,
     ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
   }
 
+  def tweet(id:String) = Action {
+    val url = "https://api.twitter.com/1/statuses/oembed.json?id="+id
+    Redirect(url, 200)
+  }
+
   def search(query: JsValue) = Action.async {
     import akka.pattern.ask
 

@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
 import edu.uci.ics.cloudberry.zion.model._
 import play.api.Logger
-import play.api.libs.json.JsArray
+import play.api.libs.json.{JsArray, Json}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -57,12 +57,14 @@ object TwitterDataStoreActor {
     )
   }
 
-  def handleAllInOneWSResponse(wsResponse: WSResponse): Response = {
-    wsResponse.json.asInstanceOf[JsArray].apply(0).as[SpatialTimeCount]
+  def handleAllInOneWSResponse(response: WSResponse): Response = {
+    //TODO This is an Asterix bug!!
+    val seq = Json.parse(response.body.replaceAll(" \\]\n\\[", " ,\n")).as[Seq[Seq[KeyCountPair]]]
+    SpatialTimeCount(seq(0), seq(1), seq(2))
   }
 
   def handleSampleResponse(wSResponse: WSResponse): Response = {
-    wSResponse.json.asInstanceOf[JsArray].apply(0).as[SampleTweet]
+    SampleList(wSResponse.json.as[Seq[SampleTweet]])
   }
 
   def handleKeyCountResponse(jsArray: JsArray): Seq[KeyCountPair] = {
@@ -72,31 +74,40 @@ object TwitterDataStoreActor {
   def generateAQL(name: String, query: DBQuery): String = {
     val aqlVisitor = AQLVisitor(name)
     val predicate = query.predicates.map(p => aqlVisitor.visitPredicate("t", p)).mkString("\n")
+    val common =
+      s"""
+         |use dataverse $DataVerse
+         |let $$common := (
+         |for $$t in dataset $name
+         |$predicate
+         |return $$t
+         |)
+         |""".stripMargin
+
     s"""
-       |use dataverse $DataVerse
-       |let $$common := (
-       |for $$t in dataset $name
-       |$predicate
-       |return $$t
-       |)
        |
+       |$common
        |let $$map := (
        |for $$t in $$common
        |${byMap(query.summaryLevel.spatialLevel)}
        |)
+       |return $$map
        |
+       |$common
        |let $$time := (
        |for $$t in $$common
        |${byTime(query.summaryLevel.timeLevel)}
        |)
+       |return $$time
        |
+       |$common
        |let $$hashtag := (
        |for $$t in $$common
        |where not(is-null($$t.hashtags))
        |${byHashTag()}
        |)
+       |return $$hashtag
        |
-       |return {"map": $$map, "time": $$time, "hashtag": $$hashtag }
        |""".stripMargin
   }
 

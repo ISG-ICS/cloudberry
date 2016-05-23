@@ -56,9 +56,11 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
       case _ => SpatialLevels.Point
     }
 
-    val predicates = Seq[Predicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
-                                    IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
-                                                   setQuery.entities.map(_.key.toInt)))
+    val predicates = Seq[Predicate](
+      IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
+                     setQuery.entities.map(_.key.toInt)),
+      TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange))
+    )
     val (dbQuery, sampleQuery) =
       if (keyword.isDefined) {
         val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, Seq(keyword.get))
@@ -83,9 +85,9 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
       }
     }
 
-    (viewsActor ? sampleQuery).mapTo[Seq[SampleTweet]] onComplete {
-      case Success(sampeTweets) => {
-        sender ! sampeTweets
+    (viewsActor ? sampleQuery).mapTo[SampleList] onComplete {
+      case Success(sampleList) => {
+        sender ! sampleList
       }
       case Failure(e: Throwable) => {
         log.error(e, "sample failed")

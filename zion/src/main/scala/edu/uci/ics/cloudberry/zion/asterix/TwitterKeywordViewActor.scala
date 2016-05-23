@@ -19,13 +19,19 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
   override def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery = {
     val newTimes = TimePredicate(FieldCreateAt, unCovered)
     val keywordPredicate = KeywordPredicate(FieldKeyword, Seq(this.keyword))
-    new DBQuery(initQuery.summaryLevel, Seq(newTimes, keywordPredicate))
+    val others = initQuery.predicates.filter(p => !p.isInstanceOf[TimePredicate] && !p.isInstanceOf[KeywordPredicate])
+    new DBQuery(initQuery.summaryLevel, others :+ newTimes :+ keywordPredicate)
   }
 
   override def mergeResult(viewResponse: Response, sourceResponse: Response): Response = {
-    val viewCount = viewResponse.asInstanceOf[SpatialTimeCount]
-    val sourceCount = sourceResponse.asInstanceOf[SpatialTimeCount]
-    TwitterDataStoreActor.mergeResult(viewCount, sourceCount)
+    viewResponse match {
+      case v: SpatialTimeCount =>
+        val viewCount = viewResponse.asInstanceOf[SpatialTimeCount]
+        val sourceCount = sourceResponse.asInstanceOf[SpatialTimeCount]
+        TwitterDataStoreActor.mergeResult(viewCount, sourceCount)
+      case v: SampleList =>
+        v
+    }
   }
 
   override def updateView(): Future[Unit] = ???
