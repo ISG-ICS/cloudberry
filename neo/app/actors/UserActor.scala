@@ -5,6 +5,7 @@ import akka.event.LoggingReceive
 import akka.util.Timeout
 import db.Migration_20160324
 import edu.uci.ics.cloudberry.gnosis._
+import edu.uci.ics.cloudberry.zion.model.SampleTweet
 import models.{QueryResult, UserQuery}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
@@ -32,6 +33,8 @@ class UserActor(val out: ActorRef, val cachesActor: ActorRef, val usGeoGnosis: U
     }
     case result: QueryResult =>
       out ! Json.toJson(result)
+    case samples: Seq[SampleTweet] =>
+      out ! Json.obj("aggType" -> "sample", "result" -> Json.toJson(samples))
     case other =>
   }
 
@@ -41,7 +44,7 @@ class UserActor(val out: ActorRef, val cachesActor: ActorRef, val usGeoGnosis: U
     val level = matchLevel(userQuery.level)
     val entities = usGeoGnosis.tagRectangle(level, userQuery.area)
     CacheQuery(Migration_20160324.TweetDataSet, userQuery.keyword, userQuery.timeRange, level,
-               entities, (userQuery.repeatDuration).seconds)
+               entities, userQuery.sampleOffset, userQuery.sampleLimit, (userQuery.repeatDuration).seconds)
   }
 
 }

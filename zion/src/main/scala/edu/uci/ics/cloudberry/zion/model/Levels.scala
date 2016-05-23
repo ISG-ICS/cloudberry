@@ -14,6 +14,10 @@ case class SummaryLevel(spatialLevel: SpatialLevels.Value, timeLevel: TimeLevels
   }
 }
 
+object SummaryLevel {
+  val Detail = SummaryLevel(SpatialLevels.Point, TimeLevels.TimeStamp)
+}
+
 object AggFunctionTypes extends Enumeration {
   val Count, Sum, TopK = Value
 }

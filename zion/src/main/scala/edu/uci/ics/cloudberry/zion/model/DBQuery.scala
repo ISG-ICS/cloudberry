@@ -21,7 +21,7 @@ case class TimePredicate(val fieldName: String, intervals: Seq[Interval]) extend
 }
 
 // Only use work on the int id so far.
-case class IdSetPredicate(val fieldName: String, idSets: Seq[Int]) extends Predicate{
+case class IdSetPredicate(val fieldName: String, idSets: Seq[Int]) extends Predicate {
   require(idSets.length > 0)
 }
 
@@ -33,9 +33,12 @@ case class AggregateOn(aggFunction: AggFunctionTypes.Value, val fieldName: Strin
 case class Groupby(groupOn: GroupOn, aggregateOns: Seq[AggregateOn]) extends Statement
 
 //TODO add the aggregation function parameters, currently only support count
-case class DBQuery(summaryLevel: SummaryLevel, val predicates: Seq[Predicate]) extends XQLVisitable {
+class DBQuery(val summaryLevel: SummaryLevel, val predicates: Seq[Predicate]) extends XQLVisitable {
   override def accept(visitor: XQLVisitor): Unit = visitor.visit(this)
 }
+
+case class SampleQuery(override val predicates: Seq[Predicate], offset: Int, limit: Int)
+  extends DBQuery(SummaryLevel.Detail, predicates)
 
 class DBUpdateQuery()
 

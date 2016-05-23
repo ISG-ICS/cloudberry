@@ -11,6 +11,8 @@ case class UserQuery(dataset: String,
                      timeRange: Interval,
                      area: Rectangle,
                      level: String,
+                     sampleOffset: Int = 0,
+                     sampleLimit: Int = 10,
                      repeatDuration: Long = 0
                     )
 

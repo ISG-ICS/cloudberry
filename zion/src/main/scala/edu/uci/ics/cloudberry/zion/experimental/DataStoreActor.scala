@@ -37,10 +37,10 @@ object DataStoreActor {
             s"create-point(${p.rectangle.neLog}, ${p.rectangle.neLat}))"
         case (Type.Time, p: ETimePredicate) =>
           s"""($$$varT.${p.fieldName} >= datetime("${TimeFormat.print(p.interval.getStart)}")
-             |and $$$varT.${p.fieldName} < datetime("${TimeFormat.print(p.interval.getEnd)}"))""".stripMargin
+              |and $$$varT.${p.fieldName} < datetime("${TimeFormat.print(p.interval.getEnd)}"))""".stripMargin
         case (Type.ID, p: IdSetPredicate) =>
           s"""let $$set := [ ${p.idSets.mkString(",")} ]
-           |for $$sid in $$set
+              |for $$sid in $$set
            """
         case (Type.Nested, p: Any) =>
       }
@@ -54,7 +54,7 @@ object DataStoreActor {
   def parseQuery(dataset: String, schema: Schema, query: Query): String = {
     val builder = StringBuilder.newBuilder
     builder ++= s"for $$t in dataset $dataset"
-    visitFilter(builder, query.filters.filter(p => schema.field(p.fieldName).isDefined).map(p => schema.field(p).get -> p).toMap)
+    visitFilter(builder, query.filters.filter(p => schema.field(p.fieldName).isDefined).map(p => schema.field(p.fieldName).get -> p).toMap)
     visitDimension(builder, query.dimensions)
     visitMeasure(builder, query.measurements)
     ???
