@@ -3,6 +3,7 @@ package edu.uci.ics.cloudberry.gnosis
 import java.io.{File, FilenameFilter}
 
 import com.vividsolutions.jts.geom.{Coordinate, Envelope, Geometry}
+import edu.uci.ics.cloudberry.util.Rectangle
 import play.api.libs.json.{JsObject, Json, Writes}
 
 import scala.collection.mutable

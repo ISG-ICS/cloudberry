@@ -25,17 +25,13 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
   override def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery = {
     import TwitterDataStoreActor._
     val newTimes = TimePredicate(FieldCreateAt, unCovered)
-    initQuery.copy(predicates = Seq(newTimes))
+    new DBQuery(initQuery.summaryLevel, Seq(newTimes))
   }
 
   override def updateView(): Future[Unit] = Future() //TODO
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    conn.post(generateAQL(query)).map { response =>
-      //TODO This is an Asterix bug!!
-      val seq = Json.parse(response.body.replaceAll(" \\]\n\\[", " ,\n")).as[Seq[Seq[KeyCountPair]]]
-      SpatialTimeCount(seq(0), seq(1), seq(2))
-    }
+    conn.post(generateAQL(query)).map(TwitterDataStoreActor.handleAllInOneWSResponse)
   }
 
 }

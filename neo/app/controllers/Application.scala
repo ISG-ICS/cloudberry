@@ -8,6 +8,7 @@ import akka.stream.Materializer
 import akka.util.Timeout
 import db.Migration_20160324
 import edu.uci.ics.cloudberry.zion.asterix.{AsterixConnection, TwitterDataStoreActor, TwitterViewsManagerActor}
+import models.UserQuery
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
 import play.api.libs.streams.ActorFlow
@@ -56,6 +57,11 @@ class Application @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
+  }
+
+  def tweet(id:String) = Action {
+    val url = "https://api.twitter.com/1/statuses/oembed.json?id="+id
+    Redirect(url, 200)
   }
 
   def search(query: JsValue) = Action.async {

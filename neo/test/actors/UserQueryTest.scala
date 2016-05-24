@@ -1,5 +1,6 @@
 package actors
 
+import models.UserQuery
 import org.specs2.mutable.Specification
 import play.api.libs.json.{JsNull, JsNumber, JsObject, JsString}
 

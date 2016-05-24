@@ -5,7 +5,9 @@ import org.joda.time.Interval
 import org.joda.time.format.DateTimeFormat
 
 class AQLVisitor(dataStore: String) extends XQLVisitor {
+
   import AQLVisitor._
+
   val aqlBuilder: StringBuilder = StringBuilder.newBuilder
 
   override def visit(query: DBQuery): Unit = {
@@ -16,6 +18,12 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
 
   def visitPredicate(variable: String, predicate: Predicate): String = {
     predicate match {
+      case p: IdSetPredicate =>
+        s"""
+           |let $$set := [ ${p.idSets.mkString(",")} ]
+           |for $$sid in $$set
+           |where $$$variable.${p.fieldName} = $$sid
+           |""".stripMargin
       case p: KeywordPredicate =>
         p.keywords.map(
           keyword =>
@@ -31,12 +39,6 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
         s"""
            |where
            |${p.intervals.map(formatInterval).mkString("or")}
-           |""".stripMargin
-      case p: IdSetPredicate =>
-        s"""
-           |let $$set := [ ${p.idSets.mkString(",")} ]
-           |for $$sid in $$set
-           |where $$$variable.${p.fieldName} = $$sid
            |""".stripMargin
     }
   }
@@ -69,6 +71,7 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
 
 object AQLVisitor {
   def apply(dataStore: String): AQLVisitor = new AQLVisitor(dataStore)
+
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 
 }

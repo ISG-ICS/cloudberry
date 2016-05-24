@@ -105,11 +105,11 @@ object TwitterViewsManagerActor {
 
   def keywordViewTemplate(keyword: String): DBQuery = {
     import TwitterDataStoreActor._
-    DBQuery(SummaryLevel(SpatialLevels.Point, TimeLevels.TimeStamp), Seq(KeywordPredicate(FieldKeyword, Seq(keyword))))
+    new DBQuery(SummaryLevel(SpatialLevels.Point, TimeLevels.TimeStamp), Seq(KeywordPredicate(FieldKeyword, Seq(keyword))))
   }
 
   def summaryViewTemplate(summaryLevel: SummaryLevel): DBQuery = {
-    DBQuery(summaryLevel, Seq.empty)
+    new DBQuery(summaryLevel, Seq.empty)
   }
 
   def generateSubSetViewAQL(sourceName: String, keyword: String): String = {

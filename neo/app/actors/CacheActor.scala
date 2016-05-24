@@ -6,6 +6,7 @@ import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.zion.asterix.TwitterDataStoreActor
 import edu.uci.ics.cloudberry.zion.model._
+import models.QueryResult
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.{Format, Json}
@@ -55,16 +56,21 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
       case _ => SpatialLevels.Point
     }
 
-    val predicates = Seq[Predicate](TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange)),
-                                    IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
-                                                   setQuery.entities.map(_.key.toInt)))
-    val dbQuery: DBQuery =
+    val predicates = Seq[Predicate](
+      IdSetPredicate(TwitterDataStoreActor.SpatialLevelMap.get(spatialLevel).get,
+                     setQuery.entities.map(_.key.toInt)),
+      TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange))
+    )
+    val (dbQuery, sampleQuery) =
       if (keyword.isDefined) {
         val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, Seq(keyword.get))
-        DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), keywordPredicate +: predicates)
+        (new DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), keywordPredicate +: predicates),
+          new SampleQuery(keywordPredicate +: predicates, setQuery.offset, setQuery.limit))
       } else {
-        DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates)
+        (new DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates),
+          new SampleQuery(predicates, setQuery.offset, setQuery.limit))
       }
+
     (viewsActor ? dbQuery).mapTo[SpatialTimeCount] onComplete {
       case Success(viewAnswer) => {
         sender ! QueryResult("map", viewAnswer.map)
@@ -76,6 +82,15 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
       }
       case Failure(e: Throwable) => {
         log.error(e, "cache failed")
+      }
+    }
+
+    (viewsActor ? sampleQuery).mapTo[SampleList] onComplete {
+      case Success(sampleList) => {
+        sender ! sampleList
+      }
+      case Failure(e: Throwable) => {
+        log.error(e, "sample failed")
       }
     }
   }
@@ -95,6 +110,8 @@ case class CacheQuery(dataSet: String,
                       timeRange: Interval,
                       level: TypeLevel,
                       entities: Seq[IEntity],
+                      offset: Int = 0,
+                      limit: Int = 10,
                       repeatDuration: Duration = 0.seconds) {
   val key = dataSet + '_' + keyword.getOrElse("")
   override val toString = s"dataset:${dataSet},keyword:$keyword,timeRange:$timeRange," +
@@ -113,11 +130,3 @@ class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis) extend
       log.info("Caches:" + self + "receive:" + other + " from : " + sender())
   }
 }
-
-case class QueryResult(aggType: String, result: Seq[KeyCountPair])
-
-object QueryResult {
-  val Empty = QueryResult("", Seq.empty[KeyCountPair])
-  implicit val format: Format[QueryResult] = Json.format[QueryResult]
-}
-

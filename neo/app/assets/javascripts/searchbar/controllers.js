@@ -3,6 +3,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $scope.search = function() {
       if ($scope.keyword)
         Asterix.parameters.keyword = $scope.keyword;
+      else
+        Asterix.parameters.keyword = null;
       Asterix.queryType = 'search';
       Asterix.query(Asterix.parameters, Asterix.queryType);
     };
