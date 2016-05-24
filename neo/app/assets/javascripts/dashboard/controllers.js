@@ -58,4 +58,34 @@ angular.module('cloudberry.dashboard', [])
         });
       }
     };
+  })
+  .directive('rowChart', function () {
+    return {
+      restrict: "E",
+      scope: {
+        config: "="
+      },
+      template: [
+        '<div class="col-md-{{$scope.config.grid}}>',
+        '</div>'
+      ].join(''),
+      link: function ($scope, $element, $attrs) {
+        var chart = d3.select($element[0]);
+        var rowchart = dc.rowChart(chart[0][0]);
+        $scope.$watch('config', function (newVal, oldVal) {
+          if (newVal.length == 0)
+            return;
+          chart.selectAll('*').remove();
+
+          rowchart
+            .width($(window).width()*$scope.config.grid/12)
+            .height($scope.config.height)
+            .dimension($scope.config.dimension)
+            .group($scope.config.group)
+            .elasticX(true);
+
+          rowchart.render();
+        });
+      }
+    };
   });
