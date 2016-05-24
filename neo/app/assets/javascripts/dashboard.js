@@ -17,19 +17,38 @@ angular.module('dashboard', ['cloudberry.dashboard'])
   // })
   .controller('dashboardCtrl', function ($scope, $window) {
     var data = [
-      {date: "12/27/2012", http_404: 2, http_200: 190, http_302: 100},
-      {date: "12/28/2012", http_404: 2, http_200: 10, http_302: 100},
-      {date: "12/29/2012", http_404: 1, http_200: 300, http_302: 200},
-      {date: "12/30/2012", http_404: 2, http_200: 90, http_302: 0},
-      {date: "12/31/2012", http_404: 2, http_200: 90, http_302: 0},
-      {date: "01/01/2013", http_404: 2, http_200: 90, http_302: 0},
-      {date: "01/02/2013", http_404: 1, http_200: 10, http_302: 1},
-      {date: "01/03/2013", http_404: 2, http_200: 90, http_302: 0},
-      {date: "01/04/2013", http_404: 2, http_200: 90, http_302: 0},
-      {date: "01/05/2013", http_404: 2, http_200: 90, http_302: 0},
-      {date: "01/06/2013", http_404: 2, http_200: 200, http_302: 1},
-      {date: "01/07/2013", http_404: 1, http_200: 200, http_302: 100}
+      {name: "President Candidate 1", party: "R", date: "12/27/2012", state: 1, count: 10},
+      {name: "President Candidate 2", party: "D", date: "12/27/2012", state: 1, count: 20},
+      {name: "President Candidate 3", party: "D", date: "12/27/2012", state: 1, count: 7},
+      {name: "President Candidate 1", party: "R", date: "12/29/2012", state: 2, count: 8},
+      {name: "President Candidate 2", party: "D", date: "12/29/2012", state: 2, count: 5},
+      {name: "President Candidate 3", party: "D", date: "12/29/2012", state: 2, count: 31},
+      {name: "Senator 1", party: "D", date: "12/27/2012", state: 1, count: 12},
+      {name: "Senator 2", party: "R", date: "12/27/2012", state: 1, count: 22},
+      {name: "Senator 3", party: "R", date: "12/27/2012", state: 1, count: 37},
+      {name: "Senator 4", party: "D", date: "12/27/2012", state: 1, count: 24},
+      {name: "Senator 5", party: "D", date: "12/27/2012", state: 1, count: 8},
+      {name: "Senator 6", party: "R", date: "12/27/2012", state: 1, count: 19},
+      {name: "Senator 7", party: "D", date: "12/27/2012", state: 1, count: 31},
+      {name: "Senator 8", party: "R", date: "12/27/2012", state: 1, count: 24},
+      {name: "Senator 9", party: "R", date: "12/27/2012", state: 1, count: 7},
+      {name: "Senator 10", party: "D", date: "12/27/2012", state: 1, count: 4},
+      {name: "Senator 1", party: "D", date: "12/29/2012", state: 2, count: 11},
+      {name: "Senator 2", party: "R", date: "12/29/2012", state: 2, count: 17},
+      {name: "Senator 3", party: "R", date: "12/29/2012", state: 2, count: 9},
+      {name: "Senator 4", party: "D", date: "12/29/2012", state: 2, count: 10},
+      {name: "Senator 5", party: "D", date: "12/29/2012", state: 2, count: 25},
+      {name: "Senator 6", party: "R", date: "12/29/2012", state: 2, count: 28},
+      {name: "Senator 7", party: "D", date: "12/29/2012", state: 2, count: 31},
+      {name: "Senator 8", party: "R", date: "12/29/2012", state: 2, count: 28},
+      {name: "Senator 9", party: "R", date: "12/29/2012", state: 2, count: 17},
+      {name: "Senator 10", party: "D", date: "12/29/2012", state: 2, count: 4}
     ];
+
+    $scope.globalConf = {
+      rowHeight: 200,
+      grids: [4,4,4]
+    };
 
     var ndx = crossfilter(data);
     var parseDate = d3.time.format("%m/%d/%Y").parse;
@@ -52,12 +71,12 @@ angular.module('dashboard', ['cloudberry.dashboard'])
         bottom: 30,
         left: 30
       },
-      width: 500,
-      height: 200,
+      height: $scope.globalConf.rowHeight,
+      grid: $scope.globalConf.grids[0],
       dimension: dateDim,
       group: hits,
       scale: d3.time.scale().domain([minDate,maxDate]),
-      renderArea: true,
+      renderArea: true
     };
 
     var yearDim  = ndx.dimension(function(d) {return +d.Year;});
@@ -65,8 +84,8 @@ angular.module('dashboard', ['cloudberry.dashboard'])
 
     $scope.piechartConf = {
       data: data,
-      width: 150,
-      height: 150,
+      height: $scope.globalConf.rowHeight,
+      grid: $scope.globalConf.grids[1],
       dimension: yearDim,
       group: year_total,
       innerRadius: 30

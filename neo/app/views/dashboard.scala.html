@@ -28,7 +28,12 @@
 </head>
 <body ng-app="dashboard" ng-controller="dashboardCtrl">
   @*<adf-dashboard name="mydashboard" collapsible="true" structure="6-6" adf-model="model" />*@
-  <pie-chart id="piechart" config="piechartConf"></pie-chart>
-  <line-chart id = "linechart" config="linechartConf"></line-chart>
+  <div class = "container-fluid">
+    <div class="row">
+      <pie-chart id="piechart" config="piechartConf"></pie-chart>
+      <line-chart id = "linechart" config="linechartConf"></line-chart>
+      <pie-chart id="piechart" config="piechartConf"></pie-chart>
+    </div>
+  </div>
 </body>
 </html>
