@@ -63,6 +63,9 @@ angular.module('cloudberry.common', [])
           case "hashtag":
             asterixService.hashTagResult = result.result;
             break;
+          case "sample":
+            asterixService.tweetResult = result.result;
+            break;
           case "error":
             asterixService.errorMessage = result.errorMessage;
             break;

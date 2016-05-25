@@ -23,9 +23,39 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       ].join('')
     };
   })
-  .controller('TweetCtrl', function ($scope, $window, Asterix) {
-    // TODO
+  .controller('TweetCtrl', function ($scope, $window, $http, Asterix) {
+    $scope.results = {};
+
+    function drawTweets(message) {
+      $('#tweet').html('');
+      $.each(message, function (i, d) {
+        var url = "/tweet/" + d.tid;
+        $.ajax({
+          url: url,
+          dataType: "json",
+          success: function (data) {
+            $('#tweet').append(data.html);
+          },
+          error: function(data) {
+            // do nothing
+          }
+        });
+      });
+    }
+    $scope.$watch(
+      function() {
+        return Asterix.tweetResult;
+      },
+      function(newResult) {
+        $scope.results = newResult;
+        if($scope.results && Object.keys($scope.results).length != 0)
+          drawTweets($scope.results);
+      }
+    );
   })
   .directive('tweet', function () {
-    // TODO
+    return {
+      restrict: 'E',
+      controller: 'TweetCtrl'
+    };
 });
