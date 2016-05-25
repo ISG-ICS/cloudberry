@@ -7,19 +7,19 @@
 
   <time-series id="chart"></time-series>
 
-  <div id='sidebar' ng-init="click = -1; tab=3" ng-class="{toggled: click === 1}" ng-click="click = click*-1">
+  <div id='sidebar' ng-init="click = -1" ng-class="{toggled: click === 1}" ng-click="click = click*-1">
     <div class="col-xs-2">
       <ul class="nav nav-tabs tabs-left">
-        <li role="presentation" ng-class="{active: tab === 1}"><a href="#hashtag" ng-click="tab=1" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-class="{active: tab === 2}"><a href="#tweet" ng-click="tab=2" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-class="{active: tab === 3}"><a href="#about" ng-click="tab=3" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
+        <li role="presentation" ><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" ><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
       </ul>
     </div>
     <div class="col-xs-10">
       <div class="tab-content">
-        <hashtag id="hashtag" class="tab-pane" ng-class="{active: tab === 1}"></hashtag>
-        <tweet id="tweet" class="tab-pane" ng-class="{active: tab === 2}"></tweet>
-        <div id="about" class="tab-pane" ng-class="{active: tab === 3}">
+        <hashtag id="hashtag" class="tab-pane"></hashtag>
+        <tweet id="tweet" class="tab-pane"></tweet>
+        <div id="about" class="tab-pane active">
           <h1> About </h1>
           <p><b>Cloudberry</b> is a research prototype to support interactive analytics and visualization of large amounts of spatial-temporal data. </p>
           <p> Basic Information: </p>
