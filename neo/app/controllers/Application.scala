@@ -59,9 +59,11 @@ class Application @Inject()(val wsClient: WSClient,
     ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
   }
 
-  def tweet(id:String) = Action {
+  def tweet(id:String) = Action.async {
     val url = "https://api.twitter.com/1/statuses/oembed.json?id="+id
-    Redirect(url, 200)
+    wsClient.url(url).get().map { response =>
+      Ok(response.json)
+    }
   }
 
   def search(query: JsValue) = Action.async {
