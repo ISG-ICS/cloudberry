@@ -29,16 +29,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     function drawTweets(message) {
       $('#tweet').html('');
       $.each(message, function (i, d) {
-        var url = "/tweet/" + d.tid;
-        $.ajax({
-          url: url,
-          dataType: "json",
-          success: function (data) {
-            $('#tweet').append(data.html);
-          },
-          error: function(data) {
-            // do nothing
-          }
+        var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.tid
+        $http.jsonp(url).success(function (data){
+          $('#tweet').append(data.html);
         });
       });
     }
