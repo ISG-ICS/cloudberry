@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.noah;
+package edu.uci.ics.cloudberry.noah.feed.fileFeed;
 
 import java.io.BufferedReader;
 import java.io.IOException;

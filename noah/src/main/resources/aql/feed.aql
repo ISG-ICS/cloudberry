@@ -1,38 +1,12 @@
-drop dataverse experiments if exists;
-create dataverse experiments;
-use dataverse experiments;
-
-create type TwitterUserType as closed {
-    screen-name: string,
-    lang: string,
-    friends_count: int32,
-    statuses_count: int32,
-    name: string,
-    followers_count: int32
-}
-
-create type TweetMessageType as closed {
-    tweetid: string,
-    tweetid-copy:string,
-    user: TwitterUserType,
-    sender-location: point,
-    send-time: datetime,
-    send-time-copy:datetime,
-    referred-topics: {{ string }},
-    message-text: string
-}
-
-create dataset Tweets(TweetMessageType) primary key tweetid;
-
+use dataverse twitter;
 create feed TweetFeed using socket_adapter
 (
     ("sockets"="127.0.0.1:10001"),
     ("address-type"="IP"),
-    ("type-name"="TweetMessageType"),
+    ("type-name"="typeTweet"),
     ("format"="adm")
 );
 
-use dataverse experiments;
 set wait-for-completion-feed "false";
 
-connect feed TweetFeed to dataset Tweets;
+connect feed TweetFeed to dataset ds_tweet;
