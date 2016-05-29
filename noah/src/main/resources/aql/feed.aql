@@ -1,4 +1,5 @@
 use dataverse twitter;
+drop feed TweetFeed if exists;
 create feed TweetFeed using socket_adapter
 (
     ("sockets"="127.0.0.1:10001"),

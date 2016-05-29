@@ -9,8 +9,10 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import edu.uci.ics.cloudberry.noah.adm.UnknownPlaceException;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import twitter4j.TwitterException;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -20,12 +22,12 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class TwitterFeedStreamDriver {
 
-    static Client twitterClient;
-    volatile static boolean isConnected = false;
+    Client twitterClient;
+    volatile boolean isConnected = false;
 
-    static StreamFeedSocketAdapterClient socketAdapterClient;
+    StreamFeedSocketAdapterClient socketAdapterClient;
 
-    public static void run(Config config)
+    public void run(Config config)
             throws InterruptedException, IOException {
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
         StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
@@ -63,7 +65,7 @@ public class TwitterFeedStreamDriver {
                 .processor(new StringDelimitedProcessor(queue))
                 .build();
 
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
         Date now = new Date();
         String strDate = sdfDate.format(now);
 
@@ -80,11 +82,15 @@ public class TwitterFeedStreamDriver {
             isConnected = true;
             // Do whatever needs to be done with messages
             while (true) {
-                String msg = queue.take();
-                String adm = tagTweet.tagOneTweet(msg) + "\n";
-                if ((adm.length() > 0) && (!adm.equals("\n"))) {
+                try {
+                    String msg = queue.take();
+                    String adm = tagTweet.tagOneTweet(msg);
                     socketAdapterClient.ingest(adm);
-                    bw.write(adm);
+                    bw.write(msg);
+                } catch(UnknownPlaceException e) {
+
+                } catch(TwitterException e) {
+
                 }
             }
         } finally {
@@ -94,18 +100,19 @@ public class TwitterFeedStreamDriver {
 
     }
 
-    public static void openSocket(Config config) {
+    public void openSocket(Config config) throws IOException{
         String adapterUrl = config.getAdapterUrl();
-        Integer port = config.getPort();
-        Integer batchSize = config.getBatchSize();
-        Integer waitMillSecPerRecord = config.getWaitMillSecPerRecord();
-        Integer maxCount = config.getMaxCount();
+        int port = config.getPort();
+        int batchSize = config.getBatchSize();
+        int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
+        int maxCount = config.getMaxCount();
         socketAdapterClient = new StreamFeedSocketAdapterClient(adapterUrl, port,
                 batchSize, waitMillSecPerRecord, maxCount);
         socketAdapterClient.initialize();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException{
+        TwitterFeedStreamDriver feedDriver = new TwitterFeedStreamDriver();
         try {
             Config config = new Config();
             CmdLineParser parser = new CmdLineParser(config);
@@ -120,19 +127,17 @@ public class TwitterFeedStreamDriver {
             }
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
-                    if (twitterClient != null && isConnected) {
-                        twitterClient.stop();
+                    if (feedDriver.twitterClient != null && feedDriver.isConnected) {
+                        feedDriver.twitterClient.stop();
                     }
                 }
             });
-            openSocket(config);
-            TwitterFeedStreamDriver.run(config);
+            feedDriver.openSocket(config);
+            feedDriver.run(config);
         } catch (InterruptedException e) {
             System.err.println(e);
-        } catch (IOException e) {
-            System.err.println(e);
         } finally {
-            socketAdapterClient.finalize();
+            feedDriver.socketAdapterClient.finalize();
         }
     }
 }

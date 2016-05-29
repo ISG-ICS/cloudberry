@@ -72,13 +72,13 @@ public class Config {
 
     public String getAdapterUrl() { return adapterUrl; }
 
-    public Integer getPort() { return port; }
+    public int getPort() { return port; }
 
-    public Integer getWaitMillSecPerRecord() { return waitMillSecPerRecord; }
+    public int getWaitMillSecPerRecord() { return waitMillSecPerRecord; }
 
-    public Integer getBatchSize() { return batchSize; }
+    public int getBatchSize() { return batchSize; }
 
-    public Integer getMaxCount() { return maxCount; }
+    public int getMaxCount() { return maxCount; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 

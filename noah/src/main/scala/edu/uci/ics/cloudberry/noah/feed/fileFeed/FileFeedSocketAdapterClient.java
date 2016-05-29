@@ -1,20 +1,15 @@
 package edu.uci.ics.cloudberry.noah.feed.fileFeed;
 
+import edu.uci.ics.cloudberry.noah.feed.FeedSocketAdapterClient;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
 
-public class FileFeedSocketAdapterClient {
-
-    private final int waitMillSecond;
-    private String adapterUrl;
-    private int port;
-    private Socket socket;
+public class FileFeedSocketAdapterClient extends FeedSocketAdapterClient{
     private InputStreamReader inputReader;
-    private int batchSize;
-    private int maxCount;
     private OutputStream out = null;
 
     public FileFeedSocketAdapterClient(String adapterUrl, int port, InputStreamReader reader, int batchSize,
@@ -27,19 +22,16 @@ public class FileFeedSocketAdapterClient {
         this.batchSize = batchSize;
     }
 
-    public void initialize() {
-        try {
-            socket = new Socket(adapterUrl, port);
-            System.out.println("adapterUrl: " + this.adapterUrl + ":" + Integer.toString(port));
-            System.out.println("maxCount: " + maxCount);
-            System.out.println("wait: " + waitMillSecond);
-            System.out.println("batchSize: " + batchSize);
-        } catch (IOException e) {
-            System.err.println("Problem in creating socket against host " + adapterUrl + " on the port " + port);
-            e.printStackTrace();
-        }
+    @Override
+    public void initialize() throws IOException{
+        socket = new Socket(adapterUrl, port);
+        System.out.println("adapterUrl: " + this.adapterUrl + ":" + Integer.toString(port));
+        System.out.println("maxCount: " + maxCount);
+        System.out.println("wait: " + waitMillSecond);
+        System.out.println("batchSize: " + batchSize);
     }
 
+    @Override
     public void finalize() {
         try {
             socket.close();

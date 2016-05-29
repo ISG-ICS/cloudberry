@@ -4,14 +4,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
-public class StreamFeedSocketAdapterClient {
-
-    private final int waitMillSecond;
-    private String adapterUrl;
-    private int port;
-    private Socket socket;
-    private int batchSize;
-    private int maxCount;
+public class StreamFeedSocketAdapterClient extends FeedSocketAdapterClient{
     private OutputStream out = null;
     private int recordCount = 0;
 
@@ -24,20 +17,17 @@ public class StreamFeedSocketAdapterClient {
         this.batchSize = batchSize;
     }
 
-    public void initialize() {
-        try {
-            socket = new Socket(adapterUrl, port);
-            out = socket.getOutputStream();
-            System.out.println("adapterUrl: " + this.adapterUrl + ":" + Integer.toString(port));
-            System.out.println("maxCount: " + maxCount);
-            System.out.println("wait: " + waitMillSecond);
-            System.out.println("batchSize: " + batchSize);
-        } catch (IOException e) {
-            System.err.println("Problem in creating socket against host " + adapterUrl + " on the port " + port);
-            e.printStackTrace();
-        }
+    @Override
+    public void initialize() throws IOException{
+        socket = new Socket(adapterUrl, port);
+        out = socket.getOutputStream();
+        System.out.println("adapterUrl: " + this.adapterUrl + ":" + Integer.toString(port));
+        System.out.println("maxCount: " + maxCount);
+        System.out.println("wait: " + waitMillSecond);
+        System.out.println("batchSize: " + batchSize);
     }
 
+    @Override
     public void finalize() {
         try {
             out.close();
@@ -48,7 +38,7 @@ public class StreamFeedSocketAdapterClient {
         }
     }
 
-    public void ingest(String record) {
+    public void ingest(String record) throws IOException{
         recordCount++;
         System.out.println("send record: " + recordCount);
         byte[] b = record.replaceAll("\\s+", " ").getBytes();
@@ -57,7 +47,7 @@ public class StreamFeedSocketAdapterClient {
             if (waitMillSecond >= 1 && recordCount % batchSize == 0) {
                 Thread.currentThread().sleep(waitMillSecond);
             }
-        } catch (Exception e) {
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }

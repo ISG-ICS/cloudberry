@@ -7,6 +7,7 @@ import org.kohsuke.args4j.Option;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 
 public class FileFeedDriver {
@@ -77,6 +78,8 @@ public class FileFeedDriver {
             System.err.println(e.getMessage());
             System.err.println("usage [option] filePath, write filePath as - to read from stdin");
             parser.printUsage(System.err);
+        } catch(IOException e) {
+            System.err.println(e.getMessage());
         }
     }
 }
