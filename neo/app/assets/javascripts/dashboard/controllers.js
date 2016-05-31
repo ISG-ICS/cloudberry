@@ -6,7 +6,7 @@ angular.module('cloudberry.dashboard', [])
         config: "="
       },
       template: [
-        '<div class="col-md-{{$scope.config.grid}}>',
+        '<div class="col-md-{{$scope.config.grid}}">',
         '</div>'
       ].join(''),
       link: function ($scope, $element, $attrs) {
@@ -36,7 +36,7 @@ angular.module('cloudberry.dashboard', [])
         config: "="
       },
       template: [
-        '<div class="col-md-{{$scope.config.grid}}>',
+        '<div class="col-md-{{$scope.config.grid}}">',
         '</div>'
       ].join(''),
       link: function ($scope, $element, $attrs) {
@@ -48,8 +48,8 @@ angular.module('cloudberry.dashboard', [])
           chart.selectAll('*').remove();
 
           piechart
-            .width($(window).width()*$scope.config.grid/12)
-            .height($scope.config.height)
+            .width($(window).width()*$scope.config.grid/12-2*$scope.config.margin)
+            .height($scope.config.height-2*$scope.config.margin)
             .dimension($scope.config.dimension)
             .group($scope.config.group)
             .innerRadius($scope.config.innerRadius);
@@ -66,7 +66,7 @@ angular.module('cloudberry.dashboard', [])
         config: "="
       },
       template: [
-        '<div class="col-md-{{$scope.config.grid}}>',
+        '<div class="col-md-{{$scope.config.grid}}">',
         '</div>'
       ].join(''),
       link: function ($scope, $element, $attrs) {
@@ -86,6 +86,23 @@ angular.module('cloudberry.dashboard', [])
 
           rowchart.render();
         });
+      }
+    };
+  })
+  .directive('map', function () {
+    return {
+      restrict: "E",
+      scope: {
+        config: "="
+      },
+      link: function ($scope, $element, $attrs) {
+        $scope.map = L.map('map').setView([36.5,-96.35],4);
+        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
+          maxZoom: 18,
+          id: 'jeremyli.p6f712pj',
+          accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw'
+        }).addTo($scope.map);
       }
     };
   });

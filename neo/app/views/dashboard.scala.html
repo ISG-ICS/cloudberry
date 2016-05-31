@@ -9,6 +9,8 @@
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("javascripts/lib/adf-widget-iframe-0.1.2/dist/adf-widget-iframe.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/dc.js/dc.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/leaflet/leaflet.css")'>
+
 
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/Sortable/Sortable.js")'></script>
@@ -18,23 +20,37 @@
   <script src='@routes.Assets.versioned("lib/angular-dashboard-framework/dist/angular-dashboard-framework.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/adf-structures-base-0.1.1/dist/adf-structures-base.min.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/adf-widget-iframe-0.1.2/dist/adf-widget-iframe.min.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/leaflet/leaflet.js")'></script>
+  <script type='text/javascript' src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
   <script type='text/javascript' src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
   <script type='text/javascript' src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
   <script type='text/javascript' src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
   <script type='text/javascript' src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
   <script type='text/javascript' src='@routes.Assets.versioned("javascripts/dashboard/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/dashboard.js")'></script>
+  <style>
+    #map {
+      border: 1px solid black;
+      border-radius: 8px;
+    }
+  </style>
 
 </head>
 <body ng-app="dashboard" ng-controller="dashboardCtrl">
   @*<adf-dashboard name="mydashboard" collapsible="true" structure="6-6" adf-model="model" />*@
   <div class = "container-fluid">
-    <div class="row">
-      <pie-chart id="piechart" config="piechartConf"></pie-chart>
-      <line-chart id = "linechart" config="linechartConf"></line-chart>
+    <div class="rowo">
+      <h1>Cloudberry Example Dashboard</h1>
     </div>
     <div class="row">
-      <row-chart id="rowchart" config="rowchartConf"></row-chart>
+      <map id="map" style="height: 350px;" class="col-md-6"></map>
+      <row-chart id="rowchart" config="rowchartConf" class="col-md-6"></row-chart>
+    </div>
+    <div class="row">
+      <pie-chart id="piechart" config="piechartConf" class="col-md-2"></pie-chart>
+      <pie-chart id="piechart" config="piechartConf" class="col-md-2"></pie-chart>
+      <pie-chart id="piechart" config="piechartConf" class="col-md-2"></pie-chart>
+      <line-chart id = "linechart" config="linechartConf" class="col-md-6"></line-chart>
     </div>
   </div>
 </body>

@@ -1,6 +1,3 @@
-/**
- * Created by Pro on 5/9/16.
- */
 angular.module('dashboard', ['cloudberry.dashboard'])
   // .config(function(dashboardProvider){
   //
@@ -59,8 +56,8 @@ angular.module('dashboard', ['cloudberry.dashboard'])
     ];
 
     $scope.globalConf = {
-      rowHeight: [200,350],
-      grids: [[6,6],[6,6]]
+      rowHeight: [350,200],
+      grids: [[2,2,8],[6,6]]
     };
 
     var ndx = crossfilter(data);
@@ -78,12 +75,12 @@ angular.module('dashboard', ['cloudberry.dashboard'])
       margin:
       {
         top: 10,
-        right: 10,
+        right: 25,
         bottom: 30,
-        left: 30
+        left: 10
       },
-      height: $scope.globalConf.rowHeight[0],
-      grid: $scope.globalConf.grids[0][0],
+      height: $scope.globalConf.rowHeight[1],
+      grid: $scope.globalConf.grids[1][1],
       dimension: dateDim,
       group: dateTotal,
       scale: d3.time.scale().domain([minDate,maxDate]),
@@ -95,7 +92,8 @@ angular.module('dashboard', ['cloudberry.dashboard'])
 
     $scope.piechartConf = {
       data: data,
-      height: $scope.globalConf.rowHeight[0],
+      height: $scope.globalConf.rowHeight[1],
+      margin: 30,
       grid: $scope.globalConf.grids[0][1],
       dimension: partyDim,
       group: partyTotal,
@@ -106,10 +104,15 @@ angular.module('dashboard', ['cloudberry.dashboard'])
     var nameTotal = nameDim.group().reduceSum(function(d) {return d.count;});
     $scope.rowchartConf = {
       data: data,
-      height: $scope.globalConf.rowHeight[1],
+      height: $scope.globalConf.rowHeight[0],
       grid: $scope.globalConf.grids[1][0],
       dimension: nameDim,
-      group: nameTotal,
+      group: nameTotal
     };
+
+    $scope.mapConf = {
+      data: data
+    };
+
   })
   ;
