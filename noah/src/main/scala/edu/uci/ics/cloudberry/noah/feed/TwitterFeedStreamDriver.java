@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.zip.GZIPOutputStream;
 
 public class TwitterFeedStreamDriver {
 
@@ -69,25 +70,24 @@ public class TwitterFeedStreamDriver {
         Date now = new Date();
         String strDate = sdfDate.format(now);
 
-        String fileName = "Tweet_" + strDate + ".txt";
-        File fout = new File(fileName);
-        FileOutputStream fos = new FileOutputStream(fout);
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-
+        String fileName = "Tweet_" + strDate + ".gz";
+        GZIPOutputStream zip = new GZIPOutputStream(
+                    new FileOutputStream(new File(fileName)));
+        BufferedWriter bw = new BufferedWriter(
+                    new OutputStreamWriter(zip, "UTF-8"));
 
         // Establish a connection
         try {
             twitterClient.connect();
-
             isConnected = true;
             // Do whatever needs to be done with messages
             while (true) {
+                String msg = queue.take();
+                bw.write(msg);
                 try {
-                    String msg = queue.take();
                     String adm = tagTweet.tagOneTweet(msg);
                     socketAdapterClient.ingest(adm);
-                    bw.write(msg);
-                } catch(UnknownPlaceException e) {
+                } catch (UnknownPlaceException e) {
 
                 } catch(TwitterException e) {
 
@@ -97,7 +97,6 @@ public class TwitterFeedStreamDriver {
             bw.close();
             twitterClient.stop();
         }
-
     }
 
     public void openSocket(Config config) throws IOException{
