@@ -89,20 +89,56 @@ angular.module('cloudberry.dashboard', [])
       }
     };
   })
-  .directive('map', function () {
+  .directive('map', function ($http) {
     return {
       restrict: "E",
       scope: {
         config: "="
       },
       link: function ($scope, $element, $attrs) {
-        $scope.map = L.map('map').setView([36.5,-96.35],4);
-        L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-          attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="http://mapbox.com">Mapbox</a>',
-          maxZoom: 18,
-          id: 'jeremyli.p6f712pj',
-          accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw'
-        }).addTo($scope.map);
+        $http.get("assets/data/state.json")
+          .success(function(data) {
+            angular.forEach(data.features, function(d) {
+              if (d.properties.count)
+                d.properties.count = 0;
+              for (var k in $scope.config.data) {
+                if ($scope.config.data[k].state == d.properties.stateID)
+                  d.properties.count += $scope.config.data[k].count;
+              }
+            });
+            draw(data);
+          })
+          .error(function(data) {
+            console.log("Load state data failure");
+          });
+
+        function draw(geojson) {
+          var chart = d3.select($element[0]);
+          var leafletChoroplethChart = dc.leafletChoroplethChart(chart[0][0]);
+
+          leafletChoroplethChart
+            .width($(window).width()*$scope.config.grid/12)
+            .height($scope.config.height)
+            .dimension($scope.config.dimension)
+            .group($scope.config.group)
+            .center([36.5, -96.35])
+            .zoom(4)
+            .geojson(geojson)
+            .colors(['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#f7f7f7', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'])
+            .colorDomain(function() {
+              return [dc.utils.groupMin(this.group(), this.valueAccessor()),
+                dc.utils.groupMax(this.group(), this.valueAccessor())];
+            })
+            .colorAccessor(function(d,i) {
+              return d.value;
+            })
+            .featureKeyAccessor(function(feature) {
+              return feature.properties.stateID;
+            });
+
+          dc.renderAll();
+
+        }
       }
     };
   });
