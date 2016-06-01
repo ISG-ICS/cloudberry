@@ -1,0 +1,13 @@
+use dataverse twitter;
+drop feed TweetFeed if exists;
+create feed TweetFeed using socket_adapter
+(
+    ("sockets"="127.0.0.1:10001"),
+    ("address-type"="IP"),
+    ("type-name"="typeTweet"),
+    ("format"="adm")
+);
+
+set wait-for-completion-feed "false";
+
+connect feed TweetFeed to dataset ds_tweet;

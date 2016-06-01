@@ -41,6 +41,7 @@ object Dependencies {
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
     "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
     "com.twitter" % "hbc-core" % "2.2.0",
+    "org.kohsuke.args4j" % "args4j-maven-plugin" % "2.33",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 
