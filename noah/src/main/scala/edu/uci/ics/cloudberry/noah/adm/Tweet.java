@@ -21,11 +21,8 @@ public class Tweet {
     public static String USER = "user";
     public static String PLACE = "place";
 
-    public static String toADM(Status status, USGeoGnosis gnosis) {
+    public static String toADM(Status status, USGeoGnosis gnosis) throws UnknownPlaceException{
         String geoTags = geoTag(status, gnosis);
-        if (geoTags.length() < 1) {
-            return geoTags;
-        }
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkDateTimeConstructor(status.getCreatedAt()));
@@ -60,7 +57,7 @@ public class Tweet {
         return sb.toString();
     }
 
-    public static String geoTag(Status status, USGeoGnosis gnosis) {
+    public static String geoTag(Status status, USGeoGnosis gnosis) throws UnknownPlaceException{
         StringBuilder sb = new StringBuilder();
         if (textMatchPlace(sb, status, gnosis)) {
             return sb.toString();
@@ -69,8 +66,7 @@ public class Tweet {
         if (exactPointLookup(sb, location, gnosis)) {
             return sb.toString();
         }
-        System.err.println("unknown place:" + status.getPlace());
-        return sb.toString();
+        throw new UnknownPlaceException("unknown place:" + status.getPlace());
     }
 
     private static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
