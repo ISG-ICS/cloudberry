@@ -19,7 +19,9 @@ class UserQueryTest extends Specification {
           "start" -> JsNumber(0),
           "end" -> JsNumber(2000))),
         "level" -> JsString("state"),
-        "repeatDuration" -> JsNumber(0)))
+        "repeatDuration" -> JsNumber(0),
+        "sampleOffset" -> JsNumber(0),
+        "sampleLimit" -> JsNumber(10)))
       val userQuery = jsonQuery.as[UserQuery]
       userQuery.keyword must_== None
     }
