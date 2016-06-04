@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.zion.actor.{TestUtil, ViewMetaRecord}
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -24,6 +24,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
     }
   })
 
+  DateTimeZone.setDefault(DateTimeZone.forOffsetHours(-8))
   val viewMetaR1 = ViewMetaRecord("twitter", "twitter_", TwitterCountyDaySummaryView.SummaryLevel,
                                   new DateTime(0), new DateTime(5000), new DateTime(4000), 0, 1 hours)
   val viewMetaR2 = viewMetaR1.copy(viewKey = "twitter_trump")
