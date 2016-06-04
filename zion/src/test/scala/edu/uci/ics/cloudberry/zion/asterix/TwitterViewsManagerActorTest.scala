@@ -24,7 +24,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
     }
   })
 
-  DateTimeZone.setDefault(DateTimeZone.forOffsetHours(-8))
+  DateTimeZone.setDefault(DateTimeZone.UTC)
   val viewMetaR1 = ViewMetaRecord("twitter", "twitter_", TwitterCountyDaySummaryView.SummaryLevel,
                                   new DateTime(0), new DateTime(5000), new DateTime(4000), 0, 1 hours)
   val viewMetaR2 = viewMetaR1.copy(viewKey = "twitter_trump")
@@ -66,9 +66,9 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
           |    "spatialLevel" : 1,
           |    "timeLevel" : 3
           |  },
-          |  "startTime" : "1969-12-31T16:00:00.000Z",
-          |  "lastVisitTime" : "1969-12-31T16:00:05.000Z",
-          |  "lastUpdateTime" : "1969-12-31T16:00:04.000Z",
+          |  "startTime" : "1970-01-01T00:00:00.000Z",
+          |  "lastVisitTime" : "1970-01-01T00:00:05.000Z",
+          |  "lastUpdateTime" : "1970-01-01T00:00:04.000Z",
           |  "visitTimes" : 0,
           |  "updateCycle" : 3600
           |}, {
@@ -78,9 +78,9 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
           |    "spatialLevel" : 1,
           |    "timeLevel" : 3
           |  },
-          |  "startTime" : "1969-12-31T16:00:00.000Z",
-          |  "lastVisitTime" : "1969-12-31T16:00:05.000Z",
-          |  "lastUpdateTime" : "1969-12-31T16:00:04.000Z",
+          |  "startTime" : "1970-01-01T00:00:00.000Z",
+          |  "lastVisitTime" : "1970-01-01T00:00:05.000Z",
+          |  "lastUpdateTime" : "1970-01-01T00:00:04.000Z",
           |  "visitTimes" : 0,
           |  "updateCycle" : 3600
           |}, {
@@ -90,14 +90,13 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
           |    "spatialLevel" : 1,
           |    "timeLevel" : 3
           |  },
-          |  "startTime" : "1969-12-31T16:00:00.000Z",
-          |  "lastVisitTime" : "1969-12-31T16:00:05.000Z",
-          |  "lastUpdateTime" : "1969-12-31T16:00:04.000Z",
+          |  "startTime" : "1970-01-01T00:00:00.000Z",
+          |  "lastVisitTime" : "1970-01-01T00:00:05.000Z",
+          |  "lastUpdateTime" : "1970-01-01T00:00:04.000Z",
           |  "visitTimes" : 20,
           |  "updateCycle" : 3600
           |} ]
-          |);
-        """.stripMargin.trim)
+          |); """.stripMargin.trim)
     }
 
     "generateSummaryViewAQL" in {
