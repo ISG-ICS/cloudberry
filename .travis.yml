@@ -26,3 +26,7 @@ script:
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
   - find $HOME/.sbt -name "*.lock" -delete
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+
