@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 import akka.actor.{Actor, ActorRef, Props}
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor._
-import edu.uci.ics.cloudberry.zion.model.{DBQuery, SpatialTimeCount}
+import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Duration}
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.SpecificationLike
@@ -19,7 +19,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
 
   sequential
 
-  val queryUpdateTemp: DBQuery = DBQuery(SummaryLevel, Seq.empty)
+  val queryUpdateTemp: DBQuery = new DBQuery(SummaryLevel, Seq.empty)
   val viewRecord = ViewMetaRecord("twitter", "rain", SummaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
   val fViewRecord = Future(viewRecord)
 
@@ -89,15 +89,15 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
 
   "TwitterCountyDaySummaryView#generateAQL" should {
     "as expected" in {
-      val dbQuery = DBQuery(TwitterCountyDaySummaryView.SummaryLevel, Seq(idPredicate, keywordPredicate2, timePredicate2))
+      val dbQuery = new DBQuery(new SummaryLevel(SpatialLevels.State, TimeLevels.Day), Seq(idPredicate, keywordPredicate2, timePredicate2))
       val aql = TwitterCountyDaySummaryView.generateAQL(dbQuery)
       aql.trim must_== ("""use dataverse twitter
                           |let $common := (
                           |for $t in dataset ds_tweet_
                           |
-                          |let $set := [ 1,2,3 ]
+                          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
                           |for $sid in $set
-                          |where $t.countyID = $sid
+                          |where $t.stateID = $sid
                           |
                           |
                           |
@@ -116,7 +116,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |let $map := (
                           |for $t in $common
                           |
-                          |group by $c := $t.countyID with $t
+                          |group by $c := $t.stateID with $t
                           |return { "key": string($c) , "count": sum(for $x in $t return $x.tweetCount) }
                           |
                           |)
@@ -127,9 +127,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |let $common := (
                           |for $t in dataset ds_tweet_
                           |
-                          |let $set := [ 1,2,3 ]
+                          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
                           |for $sid in $set
-                          |where $t.countyID = $sid
+                          |where $t.stateID = $sid
                           |
                           |
                           |
@@ -159,9 +159,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |let $common := (
                           |for $t in dataset ds_tweet_
                           |
-                          |let $set := [ 1,2,3 ]
+                          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
                           |for $sid in $set
-                          |where $t.countyID = $sid
+                          |where $t.stateID = $sid
                           |
                           |
                           |

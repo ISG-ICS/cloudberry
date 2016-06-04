@@ -20,7 +20,7 @@ trait TestData {
   val timePredicate1 = TimePredicate(FieldCreateAt, Seq[Interval](interval1))
   val timePredicate2 = TimePredicate(FieldCreateAt, Seq[Interval](interval1, interval2))
 
-  val idPredicate = IdSetPredicate(FieldStateID, Seq(1, 2, 3))
+  val idPredicate = IdSetPredicate(FieldStateID, 1 to 50 toList)
 
   val keywordPredicate1 = KeywordPredicate(FieldKeyword, Seq("trump"))
 
@@ -34,7 +34,7 @@ trait TestData {
 
   // Create by state, by day request
   val StateDaySummary = SummaryLevel(SpatialLevels.State, TimeLevels.Day)
-  val byStateByDayQuery = DBQuery(StateDaySummary, Seq(timePredicate1, idPredicate))
+  val byStateByDayQuery = new DBQuery(StateDaySummary, Seq(timePredicate1, idPredicate))
   val stateResult = Seq[KeyCountPair](KeyCountPair("1", 1), KeyCountPair("2", 2), KeyCountPair("3", 3))
   val dayResult = Seq[KeyCountPair](KeyCountPair("2012-01-01", 1), KeyCountPair("2012-01-02", 2))
   val hashTagResult = Seq[KeyCountPair](KeyCountPair("youShallPass", 100))
@@ -43,18 +43,18 @@ trait TestData {
 
   // Create by county, by month request
   val CountyMonthSummary = SummaryLevel(SpatialLevels.County, TimeLevels.Month)
-  val byCountyMonthQuery = DBQuery(CountyMonthSummary, Seq(timePredicate1, idPredicate))
+  val byCountyMonthQuery = new DBQuery(CountyMonthSummary, Seq(timePredicate1, idPredicate))
   val monthResult = Seq[KeyCountPair](KeyCountPair("2012-01", 1), KeyCountPair("2012--02", 2))
   val byCountyMonthResult = SpatialTimeCount(stateResult, monthResult, hashTagResult)
   val byCountyMonthResponse = JsArray(Seq(stateResult, monthResult, hashTagResult).map(Json.toJson(_)))
 
   // Create a partially intersected time range db query
   val partialTime = TimePredicate(FieldCreateAt, Seq(new Interval(startTime1, new DateTime())))
-  val partialQuery = DBQuery(StateDaySummary, Seq(partialTime))
+  val partialQuery = new DBQuery(StateDaySummary, Seq(partialTime))
 
   // Create a finner summary level db query
-  val finerQuery = DBQuery(SummaryLevel(SpatialLevels.City, TimeLevels.Second), Seq(timePredicate1))
+  val finerQuery = new DBQuery(SummaryLevel(SpatialLevels.City, TimeLevels.Second), Seq(timePredicate1))
 
   // Create a keyword query
-  val keywordQuery = DBQuery(StateDaySummary, Seq(keywordPredicate1, timePredicate1, idPredicate))
+  val keywordQuery = new DBQuery(StateDaySummary, Seq(keywordPredicate1, timePredicate1, idPredicate))
 }
