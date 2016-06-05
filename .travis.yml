@@ -5,10 +5,10 @@ sudo: false
 language: scala
 
 # These directories are cached to S3 at the end of the build
-#cache:
-#  directories:
-#    - $HOME/.ivy2/cache
-#    - $HOME/.sbt/boot/
+cache:
+  directories:
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
 
 # This is an sbt plugin, so this section is for demo purpose
 scala:
@@ -19,13 +19,13 @@ jdk:
 
 env:
   matrix:
-    - TEST_COMMAND="test"
+    - TEST_COMMAND="clean coverage test"
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M "$TEST_COMMAND"
+  - sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M clean coverage test
   # Tricks to avoid unnecessary cache updates
-  #- find $HOME/.ivy2 -name "ivydata-*.properties" -delete
-  #- find $HOME/.sbt -name "*.lock" -delete
+  - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
+  - find $HOME/.sbt -name "*.lock" -delete
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
