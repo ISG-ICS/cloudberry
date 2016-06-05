@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.zion.model._
-import org.joda.time.{DateTime, Duration, Interval, Weeks}
+import org.joda.time.{Duration, _}
 import play.api.libs.json.{JsArray, JsObject, Json}
 
 import scala.concurrent.ExecutionContext
@@ -9,6 +9,8 @@ import scala.concurrent.duration._
 
 trait TestData {
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+
+  DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime1 = new DateTime(2012, 1, 1, 0, 0)
   val interval1 = new Interval(startTime1, Weeks.weeks(1))
 

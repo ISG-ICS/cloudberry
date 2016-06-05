@@ -24,7 +24,6 @@ class TwitterViewsManagerActorTest extends Specification with Mockito {
     }
   })
 
-  DateTimeZone.setDefault(DateTimeZone.UTC)
   val viewMetaR1 = ViewMetaRecord("twitter", "twitter_", TwitterCountyDaySummaryView.SummaryLevel,
                                   new DateTime(0), new DateTime(5000), new DateTime(4000), 0, 1 hours)
   val viewMetaR2 = viewMetaR1.copy(viewKey = "twitter_trump")
