@@ -8,7 +8,7 @@ language: scala
 cache:
   directories:
     - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
+    #- $HOME/.sbt/boot/
 
 # This is an sbt plugin, so this section is for demo purpose
 scala:
