@@ -58,7 +58,7 @@ class ViewsManagerActorTest extends TestkitExample with SpecificationLike with M
       val sender = new TestProbe(system)
       val viewActor = system.actorOf(Props(new FakeManager(sourceName, sourceProbe.ref)(ec)))
       sender.send(viewActor, FakeManager.getMeta)
-      val actualMsg = sender.receiveOne(500 millis)
+      val actualMsg = sender.receiveOne(1000 millis)
       actualMsg must_== Seq(initViewRecord)
     }
     "use the existed viewActor to answer the query" in {
