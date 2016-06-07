@@ -89,7 +89,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       if (summaryLevel.isFinerThan(query.summaryLevel)) {
         this.query(query).onComplete {
           case Success(response) => thisSender ! response
-          case Failure(exception) => log.error(exception.getMessage)
+          case Failure(exception) => log.error(exception, exception.getMessage)
         }
         lastVisitTime = new DateTime()
         visitTimes += 1
@@ -99,10 +99,11 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
     }
     case UpdateViewMsg => {
       val now = new DateTime()
-      updateView(lastUpdateTime, now) onSuccess {
-        case x =>
+      updateView(lastUpdateTime, now) onComplete {
+        case Success(x) =>
           lastUpdateTime = now
           updateMetaRecord()
+        case Failure(throwable) => log.error(throwable, throwable.getMessage)
       }
     }
   }
