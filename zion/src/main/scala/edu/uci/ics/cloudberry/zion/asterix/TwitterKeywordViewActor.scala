@@ -3,7 +3,8 @@ package edu.uci.ics.cloudberry.zion.asterix
 import akka.actor.{ActorRef, Props}
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model._
-import org.joda.time.Interval
+import org.joda.time.{DateTime, Interval}
+import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,7 +35,14 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
     }
   }
 
-  override def updateView(): Future[Unit] = ???
+  override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
+    val aql = TwitterViewsManagerActor.generateKeywordUpdateAQL(sourceName, key, keyword, from, to)
+    conn.post(aql).map[Unit] { response: WSResponse =>
+      if (response.status != 200) {
+        throw UpdateFailedDBException(response.body)
+      }
+    }
+  }
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
     query match {

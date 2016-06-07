@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
-import edu.uci.ics.cloudberry.zion.model.{DBQuery, DBUpdateQuery, Response}
+import edu.uci.ics.cloudberry.zion.model.{DBQuery, DBSyncQuery, Response}
 import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}

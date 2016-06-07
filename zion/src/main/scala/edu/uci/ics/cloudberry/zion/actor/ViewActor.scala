@@ -37,7 +37,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
 
   def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery
 
-  def updateView(): Future[Unit]
+  def updateView(from: DateTime, to: DateTime): Future[Unit]
 
   def query(query: DBQuery): Future[Response] = {
     val requiredTime = query.predicates.find(_.isInstanceOf[TimePredicate]).map(_.asInstanceOf[TimePredicate].intervals).get
@@ -98,9 +98,10 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       }
     }
     case UpdateViewMsg => {
-      updateView() onSuccess {
+      val now = new DateTime()
+      updateView(lastUpdateTime, now) onSuccess {
         case x =>
-          lastUpdateTime = new DateTime()
+          lastUpdateTime = now
           updateMetaRecord()
       }
     }

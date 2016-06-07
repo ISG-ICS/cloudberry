@@ -85,7 +85,7 @@ public class TwitterFeedStreamDriver {
                 String msg = queue.take();
                 bw.write(msg);
                 try {
-                    String adm = tagTweet.tagOneTweet(msg);
+                    String adm = TagTweet.tagOneTweet(msg);
                     socketAdapterClient.ingest(adm);
                 } catch (UnknownPlaceException e) {
 

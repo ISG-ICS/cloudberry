@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.noah.adm.{UnknownPlaceException, Tweet}
 import edu.uci.ics.cloudberry.util.Profile._
 import twitter4j.{TwitterException, TwitterObjectFactory}
 
-object tagTweet {
+object TagTweet {
   var shapeMap = Seq( StateLevel -> "neo/public/data/state.json",
     CountyLevel -> "neo/public/data/county.json",
     CityLevel -> "neo/public/data/city.json").toMap
