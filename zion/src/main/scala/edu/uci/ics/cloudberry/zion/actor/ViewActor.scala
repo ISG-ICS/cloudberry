@@ -37,7 +37,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
 
   def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery
 
-  def updateView(): Future[Unit]
+  def updateView(from: DateTime, to: DateTime): Future[Unit]
 
   def query(query: DBQuery): Future[Response] = {
     val requiredTime = query.predicates.find(_.isInstanceOf[TimePredicate]).map(_.asInstanceOf[TimePredicate].intervals).get
@@ -89,7 +89,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       if (summaryLevel.isFinerThan(query.summaryLevel)) {
         this.query(query).onComplete {
           case Success(response) => thisSender ! response
-          case Failure(exception) => log.error(exception.getMessage)
+          case Failure(exception) => log.error(exception, exception.getMessage)
         }
         lastVisitTime = new DateTime()
         visitTimes += 1
@@ -98,10 +98,12 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       }
     }
     case UpdateViewMsg => {
-      updateView() onSuccess {
-        case x =>
-          lastUpdateTime = new DateTime()
+      val now = DateTime.now
+      updateView(lastUpdateTime, now) onComplete {
+        case Success(x) =>
+          lastUpdateTime = now
           updateMetaRecord()
+        case Failure(throwable) => log.error(throwable, throwable.getMessage)
       }
     }
   }

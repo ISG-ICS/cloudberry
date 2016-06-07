@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.zion.actor
 
+import java.lang.Throwable
+
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import edu.uci.ics.cloudberry.zion.actor.ViewActor.DoneInitializing
 import edu.uci.ics.cloudberry.zion.model._
@@ -59,10 +61,11 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
       context.child(key).getOrElse {
         val viewRecord = viewMeta.get(key)
         val fView = if (viewRecord.isEmpty) {
-          createViewStore(query).map(vr => {
-            self ! vr // update self store
-            vr
-          })
+          val fStore = createViewStore(query)
+          fStore.onFailure{
+            case e => log.error(e, e.getMessage)
+          }
+          fStore.map { vr => self ! vr; vr }
         } else {
           Future(viewRecord.get)
         }

@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
 import edu.uci.ics.cloudberry.zion.model._
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.{JsArray, Json}
 import play.api.libs.ws.WSResponse
@@ -22,8 +23,6 @@ class TwitterDataStoreActor(conn: AsterixConnection)(implicit ec: ExecutionConte
         conn.post(generateAQL(name, q)).map(handleAllInOneWSResponse)
     }
   }
-
-  override def update(query: DBUpdateQuery): Future[Response] = ???
 }
 
 object TwitterDataStoreActor {

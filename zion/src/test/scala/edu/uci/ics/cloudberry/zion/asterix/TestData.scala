@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
+import edu.uci.ics.cloudberry.zion.actor.ViewMetaRecord
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{Duration, _}
 import play.api.libs.json.{JsArray, JsObject, Json}
@@ -59,4 +60,11 @@ trait TestData {
 
   // Create a keyword query
   val keywordQuery = new DBQuery(StateDaySummary, Seq(keywordPredicate1, timePredicate1, idPredicate))
+
+  val viewMetaR1 = ViewMetaRecord("twitter", "twitter_", TwitterCountyDaySummaryView.SummaryLevel,
+                                  new DateTime(0), new DateTime(5000), new DateTime(4000), 0, 1 hours)
+  val viewMetaR2 = viewMetaR1.copy(viewKey = "twitter_trump")
+  val viewMetaR3 = viewMetaR1.copy(viewKey = "twitter_rain", visitTimes = 20)
+  val testRecords = Seq[ViewMetaRecord](viewMetaR1, viewMetaR2, viewMetaR3)
+
 }

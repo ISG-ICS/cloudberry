@@ -3,8 +3,9 @@ package edu.uci.ics.cloudberry.zion.asterix
 import akka.actor.ActorRef
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model._
-import org.joda.time.Interval
+import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json
+import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -28,7 +29,14 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
     new DBQuery(initQuery.summaryLevel, Seq(newTimes))
   }
 
-  override def updateView(): Future[Unit] = Future() //TODO
+  override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
+    val aql = TwitterViewsManagerActor.generateSummaryUpdateAQL(sourceName, key, summaryLevel, from, to)
+    conn.post(aql).map[Unit] { response: WSResponse =>
+      if (response.status != 200) {
+        throw UpdateFailedDBException(response.body)
+      }
+    }
+  }
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
     conn.post(generateAQL(query)).map(TwitterDataStoreActor.handleAllInOneWSResponse)

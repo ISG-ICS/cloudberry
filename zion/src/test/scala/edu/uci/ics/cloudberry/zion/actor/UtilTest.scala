@@ -9,7 +9,7 @@ import scala.concurrent.duration._
 class UtilTest extends Specification with TestData {
 
   "A future" should {
-    "be registered to multiple callback functions is using map" in {
+    "be registered to multiple callback functions if using map" in {
       val fint = Future {
         Thread.sleep(100)
         200
@@ -20,7 +20,7 @@ class UtilTest extends Specification with TestData {
         v
       }
 
-      Await.result(fMapped, 150 millisecond) must_== 200
+      Await.result(fMapped, 300 millisecond) must_== 200
       v1 must_==(500)
     }
   }

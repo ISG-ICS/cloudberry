@@ -40,6 +40,6 @@ class DBQuery(val summaryLevel: SummaryLevel, val predicates: Seq[Predicate]) ex
 case class SampleQuery(override val predicates: Seq[Predicate], offset: Int, limit: Int)
   extends DBQuery(SummaryLevel.Detail, predicates)
 
-class DBUpdateQuery()
+class DBSyncQuery()
 
 
