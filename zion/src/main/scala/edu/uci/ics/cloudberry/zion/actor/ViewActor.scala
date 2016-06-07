@@ -98,7 +98,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
       }
     }
     case UpdateViewMsg => {
-      val now = new DateTime()
+      val now = DateTime.now
       updateView(lastUpdateTime, now) onComplete {
         case Success(x) =>
           lastUpdateTime = now

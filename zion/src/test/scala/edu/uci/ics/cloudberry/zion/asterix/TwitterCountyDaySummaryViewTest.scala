@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor._
 import edu.uci.ics.cloudberry.zion.model._
-import org.joda.time.{DateTime, Duration}
+import org.joda.time.{DateTime, Duration, Period}
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json.{JsArray, JsObject, JsValue}
@@ -67,23 +67,23 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       val actualMessage = probeSender.receiveOne(500 millis)
       actualMessage must_== byCountyMonthResult
     }
-    "return the view record to parent when receive the update msg" in {
-      val conn: AsterixConnection = null // it shall not be touched
-      val proxy = new TestProbe(system)
-      val parent = system.actorOf(Props(new Actor {
-        val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+    "update the views if receives the update msg" in {
+      withAsterixBugConn(byStateByDayResponse) { conn =>
+        val proxy = new TestProbe(system)
+        val parent = system.actorOf(Props(new Actor {
+          val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
+                                                conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
 
-        def receive = {
-          case x if sender == viewActor => proxy.ref forward x
-          case x => viewActor forward x
-        }
-      }))
-      proxy.send(parent, ViewActor.UpdateViewMsg)
-      val actualMsg = proxy.receiveOne(100 millis).asInstanceOf[ViewMetaRecord]
-      // except the updateTime everything should be equal
-      val unifyTime = new DateTime()
-      actualMsg.copy(lastUpdateTime = unifyTime) must_== (viewRecord.copy(lastUpdateTime = unifyTime))
+          def receive = {
+            case x if sender == viewActor => proxy.ref forward x
+            case x => viewActor forward x
+          }
+        }))
+
+        proxy.send(parent, ViewActor.UpdateViewMsg)
+        val newViewRecord = proxy.receiveOne(200 millis).asInstanceOf[ViewMetaRecord]
+        new Period(newViewRecord.lastUpdateTime.getMillis, DateTime.now.getMillis).getMillis must be_<(300)
+      }
     }
   }
 
@@ -189,7 +189,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
                           |
                           |)
                           |return $hashtag
-                          |""".stripMargin.trim)
+                          | """.stripMargin.trim)
     }
 
   }
