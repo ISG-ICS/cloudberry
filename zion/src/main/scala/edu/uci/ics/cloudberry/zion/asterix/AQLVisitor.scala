@@ -33,7 +33,7 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
         def formatInterval(interval: Interval): String = {
           s"""
              |($$$variable."${p.fieldName}">= datetime("${TimeFormat.print(interval.getStart)}")
-             |and $$$variable."${p.fieldName}" < datetime("${TimeFormat.print(interval.getEnd)}"))
+             |and $$$variable."${p.fieldName}" <= datetime("${TimeFormat.print(interval.getEnd)}"))
              |""".stripMargin
         }
         s"""
