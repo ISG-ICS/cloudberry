@@ -17,7 +17,7 @@ class AQLVisitorTest extends Specification with TestData {
            |where
            |
            |($$t."create_at">= datetime("2012-01-01T00:00:00.000Z")
-           |and $$t."create_at" < datetime("2012-01-08T00:00:00.000Z"))
+           |and $$t."create_at" <= datetime("2012-01-08T00:00:00.000Z"))
            |""".stripMargin.trim())
     }
     "visit two time predicate" in {
@@ -27,10 +27,10 @@ class AQLVisitorTest extends Specification with TestData {
           |where
           |
           |($t."create_at">= datetime("2012-01-01T00:00:00.000Z")
-          |and $t."create_at" < datetime("2012-01-08T00:00:00.000Z"))
+          |and $t."create_at" <= datetime("2012-01-08T00:00:00.000Z"))
           |or
           |($t."create_at">= datetime("2016-01-01T00:00:00.000Z")
-          |and $t."create_at" < datetime("2016-01-15T00:00:00.000Z"))
+          |and $t."create_at" <= datetime("2016-01-15T00:00:00.000Z"))
           |""".stripMargin.trim)
     }
     "visit id list predicate" in {
