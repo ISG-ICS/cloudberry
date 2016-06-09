@@ -78,36 +78,42 @@ public class TwitterFeedStreamDriver {
 
         // Establish a connection
         try {
-            twitterClient.connect();
+           twitterClient.connect();
             isConnected = true;
+            int count = 0;
             // Do whatever needs to be done with messages
-            while (true) {
+            while (!twitterClient.isDone() && count < 15) {
                 String msg = queue.take();
                 bw.write(msg);
-                try {
-                    String adm = TagTweet.tagOneTweet(msg);
-                    socketAdapterClient.ingest(adm);
-                } catch (UnknownPlaceException e) {
+                count++;
+                //if is not to store in file only, geo tag and send to database
+                if (!config.getIsFileOnly()) {
+                    try {
+                         String adm = TagTweet.tagOneTweet(msg);
+                         socketAdapterClient.ingest(adm);
+                    } catch (UnknownPlaceException e) {
 
-                } catch(TwitterException e) {
-
+                    } catch (TwitterException e) {
+                    }
                 }
             }
         } finally {
-            bw.close();
-            twitterClient.stop();
+           bw.close();
+           twitterClient.stop();
         }
     }
 
     public void openSocket(Config config) throws IOException{
-        String adapterUrl = config.getAdapterUrl();
-        int port = config.getPort();
-        int batchSize = config.getBatchSize();
-        int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
-        int maxCount = config.getMaxCount();
-        socketAdapterClient = new StreamFeedSocketAdapterClient(adapterUrl, port,
-                batchSize, waitMillSecPerRecord, maxCount);
-        socketAdapterClient.initialize();
+        if (!config.getIsFileOnly()) {
+            String adapterUrl = config.getAdapterUrl();
+            int port = config.getPort();
+            int batchSize = config.getBatchSize();
+            int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
+            int maxCount = config.getMaxCount();
+            socketAdapterClient = new StreamFeedSocketAdapterClient(adapterUrl, port,
+                    batchSize, waitMillSecPerRecord, maxCount);
+            socketAdapterClient.initialize();
+        }
     }
 
     public static void main(String[] args) throws IOException{
@@ -136,7 +142,9 @@ public class TwitterFeedStreamDriver {
         } catch (InterruptedException e) {
             System.err.println(e);
         } finally {
-            feedDriver.socketAdapterClient.finalize();
+            if(feedDriver.socketAdapterClient != null){
+                feedDriver.socketAdapterClient.finalize();
+            }
         }
     }
 }
