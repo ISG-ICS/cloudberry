@@ -72,25 +72,27 @@ public class TwitterFeedStreamDriver {
 
         String fileName = "Tweet_" + strDate + ".gz";
         GZIPOutputStream zip = new GZIPOutputStream(
-                    new FileOutputStream(new File(fileName)));
+                new FileOutputStream(new File(fileName)));
         BufferedWriter bw = new BufferedWriter(
-                    new OutputStreamWriter(zip, "UTF-8"));
+                new OutputStreamWriter(zip, "UTF-8"));
 
         // Establish a connection
         try {
             twitterClient.connect();
             isConnected = true;
             // Do whatever needs to be done with messages
-            while (true) {
+            while (!twitterClient.isDone()) {
                 String msg = queue.take();
                 bw.write(msg);
-                try {
-                    String adm = TagTweet.tagOneTweet(msg);
-                    socketAdapterClient.ingest(adm);
-                } catch (UnknownPlaceException e) {
+                //if is not to store in file only, geo tag and send to database
+                if (!config.getIsFileOnly()) {
+                    try {
+                        String adm = TagTweet.tagOneTweet(msg);
+                        socketAdapterClient.ingest(adm);
+                    } catch (UnknownPlaceException e) {
 
-                } catch(TwitterException e) {
-
+                    } catch (TwitterException e) {
+                    }
                 }
             }
         } finally {
@@ -99,18 +101,20 @@ public class TwitterFeedStreamDriver {
         }
     }
 
-    public void openSocket(Config config) throws IOException{
-        String adapterUrl = config.getAdapterUrl();
-        int port = config.getPort();
-        int batchSize = config.getBatchSize();
-        int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
-        int maxCount = config.getMaxCount();
-        socketAdapterClient = new StreamFeedSocketAdapterClient(adapterUrl, port,
-                batchSize, waitMillSecPerRecord, maxCount);
-        socketAdapterClient.initialize();
+    public void openSocket(Config config) throws IOException {
+        if (!config.getIsFileOnly()) {
+            String adapterUrl = config.getAdapterUrl();
+            int port = config.getPort();
+            int batchSize = config.getBatchSize();
+            int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
+            int maxCount = config.getMaxCount();
+            socketAdapterClient = new StreamFeedSocketAdapterClient(adapterUrl, port,
+                    batchSize, waitMillSecPerRecord, maxCount);
+            socketAdapterClient.initialize();
+        }
     }
 
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws IOException {
         TwitterFeedStreamDriver feedDriver = new TwitterFeedStreamDriver();
         try {
             Config config = new Config();
@@ -136,7 +140,9 @@ public class TwitterFeedStreamDriver {
         } catch (InterruptedException e) {
             System.err.println(e);
         } finally {
-            feedDriver.socketAdapterClient.finalize();
+            if (feedDriver.socketAdapterClient != null) {
+                feedDriver.socketAdapterClient.finalize();
+            }
         }
     }
 }

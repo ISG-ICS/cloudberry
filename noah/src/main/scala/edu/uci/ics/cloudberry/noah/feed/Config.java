@@ -45,6 +45,9 @@ public class Config {
     @Option(name = "-c", aliases = "--count", usage = "maximum number to feed, default unlimited")
     private int maxCount = Integer.MAX_VALUE;
 
+    @Option(name = "-fo", aliases = "--fileonly", usage = "only store in a file, do not geotag nor ingest")
+    private boolean isFileOnly = true;
+
 
     public String getConsumerKey() {
         return consumerKey;
@@ -79,6 +82,8 @@ public class Config {
     public int getBatchSize() { return batchSize; }
 
     public int getMaxCount() { return maxCount; }
+
+    public boolean getIsFileOnly() { return isFileOnly; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 
