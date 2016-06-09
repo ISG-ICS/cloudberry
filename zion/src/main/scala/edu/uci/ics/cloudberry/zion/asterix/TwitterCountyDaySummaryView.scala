@@ -2,17 +2,20 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import akka.actor.ActorRef
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json
 import play.api.libs.ws.WSResponse
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class TwitterCountyDaySummaryView(val conn: AsterixConnection,
                                   val queryTemplate: DBQuery,
                                   override val sourceActor: ActorRef,
-                                  fViewStore: Future[ViewMetaRecord]
+                                  fViewStore: Future[ViewMetaRecord],
+                                  config: Config
                                  )(implicit ec: ExecutionContext) extends ViewActor(sourceActor, fViewStore) {
 
   import TwitterCountyDaySummaryView._
@@ -42,6 +45,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
     conn.post(generateAQL(query)).map(TwitterDataStoreActor.handleAllInOneWSResponse)
   }
 
+  override def updateInterval: FiniteDuration = config.ViewUpdateInterval
 }
 
 

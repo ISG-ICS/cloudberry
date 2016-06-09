@@ -16,8 +16,6 @@ import scala.concurrent.duration._
   */
 class UserActor(val out: ActorRef, val cachesActor: ActorRef, val usGeoGnosis: USGeoGnosis) extends Actor with ActorLogging {
 
-  implicit val timeout = Timeout(5.seconds)
-
   def receive() = LoggingReceive {
     case json: JsValue => {
       val setQuery = parseQuery(json)

@@ -1,16 +1,14 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import java.lang.Throwable
-
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Stash}
 import edu.uci.ics.cloudberry.zion.actor.ViewActor.DoneInitializing
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.DateTime
 import play.api.libs.json._
 
 import scala.collection.mutable
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 

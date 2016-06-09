@@ -1,7 +1,8 @@
 package edu.uci.ics.cloudberry.zion.actor
 
 import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
-import play.api.Play
+import edu.uci.ics.cloudberry.zion.common.Config
+import play.api.{Configuration, Play}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
 import play.api.test.WsTestClient
@@ -36,10 +37,12 @@ object TestUtil {
     }
   }
 
-
 }
 
 trait MockConnClient extends Mockito {
+  val mockPlayConfig = mock[Configuration]
+  mockPlayConfig.getString(anyString, any) returns None
+  val cloudberryConfig = new Config(mockPlayConfig)
 
   def withLightWeightConn[T](expectedResponse: JsValue)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
     val mockConn = mock[AsterixConnection]

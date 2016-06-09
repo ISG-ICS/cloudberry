@@ -32,7 +32,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
 
       withAsterixBugConn(wsResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                                             conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+                                             conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, dbQuery)
         val actualMessage = probeSender.receiveOne(500 millis)
         probeSource.expectNoMsg()
@@ -49,7 +49,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
     "split the query to ask the source if can not answer by view only" in {
       withAsterixBugConn(byStateByDayResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                                             conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+                                             conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, partialQuery)
         probeSource.expectMsgClass(classOf[DBQuery])
         probeSource.reply(byCountyMonthResult)
@@ -60,7 +60,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
     "ask the source directly if the summary level does not fit" in {
       val conn: AsterixConnection = null // it shall not be touched
       val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                                           conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+                                           conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
       probeSender.send(viewActor, finerQuery)
       probeSource.expectMsgClass(classOf[DBQuery])
       probeSource.reply(byCountyMonthResult)
@@ -72,7 +72,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
         val proxy = new TestProbe(system)
         val parent = system.actorOf(Props(new Actor {
           val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                                                conn, queryUpdateTemp, probeSource.ref, fViewRecord, ec))
+                                                conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
 
           def receive = {
             case x if sender == viewActor => proxy.ref forward x
