@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import akka.actor.{Actor, ActorRef, Props}
 import edu.uci.ics.cloudberry.zion.actor.{ViewMetaRecord, ViewsManagerActor}
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -10,7 +11,7 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceActor: ActorRef
+class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceActor: ActorRef, config: Config
                               )(implicit ec: ExecutionContext) extends ViewsManagerActor(TwitterDataStoreActor.Name, sourceActor) {
 
   import TwitterViewsManagerActor._
@@ -20,17 +21,17 @@ class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceA
     sourceName + "_" + keyword
   }
 
-  override def flushInterval: FiniteDuration = 1 hours
+  override def flushInterval: FiniteDuration = config.ViewMetaFlushInterval
 
   override def createViewActor(key: String, query: DBQuery, fView: Future[ViewMetaRecord]): ActorRef = {
     query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate]) match {
       case Some(x) =>
-        context.actorOf(Props(classOf[TwitterKeywordViewActor],
-                              conn, keywordViewTemplate(x.keywords.head), x.keywords.head, sourceActor, fView, ec),
+        context.actorOf(Props(classOf[TwitterKeywordViewActor], conn, keywordViewTemplate(x.keywords.head),
+                              x.keywords.head, sourceActor, fView, config, ec),
                         key)
       case None =>
-        context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
-                              conn, summaryViewTemplate(TwitterCountyDaySummaryView.SummaryLevel), sourceActor, fView, ec),
+        context.actorOf(Props(classOf[TwitterCountyDaySummaryView], conn,
+                              summaryViewTemplate(TwitterCountyDaySummaryView.SummaryLevel), sourceActor, fView, config, ec),
                         key)
     }
   }

@@ -2,17 +2,21 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import akka.actor.{ActorRef, Props}
 import edu.uci.ics.cloudberry.zion.actor.{ViewActor, ViewMetaRecord}
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.ws.WSResponse
 
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class TwitterKeywordViewActor(val conn: AsterixConnection,
                               val queryTemplate: DBQuery,
                               val keyword: String,
                               override val sourceActor: ActorRef,
-                              fViewStore: Future[ViewMetaRecord])(implicit ec: ExecutionContext)
+                              fViewStore: Future[ViewMetaRecord],
+                              config: Config
+                             )(implicit ec: ExecutionContext)
   extends ViewActor(sourceActor, fViewStore) {
 
   import TwitterDataStoreActor._
@@ -53,6 +57,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
     }
   }
 
+  override def updateInterval: FiniteDuration = config.ViewUpdateInterval
 }
 
 object TwitterKeywordViewActor {
