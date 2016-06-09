@@ -17,7 +17,7 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
 
   def queryTemplate: DBQuery
 
-  def updateInterval = 30 minutes
+  def updateInterval: FiniteDuration
 
   var key: String = null
   var sourceName: String = null

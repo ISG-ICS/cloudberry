@@ -24,10 +24,10 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                           |where
                           |
                           |($t."create_at">= datetime("2012-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2012-01-08T00:00:00.000Z"))
+                          |and $t."create_at" <= datetime("2012-01-08T00:00:00.000Z"))
                           |or
                           |($t."create_at">= datetime("2016-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2016-01-15T00:00:00.000Z"))
+                          |and $t."create_at" <= datetime("2016-01-15T00:00:00.000Z"))
                           |
                           |
                           |return $t
@@ -57,10 +57,10 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                           |where
                           |
                           |($t."create_at">= datetime("2012-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2012-01-08T00:00:00.000Z"))
+                          |and $t."create_at" <= datetime("2012-01-08T00:00:00.000Z"))
                           |or
                           |($t."create_at">= datetime("2016-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2016-01-15T00:00:00.000Z"))
+                          |and $t."create_at" <= datetime("2016-01-15T00:00:00.000Z"))
                           |
                           |
                           |return $t
@@ -91,10 +91,10 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                           |where
                           |
                           |($t."create_at">= datetime("2012-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2012-01-08T00:00:00.000Z"))
+                          |and $t."create_at" <= datetime("2012-01-08T00:00:00.000Z"))
                           |or
                           |($t."create_at">= datetime("2016-01-01T00:00:00.000Z")
-                          |and $t."create_at" < datetime("2016-01-15T00:00:00.000Z"))
+                          |and $t."create_at" <= datetime("2016-01-15T00:00:00.000Z"))
                           |
                           |
                           |return $t

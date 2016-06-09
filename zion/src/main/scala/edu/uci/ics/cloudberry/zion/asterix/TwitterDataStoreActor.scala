@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.DateTime
 import play.api.Logger
@@ -9,7 +10,7 @@ import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TwitterDataStoreActor(conn: AsterixConnection)(implicit ec: ExecutionContext)
+class TwitterDataStoreActor(conn: AsterixConnection, config: Config)(implicit ec: ExecutionContext)
   extends DataStoreActor(TwitterDataStoreActor.Name) {
 
   import TwitterDataStoreActor._

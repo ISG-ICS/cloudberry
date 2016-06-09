@@ -5,6 +5,7 @@ import akka.util.Timeout
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis.USGeoTagInfo
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.zion.asterix.TwitterDataStoreActor
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
 import models.QueryResult
 import org.joda.time.{DateTime, Interval}
@@ -17,11 +18,12 @@ import scala.util.{Failure, Success}
 /**
   * There is one cache per keyword
   */
-class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
+class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config: Config)
                 (val dataSet: String, val keyword: Option[String])
   extends Actor with ActorLogging {
 
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
+  implicit val timeout: Timeout = Timeout(config.CacheTimeOut)
 
   def receive = {
     case q: CacheQuery if q.entities.size > 0 =>
@@ -46,7 +48,6 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
   def mergeAnswerFromView(setQuery: CacheQuery, cachedAnswer: QueryResult, sender: ActorRef) = {
 
     import akka.pattern.ask
-    import CacheActor.timeout
 
     //TODO make a common package to unify the level spread in Gnosis and the Zion
     val spatialLevel = setQuery.level match {
@@ -100,10 +101,6 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis)
   }
 }
 
-object CacheActor {
-  implicit val timeout: Timeout = Timeout(10 minutes)
-}
-
 // only one keyword considered so far
 case class CacheQuery(dataSet: String,
                       keyword: Option[String],
@@ -118,12 +115,12 @@ case class CacheQuery(dataSet: String,
     s"level:$level,entities:${entities.map(e => USGeoTagInfo.apply(e.asInstanceOf[IUSGeoJSONEntity]))}"
 }
 
-class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis) extends Actor with ActorLogging {
+class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config: Config) extends Actor with ActorLogging {
   def receive = {
     case q: CacheQuery => {
       log.info("Caches:" + self + " get query from : " + sender())
       context.child(q.key).getOrElse {
-        context.actorOf(Props(new CacheActor(viewsActor, usGeoGnosis)(q.dataSet, q.keyword)), q.key)
+        context.actorOf(Props(new CacheActor(viewsActor, usGeoGnosis, config)(q.dataSet, q.keyword)), q.key)
       } forward q
     }
     case other =>
