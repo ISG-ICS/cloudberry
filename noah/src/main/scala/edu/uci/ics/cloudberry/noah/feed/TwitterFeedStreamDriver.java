@@ -80,12 +80,10 @@ public class TwitterFeedStreamDriver {
         try {
            twitterClient.connect();
             isConnected = true;
-            int count = 0;
             // Do whatever needs to be done with messages
-            while (!twitterClient.isDone() && count < 15) {
+            while (!twitterClient.isDone()) {
                 String msg = queue.take();
                 bw.write(msg);
-                count++;
                 //if is not to store in file only, geo tag and send to database
                 if (!config.getIsFileOnly()) {
                     try {
