@@ -72,13 +72,13 @@ public class TwitterFeedStreamDriver {
 
         String fileName = "Tweet_" + strDate + ".gz";
         GZIPOutputStream zip = new GZIPOutputStream(
-                    new FileOutputStream(new File(fileName)));
+                new FileOutputStream(new File(fileName)));
         BufferedWriter bw = new BufferedWriter(
-                    new OutputStreamWriter(zip, "UTF-8"));
+                new OutputStreamWriter(zip, "UTF-8"));
 
         // Establish a connection
         try {
-           twitterClient.connect();
+            twitterClient.connect();
             isConnected = true;
             // Do whatever needs to be done with messages
             while (!twitterClient.isDone()) {
@@ -87,8 +87,8 @@ public class TwitterFeedStreamDriver {
                 //if is not to store in file only, geo tag and send to database
                 if (!config.getIsFileOnly()) {
                     try {
-                         String adm = TagTweet.tagOneTweet(msg);
-                         socketAdapterClient.ingest(adm);
+                        String adm = TagTweet.tagOneTweet(msg);
+                        socketAdapterClient.ingest(adm);
                     } catch (UnknownPlaceException e) {
 
                     } catch (TwitterException e) {
@@ -96,12 +96,12 @@ public class TwitterFeedStreamDriver {
                 }
             }
         } finally {
-           bw.close();
-           twitterClient.stop();
+            bw.close();
+            twitterClient.stop();
         }
     }
 
-    public void openSocket(Config config) throws IOException{
+    public void openSocket(Config config) throws IOException {
         if (!config.getIsFileOnly()) {
             String adapterUrl = config.getAdapterUrl();
             int port = config.getPort();
@@ -114,7 +114,7 @@ public class TwitterFeedStreamDriver {
         }
     }
 
-    public static void main(String[] args) throws IOException{
+    public static void main(String[] args) throws IOException {
         TwitterFeedStreamDriver feedDriver = new TwitterFeedStreamDriver();
         try {
             Config config = new Config();
@@ -140,7 +140,7 @@ public class TwitterFeedStreamDriver {
         } catch (InterruptedException e) {
             System.err.println(e);
         } finally {
-            if(feedDriver.socketAdapterClient != null){
+            if (feedDriver.socketAdapterClient != null) {
                 feedDriver.socketAdapterClient.finalize();
             }
         }
