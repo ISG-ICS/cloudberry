@@ -5,10 +5,7 @@ import play.api.Configuration
 import scala.concurrent.duration._
 
 class Config(config: Configuration) {
-  def parseTimePair(timeString: String) = {
-    val split = timeString.split("\\s+")
-    FiniteDuration(split(0).toLong, split(1))
-  }
+  import Config._
 
   val AsterixURL = config.getString("asterixdb.url").getOrElse("testing")
 
@@ -23,4 +20,11 @@ class Config(config: Configuration) {
   val ViewUpdateInterval = config.getString("view.update.interval").map(parseTimePair).getOrElse(30 minutes)
 
   val ViewMetaFlushInterval = config.getString("view.meta.flush.interval").map(parseTimePair).getOrElse(30 minutes)
+}
+
+object Config{
+  def parseTimePair(timeString: String) = {
+    val split = timeString.split("\\s+")
+    FiniteDuration(split(0).toLong, split(1))
+  }
 }
