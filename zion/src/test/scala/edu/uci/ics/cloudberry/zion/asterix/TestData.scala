@@ -66,5 +66,4 @@ trait TestData {
   val viewMetaR2 = viewMetaR1.copy(viewKey = "twitter_trump")
   val viewMetaR3 = viewMetaR1.copy(viewKey = "twitter_rain", visitTimes = 20)
   val testRecords = Seq[ViewMetaRecord](viewMetaR1, viewMetaR2, viewMetaR3)
-
 }
