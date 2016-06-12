@@ -1,14 +1,11 @@
-package edu.uci.ics.cloudberry.noah.feed.fileFeed;
+package edu.uci.ics.cloudberry.noah.feed;
 
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 
 public class FileFeedDriver {
 
@@ -48,6 +45,8 @@ public class FileFeedDriver {
 
     private void doMain(String[] args) {
         CmdLineParser parser = new CmdLineParser(this);
+        FeedSocketAdapterClient client = null;
+        BufferedReader br = null;
 
         try {
             parser.parseArgument(args);
@@ -62,13 +61,15 @@ public class FileFeedDriver {
                 reader = new FileReader(sourceFilePath);
             }
 
-            FileFeedSocketAdapterClient client = new FileFeedSocketAdapterClient(adapterUrl, port, reader,
+            client = new FeedSocketAdapterClient(adapterUrl, port,
                     batchSize, waitMillSecPerRecord, maxCount);
-            try {
-                client.initialize();
-                client.ingest();
-            } finally {
-                client.finalize();
+            client.initialize();
+
+            br = new BufferedReader(reader);
+            String nextRecord;
+            while ((nextRecord = br.readLine()) != null) {
+                System.out.println(nextRecord);
+                client.ingest(nextRecord);
             }
         } catch (CmdLineException e) {
             System.err.println(e.getMessage());
@@ -80,6 +81,13 @@ public class FileFeedDriver {
             parser.printUsage(System.err);
         } catch(IOException e) {
             System.err.println(e.getMessage());
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            client.finalize();
         }
     }
 }
