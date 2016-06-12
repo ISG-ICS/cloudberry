@@ -46,7 +46,7 @@ public class Config {
     private int maxCount = Integer.MAX_VALUE;
 
     @Option(name = "-fo", aliases = "--fileonly", usage = "only store in a file, do not geotag nor ingest")
-    private boolean isFileOnly = true;
+    private boolean isFileOnly = false;
 
 
     public String getConsumerKey() {

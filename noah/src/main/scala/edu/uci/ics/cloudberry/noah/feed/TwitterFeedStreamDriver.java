@@ -26,7 +26,7 @@ public class TwitterFeedStreamDriver {
     Client twitterClient;
     volatile boolean isConnected = false;
 
-    StreamFeedSocketAdapterClient socketAdapterClient;
+    FeedSocketAdapterClient socketAdapterClient;
 
     public void run(Config config)
             throws InterruptedException, IOException {
@@ -108,7 +108,7 @@ public class TwitterFeedStreamDriver {
             int batchSize = config.getBatchSize();
             int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
             int maxCount = config.getMaxCount();
-            socketAdapterClient = new StreamFeedSocketAdapterClient(adapterUrl, port,
+            socketAdapterClient = new FeedSocketAdapterClient(adapterUrl, port,
                     batchSize, waitMillSecPerRecord, maxCount);
             socketAdapterClient.initialize();
         }
