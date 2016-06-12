@@ -17,7 +17,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
                               fViewStore: Future[ViewMetaRecord],
                               config: Config
                              )(implicit ec: ExecutionContext)
-  extends ViewActor(sourceActor, fViewStore) {
+  extends ViewActor(sourceActor, fViewStore, config) {
 
   import TwitterDataStoreActor._
 
