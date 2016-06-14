@@ -15,11 +15,8 @@ import play.api.libs.json.{Format, Json}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
-/**
-  * There is one cache per keyword
-  */
 class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config: Config)
-                (val dataSet: String, val keyword: Option[String])
+                (val dataSet: String)
   extends Actor with ActorLogging {
 
   var timeRange: Interval = new Interval(new DateTime(2012, 1, 1, 0, 0).getMillis, DateTime.now().getMillis)
@@ -63,13 +60,13 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config:
       TimePredicate(TwitterDataStoreActor.FieldCreateAt, Seq(setQuery.timeRange))
     )
     val (dbQuery, sampleQuery) =
-      if (keyword.isDefined) {
-        val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, Seq(keyword.get))
-        (new DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), keywordPredicate +: predicates),
-          new SampleQuery(keywordPredicate +: predicates, setQuery.offset, setQuery.limit))
-      } else {
+      if (setQuery.keywords.isEmpty) {
         (new DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), predicates),
           new SampleQuery(predicates, setQuery.offset, setQuery.limit))
+      } else{
+        val keywordPredicate = KeywordPredicate(TwitterDataStoreActor.FieldKeyword, setQuery.keywords)
+        (new DBQuery(SummaryLevel(spatialLevel, TimeLevels.Day), keywordPredicate +: predicates),
+          new SampleQuery(keywordPredicate +: predicates, setQuery.offset, setQuery.limit))
       }
 
     (viewsActor ? dbQuery).mapTo[SpatialTimeCount] onComplete {
@@ -103,15 +100,19 @@ class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config:
 
 // only one keyword considered so far
 case class CacheQuery(dataSet: String,
-                      keyword: Option[String],
+                      keywords: Seq[String],
                       timeRange: Interval,
                       level: TypeLevel,
                       entities: Seq[IEntity],
                       offset: Int = 0,
                       limit: Int = 10,
                       repeatDuration: Duration = 0.seconds) {
-  val key = dataSet + '_' + keyword.getOrElse("")
-  override val toString = s"dataset:${dataSet},keyword:$keyword,timeRange:$timeRange," +
+  // TODO use the selectivity as a better estimation
+  val longestKeyword = keywords.foldLeft((0, ""))((lengthPair, keyword) =>
+                                                if (lengthPair._1 < keyword.length) (keyword.length, keyword)
+                                                else lengthPair)
+  val key = dataSet + '_' + longestKeyword
+  override val toString = s"dataset:${dataSet},keyword:$keywords,timeRange:$timeRange," +
     s"level:$level,entities:${entities.map(e => USGeoTagInfo.apply(e.asInstanceOf[IUSGeoJSONEntity]))}"
 }
 
@@ -120,7 +121,7 @@ class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config
     case q: CacheQuery => {
       log.info("Caches:" + self + " get query from : " + sender())
       context.child(q.key).getOrElse {
-        context.actorOf(Props(new CacheActor(viewsActor, usGeoGnosis, config)(q.dataSet, q.keyword)), q.key)
+        context.actorOf(Props(new CacheActor(viewsActor, usGeoGnosis, config)(q.dataSet)), q.key)
       } forward q
     }
     case other =>

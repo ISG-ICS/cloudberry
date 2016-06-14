@@ -6,7 +6,7 @@ angular.module('cloudberry.common', [])
 
       parameters: {
         dataset: "twitter",
-        keyword: null,
+        keywords: [],
         area: {
           swLog: -46.23046874999999,
           swLat: 53.85252660044951,
@@ -33,7 +33,7 @@ angular.module('cloudberry.common', [])
       query: function(parameters, queryType) {
         var json = (JSON.stringify({
           dataset: parameters.dataset,
-          keyword: parameters.keyword,
+          keywords: parameters.keywords,
           area: parameters.area,
           timeRange : {
             start: queryType==='time' ? Date.parse(parameters.time.start) : Date.parse(startDate),
