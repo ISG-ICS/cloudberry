@@ -2,9 +2,9 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, Asterix) {
     $scope.search = function() {
       if ($scope.keyword)
-        Asterix.parameters.keyword = $scope.keyword.trim().split(/\s+/);
+        Asterix.parameters.keywords = $scope.keyword.trim().split(/\s+/);
       else
-        Asterix.parameters.keyword = [];
+        Asterix.parameters.keywords = [];
       Asterix.queryType = 'search';
       Asterix.query(Asterix.parameters, Asterix.queryType);
     };
