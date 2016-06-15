@@ -25,9 +25,10 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
            |where $$$variable.${p.fieldName} = $$sid
            |""".stripMargin
       case p: KeywordPredicate =>
+        //The first one is utilizing the inverted-index. The rest is using the simple `contains` to save comparison time
         val first =s"""where similarity-jaccard(word-tokens($$$variable."${p.fieldName}"), word-tokens("${p.keywords.head}")) > 0.0"""
         val rest = p.keywords.tail.map(
-          keyword => s"""and contains($$$variable."${p.fieldName}", "$keyword") """
+          keyword => s"""and contains($$$variable."${p.fieldName}", "$keyword")"""
         )
         (first +: rest).mkString("\n")
       case p: TimePredicate =>
@@ -60,6 +61,7 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
     val aggregate = statement.aggregateOns.map(aggregate =>
                                                  aggregate.fieldName
     )
+    //TODO
     s"""
        |group by ${groupOn} with $$${variable}
        |return {

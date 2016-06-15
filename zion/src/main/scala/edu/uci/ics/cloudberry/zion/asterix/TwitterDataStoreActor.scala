@@ -58,7 +58,7 @@ object TwitterDataStoreActor {
   }
 
   def handleAllInOneWSResponse(response: WSResponse): Response = {
-    //TODO This is an Asterix bug!!
+    //TODO different aggregation cost differently, it may be better to split the query, which makes the coding easier.
     val seq = Json.parse(response.body.replaceAll(" \\]\n\\[", " ,\n")).as[Seq[Seq[KeyCountPair]]]
     SpatialTimeCount(seq(0), seq(1), seq(2))
   }

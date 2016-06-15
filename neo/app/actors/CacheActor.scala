@@ -108,10 +108,7 @@ case class CacheQuery(dataSet: String,
                       limit: Int = 10,
                       repeatDuration: Duration = 0.seconds) {
   // TODO use the selectivity as a better estimation
-  val longestKeyword = keywords.foldLeft((0, ""))((lengthPair, keyword) =>
-                                                if (lengthPair._1 < keyword.length) (keyword.length, keyword)
-                                                else lengthPair)
-  val key = dataSet + '_' + longestKeyword
+  val key = dataSet + '_' + keywords.headOption.getOrElse("")
   override val toString = s"dataset:${dataSet},keyword:$keywords,timeRange:$timeRange," +
     s"level:$level,entities:${entities.map(e => USGeoTagInfo.apply(e.asInstanceOf[IUSGeoJSONEntity]))}"
 }
