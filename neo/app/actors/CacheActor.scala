@@ -15,6 +15,14 @@ import play.api.libs.json.{Format, Json}
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
+/**
+  * An actor that is supposed to visit the cache.
+  * FIXME: to be deleted, all logic should be moved to UserActor
+  * @param viewsActor
+  * @param usGeoGnosis
+  * @param config
+  * @param dataSet
+  */
 class CacheActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config: Config)
                 (val dataSet: String)
   extends Actor with ActorLogging {
@@ -107,8 +115,6 @@ case class CacheQuery(dataSet: String,
                       offset: Int = 0,
                       limit: Int = 10,
                       repeatDuration: Duration = 0.seconds) {
-  // TODO use the selectivity as a better estimation
-  val key = dataSet + '_' + keywords.headOption.getOrElse("")
   override val toString = s"dataset:${dataSet},keyword:$keywords,timeRange:$timeRange," +
     s"level:$level,entities:${entities.map(e => USGeoTagInfo.apply(e.asInstanceOf[IUSGeoJSONEntity]))}"
 }
@@ -117,8 +123,8 @@ class CachesActor(val viewsActor: ActorRef, val usGeoGnosis: USGeoGnosis, config
   def receive = {
     case q: CacheQuery => {
       log.info("Caches:" + self + " get query from : " + sender())
-      context.child(q.key).getOrElse {
-        context.actorOf(Props(new CacheActor(viewsActor, usGeoGnosis, config)(q.dataSet)), q.key)
+      context.child(q.dataSet).getOrElse {
+        context.actorOf(Props(new CacheActor(viewsActor, usGeoGnosis, config)(q.dataSet)), q.dataSet)
       } forward q
     }
     case other =>
