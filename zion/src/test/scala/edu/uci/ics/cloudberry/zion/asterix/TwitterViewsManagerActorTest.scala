@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class TwitterViewsManagerActorTest extends Specification with Mockito with TestData{
+class TwitterViewsManagerActorTest extends Specification with Mockito with TestData {
 
   val mockConn = mock[AsterixConnection]
   when(mockConn.post(any[String])).thenAnswer(new Answer[Future[String]] {
@@ -93,7 +93,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito with TestD
     }
 
     "generateSummaryViewAQL" in {
-      val str = TwitterViewsManagerActor.generateSummaryViewAQL("ds_tweet", TwitterCountyDaySummaryView.SummaryLevel)
+      val str = TwitterViewsManagerActor.generateSummaryViewAQL("ds_tweet", "ds_tweet_", TwitterCountyDaySummaryView.SummaryLevel)
       str.trim must_== ("""
                           |use dataverse twitter
                           |drop dataset ds_tweet_ if exists
@@ -140,7 +140,7 @@ class TwitterViewsManagerActorTest extends Specification with Mockito with TestD
     }
 
     "generateSubSetViewAQL" in {
-      val aql = TwitterViewsManagerActor.generateSubSetViewAQL("ds_tweet", "rain")
+      val aql = TwitterViewsManagerActor.generateSubSetViewAQL("ds_tweet", "ds_tweet_rain", "rain")
       aql.trim must_== ("""
                           |use dataverse twitter
                           |drop dataset ds_tweet_rain if exists
