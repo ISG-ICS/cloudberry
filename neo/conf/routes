@@ -4,6 +4,7 @@
 
 GET        /                         controllers.Application.index
 GET        /debug                    controllers.Application.debug
+GET        /dashboard                controllers.Application.dashboard
 GET        /ws                       controllers.Application.ws
 GET        /tweet/:id                controllers.Application.tweet(id: String)
 
