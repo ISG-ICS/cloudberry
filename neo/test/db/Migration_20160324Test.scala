@@ -67,11 +67,9 @@ class Migration_20160324Test extends Specification with Mockito {
           |    geo_tag: typeGeoTag
           |}
           |
-          |create dataset ds_tweet(typeTweet) if not exists primary key id;
-          |//with filter on create_at;
+          |create dataset ds_tweet(typeTweet) if not exists primary key id with filter on create_at;
           |create index text_idx if not exists on ds_tweet("text") type keyword;
           |create index location_idx if not exists on ds_tweet(coordinate) type rtree;
-          |create index time_idx if not exists on ds_tweet(create_at) type btree;
           |create index state_idx if not exists on ds_tweet(geo_tag.stateID) type btree;
           |create index county_idx if not exists on ds_tweet(geo_tag.countyID) type btree;
           |create index city_idx if not exists on ds_tweet(geo_tag.cityID) type btree;

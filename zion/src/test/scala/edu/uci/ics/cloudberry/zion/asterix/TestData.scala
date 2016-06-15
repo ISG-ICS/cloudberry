@@ -59,7 +59,8 @@ trait TestData {
   val finerQuery = new DBQuery(SummaryLevel(SpatialLevels.City, TimeLevels.Second), Seq(timePredicate1))
 
   // Create a keyword query
-  val keywordQuery = new DBQuery(StateDaySummary, Seq(keywordPredicate1, timePredicate1, idPredicate))
+  val keywordQuery1 = new DBQuery(StateDaySummary, Seq(keywordPredicate1, timePredicate1, idPredicate))
+  val keywordQuery2 = new DBQuery(StateDaySummary, Seq(keywordPredicate2, timePredicate1, idPredicate))
 
   val viewMetaR1 = ViewMetaRecord("twitter", "twitter_", TwitterCountyDaySummaryView.SummaryLevel,
                                   new DateTime(0), new DateTime(5000), new DateTime(4000), 0, 1 hours)

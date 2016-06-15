@@ -16,7 +16,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
                                   override val sourceActor: ActorRef,
                                   fViewStore: Future[ViewMetaRecord],
                                   config: Config
-                                 )(implicit ec: ExecutionContext) extends ViewActor(sourceActor, fViewStore) {
+                                 )(implicit ec: ExecutionContext) extends ViewActor(sourceActor, fViewStore, config) {
 
   import TwitterCountyDaySummaryView._
 

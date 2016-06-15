@@ -14,9 +14,9 @@ import scala.concurrent.duration._
 
 class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationLike with MockConnClient with TestData {
 
-  //It's usually safer to run the tests sequentially for Actors
   import TwitterCountyDaySummaryView._
 
+  //It's usually safer to run the tests sequentially for Actors
   sequential
 
   val queryUpdateTemp: DBQuery = new DBQuery(SummaryLevel, Seq.empty)
@@ -30,7 +30,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
 
     def runSummaryView(dbQuery: DBQuery, wsResponse: JsArray, result: SpatialTimeCount): MatchResult[Any] = {
 
-      withAsterixBugConn(wsResponse) { conn =>
+      withAsterixConn(wsResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, dbQuery)
@@ -47,7 +47,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       runSummaryView(byCountyMonthQuery, byCountyMonthResponse, byCountyMonthResult)
     }
     "split the query to ask the source if can not answer by view only" in {
-      withAsterixBugConn(byStateByDayResponse) { conn =>
+      withAsterixConn(byStateByDayResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, partialQuery)
@@ -68,7 +68,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       actualMessage must_== byCountyMonthResult
     }
     "update the views if receives the update msg" in {
-      withAsterixBugConn(byStateByDayResponse) { conn =>
+      withAsterixConn(byStateByDayResponse) { conn =>
         val proxy = new TestProbe(system)
         val parent = system.actorOf(Props(new Actor {
           val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
