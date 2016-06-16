@@ -56,7 +56,7 @@ class AQLVisitorTest extends Specification with TestData {
       str.trim must beEqualTo(
         """
           |where similarity-jaccard(word-tokens($t."text"), word-tokens("trump")) > 0.0
-          |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
+          |and contains($t."text", "hilary")
           |""".stripMargin.trim
       )
     }

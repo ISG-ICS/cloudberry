@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
 import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.KeyCountPair
 import play.api.{Configuration, Play}
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.mvc._
@@ -58,7 +59,7 @@ trait MockConnClient extends Mockito {
     block(mockConn)
   }
 
-  def withAsterixBugConn[T](multipleResults: JsArray)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+  def withAsterixConn[T](multipleResults: JsArray)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
     val mockConn = mock[AsterixConnection]
     val mockResponse = mock[WSResponse]
     mockResponse.status returns (200)
@@ -67,6 +68,26 @@ trait MockConnClient extends Mockito {
       override def answer(invocation: InvocationOnMock): Future[WSResponse] = {
         println(invocation.getArguments.head.asInstanceOf[String])
         Future(mockResponse)
+      }
+    })
+    block(mockConn)
+  }
+
+  def withAqlCheckConn[T](expectedAQL: String)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    val mockResponse = mock[WSResponse]
+    mockResponse.status returns (200)
+    val multipleResults = JsArray(Seq(Seq.empty[KeyCountPair], Seq.empty[KeyCountPair], Seq.empty[KeyCountPair]).map(Json.toJson(_)))
+    mockResponse.body returns (multipleResults.value.map("[ " + _.toString() + "\n ]").mkString("\n"))
+    when(mockConn.post(any[String])).thenAnswer(new Answer[Future[WSResponse]] {
+      override def answer(invocation: InvocationOnMock): Future[WSResponse] = {
+        //For debug purpose
+        expectedAQL.trim === invocation.getArguments.head.asInstanceOf[String].trim
+        if (expectedAQL.trim == invocation.getArguments.head.asInstanceOf[String].trim) {
+          Future(mockResponse)
+        } else {
+          Future(null)
+        }
       }
     })
     block(mockConn)

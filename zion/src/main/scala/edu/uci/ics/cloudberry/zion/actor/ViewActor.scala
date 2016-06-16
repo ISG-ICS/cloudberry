@@ -9,8 +9,9 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 import akka.pattern.ask
 import akka.util.Timeout
+import edu.uci.ics.cloudberry.zion.common.Config
 
-abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaRecord])(implicit ec: ExecutionContext)
+abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaRecord], config: Config)(implicit ec: ExecutionContext)
   extends Actor with Stash with ActorLogging {
 
   import ViewActor._
@@ -27,6 +28,8 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
   var lastVisitTime: DateTime = null
   var lastUpdateTime: DateTime = null
   var visitTimes: Int = 0
+
+  implicit val sourceAskTimeOut: Timeout = Timeout(config.ViewTimeOut)
 
   protected def updateMetaRecord(): Unit = context.parent !
     ViewMetaRecord(sourceName, key, summaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
@@ -116,8 +119,6 @@ object ViewActor {
   object DoneInitializing
 
   object UpdateViewMsg
-
-  implicit val timeOut: Timeout = 15 seconds
 
   def getTimeRangeDifference(actual: Interval, expected: Seq[Interval]): Seq[Interval] = {
     if (expected.forall(actual.contains)) {

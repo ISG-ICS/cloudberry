@@ -70,16 +70,16 @@ class ViewsManagerActorTest extends TestkitExample with SpecificationLike with M
     }
     "create a new view store to answer the new query" in {
       val viewActor = system.actorOf(Props(new FakeManager(sourceName, sourceProbe.ref)(ec)))
-      viewActor ! keywordQuery
+      viewActor ! keywordQuery1
       existedViewProbe.expectNoMsg()
-      newViewProbe.expectMsg(keywordQuery)
+      newViewProbe.expectMsg(keywordQuery1)
       ok
     }
     "update the meta store when receive the update request" in {
       val viewActor = system.actorOf(Props(new FakeManager(sourceName, sourceProbe.ref)(ec)))
-      viewActor ! keywordQuery
+      viewActor ! keywordQuery1
       existedViewProbe.expectNoMsg()
-      newViewProbe.expectMsg(keywordQuery)
+      newViewProbe.expectMsg(keywordQuery1)
 
       val sender = new TestProbe(system)
       sender.send(viewActor, FakeManager.getMeta)

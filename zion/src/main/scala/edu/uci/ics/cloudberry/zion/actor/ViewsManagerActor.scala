@@ -83,7 +83,7 @@ abstract class ViewsManagerActor(val sourceName: String, val sourceActor: ActorR
   }
 
 
-  // flush to persistent storage every 30 minutes.
+  // flush to persistent storage periodically
   context.system.scheduler.schedule(flushInterval, flushInterval, self, flushMetaMsg)
 
   override def postStop(): Unit = flushMeta()

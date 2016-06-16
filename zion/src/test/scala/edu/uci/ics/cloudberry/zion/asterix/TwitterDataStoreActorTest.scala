@@ -19,7 +19,7 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                           |where $t.geo_tag.stateID = $sid
                           |
                           |where similarity-jaccard(word-tokens($t."text"), word-tokens("trump")) > 0.0
-                          |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
+                          |and contains($t."text", "hilary")
                           |
                           |where
                           |
@@ -52,7 +52,7 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                           |where $t.geo_tag.stateID = $sid
                           |
                           |where similarity-jaccard(word-tokens($t."text"), word-tokens("trump")) > 0.0
-                          |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
+                          |and contains($t."text", "hilary")
                           |
                           |where
                           |
@@ -86,7 +86,7 @@ class TwitterDataStoreActorTest extends Specification with TestData {
                           |where $t.geo_tag.stateID = $sid
                           |
                           |where similarity-jaccard(word-tokens($t."text"), word-tokens("trump")) > 0.0
-                          |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
+                          |and contains($t."text", "hilary")
                           |
                           |where
                           |

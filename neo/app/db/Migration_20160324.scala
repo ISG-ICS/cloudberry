@@ -86,11 +86,9 @@ private[db] class Migration_20160324(val connection: AsterixConnection) {
        |    geo_tag: typeGeoTag
        |}
        |
-       |create dataset $TweetDataSet(typeTweet) if not exists primary key id;
-       |//with filter on create_at;
+       |create dataset $TweetDataSet(typeTweet) if not exists primary key id with filter on create_at;
        |create index text_idx if not exists on $TweetDataSet("text") type keyword;
        |create index location_idx if not exists on $TweetDataSet(coordinate) type rtree;
-       |create index time_idx if not exists on $TweetDataSet(create_at) type btree;
        |create index state_idx if not exists on $TweetDataSet(geo_tag.stateID) type btree;
        |create index county_idx if not exists on $TweetDataSet(geo_tag.countyID) type btree;
        |create index city_idx if not exists on $TweetDataSet(geo_tag.cityID) type btree;
