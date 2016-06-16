@@ -18,3 +18,4 @@ dist
 /project/*-shim.sbt
 /activator-sbt-*-shim.sbt
 *.iml
+*.gz

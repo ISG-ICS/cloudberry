@@ -47,12 +47,8 @@ public class TwitterFeedUsersTimelineDriver {
                         Paging page = new Paging(pageNum, 100);
                         List<Status> statuses = twitter.getUserTimeline(user.getId(), page);
                         for (Status status : statuses) {
-                            //Use google JSON library, otherwise the raw JSON is in a different format
-                            //Gson gson = new Gson();
-                            //String statusJson = gson.toJson(status);
                             String statusJson = TwitterObjectFactory.getRawJSON(status);
                             bw.write(statusJson);
-                            bw.write("\n");
                         }
                     }
 
