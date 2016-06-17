@@ -33,10 +33,10 @@ public class Config {
     @Option(name = "-loc", aliases = "--location", handler = LocationListOptionHandler.class, usage = "location rectangular, southwest.lon, southwest.lat, northeast.lon, northeast.lat")
     private Location[] trackLocation = new Location[]{};
 
-    @Option(required = true, name = "-u", aliases = "--url", usage = "url of the feed adapter")
+    @Option(name = "-u", aliases = "--url", usage = "url of the feed adapter")
     private String adapterUrl;
 
-    @Option(required = true, name = "-p", aliases = "--port", usage = "port of the feed socket")
+    @Option(name = "-p", aliases = "--port", usage = "port of the feed socket")
     private int port;
 
     @Option(name = "-w", aliases = "--wait", usage = "waiting milliseconds per record, default 500")

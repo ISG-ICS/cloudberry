@@ -1,5 +1,4 @@
 package edu.uci.ics.cloudberry.noah.feed;
-
 import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
@@ -11,24 +10,39 @@ import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import edu.uci.ics.cloudberry.noah.adm.UnknownPlaceException;
 import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.CmdLineParser;
 import twitter4j.TwitterException;
 
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.zip.GZIPOutputStream;
 
 public class TwitterFeedStreamDriver {
 
     Client twitterClient;
     volatile boolean isConnected = false;
-
     FeedSocketAdapterClient socketAdapterClient;
 
-    public void run(Config config)
+    public void openSocket(Config config) throws IOException, CmdLineException {
+        if(config.getPort() != 0 && config.getAdapterUrl()!=null) {
+            if (!config.getIsFileOnly()) {
+                String adapterUrl = config.getAdapterUrl();
+                int port = config.getPort();
+                int batchSize = config.getBatchSize();
+                int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
+                int maxCount = config.getMaxCount();
+                socketAdapterClient = new FeedSocketAdapterClient(adapterUrl, port,
+                        batchSize, waitMillSecPerRecord, maxCount);
+                socketAdapterClient.initialize();
+            }
+        }else{
+            throw new CmdLineException("You should provide a port and an URL");
+        }
+    }
+
+    public void run(Config config, BufferedWriter bw)
             throws InterruptedException, IOException {
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
         StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
@@ -54,6 +68,17 @@ public class TwitterFeedStreamDriver {
 
             endpoint.locations(Lists.<Location>newArrayList(config.getTrackLocation()));
         }
+        List<Long> usersID = new ArrayList<Long>();
+        if (config.getTrackUsers().length != 0) {
+            System.err.print("set track users are: ");
+            for (String user : config.getTrackUsers()) {
+                usersID.add(Long.parseLong(user));
+                System.err.print(user);
+                System.err.print(" ");
+            }
+            System.err.println();
+            endpoint.followings(usersID);
+        }
 
         Authentication auth = new OAuth1(config.getConsumerKey(), config.getConsumerSecret(), config.getToken(),
                 config.getTokenSecret());
@@ -66,15 +91,6 @@ public class TwitterFeedStreamDriver {
                 .processor(new StringDelimitedProcessor(queue))
                 .build();
 
-        SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-        Date now = new Date();
-        String strDate = sdfDate.format(now);
-
-        String fileName = "Tweet_" + strDate + ".gz";
-        GZIPOutputStream zip = new GZIPOutputStream(
-                new FileOutputStream(new File(fileName)));
-        BufferedWriter bw = new BufferedWriter(
-                new OutputStreamWriter(zip, "UTF-8"));
 
         // Establish a connection
         try {
@@ -101,33 +117,13 @@ public class TwitterFeedStreamDriver {
         }
     }
 
-    public void openSocket(Config config) throws IOException {
-        if (!config.getIsFileOnly()) {
-            String adapterUrl = config.getAdapterUrl();
-            int port = config.getPort();
-            int batchSize = config.getBatchSize();
-            int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
-            int maxCount = config.getMaxCount();
-            socketAdapterClient = new FeedSocketAdapterClient(adapterUrl, port,
-                    batchSize, waitMillSecPerRecord, maxCount);
-            socketAdapterClient.initialize();
-        }
-    }
-
     public static void main(String[] args) throws IOException {
         TwitterFeedStreamDriver feedDriver = new TwitterFeedStreamDriver();
+
         try {
-            Config config = new Config();
-            CmdLineParser parser = new CmdLineParser(config);
-            try {
-                parser.parseArgument(args);
-                if (config.getTrackTerms().length == 0 && config.getTrackLocation().length == 0) {
-                    throw new CmdLineException("Should provide at list one tracking word, or one location boundary");
-                }
-            } catch (CmdLineException e) {
-                System.err.println(e);
-                parser.printUsage(System.err);
-            }
+            Config config = CmdLineAux.parseCmdLine(args);
+            BufferedWriter bw = CmdLineAux.createWriter("Tweet_");
+
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 public void run() {
                     if (feedDriver.twitterClient != null && feedDriver.isConnected) {
@@ -135,8 +131,12 @@ public class TwitterFeedStreamDriver {
                     }
                 }
             });
-            feedDriver.openSocket(config);
-            feedDriver.run(config);
+
+           /* if (config.getTrackTerms().length == 0 && config.getTrackLocation().length == 0) {
+                throw new CmdLineException("Should provide at least one tracking word, or one location boundary");
+            }
+            feedDriver.openSocket(config);*/
+            feedDriver.run(config, bw);
         } catch (InterruptedException e) {
             System.err.println(e);
         } finally {
@@ -145,4 +145,5 @@ public class TwitterFeedStreamDriver {
             }
         }
     }
+
 }
