@@ -30,7 +30,7 @@ class Application @Inject()(val wsClient: WSClient,
                            ) extends Controller {
 
   val config = new Config(configuration)
-  val asterixConn = new AsterixConnection(wsClient, config.AsterixURL)
+  val asterixConn = new AsterixConnection(config.AsterixURL, wsClient, config)
 
   Logger.logger.info("I'm initializing")
   val checkViewStatus = Migration_20160324(asterixConn).up()

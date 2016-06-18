@@ -18,12 +18,11 @@ import org.specs2.mock.Mockito
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.mvc.Action
 
-object TestUtil {
-  /**
-    * @param block
-    * @tparam T
-    * @return
-    */
+object TestUtil extends Mockito {
+  val mockPlayConfig = mock[Configuration]
+  mockPlayConfig.getString(anyString, any) returns None
+  val cloudberryConfig = new Config(mockPlayConfig)
+
   def withAsterixConn[T](expectedResponse: JsValue)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
     Server.withRouter() {
       //* this mock server can't write the request, we can not let the result based on the request
@@ -33,7 +32,7 @@ object TestUtil {
     } { implicit port =>
       implicit val materializer = Play.current.materializer
       WsTestClient.withClient { client =>
-        block(new AsterixConnection(client, "/aql"))
+        block(new AsterixConnection("/aql", client, cloudberryConfig))
       }
     }
   }

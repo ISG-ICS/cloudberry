@@ -61,7 +61,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
       case q: SampleQuery =>
         conn.post(generateSampleAQL(key, q.copy(predicates = newPred))).map(handleSampleResponse)
       case q: DBQuery =>
-        conn.post(generateAQL(key, new DBQuery(q.summaryLevel, newPred))).map(handleAllInOneWSResponse)
+        askAsterixAndGetAllResponse(conn, key,new DBQuery(q.summaryLevel, newPred))
     }
   }
 
