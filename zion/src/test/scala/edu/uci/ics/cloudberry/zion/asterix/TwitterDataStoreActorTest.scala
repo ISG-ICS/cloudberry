@@ -91,19 +91,19 @@ class TwitterDataStoreActorTest extends Specification with TestData {
           |let $common := (
           |for $t in dataset ds_tweet
           |
-          |let $set :=[ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50]
+          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |for $sid in $set
           |where $t.geo_tag.stateID = $sid
           |
-          |where similarity - jaccard(word - tokens($t."text"), word - tokens("trump")) > 0.0
+          |where similarity-jaccard(word-tokens($t."text"), word-tokens("trump")) > 0.0
           |and contains($t."text", "hilary")
           |
           |where
           |
-          |($t."create_at" >= datetime("2012-01-01T00:00:00.000Z")
+          |($t."create_at">= datetime("2012-01-01T00:00:00.000Z")
           |and $t."create_at" <= datetime("2012-01-08T00:00:00.000Z"))
           |or
-          |($t."create_at" >= datetime("2016-01-01T00:00:00.000Z")
+          |($t."create_at">= datetime("2016-01-01T00:00:00.000Z")
           |and $t."create_at" <= datetime("2016-01-15T00:00:00.000Z"))
           |
           |
@@ -112,19 +112,17 @@ class TwitterDataStoreActorTest extends Specification with TestData {
           |
           |let $hashtag := (
           |for $t in $common
-          |where not(is - null ($t.hashtags))
+          |where not(is-null($t.hashtags))
           |
           |for $h in $t.hashtags
           |group by $tag := $h with $h
           |let $c := count($h)
           |order by $c desc
           |limit 50
-          |return {
-          |"key": $tag, "count": $c
-          |}
+          |return { "key": $tag, "count" : $c}
           |
           |)
-          | return $hashtag
+          |return $hashtag
           | """.stripMargin.trim)
     }
 

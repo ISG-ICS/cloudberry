@@ -28,9 +28,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
     val probeSender = new TestProbe(system)
     val probeSource = new TestProbe(system)
 
-    def runSummaryView(dbQuery: DBQuery, wsResponse: JsArray, result: SpatialTimeCount): MatchResult[Any] = {
+    def runSummaryView(dbQuery: DBQuery, jsResponses: Seq[JsValue], result: SpatialTimeCount): MatchResult[Any] = {
 
-      withAsterixConn(wsResponse) { conn =>
+      withQueryAQLConn(jsResponses) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, dbQuery)
@@ -47,7 +47,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       runSummaryView(byCountyMonthQuery, byCountyMonthResponse, byCountyMonthResult)
     }
     "split the query to ask the source if can not answer by view only" in {
-      withAsterixConn(byStateByDayResponse) { conn =>
+      withQueryAQLConn(byStateByDayResponse) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, partialQuery)
@@ -68,7 +68,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       actualMessage must_== byCountyMonthResult
     }
     "update the views if receives the update msg" in {
-      withAsterixConn(byStateByDayResponse) { conn =>
+      withSucceedUpdateAQLConn { conn =>
         val proxy = new TestProbe(system)
         val parent = system.actorOf(Props(new Actor {
           val viewActor = context.actorOf(Props(classOf[TwitterCountyDaySummaryView],
@@ -122,7 +122,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
           |
           |)
           |return $map;
-          |""".stripMargin.trim
+          | """.stripMargin.trim
 
       TwitterCountyDaySummaryView.generateByTimeAQL(dbQuery).trim must_== (
         """
@@ -156,7 +156,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
           |
           |)
           |return $time
-          |""".stripMargin.trim)
+          | """.stripMargin.trim)
 
       TwitterCountyDaySummaryView.generateByHashtagAQL(dbQuery).trim must_== (
         """
@@ -194,7 +194,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
           |
           |)
           |return $hashtag
-          |""".stripMargin.trim)
+          | """.stripMargin.trim)
     }
 
   }

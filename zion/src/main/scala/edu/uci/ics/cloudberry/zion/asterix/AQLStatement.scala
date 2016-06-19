@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.util.Logging
 import edu.uci.ics.cloudberry.zion.common.Config
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.duration.Duration
@@ -35,7 +35,7 @@ class AsterixConnection(url: String, wSClient: WSClient, config: Config)(implici
       if (wsResponse.status == 200) {
         succeedHandler(wsResponse)
       } else {
-        log.error("AQL failed:" + wsResponse.body)
+        log.error("AQL failed:" + Json.prettyPrint(wsResponse.json))
         failureHandler(wsResponse)
       }
     }
@@ -54,5 +54,5 @@ class AsterixConnection(url: String, wSClient: WSClient, config: Config)(implici
 }
 
 object AsterixConnection {
-  val defaultEmptyResponse = JsArray(Seq.empty[JsValue])
+  val defaultEmptyResponse = Json.toJson(Seq(Seq.empty[JsValue]))
 }

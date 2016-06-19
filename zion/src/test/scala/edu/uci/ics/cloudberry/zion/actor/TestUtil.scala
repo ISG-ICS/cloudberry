@@ -23,6 +23,15 @@ object TestUtil extends Mockito {
   mockPlayConfig.getString(anyString, any) returns None
   val cloudberryConfig = new Config(mockPlayConfig)
 
+  /** A heavy but complete way to test the ws suggested by official doc.
+    * Too heavy for unit test, may be more approprate for intergration test.
+    *
+    * @param expectedResponse
+    * @param block
+    * @param ec
+    * @tparam T
+    * @return
+    */
   def withAsterixConn[T](expectedResponse: JsValue)(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
     Server.withRouter() {
       //* this mock server can't write the request, we can not let the result based on the request
@@ -92,26 +101,81 @@ trait MockConnClient extends Mockito {
     block(mockConn)
   }
 
-  def withQueryAQLConn[T](aql2jsonAnswer: Map[String, JsArray])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
-    val mockConn = mock[AsterixConnection]
-    aql2jsonAnswer.foreach { case (aql: String, json: JsArray) =>
-      when(mockConn.postQuery(aql)).thenReturn(Future(json))
-    }
-    block(mockConn)
-  }
-
   /**
-    * Mock the response without the AQL checking.
-    * @param jsAnswers
+    * Mock the aql and the reponse based on the given map
+    *
+    * @param aql2jsonAnswer the aql to Json response map
     * @param block
     * @param ec
     * @tparam T
     * @return
     */
-  def withQueryAQLConn[T](jsAnswers: Seq[JsArray])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+  def withQueryAQLConn[T](aql2jsonAnswer: Map[String, JsValue])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
     val mockConn = mock[AsterixConnection]
-    import collection.JavaConverters._
-    when(mockConn.postQuery(any[String])).thenAnswer(AdditionalAnswers.returnsElementsOf(jsAnswers.asJava))
+    when(mockConn.postQuery(any[String], any)).thenAnswer(new Answer[Future[JsValue]] {
+      override def answer(invocation: InvocationOnMock): Future[JsValue] = {
+        val aql = invocation.getArguments.head.asInstanceOf[String].trim
+        Future(aql2jsonAnswer.getOrElse(aql, {
+          println(aql);
+          throw new IllegalArgumentException(aql)
+        }))
+      }
+    })
     block(mockConn)
   }
+
+  /**
+    * Mock the response without the AQL checking.
+    *
+    * @param jsAnswers sequence of Json response
+    * @param block
+    * @param ec
+    * @tparam T
+    * @return
+    */
+  def withQueryAQLConn[T](jsAnswers: Seq[JsValue])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    val iter = jsAnswers.iterator
+    when(mockConn.postQuery(any[String], any)).thenAnswer(new Answer[Future[JsValue]] {
+      override def answer(invocation: InvocationOnMock): Future[JsValue] = {
+        val aql = invocation.getArguments.head.asInstanceOf[String].trim
+        if (iter.hasNext) {
+          Future(iter.next())
+        } else {
+          println(aql)
+          Future(null)
+        }
+      }
+    })
+    block(mockConn)
+  }
+
+  def withUpdateAQLConn[T](aqlSet: Set[String])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    when(mockConn.postUpdate(any[String])).thenAnswer(new Answer[Future[Boolean]] {
+      override def answer(invocation: InvocationOnMock): Future[Boolean] = {
+        val aql = invocation.getArguments.head.asInstanceOf[String].trim
+        if (aqlSet.apply(aql.trim)) {
+          Future(true)
+        } else {
+          println(aql)
+          Future(false)
+        }
+      }
+    })
+    block(mockConn)
+  }
+
+  def withSucceedUpdateAQLConn[T](block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    when(mockConn.postUpdate(any[String])).thenAnswer(new Answer[Future[Boolean]] {
+      override def answer(invocation: InvocationOnMock): Future[Boolean] = {
+        val aql = invocation.getArguments.head.asInstanceOf[String].trim
+        println(aql)
+        Future(true)
+      }
+    })
+    block(mockConn)
+  }
+
 }
