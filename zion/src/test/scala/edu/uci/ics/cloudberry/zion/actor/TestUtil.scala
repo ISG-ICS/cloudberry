@@ -3,20 +3,20 @@ package edu.uci.ics.cloudberry.zion.actor
 import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.KeyCountPair
-import play.api.{Configuration, Play}
-import play.api.libs.json.{JsArray, JsValue, Json}
-import play.api.mvc._
-import play.api.test.WsTestClient
-import play.api.routing.sird._
-import play.core.server.Server
-
-import scala.concurrent.{ExecutionContext, Future}
+import org.mockito.AdditionalAnswers
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.specs2.mock.Mockito
-import play.api.libs.ws.{WSClient, WSResponse}
-import play.api.mvc.Action
+import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.ws.WSResponse
+import play.api.mvc.{Action, _}
+import play.api.routing.sird._
+import play.api.test.WsTestClient
+import play.api.{Configuration, Play}
+import play.core.server.Server
+
+import scala.concurrent.{ExecutionContext, Future}
 
 object TestUtil extends Mockito {
   val mockPlayConfig = mock[Configuration]
@@ -92,4 +92,26 @@ trait MockConnClient extends Mockito {
     block(mockConn)
   }
 
+  def withQueryAQLConn[T](aql2jsonAnswer: Map[String, JsArray])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    aql2jsonAnswer.foreach { case (aql: String, json: JsArray) =>
+      when(mockConn.postQuery(aql)).thenReturn(Future(json))
+    }
+    block(mockConn)
+  }
+
+  /**
+    * Mock the response without the AQL checking.
+    * @param jsAnswers
+    * @param block
+    * @param ec
+    * @tparam T
+    * @return
+    */
+  def withQueryAQLConn[T](jsAnswers: Seq[JsArray])(block: AsterixConnection => T)(implicit ec: ExecutionContext): T = {
+    val mockConn = mock[AsterixConnection]
+    import collection.JavaConverters._
+    when(mockConn.postQuery(any[String])).thenAnswer(AdditionalAnswers.returnsElementsOf(jsAnswers.asJava))
+    block(mockConn)
+  }
 }
