@@ -22,14 +22,7 @@ class AsterixConnection(url: String, wSClient: WSClient, config: Config)(implici
 
   import AsterixConnection._
 
-  def post(aql: String): Future[WSResponse] = {
-    log.info("AQL:" + aql)
-    val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
-    f.onFailure(wsFailureHandler(aql))
-    f
-  }
-
-  def postQuery(aql: String, responseWhenFail: JsValue = defaultEmptyResponse): Future[JsValue] = {
+ def postQuery(aql: String, responseWhenFail: JsValue = defaultEmptyResponse): Future[JsValue] = {
     postWithCheckingStatus(aql, (ws: WSResponse) => ws.json, (ws: WSResponse) => responseWhenFail)
   }
 
@@ -46,6 +39,13 @@ class AsterixConnection(url: String, wSClient: WSClient, config: Config)(implici
         failureHandler(wsResponse)
       }
     }
+  }
+
+  protected def post(aql: String): Future[WSResponse] = {
+    log.info("AQL:" + aql)
+    val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
+    f.onFailure(wsFailureHandler(aql))
+    f
   }
 
   protected def wsFailureHandler(aql: String): PartialFunction[Throwable, Unit] = {

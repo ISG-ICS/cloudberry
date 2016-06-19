@@ -34,9 +34,9 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
   override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
     val aql = TwitterViewsManagerActor.generateSummaryUpdateAQL(sourceName, key, summaryLevel, from, to)
-    conn.post(aql).map[Unit] { response: WSResponse =>
-      if (response.status != 200) {
-        throw UpdateFailedDBException(response.body)
+    conn.postUpdate(aql).map[Unit] { succeed : Boolean =>
+      if (!succeed) {
+        throw UpdateFailedDBException(key)
       }
     }
   }

@@ -4,7 +4,6 @@ import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
 import play.api.libs.json.{JsArray, JsValue}
-import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -17,7 +16,7 @@ class TwitterDataStoreActor(conn: AsterixConnection, config: Config)(implicit ec
   override def query(query: DBQuery): Future[Response] = {
     query match {
       case q: SampleQuery =>
-        conn.post(generateSampleAQL(name, q)).map(handleSampleResponse)
+        conn.postQuery(generateSampleAQL(name, q)).map(handleSampleResponse)
       case q: DBQuery =>
         askAsterixAndGetAllResponse(conn, name, q)
     }
@@ -55,8 +54,8 @@ object TwitterDataStoreActor {
     )
   }
 
-  def handleSampleResponse(wSResponse: WSResponse): Response = {
-    SampleList(wSResponse.json.as[Seq[SampleTweet]])
+  def handleSampleResponse(jsValue: JsValue): Response = {
+    SampleList(jsValue.as[Seq[SampleTweet]])
   }
 
   def handleKeyCountResponse(jsValue: JsValue): Seq[KeyCountPair] = {
@@ -99,7 +98,7 @@ object TwitterDataStoreActor {
 
   def generateByHashtagAQL(datasetName: String, query: DBQuery): String = {
     val common = applyPredicate(datasetName, query)
-    s"""|common
+    s"""|$common
         |let $$hashtag := (
         |for $$t in $$common
         |where not(is-null($$t.hashtags))

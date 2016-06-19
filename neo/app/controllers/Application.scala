@@ -37,7 +37,7 @@ class Application @Inject()(val wsClient: WSClient,
   val USGeoGnosis = Knowledge.buildUSKnowledge(environment)
 
   Await.ready(checkViewStatus, config.AwaitInitial) onComplete {
-    case Success(response: WSResponse) => Logger.logger.info(response.body)
+    case Success(succeed: Boolean) => if (!succeed) throw new IllegalStateException("Initialization failed")
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
