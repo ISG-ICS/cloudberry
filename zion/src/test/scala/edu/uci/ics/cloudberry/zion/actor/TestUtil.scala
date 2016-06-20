@@ -116,7 +116,7 @@ trait MockConnClient extends Mockito {
       override def answer(invocation: InvocationOnMock): Future[JsValue] = {
         val aql = invocation.getArguments.head.asInstanceOf[String].trim
         Future(aql2jsonAnswer.getOrElse(aql, {
-          println(aql);
+          System.err.println(aql)
           throw new IllegalArgumentException(aql)
         }))
       }
@@ -142,8 +142,7 @@ trait MockConnClient extends Mockito {
         if (iter.hasNext) {
           Future(iter.next())
         } else {
-          println(aql)
-          Future(null)
+          throw new IllegalArgumentException(aql)
         }
       }
     })
@@ -158,7 +157,7 @@ trait MockConnClient extends Mockito {
         if (aqlSet.apply(aql.trim)) {
           Future(true)
         } else {
-          println(aql)
+          System.err.println(aql)
           Future(false)
         }
       }

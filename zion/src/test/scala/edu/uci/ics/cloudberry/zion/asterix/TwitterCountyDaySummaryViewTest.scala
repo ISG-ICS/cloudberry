@@ -28,9 +28,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
     val probeSender = new TestProbe(system)
     val probeSource = new TestProbe(system)
 
-    def runSummaryView(dbQuery: DBQuery, jsResponses: Seq[JsValue], result: SpatialTimeCount): MatchResult[Any] = {
+    def runSummaryView(dbQuery: DBQuery, aql2json: Map[String,JsValue], result: SpatialTimeCount): MatchResult[Any] = {
 
-      withQueryAQLConn(jsResponses) { conn =>
+      withQueryAQLConn(aql2json) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, dbQuery)
@@ -41,13 +41,13 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
     }
 
     "answer the state summary query by aggregate those counties" in {
-      runSummaryView(byStateByDayQuery, byStateByDayResponse, byStateByDayResult)
+      runSummaryView(byStateByDayQuery, byStateByDayAQLMap, byStateByDayResult)
     }
     "answer the month summary query by aggregate those days " in {
-      runSummaryView(byCountyMonthQuery, byCountyMonthResponse, byCountyMonthResult)
+      runSummaryView(byCountyMonthQuery, byCountyMonthAQLMap, byCountyMonthResult)
     }
     "split the query to ask the source if can not answer by view only" in {
-      withQueryAQLConn(byStateByDayResponse) { conn =>
+      withQueryAQLConn(byStateByDayAQLMap) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, partialQuery)
