@@ -47,7 +47,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       runSummaryView(byCountyMonthQuery, byCountyMonthAQLMap, byCountyMonthResult)
     }
     "split the query to ask the source if can not answer by view only" in {
-      withQueryAQLConn(byStateByDayAQLMap) { conn =>
+      withQueryAQLConn(partialQueryAQL2JsonMap) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, partialQuery)
