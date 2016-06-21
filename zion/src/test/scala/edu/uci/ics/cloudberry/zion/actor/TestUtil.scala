@@ -3,7 +3,6 @@ package edu.uci.ics.cloudberry.zion.actor
 import edu.uci.ics.cloudberry.zion.asterix.AsterixConnection
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.KeyCountPair
-import org.mockito.AdditionalAnswers
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
