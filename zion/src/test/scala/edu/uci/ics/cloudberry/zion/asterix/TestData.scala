@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
+import java.util.concurrent.Executors
+
 import edu.uci.ics.cloudberry.zion.actor.ViewMetaRecord
 import edu.uci.ics.cloudberry.zion.model._
 import org.joda.time.{Duration, _}
@@ -9,7 +11,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
 trait TestData {
-  implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(1))
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime1 = new DateTime(2012, 1, 1, 0, 0)
