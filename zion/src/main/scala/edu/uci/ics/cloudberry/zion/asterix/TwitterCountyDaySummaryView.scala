@@ -34,15 +34,15 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
   override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
     val aql = TwitterViewsManagerActor.generateSummaryUpdateAQL(sourceName, key, summaryLevel, from, to)
-    conn.post(aql).map[Unit] { response: WSResponse =>
-      if (response.status != 200) {
-        throw UpdateFailedDBException(response.body)
+    conn.postUpdate(aql).map[Unit] { succeed : Boolean =>
+      if (!succeed) {
+        throw UpdateFailedDBException(key)
       }
     }
   }
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    conn.post(generateAQL(query)).map(TwitterDataStoreActor.handleAllInOneWSResponse)
+    askAsterixAndGetAllResponse(conn, query)
   }
 
   override def updateInterval: FiniteDuration = config.ViewUpdateInterval
@@ -94,39 +94,60 @@ object TwitterCountyDaySummaryView {
 
   }
 
-  def generateAQL(query: DBQuery): String = {
+  def askAsterixAndGetAllResponse(conn: AsterixConnection, query: DBQuery)(implicit ec: ExecutionContext): Future[Response] = {
+    import TwitterDataStoreActor.handleKeyCountResponse
+    val fMap = conn.postQuery(generateByMapAQL(query)).map(handleKeyCountResponse)
+    val fTime = conn.postQuery(generateByTimeAQL(query)).map(handleKeyCountResponse)
+    val fHashtag = conn.postQuery(generateByHashtagAQL(query)).map(handleKeyCountResponse)
+    for {
+      mapResult <- fMap
+      timeResult <- fTime
+      hashtagResult <- fHashtag
+    } yield SpatialTimeCount(mapResult, timeResult, hashtagResult)
+  }
 
+  def generateByMapAQL(query: DBQuery): String = {
+    val common = applyPredicate(query)
+    s"""|$common
+        |let $$map := (
+        |for $$t in $$common
+        |${byMap(query.summaryLevel.spatialLevel)}
+        |)
+        |return $$map;
+        |""".stripMargin
+  }
+
+  def generateByTimeAQL(query: DBQuery): String = {
+    val common = applyPredicate(query)
+    s"""|$common
+        |let $$time := (
+        |for $$t in $$common
+        |${byTime(query.summaryLevel.timeLevel)}
+        |)
+        |return $$time
+        |""".stripMargin
+  }
+
+  def generateByHashtagAQL(query: DBQuery): String = {
+    val common = applyPredicate(query)
+    s"""|$common
+        |let $$hashtag := (
+        |for $$t in $$common
+        |${byHashTag()}
+        |)
+        |return $$hashtag
+        |""".stripMargin
+  }
+
+  private def applyPredicate(query: DBQuery): String = {
     val predicate = query.predicates.map(visitPredicate("t", query.summaryLevel, _)).mkString("\n")
-    val common =
-      s"""
-         |use dataverse $DataVerse
-         |let $$common := (
-         |for $$t in dataset $DataSet
-         |$predicate
-         |return $$t
-         |)
-         |""".stripMargin
     s"""
-       |$common
-       |let $$map := (
-       |for $$t in $$common
-       |${byMap(query.summaryLevel.spatialLevel)}
+       |use dataverse $DataVerse
+       |let $$common := (
+       |for $$t in dataset $DataSet
+       |$predicate
+       |return $$t
        |)
-       |return $$map;
-       |
-       |$common
-       |let $$time := (
-       |for $$t in $$common
-       |${byTime(query.summaryLevel.timeLevel)}
-       |)
-       |return $$time
-       |
-       |$common
-       |let $$hashtag := (
-       |for $$t in $$common
-       |${byHashTag()}
-       |)
-       |return $$hashtag
        |""".stripMargin
   }
 

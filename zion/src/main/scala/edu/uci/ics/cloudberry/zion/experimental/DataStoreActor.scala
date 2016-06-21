@@ -14,7 +14,7 @@ class DataStoreActor(val name: String, val schema: Schema, val conn: AsterixConn
   import DataStoreActor._
 
   override def receive: Receive = {
-    case query: Query => val thisSender = sender(); conn.post(parseQuery(name, schema, query)).map(thisSender ! _.json)
+    case query: Query => val thisSender = sender(); conn.postQuery(parseQuery(name, schema, query)).map(thisSender ! _)
   }
 
 }

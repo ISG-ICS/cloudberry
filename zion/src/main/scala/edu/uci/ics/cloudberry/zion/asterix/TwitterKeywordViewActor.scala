@@ -40,9 +40,9 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
 
   override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
     val aql = TwitterViewsManagerActor.generateKeywordUpdateAQL(sourceName, key, keyword, from, to)
-    conn.post(aql).map[Unit] { response: WSResponse =>
-      if (response.status != 200) {
-        throw UpdateFailedDBException(response.body)
+    conn.postUpdate(aql).map[Unit] { succeed: Boolean =>
+      if (!succeed) {
+        throw UpdateFailedDBException(key + ", keyword is:" + keyword)
       }
     }
   }
@@ -50,7 +50,7 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
   override def askViewOnly(query: DBQuery): Future[Response] = {
     val originKeywordP = query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate]).get
     val keywords = originKeywordP.keywords.filterNot(_ == keyword)
-    val newPred=
+    val newPred =
       if (keywords.length == 0) {
         query.predicates.filterNot(_.isInstanceOf[KeywordPredicate])
       } else {
@@ -59,9 +59,9 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
 
     query match {
       case q: SampleQuery =>
-        conn.post(generateSampleAQL(key, q.copy(predicates = newPred))).map(handleSampleResponse)
+        conn.postQuery(generateSampleAQL(key, q.copy(predicates = newPred))).map(handleSampleResponse)
       case q: DBQuery =>
-        conn.post(generateAQL(key, new DBQuery(q.summaryLevel, newPred))).map(handleAllInOneWSResponse)
+        askAsterixAndGetAllResponse(conn, key, new DBQuery(q.summaryLevel, newPred))
     }
   }
 

@@ -3,10 +3,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 import edu.uci.ics.cloudberry.zion.actor.DataStoreActor
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model._
-import org.joda.time.DateTime
-import play.api.Logger
-import play.api.libs.json.{JsArray, Json}
-import play.api.libs.ws.WSResponse
+import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,9 +16,9 @@ class TwitterDataStoreActor(conn: AsterixConnection, config: Config)(implicit ec
   override def query(query: DBQuery): Future[Response] = {
     query match {
       case q: SampleQuery =>
-        conn.post(generateSampleAQL(name, q)).map(handleSampleResponse)
+        conn.postQuery(generateSampleAQL(name, q)).map(handleSampleResponse)
       case q: DBQuery =>
-        conn.post(generateAQL(name, q)).map(handleAllInOneWSResponse)
+        askAsterixAndGetAllResponse(conn, name, q)
     }
   }
 }
@@ -57,57 +54,58 @@ object TwitterDataStoreActor {
     )
   }
 
-  def handleAllInOneWSResponse(response: WSResponse): Response = {
-    //TODO different aggregation cost differently, it may be better to split the query, which makes the coding easier.
-    val seq = Json.parse(response.body.replaceAll(" \\]\n\\[", " ,\n")).as[Seq[Seq[KeyCountPair]]]
-    SpatialTimeCount(seq(0), seq(1), seq(2))
+  def handleSampleResponse(jsValue: JsValue): Response = {
+    SampleList(jsValue.as[Seq[SampleTweet]])
   }
 
-  def handleSampleResponse(wSResponse: WSResponse): Response = {
-    SampleList(wSResponse.json.as[Seq[SampleTweet]])
+  def handleKeyCountResponse(jsValue: JsValue): Seq[KeyCountPair] = {
+    jsValue.asInstanceOf[JsArray].apply(0).as[Seq[KeyCountPair]]
   }
 
-  def handleKeyCountResponse(jsArray: JsArray): Seq[KeyCountPair] = {
-    jsArray.apply(0).as[Seq[KeyCountPair]]
+  def askAsterixAndGetAllResponse(conn: AsterixConnection, name: String, query: DBQuery)
+                                 (implicit ec: ExecutionContext): Future[Response] = {
+    val fMap = conn.postQuery(generateByMapAQL(name, query)).map(handleKeyCountResponse)
+    val fTime = conn.postQuery(generateByTimeAQL(name, query)).map(handleKeyCountResponse)
+    val fHashtag = conn.postQuery(generateByHashtagAQL(name, query)).map(handleKeyCountResponse)
+    for {
+      mapResult <- fMap
+      timeResult <- fTime
+      hashtagResult <- fHashtag
+    } yield SpatialTimeCount(mapResult, timeResult, hashtagResult)
   }
 
-  def generateAQL(name: String, query: DBQuery): String = {
-    val aqlVisitor = AQLVisitor(name)
-    val predicate = query.predicates.map(p => aqlVisitor.visitPredicate("t", p)).mkString("\n")
-    val common =
-      s"""
-         |use dataverse $DataVerse
-         |let $$common := (
-         |for $$t in dataset $name
-         |$predicate
-         |return $$t
-         |)
-         |""".stripMargin
+  def generateByMapAQL(datasetName: String, query: DBQuery): String = {
+    val common = applyPredicate(datasetName, query)
+    s"""|$common
+        |let $$map := (
+        |for $$t in $$common
+        |${byMap(query.summaryLevel.spatialLevel)}
+        |)
+        |return $$map
+        |""".stripMargin
+  }
 
-    s"""
-       |
-       |$common
-       |let $$map := (
-       |for $$t in $$common
-       |${byMap(query.summaryLevel.spatialLevel)}
-       |)
-       |return $$map
-       |
-       |$common
-       |let $$time := (
-       |for $$t in $$common
-       |${byTime(query.summaryLevel.timeLevel)}
-       |)
-       |return $$time
-       |
-       |$common
-       |let $$hashtag := (
-       |for $$t in $$common
-       |where not(is-null($$t.hashtags))
-       |${byHashTag()}
-       |)
-       |return $$hashtag
-       |
+  def generateByTimeAQL(datasetName: String, query: DBQuery): String = {
+    val common = applyPredicate(datasetName, query)
+    s"""|$common
+        |let $$time := (
+        |for $$t in $$common
+        |${byTime(query.summaryLevel.timeLevel)}
+        |)
+        |return $$time
+        |""".stripMargin
+  }
+
+  def generateByHashtagAQL(datasetName: String, query: DBQuery): String = {
+    val common = applyPredicate(datasetName, query)
+    s"""|$common
+        |let $$hashtag := (
+        |for $$t in $$common
+        |where not(is-null($$t.hashtags))
+        |${byHashTag()}
+        |)
+        |return $$hashtag
+        |
        |""".stripMargin
   }
 
@@ -124,6 +122,19 @@ object TwitterDataStoreActor {
   }
 
   //TODO move this hacking code to visitor
+  private def applyPredicate(datasetName: String, query: DBQuery): String = {
+    val aqlVisitor = AQLVisitor(datasetName)
+    val predicate = query.predicates.map(p => aqlVisitor.visitPredicate("t", p)).mkString("\n")
+    s"""
+       |use dataverse $DataVerse
+       |let $$common := (
+       |for $$t in dataset $datasetName
+       |$predicate
+       |return $$t
+       |)
+       |""".stripMargin
+  }
+
   private def byMap(level: SpatialLevels.Value): String = {
     s"""
        |group by $$c := $$t.${SpatialLevelMap.getOrElse(level, FieldStateID)} with $$t

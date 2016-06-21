@@ -23,8 +23,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
       val probeSender = new TestProbe(system)
       val probeSource = new TestProbe(system)
 
-
-      val answerAql =
+      val answerAqls = Seq(
         """
           |use dataverse twitter
           |let $common := (
@@ -52,8 +51,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $map
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -81,8 +81,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $time
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -115,7 +116,8 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |)
           |return $hashtag
           | """.stripMargin
-      withAqlCheckConn(answerAql) { conn =>
+      )
+      withQueryAQLConn(answerAqls.map(aql => aql.trim -> emptyKeyCountResponse).toMap) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterKeywordViewActor],
                                              conn, queryTemplate, key, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, keywordQuery1)
@@ -133,7 +135,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
       val probeSource = new TestProbe(system)
 
 
-      val answerAql =
+      val answerAqls = Seq(
         """
           |use dataverse twitter
           |let $common := (
@@ -162,8 +164,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $map
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -192,8 +195,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $time
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -227,7 +231,8 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |)
           |return $hashtag
           | """.stripMargin
-      withAqlCheckConn(answerAql) { conn =>
+      )
+      withQueryAQLConn(answerAqls.map(aql => aql.trim -> emptyKeyCountResponse).toMap) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterKeywordViewActor],
                                              conn, queryTemplate, key, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, keywordQuery2)
