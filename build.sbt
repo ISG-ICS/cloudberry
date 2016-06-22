@@ -22,6 +22,12 @@ lazy val noah = (project in file("noah")).
     libraryDependencies ++= noahDependencies
   ).dependsOn(gnosis, util)
 
+lazy val zion = (project in file("zion")).
+  settings(Commons.settings: _*).
+  settings(
+    libraryDependencies ++= zionDependencies
+  ).dependsOn(util)
+
 lazy val neo = (project in file("neo")).
   settings(Commons.playSettings: _*).
   settings(
@@ -34,9 +40,3 @@ lazy val neo = (project in file("neo")).
   ).
   enablePlugins(PlayScala).
   dependsOn(gnosis, util, zion)
-
-lazy val zion = (project in file("zion")).
-  settings(Commons.settings: _*).
-  settings(
-    libraryDependencies ++= zionDependencies
-  ).dependsOn(util)

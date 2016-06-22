@@ -27,13 +27,16 @@ public class Config {
     @Option(name = "-tr", aliases = "--tracker", handler = TermArrayOptionHandler.class, usage = "Tracked terms, separated by comma.")
     private String[] trackTerms = new String[]{};
 
+    @Option(name = "-tu", aliases = "--trackuser", handler = TermArrayOptionHandler.class, usage = "Tracked public users, separated by comma.")
+    private String[] trackUsers = new String[]{};
+
     @Option(name = "-loc", aliases = "--location", handler = LocationListOptionHandler.class, usage = "location rectangular, southwest.lon, southwest.lat, northeast.lon, northeast.lat")
     private Location[] trackLocation = new Location[]{};
 
-    @Option(required = true, name = "-u", aliases = "--url", usage = "url of the feed adapter")
+    @Option(name = "-u", aliases = "--url", usage = "url of the feed adapter")
     private String adapterUrl;
 
-    @Option(required = true, name = "-p", aliases = "--port", usage = "port of the feed socket")
+    @Option(name = "-p", aliases = "--port", usage = "port of the feed socket")
     private int port;
 
     @Option(name = "-w", aliases = "--wait", usage = "waiting milliseconds per record, default 500")
@@ -73,17 +76,33 @@ public class Config {
         return trackTerms;
     }
 
-    public String getAdapterUrl() { return adapterUrl; }
+    public String[] getTrackUsers() {
+        return trackUsers;
+    }
 
-    public int getPort() { return port; }
+    public String getAdapterUrl() {
+        return adapterUrl;
+    }
 
-    public int getWaitMillSecPerRecord() { return waitMillSecPerRecord; }
+    public int getPort() {
+        return port;
+    }
 
-    public int getBatchSize() { return batchSize; }
+    public int getWaitMillSecPerRecord() {
+        return waitMillSecPerRecord;
+    }
 
-    public int getMaxCount() { return maxCount; }
+    public int getBatchSize() {
+        return batchSize;
+    }
 
-    public boolean getIsFileOnly() { return isFileOnly; }
+    public int getMaxCount() {
+        return maxCount;
+    }
+
+    public boolean getIsFileOnly() {
+        return isFileOnly;
+    }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 
@@ -101,7 +120,7 @@ public class Config {
                 try {
                     param = params.getParameter(counter);
                 } catch (CmdLineException ex) {
-                    System.out.println("tarck term exception");
+                    System.out.println("track term exception");
                     break;
                 }
                 if (param.startsWith("-")) {

@@ -5,6 +5,7 @@ import play.api.Configuration
 import scala.concurrent.duration._
 
 class Config(config: Configuration) {
+
   import Config._
 
   val AsterixURL = config.getString("asterixdb.url").getOrElse("testing")
@@ -20,9 +21,13 @@ class Config(config: Configuration) {
   val ViewUpdateInterval = config.getString("view.update.interval").map(parseTimePair).getOrElse(30 minutes)
 
   val ViewMetaFlushInterval = config.getString("view.meta.flush.interval").map(parseTimePair).getOrElse(30 minutes)
+
+  val AQLQueryConnTimeOut = config.getString("asterix.conn.timeout.query").map(parseTimePair).getOrElse(10 seconds)
+
+  val AQLUpdateConnTimeOut = config.getString("asterix.conn.timeout.update").map(parseTimePair).getOrElse(Duration.Inf)
 }
 
-object Config{
+object Config {
   def parseTimePair(timeString: String) = {
     val split = timeString.split("\\s+")
     FiniteDuration(split(0).toLong, split(1))

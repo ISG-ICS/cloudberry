@@ -30,14 +30,14 @@ class Application @Inject()(val wsClient: WSClient,
                            ) extends Controller {
 
   val config = new Config(configuration)
-  val asterixConn = new AsterixConnection(wsClient, config.AsterixURL)
+  val asterixConn = new AsterixConnection(config.AsterixURL, wsClient, config)
 
   Logger.logger.info("I'm initializing")
   val checkViewStatus = Migration_20160324(asterixConn).up()
   val USGeoGnosis = Knowledge.buildUSKnowledge(environment)
 
   Await.ready(checkViewStatus, config.AwaitInitial) onComplete {
-    case Success(response: WSResponse) => Logger.logger.info(response.body)
+    case Success(succeed: Boolean) => if (!succeed) throw new IllegalStateException("Initialization failed")
     case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
   }
 
@@ -54,6 +54,10 @@ class Application @Inject()(val wsClient: WSClient,
 
   def debug = Action {
     Ok(views.html.debug("Debug"))
+  }
+
+  def dashboard = Action {
+    Ok(views.html.dashboard("Dashboard"))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>

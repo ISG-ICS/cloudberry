@@ -40,7 +40,7 @@ class UserActor(val out: ActorRef, val cachesActor: ActorRef, val usGeoGnosis: U
     val userQuery = json.as[UserQuery]
     val level = matchLevel(userQuery.level)
     val entities = usGeoGnosis.tagRectangle(level, userQuery.area)
-    CacheQuery(Migration_20160324.TweetDataSet, userQuery.keyword, userQuery.timeRange, level,
+    CacheQuery(Migration_20160324.TweetDataSet, userQuery.keywords, userQuery.timeRange, level,
                entities, userQuery.sampleOffset, userQuery.sampleLimit, (userQuery.repeatDuration).seconds)
   }
 

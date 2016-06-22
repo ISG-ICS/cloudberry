@@ -17,15 +17,14 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
                               fViewStore: Future[ViewMetaRecord],
                               config: Config
                              )(implicit ec: ExecutionContext)
-  extends ViewActor(sourceActor, fViewStore) {
+  extends ViewActor(sourceActor, fViewStore, config) {
 
   import TwitterDataStoreActor._
 
   override def createSourceQuery(initQuery: DBQuery, unCovered: Seq[Interval]): DBQuery = {
     val newTimes = TimePredicate(FieldCreateAt, unCovered)
-    val keywordPredicate = KeywordPredicate(FieldKeyword, Seq(this.keyword))
-    val others = initQuery.predicates.filter(p => !p.isInstanceOf[TimePredicate] && !p.isInstanceOf[KeywordPredicate])
-    new DBQuery(initQuery.summaryLevel, others :+ newTimes :+ keywordPredicate)
+    val others = initQuery.predicates.filter(p => !p.isInstanceOf[TimePredicate])
+    new DBQuery(initQuery.summaryLevel, others :+ newTimes)
   }
 
   override def mergeResult(viewResponse: Response, sourceResponse: Response): Response = {
@@ -41,19 +40,28 @@ class TwitterKeywordViewActor(val conn: AsterixConnection,
 
   override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
     val aql = TwitterViewsManagerActor.generateKeywordUpdateAQL(sourceName, key, keyword, from, to)
-    conn.post(aql).map[Unit] { response: WSResponse =>
-      if (response.status != 200) {
-        throw UpdateFailedDBException(response.body)
+    conn.postUpdate(aql).map[Unit] { succeed: Boolean =>
+      if (!succeed) {
+        throw UpdateFailedDBException(key + ", keyword is:" + keyword)
       }
     }
   }
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
+    val originKeywordP = query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate]).get
+    val keywords = originKeywordP.keywords.filterNot(_ == keyword)
+    val newPred =
+      if (keywords.length == 0) {
+        query.predicates.filterNot(_.isInstanceOf[KeywordPredicate])
+      } else {
+        query.predicates.filterNot(_.isInstanceOf[KeywordPredicate]) :+ KeywordPredicate(originKeywordP.fieldName, keywords)
+      }
+
     query match {
       case q: SampleQuery =>
-        conn.post(generateSampleAQL(key, q)).map(handleSampleResponse)
+        conn.postQuery(generateSampleAQL(key, q.copy(predicates = newPred))).map(handleSampleResponse)
       case q: DBQuery =>
-        conn.post(generateAQL(key, q)).map(handleAllInOneWSResponse)
+        askAsterixAndGetAllResponse(conn, key, new DBQuery(q.summaryLevel, newPred))
     }
   }
 

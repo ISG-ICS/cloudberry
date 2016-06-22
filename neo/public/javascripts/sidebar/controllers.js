@@ -1,6 +1,6 @@
 angular.module('cloudberry.sidebar', ['cloudberry.common'])
   .controller('HashTagCtrl', function ($scope, $window, Asterix) {
-    $scope.result = {};
+    $scope.result = null;
     $scope.$watch(
       function() {
         return Asterix.hashTagResult;
@@ -17,7 +17,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       template: [
         '<table class="table" id="hashcount">',
           '<thead>',
-            '<tr ng-repeat="r in result"><td># {{r.key}}</td><br/><td>{{r.count}}</td></tr>',
+            '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.key}}</td><br/><td>{{r.count}}</td></tr>',
           '</thead>',
         '</table>'
       ].join('')

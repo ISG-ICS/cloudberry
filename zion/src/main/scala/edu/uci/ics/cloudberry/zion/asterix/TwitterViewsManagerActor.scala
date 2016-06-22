@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
+import java.security.MessageDigest
+
 import akka.actor.{Actor, ActorRef, Props}
 import edu.uci.ics.cloudberry.zion.actor.{ViewMetaRecord, ViewsManagerActor}
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -18,7 +20,7 @@ class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceA
 
   override def getViewKey(query: DBQuery): String = {
     val keyword = query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate].keywords.head).getOrElse("")
-    sourceName + "_" + keyword
+    sourceName + "_" + MessageDigest.getInstance("MD5").digest(keyword.getBytes("UTF-8")).map("%02x" format _).mkString
   }
 
   override def flushInterval: FiniteDuration = config.ViewMetaFlushInterval
@@ -41,15 +43,15 @@ class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceA
     val optKeyword = query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate])
     if (optKeyword.isDefined) {
       val keyword = optKeyword.get.keywords.head
-      conn.post(generateSubSetViewAQL(sourceName, keyword)).map { ws =>
-        if (ws.status != 200) throw UpdateFailedDBException(ws.body)
+      conn.postUpdate(generateSubSetViewAQL(sourceName, key, keyword)).map { succeed =>
+        if (!succeed) throw UpdateFailedDBException(key + "," + keyword)
         ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.Point, TimeLevels.TimeStamp),
                        startTime = new DateTime(0l), lastVisitTime = new DateTime(), lastUpdateTime = new DateTime(),
                        visitTimes = 0, updateCycle = flushInterval)
       }
     } else {
-      conn.post(generateSummaryViewAQL(sourceName, query.summaryLevel)).map { ws =>
-        if (ws.status != 200) throw UpdateFailedDBException(ws.body)
+      conn.postUpdate(generateSummaryViewAQL(sourceName, key, query.summaryLevel)).map { succeed =>
+        if (!succeed) throw UpdateFailedDBException(key + ", summary:" + query.summaryLevel)
         ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.County, TimeLevels.Day),
                        startTime = new DateTime(0l), lastVisitTime = new DateTime(), lastUpdateTime = new DateTime(),
                        visitTimes = 0, updateCycle = flushInterval)
@@ -78,21 +80,18 @@ object TwitterViewsManagerActor {
   def loadFromMetaStore(source: String, conn: AsterixConnection)(implicit ec: ExecutionContext): Future[Seq[ViewMetaRecord]] = {
     val aql =
       s"""
+         |$ViewMetaCreateAQL
          |use dataverse ${TwitterDataStoreActor.DataVerse}
          |for $$t in dataset $ViewMetaDataSetName
          |where $$t.sourceName = "$source"
          |return $$t
          |""".stripMargin.trim
-    conn.post(aql).map { ws =>
-      if (ws.status == 200) {
-        ws.json.as[Seq[ViewMetaRecord]]
-      } else {
-        Seq.empty[ViewMetaRecord]
-      }
+    conn.postQuery(aql).map { jsValue: JsValue =>
+        jsValue.as[Seq[ViewMetaRecord]]
     }
   }
 
-  def flushMetaToStore(conn: AsterixConnection, seq: Seq[ViewMetaRecord]): Future[WSResponse] = {
+  def flushMetaToStore(conn: AsterixConnection, seq: Seq[ViewMetaRecord]): Future[Boolean] = {
     val viewRecords = Json.prettyPrint(Json.toJson[Seq[ViewMetaRecord]](seq))
     val aql =
       s"""
@@ -100,7 +99,7 @@ object TwitterViewsManagerActor {
          |upsert into dataset $ViewMetaDataSetName (
          |$viewRecords
          |);""".stripMargin
-    conn.post(aql)
+    conn.postUpdate(aql)
   }
 
   def keywordViewTemplate(keyword: String): DBQuery = {
@@ -112,9 +111,8 @@ object TwitterViewsManagerActor {
     new DBQuery(summaryLevel, Seq.empty)
   }
 
-  def generateSubSetViewAQL(sourceName: String, keyword: String): String = {
+  def generateSubSetViewAQL(sourceName: String, viewName: String, keyword: String): String = {
     import TwitterDataStoreActor._
-    val viewName = s"${sourceName}_${keyword}"
     s"""
        |use dataverse $DataVerse
        |drop dataset $viewName if exists
@@ -129,7 +127,7 @@ object TwitterViewsManagerActor {
     s"""
        |use dataverse $DataVerse
        |
-       |insert into dataset $viewName(
+       |upsert into dataset $viewName(
        |for $$t in dataset $sourceName
        |let $$keyword := "$keyword"
        |where similarity-jaccard(word-tokens($$t."text"), word-tokens($$keyword)) > 0.0
@@ -139,8 +137,7 @@ object TwitterViewsManagerActor {
        |)""".stripMargin
   }
 
-  def generateSummaryViewAQL(sourceName: String, summaryLevel: SummaryLevel): String = {
-    val viewName = s"${sourceName}_"
+  def generateSummaryViewAQL(sourceName: String, viewName: String, summaryLevel: SummaryLevel): String = {
     import TwitterCountyDaySummaryView._
 
     s"""
@@ -162,7 +159,7 @@ object TwitterViewsManagerActor {
     //TODO hard coded for (county, day) level now.
     s"""
        |use dataverse $DataVerse
-       |insert into dataset ${viewName}
+       |upsert into dataset ${viewName}
        |(for $$t in dataset ${sourceName}
        |  where $$t.$FieldCreateAt >= datetime("${TimeFormat.print(from)}")
        |  and $$t.$FieldCreateAt < datetime("${TimeFormat.print(to)}")
