@@ -80,6 +80,7 @@ object TwitterViewsManagerActor {
   def loadFromMetaStore(source: String, conn: AsterixConnection)(implicit ec: ExecutionContext): Future[Seq[ViewMetaRecord]] = {
     val aql =
       s"""
+         |$ViewMetaCreateAQL
          |use dataverse ${TwitterDataStoreActor.DataVerse}
          |for $$t in dataset $ViewMetaDataSetName
          |where $$t.sourceName = "$source"
