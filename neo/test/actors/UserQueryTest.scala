@@ -2,7 +2,7 @@ package actors
 
 import models.UserQuery
 import org.specs2.mutable.Specification
-import play.api.libs.json.{JsNull, JsNumber, JsObject, JsString}
+import play.api.libs.json._
 
 class UserQueryTest extends Specification {
 
@@ -10,7 +10,7 @@ class UserQueryTest extends Specification {
     "return None if the json didn't have it" in {
       val jsonQuery = JsObject(Seq(
         "dataset" -> JsString("twitter"),
-        "keyword" -> JsNull,
+        "keywords" -> JsArray(),
         "area" -> JsObject(Seq("swLog" -> JsNumber(-46.23046874999999),
                                "swLat" -> JsNumber(53.85252660044951),
                                "neLog" -> JsNumber(-146.42578125),
@@ -23,7 +23,7 @@ class UserQueryTest extends Specification {
         "sampleOffset" -> JsNumber(0),
         "sampleLimit" -> JsNumber(10)))
       val userQuery = jsonQuery.as[UserQuery]
-      userQuery.keyword must_== None
+      userQuery.keywords must_== Seq.empty[String]
     }
   }
 }
