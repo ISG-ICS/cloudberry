@@ -25,9 +25,9 @@ angular.module('cloudberry.common', [])
 
       queryType: "search",
 
-      mapResult: {},
-      timeResult: {},
-      hashTagResult: {},
+      mapResult: [],
+      timeResult: [],
+      hashTagResult: [],
       errorMessage: null,
 
       query: function(parameters, queryType) {

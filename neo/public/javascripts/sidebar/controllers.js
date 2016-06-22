@@ -1,6 +1,6 @@
 angular.module('cloudberry.sidebar', ['cloudberry.common'])
   .controller('HashTagCtrl', function ($scope, $window, Asterix) {
-    $scope.result = {};
+    $scope.result = null;
     $scope.$watch(
       function() {
         return Asterix.hashTagResult;
