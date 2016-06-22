@@ -34,7 +34,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
   override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
     val aql = TwitterViewsManagerActor.generateSummaryUpdateAQL(sourceName, key, summaryLevel, from, to)
-    conn.postUpdate(aql).map[Unit] { succeed : Boolean =>
+    conn.postUpdate(aql).map[Unit] { succeed: Boolean =>
       if (!succeed) {
         throw UpdateFailedDBException(key)
       }
@@ -42,7 +42,7 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
   }
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    askAsterixAndGetAllResponse(conn, query)
+    askAsterixAndGetAllResponse(conn, key, query)
   }
 
   override def updateInterval: FiniteDuration = config.ViewUpdateInterval
@@ -51,7 +51,6 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
 object TwitterCountyDaySummaryView {
   val DataVerse = "twitter"
-  val DataSet = "ds_tweet_"
   val FieldStateID = "stateID"
   val FieldCountyID = "countyID"
   val FieldTimeBin = "timeBin"
@@ -94,11 +93,11 @@ object TwitterCountyDaySummaryView {
 
   }
 
-  def askAsterixAndGetAllResponse(conn: AsterixConnection, query: DBQuery)(implicit ec: ExecutionContext): Future[Response] = {
+  def askAsterixAndGetAllResponse(conn: AsterixConnection, name: String, query: DBQuery)(implicit ec: ExecutionContext): Future[Response] = {
     import TwitterDataStoreActor.handleKeyCountResponse
-    val fMap = conn.postQuery(generateByMapAQL(query)).map(handleKeyCountResponse)
-    val fTime = conn.postQuery(generateByTimeAQL(query)).map(handleKeyCountResponse)
-    val fHashtag = conn.postQuery(generateByHashtagAQL(query)).map(handleKeyCountResponse)
+    val fMap = conn.postQuery(generateByMapAQL(name, query)).map(handleKeyCountResponse)
+    val fTime = conn.postQuery(generateByTimeAQL(name, query)).map(handleKeyCountResponse)
+    val fHashtag = conn.postQuery(generateByHashtagAQL(name, query)).map(handleKeyCountResponse)
     for {
       mapResult <- fMap
       timeResult <- fTime
@@ -106,8 +105,8 @@ object TwitterCountyDaySummaryView {
     } yield SpatialTimeCount(mapResult, timeResult, hashtagResult)
   }
 
-  def generateByMapAQL(query: DBQuery): String = {
-    val common = applyPredicate(query)
+  def generateByMapAQL(dataSet: String, query: DBQuery): String = {
+    val common = applyPredicate(dataSet, query)
     s"""|$common
         |let $$map := (
         |for $$t in $$common
@@ -117,8 +116,8 @@ object TwitterCountyDaySummaryView {
         |""".stripMargin
   }
 
-  def generateByTimeAQL(query: DBQuery): String = {
-    val common = applyPredicate(query)
+  def generateByTimeAQL(dataSet: String, query: DBQuery): String = {
+    val common = applyPredicate(dataSet, query)
     s"""|$common
         |let $$time := (
         |for $$t in $$common
@@ -128,8 +127,8 @@ object TwitterCountyDaySummaryView {
         |""".stripMargin
   }
 
-  def generateByHashtagAQL(query: DBQuery): String = {
-    val common = applyPredicate(query)
+  def generateByHashtagAQL(dataSet: String, query: DBQuery): String = {
+    val common = applyPredicate(dataSet, query)
     s"""|$common
         |let $$hashtag := (
         |for $$t in $$common
@@ -139,12 +138,12 @@ object TwitterCountyDaySummaryView {
         |""".stripMargin
   }
 
-  private def applyPredicate(query: DBQuery): String = {
+  private def applyPredicate(dataSet: String, query: DBQuery): String = {
     val predicate = query.predicates.map(visitPredicate("t", query.summaryLevel, _)).mkString("\n")
     s"""
        |use dataverse $DataVerse
        |let $$common := (
-       |for $$t in dataset $DataSet
+       |for $$t in dataset $dataSet
        |$predicate
        |return $$t
        |)
