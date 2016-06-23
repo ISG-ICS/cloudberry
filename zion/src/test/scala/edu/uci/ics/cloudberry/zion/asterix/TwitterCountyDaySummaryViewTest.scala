@@ -20,15 +20,15 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
   sequential
 
   val queryUpdateTemp: DBQuery = new DBQuery(SummaryLevel, Seq.empty)
-  val viewRecord = ViewMetaRecord("twitter", "rain", SummaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
+  val viewRecord = ViewMetaRecord("twitter", "ds_tweet_", SummaryLevel, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
   val fViewRecord = Future(viewRecord)
 
   "TwitterCountyDaySummaryView" should {
 
-    val probeSender = new TestProbe(system)
-    val probeSource = new TestProbe(system)
-
     def runSummaryView(dbQuery: DBQuery, aql2json: Map[String,JsValue], result: SpatialTimeCount): MatchResult[Any] = {
+
+      val probeSender = new TestProbe(system)
+      val probeSource = new TestProbe(system)
 
       withQueryAQLConn(aql2json) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
@@ -47,6 +47,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       runSummaryView(byCountyMonthQuery, byCountyMonthAQLMap, byCountyMonthResult)
     }
     "split the query to ask the source if can not answer by view only" in {
+
+      val probeSender = new TestProbe(system)
+      val probeSource = new TestProbe(system)
       withQueryAQLConn(partialQueryAQL2JsonMap) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                              conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
@@ -58,6 +61,9 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       }
     }
     "ask the source directly if the summary level does not fit" in {
+
+      val probeSender = new TestProbe(system)
+      val probeSource = new TestProbe(system)
       val conn: AsterixConnection = null // it shall not be touched
       val viewActor = system.actorOf(Props(classOf[TwitterCountyDaySummaryView],
                                            conn, queryUpdateTemp, probeSource.ref, fViewRecord, cloudberryConfig, ec))
@@ -68,6 +74,8 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
       actualMessage must_== byCountyMonthResult
     }
     "update the views if receives the update msg" in {
+
+      val probeSource = new TestProbe(system)
       withSucceedUpdateAQLConn { conn =>
         val proxy = new TestProbe(system)
         val parent = system.actorOf(Props(new Actor {
@@ -90,7 +98,8 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
   "TwitterCountyDaySummaryView#generateAQL" should {
     "as expected" in {
       val dbQuery = new DBQuery(new SummaryLevel(SpatialLevels.State, TimeLevels.Day), Seq(idPredicate, keywordPredicate2, timePredicate2))
-      TwitterCountyDaySummaryView.generateByMapAQL(dbQuery).trim must_==
+      val name = "ds_tweet_"
+      TwitterCountyDaySummaryView.generateByMapAQL(name, dbQuery).trim must_==
         """
           |use dataverse twitter
           |let $common := (
@@ -124,7 +133,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
           |return $map;
           | """.stripMargin.trim
 
-      TwitterCountyDaySummaryView.generateByTimeAQL(dbQuery).trim must_== (
+      TwitterCountyDaySummaryView.generateByTimeAQL(name, dbQuery).trim must_== (
         """
           |use dataverse twitter
           |let $common := (
@@ -158,7 +167,7 @@ class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationL
           |return $time
           | """.stripMargin.trim)
 
-      TwitterCountyDaySummaryView.generateByHashtagAQL(dbQuery).trim must_== (
+      TwitterCountyDaySummaryView.generateByHashtagAQL(name, dbQuery).trim must_== (
         """
           |use dataverse twitter
           |let $common := (

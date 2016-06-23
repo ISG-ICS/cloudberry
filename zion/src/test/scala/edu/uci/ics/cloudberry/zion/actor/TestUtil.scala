@@ -114,10 +114,13 @@ trait MockConnClient extends Mockito {
     when(mockConn.postQuery(any[String], any)).thenAnswer(new Answer[Future[JsValue]] {
       override def answer(invocation: InvocationOnMock): Future[JsValue] = {
         val aql = invocation.getArguments.head.asInstanceOf[String].trim
-        Future(aql2jsonAnswer.getOrElse(aql, {
+        val optResponse = aql2jsonAnswer.get(aql)
+        if (optResponse.isDefined){
+          Future(optResponse.get)
+        } else {
           System.err.println(aql)
           throw new IllegalArgumentException(aql)
-        }))
+        }
       }
     })
     block(mockConn)
