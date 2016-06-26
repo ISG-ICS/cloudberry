@@ -20,8 +20,6 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
       val key = "trump"
       val viewRecord = ViewMetaRecord("twitter", "twitter_" + key, SummaryLevel.Detail, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
       val fViewRecord = Future(viewRecord)
-      val probeSender = new TestProbe(system)
-      val probeSource = new TestProbe(system)
 
       val answerAqls = Seq(
         """
@@ -118,10 +116,13 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           | """.stripMargin
       )
       withQueryAQLConn(answerAqls.map(aql => aql.trim -> emptyKeyCountResponse).toMap) { conn =>
+
+        val probeSender = new TestProbe(system)
+        val probeSource = new TestProbe(system)
         val viewActor = system.actorOf(Props(classOf[TwitterKeywordViewActor],
                                              conn, queryTemplate, key, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, keywordQuery1)
-        val actualMessage = probeSender.receiveOne(500 millis)
+        val actualMessage = probeSender.receiveOne(5000 millis)
         probeSource.expectNoMsg()
         actualMessage must_!= (null)
       }
@@ -236,7 +237,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
         val viewActor = system.actorOf(Props(classOf[TwitterKeywordViewActor],
                                              conn, queryTemplate, key, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, keywordQuery2)
-        val actualMessage = probeSender.receiveOne(500 millis)
+        val actualMessage = probeSender.receiveOne(5000 millis)
         probeSource.expectNoMsg()
         actualMessage must_!= (null)
       }

@@ -143,7 +143,7 @@ trait TestData {
   // Create by county, by month request
   val CountyMonthSummary = SummaryLevel(SpatialLevels.County, TimeLevels.Month)
   val byCountyMonthQuery = new DBQuery(CountyMonthSummary, Seq(timePredicate1, idPredicate))
-  val monthResult = Seq[KeyCountPair](KeyCountPair("2012-01", 1), KeyCountPair("2012--02", 2))
+  val monthResult = Seq[KeyCountPair](KeyCountPair("2012-01", 1), KeyCountPair("2012-02", 2))
   val byCountyMonthResult = SpatialTimeCount(stateResult, monthResult, hashTagResult)
   val byCountyMonthMapAQL =
     s"""

@@ -159,7 +159,7 @@ object TwitterViewsManagerActor {
     //TODO hard coded for (county, day) level now.
     s"""
        |use dataverse $DataVerse
-       |upsert into dataset ${viewName}
+       |insert into dataset ${viewName}
        |(for $$t in dataset ${sourceName}
        |  where $$t.$FieldCreateAt >= datetime("${TimeFormat.print(from)}")
        |  and $$t.$FieldCreateAt < datetime("${TimeFormat.print(to)}")
