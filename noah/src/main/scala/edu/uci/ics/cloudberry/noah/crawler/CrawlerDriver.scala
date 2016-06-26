@@ -15,10 +15,7 @@ import com.typesafe.config.ConfigFactory
 object CrawlerDriver extends App{
   val url=getClass.getResource("/promedmail")
   val conf = ConfigFactory.parseFile(new File(url.getPath))
-  // For local directory path
-  /*val url = "C:\\Users\\ashka\\IdeaProjects\\cloudberry\\noah\\src\\main\\resources\\crawler\\promedmail.conf"
-  val conf = ConfigFactory.parseFile(new File(url))
-*/val EntryURL = conf.getString("crawljax.url")
+  val EntryURL = conf.getString("crawljax.url")
   val Wait_After_Reload = conf.getInt("crawljax.waitafterreload")
   val Wait_After_Event = conf.getInt("crawljax.waitafterevent")
   val OutputDir = conf.getString("crawljax.outputDir")
