@@ -43,15 +43,15 @@ class TwitterViewsManagerActor(val conn: AsterixConnection, override val sourceA
     val optKeyword = query.predicates.find(_.isInstanceOf[KeywordPredicate]).map(_.asInstanceOf[KeywordPredicate])
     if (optKeyword.isDefined) {
       val keyword = optKeyword.get.keywords.head
-      conn.post(generateSubSetViewAQL(sourceName, key, keyword)).map { ws =>
-        if (ws.status != 200) throw UpdateFailedDBException(ws.body)
+      conn.postUpdate(generateSubSetViewAQL(sourceName, key, keyword)).map { succeed =>
+        if (!succeed) throw UpdateFailedDBException(key + "," + keyword)
         ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.Point, TimeLevels.TimeStamp),
                        startTime = new DateTime(0l), lastVisitTime = new DateTime(), lastUpdateTime = new DateTime(),
                        visitTimes = 0, updateCycle = flushInterval)
       }
     } else {
-      conn.post(generateSummaryViewAQL(sourceName, key, query.summaryLevel)).map { ws =>
-        if (ws.status != 200) throw UpdateFailedDBException(ws.body)
+      conn.postUpdate(generateSummaryViewAQL(sourceName, key, query.summaryLevel)).map { succeed =>
+        if (!succeed) throw UpdateFailedDBException(key + ", summary:" + query.summaryLevel)
         ViewMetaRecord(sourceName, key, SummaryLevel(SpatialLevels.County, TimeLevels.Day),
                        startTime = new DateTime(0l), lastVisitTime = new DateTime(), lastUpdateTime = new DateTime(),
                        visitTimes = 0, updateCycle = flushInterval)
@@ -80,21 +80,18 @@ object TwitterViewsManagerActor {
   def loadFromMetaStore(source: String, conn: AsterixConnection)(implicit ec: ExecutionContext): Future[Seq[ViewMetaRecord]] = {
     val aql =
       s"""
+         |$ViewMetaCreateAQL
          |use dataverse ${TwitterDataStoreActor.DataVerse}
          |for $$t in dataset $ViewMetaDataSetName
          |where $$t.sourceName = "$source"
          |return $$t
          |""".stripMargin.trim
-    conn.post(aql).map { ws =>
-      if (ws.status == 200) {
-        ws.json.as[Seq[ViewMetaRecord]]
-      } else {
-        Seq.empty[ViewMetaRecord]
-      }
+    conn.postQuery(aql).map { jsValue: JsValue =>
+        jsValue.as[Seq[ViewMetaRecord]]
     }
   }
 
-  def flushMetaToStore(conn: AsterixConnection, seq: Seq[ViewMetaRecord]): Future[WSResponse] = {
+  def flushMetaToStore(conn: AsterixConnection, seq: Seq[ViewMetaRecord]): Future[Boolean] = {
     val viewRecords = Json.prettyPrint(Json.toJson[Seq[ViewMetaRecord]](seq))
     val aql =
       s"""
@@ -102,7 +99,7 @@ object TwitterViewsManagerActor {
          |upsert into dataset $ViewMetaDataSetName (
          |$viewRecords
          |);""".stripMargin
-    conn.post(aql)
+    conn.postUpdate(aql)
   }
 
   def keywordViewTemplate(keyword: String): DBQuery = {
@@ -162,7 +159,7 @@ object TwitterViewsManagerActor {
     //TODO hard coded for (county, day) level now.
     s"""
        |use dataverse $DataVerse
-       |upsert into dataset ${viewName}
+       |insert into dataset ${viewName}
        |(for $$t in dataset ${sourceName}
        |  where $$t.$FieldCreateAt >= datetime("${TimeFormat.print(from)}")
        |  and $$t.$FieldCreateAt < datetime("${TimeFormat.print(to)}")

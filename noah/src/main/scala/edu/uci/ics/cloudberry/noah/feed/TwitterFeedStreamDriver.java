@@ -118,15 +118,15 @@ public class TwitterFeedStreamDriver {
                     }
                 }
             });
-            try {
-                if (config.getTrackTerms().length == 0 && config.getTrackLocation().length == 0) {
+
+            if (config.getTrackTerms().length == 0 && config.getTrackLocation().length == 0) {
                 throw new CmdLineException("Should provide at least one tracking word, or one location boundary");
-                }
-                feedDriver.openSocket(config);
-            } catch (CmdLineException e) {
-                e.printStackTrace();
             }
+            feedDriver.openSocket(config);
             feedDriver.run(config, bw);
+        } catch (CmdLineException e) {
+            System.err.println(e);
+
         } catch (InterruptedException e) {
             System.err.println(e);
         } finally {

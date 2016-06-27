@@ -20,11 +20,8 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
       val key = "trump"
       val viewRecord = ViewMetaRecord("twitter", "twitter_" + key, SummaryLevel.Detail, startTime, lastVisitTime, lastUpdateTime, visitTimes, updateCycle)
       val fViewRecord = Future(viewRecord)
-      val probeSender = new TestProbe(system)
-      val probeSource = new TestProbe(system)
 
-
-      val answerAql =
+      val answerAqls = Seq(
         """
           |use dataverse twitter
           |let $common := (
@@ -37,8 +34,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |
           |
-          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
-          |for $sid in $set
+          |for $sid in [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |where $t.geo_tag.stateID = $sid
           |
           |return $t
@@ -52,8 +48,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $map
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -65,8 +62,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |
           |
-          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
-          |for $sid in $set
+          |for $sid in [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |where $t.geo_tag.stateID = $sid
           |
           |return $t
@@ -81,8 +77,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $time
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -94,8 +91,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |
           |
-          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
-          |for $sid in $set
+          |for $sid in [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |where $t.geo_tag.stateID = $sid
           |
           |return $t
@@ -115,11 +111,15 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |)
           |return $hashtag
           | """.stripMargin
-      withAqlCheckConn(answerAql) { conn =>
+      )
+      withQueryAQLConn(answerAqls.map(aql => aql.trim -> emptyKeyCountResponse).toMap) { conn =>
+
+        val probeSender = new TestProbe(system)
+        val probeSource = new TestProbe(system)
         val viewActor = system.actorOf(Props(classOf[TwitterKeywordViewActor],
                                              conn, queryTemplate, key, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, keywordQuery1)
-        val actualMessage = probeSender.receiveOne(500 millis)
+        val actualMessage = probeSender.receiveOne(5000 millis)
         probeSource.expectNoMsg()
         actualMessage must_!= (null)
       }
@@ -133,7 +133,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
       val probeSource = new TestProbe(system)
 
 
-      val answerAql =
+      val answerAqls = Seq(
         """
           |use dataverse twitter
           |let $common := (
@@ -146,8 +146,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |
           |
-          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
-          |for $sid in $set
+          |for $sid in [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |where $t.geo_tag.stateID = $sid
           |
           |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
@@ -162,8 +161,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $map
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -175,8 +175,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |
           |
-          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
-          |for $sid in $set
+          |for $sid in [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |where $t.geo_tag.stateID = $sid
           |
           |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
@@ -192,8 +191,9 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |)
           |return $time
-          |
-          |
+          | """.stripMargin
+        ,
+        """
           |use dataverse twitter
           |let $common := (
           |for $t in dataset twitter_trump
@@ -205,8 +205,7 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |
           |
           |
-          |let $set := [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
-          |for $sid in $set
+          |for $sid in [ 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50 ]
           |where $t.geo_tag.stateID = $sid
           |
           |where similarity-jaccard(word-tokens($t."text"), word-tokens("hilary")) > 0.0
@@ -227,11 +226,12 @@ class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike 
           |)
           |return $hashtag
           | """.stripMargin
-      withAqlCheckConn(answerAql) { conn =>
+      )
+      withQueryAQLConn(answerAqls.map(aql => aql.trim -> emptyKeyCountResponse).toMap) { conn =>
         val viewActor = system.actorOf(Props(classOf[TwitterKeywordViewActor],
                                              conn, queryTemplate, key, probeSource.ref, fViewRecord, cloudberryConfig, ec))
         probeSender.send(viewActor, keywordQuery2)
-        val actualMessage = probeSender.receiveOne(500 millis)
+        val actualMessage = probeSender.receiveOne(5000 millis)
         probeSource.expectNoMsg()
         actualMessage must_!= (null)
       }

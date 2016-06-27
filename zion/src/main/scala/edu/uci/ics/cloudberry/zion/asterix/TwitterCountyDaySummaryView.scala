@@ -34,15 +34,15 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
   override def updateView(from: DateTime, to: DateTime): Future[Unit] = {
     val aql = TwitterViewsManagerActor.generateSummaryUpdateAQL(sourceName, key, summaryLevel, from, to)
-    conn.post(aql).map[Unit] { response: WSResponse =>
-      if (response.status != 200) {
-        throw UpdateFailedDBException(response.body)
+    conn.postUpdate(aql).map[Unit] { succeed: Boolean =>
+      if (!succeed) {
+        throw UpdateFailedDBException(key)
       }
     }
   }
 
   override def askViewOnly(query: DBQuery): Future[Response] = {
-    conn.post(generateAQL(query)).map(TwitterDataStoreActor.handleAllInOneWSResponse)
+    askAsterixAndGetAllResponse(conn, key, query)
   }
 
   override def updateInterval: FiniteDuration = config.ViewUpdateInterval
@@ -51,7 +51,6 @@ class TwitterCountyDaySummaryView(val conn: AsterixConnection,
 
 object TwitterCountyDaySummaryView {
   val DataVerse = "twitter"
-  val DataSet = "ds_tweet_"
   val FieldStateID = "stateID"
   val FieldCountyID = "countyID"
   val FieldTimeBin = "timeBin"
@@ -86,47 +85,67 @@ object TwitterCountyDaySummaryView {
            |""".stripMargin
       case p: IdSetPredicate =>
         s"""
-           |let $$set := [ ${p.idSets.mkString(",")} ]
-           |for $$sid in $$set
+           |for $$sid in [ ${p.idSets.mkString(",")} ]
            |where $$$variable.$spID = $$sid
            |""".stripMargin
     }
 
   }
 
-  def generateAQL(query: DBQuery): String = {
+  def askAsterixAndGetAllResponse(conn: AsterixConnection, name: String, query: DBQuery)(implicit ec: ExecutionContext): Future[Response] = {
+    import TwitterDataStoreActor.handleKeyCountResponse
+    val fMap = conn.postQuery(generateByMapAQL(name, query)).map(handleKeyCountResponse)
+    val fTime = conn.postQuery(generateByTimeAQL(name, query)).map(handleKeyCountResponse)
+    val fHashtag = conn.postQuery(generateByHashtagAQL(name, query)).map(handleKeyCountResponse)
+    for {
+      mapResult <- fMap
+      timeResult <- fTime
+      hashtagResult <- fHashtag
+    } yield SpatialTimeCount(mapResult, timeResult, hashtagResult)
+  }
 
+  def generateByMapAQL(dataSet: String, query: DBQuery): String = {
+    val common = applyPredicate(dataSet, query)
+    s"""|$common
+        |let $$map := (
+        |for $$t in $$common
+        |${byMap(query.summaryLevel.spatialLevel)}
+        |)
+        |return $$map;
+        |""".stripMargin
+  }
+
+  def generateByTimeAQL(dataSet: String, query: DBQuery): String = {
+    val common = applyPredicate(dataSet, query)
+    s"""|$common
+        |let $$time := (
+        |for $$t in $$common
+        |${byTime(query.summaryLevel.timeLevel)}
+        |)
+        |return $$time
+        |""".stripMargin
+  }
+
+  def generateByHashtagAQL(dataSet: String, query: DBQuery): String = {
+    val common = applyPredicate(dataSet, query)
+    s"""|$common
+        |let $$hashtag := (
+        |for $$t in $$common
+        |${byHashTag()}
+        |)
+        |return $$hashtag
+        |""".stripMargin
+  }
+
+  private def applyPredicate(dataSet: String, query: DBQuery): String = {
     val predicate = query.predicates.map(visitPredicate("t", query.summaryLevel, _)).mkString("\n")
-    val common =
-      s"""
-         |use dataverse $DataVerse
-         |let $$common := (
-         |for $$t in dataset $DataSet
-         |$predicate
-         |return $$t
-         |)
-         |""".stripMargin
     s"""
-       |$common
-       |let $$map := (
-       |for $$t in $$common
-       |${byMap(query.summaryLevel.spatialLevel)}
+       |use dataverse $DataVerse
+       |let $$common := (
+       |for $$t in dataset $dataSet
+       |$predicate
+       |return $$t
        |)
-       |return $$map;
-       |
-       |$common
-       |let $$time := (
-       |for $$t in $$common
-       |${byTime(query.summaryLevel.timeLevel)}
-       |)
-       |return $$time
-       |
-       |$common
-       |let $$hashtag := (
-       |for $$t in $$common
-       |${byHashTag()}
-       |)
-       |return $$hashtag
        |""".stripMargin
   }
 
