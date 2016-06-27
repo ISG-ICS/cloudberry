@@ -20,8 +20,7 @@ class AQLVisitor(dataStore: String) extends XQLVisitor {
     predicate match {
       case p: IdSetPredicate =>
         s"""
-           |let $$set := [ ${p.idSets.mkString(",")} ]
-           |for $$sid in $$set
+           |for $$sid in [ ${p.idSets.mkString(",")} ]
            |where $$$variable.${p.fieldName} = $$sid
            |""".stripMargin
       case p: KeywordPredicate =>
