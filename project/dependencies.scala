@@ -42,6 +42,9 @@ object Dependencies {
     "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
     "com.twitter" % "hbc-core" % "2.2.0",
     "org.kohsuke.args4j" % "args4j-maven-plugin" % "2.33",
+    "com.crawljax" % "crawljax-core" % "3.6",
+    "com.crawljax.plugins" % "crawloverview-plugin" % "3.6",
+    "com.crawljax" % "crawljax-cli" % "3.6",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 
