@@ -8,7 +8,6 @@ lazy val util = (project in file("util")).
     libraryDependencies ++= utilDependencies
   )
 
-
 lazy val gnosis = (project in file("gnosis")).
   settings(Commons.settings: _*).
   settings(

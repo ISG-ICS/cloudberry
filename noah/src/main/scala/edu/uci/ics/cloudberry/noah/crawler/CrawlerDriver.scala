@@ -1,12 +1,12 @@
 package edu.uci.ics.cloudberry.noah.crawler
 
-import java.io.{File, InputStream}
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 import com.crawljax.browser.EmbeddedBrowser.BrowserType
 import com.crawljax.condition.UrlCondition
 import com.crawljax.core.CrawljaxRunner
-import com.crawljax.core.configuration.{CrawlRules, CrawljaxConfiguration}
+import com.crawljax.core.configuration.CrawljaxConfiguration
 import com.crawljax.plugins.crawloverview.CrawlOverview
 import com.typesafe.config.ConfigFactory
 /**
