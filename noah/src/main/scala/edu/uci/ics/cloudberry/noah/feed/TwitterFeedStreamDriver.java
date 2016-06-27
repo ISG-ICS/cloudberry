@@ -14,8 +14,6 @@ import twitter4j.TwitterException;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -67,17 +65,6 @@ public class TwitterFeedStreamDriver {
             System.err.println();
 
             endpoint.locations(Lists.<Location>newArrayList(config.getTrackLocation()));
-        }
-        List<Long> usersID = new ArrayList<Long>();
-        if (config.getTrackUsers().length != 0) {
-            System.err.print("set track users are: ");
-            for (String user : config.getTrackUsers()) {
-                usersID.add(Long.parseLong(user));
-                System.err.print(user);
-                System.err.print(" ");
-            }
-            System.err.println();
-            endpoint.followings(usersID);
         }
 
         Authentication auth = new OAuth1(config.getConsumerKey(), config.getConsumerSecret(), config.getToken(),
@@ -131,11 +118,14 @@ public class TwitterFeedStreamDriver {
                     }
                 }
             });
-
-           /* if (config.getTrackTerms().length == 0 && config.getTrackLocation().length == 0) {
+            try {
+                if (config.getTrackTerms().length == 0 && config.getTrackLocation().length == 0) {
                 throw new CmdLineException("Should provide at least one tracking word, or one location boundary");
+                }
+                feedDriver.openSocket(config);
+            } catch (CmdLineException e) {
+                e.printStackTrace();
             }
-            feedDriver.openSocket(config);*/
             feedDriver.run(config, bw);
         } catch (InterruptedException e) {
             System.err.println(e);
