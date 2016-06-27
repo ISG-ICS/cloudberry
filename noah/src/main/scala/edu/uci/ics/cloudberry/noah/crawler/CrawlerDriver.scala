@@ -13,8 +13,8 @@ import com.typesafe.config.ConfigFactory
   * Created by ashka on 6/21/2016.
   */
 object CrawlerDriver extends App{
-  val url=getClass.getResource("/promedmail")
-  val conf = ConfigFactory.parseFile(new File(url.getPath))
+  val source = getClass.getResource("/crawler/promedmail.conf")
+  val conf = ConfigFactory.parseFile(new File(source.getFile))
   val EntryURL = conf.getString("crawljax.url")
   val Wait_After_Reload = conf.getInt("crawljax.waitafterreload")
   val Wait_After_Event = conf.getInt("crawljax.waitafterevent")
@@ -77,6 +77,9 @@ object CrawlerDriver extends App{
     builder.crawlRules().dontClick("a").withAttribute("href",it.next())
   }
 
+  builder.crawlRules().crawlFrames(true)
+
+  builder.setMaximumRunTime(1, TimeUnit HOURS)
 
   /*Crawloverview plugin generates an HTML report with a snapshot overview of what is crawled by Crawljax.
   Without this we do not get the folder-wise representation of crawled states*/
@@ -85,5 +88,4 @@ object CrawlerDriver extends App{
   /*run the crawler*/
   val crunner = new CrawljaxRunner(builder.build())
   crunner.call()
-
 }
