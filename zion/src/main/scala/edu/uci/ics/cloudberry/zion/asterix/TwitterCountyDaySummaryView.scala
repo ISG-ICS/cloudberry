@@ -85,8 +85,7 @@ object TwitterCountyDaySummaryView {
            |""".stripMargin
       case p: IdSetPredicate =>
         s"""
-           |let $$set := [ ${p.idSets.mkString(",")} ]
-           |for $$sid in $$set
+           |for $$sid in [ ${p.idSets.mkString(",")} ]
            |where $$$variable.$spID = $$sid
            |""".stripMargin
     }
