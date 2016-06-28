@@ -5,7 +5,9 @@ import org.kohsuke.args4j.CmdLineParser;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 public class CmdLineAux {
@@ -32,5 +34,18 @@ public class CmdLineAux {
         BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(zip, "UTF-8"));
         return bw;
+    }
+
+    public static Long[] parseID(String[] stringIDs) throws CmdLineException{
+        Long[] usersID = new Long[stringIDs.length];
+        for (int i = 0; i < stringIDs.length; i++) {
+            try {
+                Long id = Long.parseLong(stringIDs[i]);
+                usersID[i] = id;
+            } catch (NumberFormatException ne) {
+                throw new CmdLineException("Invalid user ID");
+            }
+        }
+        return usersID;
     }
 }

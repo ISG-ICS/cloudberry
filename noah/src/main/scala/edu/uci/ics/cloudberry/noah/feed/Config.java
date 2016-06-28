@@ -27,7 +27,7 @@ public class Config {
     @Option(name = "-tr", aliases = "--tracker", handler = TermArrayOptionHandler.class, usage = "Tracked terms, separated by comma.")
     private String[] trackTerms = new String[]{};
 
-    @Option(name = "-tu", aliases = "--trackuser", handler = TermArrayOptionHandler.class, usage = "Tracked public users, separated by comma.")
+    @Option(name = "-tu", aliases = "--trackuser", handler = TermArrayOptionHandler.class, usage = "Tracked public users ID, separated by comma.")
     private String[] trackUsers = new String[]{};
 
     @Option(name = "-loc", aliases = "--location", handler = LocationListOptionHandler.class, usage = "location rectangular, southwest.lon, southwest.lat, northeast.lon, northeast.lat")
@@ -120,6 +120,7 @@ public class Config {
                 try {
                     param = params.getParameter(counter);
                 } catch (CmdLineException ex) {
+                    ex.printStackTrace();
                     System.out.println("track term exception");
                     break;
                 }
