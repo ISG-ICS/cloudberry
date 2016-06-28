@@ -1,0 +1,357 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang="en" xml:lang="en" xmlns:v="urn:schemas-microsoft-com:vml" xmlns="http://www.w3.org/1999/xhtml"><head><style type="text/css">.gm-style-pbc{transition:opacity ease-in-out;background-color:black;text-align:center}.gm-style-pbt{font-size:22px;color:white;font-family:Roboto,Arial,sans-serif;position:relative;margin:0;top:50%;-webkit-transform:translateY(-50%);-ms-transform:translateY(-50%);transform:translateY(-50%)}</style><link type="text/css" rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" /><style type="text/css">.gm-style .gm-style-cc span,.gm-style .gm-style-cc a,.gm-style .gm-style-mtc div{font-size:10px}</style><style type="text/css">@media print {  .gm-style .gmnoprint, .gmnoprint {    display:none  }}@media screen {  .gm-style .gmnoscreen, .gmnoscreen {    display:none  }}</style><style type="text/css">.gm-style{font-family:Roboto,Arial,sans-serif;font-size:11px;font-weight:400;text-decoration:none}.gm-style img{max-width:none}</style>
+  <meta content="application/xhtml+xml; charset=UTF-8" http-equiv="Content-Type" />
+  <link href="favicon.ico" rel="shortcut icon" />
+  <!-- necessary for google maps polyline drawing in IE -->
+  <style type="text/css">
+    v\:* {
+      behavior:url(#default#VML);
+    }
+  </style>
+    <title>ProMED-SoAs: South Asia</title>
+    <meta content="Clark Freifeld, John Brownstein" name="generator" />
+    <meta content="Map of the latest alerts on infectious disease around the world" name="description" />
+    <meta content="infectious disease,alert,health,map,global,flu,norovirus,norwalk,e coli" name="keywords" />
+    <link title="Default" href="css/promed_style.css" type="text/css" rel="stylesheet" />
+    <!--[if IE]>
+	<link rel="stylesheet" type="text/css" href="css/ie.css" />
+    <![endif]-->
+    <link href="css/datePicker.css" type="text/css" rel="stylesheet" />
+    <script type="text/javascript" async="" src="http://www.google-analytics.com/ga.js" style=""></script><script src="js/datepicker/date.js" type="text/javascript"></script>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js" type="text/javascript"></script>
+    <script src="js/datepicker/jquery.datePicker.js" type="text/javascript"></script>
+    <script src="js/jquery.highlight-3.js" type="text/javascript"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?sensor=false&amp;language=en" type="text/javascript"></script>
+<script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/common.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/map.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/util.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/onion.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps/api/js/ViewportInfoService.GetViewportInfo?1m6&amp;1m2&amp;1d-90&amp;2d-180&amp;2m2&amp;1d90&amp;2d180&amp;2u2&amp;4sen&amp;5e4&amp;6sr%40353000000&amp;7b0&amp;8e0&amp;9b0&amp;callback=_xdc_._a94ed2&amp;token=25717"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/stats.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/controls.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps/vt?pb=%211m4%211m3%211i2%212i1%213i1%211m4%211m3%211i2%212i1%213i2%211m4%211m3%211i2%212i2%213i1%211m4%211m3%211i2%212i2%213i2%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e3%2112m1%215b1&amp;callback=_xdc_._k14zqp&amp;token=43085"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps/api/js/AuthenticationService.Authenticate?1shttp%3A%2F%2Fwww.promedmail.org%2Fsoas&amp;callback=_xdc_._k7p3z9&amp;token=77502"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/marker.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps-api-v3/api/js/25/5/infowindow.js"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps/api/js/ViewportInfoService.GetViewportInfo?1m6&amp;1m2&amp;1d-3.7703727558507674&amp;2d39.58891393643307&amp;2m2&amp;1d54.67040495983613&amp;2d145.15935110025453&amp;2u4&amp;4sen&amp;5e4&amp;6sr%40353000000&amp;7b0&amp;8e0&amp;9b0&amp;callback=_xdc_._vaqyxz&amp;token=56531"></script><script type="text/javascript" charset="UTF-8" src="https://maps.googleapis.com/maps/vt?pb=%211m4%211m3%211i4%212i11%213i6%211m4%211m3%211i4%212i11%213i7%211m4%211m3%211i4%212i12%213i6%211m4%211m3%211i4%212i12%213i7%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e3%2112m1%215b1&amp;callback=_xdc_._pnumta&amp;token=97269"></script></head>
+<body>
+
+<!-- START: WRAP
+............................ -->
+
+<div id="wrap">
+
+<!-- START: HEADER
+............................ -->
+
+<div id="header">
+
+<!-- START: LOGO
+............................ -->
+
+<div id="logo">
+<a href="/">
+<img width="252" height="69" src="images/promedlogo_trans3.gif" alt="ProMED logo" /></a>   
+<a target="_blank" href="http://www.isid.org" onclick="_gaq.push(['_trackEvent', 'isid_link', 'clicked'])">
+<img width="129" height="79" src="images/isid_logo_trans3.png" alt="ISID logo" /></a>
+</div>
+
+<!-- .......................
+END: LOGO -->
+
+<!-- START: TOP BUTTONS
+............................ -->
+
+<div class="topbuttons">
+<table cellspacing="0" cellpadding="0" summary="table" style="float: left">
+<tbody>
+<tr>
+<td class="aligntop"><a href="submitinfo" class="tabs">SUBMIT INFO</a></td>
+<td class="aligntop"><a href="http://isid.org/donate/index.shtml" class="tabs">MAKE A DONATION</a></td>
+<td class="aligntop"><a href="http://ww4.isid.org/promedmail/subscribe.php" class="tabs">SUBSCRIBE</a></td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<!-- .......................
+END: TOP BUTTONS -->
+
+</div>
+
+<!-- .......................
+END: HEADER -->
+
+<!-- START: NAV BAR
+............................ -->
+
+<div class="navbar">
+<div>
+<ul id="nav">
+<li><a href="aboutus">About ProMED</a></li>
+<!-- <li><a href="submitinfo">Submit Info</a></li> -->
+<li><a href="announcements">Announcements</a></li>
+<li><a href="links">Links</a></li>
+<li><a href="calendar">Calendar of Events</a></li>
+</ul>
+</div>
+</div>
+
+<div id="regional_nav">
+<div>
+<ul>
+<li><a href="http://promedmail.org"><img width="20" class="flag" src="images/en_s.png" /> ProMED-mail</a></li>
+<li><a title="ProMED-PORT" href="pt"><img width="20" alt="ProMED-PORT" class="flag" src="images/port.png" /> Português</a></li>
+<li><a title="ProMED-ESP" href="es"><img width="20" alt="ProMED-ESP" class="flag" src="images/es_s.png" /> Español</a></li>
+<li><a title="ProMED-RUS" href="ru"><img width="20" alt="ProMED-RUS" class="flag" src="images/ru_s.png" /> Русский</a></li>
+<li><a title="PRO/MBDS" href="mbds"><img width="20" alt="PRO/MBDS" class="flag" src="images/mbds_s.png" /> Mekong Basin</a></li>
+<li><a title="ProMED-FRA" href="fr"><img width="20" alt="ProMED-FRA" class="flag" src="images/fr.png" /> Afrique Francophone</a></li>
+<li><a title="ProMED-EAFR" href="eafr"><img width="20" alt="ProMED-EAFR" class="flag" src="images/eafr_s.png" /> Anglophone Africa</a></li>
+<li class="down"><a title="ProMED-SoAs" href="soas"><img width="20" alt="ProMED-SoAs" class="flag" src="images/soas_s.png" /> South Asia</a></li>
+<li><a title="ProMED-MENA" href="mena"><img width="20" alt="ProMED-MENA" class="flag" src="images/mena_s.png" /> Middle East/North Africa</a></li>
+</ul>
+</div>
+<div class="clearfloat"></div>
+</div>
+
+<!-- .......................
+END: NAV BAR -->
+
+<!-- START: SUB MAIN (GREY)
+............................ -->
+
+<div class="submain">
+<div class="submainright">
+
+<!-- START: SUB TEXT BOX (WHITE) - sue rid of subtextbox div
+............................ -->
+
+<div class="subtext">
+
+<table cellspacing="0" cellpadding="4">
+<tbody><tr>
+<td valign="top" class="left">
+
+<!-- START: PROMED logo and list name
+............................ -->
+
+<table class="region_title">
+<tbody><tr>
+<td width="70px"><img class="flaghl" src="images/soas_big.png" /></td>
+<td><h1>ProMED-SoAs: South Asia</h1>
+
+<a id="about_soas" class="about" href="javascript:;">About ProMED-SoAs»</a></td>
+<td><a target="_new" href="http://www.wellcome.ac.uk/"><img width="100px" height="27px" style="float:right;" src="images/swt.png" /></a></td>
+</tr>
+</tbody></table>
+
+<!-- START: the box with latest and search
+............................ -->
+
+<div id="tabs">
+<ul>
+<li class="hide" id="errata_tab">Errata</li> 
+<li class="hide" id="topical_tab">Hot Topics</li> 
+<li class="hide" id="plant_tab">Plants</li> 
+<li id="search_tab">Search</li>
+<li class="down" id="latest_tab">Latest</li>
+</ul>
+</div>
+
+<!-- START TODAY ALERTS -->
+<div class="block" id="latest_alerts">
+<div class="boxes">
+<h3>Latest Posts on ProMED-SoAs</h3>
+<div class="main_inner_box" id="latest_list"><ul><li>20 Jun 2016 <a class="lcl" id="id4295721" href="javascript:;"> Dengue - Pakistan (09): Sindh, new cases</a></li><li>20 Jun 2016 <a class="lcl" id="id4296666" href="javascript:;"> Foot &amp; mouth disease - India (07): (West Bengal) swamp deer, fatal</a></li><li>19 Jun 2016 <a class="lcl down" id="id4294438" href="javascript:;"> Japanese encephalitis - India: (Assam) fatal cases</a></li><li>19 Jun 2016 <a class="lcl" id="id4294437" href="javascript:;"> Hand, foot &amp; mouth disease - Malaysia: alert</a></li><li>19 Jun 2016 <a class="lcl" id="id4293004" href="javascript:;"> Anthrax - India (24): (Odisha) elephant, NOT</a></li><li>17 Jun 2016 <a class="lcl" id="id4290796" href="javascript:;"> Poliomyelitis - India: (Telangana) VDPV, sewage sample</a></li><li>17 Jun 2016 <a class="lcl" id="id4290475" href="javascript:;"> Influenza (32): WHO global update, seasonal</a></li><li>17 Jun 2016 <a class="lcl" id="id4290294" href="javascript:;"> Japanese encephalitis - Malaysia (02): (Negeri Sembilan) conf</a></li><li>17 Jun 2016 <a class="lcl" id="id4290295" href="javascript:;"> Cholera - India (05): (Karnataka)</a></li><li>17 Jun 2016 <a class="lcl" id="id4291572" href="javascript:;"> HIV/AIDS - Nepal: (Baitadi) children </a></li><li>17 Jun 2016 <a class="lcl" id="id4292349" href="javascript:;"> Anthrax - India (23): (Odisha) human, lab results</a></li><li>14 Jun 2016 <a class="lcl" id="id4284532" href="javascript:;"> Japanese encephalitis - Malaysia: (Negeri Sembilan), susp. RFI</a></li><li>14 Jun 2016 <a class="lcl" id="id4283255" href="javascript:;"> Influenza (31): China (Hong Kong) hospital cluster</a></li><li>14 Jun 2016 <a class="lcl" id="id4283252" href="javascript:;"> Diphtheria - Myanmar: fatal, alert</a></li><li>14 Jun 2016 <a class="lcl" id="id4283882" href="javascript:;"> Anthrax - India (21): (Odisha) elephant, susp, RFI</a></li><li>14 Jun 2016 <a class="lcl" id="id4284442" href="javascript:;"> Anthrax - India (22): (Odisha) human, susp, NOT fatal</a></li><li>13 Jun 2016 <a class="lcl" id="id4283334" href="javascript:;"> Dengue - Sri Lanka (05): situation update</a></li><li>13 Jun 2016 <a class="lcl" id="id4283256" href="javascript:;"> Rabies - India (15): (Kerala), dog bite cases</a></li><li>12 Jun 2016 <a class="lcl" id="id4282992" href="javascript:;"> Mushroom poisoning - Nepal (02): (Khotang) fatal</a></li><li>12 Jun 2016 <a class="lcl" id="id4282924" href="javascript:;"> Anthrax - India (20): (Odisha) human, fatal, RFI</a></li><li>12 Jun 2016 <a class="lcl" id="id4279348" href="javascript:;"> Foodborne illness - India (30): (Jharkhand) school children</a></li><li>12 Jun 2016 <a class="lcl" id="id4279286" href="javascript:;"> Malaria - India (09): (Karnataka) elimination plan</a></li><li>12 Jun 2016 <a class="lcl" id="id4275687" href="javascript:;"> Gastroenteritis - Singapore: outbreak control measures</a></li><li>11 Jun 2016 <a class="lcl" id="id4278479" href="javascript:;"> Snakebite - Nepal: (Kathmandu) increased incidence</a></li><li>10 Jun 2016 <a class="lcl" id="id4277799" href="javascript:;"> Vector borne diseases - India: (Karnataka)</a></li><li>10 Jun 2016 <a class="lcl" id="id4277477" href="javascript:;"> Undiagnosed deaths, bovine - India (05): (Jammu &amp; Kashmir) controversy</a></li><li>10 Jun 2016 <a class="lcl" id="id4277116" href="javascript:;"> Anthrax - Bhutan (03): (Samdrup Jongkhar) human, bovine, NOT, test results</a></li><li>10 Jun 2016 <a class="lcl" id="id4276770" href="javascript:;"> Anthrax - Bangladesh (04): (Rajshahi) human, bovine, monitoring issue</a></li><li>10 Jun 2016 <a class="lcl" id="id4275305" href="javascript:;"> Avian influenza, human (10): China (Hunan), H5N6</a></li><li>10 Jun 2016 <a class="lcl" id="id4275277" href="javascript:;"> Dengue - Cambodia: Outbreak alert</a></li><li>09 Jun 2016 <a class="lcl" id="id4275430" href="javascript:;"> Diarrhea - India (03): (Punjab) fatal</a></li><li>09 Jun 2016 <a class="lcl" id="id4275429" href="javascript:;"> Undiagnosed deaths, bovine - India (04): (Jammu &amp; Kashmir) no outbreak</a></li><li>09 Jun 2016 <a class="lcl" id="id4275288" href="javascript:;">  Foodborne illness - India (29): (Rajasthan) feast</a></li><li>09 Jun 2016 <a class="lcl" id="id4274797" href="javascript:;"> Dengue - India (19): (Karnataka)</a></li><li>09 Jun 2016 <a class="lcl" id="id4274796" href="javascript:;"> HIV/AIDS - India: transfusion associated</a></li><li>09 Jun 2016 <a class="lcl" id="id4272660" href="javascript:;"> Malaria - India (08): (Kerala)</a></li><li>09 Jun 2016 <a class="lcl" id="id4273979" href="javascript:;"> Gastroenteritis - Pakistan (02): (Sindh)</a></li><li>09 Jun 2016 <a class="lcl" id="id4273067" href="javascript:;"> Undiagnosed deaths, bovine - India (03): (Jammu &amp; Kashmir) RFI</a></li><li>08 Jun 2016 <a class="lcl" id="id4272030" href="javascript:;"> Malaria - Bangladesh: cross-border transmission</a></li><li>08 Jun 2016 <a class="lcl" id="id4270646" href="javascript:;"> Dengue - India (18): (Delhi)</a></li><li>08 Jun 2016 <a class="lcl" id="id4270638" href="javascript:;"> Influenza (30): India (Rajasthan) H1N1</a></li><li>07 Jun 2016 <a class="lcl" id="id4270358" href="javascript:;"> Gastroenteritis - Pakistan: (Sindh) RFI</a></li><li>07 Jun 2016 <a class="lcl" id="id4269432" href="javascript:;"> Anthrax - India (19): (Jharkhand) elephant, suspected, RFI</a></li><li>05 Jun 2016 <a class="lcl" id="id4266367" href="javascript:;"> Undiagnosed deaths - Nepal (03): (Udayapur) RFI</a></li><li>05 Jun 2016 <a class="lcl" id="id4266318" href="javascript:;"> Melioidosis - Sri Lanka</a></li><li>05 Jun 2016 <a class="lcl" id="id4266315" href="javascript:;"> Poliomyelitis (13): Pakistan (Khyber-Pakhtunkhwa)</a></li><li>03 Jun 2016 <a class="lcl" id="id4263943" href="javascript:;"> Foodborne illness - India (28): (Rajasthan) wedding reception</a></li><li>03 Jun 2016 <a class="lcl" id="id4260594" href="javascript:;"> Influenza (29): seasonal, WHO global update</a></li><li>02 Jun 2016 <a class="lcl" id="id4262093" href="javascript:;"> Crimean-Congo hem. fever - India (04): (Gujarat) susp</a></li><li>01 Jun 2016 <a class="lcl" id="id4258970" href="javascript:;"> Dengue - India (17): (Kerala)</a></li><li>01 Jun 2016 <a class="lcl" id="id4258129" href="javascript:;"> Anthrax - Bhutan (02): (Samdrup Jongkhar) human, bovine, NOT</a></li><li>01 Jun 2016 <a class="lcl" id="id4258662" href="javascript:;"> Foodborne illness - India (27): (Chhattisgarh) children, milk, fatal, RFI</a></li><li>01 Jun 2016 <a class="lcl" id="id4256499" href="javascript:;"> Leishmaniasis, visceral - Nepal: increase</a></li><li>01 Jun 2016 <a class="lcl" id="id4257077" href="javascript:;"> Anthrax - Bhutan: (Samdrup Jongkhar) human, bovine, susp. RFI</a></li><li>01 Jun 2016 <a class="lcl" id="id4254469" href="javascript:;"> Poliomyelitis (12): Pakistan, environmental surveillance</a></li><li>01 Jun 2016 <a class="lcl" id="id4254468" href="javascript:;"> Rabies - Taiwan: (Taitung) wild ferret-badgers, new cases</a></li><li>31 May 2016 <a class="lcl" id="id4254547" href="javascript:;"> Foodborne illness - India (26): (Manipur) prison, RFI</a></li><li>30 May 2016 <a class="lcl" id="id4254243" href="javascript:;"> Foodborne illness - India (25): (Telangana) nursing students, RFI</a></li><li>30 May 2016 <a class="lcl" id="id4253690" href="javascript:;"> Antibiotic resistance - USA: colistin, MCR-1, E. coli, human, pig</a></li><li>30 May 2016 <a class="lcl" id="id4253281" href="javascript:;"> Mushroom poisoning - Nepal: (Panchthar) fatal</a></li><li>30 May 2016 <a class="lcl" id="id4252387" href="javascript:;"> Malaria - India (07): (Tripura) fatal</a></li><li>29 May 2016 <a class="lcl" id="id4253225" href="javascript:;"> Diarrhea - India (02): (Madhya Pradesh)</a></li><li>28 May 2016 <a class="lcl" id="id4250917" href="javascript:;"> Dengue - India (16): (Kerala)</a></li><li>27 May 2016 <a class="lcl" id="id4248686" href="javascript:;"> Anthrax - Bangladesh (03): (Rajshahi) human, bovine, more cases</a></li><li>27 May 2016 <a class="lcl" id="id4248506" href="javascript:;"> Gastroenteritis - Philippines (02): (Zamboanga) fatal, EpiCore response</a></li><li>27 May 2016 <a class="lcl" id="id4243550" href="javascript:;"> Leishmaniasis - Pakistan (04): (Khyber Pakhtunkhwa) cutaneous, EpiCore responses</a></li><li>26 May 2016 <a class="lcl" id="id4247048" href="javascript:;"> Varicella - India (13): (Kerala) college dormitory</a></li><li>26 May 2016 <a class="lcl" id="id4246878" href="javascript:;"> Measles - Pakistan: (Khyber-Pakhtunkhwa) fatal</a></li><li>25 May 2016 <a class="lcl" id="id4244480" href="javascript:;"> Cholera - India (04): (Karnataka) alert</a></li><li>25 May 2016 <a class="lcl" id="id4243549" href="javascript:;"> Cholera - Nepal (03): (Kathmandu) non-O1/non-O139, EpiCore response</a></li><li>24 May 2016 <a class="lcl" id="id4241874" href="javascript:;"> Diarrhea - India: (Madhya Pradesh) fatal, RFI</a></li><li>24 May 2016 <a class="lcl" id="id4240091" href="javascript:;"> Vibrio parahaemolyticus - Nepal: Kathmandu </a></li><li>23 May 2016 <a class="lcl" id="id4239908" href="javascript:;"> Rabies - India (14): (Maharashtra) canine, human</a></li><li>23 May 2016 <a class="lcl" id="id4239211" href="javascript:;"> Avian influenza, human (09): China, Egypt, WHO, human-animal interface </a></li><li>22 May 2016 <a class="lcl" id="id4238058" href="javascript:;"> Dengue - India (15): (Maharashtra) fatal</a></li><li>22 May 2016 <a class="lcl" id="id4237993" href="javascript:;"> Rabies - India (13): (Kerala) canine, alert</a></li><li>22 May 2016 <a class="lcl" id="id4237515" href="javascript:;"> Undiagnosed deaths, camel - Pakistan (02): RFI, EpiCore response</a></li><li>22 May 2016 <a class="lcl" id="id4237014" href="javascript:;"> Seasonal diseases - Pakistan: (Punjab) gastroenteritis, eye infection, others</a></li><li>21 May 2016 <a class="lcl" id="id4237013" href="javascript:;"> Gastroenteritis - Philippines: (Zamboanga) rotavirus, fatal, RFI</a></li><li>21 May 2016 <a class="lcl" id="id4236474" href="javascript:;"> Dengue - India (14): (Kerala)</a></li><li>21 May 2016 <a class="lcl" id="id4236159" href="javascript:;"> Influenza (28): seasonal, WHO global update</a></li><li>21 May 2016 <a class="lcl" id="id4236157" href="javascript:;"> Crimean-Congo hem. fever - Pakistan (04): (Khyber Pakhtunkhwa) fatal</a></li><li>21 May 2016 <a class="lcl" id="id4232900" href="javascript:;"> Cholera - Nepal (02): (Kathmandu) non-O1/non-O139, EpiCore response</a></li><li>21 May 2016 <a class="lcl" id="id4236104" href="javascript:;"> Undiagnosed deaths, camel - Pakistan: RFI</a></li><li>21 May 2016 <a class="lcl" id="id4232887" href="javascript:;"> Leishmaniasis - Pakistan (03): (Khyber Pakhtunkhwa) cutaneous</a></li><li>20 May 2016 <a class="lcl" id="id4235111" href="javascript:;"> Varicella - India (12): (Punjab)</a></li><li>20 May 2016 <a class="lcl" id="id4235081" href="javascript:;"> Seasonal diseases - Nepal: (Lamjung, Humla) viral fever, diarrhea, others</a></li><li>20 May 2016 <a class="lcl" id="id4235110" href="javascript:;"> Leptospirosis - India: (Maharashtra)</a></li><li>20 May 2016 <a class="lcl" id="id4232738" href="javascript:;"> Foodborne illness - India (24): (Jammu &amp; Kasmir) school children, RFI</a></li></ul><a class="prev_or_next" id="170_2016-05-20" href="javascript:;">« prev</a> </div>
+</div>
+</div>
+<!-- END TODAY ALERTS -->
+
+<!-- START SEARCH ALERTS -->
+<div class="hide" id="search_alerts">
+<div class="boxes">
+<h3>Search the ProMED archives </h3>
+<div class="main_inner_box" id="search_form">
+<form class="search_form" id="archive_search" name="id_form">
+<p id="searchby_archivenum">Archive number:
+<input type="text" name="archiveid" id="archiveid" class="sm_textbox" />
+<input type="submit" value="search" name="submit" />
+</p>
+</form>
+<form class="search_form" id="full_search" name="as_form">
+<div id="searchby_other">
+<p><strong>OR</strong> keyword(s) in:
+<input type="checkbox" checked="true" value="summary" id="kwby1" name="kwby1" /> Subject
+<input type="checkbox" value="content" id="kwby2" name="kwby2" /> Post
+<span class="hide" id="excludesa"><input type="checkbox" value="excludesa" id="kwby3" name="kwby3" /> exclude see also</span><br />
+use "AND" or "OR" between multiple keywords    [<a href="javascript:uP('help.html');"><strong>MORE SEARCH TIPS</strong></a>]<br />
+<input type="text" name="search" id="searchterm" class="lg_textbox" />
+<br /><input type="checkbox" value="1" id="show_us" name="show_us" /> include archive number in results
+</p>
+<p>Date Range (optional):
+<input class="date-pick dp-applied" size="11" id="date1" name="date1" /><a title="" class="dp-choose-date" href="#"></a><a title="" class="dp-choose-date" href="#"></a> -
+<input class="date-pick dp-applied" size="11" id="date2" name="date2" /><a title="" class="dp-choose-date" href="#"></a><a title="" class="dp-choose-date" href="#"></a>
+</p>
+<span class="block">
+<p>
+<span><input type="radio" value="1" name="feed_id" /><img class="flag" src="images/en.png" />ProMED-mail</span>
+<span><input type="radio" value="7" name="feed_id" /><img width="16" class="flag" src="images/es.png" />ProMED-ESP</span>
+<span><input type="radio" value="12" name="feed_id" /><img width="16" class="flag" src="images/ru_s.png" />ProMED-RUS</span>
+<span><input type="radio" value="15" name="feed_id" /><img width="16" class="flag" src="images/mbds.png" />PRO/MBDS</span>
+<span><input type="radio" value="18" name="feed_id" /><img width="16" class="flag" src="images/fr.png" />ProMED-FRA</span>
+<span><input type="radio" value="26" name="feed_id" /><img width="16" class="flag" src="images/port.png" />ProMED-PORT</span>
+<span><input type="radio" value="24" name="feed_id" /><img width="16" class="flag" src="images/eafr.png" />ProMED-EAFR</span>
+<span><input type="radio" checked="true" value="170" name="feed_id" /><img width="16" class="flag" src="images/soas_s.png" />ProMED-SoAs</span>
+<span><input type="radio" value="171" name="feed_id" /><img width="16" class="flag" src="images/mena_s.png" />ProMED-MENA</span>
+<span><input type="radio" value="1:PRO/PL" name="feed_id" />Plants</span>
+</p>
+</span>
+<div class="clearfloat"></div>
+<input type="submit" value="search" name="submit" />
+</div>
+</form>
+</div>
+<div class="hide" id="search_results">
+</div>
+</div>
+</div>
+<!-- END SEARCH ALERTS -->
+
+<!-- START PLANTS -->
+<div class="hide" id="plant_alerts">
+<div class="boxes">
+<h3>Latest Posts about Plant Diseases</h3>
+<div class="main_inner_box" id="plant_list"></div>
+</div>
+</div>
+<!-- END PLANTS -->
+
+<!-- START TOPICS -->
+<div class="hide" id="topical_alerts">
+<div class="boxes">
+<h3>Latest Posts by Topic</h3>
+<div class="main_inner_box" id="topical_list"></div>
+</div>
+</div>
+<!-- END TOPICS -->
+
+<!-- START ERRATA -->
+<div class="hide" id="errata_alerts">
+<div class="boxes">
+<h3>Errata</h3>
+<div class="main_inner_box" id="errata_list"></div>
+</div>
+</div>
+<!-- END TOPICS -->
+
+<!-- START MAP -->
+<div class="boxes">
+<h3>ProMED-mail alerts on HealthMap <a href="javascript:uP('http://healthmap.org');"><img src="images/hm.png" class="f" /></a></h3>
+<div style="height: 240px; position: relative; background-color: rgb(229, 227, 223); overflow: hidden;" id="gis"><div style="position: absolute; left: 0px; top: 0px; overflow: hidden; width: 100%; height: 100%; z-index: 0;" class="gm-style"><div style="position: absolute; left: 0px; top: 0px; overflow: hidden; width: 100%; height: 100%; z-index: 0; cursor: url(&quot;https://maps.gstatic.com/mapfiles/openhand_8_8.cur&quot;), default;"><div style="position: absolute; left: 0px; top: 0px; z-index: 1; width: 100%; transform-origin: 199px 120px 0px; transform: matrix(0.403596, 0, 0, 0.403596, 138, -23);"><div style="position: absolute; left: 0px; top: 0px; z-index: 100; width: 100%;"><div style="position: absolute; left: 0px; top: 0px; z-index: 0;"><div style="position: absolute; left: 0px; top: 0px; z-index: 1; visibility: inherit;" aria-hidden="true"><div style="width: 256px; height: 256px; position: absolute; left: 128px; top: -116px;"></div><div style="width: 256px; height: 256px; position: absolute; left: 128px; top: 140px;"></div><div style="width: 256px; height: 256px; position: absolute; left: 384px; top: -116px;"></div><div style="width: 256px; height: 256px; position: absolute; left: 384px; top: 140px;"></div></div></div></div><div style="position: absolute; left: 0px; top: 0px; z-index: 101; width: 100%;"></div><div style="position: absolute; left: 0px; top: 0px; z-index: 102; width: 100%;"></div><div style="position: absolute; left: 0px; top: 0px; z-index: 103; width: 100%;"><div style="position: absolute; left: 0px; top: 0px; z-index: -1;"><div style="position: absolute; left: 0px; top: 0px; z-index: 1; visibility: inherit;" aria-hidden="true"><div style="width: 256px; height: 256px; overflow: hidden; position: absolute; left: 128px; top: -116px;"><canvas draggable="false" style="-moz-user-select: none; position: absolute; left: 0px; top: 0px; height: 256px; width: 256px;" height="320" width="320"></canvas></div><div style="width: 256px; height: 256px; overflow: hidden; position: absolute; left: 128px; top: 140px;"><canvas draggable="false" style="-moz-user-select: none; position: absolute; left: 0px; top: 0px; height: 256px; width: 256px;" height="320" width="320"></canvas></div><div style="width: 256px; height: 256px; overflow: hidden; position: absolute; left: 384px; top: -116px;"><canvas draggable="false" style="-moz-user-select: none; position: absolute; left: 0px; top: 0px; height: 256px; width: 256px;" height="320" width="320"></canvas></div><div style="width: 256px; height: 256px; overflow: hidden; position: absolute; left: 384px; top: 140px;"><canvas draggable="false" style="-moz-user-select: none; position: absolute; left: 0px; top: 0px; height: 256px; width: 256px;" height="320" width="320"></canvas></div></div></div></div><div style="position: absolute; z-index: 0; left: 211px; top: -34px;"><div style="overflow: hidden; width: 398px; height: 240px;"><img style="width: 398px; height: 240px;" src="https://maps.googleapis.com/maps/api/js/StaticMapService.GetMapImage?1m2&amp;1i2899&amp;2i1618&amp;2e2&amp;3u4&amp;4m2&amp;1u398&amp;2u240&amp;5m5&amp;1e4&amp;5sen&amp;6sus&amp;10b1&amp;12b1&amp;token=28581" /></div></div><div style="position: absolute; left: 0px; top: 0px; z-index: 0; transform-origin: 199px 120px 0px; transform: matrix(4, 0, 0, 4, -634, 103);"><div style="position: absolute; left: 0px; top: 0px; z-index: 1; visibility: inherit;" aria-hidden="true"><div style="position: absolute; left: -108px; top: -93px; transition: opacity 200ms ease-out 0s;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i2%212i1%213i1%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=124215" draggable="false" alt="" /></div><div style="position: absolute; left: -108px; top: 163px; transition: opacity 200ms ease-out 0s;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i2%212i1%213i2%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=71629" draggable="false" alt="" /></div><div style="position: absolute; left: 148px; top: -93px; transition: opacity 200ms ease-out 0s;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i2%212i2%213i1%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=114125" draggable="false" alt="" /></div><div style="position: absolute; left: 148px; top: 163px; transition: opacity 200ms ease-out 0s;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i2%212i2%213i2%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=61539" draggable="false" alt="" /></div></div></div><div style="position: absolute; left: 0px; top: 0px; z-index: 0;"><div style="position: absolute; left: 0px; top: 0px; z-index: 1; visibility: inherit;" aria-hidden="true"><div style="position: absolute; left: 128px; top: -116px; opacity: 0;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i4%212i11%213i6%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=80633" draggable="false" alt="" /></div><div style="position: absolute; left: 384px; top: -116px; opacity: 0;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i4%212i12%213i6%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=70543" draggable="false" alt="" /></div><div style="position: absolute; left: 128px; top: 140px; opacity: 0;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i4%212i11%213i7%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=28047" draggable="false" alt="" /></div><div style="position: absolute; left: 384px; top: 140px; opacity: 0;"><img style="position: absolute; left: 0px; top: 0px; width: 256px; height: 256px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.googleapis.com/maps/vt?pb=%211m5%211m4%211i4%212i12%213i7%214i256%212m3%211e4%212st%213i132%212m3%211e0%212sr%213i353022694%213m9%212sen%213sUS%215e18%2112m1%211e63%2112m3%211e37%212m1%211ssmartmaps%214e0%215m1%215f2&amp;token=17957" draggable="false" alt="" /></div></div></div></div><div style="position: absolute; left: 0px; top: 0px; z-index: 2; width: 100%; height: 100%; transition-duration: 0.3s; opacity: 0; display: none;" class="gm-style-pbc"><p class="gm-style-pbt">Use two fingers to move the map</p></div><div style="position: absolute; left: 0px; top: 0px; z-index: 3; width: 100%; height: 100%;"></div><div style="position: absolute; left: 0px; top: 0px; z-index: 4; width: 100%; transform-origin: 199px 120px 0px; transform: matrix(0.403596, 0, 0, 0.403596, 138, -23);"><div style="position: absolute; left: 0px; top: 0px; z-index: 104; width: 100%;"></div><div style="position: absolute; left: 0px; top: 0px; z-index: 105; width: 100%; visibility: hidden;"></div><div style="position: absolute; left: 0px; top: 0px; z-index: 106; width: 100%;"></div><div style="position: absolute; left: 0px; top: 0px; z-index: 107; width: 100%; visibility: hidden;"></div></div></div><div style="margin-left: 5px; margin-right: 5px; z-index: 1000000; position: absolute; left: 0px; bottom: 0px;"><a style="position: static; overflow: visible; float: none; display: inline;" target="_blank" href="https://maps.google.com/maps?ll=26.259966,92.263039&amp;z=4&amp;t=p&amp;hl=en&amp;gl=US&amp;mapclient=apiv3" title="Click to see this area on Google Maps"><div style="width: 66px; height: 26px; cursor: pointer;"><img style="position: absolute; left: 0px; top: 0px; width: 66px; height: 26px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px;" src="https://maps.gstatic.com/mapfiles/api-3/images/google4_hdpi.png" draggable="false" /></div></a></div><div style="background-color: white; padding: 15px 21px; border: 1px solid rgb(171, 171, 171); font-family: Roboto,Arial,sans-serif; color: rgb(34, 34, 34); box-shadow: 0px 4px 16px rgba(0, 0, 0, 0.2); z-index: 10000002; display: none; width: 256px; height: 148px; position: absolute; left: 49px; top: 30px;"><div style="padding: 0px 0px 10px; font-size: 16px;">Map Data</div><div style="font-size: 13px;">Map data ©2016 Google, ORION-ME, SK telecom, ZENRIN</div><div style="width: 13px; height: 13px; overflow: hidden; position: absolute; opacity: 0.7; right: 12px; top: 12px; z-index: 10000; cursor: pointer;"><img style="position: absolute; left: -2px; top: -336px; width: 59px; height: 492px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.gstatic.com/mapfiles/api-3/images/mapcnt6.png" draggable="false" /></div></div><div class="gmnoprint" style="z-index: 1000001; position: absolute; right: 71px; bottom: 0px; width: 267px;"><div draggable="false" style="-moz-user-select: none; height: 14px; line-height: 14px;" class="gm-style-cc"><div style="opacity: 0.7; width: 100%; height: 100%; position: absolute;"><div style="width: 1px;"></div><div style="background-color: rgb(245, 245, 245); width: auto; height: 100%; margin-left: 1px;"></div></div><div style="position: relative; padding-right: 6px; padding-left: 6px; font-family: Roboto,Arial,sans-serif; font-size: 10px; color: rgb(68, 68, 68); white-space: nowrap; direction: ltr; text-align: right; vertical-align: middle; display: inline-block;"><a style="color: rgb(68, 68, 68); text-decoration: none; cursor: pointer; display: none;">Map Data</a><span style="">Map data ©2016 Google, ORION-ME, SK telecom, ZENRIN</span></div></div></div><div class="gmnoscreen" style="position: absolute; right: 0px; bottom: 0px;"><div style="font-family: Roboto,Arial,sans-serif; font-size: 11px; color: rgb(68, 68, 68); direction: ltr; text-align: right; background-color: rgb(245, 245, 245);">Map data ©2016 Google, ORION-ME, SK telecom, ZENRIN</div></div><div class="gmnoprint gm-style-cc" style="z-index: 1000001; -moz-user-select: none; height: 14px; line-height: 14px; position: absolute; right: 0px; bottom: 0px;" draggable="false"><div style="opacity: 0.7; width: 100%; height: 100%; position: absolute;"><div style="width: 1px;"></div><div style="background-color: rgb(245, 245, 245); width: auto; height: 100%; margin-left: 1px;"></div></div><div style="position: relative; padding-right: 6px; padding-left: 6px; font-family: Roboto,Arial,sans-serif; font-size: 10px; color: rgb(68, 68, 68); white-space: nowrap; direction: ltr; text-align: right; vertical-align: middle; display: inline-block;"><a style="text-decoration: none; cursor: pointer; color: rgb(68, 68, 68);" href="https://www.google.com/intl/en_US/help/terms_maps.html" target="_blank">Terms of Use</a></div></div><div style="width: 25px; height: 25px; overflow: hidden; display: none; margin: 10px 14px; position: absolute; top: 0px; right: 0px;"><img style="position: absolute; left: -52px; top: -86px; width: 164px; height: 112px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px;" src="https://maps.gstatic.com/mapfiles/api-3/images/sv5.png" draggable="false" class="gm-fullscreen-control" /></div><div draggable="false" style="-moz-user-select: none; height: 14px; line-height: 14px; display: none; position: absolute; right: 0px; bottom: 0px;" class="gm-style-cc"><div style="opacity: 0.7; width: 100%; height: 100%; position: absolute;"><div style="width: 1px;"></div><div style="background-color: rgb(245, 245, 245); width: auto; height: 100%; margin-left: 1px;"></div></div><div style="position: relative; padding-right: 6px; padding-left: 6px; font-family: Roboto,Arial,sans-serif; font-size: 10px; color: rgb(68, 68, 68); white-space: nowrap; direction: ltr; text-align: right; vertical-align: middle; display: inline-block;"><a target="_new" title="Report errors in the road map or imagery to Google" style="font-family: Roboto,Arial,sans-serif; font-size: 10px; color: rgb(68, 68, 68); text-decoration: none; position: relative;" href="https://www.google.com/maps/@26.259966,92.263039,4z/data=%215m1%211e4%2110m1%211e1%2112b1?source=apiv3&amp;rapsrc=apiv3">Report a map error</a></div></div><div class="gmnoprint gm-bundled-control gm-bundled-control-on-bottom" style="margin: 10px; -moz-user-select: none; position: absolute; bottom: 69px; right: 28px;" draggable="false" controlwidth="28" controlheight="55"><div class="gmnoprint" style="position: absolute; left: 0px; top: 0px;" controlwidth="28" controlheight="55"><div draggable="false" style="-moz-user-select: none; box-shadow: 0px 1px 4px -1px rgba(0, 0, 0, 0.3); border-radius: 2px; cursor: pointer; background-color: rgb(255, 255, 255); width: 28px; height: 55px;"><div title="Zoom in" style="position: relative; width: 28px; height: 27px; left: 0px; top: 0px;"><div style="overflow: hidden; position: absolute; width: 15px; height: 15px; left: 7px; top: 6px;"><img style="position: absolute; left: 0px; top: 0px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none; width: 120px; height: 54px;" src="https://maps.gstatic.com/mapfiles/api-3/images/tmapctrl_hdpi.png" draggable="false" /></div></div><div style="position: relative; overflow: hidden; width: 67%; height: 1px; left: 16%; background-color: rgb(230, 230, 230); top: 0px;"></div><div title="Zoom out" style="position: relative; width: 28px; height: 27px; left: 0px; top: 0px;"><div style="overflow: hidden; position: absolute; width: 15px; height: 15px; left: 7px; top: 6px;"><img style="position: absolute; left: 0px; top: -15px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none; width: 120px; height: 54px;" src="https://maps.gstatic.com/mapfiles/api-3/images/tmapctrl_hdpi.png" draggable="false" /></div></div></div></div><div class="gmnoprint" controlwidth="28" controlheight="0" style="display: none; position: absolute;"><div style="width: 28px; height: 28px; overflow: hidden; position: absolute; border-radius: 2px; box-shadow: 0px 1px 4px -1px rgba(0, 0, 0, 0.3); cursor: pointer; background-color: rgb(255, 255, 255); display: none;" title="Rotate map 90 degrees"><img style="position: absolute; left: -141px; top: 6px; width: 170px; height: 54px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.gstatic.com/mapfiles/api-3/images/tmapctrl4_hdpi.png" draggable="false" /></div><div style="width: 28px; height: 28px; overflow: hidden; position: absolute; border-radius: 2px; box-shadow: 0px 1px 4px -1px rgba(0, 0, 0, 0.3); top: 0px; cursor: pointer; background-color: rgb(255, 255, 255);" class="gm-tilt"><img style="position: absolute; left: -141px; top: -13px; width: 170px; height: 54px; -moz-user-select: none; border: 0px none; padding: 0px; margin: 0px; max-width: none;" src="https://maps.gstatic.com/mapfiles/api-3/images/tmapctrl4_hdpi.png" draggable="false" /></div></div></div></div></div>
+<h3 align="right"><a class="nound" href="javascript:uP('http://healthmap.org/promed');">View Full Map »</a></h3>
+<div id="showalert"></div>
+</div>
+<!-- END MAP -->
+
+<!-- START SOCIAL NETWORKING -->
+<p>
+<br />Follow us on: <a href="javascript:uP('http://www.facebook.com/promedmail.soas');"><img src="images/facebook.png" /></a> 
+<a href="javascript:uP('http://twitter.com/PROMED_SoAs');"><img src="images/twitter.png" /></a> 
+<a href="javascript:uP('http://healthmap.org/promed2.xml');"><img src="images/rss.png" /></a>
+</p>
+<!-- END SOCIAL NETWORKING -->
+
+<div id="promote">
+<!--
+<a href="http://www.eurosurveillance.org" target="new">
+<img src="images/eurosurveillance_ad.jpg" alt="EuroSurveillance" />
+</a>
+-->
+</div>
+
+</td>
+
+<td valign="top" class="right">
+<!--<div class="announcements">
+The <a href="http://www.isid.org/donate/netathon2012F.shtml">2012 Year-End Internet-a-thon is underway!</a> Please take a moment to contribute to this valuable service.
+</div><br />-->
+<div class="announcements">
+<!-- <strong>Advertisement</strong><br /> -->
+<!-- <a href="http://www.isid.org/donate/PMM_archives.shtml"><img src="images/banner_8.jpg" height="80px"></a> -->
+<a target="_new" href="http://imed.isid.org/"><img height="80px" src="images/banner_imed.jpg" /></a>
+</div>
+<div id="preview"><span class="printable"><p><img src="images/printer.gif" /><a onclick="window.open('post/4294438');" href="javascript:;"> View printable version</a>   Share this post: <span class="addthis"><a onclick="window.open('http://api.addthis.com/oexchange/0.8/forward/facebook/offer?url=http%3A%2F%2Fwww.promedmail.org%2Fpost%2F4294438');" href="javascript:;"><img class="share" src="images/share_fb.gif" /></a></span> <span class="addthis"><a onclick="window.open('http://api.addthis.com/oexchange/0.8/forward/twitter/offer?url=http%3A%2F%2Fwww.promedmail.org%2Fpost%2F4294438');" href="javascript:;"><img class="share" src="images/share_tw.gif" /></a></span> <span class="addthis"><a onclick="window.open('http://api.addthis.com/oexchange/0.8/forward/digg/offer?url=http%3A%2F%2Fwww.promedmail.org%2Fpost%2F4294438');" href="javascript:;"><img class="share" src="images/share_dg.gif" /></a></span> <span class="addthis"><a onclick="window.open('http://api.addthis.com/oexchange/0.8/forward/delicious/offer?url=http%3A%2F%2Fwww.promedmail.org%2Fpost%2F4294438');" href="javascript:;"><img class="share" src="images/share_de.gif" /></a></span> <span class="addthis"><a onclick="window.open('http://api.addthis.com/oexchange/0.8/forward/email/offer?url=http%3A%2F%2Fwww.promedmail.org%2Fpost%2F4294438');" href="javascript:;"><img class="share" src="images/share_em.gif" /></a></span> </p></span><p><span class="blue">Published Date:</span> 2016-06-19 02:54:47<br /><span class="blue">Subject:</span> PRO/SOAS&gt; Japanese encephalitis - India: (Assam) fatal cases <br /><span class="blue">Archive Number:</span> 20160619.4294438</p><p>JAPANESE ENCEPHALITIS - INDIA: (ASSAM) FATAL CASES<br />**************************************************<br />A ProMED-mail post<br /><a href="http://www.promedmail.org">http://www.promedmail.org</a><br />ProMED-mail is a program of the<br />International Society for Infectious Diseases<br /><a href="http://www.isid.org">http://www.isid.org</a><br /><br />Date: Fri 17 Jun 2016<br />Source: The Northeast Today (TNT) [edited]<br /><a href="http://thenortheasttoday.com/japanese-encephalitis-and-dengue-claim-6-leave-200-affected/">http://thenortheasttoday.com/japanese-encephalitis-and-dengue-claim-6-leave-200-affected/</a><br /><br /><br />Japanese encephalitis seems to have taken an even more serious turn at Lahorighat and Bhurbandha blocks of Morigaon district [Assam state], claiming 6 lives and affecting more than 200 people of several villages so far. As per a statement given by Dr. Biplab Kumar Gohain, Joint Director of Health, Morigaon, 4 such death cases have occurred due to Japanese encephalitis and dengue in the district in the past 48 hours. It was informed that at Lahorighat Tengaguri village, a 65-year-old female and a 9-year-old boy died of the disease. Their death reports confirmed infection by the acute encephalitis virus.<br /><br />A 55-year-old female of Balijan village and another female of Solmari village have also lost their lives to this disease. As per a confirmed report of the medical team, a female of Borchapori village and 65-year-old lady of Lochanbori village also lost their lives to encephalitis and dengue, respectively. Meanwhile, measures are on the rise to contain the disease in the remote areas of the district, including awareness programmes and vaccination drives among others.<br /><br />--<br />Communicated by:<br />ProMED-SoAs<br />&lt;promed-SoAs@promedmail.org&gt;<br /><br />[As per the news report above, 5 persons have lost their lives due to viral encephalitis and 1 patient died due to dengue fever in different villages and blocks of Morigaon district of Assam state of India. More than 200 cases have been reported in different villages of the state so far. As such the report does not mention the exact etiology of the encephalitis cases; however, earlier reports from the northeastern India region had been due to Japanese encephalitis (JE) virus infections and to generic acute encephalitis (see ProMED-SoAs post  <a onclick="window.open('post/20151129.3826257');" href="javascript:;">20151129.3826257</a>). Simultaneously, a fatal case of dengue fever has also been reported from the region. In order to put in place effective measures for the prevention and control of both of the diseases, surveillance and laboratory diagnostic facilities should be strengthened to capture the cases for a timely response and monitoring of the disease trends. The authorities have already implemented awareness and immunization campaigns against JE in the area. - Mod.MS<br /><br />A HealthMap/ProMED-mail map can be accessed at: <a href="http://healthmap.org/promed/p/14910">http://healthmap.org/promed/p/14910</a>.]</p><p></p><h2>See Also</h2>
+2015<br />----<br />Japanese encephalitis - India (16): (Uttar Pradesh)  <a onclick="window.open('post/20151129.3826257');" href="javascript:;">20151129.3826257</a><br />Japanese encephalitis - India (15): various states  <a onclick="window.open('post/20151004.3685637');" href="javascript:;">20151004.3685637</a><br />Japanese encephalitis - India (14): (Uttar Pradesh)  <a onclick="window.open('post/20150914.3643285');" href="javascript:;">20150914.3643285</a><br />Japanese encephalitis - India (13): (Madhya Pradesh) conf.  <a onclick="window.open('post/20150828.3608654');" href="javascript:;">20150828.3608654</a><br />Japanese encephalitis - India (12): (Madhya Pradesh) susp, RFI  <a onclick="window.open('post/20150827.3606028');" href="javascript:;">20150827.3606028</a><br />Japanese encephalitis - India (11): (Manipur) RFI  <a onclick="window.open('post/20150826.3603557');" href="javascript:;">20150826.3603557</a><br />Japanese Encephalitis - India (10): (Meghalaya) fatal  <a onclick="window.open('post/20150819.3589195');" href="javascript:;">20150819.3589195</a><br />Japanese encephalitis - India (09): (Tamil Nadu) fatal  <a onclick="window.open('post/20150809.3566189');" href="javascript:;">20150809.3566189</a><br />Japanese encephalitis - India (08): (Assam) update  <a onclick="window.open('post/20150727.3540408');" href="javascript:;">20150727.3540408</a><br />Japanese encephalitis - India (07): (Assam) case numbers  <a onclick="window.open('post/20150726.3532801');" href="javascript:;">20150726.3532801</a><br />Japanese encephalitis - India (06): (Assam) vaccine-resistant strain susp.  <a onclick="window.open('post/20150720.3523121');" href="javascript:;">20150720.3523121</a><br />Japanese encephalitis - India (05): (Assam) update  <a onclick="window.open('post/20150715.3512957');" href="javascript:;">20150715.3512957</a><br />Acute encephalitis syndrome - India (04): (West Bengal) fatal  <a onclick="window.open('post/20150713.3507702');" href="javascript:;">20150713.3507702</a><br />Japanese encephalitis - Taiwan, India  <a onclick="window.open('post/20150711.3499998');" href="javascript:;">20150711.3499998</a><br />Acute encephalitis syndrome - India (03): (West Bengal) fatal<br />Japanese Encephalitis - India (04): (Assam) fatal  <a onclick="window.open('post/20150708.3491721');" href="javascript:;">20150708.3491721</a><br />Acute encephalitis syndrome - India (02): (Bihar) fatal  <a onclick="window.open('post/20150603.3408030');" href="javascript:;">20150603.3408030</a><br />Japanese encephalitis - India (03): (Jharkhand) susp, RFI  <a onclick="window.open('post/20150408.3282843');" href="javascript:;">20150408.3282843</a><br />Japanese encephalitis - India (02): (Assam)  <a onclick="window.open('post/20150327.3257544');" href="javascript:;">20150327.3257544</a><br />Acute encephalitis syndrome - India  <a onclick="window.open('post/20150302.3202445');" href="javascript:;">20150302.3202445</a><br />Encephalopathy, hypoglycemia - India: methlyenecyclopropylglycine, commentary  <a onclick="window.open('post/20150301.3199185');" href="javascript:;">20150301.3199185</a><br />Japanese Encephalitis - India: (Manipur)  <a onclick="window.open('post/20150218.3169559');" href="javascript:;">20150218.3169559</a><br />Undiagnosed deaths - India (04): (Muzaffarpur)  <a onclick="window.open('post/20150201.3134605');" href="javascript:;">20150201.3134605</a><br />Undiagnosed deaths - India (03): (Bihar) litchi associated toxin susp.  <a onclick="window.open('post/20150130.3132327');" href="javascript:;">20150130.3132327</a><br />2014<br />----<br />Encephalitis - India (13): (Odisha)  <a onclick="window.open('post/20141215.3031015');" href="javascript:;">20141215.3031015</a><br />Encephalitis - India (12): (Odisha) Japanese encephalitis, RFI  <a onclick="window.open('post/20141208.3019493');" href="javascript:;">20141208.3019493</a><br />Encephalitis - India (09): (West Bengal) Japanese encephalitis conf.  <a onclick="window.open('post/20140905.2751900');" href="javascript:;">20140905.2751900</a><br />Japanese encephalitis - Bangladesh: transmission dynamics in pig  <a onclick="window.open('post/20141003.2826135');" href="javascript:;">20141003.2826135</a><br />Japanese encephalitis - Nepal: (Morang)  <a onclick="window.open('post/20140917.2779771');" href="javascript:;">20140917.2779771</a><br />Encephalitis - India (09): (West Bengal) Japanese encephalitis conf.  <a onclick="window.open('post/20140905.2751900');" href="javascript:;">20140905.2751900</a><br />Japanese encephalitis - India: (Arunachal Pradesh) suspected  <a onclick="window.open('post/20140730.2644558');" href="javascript:;">20140730.2644558</a><br />.................................................ms/je/uba<p></p></div>
+</td>
+</tr>
+</tbody></table>
+
+</div>
+
+<!-- .......................
+END: SUB TEXT BOX (WHITE) -->
+
+</div>
+
+<div id="footer"></div>
+
+</div>
+
+<!-- .......................
+END: SUB MAIN (GREY) -->
+
+</div>
+
+<!-- START: COPYRIGHT
+............................ -->
+
+<div class="copyright">
+<a target="_blank" href="http://www.isid.org">International Society for Infectious Diseases</a>  |  9 Babcock St, 
+Unit 3, Brookline, MA 02446 · USA  |  <strong>T</strong> (617) 
+277-0551  |  <strong>F</strong> (617) 278-9113  | 
+<strong>E</strong> <a href="mailto:info@isid.org">info@isid.org</a><br />
+© 2010 International Society for Infectious Diseases.  All rights reserved.<br />
+<br />
+</div>
+
+<!-- .......................
+END: COPYRIGHT -->
+
+
+
+<!-- .......................
+END: WRAPPER -->
+
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-17547010-3']);
+  _gaq.push(['_setDomainName', '.promedmail.org']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+    var feed_id = 170;
+    var seltypes = ['latest','search','plant','topical','errata'];
+    var feedlu = new Object();
+    feedlu['latest'] = feed_id;
+    feedlu['plant'] = 1;
+    feedlu['topical'] = 1;
+    feedlu['errata'] = 95;
+    var return_map = true;
+    var pathToMain = '../';
+    var lang = '';
+    var markerArray = new Array();
+    var map_center = '15, 18';
+    var zoomlevel = 2;
+
+    // the map
+    var mapOptions = { zoom: 2, center: new google.maps.LatLng(15, 18), mapTypeId: google.maps.MapTypeId.TERRAIN, streetViewControl: false, mapTypeControl: false };
+    var map = new google.maps.Map(document.getElementById('gis'), mapOptions);
+
+	</script>
+
+  <script src="http://www.google.com/jsapi" type="text/javascript"></script>
+  <script src="js/promed.js?a" type="text/javascript"></script>
+
+<script type="text/javascript">
+google.load("language", "1");
+</script><script type="text/javascript" src="http://www.google.com/uds/?file=language&amp;v=1"></script><script type="text/javascript" src="http://www.google.com/uds/api/language/1.0/21ed3320451b9198aa71e398186af717/default+en.I.js"></script>
+
+
+
+</body></html>
