@@ -9,7 +9,7 @@ public class HTMLparserTest {
     public void testParser() throws IOException {
         HTMLparser hp = new HTMLparser();
         //the html file location
-        String result = hp.parse("C:\\Users\\dennis126\\Desktop\\Summer2017\\lab\\mycloudberry\\cloudberry\\noah\\src\\test\\resources\\state100.html");
+        String result = hp.parsePromedEmail("C:\\Users\\dennis126\\Desktop\\Summer2017\\lab\\mycloudberry\\cloudberry\\noah\\src\\test\\resources\\state100.html");
         System.out.println(result);
     }
 }

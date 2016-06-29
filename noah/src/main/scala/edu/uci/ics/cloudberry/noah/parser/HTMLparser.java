@@ -6,23 +6,23 @@ import java.io.*;
 
 public class HTMLparser {
 
-    public static String parse(String dirc) throws IOException {
-        File f = new File(dirc);
-        String info = null;
+    public static String parsePromedEmail(String directory) throws IOException {
+        File f = new File(directory);
+        String wanted_info = null;
         if (f.isFile()) {
             try {
-                Document doc = Jsoup.parse(f, "UTF-8");
-                info = doc.getElementById("preview").text();
-                if (info.intern() == "") {
+                Document parsedDocument = Jsoup.parse(f, "UTF-8");
+                wanted_info = parsedDocument.getElementById("preview").text();
+                if (wanted_info.intern() == "") { //if there is not useful information found
                     throw new Exception("empty file");
                 }
-                return info;
+                return wanted_info;
             } catch (Exception e) {
                 System.out.println("catch an exception");
             }
         } else {
             System.out.println("This is not A File");
         }
-        return info;
+        return wanted_info;
     }
 }
