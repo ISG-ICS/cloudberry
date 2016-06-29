@@ -26,7 +26,6 @@ object CrawlerDriver extends App{
     val Wait_After_Reload = conf.getInt("crawljax.waitafterreload")
     val Wait_After_Event = conf.getInt("crawljax.waitafterevent")
     val OutputDir = conf.getString("crawljax.outputDir")
-    val maxCrawlTime = conf.getInt("crawljax.maxtime")
     val InsertRandomDataForms = conf.getBoolean("crawljax.insertrandomdataforms")
 
     /* Configuration */
@@ -35,8 +34,6 @@ object CrawlerDriver extends App{
     builder.crawlRules.addCrawlCondition("stay within " + EntryURL + "domain", new UrlCondition(EntryURL + "/"))
 
     builder.setOutputDirectory(new File(OutputDir))
-
-    builder.crawlRules().clickOnce(true)
 
     /* Let the browser type for all the cases be firefox */
     val browser = BrowserType.FIREFOX
@@ -49,8 +46,6 @@ object CrawlerDriver extends App{
 
     /* Set crawlFrame to true for every case. This ensures the crawling in order. */
     builder.crawlRules().crawlFrames(true)
-
-    builder.setMaximumRunTime(maxCrawlTime, TimeUnit HOURS)
 
     builder.setMaximumDepth(conf.getInt("crawljax.maxdepth"))
 
@@ -116,6 +111,9 @@ object CrawlerDriver extends App{
     if(conf.hasPath("builder.crawlrules.clickelements")) {
       val AIds = conf.getStringList("builder.crawlrules.clickelements.a.id")
       val AClasses = conf.getStringList("builder.crawlrules.clickelements.a.class")
+      val AText = conf.getStringList("builder.crawlrules.clickelements.a.text")
+      val AHref = conf.getStringList("builder.crawlrules.clickelements.a.href")
+
       var it = AIds.iterator()
 
       while(it.hasNext){
@@ -125,6 +123,16 @@ object CrawlerDriver extends App{
       it = AClasses.iterator()
       while(it.hasNext) {
         builder.crawlRules().click("a").withAttribute("class", it.next())
+      }
+
+      it = AHref.iterator()
+      while(it.hasNext) {
+        builder.crawlRules().click("a").withAttribute("href", it.next())
+      }
+
+      it = AText.iterator()
+      while(it.hasNext) {
+        builder.crawlRules().click("a").withText(it.next())
       }
     }
 
