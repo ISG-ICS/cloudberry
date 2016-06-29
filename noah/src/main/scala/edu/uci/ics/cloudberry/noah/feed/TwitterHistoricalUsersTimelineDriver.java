@@ -2,29 +2,19 @@ package edu.uci.ics.cloudberry.noah.feed;
 
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.*;
-import twitter4j.conf.ConfigurationBuilder;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.List;
 
-public class TwitterFeedUsersTimelineDriver {
+public class TwitterHistoricalUsersTimelineDriver {
 
-    public void run(Config config) throws IOException {
+    public void run(Config config) throws IOException, CmdLineException {
 
-        ConfigurationBuilder builder = new ConfigurationBuilder();
-        builder.setDebugEnabled(true)
-                .setOAuthConsumerKey(config.getConsumerKey())
-                .setOAuthConsumerSecret(config.getConsumerSecret())
-                .setOAuthAccessToken(config.getToken())
-                .setOAuthAccessTokenSecret(config.getTokenSecret())
-                .setJSONStoreEnabled(true);
-
+        //Get historical user data
         try {
-            TwitterFactory factory = new TwitterFactory(builder.build());
-            Twitter twitter = factory.getInstance();
-            String[] userNames = config.getTrackUsers();
-            ResponseList<User> users = twitter.lookupUsers(userNames);
+            Twitter twitter = CmdLineAux.getTwitterInstance(config);
+            ResponseList<User> users = CmdLineAux.getUsers(config, twitter);
             for (User user : users) {
                 BufferedWriter bw = CmdLineAux.createWriter("Tweet_User_"+user.getName() + "_");
                 try {
@@ -46,13 +36,15 @@ public class TwitterFeedUsersTimelineDriver {
                 }
             }
         } catch (TwitterException te) {
-            System.err.println("Twitter get user timeline Exception");
+            System.err.println("User not found");
+            te.printStackTrace();
         }
+
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException, CmdLineException {
 
-        TwitterFeedUsersTimelineDriver userDriver = new TwitterFeedUsersTimelineDriver();
+        TwitterHistoricalUsersTimelineDriver userDriver = new TwitterHistoricalUsersTimelineDriver();
         Config config = CmdLineAux.parseCmdLine(args);
 
         try {
