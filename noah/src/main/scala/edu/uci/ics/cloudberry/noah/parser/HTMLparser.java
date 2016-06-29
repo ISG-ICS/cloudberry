@@ -6,19 +6,16 @@ import java.io.*;
 
 public class HTMLparser {
 
-    public static String parsePromedEmail(String directory) throws IOException {
-        File f = new File(directory);
+    public static String parsePromedEmail(File file) throws IOException {
+        File f = file;
         String wanted_info = null;
         if (f.isFile()) {
             try {
                 Document parsedDocument = Jsoup.parse(f, "UTF-8");
                 wanted_info = parsedDocument.getElementById("preview").text();
-                if (wanted_info.intern() == "") { //if there is not useful information found
-                    throw new Exception("empty file");
-                }
                 return wanted_info;
             } catch (Exception e) {
-                System.out.println("catch an exception");
+                e.printStackTrace();
             }
         } else {
             System.out.println("This is not A File");
