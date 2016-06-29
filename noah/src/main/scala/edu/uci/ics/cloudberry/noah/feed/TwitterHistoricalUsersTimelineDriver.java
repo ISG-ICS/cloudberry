@@ -1,9 +1,7 @@
 package edu.uci.ics.cloudberry.noah.feed;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.*;
-import twitter4j.conf.ConfigurationBuilder;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -13,19 +11,10 @@ public class TwitterHistoricalUsersTimelineDriver {
 
     public void run(Config config) throws IOException, CmdLineException {
 
-        ConfigurationBuilder builder = new ConfigurationBuilder();
-        builder.setDebugEnabled(true)
-                .setOAuthConsumerKey(config.getConsumerKey())
-                .setOAuthConsumerSecret(config.getConsumerSecret())
-                .setOAuthAccessToken(config.getToken())
-                .setOAuthAccessTokenSecret(config.getTokenSecret())
-                .setJSONStoreEnabled(true);
         //Get historical user data
         try {
-            TwitterFactory factory = new TwitterFactory(builder.build());
-            Twitter twitter = factory.getInstance();
-            long[] usersID = ArrayUtils.toPrimitive(CmdLineAux.parseID(config.getTrackUsers()));
-            ResponseList<User> users = twitter.lookupUsers(usersID);
+            Twitter twitter = CmdLineAux.getTwitterInstance(config);
+            ResponseList<User> users = CmdLineAux.getUsers(config, twitter);
             for (User user : users) {
                 BufferedWriter bw = CmdLineAux.createWriter("Tweet_User_"+user.getName() + "_");
                 try {
@@ -47,7 +36,7 @@ public class TwitterHistoricalUsersTimelineDriver {
                 }
             }
         } catch (TwitterException te) {
-            System.err.println("Twitter get user timeline Exception");
+            System.err.println("User not found");
             te.printStackTrace();
         }
 

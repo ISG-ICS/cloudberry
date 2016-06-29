@@ -8,21 +8,34 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import org.kohsuke.args4j.CmdLineException;
+import twitter4j.ResponseList;
+import twitter4j.Twitter;
+import twitter4j.User;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class TwitterUserStreamDriver {
 
+    public List<Long> getUsers(Config config) throws CmdLineException {
+
+        Twitter twitter = CmdLineAux.getTwitterInstance(config);
+        ResponseList<User> users = CmdLineAux.getUsers(config, twitter);
+        List<Long> usersID = new ArrayList<Long>();
+        for (User user : users) {
+            usersID.add(user.getId());
+        }
+        return usersID;
+    }
+
     public void run(Config config) throws IOException, CmdLineException {
 
-        List<Long> usersID = Arrays.asList(CmdLineAux.parseID(config.getTrackUsers()));
+        List<Long> usersID = getUsers(config);
 
-        Client twitterClient;
         boolean isConnected = false;
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
         StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
@@ -33,15 +46,15 @@ public class TwitterUserStreamDriver {
                 config.getTokenSecret());
 
         // Create a new BasicClient. By default gzip is enabled.
-        twitterClient = new ClientBuilder()
+        Client twitterClient = new ClientBuilder()
                 .hosts(Constants.STREAM_HOST)
                 .endpoint(endpoint)
                 .authentication(auth)
                 .processor(new StringDelimitedProcessor(queue))
                 .build();
 
-        // Establish a connection
-        BufferedWriter bw = CmdLineAux.createWriter("Tweet_UserStream_");
+        // Create a gz file to store live tweets from the list of users provided
+        BufferedWriter bw = CmdLineAux.createWriter("Tweet_Zika_Users_");
         try {
             twitterClient.connect();
             isConnected = true;

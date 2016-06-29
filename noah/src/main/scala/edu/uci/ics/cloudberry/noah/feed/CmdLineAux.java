@@ -2,12 +2,12 @@ package edu.uci.ics.cloudberry.noah.feed;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import twitter4j.*;
+import twitter4j.conf.ConfigurationBuilder;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.zip.GZIPOutputStream;
 
 public class CmdLineAux {
@@ -36,16 +36,29 @@ public class CmdLineAux {
         return bw;
     }
 
-    public static Long[] parseID(String[] stringIDs) throws CmdLineException{
-        Long[] usersID = new Long[stringIDs.length];
-        for (int i = 0; i < stringIDs.length; i++) {
-            try {
-                Long id = Long.parseLong(stringIDs[i]);
-                usersID[i] = id;
-            } catch (NumberFormatException ne) {
-                throw new CmdLineException("Invalid user ID");
-            }
+    public static ResponseList<User> getUsers(Config config, Twitter twitter) throws CmdLineException {
+
+        ResponseList<User> users = null;
+        try {
+            users = twitter.lookupUsers(config.getTrackUsers());
+        } catch (TwitterException ex) {
+            throw new CmdLineException("No user was found, please check the username(s) provided");
         }
-        return usersID;
+        return users;
+    }
+
+    public static Twitter getTwitterInstance(Config config) {
+        ConfigurationBuilder builder = new ConfigurationBuilder();
+
+        builder.setDebugEnabled(true)
+                .setOAuthConsumerKey(config.getConsumerKey())
+                .setOAuthConsumerSecret(config.getConsumerSecret())
+                .setOAuthAccessToken(config.getToken())
+                .setOAuthAccessTokenSecret(config.getTokenSecret())
+                .setJSONStoreEnabled(true);
+
+        TwitterFactory factory = new TwitterFactory(builder.build());
+        Twitter twitter = factory.getInstance();
+        return twitter;
     }
 }
