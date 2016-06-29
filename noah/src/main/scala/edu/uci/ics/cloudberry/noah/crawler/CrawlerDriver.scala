@@ -29,8 +29,10 @@ object CrawlerDriver extends App{
     val InsertRandomDataForms = conf.getBoolean("crawljax.insertrandomdataforms")
 
     /* Configuration */
+
     val builder = CrawljaxConfiguration.builderFor(EntryURL)
 
+    /* To stay with in the domain */
     builder.crawlRules.addCrawlCondition("stay within " + EntryURL + "domain", new UrlCondition(EntryURL + "/"))
 
     builder.setOutputDirectory(new File(OutputDir))
@@ -47,6 +49,7 @@ object CrawlerDriver extends App{
     /* Set crawlFrame to true for every case. This ensures the crawling in order. */
     builder.crawlRules().crawlFrames(true)
 
+    /* Set the maximum depth the crawler can crawler (default is 2, 0 is infinite)*/
     builder.setMaximumDepth(conf.getInt("crawljax.maxdepth"))
 
     if(conf.hasPath("input")) {
@@ -56,8 +59,9 @@ object CrawlerDriver extends App{
     }
 
     /* Get the dont click elements to be configured */
-    /* DIV */
+
     if(conf.hasPath("builder.crawlrules.dontclickelements")) {
+      /* DIV */
       val DivIds = conf.getStringList("builder.crawlrules.dontclickelements.div.id")
       val DivClasses = conf.getStringList("builder.crawlrules.dontclickelements.div.class")
 
