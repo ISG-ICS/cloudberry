@@ -17,7 +17,6 @@ public class HTMLparser {
 //        System.out.println(result);
 //    }
 
-
     public static String parse(String dirc)throws IOException{
         File f = new File(dirc);
         String info = null;
