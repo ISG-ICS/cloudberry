@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.crawljax.browser.EmbeddedBrowser.BrowserType
 import com.crawljax.condition.UrlCondition
 import com.crawljax.core.CrawljaxRunner
-import com.crawljax.core.configuration.{CrawljaxConfiguration, InputSpecification}
+import com.crawljax.core.configuration.{BrowserConfiguration, CrawljaxConfiguration, InputSpecification}
 import com.crawljax.plugins.crawloverview.CrawlOverview
 import com.typesafe.config.ConfigFactory
 /**
@@ -39,6 +39,10 @@ object CrawlerDriver extends App{
 
     /* Let the browser type for all the cases be firefox */
     val browser = BrowserType.FIREFOX
+
+    val browsers = 1
+
+    builder.setBrowserConfig((new BrowserConfiguration(browser, browsers)))
 
     builder.crawlRules().waitAfterEvent(Wait_After_Event, TimeUnit.MILLISECONDS)
 
