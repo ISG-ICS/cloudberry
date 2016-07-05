@@ -1,0 +1,47 @@
+{
+  "source" : "dataset.name",
+  "filter": [
+    {
+      "field" : "fieldP",
+      "apply" : "func|null",
+      "relation" : "==|<|>|<=|>=|true|in|inRange",
+      "values" : ["x"]
+    }
+  ],
+  "group": {
+    "by": [
+      {
+        "field": "fieldA",
+        "apply": "function",
+        "groups": 1000,
+        "as": "outputString",
+        "force" : false
+      },
+      {
+        "comment": "vision: `function` may not be required since the middleware should be able to auto scale to an acceptable phase",
+        "time": "x {year|month|day|hour|minute}",
+        "geo": {
+          "choropleth" : "{country|state|county|city|neighborhood}}",
+          "cell": [1,2,3,4]
+        },
+        "quantitative": {
+          "scale": 10
+        }
+      }
+    ],
+    "summarize": [
+      {
+        "field": "fieldB|*",
+        "apply": "function",
+        "as" : "outputFieldName"
+      },
+      {
+        "field": "fieldX",
+        "apply": "topK",
+        "k" : 10,
+        "offset" : 10,
+        "as" : "x"
+      }
+    ]
+  }
+}
