@@ -32,7 +32,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
   .directive('timeSeries', function (Asterix) {
     var margin = {
       top: 10,
-      right: 10,
+      right: 30,
       bottom: 30,
       left: 50
     };
@@ -44,11 +44,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         link: function ($scope, $element, $attrs) {
           var chart = d3.select($element[0]);
           $scope.$watch('resultArray', function (newVal, oldVal) {
+
             if(newVal.length == 0)
               return;
+
             chart.selectAll('*').remove();
 
-            var timeSeries = dc.lineChart(chart[0][0]);
+            var timeSeries = dc.barChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -60,7 +62,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var ndx = crossfilter(newVal);
             var timeDimension = ndx.dimension(function (d) {
-              if (d.time != null) return d.time;
+              if (d.time != null)
+                return d.time;
             })
             var timeGroup = timeDimension.group().reduceSum(function (d) {
               return d.count;
@@ -74,13 +77,14 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .html(minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate());
 
             timeSeries
-              .renderArea(true)
               .width(width)
               .height(height)
               .margins(margin)
               .dimension(timeDimension)
               .group(timeGroup)
+              .centerBar(true)
               .x(d3.time.scale().domain([minDate, maxDate]));
+
 
             dc.renderAll();
 
