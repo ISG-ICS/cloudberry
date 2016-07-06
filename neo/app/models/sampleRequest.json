@@ -1,5 +1,14 @@
 {
   "source" : "dataset.name",
+  "lookup" : [
+    {
+      "sourceKey" : [ "keyName"],
+      "dataset": "name",
+      "lookupKey" : ["keyName"],
+      "select" : ["outputKeyName"],
+      "as" : ["asName"]
+    }
+  ],
   "filter": [
     {
       "field" : "fieldP",
