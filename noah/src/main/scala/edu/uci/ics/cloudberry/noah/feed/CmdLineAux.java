@@ -2,6 +2,8 @@ package edu.uci.ics.cloudberry.noah.feed;
 
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import twitter4j.*;
+import twitter4j.conf.ConfigurationBuilder;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
@@ -32,5 +34,31 @@ public class CmdLineAux {
         BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(zip, "UTF-8"));
         return bw;
+    }
+
+    public static ResponseList<User> getUsers(Config config, Twitter twitter) throws CmdLineException {
+
+        ResponseList<User> users = null;
+        try {
+            users = twitter.lookupUsers(config.getTrackUsers());
+        } catch (TwitterException ex) {
+            throw new CmdLineException("No user was found, please check the username(s) provided");
+        }
+        return users;
+    }
+
+    public static Twitter getTwitterInstance(Config config) {
+        ConfigurationBuilder builder = new ConfigurationBuilder();
+
+        builder.setDebugEnabled(true)
+                .setOAuthConsumerKey(config.getConsumerKey())
+                .setOAuthConsumerSecret(config.getConsumerSecret())
+                .setOAuthAccessToken(config.getToken())
+                .setOAuthAccessTokenSecret(config.getTokenSecret())
+                .setJSONStoreEnabled(true);
+
+        TwitterFactory factory = new TwitterFactory(builder.build());
+        Twitter twitter = factory.getInstance();
+        return twitter;
     }
 }
