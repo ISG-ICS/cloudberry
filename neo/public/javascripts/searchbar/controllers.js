@@ -1,12 +1,14 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, Asterix) {
     $scope.search = function() {
-      if ($scope.keyword)
+      if ($scope.keyword && $scope.keyword.trim().length > 0) {
         Asterix.parameters.keywords = $scope.keyword.trim().split(/\s+/);
-      else
+        // skip the empty query for now.
+        Asterix.queryType = 'search';
+        Asterix.query(Asterix.parameters, Asterix.queryType);
+      } else {
         Asterix.parameters.keywords = [];
-      Asterix.queryType = 'search';
-      Asterix.query(Asterix.parameters, Asterix.queryType);
+      }
     };
   })
   .directive('searchBar', function () {
@@ -17,7 +19,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         '<form class="form-inline" id="input-form" ng-submit="search()" >',
           '<div class="form-group" style="width: 80%">',
             '<label class="sr-only">Keywords</label>',
-            '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Search keywords, e.g. zika" ng-model="keyword"/>',
+            '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Search keywords, e.g. zika" ng-model="keyword" required/>',
           '</div>',
           '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
         '</form>'
