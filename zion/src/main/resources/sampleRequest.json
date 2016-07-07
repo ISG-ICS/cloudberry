@@ -42,15 +42,17 @@
       {
         "field": "fieldB|*",
         "apply": "function",
+        "parameters" : {
+          "k" : 10
+        },
         "as" : "outputFieldName"
-      },
-      {
-        "field": "fieldX",
-        "apply": "topK",
-        "k" : 10,
-        "offset" : 10,
-        "as" : "x"
       }
     ]
+  },
+  "order" : {
+    "on" : [ "fields"],
+    "limit": 100,
+    "offset" : 0,
+    "outFields": ["field"]
   }
 }
