@@ -21,7 +21,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class TwitterUserStreamDriver {
 
-    public List<Long> getUsers(Config config) throws CmdLineException {
+    private List<Long> getUsersID(Config config) throws CmdLineException {
 
         Twitter twitter = CmdLineAux.getTwitterInstance(config);
         ResponseList<User> users = CmdLineAux.getUsers(config, twitter);
@@ -34,7 +34,7 @@ public class TwitterUserStreamDriver {
 
     public void run(Config config) throws IOException, CmdLineException {
 
-        List<Long> usersID = getUsers(config);
+        List<Long> usersID = getUsersID(config);
 
         boolean isConnected = false;
         BlockingQueue<String> queue = new LinkedBlockingQueue<String>(10000);
