@@ -1,0 +1,40 @@
+{
+  "source" : "twitter.ds_tweet",
+  "filter": [
+    {
+      "field" : "geo.stateID",
+      "relation" : "in",
+      "values" : [1,2,3,31]
+    },
+    {
+      "field" : "create_at",
+      "relation" : "inRange",
+      "values" : ["2012", "2016"]
+    },
+    {
+      "field" : "text",
+      "relation" : "in",
+      "values" : ["zika", "virus"]
+    }
+  ],
+  "group": {
+    "by": [
+      {
+        "field": "hashTags"
+      }
+    ],
+    "summarize": [
+      {
+        "field": "*",
+        "apply": "count",
+        "as" : "count"
+      }
+    ]
+  },
+  "order" : {
+    "on" : [ "count"],
+    "limit": 100,
+    "offset" : 0,
+    "outFields": ["hashTags", "count"]
+  }
+}
