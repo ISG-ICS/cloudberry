@@ -18,3 +18,5 @@ dist
 /project/*-shim.sbt
 /activator-sbt-*-shim.sbt
 *.iml
+noah/lib/
+neo/public/data.zip

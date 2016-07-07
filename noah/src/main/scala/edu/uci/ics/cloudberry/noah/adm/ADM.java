@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.noah.adm;
 
 import edu.uci.ics.cloudberry.util.Rectangle;
+import org.apache.asterix.external.library.java.JObjects;
 import org.apache.commons.lang3.StringEscapeUtils;
 import twitter4j.GeoLocation;
 import twitter4j.HashtagEntity;
@@ -38,6 +39,20 @@ public class ADM {
 
     public static String mkDateTimeConstructor(Date jdate) {
         return "datetime(\"" + ADMDateFormat.format(jdate) + "T" + ADMTimeFormat.format(jdate) + "\")";
+    }
+
+    public static Rectangle coordinates2Rectangle(JObjects.JUnorderedList coordList)  {
+        if(coordList.size()!=4){
+            throw new IllegalArgumentException("unknown boundingBoxCoordinates");
+        }
+        GeoLocation[][] geoLoc = new GeoLocation[1][4];
+
+        for (int iter1 = 0; iter1<coordList.size(); iter1++){
+            geoLoc[0][iter1] = new GeoLocation(((JObjects.JDouble)((JObjects.JUnorderedList)coordList.getElement(iter1)).getElement(0)).getValue(),
+                    ((JObjects.JDouble)((JObjects.JUnorderedList)coordList.getElement(iter1)).getElement(1)).getValue());
+        }
+
+        return coordinates2Rectangle(geoLoc);
     }
 
     public static Rectangle coordinates2Rectangle(GeoLocation[][] boundingBoxCoordinates){

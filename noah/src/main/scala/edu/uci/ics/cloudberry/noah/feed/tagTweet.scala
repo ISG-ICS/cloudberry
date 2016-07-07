@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.noah.feed
 import java.io.File
 
 import edu.uci.ics.cloudberry.gnosis._
-import edu.uci.ics.cloudberry.noah.adm.{UnknownPlaceException, Tweet}
+import edu.uci.ics.cloudberry.noah.adm.{Tweet, UnknownPlaceException}
 import edu.uci.ics.cloudberry.util.Profile._
 import twitter4j.{TwitterException, TwitterObjectFactory}
 

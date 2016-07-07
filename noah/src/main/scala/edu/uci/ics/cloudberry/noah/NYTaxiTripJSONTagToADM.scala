@@ -1,11 +1,11 @@
 package edu.uci.ics.cloudberry.noah
 import java.io.File
+
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.noah.adm.TaxiTrip
 import edu.uci.ics.cloudberry.util.Profile._
 
 import scala.collection.mutable
-import scala.io.Source
 
 object NYTaxiTripJSONTagToADM {
 

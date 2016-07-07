@@ -1,5 +1,5 @@
-import sbt._
 import play.sbt.PlayImport._
+import sbt._
 
 object Dependencies {
   val playVersion = "2.5.0"
@@ -43,6 +43,8 @@ object Dependencies {
     "com.twitter" % "hbc-core" % "2.2.0",
     "org.kohsuke.args4j" % "args4j-maven-plugin" % "2.33",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
+//    "org.apache.hyracks" % "hyracks-api" % "0.2.18-SNAPSHOT",
+//    "org.apache.asterix" % "asterix-external-data" % "0.8.9-SNAPSHOT"
   ) ++ testDeps
 
   val utilDependencies: Seq[ModuleID] = Seq(
@@ -53,13 +55,15 @@ object Dependencies {
     "org.scalactic" %% "scalactic" % "2.2.6",
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
     "com.vividsolutions" % "jts" % "1.13",
-    "org.wololo" % "jts2geojson" % "0.7.0"
+    "org.wololo" % "jts2geojson" % "0.7.0",
+    "org.json" % "json" % "20090211"
   ) ++ testDeps
 
   val zionDependencies: Seq[ModuleID] = Seq(
     "joda-time" % "joda-time" % "2.9.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.4",
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
+
     ("com.typesafe.play" %% "play-ws" % playVersion),
     ("com.typesafe.play" %% "play" % playVersion % "test") // use it to test the web client
   ) ++ testDeps

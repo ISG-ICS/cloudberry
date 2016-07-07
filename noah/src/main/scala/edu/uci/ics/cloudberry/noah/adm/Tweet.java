@@ -1,8 +1,15 @@
 package edu.uci.ics.cloudberry.noah.adm;
 
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis;
+import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.external.library.java.JObjects;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import twitter4j.GeoLocation;
 import twitter4j.Status;
+
+import java.io.IOException;
 
 public class Tweet {
     public static String CREATE_AT = "create_at";
@@ -69,6 +76,19 @@ public class Tweet {
         throw new UnknownPlaceException("unknown place:" + status.getPlace());
     }
 
+    public static boolean exactPointLookup(StringBuilder sb, String location, USGeoGnosis gnosis) throws JSONException {
+        if(location == "")
+            return false;
+        JSONObject geo = new JSONObject(location);
+        JSONArray coor = geo.getJSONArray("coordinates");
+        scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(coor.getDouble(0),coor.getDouble(1));
+        if(info.isEmpty()){
+            return false;
+        }
+        sb.append(info.get().toString());
+        return true;
+    }
+
     private static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
         if (location == null) {
             return false;
@@ -81,6 +101,67 @@ public class Tweet {
         sb.append(info.get().toString());
         return true;
     }
+
+    public static boolean textMatchPlace(StringBuilder sb, JObjects.JRecord place, USGeoGnosis gnosis) throws IOException, AsterixException {
+        String countryCode,placeType, fullName, cityName, coor;
+
+        countryCode = place.getStringByName("country_code").getValue();
+        placeType = place.getStringByName("place_type").getValue();
+        System.out.println("Country Code : " + countryCode + "  | placeType:  "+placeType);
+
+        if(!("US").equals(countryCode))
+            return false;
+
+        scala.Option<USGeoGnosis.USGeoTagInfo> info;
+
+        switch (placeType) {
+            case "country":
+                return false;
+            case "admin": // state level
+                return false;
+            case "city":
+                fullName = place.getStringByName("full_name").getValue();
+                int index = fullName.indexOf(',');
+                if (index < 0) {
+                    System.err.println("unknown neighborhood:" + fullName);
+                    return false;
+                }
+                String stateAbbr = fullName.substring(index + 1).trim();
+                cityName = place.getStringByName("name").getValue();
+                System.out.println("City name  "+cityName);
+                info = gnosis.tagCity(cityName, stateAbbr);
+                break;
+            case "neighborhood": // e.g. "The Las Vegas Strip, Paradise"
+                fullName = place.getStringByName("full_name").getValue();
+                index = fullName.indexOf(',');
+                if (index < 0) {
+                    System.err.println("unknown neighborhood:" + fullName);
+                    return false;
+                }
+                cityName = fullName.substring(index + 1).trim();
+                info = gnosis.tagNeighborhood(cityName,
+                        ADM.coordinates2Rectangle((JObjects.JUnorderedList)(place.getUnorderedListByName("coordinates").getElement(0))));
+                break;
+            case "poi": // a point
+                JObjects.JUnorderedList targetList = ((JObjects.JUnorderedList)place.getRecordByName("bounding_box").getUnorderedListByName("coordinates").getElement(0));
+                JObjects.JDouble longitude = (JObjects.JDouble)(targetList.getElement(0));
+                JObjects.JDouble latitude = (JObjects.JDouble)(targetList.getElement(0));
+                info = gnosis.tagPoint(longitude.getValue(), latitude.getValue());
+//                break;
+            default:
+                System.err.println("unknown place type:" + placeType + place.toString());
+                return false;
+        }
+
+        if (info == null || info.isEmpty()) {
+            System.out.println("return false");
+            return false;
+        }
+        sb.append(info.get().toString());
+        System.out.println("return true");
+        return true;
+    }
+
 
     private static boolean textMatchPlace(StringBuilder sb, Status status, USGeoGnosis gnosis) {
         twitter4j.Place place = status.getPlace();

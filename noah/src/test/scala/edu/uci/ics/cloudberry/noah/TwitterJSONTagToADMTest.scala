@@ -3,8 +3,8 @@ package edu.uci.ics.cloudberry.noah
 import java.io.File
 
 import edu.uci.ics.cloudberry.gnosis._
-import org.scalatest.{FlatSpec, Matchers}
 import edu.uci.ics.cloudberry.util.Profile._
+import org.scalatest.{FlatSpec, Matchers}
 
 class TwitterJSONTagToADMTest extends FlatSpec with Matchers {
   "USGeoGnosis" should "tag the us json file" in {

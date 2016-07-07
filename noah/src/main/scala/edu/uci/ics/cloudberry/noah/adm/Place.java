@@ -1,7 +1,5 @@
 package edu.uci.ics.cloudberry.noah.adm;
 
-import twitter4j.GeoLocation;
-
 public class Place {
 
     public static String COUNTRY = "country";
