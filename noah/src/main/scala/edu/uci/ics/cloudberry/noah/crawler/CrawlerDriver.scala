@@ -56,6 +56,9 @@ object CrawlerDriver extends App{
     /* Set the maximum depth the crawler can crawler (default is 2, 0 is infinite)*/
     builder.setMaximumDepth(conf.getInt("crawljax.maxdepth"))
 
+    /* Set the run time */
+    builder.setMaximumRunTime(0, TimeUnit MILLISECONDS)
+
     if(conf.hasPath("input")) {
       val in = new InputSpecification();
       in.field(conf.getString("input.field")).setValue(conf.getString("input.value"))
