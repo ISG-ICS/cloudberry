@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-sbt "project noah" 'run-main edu.uci.ics.cloudberry.noah.feed.TwitterUserStreamDriver \
+sbt "project noah" 'run-main edu.uci.ics.cloudberry.noah.feed.TwitterHistoricalFeedUsersTimelineDriver \
 -ck Your Consumer Key \
 -cs Your secret consumer key \
 -tk Your token \

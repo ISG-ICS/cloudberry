@@ -1,10 +1,4 @@
-#!/usr/bin/env bash
-sbt "project noah" 'run-main edu.uci.ics.cloudberry.noah.feed.TwitterUserStreamDriver \
--ck Your Consumer Key \
--cs Your secret consumer key \
--tk Your token \
--ts Your secret token \
--tu "Halt_Zika"
+"Halt_Zika"
 "zikadatabase"
 "EbolaRR"
 "ZikaECN"
@@ -22,4 +16,4 @@ sbt "project noah" 'run-main edu.uci.ics.cloudberry.noah.feed.TwitterUserStreamD
 "SahmedGun"
 "eZikaVirus_com"
 "Zika_Alerts"
-"Zika_News"'
+"Zika_News"
