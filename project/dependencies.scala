@@ -45,6 +45,16 @@ object Dependencies {
     "com.crawljax" % "crawljax-core" % "3.6",
     "com.crawljax.plugins" % "crawloverview-plugin" % "3.6",
     "com.crawljax" % "crawljax-cli" % "3.6",
+    "log4j" % "log4j" % "1.2.17",
+    "org.slf4j" % "slf4j-simple" % "1.7.21",
+    "com.yammer.metrics" % "metrics-core" % "2.2.0",
+    "com.yammer.metrics" % "metrics-annotation" % "2.2.0",
+  "org.apache.kafka" % "kafka-clients" % "0.10.0.0",
+    "com.101tec" % "zkclient" % "0.7",
+    "org.apache.kafka" % "kafka_2.10" % "0.10.0.0"
+      exclude("javax.jms", "jms")
+      exclude("com.sun.jdmk", "jmxtools")
+      exclude("com.sun.jmx", "jmxri"),
     "org.jsoup" % "jsoup" % "1.9.2",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps

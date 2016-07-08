@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.noah.feed;
 
+import edu.uci.ics.cloudberry.noah.kafka.ProducerKafka;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.*;
 
@@ -28,6 +29,8 @@ public class TwitterHistoricalUsersTimelineDriver {
                             for (Status status : statuses) {
                                 String statusJson = TwitterObjectFactory.getRawJSON(status);
                                 bw.write(statusJson);
+                                String id = Integer.toString(pageNum) + "_" + user.getName();
+                                ProducerKafka.store("localhost:9092",id, statusJson);
                             }
                         }
                     }
