@@ -83,6 +83,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .dimension(timeDimension)
               .group(timeGroup)
               .centerBar(true)
+              .gap(1)
               .x(d3.time.scale().domain([minDate, maxDate]));
 
 
