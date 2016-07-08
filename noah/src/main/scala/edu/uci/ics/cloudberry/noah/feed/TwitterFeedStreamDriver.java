@@ -95,9 +95,12 @@ public class TwitterFeedStreamDriver {
                     } catch (UnknownPlaceException e) {
 
                     } catch (TwitterException e) {
+                        e.printStackTrace(System.err);
                     }
                 }
             }
+        } catch (Exception e){
+            e.printStackTrace(System.err);
         } finally {
             bw.close();
             twitterClient.stop();
@@ -125,10 +128,9 @@ public class TwitterFeedStreamDriver {
             feedDriver.openSocket(config);
             feedDriver.run(config, bw);
         } catch (CmdLineException e) {
-            System.err.println(e);
-
-        } catch (InterruptedException e) {
-            System.err.println(e);
+            e.printStackTrace(System.err);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
         } finally {
             if (feedDriver.socketAdapterClient != null) {
                 feedDriver.socketAdapterClient.finalize();
