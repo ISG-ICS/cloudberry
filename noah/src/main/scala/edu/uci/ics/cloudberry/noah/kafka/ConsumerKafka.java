@@ -1,8 +1,14 @@
 package edu.uci.ics.cloudberry.noah.kafka;
 
+import com.mongodb.DBObject;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
+import com.mongodb.util.JSON;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.bson.Document;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -28,17 +34,21 @@ public class ConsumerKafka {
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topics));
         while (true) {
-            ConsumerRecords<String, String> records = consumer.poll(100);
-            for (ConsumerRecord<String, String> record : records)
+            ConsumerRecords<String, String> records = consumer.poll(10);
+            for (ConsumerRecord<String, String> record : records) {
                 System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
+                this.ingestDb("localhost", 27017, "mydb", "test", record.key(), record.value());
+            }
         }
-
     }
 
-    public static void main(String[] args) {
+    private void ingestDb(String host, int port, String dbName, String coll, String key, String record) {
 
-        ConsumerKafka cs = new ConsumerKafka();
-        String[] topics = {"test2"};
-        cs.run("localhost:9092", "testgroup2", topics);
+        MongoClient mongoClient = new MongoClient(host, port);
+        MongoDatabase database = mongoClient.getDatabase(dbName);
+        MongoCollection<Document> collection = database.getCollection(coll);
+        DBObject dbObject = (DBObject) JSON.parse(record);
+        collection.insertOne(new Document(key, dbObject));
+        mongoClient.close();
     }
 }

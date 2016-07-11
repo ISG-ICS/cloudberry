@@ -29,8 +29,10 @@ public class TwitterHistoricalUsersTimelineDriver {
                             for (Status status : statuses) {
                                 String statusJson = TwitterObjectFactory.getRawJSON(status);
                                 bw.write(statusJson);
-                                String id = Integer.toString(pageNum) + "_" + user.getName();
-                                ProducerKafka.store("localhost:9092",id, statusJson);
+                                if(config.getStoreKafka()){
+                                    ProducerKafka.store("TwitterHistUsersTimeline", statusJson,config);
+                                }
+
                             }
                         }
                     }

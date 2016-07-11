@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.noah.kafka;
 
+import edu.uci.ics.cloudberry.noah.feed.Config;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -8,7 +9,8 @@ import java.util.Properties;
 
 public class ProducerKafka {
 
-    public static void store(String server, String id, String msg) {
+    public static void store(String topic, String msg, Config config) {
+        String server = config.getKafkaServer();
         Properties props = new Properties();
         props.put("bootstrap.servers", server);
         props.put("acks", "all");
@@ -20,7 +22,7 @@ public class ProducerKafka {
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
         Producer<String, String> producer = new KafkaProducer<String, String>(props);
-        ProducerRecord<String, String> data = new ProducerRecord<String, String>("test2", id, msg);
+        ProducerRecord<String, String> data = new ProducerRecord<String, String>(topic, msg);
         producer.send(data);
         producer.close();
     }

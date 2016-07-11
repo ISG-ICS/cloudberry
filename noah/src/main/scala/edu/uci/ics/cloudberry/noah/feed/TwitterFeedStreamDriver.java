@@ -9,6 +9,7 @@ import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import edu.uci.ics.cloudberry.noah.adm.UnknownPlaceException;
+import edu.uci.ics.cloudberry.noah.kafka.ProducerKafka;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.TwitterException;
 
@@ -83,10 +84,13 @@ public class TwitterFeedStreamDriver {
         try {
             twitterClient.connect();
             isConnected = true;
-            // Do whatever needs to be done with messages
+            // Do whatever needs to be done with messages;
             while (!twitterClient.isDone()) {
                 String msg = queue.take();
                 bw.write(msg);
+                if(config.getStoreKafka()){
+                    ProducerKafka.store("TwitterZikaStreaming",msg,config);
+                }
                 //if is not to store in file only, geo tag and send to database
                 if (!config.getIsFileOnly()) {
                     try {

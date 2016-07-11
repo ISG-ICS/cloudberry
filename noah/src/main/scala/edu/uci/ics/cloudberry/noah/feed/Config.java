@@ -51,6 +51,15 @@ public class Config {
     @Option(name = "-fo", aliases = "--fileonly", usage = "only store in a file, do not geotag nor ingest")
     private boolean isFileOnly = false;
 
+    @Option(name = "-kaf", aliases = "--kafka", usage = "send data to Kafka Cluster")
+    private boolean storeKafka = false;
+
+    @Option(name = "-ks", aliases = "--kafkaserver", usage = "hostname:port used to start the connection with KafkaCluster")
+    private String kafkaServer = "";
+
+    @Option(name = "-kID", aliases = "--kafkatopic", usage = "Id of the consumerfor Kafka")
+    private String kafkaId = "";
+
 
     public String getConsumerKey() {
         return consumerKey;
@@ -100,9 +109,13 @@ public class Config {
         return maxCount;
     }
 
-    public boolean getIsFileOnly() {
-        return isFileOnly;
-    }
+    public boolean getIsFileOnly() { return isFileOnly; }
+
+    public boolean getStoreKafka() { return storeKafka; }
+
+    public String getKafkaServer() { return kafkaServer; }
+
+    public String getKafkaId() { return kafkaId; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 
