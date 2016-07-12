@@ -12,16 +12,16 @@ import org.kohsuke.args4j.spi.Setter;
 import java.util.ArrayList;
 
 public class Config {
-    @Option(required = true, name = "-ck", aliases = "--consumer-key", usage = "ConsumerKey for Twitter OAuth")
+    @Option(name = "-ck", aliases = "--consumer-key", usage = "ConsumerKey for Twitter OAuth")
     private String consumerKey = null;
 
-    @Option(required = true, name = "-cs", aliases = "--consumer-secret", usage = "Consumer Secret for Twitter OAuth")
+    @Option(name = "-cs", aliases = "--consumer-secret", usage = "Consumer Secret for Twitter OAuth")
     private String consumerSecret = null;
 
-    @Option(required = true, name = "-tk", aliases = "--token", usage = "Token for Twitter OAuth")
+    @Option(name = "-tk", aliases = "--token", usage = "Token for Twitter OAuth")
     private String token = null;
 
-    @Option(required = true, name = "-ts", aliases = "--token-secret", usage = "Token secret for Twitter OAuth")
+    @Option(name = "-ts", aliases = "--token-secret", usage = "Token secret for Twitter OAuth")
     private String tokenSecret = null;
 
     @Option(name = "-tr", aliases = "--tracker", handler = TermArrayOptionHandler.class, usage = "Tracked terms, separated by comma.")
@@ -57,7 +57,7 @@ public class Config {
     @Option(name = "-ks", aliases = "--kafkaserver", usage = "hostname:port used to start the connection with KafkaCluster")
     private String kafkaServer = "";
 
-    @Option(name = "-kID", aliases = "--kafkatopic", usage = "Id of the consumerfor Kafka")
+    @Option(name = "-kid", aliases = "--kafkaconsumerId", usage = "Id of the consumer for Kafka")
     private String kafkaId = "";
 
 

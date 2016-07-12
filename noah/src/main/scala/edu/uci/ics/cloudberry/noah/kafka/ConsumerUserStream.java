@@ -16,7 +16,7 @@ public class ConsumerUserStream {
 
             ConsumerKafka consumer = new ConsumerKafka();
             String[] topics = {"TwitterUserStream"};
-            consumer.run(config.getKafkaServer(), config.getKafkaId(), topics);
+            consumer.run(config.getKafkaServer(), config.getKafkaId(), topics, "UserStream");
 
         } catch (CmdLineException e) {
             e.printStackTrace(System.err);

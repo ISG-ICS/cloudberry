@@ -28,16 +28,16 @@ public class ConsumerKafka {
         return props;
     }
 
-    public void run(String server, String groupId, String[] topics) {
+    public void run(String server, String groupId, String[] topics, String collection) {
 
         Properties props = this.getProperties(server, groupId);
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topics));
         while (true) {
-            ConsumerRecords<String, String> records = consumer.poll(10);
+            ConsumerRecords<String, String> records = consumer.poll(100);
             for (ConsumerRecord<String, String> record : records) {
                 System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
-                this.ingestDb("localhost", 27017, "mydb", "test", record.key(), record.value());
+                this.ingestDb("localhost", 27017, "TwitterDB", collection, Long.toString(record.offset()), record.value());
             }
         }
     }
