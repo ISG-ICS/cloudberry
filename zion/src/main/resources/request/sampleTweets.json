@@ -13,7 +13,7 @@
     },
     {
       "field" : "text",
-      "relation" : "in",
+      "relation" : "contains",
       "values" : ["zika", "virus"]
     }
   ],

@@ -2,7 +2,7 @@
   "source" : "twitter.ds_tweet",
   "filter": [
     {
-      "field" : "geo.stateID",
+      "field" : "geo_tag.stateID",
       "relation" : "in",
       "values" : [1,2,3,31]
     },
@@ -13,7 +13,7 @@
     },
     {
       "field" : "text",
-      "relation" : "in",
+      "relation" : "contains",
       "values" : ["zika", "virus"]
     }
   ],
@@ -21,13 +21,13 @@
     "by": [
       {
         "field": "geo",
-        "apply": "state",
-        "as": "stateID"
+        "apply": "stateID",
+        "as" : "state"
       },
       {
         "field" : "create_at",
         "apply" : "hour",
-        "as" : "time"
+        "as" : "hour"
       }
     ],
     "summarize": [
@@ -35,6 +35,22 @@
         "field": "*",
         "apply": "count",
         "as" : "count"
+      },
+      {
+        "field" : "hashTags",
+        "apply" : {
+          "name": "topK",
+          "args": [10]
+        },
+        "as" : "top10_hash"
+      },
+      {
+        "field" : "lang",
+        "apply" : {
+          "name": "topK",
+          "args": [10]
+        },
+        "as" : "top10_lang"
       }
     ]
   }

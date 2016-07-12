@@ -1,8 +1,8 @@
 {
-  "source" : "twitter.ds_tweet",
+  "dataset" : "twitter.ds_tweet",
   "filter": [
     {
-      "field" : "geo.stateID",
+      "field" : "geo_tag.stateID",
       "relation" : "in",
       "values" : [1,2,3,31]
     },
@@ -13,21 +13,26 @@
     },
     {
       "field" : "text",
-      "relation" : "in",
+      "relation" : "contains",
       "values" : ["zika", "virus"]
     }
   ],
   "group": {
     "by": [
       {
-        "field": "hashTags"
+        "field": "hashTags",
+        "apply": "unnest",
+        "as" : "hashTag"
       }
     ],
     "summarize": [
       {
-        "field": "*",
-        "apply": "count",
-        "as" : "count"
+        "field" : "hashTag",
+        "apply" : {
+          "name": "topK",
+          "args": [10]
+        },
+        "as" : "top10_hash"
       }
     ]
   },

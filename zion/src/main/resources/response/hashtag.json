@@ -1,0 +1,7 @@
+{
+  "status" : 0,
+  "result" : [
+    {"hashtag": {"group": "zika"}, "count" : 235},
+    {"hashtag": {"group": "virus"}, "count": 400}
+  ]
+}
