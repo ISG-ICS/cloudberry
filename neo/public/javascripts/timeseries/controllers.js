@@ -44,7 +44,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         link: function ($scope, $element, $attrs) {
           var chart = d3.select($element[0]);
           $scope.$watch('resultArray', function (newVal, oldVal) {
-
             if(newVal.length == 0)
               return;
 
@@ -71,7 +70,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var minDate = timeDimension.bottom(1)[0].time;
             var maxDate = timeDimension.top(1)[0].time;
-
             chart.append('text')
               .style('font','12px sans-serif')
               .html(minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate());
@@ -83,8 +81,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .dimension(timeDimension)
               .group(timeGroup)
               .centerBar(true)
-              .gap(1)
-              .x(d3.time.scale().domain([minDate, maxDate]));
+              .x(d3.time.scale().domain([minDate, maxDate]))
+              .xUnits(d3.time.days)
+              .gap(1);
+
 
 
             dc.renderAll();
