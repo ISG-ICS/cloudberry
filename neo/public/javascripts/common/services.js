@@ -1,6 +1,6 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
-    var startDate = new Date(2012, 11, 1, 0, 0, 0, 0);
+    var startDate = new Date(2012, 1, 1, 0, 0, 0, 0);
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
     var asterixService = {
 
