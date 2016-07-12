@@ -3,7 +3,7 @@
   "result": {
     "scale": {
       "hour": "hour",
-      "state": "geo.stateID"
+      "state": "state"
     },
     "result": [
       {

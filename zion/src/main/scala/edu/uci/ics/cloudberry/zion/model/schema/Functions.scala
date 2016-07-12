@@ -27,8 +27,8 @@ trait Scale {
 }
 
 // Number
-case class NumScale(override val scale: Int) extends TransformFunc with Scale {
-  override val name = "scale"
+case class Bin(override val scale: Int) extends TransformFunc with Scale {
+  override val name = "bin"
   override val args = Map("scale" -> scale)
 }
 

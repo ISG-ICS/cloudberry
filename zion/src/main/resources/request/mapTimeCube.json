@@ -1,5 +1,5 @@
 {
-  "source": "twitter.ds_tweet",
+  "dataset": "twitter.ds_tweet",
   "filter": [
     {
       "field": "geo_tag.stateID",
