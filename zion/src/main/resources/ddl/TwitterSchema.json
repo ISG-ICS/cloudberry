@@ -12,37 +12,45 @@
       },
       {
         "field": "coordinate",
-        "type" : "point"
+        "type": "point"
       },
       {
-        "field" : "lang",
-        "type" : "string"
+        "field": "lang",
+        "type": "string"
       },
       {
-        "field" : "is_retweet",
-        "type" : "boolean"
+        "field": "is_retweet",
+        "type": "boolean"
       },
       {
-        "field" : "hashtag",
-        "type" : "bag",
-        "innerType" : "string"
+        "field": "hashtag",
+        "type": "bag",
+        "innerType": "string"
       },
       {
-        "field" : "user_mentions",
-        "type" : "bag",
-        "innerType" : "number"
+        "field": "user_mentions",
+        "type": "bag",
+        "innerType": "number"
       },
       {
-        "field" : "user.id",
-        "type" : "number"
+        "field": "user.id",
+        "type": "number"
       },
       {
-        "field": "geo_tag",
-        "type" : "hierarchy",
-        "levels" : [
-          "geo_tag.stateID", "geo_tag.countyID", "geo_tag.cityID"
+        "field": "geo",
+        "type": "hierarchy",
+        "levels": [
+          {
+            "state": "geo_tag.stateID"
+          },
+          {
+            "county": "geo_tag.countyID"
+          },
+          {
+            "city": "geo_tag.cityID"
+          }
         ],
-        "innerType" : "number"
+        "innerType": "number"
       }
     ],
     "measurements": [
@@ -55,20 +63,20 @@
         "type": "number"
       },
       {
-        "field":  "in_reply_to_user",
-        "type" : "number"
+        "field": "in_reply_to_user",
+        "type": "number"
       },
       {
-        "field":  "favorite_count",
-        "type" : "number"
+        "field": "favorite_count",
+        "type": "number"
       },
       {
-        "field":  "retweet_count",
-        "type" : "number"
+        "field": "retweet_count",
+        "type": "number"
       },
       {
-        "field" : "user.status_count",
-        "type" : "number"
+        "field": "user.status_count",
+        "type": "number"
       }
     ]
   }

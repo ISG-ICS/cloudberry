@@ -17,6 +17,11 @@ case object Unnest extends TransformFunc {
   override val name = "unnest"
 }
 
+case class Level(val level : String) extends TransformFunc {
+  override val name = "level"
+  override val args = Map("level" -> level)
+}
+
 trait Scale {
   def scale: Int
 }

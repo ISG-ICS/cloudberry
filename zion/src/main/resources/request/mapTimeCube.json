@@ -1,56 +1,76 @@
 {
-  "source" : "twitter.ds_tweet",
+  "source": "twitter.ds_tweet",
   "filter": [
     {
-      "field" : "geo_tag.stateID",
-      "relation" : "in",
-      "values" : [1,2,3,31]
+      "field": "geo_tag.stateID",
+      "relation": "in",
+      "values": [
+        1,
+        2,
+        3,
+        31
+      ]
     },
     {
-      "field" : "create_at",
-      "relation" : "inRange",
-      "values" : ["2012", "2016"]
+      "field": "create_at",
+      "relation": "inRange",
+      "values": [
+        "2012",
+        "2016"
+      ]
     },
     {
-      "field" : "text",
-      "relation" : "contains",
-      "values" : ["zika", "virus"]
+      "field": "text",
+      "relation": "contains",
+      "values": [
+        "zika",
+        "virus"
+      ]
     }
   ],
   "group": {
     "by": [
       {
         "field": "geo",
-        "apply": "stateID",
-        "as" : "state"
+        "apply": {
+          "name": "level",
+          "args": {
+            "level": "state"
+          }
+        },
+        "as": "state"
       },
       {
-        "field" : "create_at",
-        "apply" : "hour",
-        "as" : "hour"
+        "field": "create_at",
+        "apply": "hour",
+        "as": "hour"
       }
     ],
     "summarize": [
       {
         "field": "*",
         "apply": "count",
-        "as" : "count"
+        "as": "count"
       },
       {
-        "field" : "hashTags",
-        "apply" : {
+        "field": "hashTags",
+        "apply": {
           "name": "topK",
-          "args": [10]
+          "args": {
+            "k" : 10
+          }
         },
-        "as" : "top10_hash"
+        "as": "top10_hash"
       },
       {
-        "field" : "lang",
-        "apply" : {
+        "field": "lang",
+        "apply": {
           "name": "topK",
-          "args": [10]
+          "args": {
+            "k" : 10
+          }
         },
-        "as" : "top10_lang"
+        "as": "top10_lang"
       }
     ]
   }
