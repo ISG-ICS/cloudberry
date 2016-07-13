@@ -3,11 +3,11 @@ package edu.uci.ics.cloudberry.zion.model.schema
 trait IFunction {
   def name: String
 
-  def args: Map[String, AnyVal]
+  def args: Map[String, Any]
 }
 
 trait TransformFunc extends IFunction {
-  override val args: Map[String, AnyVal] = Map.empty
+  override val args: Map[String, Any] = Map.empty
 }
 
 /**
