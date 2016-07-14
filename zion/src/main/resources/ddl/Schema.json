@@ -10,7 +10,11 @@
         "field": "H",
         "type" : "hierarchy",
         "levels" : [
-          "state", "county", "city"
+          {
+            "state": "H.state",
+            "county": "H.county",
+            "city": "H.city"
+          }
         ],
         "innerType": "number"
       }

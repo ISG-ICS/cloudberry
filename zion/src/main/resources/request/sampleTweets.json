@@ -17,10 +17,10 @@
       "values" : ["zika", "virus"]
     }
   ],
-  "order" : {
-    "on" : [ "-create_at"],
+  "select" : {
+    "order" : [ "-create_at"],
     "limit": 100,
     "offset" : 0,
-    "outFields": ["id", "user", "create_at"]
+    "fields": ["id", "user", "create_at"]
   }
 }

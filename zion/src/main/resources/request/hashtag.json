@@ -18,14 +18,7 @@
     }
   ],
   "group": {
-    "by": [
-      {
-        "field": "hashTags",
-        "apply": "unnest",
-        "as" : "hashTag"
-      }
-    ],
-    "summarize": [
+    "aggregate": [
       {
         "field" : "hashTag",
         "apply" : {
@@ -37,11 +30,5 @@
         "as" : "top10_hash"
       }
     ]
-  },
-  "order" : {
-    "on" : [ "count"],
-    "limit": 100,
-    "offset" : 0,
-    "outFields": ["hashTags", "count"]
   }
 }
