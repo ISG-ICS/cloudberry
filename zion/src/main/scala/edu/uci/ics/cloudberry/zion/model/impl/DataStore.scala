@@ -6,15 +6,13 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import scala.concurrent.{ExecutionContext, Future}
 
 class DataStore(override val schema: Schema,
-                queryParser: IQueryParser,
                 conn: IDataConn,
                 responseHandler: IResponseHandler
                )(implicit ec: ExecutionContext)
   extends IDataStore {
 
-  override def query(query: Query): Future[IResponse] = {
-    val xql = queryParser.parse(query, schema)
-    conn.query(xql).map(responseHandler.handler)
+  override def query(query: String): Future[IResponse] = {
+    conn.query(query).map(responseHandler.handler)
   }
 }
 

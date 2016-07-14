@@ -11,6 +11,7 @@ import play.api.libs.ws.WSResponse
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
+//TODO these views should be load automatically than hard coded.
 class TwitterCountyDaySummaryView(val conn: AsterixConnection,
                                   val queryTemplate: DBQuery,
                                   override val sourceActor: ActorRef,

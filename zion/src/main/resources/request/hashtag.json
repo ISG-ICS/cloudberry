@@ -37,11 +37,5 @@
         "as" : "top10_hash"
       }
     ]
-  },
-  "order" : {
-    "on" : [ "count"],
-    "limit": 100,
-    "offset" : 0,
-    "outFields": ["hashTags", "count"]
   }
 }

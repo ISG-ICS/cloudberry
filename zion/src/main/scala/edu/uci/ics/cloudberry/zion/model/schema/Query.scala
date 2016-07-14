@@ -16,13 +16,13 @@ trait Statement {}
 /**
   * Augments the source data to contain more fields.
   * @param sourceKeys
-  * @param lookupDataset
+  * @param dataset
   * @param lookupKeys
   * @param selectValues
   * @param as
   */
 class LookupStatement(val sourceKeys: Seq[String],
-                      val lookupDataset: String,
+                      val dataset: String,
                       val lookupKeys: Seq[String],
                       val selectValues: Seq[String],
                       val as: Seq[String]
