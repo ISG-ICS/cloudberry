@@ -18,17 +18,24 @@
     }
   ],
   "group": {
+    "by": [
+      {
+        "field": "hashTags",
+        "apply": "unnest",
+        "as" : "hashTag"
+      }
+    ],
     "aggregate": [
       {
         "field" : "hashTag",
-        "apply" : {
-          "name": "topK",
-          "args": {
-            "k" : 10
-          }
-        },
-        "as" : "top10_hash"
+        "apply" : "count",
+        "as" : "count"
       }
     ]
+  },
+  "select" : {
+    "order" : [ "-count"],
+    "limit": 100,
+    "offset" : 0
   }
 }
