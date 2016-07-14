@@ -8,7 +8,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class DataStore(override val schema: Schema,
                 queryParser: IQueryParser,
                 conn: IDataConn,
-                responseHandler: IResponseHandler
+                responseHandler: IWSResponseHandler
                )(implicit ec: ExecutionContext)
   extends IDataStore {
 

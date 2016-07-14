@@ -4,17 +4,17 @@
     {
       "field" : "geo_tag.stateID",
       "relation" : "in",
-      "values" : [1,2,3,31]
+      "value" : [1,2,3,31]
     },
     {
       "field" : "create_at",
       "relation" : "inRange",
-      "values" : ["2012", "2016"]
+      "value" : ["2012", "2016"]
     },
     {
       "field" : "text",
       "relation" : "contains",
-      "values" : ["zika", "virus"]
+      "value" : ["zika", "virus"]
     }
   ],
   "group": {

@@ -1,7 +1,7 @@
 [
   {
     "dataset": "twitter.ds_tweet",
-    "dimensions": [
+    "dimension": [
       {
         "field": "A",
         "type": "datetime"
@@ -9,7 +9,7 @@
       {
         "field": "H",
         "type" : "hierarchy",
-        "levels" : [
+        "level" : [
           {
             "state": "H.state",
             "county": "H.county",
@@ -19,7 +19,7 @@
         "innerType": "number"
       }
     ],
-    "measurements": [
+    "measurement": [
       {
         "field":  "X",
         "type" : "int"

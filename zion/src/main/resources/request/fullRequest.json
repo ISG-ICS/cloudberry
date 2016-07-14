@@ -22,7 +22,7 @@
       "field": "fieldP",
       "apply": "func",
       "relation": "==|<|>|<=|>=|isTrue|isFalse|in|contains|inRange",
-      "values": [
+      "value": [
         "x"
       ]
     }
@@ -32,7 +32,7 @@
       {
         "field": "fieldA",
         "apply": "function",
-        "groups": 1000,
+        "groupNum": 1000,
         "as": "outputString"
       }
     ],
@@ -55,7 +55,7 @@
     ],
     "offset": 0,
     "limit": 100,
-    "select": [
+    "field": [
       "fieldA",
       "fieldB"
     ]

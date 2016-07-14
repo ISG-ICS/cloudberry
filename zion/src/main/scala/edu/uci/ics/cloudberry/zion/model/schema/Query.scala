@@ -75,7 +75,7 @@ class GroupStatement(val bys: Seq[ByStatement],
 class SelectStatement(val order: Seq[String],
                       val limit: Int,
                       val offset: Int,
-                      val selects: Seq[String]
+                      val fields: Seq[String]
                      ) extends Statement {
 
 }

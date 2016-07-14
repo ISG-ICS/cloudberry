@@ -1,7 +1,7 @@
 [
   {
     "dataset": "twitter.ds_tweet",
-    "dimensions": [
+    "dimension": [
       {
         "field": "create_at",
         "type": "datetime"
@@ -39,7 +39,7 @@
       {
         "field": "geo",
         "type": "hierarchy",
-        "levels": [
+        "level": [
           {
             "state": "geo_tag.stateID"
           },
@@ -53,7 +53,7 @@
         "innerType": "number"
       }
     ],
-    "measurements": [
+    "measurement": [
       {
         "field": "text",
         "type": "text"
