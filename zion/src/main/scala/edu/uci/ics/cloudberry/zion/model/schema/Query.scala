@@ -6,7 +6,7 @@ class Query(val dataset: String,
             val lookup: Seq[LookupStatement],
             val filter: Seq[FilterStatement],
             val groups: Option[GroupStatement],
-            val order: Option[OrderStatement]
+            val select: Option[SelectStatement]
            ) extends Statement {
 
 }
@@ -15,6 +15,7 @@ trait Statement {}
 
 /**
   * Augments the source data to contain more fields.
+  *
   * @param sourceKeys
   * @param dataset
   * @param lookupKeys
@@ -58,7 +59,7 @@ class ByStatement(val fieldName: String,
 /**
   * The aggregate results produced by group by
   */
-class SummarizeStatement(val fieldName: String,
+class AggregateStatement(val fieldName: String,
                          val apply: AggregateFunc,
                          val as: String
                         ) extends Statement {
@@ -66,16 +67,16 @@ class SummarizeStatement(val fieldName: String,
 }
 
 class GroupStatement(val bys: Seq[ByStatement],
-                     val summarizes: Seq[SummarizeStatement]
+                     val aggregates: Seq[AggregateStatement]
                     ) extends Statement {
 
 }
 
-class OrderStatement(val ons: Seq[String],
-                     val limit: Int,
-                     val offset: Int,
-                     val selects: Seq[String]
-                    ) extends Statement {
+class SelectStatement(val order: Seq[String],
+                      val limit: Int,
+                      val offset: Int,
+                      val fields: Seq[String]
+                     ) extends Statement {
 
 }
 

@@ -1,0 +1,29 @@
+[
+  {
+    "dataset": "twitter.ds_tweet",
+    "dimension": [
+      {
+        "field": "A",
+        "type": "datetime"
+      },
+      {
+        "field": "H",
+        "type" : "hierarchy",
+        "level" : [
+          {
+            "state": "H.state",
+            "county": "H.county",
+            "city": "H.city"
+          }
+        ],
+        "innerType": "number"
+      }
+    ],
+    "measurement": [
+      {
+        "field":  "X",
+        "type" : "int"
+      }
+    ]
+  }
+]

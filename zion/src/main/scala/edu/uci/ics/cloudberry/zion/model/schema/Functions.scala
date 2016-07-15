@@ -17,9 +17,9 @@ case object Unnest extends TransformFunc {
   override val name = "unnest"
 }
 
-case class Level(val level : String) extends TransformFunc {
+case class Level(val levelTag : String) extends TransformFunc {
   override val name = "level"
-  override val args = Map("level" -> level)
+  override val args = Map("level" -> levelTag)
 }
 
 trait Scale {
@@ -70,16 +70,16 @@ case class Year(override val x: Int = 1) extends TimeStampScale(60 * 60 * 24 * 7
 // Cell
 sealed class GeoCellScale(override val scale: Int) extends Scale
 
-case object GeoCell001X extends GeoCellScale(10) with TransformFunc {
-  override def name: String = "geo-cell-001x"
+case object GeoCellThousandths extends GeoCellScale(10000) with TransformFunc {
+  override def name: String = "geo-cell-thousands"
 }
 
-case object GeoCell01X extends GeoCellScale(100) with TransformFunc {
-  override def name: String = "geo-cell-01x"
+case object GeoCellHundredths extends GeoCellScale(100000) with TransformFunc {
+  override def name: String = "geo-cell-hundredths"
 }
 
-case object GeoCell1X extends GeoCellScale(1000) with TransformFunc {
-  override def name: String = "geo-cell-1x"
+case object GeoCellTenths extends GeoCellScale(1000000) with TransformFunc {
+  override def name: String = "geo-cell-tenths"
 }
 
 trait AggregateFunc extends IFunction {

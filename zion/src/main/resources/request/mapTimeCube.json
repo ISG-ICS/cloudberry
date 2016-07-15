@@ -6,9 +6,7 @@
       "relation": "in",
       "values": [
         1,
-        2,
-        3,
-        31
+        3
       ]
     },
     {
@@ -32,12 +30,7 @@
     "by": [
       {
         "field": "geo",
-        "apply": {
-          "name": "level",
-          "args": {
-            "level": "state"
-          }
-        },
+        "apply": "state",
         "as": "state"
       },
       {
@@ -46,7 +39,7 @@
         "as": "hour"
       }
     ],
-    "summarize": [
+    "aggregate": [
       {
         "field": "*",
         "apply": "count",

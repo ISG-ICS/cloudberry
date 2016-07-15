@@ -5,7 +5,7 @@
       "hour": "hour",
       "state": "state"
     },
-    "result": [
+    "data": [
       {
         "hour": "2016010101",
         "state": 15,
