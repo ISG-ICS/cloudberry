@@ -5,6 +5,7 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.util.JSON;
+import edu.uci.ics.cloudberry.noah.feed.AsterixHttpRequest;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -36,8 +37,9 @@ public class ConsumerKafka {
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(100);
             for (ConsumerRecord<String, String> record : records) {
-                System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
-                this.ingestDb("localhost", 27017, "TwitterDB", collection, Long.toString(record.offset()), record.value());
+                //System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
+                //this.ingestDb("localhost", 27017, "TwitterDB", collection, Long.toString(record.offset()), record.value());
+                AsterixHttpRequest.insertDB("twitter_test",collection,record.value());
             }
         }
     }

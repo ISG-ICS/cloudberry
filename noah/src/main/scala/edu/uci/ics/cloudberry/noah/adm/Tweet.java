@@ -69,7 +69,7 @@ public class Tweet {
         throw new UnknownPlaceException("unknown place:" + status.getPlace());
     }
 
-    private static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
+    protected static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
         if (location == null) {
             return false;
         }
@@ -82,7 +82,7 @@ public class Tweet {
         return true;
     }
 
-    private static boolean textMatchPlace(StringBuilder sb, Status status, USGeoGnosis gnosis) {
+    protected static boolean textMatchPlace(StringBuilder sb, Status status, USGeoGnosis gnosis) {
         twitter4j.Place place = status.getPlace();
         if (place == null) {
             return false;
