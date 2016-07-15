@@ -77,8 +77,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .style("background-color", "Transparent")
                 .style("color", "blue")
                 .style("position", "relative")
-                .style("bottom", "110px")
-                .style("left", "150px")
+                .style("bottom", "125%")
+                .style("left", "15%")
                 .on("click", function() { timeSeries.filterAll(); dc.redrawAll();});
 
 
