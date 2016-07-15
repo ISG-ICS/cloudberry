@@ -1,0 +1,53 @@
+{
+  "status": 0,
+  "result": {
+    "scale": {
+      "hour": "hour",
+      "state": "state"
+    },
+    "data": [
+      {
+        "hour": "2016010101",
+        "state": 15,
+        "count": 235,
+        "top10_hash": [
+          {
+            "zika": 25
+          },
+          {
+            "virus": 15
+          }
+        ],
+        "top10_lang": [
+          {
+            "en": 100
+          },
+          {
+            "fr": 80
+          }
+        ]
+      },
+      {
+        "hour": "2016010115",
+        "state": 15,
+        "count": 242,
+        "top10_hash": [
+          {
+            "zika": 255
+          },
+          {
+            "virus": 150
+          }
+        ],
+        "top10_lang": [
+          {
+            "en": 1000
+          },
+          {
+            "fr": 800
+          }
+        ]
+      }
+    ]
+  }
+}
