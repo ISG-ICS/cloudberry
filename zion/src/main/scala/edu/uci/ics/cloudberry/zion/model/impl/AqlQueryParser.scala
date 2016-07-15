@@ -10,7 +10,7 @@ class AqlQueryParser extends IQueryParser {
 
 
   def validateQuery(query: Query): Unit = {
-    if (query.order.isEmpty && query.groups.isEmpty) {
+    if (query.select.isEmpty && query.groups.isEmpty) {
       throw QueryParsingException("either groupBy or orderBy statement is required")
     }
   }
@@ -23,7 +23,7 @@ class AqlQueryParser extends IQueryParser {
     val (lookup, lookupVarMap) = parseLookup(query.lookup)
     val filter = parseFilter(query.filter, schemaVars, lookupVarMap)
     val group = parseGroupby(query.groups)
-    val order = parseOrder(query.order)
+    val order = parseSelect(query.select)
     Seq(Seq(dataset, lookup, filter, group, order).mkString("\n"))
   }
 
@@ -52,5 +52,5 @@ class AqlQueryParser extends IQueryParser {
 
   private def parseGroupby(groups: Option[GroupStatement]): String = ???
 
-  private def parseOrder(order: Option[OrderStatement]): String = ???
+  private def parseSelect(order: Option[SelectStatement]): String = ???
 }

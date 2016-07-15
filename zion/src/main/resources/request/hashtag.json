@@ -19,7 +19,7 @@
   ],
   "group": {
     "by": [
-      {t
+      {
         "field": "hashTags",
         "apply": "unnest",
         "as" : "hashTag"
