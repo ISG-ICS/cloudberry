@@ -22,11 +22,11 @@ public class TwitterFeedStreamDriver {
 
     Client twitterClient;
     volatile boolean isConnected = false;
-    FeedSocketAdapterClient socketAdapterClient;
+    public FeedSocketAdapterClient socketAdapterClient;
 
     public void openSocket(Config config) throws IOException, CmdLineException {
         if(config.getPort() != 0 && config.getAdapterUrl()!=null) {
-            if (!config.getIsFileOnly()) {
+            if (!config.isFileOnly()) {
                 String adapterUrl = config.getAdapterUrl();
                 int port = config.getPort();
                 int batchSize = config.getBatchSize();
@@ -88,11 +88,11 @@ public class TwitterFeedStreamDriver {
             while (!twitterClient.isDone()) {
                 String msg = queue.take();
                 bw.write(msg);
-                if(config.getStoreKafka()){
-                    ProducerKafka.store("TwitterZikaStreaming",msg,config);
+                if (config.isStoreKafka()) {
+                    ProducerKafka.store(config.getTopicZikaStream(), msg, config);
                 }
                 //if is not to store in file only, geo tag and send to database
-                if (!config.getIsFileOnly()) {
+                if (!config.isFileOnly()) {
                     try {
                         String adm = TagTweet.tagOneTweet(msg);
                         socketAdapterClient.ingest(adm);

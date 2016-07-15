@@ -68,8 +68,8 @@ public class TwitterUserStreamDriver {
                     e.printStackTrace();
                 }
                 bw.write(msg);
-                if(config.getStoreKafka()){
-                    ProducerKafka.store("TwitterUserStream",msg,config);
+                if (config.isStoreKafka()) {
+                    ProducerKafka.store(config.getTopicUserStream(), msg, config);
                 }
             }
         } finally {

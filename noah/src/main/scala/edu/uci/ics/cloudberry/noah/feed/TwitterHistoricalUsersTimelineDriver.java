@@ -29,8 +29,8 @@ public class TwitterHistoricalUsersTimelineDriver {
                             for (Status status : statuses) {
                                 String statusJson = TwitterObjectFactory.getRawJSON(status);
                                 bw.write(statusJson);
-                                if(config.getStoreKafka()){
-                                    ProducerKafka.store("TwitterHistUsersTimelineTEST", statusJson,config);
+                                if (config.isStoreKafka()) {
+                                    ProducerKafka.store(config.getTopicHistUsers(), statusJson, config);
                                 }
 
                             }

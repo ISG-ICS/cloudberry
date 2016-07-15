@@ -4,7 +4,7 @@ import edu.uci.ics.cloudberry.gnosis.USGeoGnosis;
 import twitter4j.GeoLocation;
 import twitter4j.Status;
 
-public class TweetNoGeoTagException {
+public class TweetGeotagNotRequired {
     public static String CREATE_AT = "create_at";
     public static String ID = "id";
     public static String TEXT = "text";

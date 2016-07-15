@@ -15,8 +15,8 @@ public class ConsumerZikaStreaming {
             }
 
             ConsumerKafka consumer = new ConsumerKafka();
-            String[] topics = {"TwitterZikaStreaming"};
-            consumer.run(config.getKafkaServer(), config.getKafkaId(), topics, "ZikaStreaming");
+            String[] topics = {config.getTopicZikaStream()};
+            consumer.run(config, topics, "ds_zika_streaming");
 
         } catch (CmdLineException e) {
             e.printStackTrace(System.err);

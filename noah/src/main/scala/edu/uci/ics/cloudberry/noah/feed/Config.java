@@ -27,7 +27,7 @@ public class Config {
     @Option(name = "-tr", aliases = "--tracker", handler = TermArrayOptionHandler.class, usage = "Tracked terms, separated by comma.")
     private String[] trackTerms = new String[]{};
 
-    @Option(name = "-tu", aliases = "--trackuser", handler = TermArrayOptionHandler.class, usage = "Tracked public users, by username, separated by comma.")
+    @Option(name = "-tu", aliases = "--track-user", handler = TermArrayOptionHandler.class, usage = "Tracked public users, by username, separated by comma.")
     private String[] trackUsers = new String[]{};
 
     @Option(name = "-loc", aliases = "--location", handler = LocationListOptionHandler.class, usage = "location rectangular, southwest.lon, southwest.lat, northeast.lon, northeast.lat")
@@ -48,17 +48,26 @@ public class Config {
     @Option(name = "-c", aliases = "--count", usage = "maximum number to feed, default unlimited")
     private int maxCount = Integer.MAX_VALUE;
 
-    @Option(name = "-fo", aliases = "--fileonly", usage = "only store in a file, do not geotag nor ingest")
+    @Option(name = "-fo", aliases = "--file-only", usage = "only store in a file, do not geotag nor ingest")
     private boolean isFileOnly = false;
 
     @Option(name = "-kaf", aliases = "--kafka", usage = "send data to Kafka Cluster")
     private boolean storeKafka = false;
 
-    @Option(name = "-ks", aliases = "--kafkaserver", usage = "hostname:port used to start the connection with KafkaCluster")
+    @Option(name = "-ks", aliases = "--kafka-server", usage = "hostname:port used to start the connection with KafkaCluster")
     private String kafkaServer = "";
 
-    @Option(name = "-kid", aliases = "--kafkaconsumerId", usage = "Id of the consumer for Kafka")
+    @Option(name = "-kid", aliases = "--kafka-consumer-id", usage = "Id of the consumer for Kafka")
     private String kafkaId = "";
+
+    @Option(name = "-tpzs", aliases = "--topic-zika-streaming", usage = "Topic name on Kafka for Zika Streaming")
+    private String topicZikaStream = "TwitterZikaStreaming";
+
+    @Option(name = "-tpus", aliases = "--topic-user-stream", usage = "Topic name on Kafka for Users Stream")
+    private String topicUserStream = "TwitterUserStream";
+
+    @Option(name = "-tpht", aliases = "--topic-hist-users", usage = "Topic name on Kafka for Historical Users Timeline")
+    private String topicHistUsers = "TwitterHistUsersTimeline";
 
 
     public String getConsumerKey() {
@@ -109,13 +118,29 @@ public class Config {
         return maxCount;
     }
 
-    public boolean getIsFileOnly() { return isFileOnly; }
-
-    public boolean getStoreKafka() { return storeKafka; }
-
     public String getKafkaServer() { return kafkaServer; }
 
     public String getKafkaId() { return kafkaId; }
+
+    public boolean isFileOnly() {
+        return isFileOnly;
+    }
+
+    public boolean isStoreKafka() {
+        return storeKafka;
+    }
+
+    public String getTopicZikaStream() {
+        return topicZikaStream;
+    }
+
+    public String getTopicUserStream() {
+        return topicUserStream;
+    }
+
+    public String getTopicHistUsers() {
+        return topicHistUsers;
+    }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 

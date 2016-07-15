@@ -1,15 +1,15 @@
 package edu.uci.ics.cloudberry.noah.kafka;
 
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import com.mongodb.util.JSON;
+
 import edu.uci.ics.cloudberry.noah.feed.AsterixHttpRequest;
+import edu.uci.ics.cloudberry.noah.feed.Config;
+import edu.uci.ics.cloudberry.noah.feed.TagTweetGeotagNotRequired;
+import edu.uci.ics.cloudberry.noah.feed.TwitterFeedStreamDriver;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.bson.Document;
+import org.kohsuke.args4j.CmdLineException;
+import twitter4j.TwitterException;
 
 import java.util.Arrays;
 import java.util.Properties;
@@ -29,28 +29,44 @@ public class ConsumerKafka {
         return props;
     }
 
-    public void run(String server, String groupId, String[] topics, String collection) {
+    private void ingest(Config config, String msg) {
+        TwitterFeedStreamDriver feedDriver = new TwitterFeedStreamDriver();
+        try {
+            feedDriver.openSocket(config);
+            try {
+                String adm = TagTweetGeotagNotRequired.tagOneTweet(msg);
+                feedDriver.socketAdapterClient.ingest(adm);
+            } catch (TwitterException e) {
+                e.printStackTrace(System.err);
+            }
+        } catch (CmdLineException e) {
+            e.printStackTrace(System.err);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        } finally {
+            if (feedDriver.socketAdapterClient != null) {
+                feedDriver.socketAdapterClient.finalize();
+            }
+        }
+    }
 
+    public void run(Config config, String[] topics, String dataset) throws CmdLineException {
+        String server = config.getKafkaServer();
+        String groupId = config.getKafkaId();
         Properties props = this.getProperties(server, groupId);
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(topics));
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(100);
-            for (ConsumerRecord<String, String> record : records) {
-                //System.out.printf("offset = %d, key = %s, value = %s", record.offset(), record.key(), record.value());
-                //this.ingestDb("localhost", 27017, "TwitterDB", collection, Long.toString(record.offset()), record.value());
-                AsterixHttpRequest.insertDB("twitter_test",collection,record.value());
+            if (dataset.equals("ds_zika_streaming")) {
+                for (ConsumerRecord<String, String> record : records) {
+                    ingest(config, record.value());
+                }
+            } else {
+                for (ConsumerRecord<String, String> record : records) {
+                    AsterixHttpRequest.insertDB("twitter_zika", dataset, record.value());
+                }
             }
         }
-    }
-
-    private void ingestDb(String host, int port, String dbName, String coll, String key, String record) {
-
-        MongoClient mongoClient = new MongoClient(host, port);
-        MongoDatabase database = mongoClient.getDatabase(dbName);
-        MongoCollection<Document> collection = database.getCollection(coll);
-        DBObject dbObject = (DBObject) JSON.parse(record);
-        collection.insertOne(new Document(key, dbObject));
-        mongoClient.close();
     }
 }
