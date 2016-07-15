@@ -20,6 +20,10 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import org.kohsuke.args4j.Argument;
+import org.kohsuke.args4j.CmdLineException;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -27,25 +31,43 @@ import java.util.List;
 import java.util.Properties;
 
 
-public class NewsCollection {
+public class WebhoseCollector {
+    @Option(required = true,
+            name = "-a",
+            aliases = "--api",
+            usage = "Webhose API")
+    private String apiKey = "";
 
-    private static String apiKey = "";
-    private static String filePath = "";
-    private static String ts = null;
-    private static String propFileName = System.getProperty("user.dir") + "/noah/src/main/scala/edu/uci/ics/cloudberry/noah/news/news.properties";
+    @Option(required = true,
+            name = "-o",
+            aliases = "--output",
+            usage = "output file directory")
+    private String filePath = "";
+
+    @Option(required = true,
+            name = "-t",
+            aliases = "--timestamp",
+            usage="timestamp for search")
+    private String ts = null;
+    private static String propFileName = "";
 
     public static void main( String[] args ) throws IOException {
+        new Web
+    }
 
-        loadPropValue();
+    public void doMain(String[] args) throws IOException {
+        CmdLineParser parser = new CmdLineParser(this);
+
+//        loadPropValue();
 
         WebhoseQuery query = new WebhoseQuery();
         query.title = "Zika";
         query.siteTypes.add(WebhoseQuery.SiteType.news);
 
-        WebhoseResponse response = search_ts(query.toString(), Long.parseLong(ts));
+        WebhoseResponse response = searchTimestamp(query.toString(), Long.parseLong(ts));
         String response_str = "";
         if(response.totalResults == 0) {
-            System.out.println("No new result available.");
+            System.err.println("No new result available.");
             return;
         }
         while (true){
@@ -54,8 +76,7 @@ public class NewsCollection {
 
             if(response.moreResultsAvailable != 0) {
                 response = getMore(response);
-            }
-            else {
+            } else {
                 //Update the timestamp
                 List<NameValuePair> params =
                         URLEncodedUtils.parse(response.next, StandardCharsets.UTF_8);
@@ -68,7 +89,7 @@ public class NewsCollection {
                 File outFile = new File(filePath + "/response_" + ts + ".json");
                 try {
                     FileUtils.writeStringToFile(outFile, response_str);
-                    System.out.println("response saved to file.");
+                    System.err.println("response saved to file.");
                     savePropValue();
                 } catch (IOException io) {
                     io.printStackTrace();
@@ -134,9 +155,7 @@ public class NewsCollection {
         }
     }
 
-    private static WebhoseResponse search_ts(String query, Long ts) throws IOException {
-
-
+    private static WebhoseResponse searchTimestamp(String query, Long ts) throws IOException {
         WebhoseUrl url = new WebhoseUrl("https://webhose.io/search");
         url.token = apiKey;
         url.query = query;
