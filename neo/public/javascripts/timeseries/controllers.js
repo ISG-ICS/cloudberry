@@ -70,6 +70,18 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var minDate = timeDimension.bottom(1)[0].time;
             var maxDate = timeDimension.top(1)[0].time;
+
+            chart.append('button')
+                .text("Reset")
+                .style("border", "none")
+                .style("background-color", "Transparent")
+                .style("color", "blue")
+                .style("position", "relative")
+                .style("bottom", "125%")
+                .style("left", "15%")
+                .on("click", function() { timeSeries.filterAll(); dc.redrawAll();});
+
+
             chart.append('text')
               .style('font','12px sans-serif')
               .html(minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate());
