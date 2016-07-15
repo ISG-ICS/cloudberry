@@ -20,7 +20,6 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 import org.apache.commons.io.FileUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
-import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
@@ -36,35 +35,43 @@ public class WebhoseCollector {
             name = "-a",
             aliases = "--api",
             usage = "Webhose API")
-    private String apiKey = "";
+    private String apiKey;
 
     @Option(required = true,
             name = "-o",
             aliases = "--output",
             usage = "output file directory")
-    private String filePath = "";
+    private String filePath;
 
     @Option(required = true,
             name = "-t",
             aliases = "--timestamp",
             usage="timestamp for search")
-    private String ts = null;
-    private static String propFileName = "";
+    private String ts;
+//    private static String propFileName = "";
 
     public static void main( String[] args ) throws IOException {
-        new Web
+        new WebhoseCollector().doMain(args);
     }
 
     public void doMain(String[] args) throws IOException {
         CmdLineParser parser = new CmdLineParser(this);
-
+        try{
+            parser.parseArgument(args);
+        } catch( CmdLineException e ) {
+            // if there's a problem in the command line,
+            // you'll get this exception. this will report
+            // an error message.
+            System.err.println(e.getMessage());
+            return;
+        }
 //        loadPropValue();
 
         WebhoseQuery query = new WebhoseQuery();
         query.title = "Zika";
         query.siteTypes.add(WebhoseQuery.SiteType.news);
 
-        WebhoseResponse response = searchTimestamp(query.toString(), Long.parseLong(ts));
+        WebhoseResponse response = searchTimestamp(apiKey, query.toString(), Long.parseLong(ts));
         String response_str = "";
         if(response.totalResults == 0) {
             System.err.println("No new result available.");
@@ -90,7 +97,8 @@ public class WebhoseCollector {
                 try {
                     FileUtils.writeStringToFile(outFile, response_str);
                     System.err.println("response saved to file.");
-                    savePropValue();
+                    System.out.println(ts);
+//                    savePropValue();
                 } catch (IOException io) {
                     io.printStackTrace();
                 }
@@ -99,63 +107,63 @@ public class WebhoseCollector {
         }
     }
 
-    private static void loadPropValue() {
-        Properties prop = new Properties();
-        InputStream input = null;
-        try {
-            input = new FileInputStream(propFileName);
-            prop.load(input);
+//    private static void loadPropValue() {
+//        Properties prop = new Properties();
+//        InputStream input = null;
+//        try {
+//            input = new FileInputStream(propFileName);
+//            prop.load(input);
+//
+//            //set attribute values
+//            apiKey = prop.getProperty("apiKey");
+//            filePath = prop.getProperty("filePath");
+//            ts = prop.getProperty("ts");
+//
+//        } catch (IOException io) {
+//            io.printStackTrace();
+//        }
+//        finally {
+//            if (input != null) {
+//                try {
+//                    input.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//        }
+//    }
+//
+//    private static void savePropValue() {
+//        Properties prop = new Properties();
+//        OutputStream output = null;
+//
+//        try {
+//
+//            output = new FileOutputStream(propFileName);
+//
+//            // set the new timestamp value
+//            prop.setProperty("apiKey", apiKey);
+//            prop.setProperty("filePath", filePath);
+//            prop.setProperty("ts", ts);
+//
+//            // save properties to project root folder
+//            prop.store(output, null);
+//
+//        } catch (IOException io) {
+//            io.printStackTrace();
+//        } finally {
+//            if (output != null) {
+//                try {
+//                    output.close();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//
+//        }
+//    }
 
-            //set attribute values
-            apiKey = prop.getProperty("apiKey");
-            filePath = prop.getProperty("filePath");
-            ts = prop.getProperty("ts");
-
-        } catch (IOException io) {
-            io.printStackTrace();
-        }
-        finally {
-            if (input != null) {
-                try {
-                    input.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private static void savePropValue() {
-        Properties prop = new Properties();
-        OutputStream output = null;
-
-        try {
-
-            output = new FileOutputStream(propFileName);
-
-            // set the new timestamp value
-            prop.setProperty("apiKey", apiKey);
-            prop.setProperty("filePath", filePath);
-            prop.setProperty("ts", ts);
-
-            // save properties to project root folder
-            prop.store(output, null);
-
-        } catch (IOException io) {
-            io.printStackTrace();
-        } finally {
-            if (output != null) {
-                try {
-                    output.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-
-        }
-    }
-
-    private static WebhoseResponse searchTimestamp(String query, Long ts) throws IOException {
+    private static WebhoseResponse searchTimestamp(String apiKey, String query, Long ts) throws IOException {
         WebhoseUrl url = new WebhoseUrl("https://webhose.io/search");
         url.token = apiKey;
         url.query = query;
