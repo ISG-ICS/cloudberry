@@ -29,13 +29,15 @@ public class ConsumerKafka {
         return props;
     }
 
-    private void ingest(Config config, String msg) {
+    private void ingest(Config config, ConsumerRecords<String, String> records) {
         TwitterFeedStreamDriver feedDriver = new TwitterFeedStreamDriver();
         try {
             feedDriver.openSocket(config);
             try {
-                String adm = TagTweetGeotagNotRequired.tagOneTweet(msg);
-                feedDriver.socketAdapterClient.ingest(adm);
+                for (ConsumerRecord<String, String> record : records) {
+                    String adm = TagTweetGeotagNotRequired.tagOneTweet(record.value());
+                    feedDriver.socketAdapterClient.ingest(adm);
+                }
             } catch (TwitterException e) {
                 e.printStackTrace(System.err);
             }
@@ -59,9 +61,7 @@ public class ConsumerKafka {
         while (true) {
             ConsumerRecords<String, String> records = consumer.poll(100);
             if (dataset.equals("ds_zika_streaming")) {
-                for (ConsumerRecord<String, String> record : records) {
-                    ingest(config, record.value());
-                }
+               ingest(config,records);
             } else {
                 for (ConsumerRecord<String, String> record : records) {
                     AsterixHttpRequest.insertDB("twitter_zika", dataset, record.value());

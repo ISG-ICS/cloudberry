@@ -2,7 +2,7 @@ use dataverse twitter_zika;
 drop feed ZikaTweetFeed if exists;
 create feed ZikaTweetFeed using socket_adapter
 (
-    ("sockets"="cloudberry_ac:10001"),
+    ("sockets"="nc1:10001"),
     ("address-type"="nc"),
     ("type-name"="typeTweet"),
     ("format"="adm")
@@ -10,5 +10,5 @@ create feed ZikaTweetFeed using socket_adapter
 
 set wait-for-completion-feed "false";
 
-connect feed ZikaTweetFeed to dataset feed.aql;
+connect feed ZikaTweetFeed to dataset ds_zika_streaming;
 
