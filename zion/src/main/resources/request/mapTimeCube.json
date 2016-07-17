@@ -35,7 +35,12 @@
       },
       {
         "field": "create_at",
-        "apply": "hour",
+        "apply": {
+          "name": "interval",
+          "args" : {
+            "unit": "hour"
+          }
+        },
         "as": "hour"
       }
     ],

@@ -1,115 +1,179 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-trait IFunction {
+import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
+import edu.uci.ics.cloudberry.zion.model.schema.TimeUnit.TimeUnit
+
+sealed trait IFunction {
   def name: String
 
-  def args: Map[String, Any]
+  def acceptType: Set[DataType]
+
+  def apply(field: Field): Field = ???
 }
 
-trait TransformFunc extends IFunction {
-  override val args: Map[String, Any] = Map.empty
+object IFunction {
+  def verifyField(function: IFunction, field: Field): Option[String] = {
+    if (function.acceptType.contains(field.dataType)) None
+    else Some(s"Type ${field.dataType} of ${field.name} mismatch with the input type of the function ${function.name}.")
+  }
 }
 
-/**
-  * unnest a bag. it should be ONLY used in the group by statement
-  */
-case object Unnest extends TransformFunc {
-  override val name = "unnest"
-}
+sealed trait TransformFunc extends IFunction
 
-case class Level(val levelTag : String) extends TransformFunc {
-  override val name = "level"
-  override val args = Map("level" -> levelTag)
-}
+sealed trait GroupFunc extends IFunction
 
-trait Scale {
-  def scale: Int
-}
+object GroupFunc {
+  val Bin = "bin"
+  val Level = "level"
+  val Unnest = "unnest"
+  val GeoCellTenth = "geoCellTenth"
+  val GeoCellHundredth = "geoCellHundredth"
+  val GeoCellThousandth = "geoCellThousandth"
 
-// Number
-case class Bin(override val scale: Int) extends TransformFunc with Scale {
-  override val name = "bin"
-  override val args = Map("scale" -> scale)
-}
-
-// Time
-sealed abstract class TimeStampScale(override val scale: Int) extends Scale with TransformFunc {
-  def x: Int
-
-  override val args = Map("x" -> x)
-}
-
-case class Second(override val x: Int = 1) extends TimeStampScale(1 * x) with TransformFunc {
-  override val name = "second"
-}
-
-case class Minute(override val x: Int = 1) extends TimeStampScale(60 * x) with TransformFunc {
-  override val name = "minute"
-}
-
-case class Hour(override val x: Int = 1) extends TimeStampScale(60 * 60 * x) with TransformFunc {
-  override val name = "hour"
-}
-
-case class Day(override val x: Int = 1) extends TimeStampScale(60 * 60 * 24 * x) with TransformFunc {
-  override val name = "day"
-}
-
-case class Week(override val x: Int = 1) extends TimeStampScale(60 * 60 * 24 * 7 * x) with TransformFunc {
-  override val name = "week"
-}
-
-case class Month(override val x: Int = 1) extends TimeStampScale(60 * 60 * 24 * 7 * 30 * x) with TransformFunc {
-  override val name = "month"
-}
-
-case class Year(override val x: Int = 1) extends TimeStampScale(60 * 60 * 24 * 7 * 365 * x) with TransformFunc {
-  override val name = "year"
-}
-
-// Cell
-sealed class GeoCellScale(override val scale: Int) extends Scale
-
-case object GeoCellThousandths extends GeoCellScale(10000) with TransformFunc {
-  override def name: String = "geo-cell-thousands"
-}
-
-case object GeoCellHundredths extends GeoCellScale(100000) with TransformFunc {
-  override def name: String = "geo-cell-hundredths"
-}
-
-case object GeoCellTenths extends GeoCellScale(1000000) with TransformFunc {
-  override def name: String = "geo-cell-tenths"
+  val All = Set(Bin, Level, Unnest, GeoCellTenth, GeoCellHundredth, GeoCellThousandth)
 }
 
 trait AggregateFunc extends IFunction {
   def args: Map[String, AnyVal] = Map.empty
 }
 
+object AggregateFunc {
+  val Count = "count"
+  val Min = "min"
+  val Max = "max"
+  val Sum = "sum"
+  val Avg = "avg"
+  val DistinctCount = "distinctCount"
+  val TopK = "topK"
+
+  val All = Set(Count, Min, Max, Sum, Avg, DistinctCount, TopK)
+}
+
+/**
+  * unnest a bag.
+  */
+case object Unnest extends GroupFunc {
+  override val name = GroupFunc.Unnest
+
+  override def acceptType: Set[DataType] = Set(DataType.Bag)
+}
+
+case class Level(val levelTag: String) extends GroupFunc {
+  override val name = GroupFunc.Level
+
+  override def acceptType: Set[DataType] = Set(DataType.Hierarchy)
+}
+
+trait Scale {
+  def scale: Int
+}
+
+/**
+  * Produce the bin number of the group for those number type field
+  *
+  * @param scale
+  */
+case class Bin(override val scale: Int) extends GroupFunc with Scale {
+  override val name = GroupFunc.Bin
+
+  override def acceptType: Set[DataType] = Set(DataType.Number)
+}
+
+case class Interval(unit: TimeUnit, val x: Int = 1) extends GroupFunc with Scale {
+  override def name: String = "interval"
+
+  override def acceptType: Set[DataType] = Set(DataType.Time)
+
+  override val scale: Int = {
+    import TimeUnit._
+    unit match {
+      case Second => x
+      case Minute => x * 60
+      case Hour => x * 60 * 60
+      case Day => x * 60 * 60 * 24
+      case Week => x * 60 * 60 * 24 * 7
+      case Month => x * 60 * 60 * 24 * 30
+      case Year => x * 60 * 60 * 24 * 365
+    }
+  }
+}
+
+object TimeUnit extends Enumeration {
+  type TimeUnit = Value
+  val Second = Value("second")
+  val Minute = Value("minute")
+  val Hour = Value("hour")
+  val Day = Value("day")
+  val Week = Value("week")
+  val Month = Value("month")
+  val Year = Value("year")
+}
+
+// Cell
+sealed class GeoCellScale(override val scale: Int) extends Scale
+
+case object GeoCellThousandth extends GeoCellScale(10000) with GroupFunc {
+  override def name: String = GroupFunc.GeoCellThousandth
+
+  override def acceptType: Set[DataType] = Set(DataType.Point)
+}
+
+case object GeoCellHundredth extends GeoCellScale(100000) with GroupFunc {
+  override def name: String = GroupFunc.GeoCellHundredth
+
+  override def acceptType: Set[DataType] = Set(DataType.Point)
+}
+
+case object GeoCellTenth extends GeoCellScale(1000000) with GroupFunc {
+  override def name: String = GroupFunc.GeoCellTenth
+
+  override def acceptType: Set[DataType] = Set(DataType.Point)
+}
+
 case object Count extends AggregateFunc {
-  override val name = "count"
+  override val name = AggregateFunc.Count
+
+  override def acceptType: Set[DataType] = DataType.values
 }
 
 case object Max extends AggregateFunc {
-  override val name = "max"
+  override val name = AggregateFunc.Max
+
+  override def acceptType: Set[DataType] = Set(DataType.Number, DataType.Time)
 }
 
 case object Min extends AggregateFunc {
-  override val name = "min"
+  override val name = AggregateFunc.Min
+
+  override def acceptType: Set[DataType] = Set(DataType.Number, DataType.Time)
 }
 
 case object Sum extends AggregateFunc {
-  override val name = "sum"
+  override val name = AggregateFunc.Sum
+
+  override def acceptType: Set[DataType] = Set(DataType.Number)
+}
+
+case object Avg extends AggregateFunc {
+  override val name = AggregateFunc.Avg
+
+  override def acceptType: Set[DataType] = Set(DataType.Number)
 }
 
 case object DistinctCount extends AggregateFunc {
-  override val name = "distinctCount"
+  override val name = AggregateFunc.DistinctCount
+
+  override def acceptType: Set[DataType] = DataType.values
 }
 
 case class TopK(val k: Int) extends AggregateFunc {
-  override val name = "topK"
-  override val args: Map[String, AnyVal] = Map("k" -> k)
+  override val name = AggregateFunc.TopK
+
+  override def acceptType: Set[DataType] = DataType.values
 }
 
+case class As(val rename: String) extends TransformFunc {
+  override def name: String = "as"
 
-
+  override def acceptType: Set[DataType] = DataType.values
+}

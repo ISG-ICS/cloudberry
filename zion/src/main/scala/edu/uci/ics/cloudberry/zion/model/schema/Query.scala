@@ -35,7 +35,7 @@ class LookupStatement(val sourceKeys: Seq[String],
 
 //TODO only support one transform for now
 class FilterStatement(val fieldName: String,
-                      val apply: Option[TransformFunc],
+                      val funcOpt: Option[TransformFunc],
                       val relation: Relation = Relation.isTrue,
                       val values: Seq[AnyVal]
                      ) extends Statement {
@@ -46,11 +46,11 @@ class FilterStatement(val fieldName: String,
   * Groupby fieldNames
   *
   * @param fieldName
-  * @param apply
+  * @param funcOpt
   * @param groups //TODO support the auto group by given size
   */
 class ByStatement(val fieldName: String,
-                  val apply: Option[TransformFunc],
+                  val funcOpt: Option[GroupFunc],
                   val as: Option[String]
                  ) extends Statement {
 
@@ -60,7 +60,7 @@ class ByStatement(val fieldName: String,
   * The aggregate results produced by group by
   */
 class AggregateStatement(val fieldName: String,
-                         val apply: AggregateFunc,
+                         val func: AggregateFunc,
                          val as: String
                         ) extends Statement {
 
