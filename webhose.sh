@@ -1,3 +1,11 @@
 #!/bin/bash
-sbt "project noah" "run-main edu.uci.ics.cloudberry.noah.news.WebHostCollector -a PLEASE-GIVE-API-KEY -o OUTPUT-FILE-PATH -t START-TIMESTAMP
+current_time=$(($(date +%s%N)/1000000))
+start_time=$(($current_time-3600000))
+api_key=PLEASE-GIVE-API-KEY
+output_path=PLEASH-GIVE-OUTPUT-FILE-PATH
+
+sbt "project noah" "run-main edu.uci.ics.cloudberry.noah.news.WebHostCollector \
+-a $api_key \
+-o $output_path \
+-t $start_time
 "
