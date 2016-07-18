@@ -7,7 +7,7 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
-import edu.uci.ics.cloudberry.noah.kafka.ProducerKafka;
+import edu.uci.ics.cloudberry.noah.ProducerKafka;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.ResponseList;
 import twitter4j.Twitter;

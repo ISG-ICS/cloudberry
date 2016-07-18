@@ -69,8 +69,8 @@ public class Config {
     @Option(name = "-tpht", aliases = "--topic-hist-users", usage = "Topic name on Kafka for Historical Users Timeline")
     private String topicHistUsers = "TwitterHistUsersTimeline";
 
-    @Option(name = "-rg", aliases = "--require-geo-field", usage = "Geo location field is required")
-    private boolean requiredGeoField = true;
+    @Option(name = "-kcf", aliases = "--kafka-config-filename", usage = "file with configuration for Kafka Consumer and Producer")
+    private String configFilename = "kafka/kafka.conf";
 
     @Option(name = "-axs", aliases = "--asterix-server", usage = "server:port for AsterixDB requests")
     private String axServer = "http://kiwi.ics.uci.edu:19002";
@@ -147,7 +147,7 @@ public class Config {
         return topicHistUsers;
     }
 
-    public boolean isRequiredGeoField() { return requiredGeoField; }
+    public String  getConfigFilename() { return configFilename; }
 
     public String getAxServer() { return axServer; }
 

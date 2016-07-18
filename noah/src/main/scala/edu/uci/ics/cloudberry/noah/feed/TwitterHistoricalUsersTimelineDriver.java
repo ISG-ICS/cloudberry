@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.noah.feed;
 
-import edu.uci.ics.cloudberry.noah.kafka.ProducerKafka;
+import edu.uci.ics.cloudberry.noah.ProducerKafka;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.*;
 

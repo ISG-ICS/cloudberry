@@ -55,7 +55,7 @@ object Dependencies {
       exclude("org.slf4j","slf4j-log4j12" )
       exclude("com.sun.jmx", "jmxri"),
     "org.jsoup" % "jsoup" % "1.9.2",
-    "org.mongodb" % "mongo-java-driver" % "3.2.2",
+    "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
     "com.typesafe.play" %% "play-ws" % "2.4.3",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
