@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit
 import com.crawljax.browser.EmbeddedBrowser.BrowserType
 import com.crawljax.condition.UrlCondition
 import com.crawljax.core.CrawljaxRunner
-import com.crawljax.core.configuration.{CrawljaxConfiguration, InputSpecification}
+import com.crawljax.core.configuration.{BrowserConfiguration, CrawljaxConfiguration, InputSpecification}
 import com.crawljax.plugins.crawloverview.CrawlOverview
 import com.typesafe.config.ConfigFactory
 /**
@@ -29,7 +29,6 @@ object CrawlerDriver extends App{
     val InsertRandomDataForms = conf.getBoolean("crawljax.insertrandomdataforms")
 
     /* Configuration */
-
     val builder = CrawljaxConfiguration.builderFor(EntryURL)
 
     /* To stay with in the domain */
@@ -40,26 +39,39 @@ object CrawlerDriver extends App{
     /* Let the browser type for all the cases be firefox */
     val browser = BrowserType.FIREFOX
 
+    val browsers = 1
+
+    builder.setBrowserConfig((new BrowserConfiguration(browser, browsers)))
+
     builder.crawlRules().waitAfterEvent(Wait_After_Event, TimeUnit.MILLISECONDS)
 
     builder.crawlRules().waitAfterReloadUrl(Wait_After_Reload, TimeUnit.MILLISECONDS)
 
     builder.crawlRules.insertRandomDataInInputForms(InsertRandomDataForms)
 
+    builder.crawlRules().dontClick("a").withAttribute("href","http://www.promedmail.org")
+    builder.crawlRules().dontClick("a").withAttribute("href", "http://www.isid.org")
+
+
     /* Set crawlFrame to true for every case. This ensures the crawling in order. */
     builder.crawlRules().crawlFrames(true)
 
-    /* Set the maximum depth the crawler can crawler (default is 2, 0 is infinite)*/
-    builder.setMaximumDepth(conf.getInt("crawljax.maxdepth"))
+    /* Set unlimited crawl states */
+    builder.setMaximumDepth(0)
+
+    /* Set unlimited run time */
+    builder.setMaximumRunTime(0, TimeUnit MILLISECONDS)
+
+    builder.crawlRules().clickOnce(true)
+
 
     if(conf.hasPath("input")) {
-      val in = new InputSpecification();
+      val in = new InputSpecification()
       in.field(conf.getString("input.field")).setValue(conf.getString("input.value"))
       builder.crawlRules().setInputSpec(in)
     }
 
     /* Get the dont click elements to be configured */
-
     if(conf.hasPath("builder.crawlrules.dontclickelements")) {
       /* DIV */
       val DivIds = conf.getStringList("builder.crawlrules.dontclickelements.div.id")
@@ -113,18 +125,16 @@ object CrawlerDriver extends App{
     }
 
     if(conf.hasPath("builder.crawlrules.clickelements")) {
-      val AIds = conf.getStringList("builder.crawlrules.clickelements.a.id")
       val AClasses = conf.getStringList("builder.crawlrules.clickelements.a.class")
-      val AText = conf.getStringList("builder.crawlrules.clickelements.a.text")
       val AHref = conf.getStringList("builder.crawlrules.clickelements.a.href")
+      val LiIds = conf.getString("builder.crawlrules.clickelements.li.id")
+      val InputIds = conf.getStringList("builder.crawlrules.clickelements.input.id")
+      val InputNames = conf.getStringList("builder.crawlrules.clickelements.input.name")
+      val InputValues = conf.getStringList("builder.crawlrules.clickelements.input.value")
 
-      var it = AIds.iterator()
+      builder.crawlRules().click("li").withAttribute("id", LiIds)
 
-      while(it.hasNext){
-        builder.crawlRules().click("a").withAttribute("id", it.next())
-      }
-
-      it = AClasses.iterator()
+      var it = AClasses.iterator()
       while(it.hasNext) {
         builder.crawlRules().click("a").withAttribute("class", it.next())
       }
@@ -134,11 +144,24 @@ object CrawlerDriver extends App{
         builder.crawlRules().click("a").withAttribute("href", it.next())
       }
 
-      it = AText.iterator()
+      it = InputIds.iterator()
       while(it.hasNext) {
-        builder.crawlRules().click("a").withText(it.next())
+        builder.crawlRules().click("input").withAttribute("id", it.next())
       }
+
+      it = InputNames.iterator()
+      while(it.hasNext) {
+        builder.crawlRules().click("input").withAttribute("name", it.next())
+      }
+
+      it = InputValues.iterator()
+      while(it.hasNext) {
+        builder.crawlRules().click("input").withAttribute("value", it.next())
+      }
+
     }
+
+
 
     /*Crawloverview plugin generates an HTML report with a snapshot overview of what is crawled by Crawljax.
     Without this we do not get the folder-wise representation of crawled states*/
