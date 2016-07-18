@@ -53,7 +53,6 @@ object Dependencies {
       exclude("com.sun.jmx", "jmxri"),
     "org.jsoup" % "jsoup" % "1.9.2",
     "com.buzzilla" % "webhose" % "0.1.1",
-    "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 

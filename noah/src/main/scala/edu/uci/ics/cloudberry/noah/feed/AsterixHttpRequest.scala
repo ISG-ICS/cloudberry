@@ -2,6 +2,9 @@ package edu.uci.ics.cloudberry.noah.feed
 
 import java.net.URLEncoder
 
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import play.api.libs.ws.ahc.AhcWSClient
 import play.api.libs.ws.ning.NingWSClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -16,7 +19,10 @@ object AsterixHttpRequest {
   }
 
   def httpRequest(url:String){
-    val wsClient = NingWSClient()
+
+    implicit val system = ActorSystem("my-system")
+    implicit val materializer = ActorMaterializer()
+    val wsClient = AhcWSClient()
     wsClient
       .url(url)
       .withHeaders("Cache-Control" -> "no-cache")
