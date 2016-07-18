@@ -46,6 +46,7 @@ object Dependencies {
     "com.crawljax.plugins" % "crawloverview-plugin" % "3.6",
     "com.crawljax" % "crawljax-cli" % "3.6",
     "org.jsoup" % "jsoup" % "1.9.2",
+    "com.buzzilla" % "webhose" % "0.1.1",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 
