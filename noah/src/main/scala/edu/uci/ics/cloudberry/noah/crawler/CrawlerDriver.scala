@@ -49,6 +49,10 @@ object CrawlerDriver extends App{
 
     builder.crawlRules.insertRandomDataInInputForms(InsertRandomDataForms)
 
+    builder.crawlRules().dontClick("a").withAttribute("href","http://www.promedmail.org")
+    builder.crawlRules().dontClick("a").withAttribute("href", "http://www.isid.org")
+
+
     /* Set crawlFrame to true for every case. This ensures the crawling in order. */
     builder.crawlRules().crawlFrames(true)
 
@@ -122,8 +126,13 @@ object CrawlerDriver extends App{
 
     if(conf.hasPath("builder.crawlrules.clickelements")) {
       val AClasses = conf.getStringList("builder.crawlrules.clickelements.a.class")
-      val AText = conf.getStringList("builder.crawlrules.clickelements.a.text")
       val AHref = conf.getStringList("builder.crawlrules.clickelements.a.href")
+      val LiIds = conf.getString("builder.crawlrules.clickelements.li.id")
+      val InputIds = conf.getStringList("builder.crawlrules.clickelements.input.id")
+      val InputNames = conf.getStringList("builder.crawlrules.clickelements.input.name")
+      val InputValues = conf.getStringList("builder.crawlrules.clickelements.input.value")
+
+      builder.crawlRules().click("li").withAttribute("id", LiIds)
 
       var it = AClasses.iterator()
       while(it.hasNext) {
@@ -135,11 +144,24 @@ object CrawlerDriver extends App{
         builder.crawlRules().click("a").withAttribute("href", it.next())
       }
 
-      it = AText.iterator()
+      it = InputIds.iterator()
       while(it.hasNext) {
-        builder.crawlRules().click("a").withText(it.next())
+        builder.crawlRules().click("input").withAttribute("id", it.next())
       }
+
+      it = InputNames.iterator()
+      while(it.hasNext) {
+        builder.crawlRules().click("input").withAttribute("name", it.next())
+      }
+
+      it = InputValues.iterator()
+      while(it.hasNext) {
+        builder.crawlRules().click("input").withAttribute("value", it.next())
+      }
+
     }
+
+
 
     /*Crawloverview plugin generates an HTML report with a snapshot overview of what is crawled by Crawljax.
     Without this we do not get the folder-wise representation of crawled states*/
