@@ -7,6 +7,7 @@ package edu.uci.ics.cloudberry.noah.news;
  */
 
 import com.buzzilla.webhose.client.WebhoseClient.WebhoseUrl;
+import com.buzzilla.webhose.client.WebhosePost;
 import com.buzzilla.webhose.client.WebhoseQuery;
 import com.buzzilla.webhose.client.WebhoseResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -26,6 +27,7 @@ import org.kohsuke.args4j.Option;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -67,16 +69,16 @@ public class WebhoseCollector {
         query.siteTypes.add(WebhoseQuery.SiteType.news);
 
         WebhoseResponse response = searchTimestamp(apiKey, query.toString(), Long.parseLong(ts));
-        String response_str = "";
+
         if(response.totalResults == 0) {
             System.err.println("No new result available.");
             return;
         }
 
         String fileName = "response_" + ts + "_";
-        while (true){
-
-            response_str += responseToString(response) + "\n";
+        List<WebhosePost> postList = new ArrayList<>();
+        while (true) {
+            postList.addAll(response.posts);
 
             if(response.moreResultsAvailable != 0) {
                 response = getMore(response);
@@ -93,7 +95,7 @@ public class WebhoseCollector {
                 // File Name Format: response_from_to.json
                 File outFile = new File(filePath + "/" + fileName + ts + ".json");
                 try {
-                    FileUtils.writeStringToFile(outFile, response_str);
+                    FileUtils.writeStringToFile(outFile, postListToString(postList));
                     System.err.println("response saved to file.");
                     System.out.println(ts);
                 } catch (IOException io) {
@@ -136,8 +138,9 @@ public class WebhoseCollector {
         return request.execute();
     }
 
-    private static String responseToString(WebhoseResponse response) throws JsonProcessingException{
+
+    private static String postListToString(List<WebhosePost> postList) throws JsonProcessingException{
         ObjectWriter ow = new ObjectMapper().writer().withDefaultPrettyPrinter();
-        return ow.writeValueAsString(response.posts);
+        return ow.writeValueAsString(postList);
     }
 }
