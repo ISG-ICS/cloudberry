@@ -32,7 +32,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
   .directive('timeSeries', function (Asterix) {
     var margin = {
       top: 10,
-      right: 10,
+      right: 30,
       bottom: 30,
       left: 50
     };
@@ -46,9 +46,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
           $scope.$watch('resultArray', function (newVal, oldVal) {
             if(newVal.length == 0)
               return;
+
             chart.selectAll('*').remove();
 
-            var timeSeries = dc.lineChart(chart[0][0]);
+            var timeSeries = dc.barChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -60,7 +61,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var ndx = crossfilter(newVal);
             var timeDimension = ndx.dimension(function (d) {
-              if (d.time != null) return d.time;
+              if (d.time != null)
+                return d.time;
             })
             var timeGroup = timeDimension.group().reduceSum(function (d) {
               return d.count;
@@ -69,18 +71,33 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var minDate = timeDimension.bottom(1)[0].time;
             var maxDate = timeDimension.top(1)[0].time;
 
+            chart.append('button')
+                .text("Reset")
+                .style("border", "none")
+                .style("background-color", "Transparent")
+                .style("color", "blue")
+                .style("position", "relative")
+                .style("bottom", "110px")
+                .style("left", "150px")
+                .on("click", function() { timeSeries.filterAll(); dc.redrawAll();});
+
+
             chart.append('text')
               .style('font','12px sans-serif')
               .html(minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate());
 
             timeSeries
-              .renderArea(true)
               .width(width)
               .height(height)
               .margins(margin)
               .dimension(timeDimension)
               .group(timeGroup)
-              .x(d3.time.scale().domain([minDate, maxDate]));
+              .centerBar(true)
+              .x(d3.time.scale().domain([minDate, maxDate]))
+              .xUnits(d3.time.days)
+              .gap(1);
+
+
 
             dc.renderAll();
 

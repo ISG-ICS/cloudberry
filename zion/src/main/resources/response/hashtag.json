@@ -1,0 +1,10 @@
+{
+  "status" : 0,
+  "result" : {
+    "data" : [
+      {"hashtag": "zika", "count" : 235},
+      {"hashtag": "virus", "count": 400}
+    ]
+  }
+
+}
