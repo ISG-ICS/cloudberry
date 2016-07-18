@@ -94,7 +94,7 @@ public class TwitterFeedStreamDriver {
                 //if is not to store in file only, geo tag and send to database
                 if (!config.isFileOnly()) {
                     try {
-                        String adm = TagTweet.tagOneTweet(msg);
+                        String adm = TagTweet.tagOneTweet(msg, true);
                         socketAdapterClient.ingest(adm);
                     } catch (UnknownPlaceException e) {
 

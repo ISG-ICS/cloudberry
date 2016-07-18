@@ -16,7 +16,7 @@ public class ConsumerHistUsersTimeline {
 
             ConsumerKafka consumer = new ConsumerKafka();
             String[] topics = {config.getTopicHistUsers()};
-            consumer.run(config, topics, "ds_hist_users_timeline");
+            consumer.run(config, topics, "ds_users_tweet");
 
         } catch (CmdLineException e) {
             e.printStackTrace(System.err);

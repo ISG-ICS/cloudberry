@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.noah.kafka;
 
 import edu.uci.ics.cloudberry.noah.feed.AsterixHttpRequest;
 import edu.uci.ics.cloudberry.noah.feed.Config;
-import edu.uci.ics.cloudberry.noah.feed.TagTweetGeotagNotRequired;
+import edu.uci.ics.cloudberry.noah.feed.TagTweet;
 import edu.uci.ics.cloudberry.noah.feed.TwitterFeedStreamDriver;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -35,7 +35,7 @@ public class ConsumerKafka {
             feedDriver.openSocket(config);
             try {
                 for (ConsumerRecord<String, String> record : records) {
-                    String adm = TagTweetGeotagNotRequired.tagOneTweet(record.value());
+                    String adm = TagTweet.tagOneTweet(record.value(), false);
                     feedDriver.socketAdapterClient.ingest(adm);
                 }
             } catch (TwitterException e) {
@@ -64,7 +64,7 @@ public class ConsumerKafka {
                ingest(config,records);
             } else {
                 for (ConsumerRecord<String, String> record : records) {
-                    AsterixHttpRequest.insertDB("twitter_zika", dataset, record.value());
+                    AsterixHttpRequest.insertDB(config.getAxServer(),"twitter_zika", dataset, record.value());
                 }
             }
         }

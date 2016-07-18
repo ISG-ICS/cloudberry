@@ -69,6 +69,11 @@ public class Config {
     @Option(name = "-tpht", aliases = "--topic-hist-users", usage = "Topic name on Kafka for Historical Users Timeline")
     private String topicHistUsers = "TwitterHistUsersTimeline";
 
+    @Option(name = "-rg", aliases = "--require-geo-field", usage = "Geo location field is required")
+    private boolean requiredGeoField = true;
+
+    @Option(name = "-axs", aliases = "--asterix-server", usage = "server:port for AsterixDB requests")
+    private String axServer = "http://kiwi.ics.uci.edu:19002";
 
     public String getConsumerKey() {
         return consumerKey;
@@ -141,6 +146,10 @@ public class Config {
     public String getTopicHistUsers() {
         return topicHistUsers;
     }
+
+    public boolean isRequiredGeoField() { return requiredGeoField; }
+
+    public String getAxServer() { return axServer; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 

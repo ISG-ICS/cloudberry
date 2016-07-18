@@ -8,11 +8,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object AsterixHttpRequest {
 
-  def insertDB(dataverse:String, dataset:String, record:String){
-    var adm = TagTweetGeotagNotRequired.tagOneTweet(record)
+  def insertDB(server: String, dataverse:String, dataset:String, record:String){
+    var adm = TagTweet.tagOneTweet(record, false)
     adm = URLEncoder.encode(adm, "UTF-8")
-
-    val url = "http://kiwi.ics.uci.edu:19002/update?statements=use dataverse "+dataverse+"; insert into dataset "+dataset+"("+adm+");"
+    val url = server + "/update?statements=use dataverse "+dataverse+"; insert into dataset "+dataset+"("+adm+");"
     httpRequest(url)
   }
 
