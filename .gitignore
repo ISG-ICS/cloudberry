@@ -19,3 +19,4 @@ dist
 /activator-sbt-*-shim.sbt
 *.iml
 *.gz
+OutputFolderPromedmail/
