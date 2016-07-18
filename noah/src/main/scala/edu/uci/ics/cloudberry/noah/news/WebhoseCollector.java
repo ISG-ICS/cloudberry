@@ -48,7 +48,6 @@ public class WebhoseCollector {
             aliases = "--timestamp",
             usage="timestamp for search")
     private String ts;
-//    private static String propFileName = "";
 
     public static void main( String[] args ) throws IOException {
         new WebhoseCollector().doMain(args);
@@ -59,13 +58,9 @@ public class WebhoseCollector {
         try{
             parser.parseArgument(args);
         } catch( CmdLineException e ) {
-            // if there's a problem in the command line,
-            // you'll get this exception. this will report
-            // an error message.
             System.err.println(e.getMessage());
             return;
         }
-//        loadPropValue();
 
         WebhoseQuery query = new WebhoseQuery();
         query.title = "Zika";
@@ -77,6 +72,8 @@ public class WebhoseCollector {
             System.err.println("No new result available.");
             return;
         }
+
+        String fileName = "response_" + ts + "_";
         while (true){
 
             response_str += responseToString(response) + "\n";
@@ -93,12 +90,12 @@ public class WebhoseCollector {
                     }
                 }
 
-                File outFile = new File(filePath + "/response_" + ts + ".json");
+                // File Name Format: response_from_to.json
+                File outFile = new File(filePath + "/" + fileName + ts + ".json");
                 try {
                     FileUtils.writeStringToFile(outFile, response_str);
                     System.err.println("response saved to file.");
                     System.out.println(ts);
-//                    savePropValue();
                 } catch (IOException io) {
                     io.printStackTrace();
                 }
@@ -107,61 +104,6 @@ public class WebhoseCollector {
         }
     }
 
-//    private static void loadPropValue() {
-//        Properties prop = new Properties();
-//        InputStream input = null;
-//        try {
-//            input = new FileInputStream(propFileName);
-//            prop.load(input);
-//
-//            //set attribute values
-//            apiKey = prop.getProperty("apiKey");
-//            filePath = prop.getProperty("filePath");
-//            ts = prop.getProperty("ts");
-//
-//        } catch (IOException io) {
-//            io.printStackTrace();
-//        }
-//        finally {
-//            if (input != null) {
-//                try {
-//                    input.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//        }
-//    }
-//
-//    private static void savePropValue() {
-//        Properties prop = new Properties();
-//        OutputStream output = null;
-//
-//        try {
-//
-//            output = new FileOutputStream(propFileName);
-//
-//            // set the new timestamp value
-//            prop.setProperty("apiKey", apiKey);
-//            prop.setProperty("filePath", filePath);
-//            prop.setProperty("ts", ts);
-//
-//            // save properties to project root folder
-//            prop.store(output, null);
-//
-//        } catch (IOException io) {
-//            io.printStackTrace();
-//        } finally {
-//            if (output != null) {
-//                try {
-//                    output.close();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//
-//        }
-//    }
 
     private static WebhoseResponse searchTimestamp(String apiKey, String query, Long ts) throws IOException {
         WebhoseUrl url = new WebhoseUrl("https://webhose.io/search");
