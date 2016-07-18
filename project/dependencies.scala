@@ -38,13 +38,10 @@ object Dependencies {
   ) ++ testDeps
 
   val noahDependencies: Seq[ModuleID] = Seq(
-    "org.twitter4j" % "twitter4j-stream" % twitter4jVersion
-      exclude("org.slf4j","slf4j-log4j12" ),
-    "org.twitter4j" % "twitter4j-core" % twitter4jVersion
-    exclude("org.slf4j","slf4j-log4j12" ),
-    "log4j" % "log4j" % "1.2.17",
-    "com.twitter" % "hbc-core" % "2.2.0"
-      exclude("org.slf4j","slf4j-log4j12" ),
+    ws,
+    "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
+    "com.twitter" % "hbc-core" % "2.2.0",
     "org.kohsuke.args4j" % "args4j-maven-plugin" % "2.33",
     "com.crawljax" % "crawljax-core" % "3.6",
     "com.crawljax.plugins" % "crawloverview-plugin" % "3.6",
@@ -55,8 +52,8 @@ object Dependencies {
       exclude("org.slf4j","slf4j-log4j12" )
       exclude("com.sun.jmx", "jmxri"),
     "org.jsoup" % "jsoup" % "1.9.2",
+    "com.buzzilla" % "webhose" % "0.1.1",
     "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
-    "com.typesafe.play" %% "play-ws" % "2.4.3",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 
