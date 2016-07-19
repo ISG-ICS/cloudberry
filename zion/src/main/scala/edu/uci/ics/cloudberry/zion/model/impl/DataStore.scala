@@ -28,6 +28,9 @@ object TwitterDataStore {
                                            BagField("hashtag", DataType.String),
                                            BagField("user_mentions", DataType.Number),
                                            NumberField("user.id"),
+                                           NumberField("geo_tag.stateID"),
+                                           NumberField("geo_tag.countyID"),
+                                           NumberField("geo_tag.cityID"),
                                            HierarchyField("geo", DataType.Number,
                                                           Map(
                                                             "state" -> "geo_tag.stateID",

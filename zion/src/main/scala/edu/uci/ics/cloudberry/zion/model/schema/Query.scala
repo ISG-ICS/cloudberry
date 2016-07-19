@@ -37,7 +37,7 @@ class LookupStatement(val sourceKeys: Seq[String],
 class FilterStatement(val fieldName: String,
                       val funcOpt: Option[TransformFunc],
                       val relation: Relation = Relation.isTrue,
-                      val values: Seq[AnyVal]
+                      val values: Seq[Any]
                      ) extends Statement {
 
 }

@@ -6,15 +6,12 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 
 import scala.collection.mutable
 
-object AqlQueryParser extends IQueryParser {
+object AQLQueryParser extends IQueryParser {
 
   class ProducedField(origField: Field, func: IFunction, as: String, dataType: DataType) extends Field(as, dataType)
 
   val sourceVar = "$t"
 
-  def validateQuery(query: Query): Unit = {
-    requireOrThrow(query.select.isDefined || query.groups.isDefined, "either group or select statement is required")
-  }
 
   override def parse(query: Query, schema: Schema): Seq[String] = {
     validateQuery(query)
@@ -113,4 +110,9 @@ object AqlQueryParser extends IQueryParser {
       ???
     }.getOrElse("")
   }
+
+  private def validateQuery(query: Query): Unit = {
+    requireOrThrow(query.select.isDefined || query.groups.isDefined, "either group or select statement is required")
+  }
+
 }

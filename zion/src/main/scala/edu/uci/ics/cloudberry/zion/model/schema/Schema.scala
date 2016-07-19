@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
+import org.joda.time.DateTime
 
 //TODO support nested type
 object DataType extends Enumeration {
@@ -92,14 +93,14 @@ object Schema {
   import DataType._
   import Relation.Relation
 
-  val BasicRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.<=, Relation.>=, Relation.>, Relation.<, Relation.in)
+  val BasicRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.<=, Relation.>=, Relation.>, Relation.<)
   val StringRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.in, Relation.contains, Relation.startsWith, Relation.endsWith, Relation.matches, Relation.~=)
 
   val Type2Relations: Map[DataType, Set[Relation]] = Map(
-    Number -> (BasicRelSet + Relation.inRange),
+    Number -> (BasicRelSet + Relation.in + Relation.inRange),
     Time -> (BasicRelSet + Relation.inRange),
     Boolean -> Set(Relation.isTrue, Relation.isFalse),
-    Point -> Set(Relation.in, Relation.inRange),
+    Point -> Set(Relation.inRange),
     String -> StringRelSet,
     Text -> Set(Relation.contains),
     Bag -> Set(Relation.contains),
