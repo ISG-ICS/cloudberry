@@ -1,4 +1,6 @@
 #!/bin/bash
+#to run this script in cron jon hourly, add this line to cron table
+#00 * * * * cd /home/kaiyim/cloudberry/; ./webhose.sh
 current_time=$(($(date +%s%N)/1000000))
 start_time=$(($current_time-3600000))
 api_key=PLEASE-GIVE-API-KEY
