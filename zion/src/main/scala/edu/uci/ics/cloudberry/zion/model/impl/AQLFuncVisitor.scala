@@ -9,7 +9,7 @@ import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object AQLFuncVisitor {
 
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
   def isAnyVal[T: TypeTag](t: T): Boolean = {
     implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
@@ -50,15 +50,15 @@ object AQLFuncVisitor {
           throw QueryParsingException(s"the ${relation} on point type requires a pair of value pairs")
         }
         translatePointRelation(field, funcOpt, sourceVar, relation, values.map(_.asInstanceOf[Seq[Number]].map(_.doubleValue())))
-      case DataType.Boolean =>
-      case DataType.String =>
+      case DataType.Boolean => ???
+      case DataType.String => ???
       case DataType.Text =>
         if (!values.forall(_.isInstanceOf[String])) {
           throw QueryParsingException(s"the ${relation} on text type requires string parameters")
         }
         translateTextRelation(field, funcOpt, sourceVar, relation, values.map(_.asInstanceOf[String]))
-      case DataType.Bag =>
-      case DataType.Hierarchy =>
+      case DataType.Bag => ???
+      case DataType.Hierarchy => ???
       case _ => throw QueryParsingException(s"unknown datatype: ${field.dataType}")
     }
   }
@@ -154,9 +154,7 @@ object AQLFuncVisitor {
             case Month => s""" year-month-duration("P${interval.x}M") """
             case Year => s""" year-month-duration("P${interval.x}Y") """
           }
-          s"""
-             |get-interval-start(interval-bin($sourceVar.${field.name}, datetime("1990-01-01T00:00:00.000Z"), $duration),
-           """.stripMargin
+          s"get-interval-start-datetime(interval-bin($sourceVar.${field.name}, datetime('1990-01-01T00:00:00.000Z'), $duration))"
         case level: Level => ???
         case GeoCellTenth => ???
         case GeoCellHundredth => ???
