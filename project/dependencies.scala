@@ -38,6 +38,7 @@ object Dependencies {
   ) ++ testDeps
 
   val noahDependencies: Seq[ModuleID] = Seq(
+    ws,
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
     "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
     "com.twitter" % "hbc-core" % "2.2.0",
