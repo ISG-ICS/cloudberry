@@ -12,7 +12,7 @@ trait IQueryParser {
     */
   def parse(query: Query, schema: Schema): Seq[String]
 
-  protected def requireOrThrow(boolean: Boolean, msg: String): Unit = {
-    if (!boolean) throw QueryParsingException(msg)
+  protected def requireOrThrow(condition: Boolean, msg: String): Unit = {
+    if (!condition) throw QueryParsingException(msg)
   }
 }

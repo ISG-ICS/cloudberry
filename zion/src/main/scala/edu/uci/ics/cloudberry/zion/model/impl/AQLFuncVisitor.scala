@@ -21,7 +21,7 @@ object AQLFuncVisitor {
                         relation: Relation,
                         values: Seq[Any]
                        ): String = {
-    //TODO add the functions
+    //TODO add the function handling logic
     if (!Schema.Type2Relations.get(field.dataType).get.contains(relation)) {
       throw QueryParsingException(s"field ${field.name} of type ${field.dataType} can not apply to relation: ${relation}")
     }
@@ -49,7 +49,8 @@ object AQLFuncVisitor {
           || values.map(_.asInstanceOf[Seq[Number]]).forall(_.size != 2)) {
           throw QueryParsingException(s"the ${relation} on point type requires a pair of value pairs")
         }
-        translatePointRelation(field, funcOpt, sourceVar, relation, values.map(_.asInstanceOf[Seq[Number]].map(_.doubleValue())))
+        translatePointRelation(field, funcOpt, sourceVar, relation,
+                               values.map(_.asInstanceOf[Seq[Number]].map(_.doubleValue())))
       case DataType.Boolean => ???
       case DataType.String => ???
       case DataType.Text =>
@@ -96,7 +97,8 @@ object AQLFuncVisitor {
     relation match {
       case Relation.inRange => {
         if (values.size != 2) throw QueryParsingException(s"relation: ${relation} require two parameters")
-        return s"$sourceVar.${field.name} >= datetime('${values(0)}') and $sourceVar.${field.name} < datetime('${values(1)}')"
+        return s"$sourceVar.${field.name} >= datetime('${values(0)}') " +
+          s"and $sourceVar.${field.name} < datetime('${values(1)}')"
       }
       case _ => {
         if (values.size != 1) throw QueryParsingException(s"relation: ${relation} require one parameter")
@@ -127,7 +129,7 @@ object AQLFuncVisitor {
                                     sourceVar: String,
                                     relation: Relation,
                                     values: Seq[String]): String = {
-    val first =s"""similarity-jaccard(word-tokens($sourceVar.'${field.name}'), word-tokens("${values.head}")) > 0.0"""
+    val first = s"similarity-jaccard(word-tokens($sourceVar.'${field.name}'), word-tokens('${values.head}')) > 0.0"
     val rest = values.tail.map(
       keyword => s"""and contains($sourceVar.'${field.name}', "$keyword")"""
     )
