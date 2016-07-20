@@ -17,9 +17,8 @@ object ConsumerHistUsersTimeline {
       }
 
       val topics: Array[String] = Array(config.getTopicHistUsers)
-      ConsumerKafka.run(config, topics, "ds_users_tweet")
-    }
-    catch {
+      ConsumerKafka.run(config, topics, config.getUsersDataset)
+    } catch {
       case e: CmdLineException => {
         e.printStackTrace(System.err)
       }

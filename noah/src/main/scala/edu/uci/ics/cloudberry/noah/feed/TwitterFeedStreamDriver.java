@@ -22,9 +22,9 @@ public class TwitterFeedStreamDriver {
 
     Client twitterClient;
     volatile boolean isConnected = false;
-    public FeedSocketAdapterClient socketAdapterClient;
+    FeedSocketAdapterClient socketAdapterClient;
 
-    public void openSocket(Config config) throws IOException, CmdLineException {
+    public FeedSocketAdapterClient openSocket(Config config) throws IOException, CmdLineException {
         if(config.getPort() != 0 && config.getAdapterUrl()!=null) {
             if (!config.isFileOnly()) {
                 String adapterUrl = config.getAdapterUrl();
@@ -39,6 +39,7 @@ public class TwitterFeedStreamDriver {
         }else{
             throw new CmdLineException("You should provide a port and an URL");
         }
+        return socketAdapterClient;
     }
 
     public void run(Config config, BufferedWriter bw)

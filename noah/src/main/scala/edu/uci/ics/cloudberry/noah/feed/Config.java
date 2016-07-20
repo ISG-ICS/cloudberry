@@ -73,7 +73,16 @@ public class Config {
     private String configFilename = "kafka/kafka.conf";
 
     @Option(name = "-axs", aliases = "--asterix-server", usage = "server:port for AsterixDB requests")
-    private String axServer = "http://kiwi.ics.uci.edu:19002";
+    private String axServer = "http://kiwi.ics.uci.edu:19002/aql";
+
+    @Option(name = "-dv", aliases = "--dataverse-zika-twitter", usage = "Dataverse name for zika related tweets")
+    private String dataverse = "twitter_zika";
+
+    @Option(name = "-uds", aliases = "--users-dataset", usage = "Dataset name for zika related tweets from specific users ")
+    private String usersDataset = "ds_users_tweet";
+
+    @Option(name = "-zds", aliases = "--zika-dataset", usage = "Dataset name for streaming zika related tweets")
+    private String zikaStreamDataset = "ds_zika_streaming";
 
     public String getConsumerKey() {
         return consumerKey;
@@ -150,6 +159,12 @@ public class Config {
     public String  getConfigFilename() { return configFilename; }
 
     public String getAxServer() { return axServer; }
+
+    public String getDataverse() { return dataverse; }
+
+    public String getUsersDataset() { return usersDataset; }
+
+    public String getZikaStreamDataset() { return zikaStreamDataset; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 

@@ -16,7 +16,7 @@ object ConsumerUserStream {
       }
 
       val topics: Array[String] = Array(config.getTopicUserStream)
-      ConsumerKafka.run(config, topics, "ds_users_tweet")
+      ConsumerKafka.run(config, topics, config.getUsersDataset)
     }
     catch {
       case e: CmdLineException => {

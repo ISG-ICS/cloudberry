@@ -1,4 +1,4 @@
-drop dataverse twitter_zika
+drop dataverse twitter_zika if exists;
 create dataverse twitter_zika if not exists;
 use dataverse twitter_zika
 
@@ -52,22 +52,12 @@ create type typeTweet if not exists as open{
     geo_tag: typeGeoTag?
 }
 
-create dataset ds_users_tweet(typeTweet) if not exists primary key id;
-with filter on create_at;
+create dataset ds_users_tweet(typeTweet) if not exists primary key id with filter on create_at;
 //"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
 create index text_idx if not exists on ds_users_tweet("text") type keyword;
 create index location_idx if not exists on ds_users_tweet(coordinate) type rtree;
-create index time_idx if not exists on ds_users_tweet(create_at) type btree;
-create index state_idx if not exists on ds_users_tweet(geo_tag.stateID) type btree;
-create index county_idx if not exists on ds_users_tweet(geo_tag.countyID) type btree;
-create index city_idx if not exists on ds_users_tweet(geo_tag.cityID) type btree;
 
-create dataset ds_zika_streaming(typeTweet) if not exists primary key id;
-with filter on create_at;
+create dataset ds_zika_streaming(typeTweet) if not exists primary key id with filter on create_at;
 //"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
 create index text_idx if not exists on ds_zika_streaming("text") type keyword;
 create index location_idx if not exists on ds_zika_streaming(coordinate) type rtree;
-create index time_idx if not exists on ds_zika_streaming(create_at) type btree;
-create index state_idx if not exists on ds_zika_streaming(geo_tag.stateID) type btree;
-create index county_idx if not exists on ds_zika_streaming(geo_tag.countyID) type btree;
-create index city_idx if not exists on ds_zika_streaming(geo_tag.cityID) type btree;

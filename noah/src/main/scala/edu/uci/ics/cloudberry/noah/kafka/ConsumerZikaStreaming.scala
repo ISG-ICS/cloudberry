@@ -17,7 +17,7 @@ object ConsumerZikaStreaming {
       }
 
       val topics: Array[String] = Array(config.getTopicZikaStream)
-      ConsumerKafka.run(config, topics, "ds_zika_streaming")
+      ConsumerKafka.run(config, topics, config.getZikaStreamDataset)
     }
     catch {
       case e: CmdLineException => {

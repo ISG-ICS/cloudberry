@@ -47,10 +47,7 @@ object Dependencies {
     "com.crawljax.plugins" % "crawloverview-plugin" % "3.6",
     "com.crawljax" % "crawljax-cli" % "3.6",
     "org.apache.kafka" % "kafka_2.10" % "0.10.0.0"
-      exclude("javax.jms", "jms")
-      exclude("com.sun.jdmk", "jmxtools")
-      exclude("org.slf4j","slf4j-log4j12" )
-      exclude("com.sun.jmx", "jmxri"),
+      exclude("org.slf4j","slf4j-log4j12" ),
     "org.jsoup" % "jsoup" % "1.9.2",
     "com.buzzilla" % "webhose" % "0.1.1",
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")

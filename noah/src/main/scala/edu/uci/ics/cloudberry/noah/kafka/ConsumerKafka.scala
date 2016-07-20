@@ -27,6 +27,7 @@ object ConsumerKafka {
     val reset = conf.getString("auto.offset.reset")
     val keySerial = conf.getString("key.deserializer")
     val valueSerial = conf.getString("value.deserializer")
+    val poolTimeout = conf.getString("poll.ms")
 
     props.put("bootstrap.servers", server)
     props.put("group.id", groupId)
@@ -36,26 +37,23 @@ object ConsumerKafka {
     props.put("auto.offset.reset", reset)
     props.put("key.deserializer", keySerial)
     props.put("value.deserializer", valueSerial)
+    props.put("poll.ms", poolTimeout)
     return props
   }
 
   private def ingest(config: Config, records: ConsumerRecords[String, String]) {
     val feedDriver: TwitterFeedStreamDriver = new TwitterFeedStreamDriver
-    try {
-      feedDriver.openSocket(config)
+    val socketAdapterClient = feedDriver.openSocket(config)
       try {
         for (record <- records) {
           val adm: String = TagTweet.tagOneTweet(record.value, false)
-          feedDriver.socketAdapterClient.ingest(adm)
+          socketAdapterClient.ingest(adm)
         }
       }
       catch {
         case e: TwitterException => {
           e.printStackTrace(System.err)
-        }
       }
-    }
-    catch {
       case e: CmdLineException => {
         e.printStackTrace(System.err)
       }
@@ -63,8 +61,8 @@ object ConsumerKafka {
         e.printStackTrace(System.err)
       }
     } finally {
-      if (feedDriver.socketAdapterClient != null) {
-        feedDriver.socketAdapterClient.finalize
+        if (socketAdapterClient != null) {
+          socketAdapterClient.finalize
       }
     }
   }
@@ -76,16 +74,21 @@ object ConsumerKafka {
     val props: Properties = this.getProperties(server, groupId, config.getConfigFilename)
     val consumer: KafkaConsumer[String, String] = new KafkaConsumer[String, String](props)
     consumer.subscribe(topics.toSeq)
+
+    val wsClient = AsterixHttpRequest.createClient()
     while (true) {
-      val records: ConsumerRecords[String, String] = consumer.poll(100)
-      if (dataset == "ds_zika_streaming") {
+      val records: ConsumerRecords[String, String] = consumer.poll(props.getProperty("poll.ms").toLong)
+      if (dataset == config.getZikaStreamDataset) {
         ingest(config, records)
       }
       else {
         for (record <- records) {
-          AsterixHttpRequest.insertDB(config.getAxServer, "twitter_zika", dataset, record.value)
+          AsterixHttpRequest.insertRecord(config.getAxServer, config.getDataverse, dataset, record.value, wsClient)
         }
       }
+    }
+    if (wsClient != null) {
+      AsterixHttpRequest.close(wsClient)
     }
   }
 }
