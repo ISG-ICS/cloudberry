@@ -25,7 +25,6 @@ import re
 import ConfigParser
 import os
 from scrapy_splash import SplashRequest
-from scrapy.selector import Selector
 
 class PromedmailSpider(scrapy.Spider):
 
@@ -54,13 +53,12 @@ class PromedmailSpider(scrapy.Spider):
 			#set used to avoid duplicates
 			if(config.has_option('domains', 'start_archive_number')):
 				self.archNo = config.get('domains', 'start_archive_number')
-				print self.archNo
 				
 			#Get the common part of the url 	
 			if(config.has_option('domains', 'part_url')):
 				self.part_url = config.get('domains', 'part_url')
-				print self.part_url
-			
+				
+		if(config.has_section('result')):
 			if(config.has_option('result', 'directory')):
 				self.directoryName = config.get('result', 'directory')
 				
@@ -71,10 +69,13 @@ class PromedmailSpider(scrapy.Spider):
 		self.s.add(self.archNo)
 		if not os.path.exists(self.directoryName):
 			os.makedirs(self.directoryName)
-		self.completePath = os.path.abspath(self.directoryName)	
-		
-		url =  self.part_url + self.archNo
-		yield SplashRequest(url, self.parse, args={'wait': 0.5})
+			self.completePath = os.path.abspath(self.directoryName)	
+			url =  self.part_url + self.archNo
+			yield SplashRequest(url, self.parse, args={'wait': 0.7})
+		else:
+			self.completePath = os.path.abspath(self.directoryName)	
+			url =  self.part_url + self.archNo
+			yield SplashRequest(url, self.parse, args={'wait': 0.7})
 			
 	def parse(self, response):
 		html=response.body
@@ -82,18 +83,20 @@ class PromedmailSpider(scrapy.Spider):
 		#save the response in an html file
 		filename = response.url.split("/")[-1] + '.html'
 		completeName = os.path.join(self.completePath, filename)
-		with open(completeName, 'wb') as f:
-			f.write(html)
+		if not os.path.isfile(completeName):
+			with open(completeName, 'wb') as f:
+				f.write(html)
+		else:
+			pass
 			
 		#regex to match the archive numbers
 		listId = re.findall(r"\D(\d{8})"+"."+"(\d{5,8})\D", html)
-		print listId
 		for id in listId:
 			concatId = id[0]+"."+id[1]
 			if concatId not in self.s:
 				url = self.part_url + concatId
 				self.s.add(concatId)
-				yield SplashRequest(url, self.parse, args={'wait': 0.5})
+				yield SplashRequest(url, self.parse, args={'wait': 0.7})
 				
 
 #Scrapy creates scrapy.Request objects for each URL in the start_urls 
