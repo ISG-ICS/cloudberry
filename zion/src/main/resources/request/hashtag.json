@@ -36,6 +36,7 @@
   "select" : {
     "order" : [ "-count"],
     "limit": 100,
-    "offset" : 0
+    "offset" : 0,
+    "field": ["hashTag", "count"]
   }
 }

@@ -11,10 +11,6 @@ object AQLFuncVisitor {
 
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
-  def isAnyVal[T: TypeTag](t: T): Boolean = {
-    implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
-  }
-
   def translateRelation(field: Field,
                         funcOpt: Option[TransformFunc],
                         sourceVar: String,
@@ -27,39 +23,23 @@ object AQLFuncVisitor {
     }
     field.dataType match {
       case DataType.Number =>
-        if (!values.forall(isAnyVal)) {
-          throw QueryParsingException(s"values contain non compatible data type for relation: ${relation}")
-        }
+        validateNumberValue(relation, values)
         translateNumberRelation(field, funcOpt, sourceVar, relation, values.map(_.asInstanceOf[AnyVal]))
       case DataType.Time =>
-        //required string format : http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html
-        try {
-          if (!values.forall(_.isInstanceOf[String])) {
-            throw new IllegalArgumentException
-          }
-          // This parseDateTime will throw an exception if the format is invalid
-          values.foreach(t => TimeFormat.parseDateTime(t.asInstanceOf[String]))
-        } catch {
-          case ex: IllegalArgumentException => throw QueryParsingException("invalid time format")
-        }
+        validateTimeValue(relation, values)
         translateTimeRelation(field, funcOpt, sourceVar, relation, values.map(_.asInstanceOf[String]))
       case DataType.Point =>
-        //TODO support circle and polygon
-        if (!values.forall(_.isInstanceOf[Seq[Number]]) || values.size != 2
-          || values.map(_.asInstanceOf[Seq[Number]]).forall(_.size != 2)) {
-          throw QueryParsingException(s"the ${relation} on point type requires a pair of value pairs")
-        }
+        validatePointValue(relation, values)
         translatePointRelation(field, funcOpt, sourceVar, relation,
                                values.map(_.asInstanceOf[Seq[Number]].map(_.doubleValue())))
       case DataType.Boolean => ???
       case DataType.String => ???
       case DataType.Text =>
-        if (!values.forall(_.isInstanceOf[String])) {
-          throw QueryParsingException(s"the ${relation} on text type requires string parameters")
-        }
+        validateTextValue(relation, values)
         translateTextRelation(field, funcOpt, sourceVar, relation, values.map(_.asInstanceOf[String]))
       case DataType.Bag => ???
-      case DataType.Hierarchy => ???
+      case DataType.Hierarchy =>
+        throw QueryParsingException("the Hierarchy type doesn't support any relations.")
       case _ => throw QueryParsingException(s"unknown datatype: ${field.dataType}")
     }
   }
@@ -136,6 +116,43 @@ object AQLFuncVisitor {
     (first +: rest).mkString("\n")
   }
 
+  private def validateNumberValue(relation: Relation, values: Seq[Any]): Unit = {
+    if (!values.forall(isAnyVal)) {
+      throw QueryParsingException(s"values contain non compatible data type for relation: ${relation}")
+    }
+  }
+
+  private def isAnyVal[T: TypeTag](t: T): Boolean = {
+    implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
+  }
+
+  private def validateTimeValue(relation: Relation, values: Seq[Any]) = {
+    //required string format : http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html
+    try {
+      if (!values.forall(_.isInstanceOf[String])) {
+        throw new IllegalArgumentException
+      }
+      // This parseDateTime will throw an exception if the format is invalid
+      values.foreach(t => TimeFormat.parseDateTime(t.asInstanceOf[String]))
+    } catch {
+      case ex: IllegalArgumentException => throw QueryParsingException("invalid time format")
+    }
+  }
+
+  private def validatePointValue(relation: Relation, values: Seq[Any]) = {
+    //TODO support circle and polygon
+    if (!values.forall(_.isInstanceOf[Seq[_]]) || values.size != 2
+      || !values.map(_.asInstanceOf[Seq[_]]).forall(ary => ary.size == 2 && ary.forall(isAnyVal))) {
+      throw QueryParsingException(s"the ${relation} on point type requires a pair of value pairs")
+    }
+  }
+
+  private def validateTextValue(relation: Relation, values: Seq[Any]) = {
+    if (!values.forall(_.isInstanceOf[String])) {
+      throw QueryParsingException(s"the ${relation} on text type requires string parameters")
+    }
+  }
+
   def translateGroupFunc(field: Field,
                          funcOpt: Option[GroupFunc],
                          sourceVar: String
@@ -170,4 +187,5 @@ object AQLFuncVisitor {
                         funcOpt: Option[IFunction],
                         sourceVar: String
                        ): String = ???
+
 }

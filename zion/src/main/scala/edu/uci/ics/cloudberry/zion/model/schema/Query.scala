@@ -23,11 +23,11 @@ trait Statement {}
   * @param as
   */
 case class LookupStatement(val sourceKeys: Seq[String],
-                      val dataset: String,
-                      val lookupKeys: Seq[String],
-                      val selectValues: Seq[String],
-                      val as: Seq[String]
-                     ) extends Statement {
+                           val dataset: String,
+                           val lookupKeys: Seq[String],
+                           val selectValues: Seq[String],
+                           val as: Seq[String]
+                          ) extends Statement {
   //TODO to be replaced by a unified syntax exceptions
   require(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
   require(selectValues.length == as.length, "LookupStatement: select value names doesn't match with renamed names")
@@ -35,10 +35,10 @@ case class LookupStatement(val sourceKeys: Seq[String],
 
 //TODO only support one transform for now
 case class FilterStatement(val fieldName: String,
-                      val funcOpt: Option[TransformFunc],
-                      val relation: Relation = Relation.isTrue,
-                      val values: Seq[Any]
-                     ) extends Statement {
+                           val funcOpt: Option[TransformFunc],
+                           val relation: Relation = Relation.isTrue,
+                           val values: Seq[Any]
+                          ) extends Statement {
 
 }
 
@@ -50,9 +50,9 @@ case class FilterStatement(val fieldName: String,
   * @param groups //TODO support the auto group by given size
   */
 case class ByStatement(val fieldName: String,
-                  val funcOpt: Option[GroupFunc],
-                  val as: Option[String]
-                 ) extends Statement {
+                       val funcOpt: Option[GroupFunc],
+                       val as: Option[String]
+                      ) extends Statement {
 
 }
 
@@ -60,23 +60,23 @@ case class ByStatement(val fieldName: String,
   * The aggregate results produced by group by
   */
 case class AggregateStatement(val fieldName: String,
-                         val func: AggregateFunc,
-                         val as: String
-                        ) extends Statement {
+                              val func: AggregateFunc,
+                              val as: String
+                             ) extends Statement {
 
 }
 
 case class GroupStatement(val bys: Seq[ByStatement],
-                     val aggregates: Seq[AggregateStatement]
-                    ) extends Statement {
+                          val aggregates: Seq[AggregateStatement]
+                         ) extends Statement {
 
 }
 
-case class SelectStatement(val order: Seq[String],
-                      val limit: Int,
-                      val offset: Int,
-                      val fields: Seq[String]
-                     ) extends Statement {
+case class SelectStatement(val orderOn: Seq[String],
+                           val limit: Int,
+                           val offset: Int,
+                           val fields: Seq[String]
+                          ) extends Statement {
 
 }
 
