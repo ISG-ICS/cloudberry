@@ -22,7 +22,7 @@ trait Statement {}
   * @param selectValues
   * @param as
   */
-class LookupStatement(val sourceKeys: Seq[String],
+case class LookupStatement(val sourceKeys: Seq[String],
                       val dataset: String,
                       val lookupKeys: Seq[String],
                       val selectValues: Seq[String],
@@ -34,7 +34,7 @@ class LookupStatement(val sourceKeys: Seq[String],
 }
 
 //TODO only support one transform for now
-class FilterStatement(val fieldName: String,
+case class FilterStatement(val fieldName: String,
                       val funcOpt: Option[TransformFunc],
                       val relation: Relation = Relation.isTrue,
                       val values: Seq[Any]
@@ -49,7 +49,7 @@ class FilterStatement(val fieldName: String,
   * @param funcOpt
   * @param groups //TODO support the auto group by given size
   */
-class ByStatement(val fieldName: String,
+case class ByStatement(val fieldName: String,
                   val funcOpt: Option[GroupFunc],
                   val as: Option[String]
                  ) extends Statement {
@@ -59,20 +59,20 @@ class ByStatement(val fieldName: String,
 /**
   * The aggregate results produced by group by
   */
-class AggregateStatement(val fieldName: String,
+case class AggregateStatement(val fieldName: String,
                          val func: AggregateFunc,
                          val as: String
                         ) extends Statement {
 
 }
 
-class GroupStatement(val bys: Seq[ByStatement],
+case class GroupStatement(val bys: Seq[ByStatement],
                      val aggregates: Seq[AggregateStatement]
                     ) extends Statement {
 
 }
 
-class SelectStatement(val order: Seq[String],
+case class SelectStatement(val order: Seq[String],
                       val limit: Int,
                       val offset: Int,
                       val fields: Seq[String]
