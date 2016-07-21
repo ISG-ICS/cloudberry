@@ -31,3 +31,6 @@ sudo apt-get install python-dev
 
 #Install scrapy using pip
 sudo pip install Scrapy
+
+#Install scrapy-splash
+sudo pip install scrapy-splash
