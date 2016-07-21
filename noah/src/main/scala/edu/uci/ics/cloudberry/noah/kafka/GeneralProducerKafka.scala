@@ -10,9 +10,9 @@ import org.apache.kafka.clients.producer._
 /**
   * Created by Monique on 7/18/2016.
   */
-object ProducerKafka {
-  def store(topic: String, msg: String, config: Config) {
+class GeneralProducerKafka(config: Config) {
 
+  private def getProperties: Properties = {
     val server = config.getKafkaServer();
     val file = new File(getClass().getClassLoader().getResource(config.getConfigFilename()).getFile())
     val conf = ConfigFactory.parseFile(file)
@@ -32,7 +32,11 @@ object ProducerKafka {
     props.put("key.serializer", keySerial)
     props.put("value.serializer", valueSerial)
 
-    val producer = new KafkaProducer[String, String](props);
+    return props
+  }
+
+  def store(topic: String, msg: String) {
+    val producer = new KafkaProducer[String, String](getProperties);
     val data = new ProducerRecord[String, String](topic, msg);
     producer.send(data);
     producer.close()

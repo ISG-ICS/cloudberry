@@ -11,9 +11,7 @@ object AsterixHttpRequest {
   def createClient(): AhcWSClient = {
     implicit val system = ActorSystem("my-system")
     implicit val materializer = ActorMaterializer()
-
-    val wsClient = AhcWSClient()
-    return wsClient
+    AhcWSClient()
   }
 
   def insertRecord(url: String, dataverse: String, dataset: String, record: String, wsClient: AhcWSClient) {

@@ -144,16 +144,25 @@ public class Config {
         return storeKafka;
     }
 
-    public String getTopicZikaStream() {
-        return topicZikaStream;
+    public enum Source {
+        Zika, User, HistUser
+    }
+    public String getTopic(Source source){
+        switch (source){
+            case Zika: return topicZikaStream;
+            case User: return topicUserStream;
+            case HistUser: return topicHistUsers;
+            default: return null;
+        }
     }
 
-    public String getTopicUserStream() {
-        return topicUserStream;
-    }
-
-    public String getTopicHistUsers() {
-        return topicHistUsers;
+    public String getDataset(Source source){
+        switch (source){
+            case Zika: return zikaStreamDataset;
+            case User:
+            case HistUser: return usersDataset;
+            default: return null;
+        }
     }
 
     public String  getConfigFilename() { return configFilename; }
@@ -161,10 +170,6 @@ public class Config {
     public String getAxServer() { return axServer; }
 
     public String getDataverse() { return dataverse; }
-
-    public String getUsersDataset() { return usersDataset; }
-
-    public String getZikaStreamDataset() { return zikaStreamDataset; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 

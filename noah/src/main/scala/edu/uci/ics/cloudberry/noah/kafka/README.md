@@ -40,8 +40,6 @@ list of keywords separated by comma
 -kaf
 -ks
 kafka 'hostname:port'  eg.: "localhost:9092"
--tpht
-topic name (on kafka)
 ```
 
 ### Get data from Kafka and insert into AsterixDB
@@ -53,14 +51,8 @@ sbt "project noah" "edu.uci.ics.cloudberry.noah.kafka.ConsumerZikaStreaming \
 kafka 'hostname:port'  eg.: "localhost:9092"
 -kid 
 an id to identify who is consuming the data eg.: "test1"
--tpzs
-Topic name on Kafka for Zika Streaming
 -axs
  "server:port for AsterixDB requests"
- -dv
- "Dataverse name for zika related tweets"
-"-zds"
-"Dataset name for streaming zika related tweets"
 ```
 
 You can replace the `TwitterFeedStreamDriver` to other Twitter Driver on the project, but make sure to also run the related Consumer and set related options

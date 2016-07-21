@@ -4,9 +4,11 @@ import java.io.File
 import java.util.Properties
 
 import com.typesafe.config.ConfigFactory
-import edu.uci.ics.cloudberry.noah.feed.{AsterixHttpRequest, Config, TagTweet, TwitterFeedStreamDriver}
+import edu.uci.ics.cloudberry.noah.feed.Config.Source
+import edu.uci.ics.cloudberry.noah.feed._
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
 import org.kohsuke.args4j.CmdLineException
+import play.api.libs.ws.ahc.AhcWSClient
 import twitter4j.TwitterException
 
 import scala.collection.JavaConversions._
@@ -14,10 +16,12 @@ import scala.collection.JavaConversions._
 /**
   * Created by Monique on 7/18/2016.
   */
-object ConsumerKafka {
+class AsterixConsumerKafka(config: Config) {
 
-  private def getProperties(server: String, groupId: String, filename: String): Properties = {
-
+  private def getProperties(): Properties = {
+    val server = config.getKafkaServer
+    val groupId = config.getKafkaId
+    val filename = config.getConfigFilename
     val props: Properties = new Properties
     val file = new File(getClass().getClassLoader().getResource(filename).getFile())
     val conf = ConfigFactory.parseFile(file)
@@ -41,7 +45,7 @@ object ConsumerKafka {
     return props
   }
 
-  private def ingest(config: Config, records: ConsumerRecords[String, String]) {
+  private def ingest(records: ConsumerRecords[String, String]) {
     val feedDriver: TwitterFeedStreamDriver = new TwitterFeedStreamDriver
     val socketAdapterClient = feedDriver.openSocket(config)
       try {
@@ -68,27 +72,26 @@ object ConsumerKafka {
   }
 
   @throws[CmdLineException]
-  def run(config: Config, topics: Array[String], dataset: String) {
-    val server: String = config.getKafkaServer
-    val groupId: String = config.getKafkaId
-    val props: Properties = this.getProperties(server, groupId, config.getConfigFilename)
-    val consumer: KafkaConsumer[String, String] = new KafkaConsumer[String, String](props)
+  def consume(source: Source) {
+    val props = getProperties
+    val consumer = new KafkaConsumer[String, String](props)
+    val topics: Array[String] = Array(config.getTopic(source))
     consumer.subscribe(topics.toSeq)
+    val dataset = config.getDataset(source)
 
-    val wsClient = AsterixHttpRequest.createClient()
+    val wsClient: AhcWSClient = AsterixHttpRequest.createClient()
     while (true) {
       val records: ConsumerRecords[String, String] = consumer.poll(props.getProperty("poll.ms").toLong)
-      if (dataset == config.getZikaStreamDataset) {
-        ingest(config, records)
+
+      if (source == Config.Source.Zika) {
+        ingest(records)
       }
       else {
         for (record <- records) {
-          AsterixHttpRequest.insertRecord(config.getAxServer, config.getDataverse, dataset, record.value, wsClient)
+         AsterixHttpRequest.insertRecord(config.getAxServer, config.getDataverse, dataset, record.value, wsClient)
         }
       }
     }
-    if (wsClient != null) {
-      AsterixHttpRequest.close(wsClient)
+    AsterixHttpRequest.close(wsClient)
     }
-  }
 }

@@ -8,7 +8,7 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
-import edu.uci.ics.cloudberry.noah.ProducerKafka;
+import edu.uci.ics.cloudberry.noah.GeneralProducerKafka;
 import edu.uci.ics.cloudberry.noah.adm.UnknownPlaceException;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.TwitterException;
@@ -83,6 +83,7 @@ public class TwitterFeedStreamDriver {
 
         // Establish a connection
         try {
+            GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
             // Do whatever needs to be done with messages;
@@ -90,7 +91,7 @@ public class TwitterFeedStreamDriver {
                 String msg = queue.take();
                 bw.write(msg);
                 if (config.isStoreKafka()) {
-                    ProducerKafka.store(config.getTopicZikaStream(), msg, config);
+                    producer.store(config.getTopic(Config.Source.Zika), msg);
                 }
                 //if is not to store in file only, geo tag and send to database
                 if (!config.isFileOnly()) {
