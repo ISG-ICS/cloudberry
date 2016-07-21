@@ -57,7 +57,7 @@ class AQLQueryParser extends IQueryParser {
       schema.getField(filter.fieldName).map { field =>
         AQLFuncVisitor.translateRelation(field, filter.funcOpt, sourceVar, filter.relation, filter.values)
       }.getOrElse(throw QueryParsingException(s"cannot find field: ${filter.fieldName} in table, lookup haven't implemented"))
-    }.mkString("where ", "\n and ", "")
+    }.mkString("where ", " and ", "")
   }
 
   private def parseGroupby(group: GroupStatement,
@@ -85,7 +85,7 @@ class AQLQueryParser extends IQueryParser {
 
     val groups = groupNameMap.zipWithIndex.map { case ((as, field), id) =>
       s" $$g${id} := $field "
-    }.mkString(" ")
+    }.mkString(", ")
 
     val retGroups = groupNameMap.zipWithIndex.map { case ((as, field), id) =>
       s"'$as' : $$g${id}"

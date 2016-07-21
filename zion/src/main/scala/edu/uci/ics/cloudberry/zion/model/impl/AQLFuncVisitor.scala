@@ -11,6 +11,7 @@ object AQLFuncVisitor {
 
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
 
+  //TODO possibly using /*+ skip-index */ hint if the relation selectivity is not high enough
   def translateRelation(field: Field,
                         funcOpt: Option[TransformFunc],
                         sourceVar: String,
@@ -57,7 +58,8 @@ object AQLFuncVisitor {
       case Relation.in => {
         val setVar = s"${sourceVar}s"
         val ret =
-          s"""|for $setVar in [ ${values.mkString(",")} ]
+          s"""|true
+              |for $setVar in [ ${values.mkString(",")} ]
               |where $sourceVar.${field.name} = $setVar
               |""".stripMargin
         return ret
@@ -117,13 +119,13 @@ object AQLFuncVisitor {
   }
 
   private def validateNumberValue(relation: Relation, values: Seq[Any]): Unit = {
-    if (!values.forall(isAnyVal)) {
+    if (!values.forall(isAnyNumber)) {
       throw QueryParsingException(s"values contain non compatible data type for relation: ${relation}")
     }
   }
 
-  private def isAnyVal[T: TypeTag](t: T): Boolean = {
-    implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
+  private def isAnyNumber[T: TypeTag](t: T): Boolean = {
+    t.isInstanceOf[Number] || implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
   }
 
   private def validateTimeValue(relation: Relation, values: Seq[Any]) = {
@@ -142,7 +144,7 @@ object AQLFuncVisitor {
   private def validatePointValue(relation: Relation, values: Seq[Any]) = {
     //TODO support circle and polygon
     if (!values.forall(_.isInstanceOf[Seq[_]]) || values.size != 2
-      || !values.map(_.asInstanceOf[Seq[_]]).forall(ary => ary.size == 2 && ary.forall(isAnyVal))) {
+      || !values.map(_.asInstanceOf[Seq[_]]).forall(ary => ary.size == 2 && ary.forall(isAnyNumber))) {
       throw QueryParsingException(s"the ${relation} on point type requires a pair of value pairs")
     }
   }
@@ -174,10 +176,15 @@ object AQLFuncVisitor {
             case Year => s""" year-month-duration("P${interval.x}Y") """
           }
           s"get-interval-start-datetime(interval-bin($sourceVar.${field.name}, datetime('1990-01-01T00:00:00.000Z'), $duration))"
-        case level: Level => ???
+        case level: Level =>
+          val hierarchyField = field.asInstanceOf[HierarchyField]
+          hierarchyField.levels.get(level.levelTag).map { actualFName =>
+            s"$sourceVar.$actualFName"
+          }.getOrElse(throw QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}"))
         case GeoCellTenth => ???
         case GeoCellHundredth => ???
         case GeoCellThousandth => ???
+        case Unnest => ???
         case _ => throw QueryParsingException(s"unknown function: ${func.name}")
       }
     }.getOrElse(s"$sourceVar.${field.name}")

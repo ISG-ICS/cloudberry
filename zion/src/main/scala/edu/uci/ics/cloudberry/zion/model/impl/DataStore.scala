@@ -25,7 +25,7 @@ object TwitterDataStore {
                                            PointField("coordinate"),
                                            StringField("lang"),
                                            BooleanField("is_retweet"),
-                                           BagField("hashtag", DataType.String),
+                                           BagField("hashtags", DataType.String),
                                            BagField("user_mentions", DataType.Number),
                                            NumberField("user.id"),
                                            NumberField("geo_tag.stateID"),
