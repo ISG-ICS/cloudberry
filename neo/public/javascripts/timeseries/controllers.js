@@ -71,13 +71,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var minDate = timeDimension.bottom(1)[0].time;
             var maxDate = timeDimension.top(1)[0].time;
 
-
             chart.append('a')
                 .text('Reset')
                 .attr('href',"#")
                 .on("click", function() { timeSeries.filterAll(); dc.redrawAll();})
                 .style("position", "inherit")
-                .style("bottom", "100%")
+                .style("bottom", "90%")
                 .style("left", "10%");
 
 
