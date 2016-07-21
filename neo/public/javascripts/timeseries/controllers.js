@@ -71,11 +71,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var minDate = timeDimension.bottom(1)[0].time;
             var maxDate = timeDimension.top(1)[0].time;
 
-            function reset(){
-
-                timeSeries.filterAll();
-                dc.redrawAll();
-            }
 
             chart.append('a')
                 .text('Reset')
@@ -85,20 +80,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .style("bottom", "100%")
                 .style("left", "10%");
 
-            /*
-            chart.append('a')
-                .html('<a href = \"javascript:myChart.filterAll(); dc.redrawAll();\" > Reset </a>')
-                //.text("Reset")
 
-                //.attrs('href',"httlp://google.com")
-                //.style("border", "none")
-                //.style("background-color", "Transparent")
-                .style("color", "blue")
-                .style("position", "relative")
-                .style("bottom", "125%")
-                .style("left", "15%");
-                //.on("click", function() { timeSeries.filterAll(); dc.redrawAll();});
-            */
             chart.append('text')
               .style('font','12px sans-serif')
               .html(minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate());
