@@ -49,15 +49,6 @@ object AggregateFunc {
   val All = Set(Count, Min, Max, Sum, Avg, DistinctCount, TopK)
 }
 
-/**
-  * unnest a bag.
-  */
-case object Unnest extends GroupFunc {
-  override val name = GroupFunc.Unnest
-
-  override def acceptType: Set[DataType] = Set(DataType.Bag)
-}
-
 case class Level(val levelTag: String) extends GroupFunc {
   override val name = GroupFunc.Level
 
@@ -168,12 +159,6 @@ case object DistinctCount extends AggregateFunc {
 
 case class TopK(val k: Int) extends AggregateFunc {
   override val name = AggregateFunc.TopK
-
-  override def acceptType: Set[DataType] = DataType.values
-}
-
-case class As(val rename: String) extends TransformFunc {
-  override def name: String = "as"
 
   override def acceptType: Set[DataType] = DataType.values
 }

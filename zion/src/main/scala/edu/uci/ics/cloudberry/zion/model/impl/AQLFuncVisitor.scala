@@ -184,7 +184,6 @@ object AQLFuncVisitor {
         case GeoCellTenth => ???
         case GeoCellHundredth => ???
         case GeoCellThousandth => ???
-        case Unnest => ???
         case _ => throw QueryParsingException(s"unknown function: ${func.name}")
       }
     }.getOrElse(s"$sourceVar.${field.name}")

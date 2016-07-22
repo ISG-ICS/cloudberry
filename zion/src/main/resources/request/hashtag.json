@@ -17,17 +17,18 @@
       "value" : ["zika", "virus"]
     }
   ],
+  "unnest" : [
+    { "hashTags": "hashTag"}
+  ],
   "group": {
     "by": [
       {
-        "field": "hashTags",
-        "apply": "unnest",
-        "as" : "hashTag"
+        "field": "hashTag"
       }
     ],
     "aggregate": [
       {
-        "field" : "hashTag",
+        "field" : "*",
         "apply" : "count",
         "as" : "count"
       }

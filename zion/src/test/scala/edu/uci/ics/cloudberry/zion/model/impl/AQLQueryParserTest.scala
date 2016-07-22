@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.Specification
 
-class AQLQueryParserTest extends Specification with TestQuery{
+class AQLQueryParserTest extends Specification with TestQuery {
 
   val parser = new AQLQueryParser
 
@@ -11,7 +11,7 @@ class AQLQueryParserTest extends Specification with TestQuery{
     "translate a simple filter by time and group by time query" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
-      val query = new Query(schema.dataset, Seq.empty, filter, Some(group), None)
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.parse(query, schema).head
       result.trim must_==
         """
@@ -30,7 +30,7 @@ class AQLQueryParserTest extends Specification with TestQuery{
     "translate a text contain filter and group by time query" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
-      val query = new Query(schema.dataset, Seq.empty, filter, Some(group), None)
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.parse(query, schema).head
       result.trim must_==
         """
@@ -49,7 +49,7 @@ class AQLQueryParserTest extends Specification with TestQuery{
     "translate a geo id set filter group by time query" in {
       val filter = Seq(stateFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
-      val query = new Query(schema.dataset, Seq.empty, filter, Some(group), None)
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.parse(query, schema).head
       result.trim must_==
         """
@@ -70,7 +70,7 @@ class AQLQueryParserTest extends Specification with TestQuery{
     "translate a text contain + time + geo id set filter and group by time + spatial cube" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byHour, byState), Seq(aggrCount))
-      val query = new Query(schema.dataset, Seq.empty, filter, Some(group), None)
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.parse(query, schema).head
       result.trim must_==
         """
@@ -91,15 +91,15 @@ class AQLQueryParserTest extends Specification with TestQuery{
 
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
-      val query = new Query(schema.dataset, Seq.empty, filter, None, Some(selectRecent))
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
       //val result = parser.parse(query, schema).head
       ok
     }
 
     "translate a text contain + time + geo id set filter and group by hashtags" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
-      val group = GroupStatement(Seq(byHashTag), Seq(aggrHashTagCount))
-      val query = new Query(schema.dataset, Seq.empty, filter, Some(group), Some(selectTopK))
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
       val result = parser.parse(query, schema).head
       result.trim must_== ""
       ok
