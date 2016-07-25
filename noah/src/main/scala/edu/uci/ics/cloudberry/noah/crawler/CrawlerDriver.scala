@@ -46,12 +46,9 @@ object CrawlerDriver extends App{
     builder.crawlRules().waitAfterEvent(Wait_After_Event, TimeUnit.MILLISECONDS)
 
     builder.crawlRules().waitAfterReloadUrl(Wait_After_Reload, TimeUnit.MILLISECONDS)
-
     builder.crawlRules.insertRandomDataInInputForms(InsertRandomDataForms)
-
     builder.crawlRules().dontClick("a").withAttribute("href","http://www.promedmail.org")
     builder.crawlRules().dontClick("a").withAttribute("href", "http://www.isid.org")
-
 
     /* Set crawlFrame to true for every case. This ensures the crawling in order. */
     builder.crawlRules().crawlFrames(true)
@@ -64,6 +61,8 @@ object CrawlerDriver extends App{
 
     builder.crawlRules().clickOnce(true)
 
+    /* Set the run time */
+    builder.setMaximumRunTime(0, TimeUnit MILLISECONDS)
 
     if(conf.hasPath("input")) {
       val in = new InputSpecification()
@@ -160,8 +159,6 @@ object CrawlerDriver extends App{
       }
 
     }
-
-
 
     /*Crawloverview plugin generates an HTML report with a snapshot overview of what is crawled by Crawljax.
     Without this we do not get the folder-wise representation of crawled states*/

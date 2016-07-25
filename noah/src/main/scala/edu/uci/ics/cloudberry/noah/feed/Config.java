@@ -12,22 +12,22 @@ import org.kohsuke.args4j.spi.Setter;
 import java.util.ArrayList;
 
 public class Config {
-    @Option(required = true, name = "-ck", aliases = "--consumer-key", usage = "ConsumerKey for Twitter OAuth")
+    @Option(name = "-ck", aliases = "--consumer-key", usage = "ConsumerKey for Twitter OAuth")
     private String consumerKey = null;
 
-    @Option(required = true, name = "-cs", aliases = "--consumer-secret", usage = "Consumer Secret for Twitter OAuth")
+    @Option(name = "-cs", aliases = "--consumer-secret", usage = "Consumer Secret for Twitter OAuth")
     private String consumerSecret = null;
 
-    @Option(required = true, name = "-tk", aliases = "--token", usage = "Token for Twitter OAuth")
+    @Option(name = "-tk", aliases = "--token", usage = "Token for Twitter OAuth")
     private String token = null;
 
-    @Option(required = true, name = "-ts", aliases = "--token-secret", usage = "Token secret for Twitter OAuth")
+    @Option(name = "-ts", aliases = "--token-secret", usage = "Token secret for Twitter OAuth")
     private String tokenSecret = null;
 
     @Option(name = "-tr", aliases = "--tracker", handler = TermArrayOptionHandler.class, usage = "Tracked terms, separated by comma.")
     private String[] trackTerms = new String[]{};
 
-    @Option(name = "-tu", aliases = "--trackuser", handler = TermArrayOptionHandler.class, usage = "Tracked public users, by username, separated by comma.")
+    @Option(name = "-tu", aliases = "--track-user", handler = TermArrayOptionHandler.class, usage = "Tracked public users, by username, separated by comma.")
     private String[] trackUsers = new String[]{};
 
     @Option(name = "-loc", aliases = "--location", handler = LocationListOptionHandler.class, usage = "location rectangular, southwest.lon, southwest.lat, northeast.lon, northeast.lat")
@@ -48,9 +48,41 @@ public class Config {
     @Option(name = "-c", aliases = "--count", usage = "maximum number to feed, default unlimited")
     private int maxCount = Integer.MAX_VALUE;
 
-    @Option(name = "-fo", aliases = "--fileonly", usage = "only store in a file, do not geotag nor ingest")
+    @Option(name = "-fo", aliases = "--file-only", usage = "only store in a file, do not geotag nor ingest")
     private boolean isFileOnly = false;
 
+    @Option(name = "-kaf", aliases = "--kafka", usage = "send data to Kafka Cluster")
+    private boolean storeKafka = false;
+
+    @Option(name = "-ks", aliases = "--kafka-server", usage = "hostname:port used to start the connection with KafkaCluster")
+    private String kafkaServer = "";
+
+    @Option(name = "-kid", aliases = "--kafka-consumer-id", usage = "Id of the consumer for Kafka")
+    private String kafkaId = "";
+
+    @Option(name = "-tpzs", aliases = "--topic-zika-streaming", usage = "Topic name on Kafka for Zika Streaming")
+    private String topicZikaStream = "TwitterZikaStreaming";
+
+    @Option(name = "-tpus", aliases = "--topic-user-stream", usage = "Topic name on Kafka for Users Stream")
+    private String topicUserStream = "TwitterUserStream";
+
+    @Option(name = "-tpht", aliases = "--topic-hist-users", usage = "Topic name on Kafka for Historical Users Timeline")
+    private String topicHistUsers = "TwitterHistUsersTimeline";
+
+    @Option(name = "-kcf", aliases = "--kafka-config-filename", usage = "file with configuration for Kafka Consumer and Producer")
+    private String configFilename = "kafka/kafka.conf";
+
+    @Option(name = "-axs", aliases = "--asterix-server", usage = "server:port for AsterixDB requests")
+    private String axServer = "http://kiwi.ics.uci.edu:19002";
+
+    @Option(name = "-dv", aliases = "--dataverse-zika-twitter", usage = "Dataverse name for zika related tweets")
+    private String dataverse = "twitter_zika";
+
+    @Option(name = "-uds", aliases = "--users-dataset", usage = "Dataset name for zika related tweets from specific users ")
+    private String usersDataset = "ds_users_tweet";
+
+    @Option(name = "-zds", aliases = "--zika-dataset", usage = "Dataset name for streaming zika related tweets")
+    private String zikaStreamDataset = "ds_zika_streaming";
 
     public String getConsumerKey() {
         return consumerKey;
@@ -100,9 +132,44 @@ public class Config {
         return maxCount;
     }
 
-    public boolean getIsFileOnly() {
+    public String getKafkaServer() { return kafkaServer; }
+
+    public String getKafkaId() { return kafkaId; }
+
+    public boolean isFileOnly() {
         return isFileOnly;
     }
+
+    public boolean isStoreKafka() {
+        return storeKafka;
+    }
+
+    public enum Source {
+        Zika, User, HistUser
+    }
+    public String getTopic(Source source){
+        switch (source){
+            case Zika: return topicZikaStream;
+            case User: return topicUserStream;
+            case HistUser: return topicHistUsers;
+            default: return null;
+        }
+    }
+
+    public String getDataset(Source source){
+        switch (source){
+            case Zika: return zikaStreamDataset;
+            case User:
+            case HistUser: return usersDataset;
+            default: return null;
+        }
+    }
+
+    public String  getConfigFilename() { return configFilename; }
+
+    public String getAxServer() { return axServer; }
+
+    public String getDataverse() { return dataverse; }
 
     public static class TermArrayOptionHandler extends OptionHandler<String[]> {
 
