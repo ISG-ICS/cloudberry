@@ -199,7 +199,10 @@ object AQLFuncVisitor {
                         aqlExpr: String
                        ): (DataType.DataType, String) = {
     func match {
-      case Count => (DataType.Number, s"count($aqlExpr)")
+      case Count => {
+        if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
+        (DataType.Number, s"count($aqlExpr)")
+      }
       case Max => ???
       case Min => ???
       case topK: TopK => ???

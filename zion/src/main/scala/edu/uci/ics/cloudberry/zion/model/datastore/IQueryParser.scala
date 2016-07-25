@@ -13,6 +13,6 @@ trait IQueryParser {
   def parse(query: Query, schema: Schema): Seq[String]
 
   protected def requireOrThrow(condition: Boolean, msg: String): Unit = {
-    if (!condition) throw QueryParsingException(msg)
+    if (!condition) throw new QueryParsingException(msg)
   }
 }

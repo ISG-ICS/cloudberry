@@ -55,4 +55,6 @@ trait TestQuery {
       |  }
       |}
     """.stripMargin)
+
+  def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 }
