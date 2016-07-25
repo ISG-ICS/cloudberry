@@ -6,7 +6,7 @@ import org.joda.time.DateTime
 //TODO support nested type
 object DataType extends Enumeration {
   type DataType = Value
-  val Number, Time, Point, Boolean, String, Text, Bag, Hierarchy = Value
+  val Number, Time, Point, Boolean, String, Text, Bag, Hierarchy, Record = Value
 }
 
 object Relation extends Enumeration {
@@ -57,6 +57,7 @@ case class BagField(override val name: String,
 
 /**
   * Hierarchy field type
+  *
   * @param name
   * @param innerType
   * @param levels the level to actual field name mapping
@@ -66,6 +67,8 @@ case class HierarchyField(override val name: String,
                           val levels: Map[String, String]
                          ) extends NestedField(name, DataType.Hierarchy, innerType) {
 }
+
+case object AllField extends Field("*", DataType.Record)
 
 /**
   * Including "interesting" fields which could be used as group keys.
@@ -89,9 +92,7 @@ final class Schema(val dataset: String, val dimension: Seq[Field], val measureme
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
 
-  def getFieldNames: Seq[String] = dimension.map(_.name) ++ measurement.map(_.name)
-
-  def getField(name: String): Option[Field] = dimensionMap.get(name).orElse(measurementMap.get(name))
+  val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
 }
 
 object Schema {

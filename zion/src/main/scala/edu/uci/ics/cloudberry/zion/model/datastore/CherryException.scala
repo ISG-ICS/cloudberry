@@ -12,6 +12,8 @@ class CherryException(msg: String, cause: Throwable) extends RuntimeException(ms
 
 case class QueryInitException(msg: String) extends CherryException(msg, null)
 
-case class QueryParsingException(msg: String) extends CherryException(msg, null)
+class QueryParsingException(msg: String) extends CherryException(msg, null)
 
 case class JsonRequestException(msg: String) extends CherryException(msg, null)
+
+case class FieldNotFound(fieldName: String) extends QueryInitException(s"cannot find field $fieldName")
