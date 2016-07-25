@@ -78,7 +78,7 @@ class AsterixConsumerKafka(config: Config) {
     val topics: Array[String] = Array(config.getTopic(source))
     consumer.subscribe(topics.toSeq)
     val dataset = config.getDataset(source)
-
+    val url = s"${config.getAxServer}/aql"
     val wsClient: AhcWSClient = AsterixHttpRequest.createClient()
     while (true) {
       val records: ConsumerRecords[String, String] = consumer.poll(props.getProperty("poll.ms").toLong)
@@ -88,7 +88,7 @@ class AsterixConsumerKafka(config: Config) {
       }
       else {
         for (record <- records) {
-         AsterixHttpRequest.insertRecord(config.getAxServer, config.getDataverse, dataset, record.value, wsClient)
+         AsterixHttpRequest.insertRecord(url, config.getDataverse, dataset, record.value, wsClient)
         }
       }
     }

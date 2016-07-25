@@ -44,7 +44,7 @@ kafka 'hostname:port'  eg.: "localhost:9092"
 
 ### Get data from Kafka and insert into AsterixDB
 
-*Run twitter/zika/ddl.aql in Asterix first
+*****Run twitter/zika/ddl.aql in Asterix **first**
 ```
 sbt "project noah" "edu.uci.ics.cloudberry.noah.kafka.ConsumerZikaStreaming \
 -ks 
@@ -52,7 +52,7 @@ kafka 'hostname:port'  eg.: "localhost:9092"
 -kid 
 an id to identify who is consuming the data eg.: "test1"
 -axs
- "server:port for AsterixDB requests"
+ "server:port" for AsterixDB requests
 ```
 
-You can replace the `TwitterFeedStreamDriver` to other Twitter Driver on the project, but make sure to also run the related Consumer and set related options
+You can replace the `TwitterFeedStreamDriver` to other Twitter Driver on the project, but make sure to also run the related Consumer

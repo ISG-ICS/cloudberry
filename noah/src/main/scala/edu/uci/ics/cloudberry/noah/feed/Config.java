@@ -73,7 +73,7 @@ public class Config {
     private String configFilename = "kafka/kafka.conf";
 
     @Option(name = "-axs", aliases = "--asterix-server", usage = "server:port for AsterixDB requests")
-    private String axServer = "http://kiwi.ics.uci.edu:19002/aql";
+    private String axServer = "http://kiwi.ics.uci.edu:19002";
 
     @Option(name = "-dv", aliases = "--dataverse-zika-twitter", usage = "Dataverse name for zika related tweets")
     private String dataverse = "twitter_zika";
