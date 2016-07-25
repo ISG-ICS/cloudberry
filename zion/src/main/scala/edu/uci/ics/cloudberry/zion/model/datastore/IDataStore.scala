@@ -9,6 +9,6 @@ trait IDataStore {
 
   def schema: Schema
 
-  def query(query: Query): Future[IResponse]
+  def query(query: String): Future[IResponse]
 }
 

@@ -6,15 +6,13 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import scala.concurrent.{ExecutionContext, Future}
 
 class DataStore(override val schema: Schema,
-                queryParser: IQueryParser,
                 conn: IDataConn,
                 responseHandler: IWSResponseHandler
                )(implicit ec: ExecutionContext)
   extends IDataStore {
 
-  override def query(query: Query): Future[IResponse] = {
-    val xql = queryParser.parse(query, schema)
-    conn.query(xql).map(responseHandler.handler)
+  override def query(query: String): Future[IResponse] = {
+    conn.query(query).map(responseHandler.handler)
   }
 }
 
@@ -27,9 +25,12 @@ object TwitterDataStore {
                                            PointField("coordinate"),
                                            StringField("lang"),
                                            BooleanField("is_retweet"),
-                                           BagField("hashtag", DataType.String),
+                                           BagField("hashtags", DataType.String),
                                            BagField("user_mentions", DataType.Number),
                                            NumberField("user.id"),
+                                           NumberField("geo_tag.stateID"),
+                                           NumberField("geo_tag.countyID"),
+                                           NumberField("geo_tag.cityID"),
                                            HierarchyField("geo", DataType.Number,
                                                           Map(
                                                             "state" -> "geo_tag.stateID",

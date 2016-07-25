@@ -37,6 +37,18 @@
         "type": "number"
       },
       {
+        "field": "geo_tag.stateID",
+        "type": "number"
+      },
+      {
+        "field": "geo_tag.countyID",
+        "type": "number"
+      },
+      {
+        "field": "geo_tag.cityID",
+        "type": "number"
+      },
+      {
         "field": "geo",
         "type": "hierarchy",
         "level": [
