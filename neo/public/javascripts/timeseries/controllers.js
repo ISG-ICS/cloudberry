@@ -71,15 +71,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var minDate = timeDimension.bottom(1)[0].time;
             var maxDate = timeDimension.top(1)[0].time;
 
-            chart.append('button')
-                .text("Reset")
-                .style("border", "none")
-                .style("background-color", "Transparent")
-                .style("color", "blue")
-                .style("position", "relative")
-                .style("bottom", "110px")
-                .style("left", "150px")
-                .on("click", function() { timeSeries.filterAll(); dc.redrawAll();});
+            chart.append('a')
+                .text('Reset')
+                .attr('href',"#")
+                .on("click", function() { timeSeries.filterAll(); dc.redrawAll();})
+                .style("position", "inherit")
+                .style("bottom", "90%")
+                .style("left", "10%");
 
 
             chart.append('text')
