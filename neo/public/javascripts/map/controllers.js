@@ -68,6 +68,24 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
       });
 
+    //Reset Zoom Button
+    var button = document.createElement("a");
+    var text =  document.createTextNode("Reset");
+        button.appendChild(text);
+        button.title = "Reset";
+        button.href = "#";
+        button.style.position = 'inherit';
+        button.style.top = '150%';
+        button.style.left = '-53%';
+    var body = document.getElementsByTagName("search-bar")[0];
+        body.appendChild(button);
+        button.addEventListener ("click", function() {
+          $scope.map.setView([$scope.lat, $scope.lng], 4);
+        });
+
+
+
+
       setInfoControl();
       $scope.$on("leafletDirectiveMap.zoomend", function() {
         if ($scope.map) {
@@ -169,6 +187,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       info.onAdd = function() {
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+        this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
           '<h4>Count by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
@@ -324,6 +343,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       if ($scope.map)
         $scope.legend.addTo($scope.map);
+
     }
 
     $scope.$watch(
