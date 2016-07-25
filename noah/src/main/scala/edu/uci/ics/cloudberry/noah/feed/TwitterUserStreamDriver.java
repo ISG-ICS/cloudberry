@@ -7,6 +7,7 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import edu.uci.ics.cloudberry.noah.GeneralProducerKafka;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.ResponseList;
 import twitter4j.Twitter;
@@ -56,6 +57,7 @@ public class TwitterUserStreamDriver {
         // Create a gz file to store live tweets from the list of users provided
         BufferedWriter bw = CmdLineAux.createWriter("Tweet_Zika_Users_");
         try {
+            GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
             // Do whatever needs to be done with messages
@@ -67,6 +69,9 @@ public class TwitterUserStreamDriver {
                     e.printStackTrace();
                 }
                 bw.write(msg);
+                if (config.isStoreKafka()) {
+                    producer.store(config.getTopic(Config.Source.User), msg);
+            }
             }
         } finally {
             bw.close();
