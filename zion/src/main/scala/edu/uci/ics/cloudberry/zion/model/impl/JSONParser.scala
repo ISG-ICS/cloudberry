@@ -27,15 +27,26 @@ object JSONParser {
       json.asOpt[JsArray] match {
         case Some(array) =>
           JsSuccess {
-            array.value.map {
+            var (allInt, allLong) = (0, 0)
+            val ret = array.value.map {
               case jsBoolean: JsBoolean => jsBoolean.value
               case jsNumber: JsNumber =>
-                if (jsNumber.value.isValidInt) jsNumber.value.toIntExact
-                else if (jsNumber.value.isValidLong) jsNumber.value.toLongExact
-                else jsNumber.value.toDouble
+                if (jsNumber.value.isValidInt) {
+                  allInt += 1
+                  jsNumber.value.toIntExact
+                } else if (jsNumber.value.isValidLong) {
+                  allLong += 1
+                  jsNumber.value.toLongExact
+                } else {
+                  jsNumber.value.toDouble
+                }
               case jsString: JsString => jsString.value
               case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
             }.toList
+            //Scala upgrade the type to Double for the mixing case. Here we downgrade it to Int or Long.
+            if (ret.size == allInt) ret.map(_.asInstanceOf[Double].toInt)
+            else if (ret.size == allLong) ret.map(_.asInstanceOf[Double].toLong)
+            else ret
           }
         case None => JsSuccess(Seq.empty)
       }
