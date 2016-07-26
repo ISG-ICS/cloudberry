@@ -30,11 +30,6 @@ trait TestQuery {
       |  "group": {
       |    "by": [
       |      {
-      |        "field": "geo",
-      |        "apply": "state",
-      |        "as": "state"
-      |      },
-      |      {
       |        "field": "create_at",
       |        "apply": {
       |          "name": "interval",
@@ -48,7 +43,9 @@ trait TestQuery {
       |    "aggregate": [
       |      {
       |        "field": "*",
-      |        "apply": "count",
+      |        "apply": {
+      |          "name" : "count"
+      |        },
       |        "as": "count"
       |      }
       |    ]

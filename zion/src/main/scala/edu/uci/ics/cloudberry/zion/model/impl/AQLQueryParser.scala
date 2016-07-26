@@ -7,8 +7,6 @@ import scala.collection.mutable
 
 class AQLQueryParser extends IQueryParser {
 
-  case class AQLVar(val field: Field, val aqlExpr: String)
-
   override def parse(query: Query, schema: Schema): Seq[String] = {
 
     validateQuery(query)
@@ -192,5 +190,7 @@ class AQLQueryParser extends IQueryParser {
   private def validateQuery(query: Query): Unit = {
     requireOrThrow(query.select.isDefined || query.groups.isDefined, "either group or select statement is required")
   }
+
+  case class AQLVar(val field: Field, val aqlExpr: String)
 
 }

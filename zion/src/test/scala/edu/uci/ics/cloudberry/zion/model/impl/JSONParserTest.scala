@@ -5,13 +5,14 @@ import org.specs2.mutable.Specification
 
 class JSONParserTest extends Specification with TestQuery {
 
-  val parser = new JSONParser
   "JSONParser" should {
     "parse the by (spatial, time) count" in {
-      //val actualQuery = parser.parse(stateHourCountJSON)
-      //val expectQuery = new Query(schema.dataset, Seq.empty, Seq.empty, Seq.empty,
-      //Some(GroupStatement(Seq(byState, byHour), Seq(aggrCount))), None)
-      //actualQuery must_== expectQuery
+      val parser = new JSONParser
+      val actualQuery = parser.parse(stateHourCountJSON)
+      val expectQuery = Query(schema.dataset, Seq.empty, Seq.empty, Seq.empty,
+                              Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
+      actualQuery.groups must_== expectQuery.groups
+      actualQuery must_== expectQuery
       ok
     }
   }

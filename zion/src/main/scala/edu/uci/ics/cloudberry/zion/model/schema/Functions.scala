@@ -24,13 +24,13 @@ sealed trait GroupFunc extends IFunction
 
 object GroupFunc {
   val Bin = "bin"
+  val Interval = "interval"
   val Level = "level"
-  val Unnest = "unnest"
   val GeoCellTenth = "geoCellTenth"
   val GeoCellHundredth = "geoCellHundredth"
   val GeoCellThousandth = "geoCellThousandth"
 
-  val All = Set(Bin, Level, Unnest, GeoCellTenth, GeoCellHundredth, GeoCellThousandth)
+  val All = Set(Bin, Level, GeoCellTenth, GeoCellHundredth, GeoCellThousandth)
 }
 
 trait AggregateFunc extends IFunction {
@@ -71,7 +71,7 @@ case class Bin(override val scale: Int) extends GroupFunc with Scale {
 }
 
 case class Interval(unit: TimeUnit, val x: Int = 1) extends GroupFunc with Scale {
-  override def name: String = "interval"
+  override def name: String = GroupFunc.Interval
 
   override def acceptType: Set[DataType] = Set(DataType.Time)
 

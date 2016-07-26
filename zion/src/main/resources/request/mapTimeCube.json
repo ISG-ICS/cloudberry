@@ -30,14 +30,19 @@
     "by": [
       {
         "field": "geo",
-        "apply": "state",
+        "apply": {
+          "name": "level",
+          "args": {
+            "level": "state"
+          }
+        },
         "as": "state"
       },
       {
         "field": "create_at",
         "apply": {
           "name": "interval",
-          "args" : {
+          "args": {
             "unit": "hour"
           }
         },
@@ -47,7 +52,9 @@
     "aggregate": [
       {
         "field": "*",
-        "apply": "count",
+        "apply": {
+          "name": "count"
+        },
         "as": "count"
       },
       {
@@ -55,7 +62,7 @@
         "apply": {
           "name": "topK",
           "args": {
-            "k" : 10
+            "k": 10
           }
         },
         "as": "top10_hash"
@@ -65,7 +72,7 @@
         "apply": {
           "name": "topK",
           "args": {
-            "k" : 10
+            "k": 10
           }
         },
         "as": "top10_lang"

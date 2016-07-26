@@ -17,9 +17,7 @@
       "value" : ["zika", "virus"]
     }
   ],
-  "unnest" : [
-    { "hashTags": "hashTag"}
-  ],
+  "unnest" : { "hashTags": "hashTag"},
   "group": {
     "by": [
       {

@@ -3,14 +3,13 @@ package edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 
-class Query(val dataset: String,
-            val lookup: Seq[LookupStatement],
-            val filter: Seq[FilterStatement],
-            val unnest: Seq[UnnestStatement],
-            val groups: Option[GroupStatement],
-            val select: Option[SelectStatement]
-           ) extends Statement {
-
+case class Query(val dataset: String,
+                 val lookup: Seq[LookupStatement],
+                 val filter: Seq[FilterStatement],
+                 val unnest: Seq[UnnestStatement],
+                 val groups: Option[GroupStatement],
+                 val select: Option[SelectStatement]
+                ) extends Statement {
 }
 
 trait Statement {
@@ -42,7 +41,7 @@ case class LookupStatement(val sourceKeys: Seq[String],
 //TODO only support one transform for now
 case class FilterStatement(val fieldName: String,
                            val funcOpt: Option[TransformFunc],
-                           val relation: Relation = Relation.isTrue,
+                           val relation: Relation,
                            val values: Seq[Any]
                           ) extends Statement
 
@@ -80,7 +79,6 @@ case class SelectStatement(val orderOn: Seq[String],
                            val offset: Int,
                            val fields: Seq[String]
                           ) extends Statement {
-  requireOrThrow(fields.size > 0, "The output fields for select statement is required")
 }
 
 
