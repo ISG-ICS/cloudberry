@@ -22,5 +22,20 @@ class JSONParserTest extends Specification with TestQuery {
       val expectQuery = Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
       actualQuery must_== expectQuery
     }
+    "parse the by topK hashtag request" in {
+      val actualQuery = parser.parse(topKHashTagJSON)
+      val filter = Seq(stateFilter, timeFilter, textFilter)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val expectQuery = Query(schema.dataset, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
+      actualQuery must_== expectQuery
+      ok
+    }
+    "parse the by sample tweets" in {
+      val actualQuery = parser.parse(sampleTweetJSON)
+      val filter = Seq(stateFilter, timeFilter, textFilter)
+      val expectQuery = Query(schema.dataset, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
+      actualQuery must_== expectQuery
+      ok
+    }
   }
 }

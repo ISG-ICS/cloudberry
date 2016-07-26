@@ -122,7 +122,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
           |limit 10
           |offset 0
           |return
-          |{ 'tag': $g.tag, 'count': $g.count}
+          |$g
           | """.stripMargin.trim
     }
 

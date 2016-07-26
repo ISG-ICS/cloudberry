@@ -23,13 +23,11 @@ trait TestQuery {
   val aggrCount = AggregateStatement("*", Count, "count")
 
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
-  val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq("tag", "count"))
+  val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
 
-  val filterSelectJSON = Json.parse(
+  val filterJSON =
     s"""
-       |{
-       | "dataset": "twitter.ds_tweet",
-       | "filter": [
+       |"filter": [
        |  {
        |    "field": "geo_tag.stateID",
        |    "relation": "in",
@@ -50,7 +48,14 @@ trait TestQuery {
        |      ${textValue.map("\"" + _ + "\"").mkString(",")}
        |    ]
        |  }
-       | ],
+       | ]
+     """.stripMargin
+
+  val filterSelectJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterJSON,
        | "group": {
        |   "by": [
        |      {
@@ -87,6 +92,52 @@ trait TestQuery {
        |}
     """.stripMargin
   )
+
+  val topKHashTagJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterJSON,
+       | "unnest" : { "hashtags": "tag"},
+       | "group": {
+       |    "by": [
+       |      {
+       |        "field": "tag"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field" : "*",
+       |        "apply" : {
+       |          "name": "count"
+       |        },
+       |        "as" : "count"
+       |      }
+       |    ]
+       |  },
+       |  "select" : {
+       |    "order" : [ "-count"],
+       |    "limit": 10,
+       |    "offset" : 0
+       |  }
+       |}
+     """.stripMargin
+  )
+
+  val sampleTweetJSON = Json.parse(
+    s"""
+       |{
+       |  "dataset": "twitter.ds_tweet",
+       |  $filterJSON,
+       |   "select" : {
+       |    "order" : [ "-create_at"],
+       |    "limit": 100,
+       |    "offset" : 0,
+       |    "field": ["create_at", "id", "user.id"]
+       |  }
+       |}
+       | """.stripMargin)
+
 
   val hourCountJSON = Json.parse(
     """
