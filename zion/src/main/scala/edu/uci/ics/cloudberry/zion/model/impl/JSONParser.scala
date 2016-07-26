@@ -9,28 +9,34 @@ import play.api.libs.functional.syntax._
 
 class JSONParser extends IJSONParser {
 
+  import JSONParser._
+
+  override def parse(json: JsValue): Query = {
+    json.validate[Query] match {
+      case js: JsSuccess[Query] => js.get
+      case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
+    }
+  }
+}
+
+object JSONParser {
   //Warn: the order of implicit values matters. The dependence should be initialized earlier
 
   implicit val seqAnyValue: Reads[Seq[Any]] = new Reads[Seq[Any]] {
     override def reads(json: JsValue): JsResult[Seq[Any]] = {
       json.asOpt[JsArray] match {
-        case Some(array) => {
+        case Some(array) =>
           JsSuccess {
             array.value.map {
-              jsValue =>
-                jsValue match {
-                  case jsBoolean: JsBoolean => jsBoolean.value
-                  case jsNumber: JsNumber => {
-                    if (jsNumber.value.isValidInt) jsNumber.value.toIntExact
-                    else if (jsNumber.value.isValidLong) jsNumber.value.toLongExact
-                    else jsNumber.value.toDouble
-                  }
-                  case jsString: JsString => jsString.value
-                  case other: JsValue => throw new JsonRequestException(s"unknown data type: $other")
-                }
+              case jsBoolean: JsBoolean => jsBoolean.value
+              case jsNumber: JsNumber =>
+                if (jsNumber.value.isValidInt) jsNumber.value.toIntExact
+                else if (jsNumber.value.isValidLong) jsNumber.value.toLongExact
+                else jsNumber.value.toDouble
+              case jsString: JsString => jsString.value
+              case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
             }.toList
           }
-        }
         case None => JsSuccess(Seq.empty)
       }
     }
@@ -52,29 +58,25 @@ class JSONParser extends IJSONParser {
 
 
   implicit val groupFuncReads: Reads[GroupFunc] = new Reads[GroupFunc] {
-    override def reads(json: JsValue): JsResult[GroupFunc] = {
-      (json \ "name").as[String] match {
-        case GroupFunc.Bin => ???
-        case GroupFunc.Level => {
-          val level = (json \ "args" \ "level").as[String]
-          JsSuccess(Level(level))
+    override def reads(json: JsValue): JsResult[GroupFunc] = (json \ "name").as[String] match {
+      case GroupFunc.Bin => ???
+      case GroupFunc.Level =>
+        val level = (json \ "args" \ "level").as[String]
+        JsSuccess(Level(level))
+      case GroupFunc.Interval =>
+        try {
+          val unit = TimeUnit.withName((json \ "args" \ "unit").as[String])
+          val x = (json \ "args" \ "x").asOpt[Int].getOrElse(1)
+          JsSuccess(Interval(unit, x))
+        } catch {
+          case e: NoSuchElementException => JsError(s"unknown time unit ${
+            e.getMessage
+          } ")
         }
-        case GroupFunc.Interval => {
-          try {
-            val unit = TimeUnit.withName((json \ "args" \ "unit").as[String])
-            val x = (json \ "args" \ "x").asOpt[Int].getOrElse(1)
-            JsSuccess(Interval(unit, x))
-          } catch {
-            case e: NoSuchElementException => JsError(s"unknown time unit ${
-              e.getMessage
-            } ")
-          }
-        }
-        case GroupFunc.GeoCellTenth => JsSuccess(GeoCellTenth)
-        case GroupFunc.GeoCellHundredth => JsSuccess(GeoCellHundredth)
-        case GroupFunc.GeoCellThousandth => JsSuccess(GeoCellThousandth)
-        case unknown: String => JsError(s"group function not found: $unknown")
-      }
+      case GroupFunc.GeoCellTenth => JsSuccess(GeoCellTenth)
+      case GroupFunc.GeoCellHundredth => JsSuccess(GeoCellHundredth)
+      case GroupFunc.GeoCellThousandth => JsSuccess(GeoCellThousandth)
+      case unknown: String => JsError(s"group function not found: $unknown")
     }
   }
 
@@ -150,10 +152,4 @@ class JSONParser extends IJSONParser {
       (JsPath \ "select").readNullable[SelectStatement]
   }.apply(Query.apply _)
 
-  override def parse(json: JsValue): Query = {
-    json.validate[Query] match {
-      case js: JsSuccess[Query] => js.get
-      case e: JsError => throw new JsonRequestException(JsError.toJson(e).toString())
-    }
-  }
 }
