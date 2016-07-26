@@ -28,7 +28,7 @@ class JSONParser extends IJSONParser {
                   case jsString: JsString => jsString.value
                   case other: JsValue => throw new JsonRequestException(s"unknown data type: $other")
                 }
-            }
+            }.toList
           }
         }
         case None => JsSuccess(Seq.empty)
@@ -55,7 +55,10 @@ class JSONParser extends IJSONParser {
     override def reads(json: JsValue): JsResult[GroupFunc] = {
       (json \ "name").as[String] match {
         case GroupFunc.Bin => ???
-        case GroupFunc.Level => ???
+        case GroupFunc.Level => {
+          val level = (json \ "args" \ "level").as[String]
+          JsSuccess(Level(level))
+        }
         case GroupFunc.Interval => {
           try {
             val unit = TimeUnit.withName((json \ "args" \ "unit").as[String])
@@ -135,7 +138,7 @@ class JSONParser extends IJSONParser {
     (JsPath \ "field").read[String] and
       (JsPath \ "apply").readNullable[TransformFunc] and
       (JsPath \ "relation").read[Relation] and
-      (JsPath \ "value").read[Seq[Any]]
+      (JsPath \ "values").read[Seq[Any]]
   }.apply(FilterStatement.apply _)
 
   implicit val queryReads: Reads[Query] = {
