@@ -9,16 +9,15 @@ import edu.uci.ics.cloudberry.noah.feed._
 import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer}
 import org.kohsuke.args4j.CmdLineException
 import play.api.libs.ws.ahc.AhcWSClient
-import twitter4j.TwitterException
 
 import scala.collection.JavaConversions._
 
 /**
   * Created by Monique on 7/18/2016.
   */
-class AsterixConsumerKafka(config: Config) {
+class AsterixConsumerKafka(config: Config, wsClient: AhcWSClient) {
 
-  private def getProperties(): Properties = {
+  def getProperties(): Properties = {
     val server = config.getKafkaServer
     val groupId = config.getKafkaId
     val filename = config.getConfigFilename
@@ -45,53 +44,40 @@ class AsterixConsumerKafka(config: Config) {
     return props
   }
 
-  private def ingest(records: ConsumerRecords[String, String]) {
-    val feedDriver: TwitterFeedStreamDriver = new TwitterFeedStreamDriver
-    val socketAdapterClient = feedDriver.openSocket(config)
-      try {
+  def subscribe(consumer: KafkaConsumer[String, String], source: Source): Unit = {
+    val topics: Array[String] = Array(config.getTopic(source))
+    consumer.subscribe(topics.toSeq)
+  }
+
+  def sendToAsterix(source: Source, url: String, dataset: String, asterixDataInsertion: AsterixDataInsertion, records: ConsumerRecords[String, String]): Unit = {
+    if (!records.isEmpty) {
+      if (source == Config.Source.Zika) {
+        asterixDataInsertion.ingest(records, config)
+      }
+      else {
         for (record <- records) {
-          val adm: String = TagTweet.tagOneTweet(record.value, false)
-          socketAdapterClient.ingest(adm)
+          asterixDataInsertion.insertRecord(url, config.getDataverse, dataset, record.value)
         }
-      }
-      catch {
-        case e: TwitterException => {
-          e.printStackTrace(System.err)
-      }
-      case e: CmdLineException => {
-        e.printStackTrace(System.err)
-      }
-      case e: Exception => {
-        e.printStackTrace(System.err)
-      }
-    } finally {
-        if (socketAdapterClient != null) {
-          socketAdapterClient.finalize
       }
     }
   }
 
   @throws[CmdLineException]
-  def consume(source: Source) {
-    val props = getProperties
-    val consumer = new KafkaConsumer[String, String](props)
-    val topics: Array[String] = Array(config.getTopic(source))
-    consumer.subscribe(topics.toSeq)
+  def consume(source: Source, consumer: KafkaConsumer[String, String], timeout: Long) {
+    subscribe(consumer, source)
+    val asterixDataInsertion = new AsterixDataInsertion(wsClient)
     val dataset = config.getDataset(source)
     val url = s"${config.getAxServer}/aql"
-    val wsClient: AhcWSClient = AsterixHttpRequest.createClient()
-    while (true) {
-      val records: ConsumerRecords[String, String] = consumer.poll(props.getProperty("poll.ms").toLong)
-
-      if (source == Config.Source.Zika) {
-        ingest(records)
+    try {
+      //TODO change while(true) logic to sleep(timeout) when there is no record available
+      while (true) {
+        val records: ConsumerRecords[String, String] = consumer.poll(timeout);
+        sendToAsterix(source, url, dataset, asterixDataInsertion, records)
       }
-      else {
-        for (record <- records) {
-         AsterixHttpRequest.insertRecord(url, config.getDataverse, dataset, record.value, wsClient)
+    } catch {
+      case e: Exception => {
+        e.printStackTrace(System.err)
         }
-      }
     }
-    AsterixHttpRequest.close(wsClient)
     }
 }
