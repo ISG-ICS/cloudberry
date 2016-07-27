@@ -10,6 +10,7 @@ import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
 import edu.uci.ics.cloudberry.noah.GeneralProducerKafka;
 import edu.uci.ics.cloudberry.noah.adm.UnknownPlaceException;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.TwitterException;
 
@@ -86,12 +87,13 @@ public class TwitterFeedStreamDriver {
             GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
+            KafkaProducer<String, String> kafkaProducer = producer.getKafkaProducer();
             // Do whatever needs to be done with messages;
             while (!twitterClient.isDone()) {
                 String msg = queue.take();
                 bw.write(msg);
                 if (config.isStoreKafka()) {
-                    producer.store(config.getTopic(Config.Source.Zika), msg);
+                    producer.store(config.getTopic(Config.Source.Zika), msg, kafkaProducer);
                 }
                 //if is not to store in file only, geo tag and send to database
                 if (!config.isFileOnly()) {

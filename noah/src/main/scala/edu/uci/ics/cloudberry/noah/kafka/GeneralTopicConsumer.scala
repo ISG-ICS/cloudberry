@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.noah.kafka
 
 import edu.uci.ics.cloudberry.noah.feed.Config.Source
 import edu.uci.ics.cloudberry.noah.feed.{CmdLineAux, Config}
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.kohsuke.args4j.CmdLineException
 
 /**
@@ -18,7 +19,9 @@ class GeneralTopicConsumer {
       }
 
       val consumer = new AsterixConsumerKafka(config)
-      consumer.consume(source)
+      val props = consumer.getProperties()
+      val kafkaConsumer = new KafkaConsumer[String, String](props)
+      consumer.consume(source, kafkaConsumer, props.getProperty("poll.ms").toLong)
     }
     catch {
       case e: CmdLineException => {
