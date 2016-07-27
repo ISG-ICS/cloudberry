@@ -1,7 +1,5 @@
 package edu.uci.ics.cloudberry.noah.kafka
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
 import edu.uci.ics.cloudberry.noah.feed._
 import org.apache.kafka.clients.consumer.ConsumerRecords
 import play.api.libs.ws.ahc.AhcWSClient
@@ -10,21 +8,15 @@ import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class AsterixDataInsertion {
+class AsterixDataInsertion(wsClient: AhcWSClient){
 
-  def createClient(): AhcWSClient = {
-    implicit val system = ActorSystem("my-system")
-    implicit val materializer = ActorMaterializer()
-    AhcWSClient()
-  }
-
-  def insertRecord(url: String, dataverse: String, dataset: String, record: String, wsClient: AhcWSClient) {
+  def insertRecord(url: String, dataverse: String, dataset: String, record: String) {
     val adm = TagTweet.tagOneTweet(record, false)
     val aql = s"use dataverse $dataverse; insert into dataset $dataset($adm);"
-    httpRequest(url, aql, wsClient)
+    httpRequest(url, aql)
   }
 
-  def httpRequest(url: String, aql: String, wsClient: AhcWSClient) {
+  private def httpRequest(url: String, aql: String) {
     wsClient
       .url(url)
       .post(aql)
@@ -35,10 +27,6 @@ class AsterixDataInsertion {
           println("OK! Record successfully inserted")
         }
       }
-  }
-
-  def close(wsClient: AhcWSClient): Unit = {
-    wsClient.close()
   }
 
   def ingest(records: ConsumerRecords[String, String], config: Config) {

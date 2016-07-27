@@ -15,7 +15,7 @@ import scala.collection.JavaConversions._
 /**
   * Created by Monique on 7/18/2016.
   */
-class AsterixConsumerKafka(config: Config) {
+class AsterixConsumerKafka(config: Config, wsClient: AhcWSClient) {
 
   def getProperties(): Properties = {
     val server = config.getKafkaServer
@@ -49,14 +49,14 @@ class AsterixConsumerKafka(config: Config) {
     consumer.subscribe(topics.toSeq)
   }
 
-  def sendToAsterix(source: Source, url: String, dataset: String, asterixDataInsertion: AsterixDataInsertion, wsClient: AhcWSClient, records: ConsumerRecords[String, String]): Unit = {
+  def sendToAsterix(source: Source, url: String, dataset: String, asterixDataInsertion: AsterixDataInsertion, records: ConsumerRecords[String, String]): Unit = {
     if (!records.isEmpty) {
       if (source == Config.Source.Zika) {
         asterixDataInsertion.ingest(records, config)
       }
       else {
         for (record <- records) {
-          asterixDataInsertion.insertRecord(url, config.getDataverse, dataset, record.value, wsClient)
+          asterixDataInsertion.insertRecord(url, config.getDataverse, dataset, record.value)
         }
       }
     }
@@ -65,21 +65,19 @@ class AsterixConsumerKafka(config: Config) {
   @throws[CmdLineException]
   def consume(source: Source, consumer: KafkaConsumer[String, String], timeout: Long) {
     subscribe(consumer, source)
-    val asterixDataInsertion = new AsterixDataInsertion()
-    val wsClient = asterixDataInsertion.createClient()
+    val asterixDataInsertion = new AsterixDataInsertion(wsClient)
     val dataset = config.getDataset(source)
     val url = s"${config.getAxServer}/aql"
     try {
+      //TODO change while(true) logic to sleep(timeout) when there is no record available
       while (true) {
         val records: ConsumerRecords[String, String] = consumer.poll(timeout);
-        sendToAsterix(source, url, dataset, asterixDataInsertion, wsClient, records)
+        sendToAsterix(source, url, dataset, asterixDataInsertion, records)
       }
     } catch {
       case e: Exception => {
         e.printStackTrace(System.err)
         }
-    } finally {
-      asterixDataInsertion.close(wsClient)
-      }
+    }
     }
 }
