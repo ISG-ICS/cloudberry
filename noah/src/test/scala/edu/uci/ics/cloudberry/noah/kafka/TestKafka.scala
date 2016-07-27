@@ -25,7 +25,7 @@ class TestKafka extends Specification with Mockito {
     "   store data given into producer" in {
       "TestKafka" must_== (argument.getValue.topic())
       "testing..." must_== (argument.getValue.value())
-      argument.getValuet .isInstanceOf[ProducerRecord[String, String]]
+      argument.getValue.isInstanceOf[ProducerRecord[String, String]]
     }
     " close should be called" in {
       Mockito.verify(mockProducer, Mockito.times(1)).close() must_== (())
