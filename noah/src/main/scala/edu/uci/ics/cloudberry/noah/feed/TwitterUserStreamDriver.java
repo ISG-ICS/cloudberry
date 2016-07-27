@@ -59,7 +59,7 @@ public class TwitterUserStreamDriver {
         BufferedWriter bw = CmdLineAux.createWriter("Tweet_Zika_Users_");
         try {
             GeneralProducerKafka producer = new GeneralProducerKafka(config);
-            KafkaProducer<String, String> kafkaProducer = producer.getKafkaProducer();
+            KafkaProducer<String, String> kafkaProducer = producer.createKafkaProducer();
             twitterClient.connect();
             isConnected = true;
             // Do whatever needs to be done with messages

@@ -4,9 +4,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import edu.uci.ics.cloudberry.noah.feed._
 import org.apache.kafka.clients.consumer.ConsumerRecords
-import org.kohsuke.args4j.CmdLineException
 import play.api.libs.ws.ahc.AhcWSClient
-import twitter4j.TwitterException
 
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,12 +51,6 @@ class AsterixDataInsertion {
       }
     }
     catch {
-      case e: TwitterException => {
-        e.printStackTrace(System.err)
-      }
-      case e: CmdLineException => {
-        e.printStackTrace(System.err)
-      }
       case e: Exception => {
         e.printStackTrace(System.err)
       }

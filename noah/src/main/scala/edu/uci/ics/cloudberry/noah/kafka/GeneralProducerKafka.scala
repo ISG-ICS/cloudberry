@@ -35,7 +35,7 @@ class GeneralProducerKafka(config: Config) {
     return props
   }
 
-  def getKafkaProducer(): KafkaProducer[String, String] = {
+  def createKafkaProducer(): KafkaProducer[String, String] = {
     new KafkaProducer[String, String](getProperties)
   }
 

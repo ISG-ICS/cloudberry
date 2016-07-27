@@ -16,7 +16,7 @@ public class TwitterHistoricalUsersTimelineDriver {
         //Get historical user data
         try {
             GeneralProducerKafka producer = new GeneralProducerKafka(config);
-            KafkaProducer<String, String> kafkaProducer = producer.getKafkaProducer();
+            KafkaProducer<String, String> kafkaProducer = producer.createKafkaProducer();
             Twitter twitter = CmdLineAux.getTwitterInstance(config);
             ResponseList<User> users = CmdLineAux.getUsers(config, twitter);
             for (User user : users) {

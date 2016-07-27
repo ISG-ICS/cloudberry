@@ -87,7 +87,7 @@ public class TwitterFeedStreamDriver {
             GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
-            KafkaProducer<String, String> kafkaProducer = producer.getKafkaProducer();
+            KafkaProducer<String, String> kafkaProducer = producer.createKafkaProducer();
             // Do whatever needs to be done with messages;
             while (!twitterClient.isDone()) {
                 String msg = queue.take();

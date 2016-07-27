@@ -17,17 +17,21 @@ import play.api.libs.ws.ahc.AhcWSClient
 class TestKafka extends Specification with Mockito {
 
   "General Producer Kafka" should {
-    val mockProducer = mock[KafkaProducer[String, String]]
-    val argument = ArgumentCaptor.forClass(classOf[ProducerRecord[String, String]])
-    val producerKafka = new GeneralProducerKafka(any)
-    producerKafka.store("TestKafka", "testing...", mockProducer)
-    Mockito.verify(mockProducer).send(argument.capture());
-    "   store data given into producer" in {
+    "send data given to producer" in {
+      val mockProducer = mock[KafkaProducer[String, String]]
+      val argument = ArgumentCaptor.forClass(classOf[ProducerRecord[String, String]])
+      val producerKafka = new GeneralProducerKafka(config = new Config)
+      producerKafka.store("TestKafka", "testing...", mockProducer)
+      Mockito.verify(mockProducer).send(argument.capture())
       "TestKafka" must_== (argument.getValue.topic())
       "testing..." must_== (argument.getValue.value())
       argument.getValue.isInstanceOf[ProducerRecord[String, String]]
     }
-    " close should be called" in {
+    
+    "close should be called" in {
+      val mockProducer = mock[KafkaProducer[String, String]]
+      val producerKafka = new GeneralProducerKafka(config = new Config)
+      producerKafka.store("TestKafka", "testing...", mockProducer)
       Mockito.verify(mockProducer, Mockito.times(1)).close() must_== (())
     }
   }
@@ -37,11 +41,9 @@ class TestKafka extends Specification with Mockito {
     val mockKafkaConsumer = mock[KafkaConsumer[String, String]]
     val mockClient = mock[AhcWSClient]
     val mockAsterix = mock[AsterixDataInsertion]
-    Mockito.doNothing().when(mockAsterix).ingest(any, any)
-    Mockito.doNothing().when(mockAsterix).insertRecord(any, any, any, any, any)
     val consumer = new AsterixConsumerKafka(config = new Config)
 
-    " subscribe in at least one topic" in {
+    "subscribe in at least one topic" in {
       consumer.subscribe(mockKafkaConsumer, Config.Source.Zika)
       val argument = ArgumentCaptor.forClass(classOf[util.Collection[String]])
       Mockito.verify(mockKafkaConsumer).subscribe(argument.capture());
