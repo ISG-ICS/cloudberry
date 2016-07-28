@@ -9,8 +9,11 @@ case class Query(val dataset: String,
                  val unnest: Seq[UnnestStatement],
                  val groups: Option[GroupStatement],
                  val select: Option[SelectStatement]
-                ) extends Statement {
-}
+                )
+
+case class Append(val dataset: String, val query: Query)
+
+case class Drop(val dataset: String)
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
