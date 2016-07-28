@@ -27,6 +27,7 @@
       ]
     }
   ],
+  "unnest" : {"hashtags": "hashtag"},
   "group": {
     "by": [
       {
