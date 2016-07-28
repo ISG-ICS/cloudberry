@@ -95,7 +95,6 @@ class AQLQueryParserTest extends Specification with TestQuery {
           |return
           |{ 'create_at': $t.'create_at', 'id': $t.'id', 'user.id': $t.'user'.'id'}
           | """.stripMargin.trim
-      ok
     }
 
     "translate a text contain + time + geo id set filter and group by hashtags" in {
