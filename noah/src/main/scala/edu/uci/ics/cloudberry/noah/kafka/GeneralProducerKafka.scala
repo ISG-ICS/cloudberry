@@ -35,10 +35,13 @@ class GeneralProducerKafka(config: Config) {
     return props
   }
 
-  def store(topic: String, msg: String) {
-    val producer = new KafkaProducer[String, String](getProperties);
-    val data = new ProducerRecord[String, String](topic, msg);
-    producer.send(data);
+  def createKafkaProducer(): KafkaProducer[String, String] = {
+    new KafkaProducer[String, String](getProperties)
+  }
+
+  def store(topic: String, msg: String, producer: KafkaProducer[String, String]) {
+    val data = new ProducerRecord[String, String](topic, msg)
+    producer.send(data)
     producer.close()
   }
 }
