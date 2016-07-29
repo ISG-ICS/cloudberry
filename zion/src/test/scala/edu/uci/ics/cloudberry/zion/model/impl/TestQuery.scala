@@ -15,10 +15,15 @@ trait TestQuery {
   val textFilter = FilterStatement("text", None, Relation.contains, textValue)
   val stateFilter = FilterStatement("geo_tag.stateID", None, Relation.in, stateValue)
   val retweetFilter = FilterStatement("is_retweet", None, Relation.isTrue, Seq.empty)
+  val bagFilter = FilterStatement("hashtag", None, Relation.contains, Seq(BagField("tags", DataType.String)))
 
-  val longValues: Seq[Long] = Seq(1644.toLong, 45464.toLong)
+  val intValues = Seq(1, 2, 3)
+  val stringValue = Seq("English")
+  val longValues: Seq[Long] = Seq(1644l, 45464l)
   val doubleValues: Seq[Double] = Seq(0.45541, 9.456)
 
+  val intFilter = FilterStatement("id", None, Relation.==, intValues)
+  val stringFilter = FilterStatement("lang", None, Relation.matches, stringValue)
   val longFilter = FilterStatement("id", None, Relation.inRange, longValues)
   val doubleFilter = FilterStatement("id", None, Relation.inRange, doubleValues)
 
@@ -26,7 +31,9 @@ trait TestQuery {
   val byTag = ByStatement("tag", None, None)
   val byHour = ByStatement("create_at", Some(Interval(TimeUnit.Hour)), Some("hour"))
   val byState = ByStatement("geo", Some(Level("state")), Some("state"))
-  val byGeocell = ByStatement("coordinate", Some(GeoCellTenth), Some("scale"))
+  val byGeocell10 = ByStatement("coordinate", Some(GeoCellTenth), Some("scale"))
+  val byGeocell100 = ByStatement("coordinate", Some(GeoCellHundredth), Some("scale"))
+  val byGeocell1000 = ByStatement("coordinate", Some(GeoCellThousandth), Some("scale"))
   val byUser = ByStatement("user.id", None, None)
 
   val aggrCount = AggregateStatement("*", Count, "count")
@@ -84,6 +91,28 @@ trait TestQuery {
        | ]
      """.stripMargin
 
+  val filterIntValueJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "id",
+       |    "relation": "=",
+       |    "values": [${intValues.mkString(",")}]
+       |  }
+       | ]
+     """.stripMargin
+
+  val filterStringValueJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "lang",
+       |    "relation": "matches",
+       |    "values": [${stringValue.map("\"" + _ + "\"").mkString(",")}]
+       |  }
+       | ]
+     """.stripMargin
+
   val filterLongValueJSON =
     s"""
        |"filter": [
@@ -107,13 +136,24 @@ trait TestQuery {
      """.stripMargin
 
 
-  val filterRetweetJSON =
+  val filterBooleanJSON =
     s"""
        |"filter": [
        |  {
        |    "field": "is_retweet",
        |    "relation": "true",
        |    "values": []
+       |  }
+       | ]
+     """.stripMargin
+
+  val filterBagValueJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "hashtag",
+       |    "relation": "contains",
+       |    "values": [${textValue.map("\"" + _ + "\"").mkString(",")}]
        |  }
        | ]
      """.stripMargin
@@ -264,6 +304,22 @@ trait TestQuery {
        |}
        | """.stripMargin)
 
+  val intValuesJSON = Json.parse(
+    s"""
+       |{
+       |  "dataset": "twitter.ds_tweet",
+       |  $filterIntValueJSON
+       |}
+       | """.stripMargin)
+
+  val stringValueJSON = Json.parse(
+    s"""
+       |{
+       |  "dataset": "twitter.ds_tweet",
+       |  $filterStringValueJSON
+       |}
+       | """.stripMargin)
+
   val longValuesJSON = Json.parse(
     s"""
        |{
@@ -280,7 +336,15 @@ trait TestQuery {
        |}
        | """.stripMargin)
 
-  val geoCellJSON = Json.parse(
+  val bagValuesJSON = Json.parse(
+    s"""
+       |{
+       |  "dataset": "twitter.ds_tweet",
+       |  $filterBagValueJSON
+       |}
+       | """.stripMargin)
+
+  val geoCell10JSON = Json.parse(
     """
       |{
       |  "dataset": "twitter.ds_tweet",
@@ -307,11 +371,65 @@ trait TestQuery {
       |}
     """.stripMargin)
 
-  val retweetsJSON = Json.parse(
+  val geoCell100JSON = Json.parse(
+    """
+      |{
+      |  "dataset": "twitter.ds_tweet",
+      |  "group": {
+      |    "by": [
+      |      {
+      |        "field": "coordinate",
+      |        "apply": {
+      |          "name": "geoCellHundredth"
+      |        },
+      |        "as": "scale"
+      |      }
+      |    ],
+      |    "aggregate": [
+      |      {
+      |        "field": "*",
+      |        "apply": {
+      |          "name" : "count"
+      |        },
+      |        "as": "count"
+      |      }
+      |    ]
+      |  }
+      |}
+    """.stripMargin)
+
+  val geoCell1000JSON = Json.parse(
+    """
+      |{
+      |  "dataset": "twitter.ds_tweet",
+      |  "group": {
+      |    "by": [
+      |      {
+      |        "field": "coordinate",
+      |        "apply": {
+      |          "name": "geoCellThousandth"
+      |        },
+      |        "as": "scale"
+      |      }
+      |    ],
+      |    "aggregate": [
+      |      {
+      |        "field": "*",
+      |        "apply": {
+      |          "name" : "count"
+      |        },
+      |        "as": "count"
+      |      }
+      |    ]
+      |  }
+      |}
+    """.stripMargin)
+
+  val booleanFilterJSON = Json.parse(
     s"""
        |{
        | "dataset": "twitter.ds_tweet",
-       | $filterRetweetJSON,
+       | $filterBooleanJSON,
        | "group": {
        |    "by": [
        |      {

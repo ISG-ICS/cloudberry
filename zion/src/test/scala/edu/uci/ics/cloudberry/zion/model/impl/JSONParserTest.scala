@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
-import edu.uci.ics.cloudberry.zion.model.schema.{FilterStatement, GroupStatement, Query}
+import edu.uci.ics.cloudberry.zion.model.schema.{GroupStatement, Query}
 import org.specs2.mutable.Specification
 
 class JSONParserTest extends Specification with TestQuery {
@@ -35,6 +35,16 @@ class JSONParserTest extends Specification with TestQuery {
       val expectQuery = Query(schema.dataset, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
       actualQuery must_== expectQuery
     }
+    "parse int values " in {
+      val actualQuery = parser.parse(intValuesJSON)
+      val expectQuery = new Query(schema.dataset, Seq.empty, Seq(intFilter), Seq.empty, None, None)
+      actualQuery must_== expectQuery
+    }
+    "parse string values " in {
+      val actualQuery = parser.parse(stringValueJSON)
+      val expectQuery = new Query(schema.dataset, Seq.empty, Seq(stringFilter), Seq.empty, None, None)
+      actualQuery must_== expectQuery
+    }
     "parse long values " in {
       val actualQuery = parser.parse(longValuesJSON)
       val expectQuery = new Query(schema.dataset, Seq.empty, Seq(longFilter), Seq.empty, None, None)
@@ -45,14 +55,26 @@ class JSONParserTest extends Specification with TestQuery {
       val expectQuery = new Query(schema.dataset, Seq.empty, Seq(doubleFilter), Seq.empty, None, None)
       actualQuery must_== expectQuery
     }
-    "parse geo-cell group function " in {
-     val actualQuery = parser.parse(geoCellJSON)
+    "parse geoCellTenth group function " in {
+      val actualQuery = parser.parse(geoCell10JSON)
       val expectQuery = new Query(schema.dataset, Seq.empty, Seq.empty, Seq.empty,
-        Some(GroupStatement(Seq(byGeocell), Seq(aggrCount))), None)
+        Some(GroupStatement(Seq(byGeocell10), Seq(aggrCount))), None)
       actualQuery must_== expectQuery
     }
-    "parse is_retweet filter request" in {
-      val actualQuery = parser.parse(retweetsJSON)
+    "parse geoCellHundredth group function " in {
+      val actualQuery = parser.parse(geoCell100JSON)
+      val expectQuery = new Query(schema.dataset, Seq.empty, Seq.empty, Seq.empty,
+        Some(GroupStatement(Seq(byGeocell100), Seq(aggrCount))), None)
+      actualQuery must_== expectQuery
+    }
+    "parse geoCellThousandth group function " in {
+      val actualQuery = parser.parse(geoCell1000JSON)
+      val expectQuery = new Query(schema.dataset, Seq.empty, Seq.empty, Seq.empty,
+        Some(GroupStatement(Seq(byGeocell1000), Seq(aggrCount))), None)
+      actualQuery must_== expectQuery
+    }
+    "parse boolean filter request" in {
+      val actualQuery = parser.parse(booleanFilterJSON)
       val expectQuery = new Query(schema.dataset, Seq.empty, Seq(retweetFilter), Seq.empty,
         Some(GroupStatement(Seq(byUser), Seq(aggrCount))), None)
       actualQuery must_== expectQuery
