@@ -1,17 +1,28 @@
 package edu.uci.ics.cloudberry.zion.model.actor
 
-import akka.actor.Actor
-import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo
-import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, CreateView, DropView, Query}
+import akka.actor.{Actor, ActorRef, Props}
+import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLQueryParser, DataSetInfo}
+import edu.uci.ics.cloudberry.zion.model.schema._
 
-class DataManager extends Actor {
+import scala.concurrent.ExecutionContext
+
+class DataManager(val conn: IDataConn)
+                 (implicit ec: ExecutionContext) extends Actor {
 
   import DataManager._
+
+  def answerQuery(query: Query, ref: ActorRef): Unit = {
+    context.child(query.dataset).getOrElse {
+      val schema: Schema = ???
+      context.actorOf(Props(classOf[DataSetActor], schema, new AQLQueryParser, conn, ec), query.dataset)
+    } forward query
+  }
 
   override def receive: Receive = {
     case register: Register => ???
     case deregister: Deregister => ???
-    case query: Query => ???
+    case query: Query => answerQuery(query, sender())
     case append: AppendView => ???
     case createView: CreateView => ???
     case drop: DropView => ???

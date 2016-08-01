@@ -4,9 +4,10 @@ import akka.actor.{Actor, ActorRef}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.actor.DataManager.AskInfoMsg
-import edu.uci.ics.cloudberry.zion.model.datastore.IResponse
+import edu.uci.ics.cloudberry.zion.model.datastore.QueryResponse
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryOptimizer}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
+import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -27,7 +28,7 @@ class Client(dataManager: ActorRef, optimizer: QueryOptimizer)
           val queries = optimizer.makePlan(query, infos.head, infos.tail)
           val fResponse = Future.traverse(queries) { query =>
             dataManager ? query
-          }.map(seq => seq.map(_.asInstanceOf[IResponse]))
+          }.map(seq => seq.map(_.asInstanceOf[QueryResponse]))
 
           fResponse.map(curSender ! mergeResponse(_))
 
@@ -48,7 +49,10 @@ class Client(dataManager: ActorRef, optimizer: QueryOptimizer)
 
 object Client {
 
-  def mergeResponse(responses: TraversableOnce[IResponse]): IResponse = ???
+  def mergeResponse(responses: TraversableOnce[QueryResponse]): QueryResponse = {
+    val jsValue = responses.foldLeft(List[JsValue]())((merge, response) => merge ++ response.jsArray.value)
+    QueryResponse(JsArray(jsValue))
+  }
 
   case class NoSuchDataset(name: String)
 
