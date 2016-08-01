@@ -12,7 +12,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema).head
+      val result = parser.parse(query, schema)
       removeEmptyLine(result) must_==
         """
           |for $t in dataset twitter.ds_tweet
@@ -28,7 +28,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema).head
+      val result = parser.parse(query, schema)
       removeEmptyLine(result) must_==
         """
           |for $t in dataset twitter.ds_tweet
@@ -45,7 +45,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
       val filter = Seq(stateFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema).head
+      val result = parser.parse(query, schema)
       removeEmptyLine(result) must_==
         """
           |for $t in dataset twitter.ds_tweet
@@ -63,7 +63,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byHour, byState), Seq(aggrCount))
       val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema).head
+      val result = parser.parse(query, schema)
       removeEmptyLine(result) must_==
         """
           |for $t in dataset twitter.ds_tweet
@@ -81,7 +81,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
-      val result = parser.parse(query, schema).head
+      val result = parser.parse(query, schema)
       removeEmptyLine(result) must_==
         """
           |for $t in dataset twitter.ds_tweet
@@ -101,7 +101,7 @@ class AQLQueryParserTest extends Specification with TestQuery {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
       val query = new Query(schema.dataset, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-      val result = parser.parse(query, schema).head
+      val result = parser.parse(query, schema)
       removeEmptyLine(result) must_==
         """
           |for $g in (

@@ -7,7 +7,7 @@ import scala.collection.mutable
 
 class AQLQueryParser extends IQueryParser {
 
-  override def parse(query: Query, schema: Schema): Seq[String] = {
+  override def parse(query: Query, schema: Schema): String = {
 
     validateQuery(query)
 
@@ -38,7 +38,7 @@ class AQLQueryParser extends IQueryParser {
     val (selectPrefix, select) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0, varName))
       .getOrElse("", "")
 
-    Seq(Seq(selectPrefix, dataset, lookup, filter, unnest, group, select).mkString("\n"))
+    Seq(selectPrefix, dataset, lookup, filter, unnest, group, select).mkString("\n")
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],

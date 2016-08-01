@@ -1,20 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore._
 import edu.uci.ics.cloudberry.zion.model.schema._
-
-import scala.concurrent.{ExecutionContext, Future}
-
-class DataStore(override val schema: Schema,
-                conn: IDataConn,
-                responseHandler: IWSResponseHandler
-               )(implicit ec: ExecutionContext)
-  extends IDataStore {
-
-  override def query(query: String): Future[IResponse] = {
-    conn.query(query).map(responseHandler.handler)
-  }
-}
 
 object TwitterDataStore {
   val Name = "twitter.ds_tweet"

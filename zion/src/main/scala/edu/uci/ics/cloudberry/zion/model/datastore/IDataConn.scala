@@ -6,5 +6,5 @@ import scala.concurrent.Future
 
 trait IDataConn {
 
-  def query(statement: String): Future[WSResponse]
+  def post(statement: String): Future[WSResponse]
 }

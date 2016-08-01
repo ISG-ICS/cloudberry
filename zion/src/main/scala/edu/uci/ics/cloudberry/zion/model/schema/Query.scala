@@ -3,17 +3,21 @@ package edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 
-case class Query(val dataset: String,
-                 val lookup: Seq[LookupStatement],
-                 val filter: Seq[FilterStatement],
-                 val unnest: Seq[UnnestStatement],
-                 val groups: Option[GroupStatement],
-                 val select: Option[SelectStatement]
-                )
+trait IQuery {
+  def dataset: String
+}
 
-case class Append(val dataset: String, val query: Query)
+case class Query(dataset: String,
+                 lookup: Seq[LookupStatement],
+                 filter: Seq[FilterStatement],
+                 unnest: Seq[UnnestStatement],
+                 groups: Option[GroupStatement],
+                 select: Option[SelectStatement]
+                ) extends IQuery
 
-case class Drop(val dataset: String)
+case class AppendSelfQuery(dataset: String, query: Query) extends IQuery
+
+case class DropQuery(dataset: String) extends IQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
