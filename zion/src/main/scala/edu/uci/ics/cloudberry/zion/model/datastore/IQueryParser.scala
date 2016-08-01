@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.zion.model.schema.{Query, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema.{IQuery, Query, Schema}
 
 trait IQueryParser {
   /**
@@ -10,7 +10,7 @@ trait IQueryParser {
     * @param schema
     * @return
     */
-  def parse(query: Query, schema: Schema): String
+  def parse(query: IQuery, schema: Schema): String
 
   protected def requireOrThrow(condition: Boolean, msg: String): Unit = {
     if (!condition) throw new QueryParsingException(msg)

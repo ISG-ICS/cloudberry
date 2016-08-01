@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.zion.model.actor
+package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import org.joda.time.{DateTime, Interval}

@@ -13,11 +13,18 @@ case class Query(dataset: String,
                  unnest: Seq[UnnestStatement],
                  groups: Option[GroupStatement],
                  select: Option[SelectStatement]
-                ) extends IQuery
+                ) extends IQuery {
+  def replaceInterval(interval: org.joda.time.Interval): Query = ???
 
-case class AppendSelfQuery(dataset: String, query: Query) extends IQuery
+  def getTimeInterval: org.joda.time.Interval = ???
+}
 
-case class DropQuery(dataset: String) extends IQuery
+
+case class AppendView(dataset: String, interval: org.joda.time.Interval) extends IQuery
+
+case class CreateView(dataset: String, query: Query) extends IQuery
+
+case class DropView(dataset: String) extends IQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
@@ -34,11 +41,11 @@ trait Statement {
   * @param selectValues
   * @param as
   */
-case class LookupStatement(val sourceKeys: Seq[String],
-                           val dataset: String,
-                           val lookupKeys: Seq[String],
-                           val selectValues: Seq[String],
-                           val as: Seq[String]
+case class LookupStatement(sourceKeys: Seq[String],
+                           dataset: String,
+                           lookupKeys: Seq[String],
+                           selectValues: Seq[String],
+                           as: Seq[String]
                           ) extends Statement {
   //TODO to be replaced by a unified syntax exceptions
   requireOrThrow(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
@@ -46,13 +53,15 @@ case class LookupStatement(val sourceKeys: Seq[String],
 }
 
 //TODO only support one transform for now
-case class FilterStatement(val fieldName: String,
-                           val funcOpt: Option[TransformFunc],
-                           val relation: Relation,
-                           val values: Seq[Any]
-                          ) extends Statement
+case class FilterStatement(fieldName: String,
+                           funcOpt: Option[TransformFunc],
+                           relation: Relation,
+                           values: Seq[Any]
+                          ) extends Statement {
+  def include(another: FilterStatement): Boolean = ???
+}
 
-case class UnnestStatement(val fieldName: String, val as: String)
+case class UnnestStatement(fieldName: String, as: String)
 
 /**
   * Groupby fieldNames
@@ -61,30 +70,32 @@ case class UnnestStatement(val fieldName: String, val as: String)
   * @param funcOpt
   * @param groups //TODO support the auto group by given size
   */
-case class ByStatement(val fieldName: String,
-                       val funcOpt: Option[GroupFunc],
-                       val as: Option[String]
+case class ByStatement(fieldName: String,
+                       funcOpt: Option[GroupFunc],
+                       as: Option[String]
                       ) extends Statement
 
 /**
   * The aggregate results produced by group by
   */
-case class AggregateStatement(val fieldName: String,
-                              val func: AggregateFunc,
-                              val as: String
+case class AggregateStatement(fieldName: String,
+                              func: AggregateFunc,
+                              as: String
                              ) extends Statement
 
-case class GroupStatement(val bys: Seq[ByStatement],
-                          val aggregates: Seq[AggregateStatement]
+case class GroupStatement(bys: Seq[ByStatement],
+                          aggregates: Seq[AggregateStatement]
                          ) extends Statement {
-  requireOrThrow(bys.size > 0, "Group by statement is required")
-  requireOrThrow(aggregates.size > 0, "Aggregation statement is required")
+  def finerThan(group: GroupStatement): Boolean = ???
+
+  requireOrThrow(bys.nonEmpty, "Group by statement is required")
+  requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
-case class SelectStatement(val orderOn: Seq[String],
-                           val limit: Int,
-                           val offset: Int,
-                           val fields: Seq[String]
+case class SelectStatement(orderOn: Seq[String],
+                           limit: Int,
+                           offset: Int,
+                           fields: Seq[String]
                           ) extends Statement {
 }
 

@@ -7,7 +7,15 @@ import scala.collection.mutable
 
 class AQLQueryParser extends IQueryParser {
 
-  override def parse(query: Query, schema: Schema): String = {
+  override def parse(query: IQuery, schema: Schema): String = {
+    query match {
+      case q: Query => parseQuery(q, schema)
+      case q: AppendView => ???
+      case q: DropView => ???
+    }
+  }
+
+  def parseQuery(query: Query, schema: Schema): String = {
 
     validateQuery(query)
 
