@@ -9,6 +9,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait IDataConn {
 
+  def defaultQueryResponse: JsValue
+
+  def postQuery(statement: String): Future[JsValue]
+
+  def postControl(statement: String): Future[Boolean]
+
   def post(statement: String): Future[WSResponse]
 }
 
@@ -16,11 +22,13 @@ class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext
 
   import AsterixConn._
 
-  def postQuery(aql: String, responseWhenFail: JsValue = defaultEmptyResponse): Future[JsValue] = {
-    postWithCheckingStatus(aql, (ws: WSResponse) => ws.json, (ws: WSResponse) => responseWhenFail)
+  override def defaultQueryResponse: JsValue = defaultEmptyResponse
+
+  def postQuery(aql: String): Future[JsValue] = {
+    postWithCheckingStatus(aql, (ws: WSResponse) => ws.json, (ws: WSResponse) => defaultQueryResponse)
   }
 
-  def postUpdate(aql: String): Future[Boolean] = {
+  def postControl(aql: String): Future[Boolean] = {
     postWithCheckingStatus(aql, (ws: WSResponse) => true, (ws: WSResponse) => false)
   }
 
@@ -35,7 +43,7 @@ class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext
     }
   }
 
-  protected def post(aql: String): Future[WSResponse] = {
+  def post(aql: String): Future[WSResponse] = {
     log.info("AQL:" + aql)
     val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
     f.onFailure(wsFailureHandler(aql))
