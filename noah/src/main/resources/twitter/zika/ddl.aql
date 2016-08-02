@@ -1,0 +1,63 @@
+drop dataverse twitter_zika if exists;
+create dataverse twitter_zika if not exists;
+use dataverse twitter_zika
+
+create type typeUser if not exists as open {
+    id: int64,
+    name: string,
+    screen_name : string,
+    lang : string,
+    location: string,
+    create_at: date,
+    description: string,
+    followers_count: int32,
+    friends_count: int32,
+    statues_count: int64
+}
+
+create type typePlace if not exists as open{
+    country : string,
+    country_code : string,
+    full_name : string,
+    id : string,
+    name : string,
+    place_type : string,
+    bounding_box : rectangle
+}
+
+create type typeGeoTag if not exists as open {
+    stateID: int32,
+    stateName: string,
+    countyID: int32,
+    countyName: string,
+    cityID: int32?,
+    cityName: string?
+}
+
+create type typeTweet if not exists as open{
+    create_at : datetime,
+    id: int64,
+    "text": string,
+    in_reply_to_status : int64,
+    in_reply_to_user : int64,
+    favorite_count : int64,
+    coordinate: point?,
+    retweet_count : int64,
+    lang : string,
+    is_retweet: boolean,
+    hashtags : {{ string }} ?,
+    user_mentions : {{ int64 }} ? ,
+    user : typeUser,
+    place : typePlace?,
+    geo_tag: typeGeoTag?
+}
+
+create dataset ds_users_tweet(typeTweet) if not exists primary key id with filter on create_at;
+//"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
+create index text_idx if not exists on ds_users_tweet("text") type keyword;
+create index location_idx if not exists on ds_users_tweet(coordinate) type rtree;
+
+create dataset ds_zika_streaming(typeTweet) if not exists primary key id with filter on create_at;
+//"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
+create index text_idx if not exists on ds_zika_streaming("text") type keyword;
+create index location_idx if not exists on ds_zika_streaming(coordinate) type rtree;

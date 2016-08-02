@@ -22,7 +22,7 @@ class AsterixConnection(url: String, wSClient: WSClient, config: Config)(implici
 
   import AsterixConnection._
 
- def postQuery(aql: String, responseWhenFail: JsValue = defaultEmptyResponse): Future[JsValue] = {
+  def postQuery(aql: String, responseWhenFail: JsValue = defaultEmptyResponse): Future[JsValue] = {
     postWithCheckingStatus(aql, (ws: WSResponse) => ws.json, (ws: WSResponse) => responseWhenFail)
   }
 

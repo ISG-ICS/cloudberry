@@ -21,8 +21,8 @@ public class Tweet {
     public static String USER = "user";
     public static String PLACE = "place";
 
-    public static String toADM(Status status, USGeoGnosis gnosis) throws UnknownPlaceException{
-        String geoTags = geoTag(status, gnosis);
+    public static String toADM(Status status, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException{
+        String geoTags = geoTag(status, gnosis, requireGeoField);
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkDateTimeConstructor(status.getCreatedAt()));
@@ -41,8 +41,6 @@ public class Tweet {
         if (status.getUserMentionEntities().length > 0) {
             ADM.keyValueToSbWithComma(sb, USER_MENTION, ADM.mkStringSet(status.getUserMentionEntities()));
         }
-        ADM.keyValueToSbWithComma(sb, USER, User.toADM(status.getUser()));
-
         if (status.getPlace() != null) {
             ADM.keyValueToSbWithComma(sb, PLACE, Place.toADM(status.getPlace()));
         }
@@ -51,13 +49,15 @@ public class Tweet {
         } else if (status.getPlace() != null && status.getPlace().getPlaceType().equals("poi")) {
             ADM.keyValueToSbWithComma(sb, GEO_COORDINATE, ADM.mkPoint(status.getPlace().getBoundingBoxCoordinates()[0][0]));
         }
-
-        ADM.keyValueToSb(sb, GEO_TAG, geoTags);
+        if(geoTags != null){
+            ADM.keyValueToSbWithComma(sb, GEO_TAG, geoTags);
+        }
+        ADM.keyValueToSb(sb, USER, User.toADM(status.getUser()));
         sb.append("}");
         return sb.toString();
     }
 
-    public static String geoTag(Status status, USGeoGnosis gnosis) throws UnknownPlaceException{
+    public static String geoTag(Status status, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException{
         StringBuilder sb = new StringBuilder();
         if (textMatchPlace(sb, status, gnosis)) {
             return sb.toString();
@@ -66,10 +66,14 @@ public class Tweet {
         if (exactPointLookup(sb, location, gnosis)) {
             return sb.toString();
         }
-        throw new UnknownPlaceException("unknown place:" + status.getPlace());
+        if(requireGeoField){
+            throw new UnknownPlaceException("unknown place:" + status.getPlace());
+        }else{
+            return null;
+        }
     }
 
-    private static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
+    protected static boolean exactPointLookup(StringBuilder sb, GeoLocation location, USGeoGnosis gnosis) {
         if (location == null) {
             return false;
         }
@@ -82,7 +86,7 @@ public class Tweet {
         return true;
     }
 
-    private static boolean textMatchPlace(StringBuilder sb, Status status, USGeoGnosis gnosis) {
+    protected static boolean textMatchPlace(StringBuilder sb, Status status, USGeoGnosis gnosis) {
         twitter4j.Place place = status.getPlace();
         if (place == null) {
             return false;

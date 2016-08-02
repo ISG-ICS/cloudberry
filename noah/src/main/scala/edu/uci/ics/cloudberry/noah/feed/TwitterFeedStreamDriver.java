@@ -8,7 +8,9 @@ import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint;
 import com.twitter.hbc.core.processor.StringDelimitedProcessor;
 import com.twitter.hbc.httpclient.auth.Authentication;
 import com.twitter.hbc.httpclient.auth.OAuth1;
+import edu.uci.ics.cloudberry.noah.GeneralProducerKafka;
 import edu.uci.ics.cloudberry.noah.adm.UnknownPlaceException;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.kohsuke.args4j.CmdLineException;
 import twitter4j.TwitterException;
 
@@ -23,9 +25,9 @@ public class TwitterFeedStreamDriver {
     volatile boolean isConnected = false;
     FeedSocketAdapterClient socketAdapterClient;
 
-    public void openSocket(Config config) throws IOException, CmdLineException {
+    public FeedSocketAdapterClient openSocket(Config config) throws IOException, CmdLineException {
         if(config.getPort() != 0 && config.getAdapterUrl()!=null) {
-            if (!config.getIsFileOnly()) {
+            if (!config.isFileOnly()) {
                 String adapterUrl = config.getAdapterUrl();
                 int port = config.getPort();
                 int batchSize = config.getBatchSize();
@@ -38,6 +40,7 @@ public class TwitterFeedStreamDriver {
         }else{
             throw new CmdLineException("You should provide a port and an URL");
         }
+        return socketAdapterClient;
     }
 
     public void run(Config config, BufferedWriter bw)
@@ -81,16 +84,21 @@ public class TwitterFeedStreamDriver {
 
         // Establish a connection
         try {
+            GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
-            // Do whatever needs to be done with messages
+            KafkaProducer<String, String> kafkaProducer = producer.createKafkaProducer();
+            // Do whatever needs to be done with messages;
             while (!twitterClient.isDone()) {
                 String msg = queue.take();
                 bw.write(msg);
+                if (config.isStoreKafka()) {
+                    producer.store(config.getTopic(Config.Source.Zika), msg, kafkaProducer);
+                }
                 //if is not to store in file only, geo tag and send to database
-                if (!config.getIsFileOnly()) {
+                if (!config.isFileOnly()) {
                     try {
-                        String adm = TagTweet.tagOneTweet(msg);
+                        String adm = TagTweet.tagOneTweet(msg, true);
                         socketAdapterClient.ingest(adm);
                     } catch (UnknownPlaceException e) {
 
