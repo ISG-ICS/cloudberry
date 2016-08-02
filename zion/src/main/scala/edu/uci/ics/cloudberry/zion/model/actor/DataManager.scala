@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.actor
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, Props}
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLQueryParser, DataSetInfo}
 import edu.uci.ics.cloudberry.zion.model.schema._
@@ -12,19 +12,18 @@ class DataManager(val conn: IDataConn)
 
   import DataManager._
 
-  def answerQuery(query: Query, ref: ActorRef): Unit = {
-    context.child(query.dataset).getOrElse {
-      val schema: Schema = ???
-      context.actorOf(Props(classOf[DataSetActor], schema, new AQLQueryParser, conn, ec), query.dataset)
-    } forward query
-  }
+  type MutableMap[String, DataSetInfo] = scala.collection.mutable.Map[String, DataSetInfo]
+
+  val aqlQueryParser = new AQLQueryParser
+  val metaData: scala.collection.mutable.Map[String, DataSetInfo] = ???
+  val viewRelation: scala.collection.mutable.Map[String, Seq[String]] = ???
 
   override def receive: Receive = {
     case register: Register => ???
     case deregister: Deregister => ???
-    case query: Query => answerQuery(query, sender())
+    case query: Query => answerQuery(query)
     case append: AppendView => ???
-    case createView: CreateView => ???
+    case create: CreateView => this.createView(create)
     case drop: DropView => ???
     case askInfo: AskInfoMsg => metaData.get(askInfo.who) match {
       case Some(info) => info +: viewRelation(info.name).map(metaData(_))
@@ -32,8 +31,18 @@ class DataManager(val conn: IDataConn)
     }
   }
 
-  val metaData: scala.collection.mutable.Map[String, DataSetInfo] = ???
-  val viewRelation: scala.collection.mutable.Map[String, Seq[String]] = ???
+  private def answerQuery(query: Query): Unit = {
+    context.child(query.dataset).getOrElse {
+      val schema: Schema = metaData(query.dataset).schema
+      context.actorOf(Props(classOf[DataSetActor], schema, new AQLQueryParser, conn, ec), query.dataset)
+    } forward query
+  }
+
+  private def createView(create: CreateView): Unit = {
+    if (metaData.contains(create.dataset)) return
+    val schema = aqlQueryParser.calcResultSchema(create.query, metaData(create.dataset).schema)
+    ???
+  }
 }
 
 object DataManager {

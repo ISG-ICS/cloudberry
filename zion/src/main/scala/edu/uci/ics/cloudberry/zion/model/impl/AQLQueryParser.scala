@@ -10,9 +10,28 @@ class AQLQueryParser extends IQueryParser {
   override def parse(query: IQuery, schema: Schema): String = {
     query match {
       case q: Query => parseQuery(q, schema)
+      case q: CreateView => parseCreate(q, schema)
       case q: AppendView => ???
       case q: DropView => ???
     }
+  }
+
+  //TODO combine with parseQuery
+  def calcResultSchema(query: Query, schema: Schema): Schema = {
+    if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
+      schema.copy()
+    } else {
+      //TODO
+      ???
+    }
+  }
+
+  def parseCreate(create: CreateView, schema: Schema): String = {
+    // generate schema
+    // create data type by schema
+    // drop statement
+    // insert into
+    ???
   }
 
   def parseQuery(query: Query, schema: Schema): String = {
