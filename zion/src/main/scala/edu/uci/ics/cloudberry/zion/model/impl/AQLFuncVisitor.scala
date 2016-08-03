@@ -176,7 +176,7 @@ object AQLFuncVisitor {
           //TODO remove this data type
           val hierarchyField = field.asInstanceOf[HierarchyField]
           hierarchyField.levels.find(_._1 == level.levelTag) match {
-            case Some(name) => (hierarchyField.innerType, s"$aqlExpr.$name")
+            case Some(name) => (hierarchyField.innerType, s"$aqlExpr.${name._2}")
             case None => throw new QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}")
           }
         case GeoCellTenth => ???
