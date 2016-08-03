@@ -9,7 +9,9 @@ class AQLQueryParser extends IQueryParser {
 
   override def parse(query: IQuery, schema: Schema): String = {
     query match {
-      case q: Query => parseQuery(q, schema)
+      case q: Query =>
+        validateQuery(q)
+        parseQuery(q, schema)
       case q: CreateView => parseCreate(q, schema)
       case q: AppendView => ???
       case q: DropView => ???
@@ -35,8 +37,6 @@ class AQLQueryParser extends IQueryParser {
   }
 
   def parseQuery(query: Query, schema: Schema): String = {
-
-    validateQuery(query)
 
     val sourceVar = "$t"
     val dataset = s"for $sourceVar in dataset ${query.dataset}"

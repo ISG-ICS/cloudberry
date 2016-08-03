@@ -1,26 +1,50 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
+import java.security.MessageDigest
+
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.Interval
 
 class QueryOptimizer {
 
+  import QueryOptimizer._
+
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[Query] = {
 
-    val applicableViews = filterViews(query.filter, views)
+    val applicableViews = filterViews(query.filter, source, views)
     val matchedViews = filterView(query.groups, applicableViews)
     //TODO currently only get the best one
     val bestView = selectBestView(matchedViews)
     splitQuery(query, source, bestView)
   }
 
-  def suggestNewView(query: Query, views: Seq[DataSetInfo]): Seq[CreateView] = ???
+  def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
+    //TODO currently only suggest the keyword subset views
+    if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {
+      Seq.empty[CreateView]
+    } else {
+      val keywordFilters = query.filter.filter(f => source.schema.fieldMap(f.fieldName).dataType == DataType.Text)
+      keywordFilters.flatMap { kwFilter =>
+        kwFilter.values.map { wordAny =>
+          val word = wordAny.asInstanceOf[String]
+          val wordFilter = FilterStatement(kwFilter.fieldName, None, Relation.contains, Seq(word))
+          val wordQuery = Query(query.dataset, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
+          CreateView(getViewKey(query.dataset, word), wordQuery)
+        }
+      }
+    }
+  }
 
-  private def filterViews(filter: Seq[FilterStatement], views: Seq[DataSetInfo]): Seq[DataSetInfo] = {
+  private def filterViews(filter: Seq[FilterStatement], sourceInfo: DataSetInfo, views: Seq[DataSetInfo]): Seq[DataSetInfo] = {
+
     views.filter { view =>
+      val matchedFilter = filter.filter(f => view.createQueryOpt.exists(q => q.filter.exists(_.fieldName == f.fieldName)))
       view.createQueryOpt.exists { viewQuery: Query =>
-        //TODO should remove the time dimension.
-        filter.forall(queryFilter => viewQuery.filter.exists(viewFilter => viewFilter.include(queryFilter)))
+        // time dimension is composable, so skip it
+        matchedFilter.filterNot(_.fieldName == sourceInfo.timeField)
+          .forall(queryFilter => viewQuery.filter.exists { viewFilter =>
+            viewFilter.include(queryFilter, view.schema.fieldMap(queryFilter.fieldName).dataType)
+          })
       }
     }
   }
@@ -50,19 +74,41 @@ class QueryOptimizer {
     bestView match {
       case None => Seq(query)
       case Some(view) =>
-        val queryInterval = query.getTimeInterval
+        val queryInterval = query.getTimeInterval(source.timeField).getOrElse(source.dataInterval)
         val viewInterval = view.dataInterval
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
         val seqBuilder = Seq.newBuilder[Query]
 
+        //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
         seqBuilder += query.copy(dataset = view.name)
         for (interval <- unCovered) {
-          seqBuilder += query.replaceInterval(interval)
+          seqBuilder += query.setInterval(source.timeField, interval)
         }
         seqBuilder.result()
     }
   }
 
-  private def getUnCoveredInterval(viewInterval: Interval, queryInterval: Interval): Seq[Interval] = ???
+}
+
+object QueryOptimizer {
+
+  def getUnCoveredInterval(dataInterval: Interval, queryInterval: Interval): Seq[Interval] = {
+    val intersect = dataInterval.overlap(queryInterval)
+    if (intersect == null) {
+      return Seq(queryInterval)
+    }
+    val intervals = scala.collection.mutable.ArrayBuffer.empty[Interval]
+    if (queryInterval.getStartMillis < intersect.getStartMillis) {
+      intervals += new Interval(queryInterval.getStartMillis, intersect.getStartMillis)
+    }
+    if (intersect.getEndMillis < queryInterval.getEndMillis) {
+      intervals += new Interval(intersect.getEndMillis, queryInterval.getEndMillis)
+    }
+    intervals
+  }
+
+  def getViewKey(sourceName: String, keyword: String): String = {
+    sourceName + "_" + MessageDigest.getInstance("MD5").digest(keyword.getBytes("UTF-8")).map("%02x" format _).mkString
+  }
 }

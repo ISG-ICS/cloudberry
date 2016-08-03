@@ -64,7 +64,7 @@ case class BagField(override val name: String,
   */
 case class HierarchyField(override val name: String,
                           override val innerType: DataType,
-                          val levels: Map[String, String]
+                          levels: Seq[(String, String)]
                          ) extends NestedField(name, DataType.Hierarchy, innerType) {
 }
 

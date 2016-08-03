@@ -32,7 +32,7 @@ class Client(dataManager: ActorRef, optimizer: QueryOptimizer)
 
           fResponse.map(curSender ! mergeResponse(_))
 
-          val newViews = optimizer.suggestNewView(query, infos.tail)
+          val newViews = optimizer.suggestNewView(query, infos.head, infos.tail)
           newViews.foreach(dataManager ! _)
       }
     case _ =>

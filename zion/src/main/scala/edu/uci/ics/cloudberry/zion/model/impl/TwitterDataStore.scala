@@ -18,7 +18,7 @@ object TwitterDataStore {
                                            NumberField("geo_tag.countyID"),
                                            NumberField("geo_tag.cityID"),
                                            HierarchyField("geo", DataType.Number,
-                                                          Map(
+                                                          Seq(
                                                             "state" -> "geo_tag.stateID",
                                                             "county" -> "geo_tag.countyID",
                                                             "city" -> "geo_tag.cityID"
