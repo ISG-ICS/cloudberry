@@ -45,6 +45,7 @@ case class Query(dataset: String,
     //unfiltered field can be covered anyway
     //TODO think another way: just using compare the output schema!!!
     //still need the filter, but won't need to consider the group/select/lookup
+    //TODO read paper http://www.vldb.org/conf/1996/P318.PDF
     import Query._
 
     if (!isSubsetFilter(this.filter, another.filter)) {
@@ -62,7 +63,7 @@ case class Query(dataset: String,
       case Some(group) => this.groups.forall(_.finerThan(group))
     }
 
-    isGroupMatch && this.unnest.isEmpty && this.select.isEmpty
+    isGroupMatch && this.unnest.isEmpty && another.unnest.isEmpty && this.select.isEmpty
   }
 
 }

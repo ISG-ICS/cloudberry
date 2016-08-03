@@ -5,13 +5,13 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.actor.DataManager.AskInfoMsg
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryResponse
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryOptimizer}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner$}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Client(dataManager: ActorRef, optimizer: QueryOptimizer)
+class Client(dataManager: ActorRef, optimizer: QueryPlanner)
             (implicit val askTimeOut: Timeout, implicit val ec: ExecutionContext) extends Actor {
 
   import Client._

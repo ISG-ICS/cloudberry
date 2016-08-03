@@ -5,9 +5,9 @@ import java.security.MessageDigest
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.Interval
 
-class QueryOptimizer {
+class QueryPlanner {
 
-  import QueryOptimizer._
+  import QueryPlanner._
 
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[Query] = {
 
@@ -91,7 +91,7 @@ class QueryOptimizer {
 
 }
 
-object QueryOptimizer {
+object QueryPlanner {
 
   def getUnCoveredInterval(dataInterval: Interval, queryInterval: Interval): Seq[Interval] = {
     val intersect = dataInterval.overlap(queryInterval)
