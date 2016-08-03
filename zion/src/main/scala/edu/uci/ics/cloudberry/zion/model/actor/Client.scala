@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.actor.DataManager.AskInfoMsg
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryResponse
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner$}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json.{JsArray, JsValue}
 

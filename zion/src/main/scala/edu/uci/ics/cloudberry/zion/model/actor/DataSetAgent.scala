@@ -7,7 +7,7 @@ import play.api.libs.ws.WSResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DataSetActor(val schema: Schema, val queryParser: IQueryParser, val conn: IDataConn)
+class DataSetAgent(val schema: Schema, val queryParser: IQueryParser, val conn: IDataConn)
                   (implicit ec: ExecutionContext)
   extends Actor with ActorLogging {
 

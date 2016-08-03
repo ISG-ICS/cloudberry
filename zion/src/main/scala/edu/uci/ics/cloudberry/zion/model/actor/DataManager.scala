@@ -34,7 +34,7 @@ class DataManager(val conn: IDataConn)
   private def answerQuery(query: Query): Unit = {
     context.child(query.dataset).getOrElse {
       val schema: Schema = metaData(query.dataset).schema
-      context.actorOf(Props(classOf[DataSetActor], schema, new AQLQueryParser, conn, ec), query.dataset)
+      context.actorOf(Props(classOf[DataSetAgent], schema, new AQLQueryParser, conn, ec), query.dataset)
     } forward query
   }
 
