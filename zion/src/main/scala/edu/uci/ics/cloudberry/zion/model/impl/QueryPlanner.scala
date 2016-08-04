@@ -11,8 +11,7 @@ class QueryPlanner {
 
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[Query] = {
 
-    val applicableViews = filterViews(query.filter, source, views)
-    val matchedViews = filterView(query.groups, applicableViews)
+    val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
     //TODO currently only get the best one
     val bestView = selectBestView(matchedViews)
     splitQuery(query, source, bestView)
@@ -32,32 +31,6 @@ class QueryPlanner {
           CreateView(getViewKey(query.dataset, word), wordQuery)
         }
       }
-    }
-  }
-
-  private def filterViews(filter: Seq[FilterStatement], sourceInfo: DataSetInfo, views: Seq[DataSetInfo]): Seq[DataSetInfo] = {
-
-    views.filter { view =>
-      val matchedFilter = filter.filter(f => view.createQueryOpt.exists(q => q.filter.exists(_.fieldName == f.fieldName)))
-      view.createQueryOpt.exists { viewQuery: Query =>
-        // time dimension is composable, so skip it
-        matchedFilter.filterNot(_.fieldName == sourceInfo.timeField)
-          .forall(queryFilter => viewQuery.filter.exists { viewFilter =>
-            viewFilter.include(queryFilter, view.schema.fieldMap(queryFilter.fieldName).dataType)
-          })
-      }
-    }
-  }
-
-  private def filterView(groups: Option[GroupStatement], views: Seq[DataSetInfo]): Seq[DataSetInfo] = {
-    groups match {
-      case None => views.filter(_.createQueryOpt.exists(_.groups.isEmpty))
-      case Some(group) =>
-        views.filter { view =>
-          view.createQueryOpt.exists { viewQuery: Query =>
-            viewQuery.groups.forall(_.finerThan(group))
-          }
-        }
     }
   }
 

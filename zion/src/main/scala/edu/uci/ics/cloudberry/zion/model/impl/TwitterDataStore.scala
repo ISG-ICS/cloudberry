@@ -3,10 +3,11 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 object TwitterDataStore {
-  val Name = "twitter.ds_tweet"
-  val TwitterSchema: Schema = new Schema(Name,
+  val DatasetName = "twitter.ds_tweet"
+  val TimeFieldName = "create_at"
+  val TwitterSchema: Schema = new Schema(DatasetName,
                                          Seq(
-                                           TimeField("create_at"),
+                                           TimeField(TimeFieldName),
                                            NumberField("id"),
                                            PointField("coordinate"),
                                            StringField("lang"),

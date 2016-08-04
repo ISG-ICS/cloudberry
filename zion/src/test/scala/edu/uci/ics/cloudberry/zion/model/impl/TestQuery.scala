@@ -3,8 +3,9 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.Json
 
-trait TestQuery {
+object TestQuery {
 
+  val TwitterDataSet = TwitterDataStore.DatasetName
   val schema = TwitterDataStore.TwitterSchema
   val startTime = "2016-01-01T00:00:00Z"
   val endTime = "2016-12-01T00:00:00Z"
@@ -12,6 +13,8 @@ trait TestQuery {
   val textValue = Seq("zika", "virus")
   val stateValue = Seq(37, 51, 24, 11, 10, 34, 42, 9, 44)
   val timeFilter = FilterStatement("create_at", None, Relation.inRange, Seq(startTime, endTime))
+  val zikaFilter = FilterStatement("text", None, Relation.contains, Seq("zika"))
+  val virusFilter = FilterStatement("text", None, Relation.contains, Seq("virus"))
   val textFilter = FilterStatement("text", None, Relation.contains, textValue)
   val stateFilter = FilterStatement("geo_tag.stateID", None, Relation.in, stateValue)
   val retweetFilter = FilterStatement("is_retweet", None, Relation.isTrue, Seq.empty)

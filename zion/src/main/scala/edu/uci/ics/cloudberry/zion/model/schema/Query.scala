@@ -14,11 +14,11 @@ object IQuery {
 }
 
 case class Query(dataset: String,
-                 lookup: Seq[LookupStatement],
-                 filter: Seq[FilterStatement],
-                 unnest: Seq[UnnestStatement],
-                 groups: Option[GroupStatement],
-                 select: Option[SelectStatement]
+                 lookup: Seq[LookupStatement] = Seq.empty,
+                 filter: Seq[FilterStatement] = Seq.empty,
+                 unnest: Seq[UnnestStatement] = Seq.empty,
+                 groups: Option[GroupStatement] = None,
+                 select: Option[SelectStatement] = None
                 ) extends IQuery {
 
   import IQuery.TimeFormat
