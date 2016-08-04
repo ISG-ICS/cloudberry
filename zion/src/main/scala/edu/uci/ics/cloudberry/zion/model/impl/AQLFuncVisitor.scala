@@ -3,7 +3,6 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryParsingException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.format.DateTimeFormat
 
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
