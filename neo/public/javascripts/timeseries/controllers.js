@@ -2,7 +2,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
   .controller('TimeSeriesCtrl', function ($scope, $window, Asterix) {
     $scope.result = {};
     $scope.resultArray = [];
-    $scope.first = true;
     $scope.d3 = $window.d3;
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
@@ -23,7 +22,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       },
 
       function(newResult) {
-        if(Asterix.queryType != 'time') {
+        if(newResult && Asterix.queryType != 'time') {
           $scope.result = newResult;
           $scope.resultArray = $scope.preProcess(newResult);
         }

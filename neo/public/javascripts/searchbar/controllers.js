@@ -3,6 +3,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
         Asterix.parameters.keywords = $scope.keyword.trim().split(/\s+/);
+        // skip the empty query for now.
         Asterix.queryType = 'search';
         Asterix.query(Asterix.parameters, Asterix.queryType);
       } else {

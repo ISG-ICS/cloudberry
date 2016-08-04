@@ -240,7 +240,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
      * @param    [Array]     mapPlotData, an array of coordinate and weight objects
      */
     function drawMap(result) {
-
       var maxWeight = 10;
       var minWeight = 0;
 
@@ -354,18 +353,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       function(newResult) {
         $scope.result = newResult;
-        if (Object.keys($scope.result).length != 0) {                   // <------Will always be 0
+        if (Object.keys($scope.result).length != 0) {
           $scope.status.init = false;
           drawMap($scope.result);
         }
         else {
-          $scope.init;
           drawMap($scope.result);
-          /*
-          alert('empty');
-          $scope.status.init = true;
-          $scope.init;
-          */
         }
       }
     );
