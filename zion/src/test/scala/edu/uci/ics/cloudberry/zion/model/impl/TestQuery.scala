@@ -41,6 +41,10 @@ object TestQuery {
 
   val aggrCount = AggregateStatement("*", Count, "count")
   val aggrMax = AggregateStatement("id", Max, "max")
+  val aggrMin = AggregateStatement("id", Min, "min")
+  val aggrSum = AggregateStatement("id", Sum, "sum")
+  val aggrAvg = AggregateStatement("id", Avg, "avg")
+
 
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
   val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
@@ -454,4 +458,5 @@ object TestQuery {
      """.stripMargin)
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
+  def unifyNewLine(string: String): String = string.replaceAll("\\r?\\n", "\n")
 }

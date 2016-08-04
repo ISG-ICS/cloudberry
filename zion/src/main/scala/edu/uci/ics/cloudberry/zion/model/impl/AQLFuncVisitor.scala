@@ -190,29 +190,26 @@ object AQLFuncVisitor {
   def translateAggrFunc(field: Field,
                         func: AggregateFunc,
                         aqlExpr: String
-                       ): (DataType.DataType, String) = {
+                       ): (DataType.DataType, String, String, String) = {
+    val newvar = s"${aqlExpr.split('.')(0)}aggr";
     func match {
       case Count =>
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
-        (DataType.Number, s"count($aqlExpr)")
+        (DataType.Number, s"count($newvar)", newvar, s"let $newvar := $aqlExpr")
       case Max =>
-         if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
-         (field.dataType, s"max($aqlExpr)")
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+        (DataType.Number, s"max($newvar)", newvar, s"let $newvar := $aqlExpr")
       case Min =>
         if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
-        (field.dataType, s"min$aqlExpr)")
-      case topK: TopK =>
-        if (!Seq(DataType.Text,DataType.String, DataType.Bag).contains(field.dataType)) throw new QueryParsingException("Sum requires to aggregate on numbers")
-        (DataType.Record, s"order by $aqlExpr.count desc limit 10 offset 0 return $aqlExpr")
+        (DataType.Number, s"min($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case topK: TopK => ???
       case Avg =>
         if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
-        (DataType.Number, s"avg($aqlExpr)")
+        (DataType.Number, s"avg($newvar)", newvar, s"let $newvar := $aqlExpr")
       case Sum =>
         if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
-        (DataType.Number, s"sum($aqlExpr)")
-      case DistinctCount =>
-        if (!Seq(DataType.Boolean,DataType.String).contains(field.dataType)) throw new QueryParsingException("Sum requires to aggregate on numbers")
-        (DataType.Number, s"($aqlExpr)")
+        (DataType.Number, s"sum($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case DistinctCount => ???
     }
   }
 

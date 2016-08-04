@@ -148,12 +148,14 @@ class AQLQueryParser extends IQueryParser {
     }
 
     //used to append to the AQL `group by`'s `with` clause to expose the required fields
+    val letExpr = mutable.Seq.newBuilder[String]
     val aggrRequiredVar = mutable.Seq.newBuilder[String]
     val aggrNameMap = group.aggregates.map { aggr =>
       varMap.get(aggr.fieldName) match {
         case Some(aqlVar) =>
-          aggrRequiredVar += aqlVar.aqlExpr.split('.')(0)
-          val (dataType, aqlAggExpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr)
+          val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr)
+          aggrRequiredVar += newvar
+          letExpr += newvarexpr
           producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
           s"'${aggr.as}' : $aqlAggExpr"
         case None => throw FieldNotFound(aggr.fieldName)
@@ -162,9 +164,10 @@ class AQLQueryParser extends IQueryParser {
 
     val groups = groupByAQLPair.map(_._1).mkString(", ")
     val retGroups = groupByAQLPair.map(_._2)
-    //val letsttmt = s"let ${aggrRequiredVar.result()} := ${group.aggregates.head.fieldName}"
+
     val aql =
       s"""
+         |${letExpr.result().mkString(",")}
          |group by $groups with ${aggrRequiredVar.result().mkString(",")}
          |return {
          |  ${(retGroups ++ aggrNameMap).mkString(",")}
