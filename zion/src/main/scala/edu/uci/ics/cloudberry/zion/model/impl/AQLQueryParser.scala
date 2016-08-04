@@ -7,11 +7,36 @@ import scala.collection.mutable
 
 class AQLQueryParser extends IQueryParser {
 
-  case class AQLVar(val field: Field, val aqlExpr: String)
+  override def parse(query: IQuery, schema: Schema): String = {
+    query match {
+      case q: Query =>
+        validateQuery(q)
+        parseQuery(q, schema)
+      case q: CreateView => parseCreate(q, schema)
+      case q: AppendView => ???
+      case q: DropView => ???
+    }
+  }
 
-  override def parse(query: Query, schema: Schema): Seq[String] = {
+  //TODO combine with parseQuery
+  def calcResultSchema(query: Query, schema: Schema): Schema = {
+    if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
+      schema.copy()
+    } else {
+      //TODO
+      ???
+    }
+  }
 
-    validateQuery(query)
+  def parseCreate(create: CreateView, schema: Schema): String = {
+    // generate schema
+    // create data type by schema
+    // drop statement
+    // insert into
+    ???
+  }
+
+  def parseQuery(query: Query, schema: Schema): String = {
 
     val sourceVar = "$t"
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
@@ -40,7 +65,7 @@ class AQLQueryParser extends IQueryParser {
     val (selectPrefix, select) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0, varName))
       .getOrElse("", "")
 
-    Seq(Seq(selectPrefix, dataset, lookup, filter, unnest, group, select).mkString("\n"))
+    Seq(selectPrefix, dataset, lookup, filter, unnest, group, select).mkString("\n")
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],
@@ -87,7 +112,7 @@ class AQLQueryParser extends IQueryParser {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val aql = unnest.zipWithIndex.map { case (stat, id) =>
       varMap.get(stat.fieldName) match {
-        case Some(aqlVar) => {
+        case Some(aqlVar) =>
           aqlVar.field match {
             case field: BagField =>
               val newVar = s"$$unnest$id"
@@ -99,7 +124,6 @@ class AQLQueryParser extends IQueryParser {
                  |""".stripMargin
             case _ => throw new QueryParsingException("unnest can only apply on Bag type")
           }
-        }
         case None => throw FieldNotFound(stat.fieldName)
       }
     }.mkString("\n")
@@ -113,13 +137,12 @@ class AQLQueryParser extends IQueryParser {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map { case (by, id) =>
       varMap.get(by.fieldName) match {
-        case Some(aqlVar) => {
+        case Some(aqlVar) =>
           val key = by.as.getOrElse(aqlVar.field.name)
           val varKey = s"$$g$id"
           val (dataType, aqlGrpFunc) = AQLFuncVisitor.translateGroupFunc(aqlVar.field, by.funcOpt, aqlVar.aqlExpr)
           producedVar += key -> AQLVar(new Field(key, dataType), s"$varGroupSource.$key")
-          (s"$varKey := ${aqlGrpFunc}", s" '$key' : $varKey")
-        }
+          (s"$varKey := $aqlGrpFunc", s" '$key' : $varKey")
         case None => throw FieldNotFound(by.fieldName)
       }
     }
@@ -128,12 +151,11 @@ class AQLQueryParser extends IQueryParser {
     val aggrRequiredVar = mutable.Seq.newBuilder[String]
     val aggrNameMap = group.aggregates.map { aggr =>
       varMap.get(aggr.fieldName) match {
-        case Some(aqlVar) => {
+        case Some(aqlVar) =>
           aggrRequiredVar += aqlVar.aqlExpr.split('.')(0)
           val (dataType, aqlAggExpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr)
           producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
           s"'${aggr.as}' : $aqlAggExpr"
-        }
         case None => throw FieldNotFound(aggr.fieldName)
       }
     }
@@ -157,7 +179,7 @@ class AQLQueryParser extends IQueryParser {
                           sourceVar: String = "$g"
                          ): (String, String) = {
 
-    val (prefix, wrap) = if (isInGroup) (s"for ${sourceVar} in (", ")") else ("", "")
+    val (prefix, wrap) = if (isInGroup) (s"for $sourceVar in (", ")") else ("", "")
     //sampling only
     val orders = select.orderOn.map { fieldNameWithOrder =>
       val order = if (fieldNameWithOrder.startsWith("-")) "desc" else ""
@@ -167,7 +189,7 @@ class AQLQueryParser extends IQueryParser {
         case None => throw FieldNotFound(fieldName)
       }
     }
-    val ordersAQL = if (orders.size > 0) orders.mkString("order by ", ",", "") else ""
+    val ordersAQL = if (orders.nonEmpty) orders.mkString("order by ", ",", "") else ""
 
     val rets = select.fields.map { fieldName =>
       varMap.get(fieldName) match {
@@ -175,7 +197,7 @@ class AQLQueryParser extends IQueryParser {
         case None => throw FieldNotFound(fieldName)
       }
     }
-    val retAQL = if (rets.size > 0) rets.mkString("{", ",", "}") else sourceVar
+    val retAQL = if (rets.nonEmpty) rets.mkString("{", ",", "}") else sourceVar
 
     val aql =
       s"""
@@ -192,5 +214,7 @@ class AQLQueryParser extends IQueryParser {
   private def validateQuery(query: Query): Unit = {
     requireOrThrow(query.select.isDefined || query.groups.isDefined, "either group or select statement is required")
   }
+
+  case class AQLVar(field: Field, aqlExpr: String)
 
 }

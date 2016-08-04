@@ -64,7 +64,7 @@ case class BagField(override val name: String,
   */
 case class HierarchyField(override val name: String,
                           override val innerType: DataType,
-                          val levels: Map[String, String]
+                          levels: Seq[(String, String)]
                          ) extends NestedField(name, DataType.Hierarchy, innerType) {
 }
 
@@ -87,7 +87,7 @@ trait Measurement {
 
 //TODO when UI get the schema, it should know which is dimension/measure, functions that can apply onto it, etc.
 // so that it won't ask for a inapplicable function such that get the max to a string field
-final class Schema(val dataset: String, val dimension: Seq[Field], val measurement: Seq[Field]) {
+case class Schema(typeName: String, dimension: Seq[Field], measurement: Seq[Field]) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap

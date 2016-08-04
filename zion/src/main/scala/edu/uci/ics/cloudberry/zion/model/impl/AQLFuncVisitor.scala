@@ -9,8 +9,6 @@ import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object AQLFuncVisitor {
 
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-
   //TODO possibly using /*+ skip-index */ hint if the relation selectivity is not high enough
   def translateRelation(field: Field,
                         funcOpt: Option[TransformFunc],
@@ -19,7 +17,7 @@ object AQLFuncVisitor {
                         values: Seq[Any]
                        ): String = {
     //TODO add the function handling logic
-    if (!Schema.Type2Relations.get(field.dataType).get.contains(relation)) {
+    if (!Schema.Type2Relations(field.dataType).contains(relation)) {
       throw new QueryParsingException(s"field ${field.name} of type ${field.dataType} can not apply to relation: ${relation}")
     }
     field.dataType match {
@@ -51,23 +49,18 @@ object AQLFuncVisitor {
                                       relation: Relation,
                                       values: Seq[AnyVal]): String = {
     relation match {
-      case Relation.inRange => {
-        if (values.size != 2) throw new QueryParsingException(s"relation: ${relation} require two parameters")
-        return s"$aqlExpr >= ${values(0)} and $aqlExpr < ${values(1)}"
-      }
-      case Relation.in => {
+      case Relation.inRange =>
+        if (values.size != 2) throw new QueryParsingException(s"relation: $relation require two parameters")
+        s"$aqlExpr >= ${values(0)} and $aqlExpr < ${values(1)}"
+      case Relation.in =>
         val setVar = s"$$set${field.name.replace('.', '_')}"
-        val ret =
-          s"""|true
-              |for $setVar in [ ${values.mkString(",")} ]
-              |where $aqlExpr = $setVar
-              |""".stripMargin
-        return ret
-      }
-      case _ => {
-        if (values.size != 1) throw new QueryParsingException(s"relation: ${relation} require one parameter")
-        return s"$aqlExpr $relation ${values.head}"
-      }
+        s"""|true
+            |for $setVar in [ ${values.mkString(",")} ]
+            |where $aqlExpr = $setVar
+            |""".stripMargin
+      case _ =>
+        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
+        s"$aqlExpr $relation ${values.head}"
     }
   }
 
@@ -78,12 +71,12 @@ object AQLFuncVisitor {
                                     values: Seq[String]): String = {
     relation match {
       case Relation.inRange => {
-        if (values.size != 2) throw new QueryParsingException(s"relation: ${relation} require two parameters")
+        if (values.size != 2) throw new QueryParsingException(s"relation: $relation require two parameters")
         return s"$aqlExpr >= datetime('${values(0)}') " +
           s"and $aqlExpr < datetime('${values(1)}')"
       }
       case _ => {
-        if (values.size != 1) throw new QueryParsingException(s"relation: ${relation} require one parameter")
+        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
         s"$aqlExpr $relation datetime('${values.head}')"
       }
     }
@@ -120,7 +113,7 @@ object AQLFuncVisitor {
 
   private def validateNumberValue(relation: Relation, values: Seq[Any]): Unit = {
     if (!values.forall(isAnyNumber)) {
-      throw new QueryParsingException(s"values contain non compatible data type for relation: ${relation}")
+      throw new QueryParsingException(s"values contain non compatible data type for relation: $relation")
     }
   }
 
@@ -135,7 +128,7 @@ object AQLFuncVisitor {
         throw new IllegalArgumentException
       }
       // This parseDateTime will throw an exception if the format is invalid
-      values.foreach(t => TimeFormat.parseDateTime(t.asInstanceOf[String]))
+      values.foreach(t => IQuery.TimeFormat.parseDateTime(t.asInstanceOf[String]))
     } catch {
       case ex: IllegalArgumentException => throw new QueryParsingException("invalid time format")
     }
@@ -182,8 +175,8 @@ object AQLFuncVisitor {
           //The `aqlExpr` for Hierarchy type only has the $t part
           //TODO remove this data type
           val hierarchyField = field.asInstanceOf[HierarchyField]
-          hierarchyField.levels.get(level.levelTag) match {
-            case Some(name) => (hierarchyField.innerType, s"$aqlExpr.$name")
+          hierarchyField.levels.find(_._1 == level.levelTag) match {
+            case Some(name) => (hierarchyField.innerType, s"$aqlExpr.${name._2}")
             case None => throw new QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}")
           }
         case GeoCellTenth => ???
@@ -199,10 +192,9 @@ object AQLFuncVisitor {
                         aqlExpr: String
                        ): (DataType.DataType, String) = {
     func match {
-      case Count => {
+      case Count =>
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
         (DataType.Number, s"count($aqlExpr)")
-      }
       case Max => ???
       case Min => ???
       case topK: TopK => ???
