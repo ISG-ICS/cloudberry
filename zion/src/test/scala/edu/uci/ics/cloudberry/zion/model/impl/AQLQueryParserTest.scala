@@ -134,6 +134,22 @@ class AQLQueryParserTest extends Specification {
     "translate a lookup query" in {
       ok
     }
+/*
+    "translate a simple filter by time and group by time query" in {
+      val filter = Seq(timeFilter)
+      val group = GroupStatement(Seq(byHour), Seq(aggrMax))
+      val query = new Query(schema.dataset, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema).head
+      removeEmptyLine(result) must_==
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $t
+          |return {
+          |   'hour' : $g0,'max' : max($t.'id')
+          |}
+          | """.stripMargin.trim
+    }*/
   }
 
 }

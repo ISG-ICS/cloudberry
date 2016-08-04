@@ -40,6 +40,7 @@ object TestQuery {
   val byUser = ByStatement("user.id", None, None)
 
   val aggrCount = AggregateStatement("*", Count, "count")
+  val aggrMax = AggregateStatement("id", Max, "max")
 
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
   val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)

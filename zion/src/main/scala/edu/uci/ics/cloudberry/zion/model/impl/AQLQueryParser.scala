@@ -162,7 +162,7 @@ class AQLQueryParser extends IQueryParser {
 
     val groups = groupByAQLPair.map(_._1).mkString(", ")
     val retGroups = groupByAQLPair.map(_._2)
-
+    //val letsttmt = s"let ${aggrRequiredVar.result()} := ${group.aggregates.head.fieldName}"
     val aql =
       s"""
          |group by $groups with ${aggrRequiredVar.result().mkString(",")}

@@ -195,12 +195,24 @@ object AQLFuncVisitor {
       case Count =>
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
         (DataType.Number, s"count($aqlExpr)")
-      case Max => ???
-      case Min => ???
-      case topK: TopK => ???
-      case Avg => ???
-      case Sum => ???
-      case DistinctCount => ???
+      case Max =>
+         if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+         (field.dataType, s"max($aqlExpr)")
+      case Min =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
+        (field.dataType, s"min$aqlExpr)")
+      case topK: TopK =>
+        if (!Seq(DataType.Text,DataType.String, DataType.Bag).contains(field.dataType)) throw new QueryParsingException("Sum requires to aggregate on numbers")
+        (DataType.Record, s"order by $aqlExpr.count desc limit 10 offset 0 return $aqlExpr")
+      case Avg =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
+        (DataType.Number, s"avg($aqlExpr)")
+      case Sum =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
+        (DataType.Number, s"sum($aqlExpr)")
+      case DistinctCount =>
+        if (!Seq(DataType.Boolean,DataType.String).contains(field.dataType)) throw new QueryParsingException("Sum requires to aggregate on numbers")
+        (DataType.Number, s"($aqlExpr)")
     }
   }
 
