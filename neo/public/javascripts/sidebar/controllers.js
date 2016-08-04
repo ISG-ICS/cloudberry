@@ -41,7 +41,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       },
       function(newResult) {
         $scope.results = newResult;
-        if($scope.results && Object.keys($scope.results).length != 0)
+        if($scope.results)
           drawTweets($scope.results);
       }
     );

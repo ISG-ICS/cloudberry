@@ -44,8 +44,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         link: function ($scope, $element, $attrs) {
           var chart = d3.select($element[0]);
           $scope.$watch('resultArray', function (newVal, oldVal) {
-            if(newVal.length == 0)
-              return;
+
+            if(oldVal.length == 0)
+            {
+                if(newVal.length == 0)
+                  return;
+            }
 
             chart.selectAll('*').remove();
 
