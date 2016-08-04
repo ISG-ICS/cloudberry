@@ -1,16 +1,16 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.zion.model.schema.{Query, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema.{IQuery, Query, Schema}
 
 trait IQueryParser {
   /**
-    * Parser the Query to string statements. One query may produce multiple statements.
+    * Parser the Query to string statements.
     *
     * @param query
     * @param schema
     * @return
     */
-  def parse(query: Query, schema: Schema): Seq[String]
+  def parse(query: IQuery, schema: Schema): String
 
   protected def requireOrThrow(condition: Boolean, msg: String): Unit = {
     if (!condition) throw new QueryParsingException(msg)

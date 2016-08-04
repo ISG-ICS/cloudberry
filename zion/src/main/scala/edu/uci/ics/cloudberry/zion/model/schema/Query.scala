@@ -1,16 +1,86 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
+import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
+import org.joda.time.format.DateTimeFormat
 
-case class Query(val dataset: String,
-                 val lookup: Seq[LookupStatement],
-                 val filter: Seq[FilterStatement],
-                 val unnest: Seq[UnnestStatement],
-                 val groups: Option[GroupStatement],
-                 val select: Option[SelectStatement]
-                ) extends Statement {
+trait IQuery {
+  def dataset: String
 }
+
+object IQuery {
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+}
+
+case class Query(dataset: String,
+                 lookup: Seq[LookupStatement] = Seq.empty,
+                 filter: Seq[FilterStatement] = Seq.empty,
+                 unnest: Seq[UnnestStatement] = Seq.empty,
+                 groups: Option[GroupStatement] = None,
+                 select: Option[SelectStatement] = None
+                ) extends IQuery {
+
+  import IQuery.TimeFormat
+
+  def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
+    //TODO support filter query that contains multiple relation on that same field
+    val timeFilter = FilterStatement(fieldName, None, Relation.inRange,
+                                     Seq(TimeFormat.print(interval.getStartMillis),
+                                         TimeFormat.print(interval.getEndMillis)))
+    this.copy(filter = timeFilter +: this.filter.filterNot(_.fieldName == fieldName))
+  }
+
+  def getTimeInterval(fieldName: String): Option[org.joda.time.Interval] = {
+    //TODO support > < etc.
+    //TODO support multiple time condition
+    filter.find(f => f.fieldName == fieldName && f.relation == Relation.inRange).map { stat =>
+      require(stat.values.size == 2)
+      val toTime = stat.values.map(v => TimeFormat.parseDateTime(v.asInstanceOf[String]))
+      new org.joda.time.Interval(toTime(0), toTime(1))
+    }
+  }
+
+  def canSolve(another: Query, schema: Schema): Boolean = {
+    //unfiltered field can be covered anyway
+    //TODO think another way: just using compare the output schema!!!
+    //still need the filter, but won't need to consider the group/select/lookup
+    //TODO read paper http://www.vldb.org/conf/1996/P318.PDF
+    import Query._
+
+    if (!isSubsetFilter(this.filter, another.filter)) {
+      return false
+    }
+
+    val isFilterMatch = this.filter.forall(f => another.filter.filter(_.fieldName == f.fieldName)
+      .exists(anotherF => f.include(anotherF, schema.fieldMap(f.fieldName).dataType)))
+    if (!isFilterMatch) {
+      return false
+    }
+
+    val isGroupMatch = another.groups match {
+      case None => this.groups.isEmpty
+      case Some(group) => this.groups.forall(_.finerThan(group))
+    }
+
+    isGroupMatch && this.unnest.isEmpty && another.unnest.isEmpty && this.select.isEmpty
+  }
+
+}
+
+object Query {
+
+  def isSubsetFilter(thisFilter: Seq[FilterStatement], thatFilter: Seq[FilterStatement]): Boolean = {
+    thisFilter.forall(f => thatFilter.exists(_.fieldName == f.fieldName))
+  }
+}
+
+
+case class CreateView(dataset: String, query: Query) extends IQuery
+
+case class AppendView(dataset: String, interval: org.joda.time.Interval, query: Query) extends IQuery
+
+case class DropView(dataset: String) extends IQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
@@ -27,57 +97,77 @@ trait Statement {
   * @param selectValues
   * @param as
   */
-case class LookupStatement(val sourceKeys: Seq[String],
-                           val dataset: String,
-                           val lookupKeys: Seq[String],
-                           val selectValues: Seq[String],
-                           val as: Seq[String]
+case class LookupStatement(sourceKeys: Seq[String],
+                           dataset: String,
+                           lookupKeys: Seq[String],
+                           selectValues: Seq[String],
+                           as: Seq[String]
                           ) extends Statement {
   //TODO to be replaced by a unified syntax exceptions
   requireOrThrow(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
   requireOrThrow(selectValues.length == as.length, "LookupStatement: select value names doesn't match with renamed names")
 }
 
-//TODO only support one transform for now
-case class FilterStatement(val fieldName: String,
-                           val funcOpt: Option[TransformFunc],
-                           val relation: Relation,
-                           val values: Seq[Any]
-                          ) extends Statement
+//TODO only support at most one transform for now
+case class FilterStatement(fieldName: String,
+                           funcOpt: Option[TransformFunc],
+                           relation: Relation,
+                           values: Seq[Any]
+                          ) extends Statement {
+  def include(another: FilterStatement, dataType: DataType): Boolean = {
+    if (fieldName != another.fieldName) {
+      false
+    } else {
+      dataType match {
+        case DataType.Number => ???
+        case DataType.Time => ???
+        case DataType.Point => ???
+        case DataType.Boolean => ???
+        case DataType.String => ???
+        case DataType.Text => relation == another.relation && values.forall(v => another.values.contains(v))
+        case DataType.Bag => ???
+        case DataType.Hierarchy => ???
+        case DataType.Record => ???
+      }
+    }
+  }
+}
 
-case class UnnestStatement(val fieldName: String, val as: String)
+case class UnnestStatement(fieldName: String, as: String)
 
 /**
   * Groupby fieldNames
   *
   * @param fieldName
   * @param funcOpt
-  * @param groups //TODO support the auto group by given size
+  * *@param groups //TODO support the auto group by given size
   */
-case class ByStatement(val fieldName: String,
-                       val funcOpt: Option[GroupFunc],
-                       val as: Option[String]
+case class ByStatement(fieldName: String,
+                       funcOpt: Option[GroupFunc],
+                       as: Option[String]
                       ) extends Statement
 
 /**
   * The aggregate results produced by group by
   */
-case class AggregateStatement(val fieldName: String,
-                              val func: AggregateFunc,
-                              val as: String
+case class AggregateStatement(fieldName: String,
+                              func: AggregateFunc,
+                              as: String
                              ) extends Statement
 
-case class GroupStatement(val bys: Seq[ByStatement],
-                          val aggregates: Seq[AggregateStatement]
+case class GroupStatement(bys: Seq[ByStatement],
+                          aggregates: Seq[AggregateStatement]
                          ) extends Statement {
-  requireOrThrow(bys.size > 0, "Group by statement is required")
-  requireOrThrow(aggregates.size > 0, "Aggregation statement is required")
+  def finerThan(group: GroupStatement): Boolean = ???
+
+  requireOrThrow(bys.nonEmpty, "Group by statement is required")
+  requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
-case class SelectStatement(val orderOn: Seq[String],
-                           val limit: Int,
-                           val offset: Int,
-                           val fields: Seq[String]
+case class SelectStatement(orderOn: Seq[String],
+                           limit: Int,
+                           offset: Int,
+                           fields: Seq[String]
                           ) extends Statement {
 }
 

@@ -9,8 +9,6 @@ import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object AQLFuncVisitor {
 
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-
   //TODO possibly using /*+ skip-index */ hint if the relation selectivity is not high enough
   def translateRelation(field: Field,
                         funcOpt: Option[TransformFunc],
@@ -130,7 +128,7 @@ object AQLFuncVisitor {
         throw new IllegalArgumentException
       }
       // This parseDateTime will throw an exception if the format is invalid
-      values.foreach(t => TimeFormat.parseDateTime(t.asInstanceOf[String]))
+      values.foreach(t => IQuery.TimeFormat.parseDateTime(t.asInstanceOf[String]))
     } catch {
       case ex: IllegalArgumentException => throw new QueryParsingException("invalid time format")
     }
@@ -177,8 +175,8 @@ object AQLFuncVisitor {
           //The `aqlExpr` for Hierarchy type only has the $t part
           //TODO remove this data type
           val hierarchyField = field.asInstanceOf[HierarchyField]
-          hierarchyField.levels.get(level.levelTag) match {
-            case Some(name) => (hierarchyField.innerType, s"$aqlExpr.$name")
+          hierarchyField.levels.find(_._1 == level.levelTag) match {
+            case Some(name) => (hierarchyField.innerType, s"$aqlExpr.${name._2}")
             case None => throw new QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}")
           }
         case GeoCellTenth => ???

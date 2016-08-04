@@ -18,15 +18,15 @@ abstract class ViewActor(val sourceActor: ActorRef, fViewStore: Future[ViewMetaR
 
   def queryTemplate: DBQuery
 
-  def updateInterval: FiniteDuration
+  def updateInterval(): FiniteDuration
 
-  var key: String = null
-  var sourceName: String = null
-  var summaryLevel: SummaryLevel = null
-  var startTime: DateTime = null
-  var updateCycle: Duration = null
-  var lastVisitTime: DateTime = null
-  var lastUpdateTime: DateTime = null
+  var key: String = _
+  var sourceName: String = _
+  var summaryLevel: SummaryLevel = _
+  var startTime: DateTime = _
+  var updateCycle: Duration = _
+  var lastVisitTime: DateTime = _
+  var lastUpdateTime: DateTime = _
   var visitTimes: Int = 0
 
   implicit val sourceAskTimeOut: Timeout = Timeout(config.ViewTimeOut)
@@ -126,8 +126,8 @@ object ViewActor {
     } else {
       // may need update query, but should not need to create query.
       import scala.collection.mutable.ArrayBuffer
-      val futureInterval = new Interval(Math.min(actual.getStartMillis, expected.map(_.getStartMillis).reduceLeft(_ min _)),
-                                        Math.max(actual.getEndMillis, expected.map(_.getEndMillis).reduceLeft(_ max _)))
+      val futureInterval = new Interval(Math.min(actual.getStartMillis, expected.map(_.getStartMillis).min),
+                                        Math.max(actual.getEndMillis, expected.map(_.getEndMillis).max))
       val intervals = ArrayBuffer.empty[Interval]
       if (futureInterval.getStartMillis < actual.getStartMillis) {
         intervals += new Interval(futureInterval.getStartMillis, actual.getStartMillis)
