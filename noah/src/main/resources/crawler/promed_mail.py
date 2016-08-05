@@ -63,12 +63,12 @@ if __name__ == '__main__':
     pagenum = 0
     submit = "next"
     
-    if len(sys.argv) <= 1:
-        sys.exit("Enter the interval in arguments: ")
-        
-    for arg in sys.argv:
-        interval = arg
-        print interval
+    if len(sys.argv) <= 2:
+        sys.exit("Enter the number of days in arguments: ")
+    
+    dirName = sys.argv[1]
+               
+    interval = sys.argv[2]
     
     archNo = set()
     headers = {}
@@ -87,7 +87,6 @@ if __name__ == '__main__':
     end_date = end_date.strftime("%m/%d/%Y")
     start_date = start_date.strftime("%m/%d/%Y")
     filename = "promedsearchresult.html"
-    dirName = "PromedResult"
        
     if not os.path.exists(dirName):
         os.makedirs(dirName)
