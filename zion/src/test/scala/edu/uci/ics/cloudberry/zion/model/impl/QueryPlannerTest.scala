@@ -21,7 +21,6 @@ class QueryPlannerTest extends Specification {
   val sourceStat = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 10000)
   val sourceInfo = DataSetInfo(schema.typeName, None, schema, TwitterDataStore.TimeFieldName, sourceInterval, sourceStat)
 
-  val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
   val zikaHalfInterval = new Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2016, 6, 1, 0, 0))
   val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
   val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, TwitterDataStore.TimeFieldName, zikaHalfInterval, zikaStats)

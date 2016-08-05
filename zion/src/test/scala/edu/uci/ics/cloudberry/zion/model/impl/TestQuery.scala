@@ -18,7 +18,7 @@ object TestQuery {
   val textFilter = FilterStatement("text", None, Relation.contains, textValue)
   val stateFilter = FilterStatement("geo_tag.stateID", None, Relation.in, stateValue)
   val retweetFilter = FilterStatement("is_retweet", None, Relation.isTrue, Seq.empty)
-  val bagFilter = FilterStatement("hashtag", None, Relation.contains, Seq(BagField("tags", DataType.String)))
+  val bagFilter = FilterStatement("hashtag", None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
 
   val intValues = Seq(1, 2, 3)
   val stringValue = Seq("English")
@@ -44,7 +44,7 @@ object TestQuery {
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
   val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
 
-
+  val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
 
   val filterJSON =
     s"""

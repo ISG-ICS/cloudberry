@@ -30,30 +30,38 @@ object Relation extends Enumeration {
   val ~= = Value("~=")
 }
 
-class Field(val name: String, val dataType: DataType) {
+class Field(val name: String, val dataType: DataType, val isOptional: Boolean = false) {
 }
 
-case class NumberField(override val name: String) extends Field(name, DataType.Number)
+case class NumberField(override val name: String, override val isOptional: Boolean = false)
+  extends Field(name, DataType.Number, isOptional)
 
-case class TimeField(override val name: String) extends Field(name, DataType.Time)
+case class TimeField(override val name: String, override val isOptional: Boolean = false)
+  extends Field(name, DataType.Time, isOptional)
 
-case class StringField(override val name: String) extends Field(name, DataType.String)
+case class StringField(override val name: String, override val isOptional: Boolean = false)
+  extends Field(name, DataType.String, isOptional)
 
-case class TextField(override val name: String) extends Field(name, DataType.Text)
+case class TextField(override val name: String, override val isOptional: Boolean = false)
+  extends Field(name, DataType.Text, isOptional)
 
-case class PointField(override val name: String) extends Field(name, DataType.Point)
+case class PointField(override val name: String, override val isOptional: Boolean = false)
+  extends Field(name, DataType.Point, isOptional)
 
-case class BooleanField(override val name: String) extends Field(name, DataType.Boolean)
+case class BooleanField(override val name: String, override val isOptional: Boolean = false)
+  extends Field(name, DataType.Boolean, isOptional)
 
 class NestedField(override val name: String,
                   override val dataType: DataType,
-                  val innerType: DataType
-                 ) extends Field(name, dataType) {
+                  val innerType: DataType,
+                  override val isOptional: Boolean
+                 ) extends Field(name, dataType, isOptional) {
 }
 
 case class BagField(override val name: String,
-                    override val innerType: DataType
-                   ) extends NestedField(name, DataType.Bag, innerType)
+                    override val innerType: DataType,
+                    override val isOptional: Boolean
+                   ) extends NestedField(name, DataType.Bag, innerType, isOptional)
 
 /**
   * Hierarchy field type
@@ -65,10 +73,12 @@ case class BagField(override val name: String,
 case class HierarchyField(override val name: String,
                           override val innerType: DataType,
                           levels: Seq[(String, String)]
-                         ) extends NestedField(name, DataType.Hierarchy, innerType) {
-}
+                         ) extends NestedField(name, DataType.Hierarchy, innerType, false)
 
-case object AllField extends Field("*", DataType.Record)
+case class RecordField(override val name: String, schema: Schema, override val isOptional: Boolean)
+  extends Field(name, DataType.Record, isOptional)
+
+case object AllField extends Field("*", DataType.Record, false)
 
 /**
   * Including "interesting" fields which could be used as group keys.
@@ -87,7 +97,7 @@ trait Measurement {
 
 //TODO when UI get the schema, it should know which is dimension/measure, functions that can apply onto it, etc.
 // so that it won't ask for a inapplicable function such that get the max to a string field
-case class Schema(typeName: String, dimension: Seq[Field], measurement: Seq[Field]) {
+case class Schema(typeName: String, dimension: Seq[Field], measurement: Seq[Field], primaryKey: Seq[String]) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap

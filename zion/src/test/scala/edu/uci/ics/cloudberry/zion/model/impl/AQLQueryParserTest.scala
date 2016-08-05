@@ -9,7 +9,7 @@ class AQLQueryParserTest extends Specification {
 
   val parser = new AQLQueryParser
 
-  "AQLQueryParser" should {
+  "AQLQueryParser parseQuery" should {
     "translate a simple filter by time and group by time query" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
@@ -136,4 +136,39 @@ class AQLQueryParserTest extends Specification {
     }
   }
 
+  "AQLQueryParser createView" should {
+    "write the ddl for the twitter dataset" in {
+      val ddl = parser.parseCreate(CreateView("zika", zikaCreateQuery), TwitterDataStore.TwitterSchema)
+      removeEmptyLine(ddl) must_==
+        """
+          |create type twitter.typeTweet if not exists as closed {
+          |  favorite_count : double,
+          |  geo_tag : {   countyID : double },
+          |  user_mentions : {{double}}?,
+          |  user : {   id : double },
+          |  geo_tag : {   cityID : double },
+          |  is_retweet : boolean,
+          |  text : string,
+          |  retweet_count : double,
+          |  in_reply_to_user : double,
+          |  id : double,
+          |  coordinate : point,
+          |  in_reply_to_status : double,
+          |  user : {   status_count : double },
+          |  geo_tag : {   stateID : double },
+          |  create_at : datetime,
+          |  lang : string,
+          |  hashtags : {{string}}?
+          |}
+          |drop dataset zika if exists;
+          |create dataset zika(twitter.typeTweet) primary key id
+          |insert into dataset zika (
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |return $t
+          |)
+          |
+        """.stripMargin.trim
+    }
+  }
 }
