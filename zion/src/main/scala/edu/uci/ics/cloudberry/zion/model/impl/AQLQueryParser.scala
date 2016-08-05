@@ -97,6 +97,7 @@ class AQLQueryParser extends IQueryParser {
   }
 
   private def parseFilter(filters: Seq[FilterStatement], varMap: Map[String, AQLVar]): String = {
+    if (filters.isEmpty) return ""
     filters.map { filter =>
       varMap.get(filter.fieldName) match {
         case Some(variable) =>

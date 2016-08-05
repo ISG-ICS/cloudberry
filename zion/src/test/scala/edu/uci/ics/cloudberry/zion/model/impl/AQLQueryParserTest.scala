@@ -200,6 +200,113 @@ class AQLQueryParserTest extends Specification {
           | """.stripMargin.trim)
     }
 
+    "translate a text contain filter and group by geocell 10th" in {
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |let $taggr := $t
+          |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.1, 0.1))[0] with $taggr
+          |return {
+          |   'cell' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+
+    "translate a text contain filter and group by geocell 100th" in {
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |let $taggr := $t
+          |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.01, 0.01))[0] with $taggr
+          |return {
+          |   'cell' : $g0,'count' : count($taggr)
+          |}
+          | """.
+          stripMargin.trim)
+    }
+
+    "translate a text contain filter and group by geocell 1000th" in {
+      val
+      filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |let $taggr := $t
+          |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.001, 0.001))[0] with $taggr
+          |return {
+          |   'cell' : $g0,'count' : count($taggr)
+          |}
+          | """.
+          stripMargin.trim)
+    }
+
+    "translate a text contain filter and group by bin" in {
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byBin), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |let $taggr := $t
+          |group by $g0 := round($t.'geo_tag'.'stateID'/10)*10 with $taggr
+          |return {
+          |   'state' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+
+    "translate a group by geocell without filter" in {
+      val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.001, 0.001))[0] with $taggr
+          |return {
+          |   'cell' : $g0,'count' : count($taggr)
+          |}
+          | """.
+          stripMargin.trim)
+    }
+
+    "translate a text contain filter and select 10" in {
+      val filter = Seq(textFilter)
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectTop10))
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |limit 10
+          |offset 0
+          |return
+          |$t
+          | """.stripMargin.trim)
+    }
+
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
@@ -208,5 +315,4 @@ class AQLQueryParserTest extends Specification {
       ok
     }
   }
-
 }

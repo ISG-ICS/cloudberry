@@ -34,10 +34,11 @@ object TestQuery {
   val byTag = ByStatement("tag", None, None)
   val byHour = ByStatement("create_at", Some(Interval(TimeUnit.Hour)), Some("hour"))
   val byState = ByStatement("geo", Some(Level("state")), Some("state"))
-  val byGeocell10 = ByStatement("coordinate", Some(GeoCellTenth), Some("scale"))
-  val byGeocell100 = ByStatement("coordinate", Some(GeoCellHundredth), Some("scale"))
-  val byGeocell1000 = ByStatement("coordinate", Some(GeoCellThousandth), Some("scale"))
+  val byGeocell10 = ByStatement("coordinate", Some(GeoCellTenth), Some("cell"))
+  val byGeocell100 = ByStatement("coordinate", Some(GeoCellHundredth), Some("cell"))
+  val byGeocell1000 = ByStatement("coordinate", Some(GeoCellThousandth), Some("cell"))
   val byUser = ByStatement("user.id", None, None)
+  val byBin = ByStatement("geo_tag.stateID", Some(Bin(10)), Some("state"))
 
   val aggrCount = AggregateStatement("*", Count, "count")
   val aggrMax = AggregateStatement("id", Max, "max")
@@ -48,6 +49,7 @@ object TestQuery {
 
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
   val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
+  val selectTop10 = SelectStatement(Seq.empty, 10, 0, Seq.empty)
 
 
 
@@ -363,7 +365,7 @@ object TestQuery {
       |        "apply": {
       |          "name": "geoCellTenth"
       |        },
-      |        "as": "scale"
+      |        "as": "cell"
       |      }
       |    ],
       |    "aggregate": [
@@ -390,7 +392,7 @@ object TestQuery {
       |        "apply": {
       |          "name": "geoCellHundredth"
       |        },
-      |        "as": "scale"
+      |        "as": "cell"
       |      }
       |    ],
       |    "aggregate": [
@@ -417,7 +419,7 @@ object TestQuery {
       |        "apply": {
       |          "name": "geoCellThousandth"
       |        },
-      |        "as": "scale"
+      |        "as": "cell"
       |      }
       |    ],
       |    "aggregate": [
