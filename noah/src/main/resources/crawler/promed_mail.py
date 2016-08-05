@@ -38,13 +38,8 @@ def getIds(fileName):
 def getEachMail(archNo, headers, directoryName):
     
     url = "http://promedmail.org/ajax/getPost.php?alert_id="
-    directoryName = 'PromedResult'
     
-    if not os.path.exists(directoryName):
-        os.makedirs(directoryName)
-        completePath = os.path.abspath(directoryName)
-    else:
-        completePath = os.path.abspath(directoryName)
+    completePath = os.path.abspath(directoryName)
         
     for id in archNo:
         fname = id +'.html'
@@ -59,12 +54,11 @@ def getEachMail(archNo, headers, directoryName):
             pass         
 
 if __name__ == '__main__':
-    global pageNum
     pagenum = 0
     submit = "next"
     
-    if len(sys.argv) <= 2:
-        sys.exit("Enter the number of days in arguments: ")
+    if len(sys.argv) < 2:
+        sys.exit("Enter the directory name and number of days in arguments: \n Example: python promed_mail.py PromedResult 365")
     
     dirName = sys.argv[1]
                
@@ -90,9 +84,7 @@ if __name__ == '__main__':
        
     if not os.path.exists(dirName):
         os.makedirs(dirName)
-        completePath = os.path.abspath(dirName)
-    else:
-        completePath = os.path.abspath(dirName)
+    completePath = os.path.abspath(dirName)
         
     completeName = os.path.join(completePath, filename)
     
