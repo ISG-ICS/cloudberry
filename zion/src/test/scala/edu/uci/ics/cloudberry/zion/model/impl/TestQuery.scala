@@ -32,7 +32,13 @@ object TestQuery {
 
   val unnestHashTag = UnnestStatement("hashtags", "tag")
   val byTag = ByStatement("tag", None, None)
+  val bySecond = ByStatement("create_at", Some(Interval(TimeUnit.Second)), Some("sec"))
+  val byMinute = ByStatement("create_at", Some(Interval(TimeUnit.Minute)), Some("min"))
   val byHour = ByStatement("create_at", Some(Interval(TimeUnit.Hour)), Some("hour"))
+  val byDay = ByStatement("create_at", Some(Interval(TimeUnit.Day)), Some("day"))
+  val byWeek = ByStatement("create_at", Some(Interval(TimeUnit.Week)), Some("week"))
+  val byMonth = ByStatement("create_at", Some(Interval(TimeUnit.Month)), Some("month"))
+  val byYear = ByStatement("create_at", Some(Interval(TimeUnit.Year)), Some("year"))
   val byState = ByStatement("geo", Some(Level("state")), Some("state"))
   val byGeocell10 = ByStatement("coordinate", Some(GeoCellTenth), Some("cell"))
   val byGeocell100 = ByStatement("coordinate", Some(GeoCellHundredth), Some("cell"))

@@ -306,6 +306,94 @@ class AQLQueryParserTest extends Specification {
           |$t
           | """.stripMargin.trim)
     }
+    "translate group by second" in {
+      val group = GroupStatement(Seq(bySecond), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1S") )) with $taggr
+          |return {
+          |   'sec' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+    "translate group by minute" in {
+      val group = GroupStatement(Seq(byMinute), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1M") )) with $taggr
+          |return {
+          |   'min' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+
+    "translate group by day" in {
+      val group = GroupStatement(Seq(byDay), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("P1D") )) with $taggr
+          |return {
+          |   'day' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+
+    "translate group by week" in {
+      val group = GroupStatement(Seq(byWeek), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("P7D") )) with $taggr
+          |return {
+          |   'week' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+
+    "translate group by month" in {
+      val group = GroupStatement(Seq(byMonth), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  year-month-duration("P1M") )) with $taggr
+          |return {
+          |   'month' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
+
+    "translate group by year" in {
+      val group = GroupStatement(Seq(byYear), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $taggr := $t
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  year-month-duration("P1Y") )) with $taggr
+          |return {
+          |   'year' : $g0,'count' : count($taggr)
+          |}
+          | """.stripMargin.trim)
+    }
 
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
