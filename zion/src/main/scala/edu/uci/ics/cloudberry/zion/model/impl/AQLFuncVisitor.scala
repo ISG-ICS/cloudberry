@@ -3,7 +3,6 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryParsingException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.format.DateTimeFormat
 
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
@@ -155,7 +154,10 @@ object AQLFuncVisitor {
     funcOpt.map { func =>
       IFunction.verifyField(func, field).map { msg => throw new QueryParsingException(msg) }
       func match {
-        case bin: Bin => ???
+        case bin: Bin =>
+          (DataType.Number,
+            s"""round($aqlExpr/${bin.scale})*${bin.scale}"""
+            )
         case interval: Interval =>
           import TimeUnit._
           //PnYnMnDTnHnMn.mmmS
@@ -179,9 +181,19 @@ object AQLFuncVisitor {
             case Some(name) => (hierarchyField.innerType, s"$aqlExpr.${name._2}")
             case None => throw new QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}")
           }
-        case GeoCellTenth => ???
-        case GeoCellHundredth => ???
-        case GeoCellThousandth => ???
+        case GeoCellTenth =>
+          if (field.dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
+          val origin = s"create-point(0.0,0.0)"
+          (DataType.Point, s"get-points(spatial-cell(${aqlExpr}, $origin, 0.1, 0.1))[0]")
+        case GeoCellHundredth =>
+          if (field.dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
+          val origin = s"create-point(0.0,0.0)"
+          (DataType.Point, s"get-points(spatial-cell(${aqlExpr}, $origin, 0.01, 0.01))[0]")
+        case GeoCellThousandth =>
+          if (field.dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
+          val origin = s"create-point(0.0,0.0)"
+          (DataType.Point, s"get-points(spatial-cell(${aqlExpr}, $origin, 0.001, 0.001))[0]")
+
         case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
       }
     }.getOrElse(field.dataType, s"$aqlExpr")
@@ -190,16 +202,25 @@ object AQLFuncVisitor {
   def translateAggrFunc(field: Field,
                         func: AggregateFunc,
                         aqlExpr: String
-                       ): (DataType.DataType, String) = {
+                       ): (DataType.DataType, String, String, String) = {
+    val newvar = s"${aqlExpr.split('.')(0)}aggr";
     func match {
       case Count =>
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
-        (DataType.Number, s"count($aqlExpr)")
-      case Max => ???
-      case Min => ???
+        (DataType.Number, s"count($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case Max =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+        (DataType.Number, s"max($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case Min =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
+        (DataType.Number, s"min($newvar)", newvar, s"let $newvar := $aqlExpr")
       case topK: TopK => ???
-      case Avg => ???
-      case Sum => ???
+      case Avg =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
+        (DataType.Number, s"avg($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case Sum =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
+        (DataType.Number, s"sum($newvar)", newvar, s"let $newvar := $aqlExpr")
       case DistinctCount => ???
     }
   }
