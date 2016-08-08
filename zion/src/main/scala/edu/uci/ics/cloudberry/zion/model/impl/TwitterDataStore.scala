@@ -33,5 +33,6 @@ object TwitterDataStore {
                                            NumberField("retweet_count"),
                                            NumberField("user.status_count")
                                          ),
-                                         Seq("id"))
+                                         Seq("id"),
+                                         TimeFieldName)
 }

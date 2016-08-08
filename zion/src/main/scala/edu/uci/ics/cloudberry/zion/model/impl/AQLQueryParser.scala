@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQueryParser, QueryParsingException}
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQueryParser, IQueryParserFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 import scala.collection.mutable
@@ -19,7 +19,7 @@ class AQLQueryParser extends IQueryParser {
   }
 
   //TODO combine with parseQuery
-  def calcResultSchema(query: Query, schema: Schema): Schema = {
+  override def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copy()
     } else {
@@ -260,4 +260,8 @@ class AQLQueryParser extends IQueryParser {
 
   case class AQLVar(field: Field, aqlExpr: String)
 
+}
+
+object AQLQueryParser extends IQueryParserFactory {
+  override def apply(): IQueryParser = new AQLQueryParser()
 }
