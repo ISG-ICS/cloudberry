@@ -24,7 +24,7 @@ class UtilTest extends Specification with TestData with Mockito {
         v
       }
 
-      Await.result(fMapped, 400 millisecond) must_== 200
+      Await.result(fMapped, 5000 millisecond) must_== 200
       v1 must_== (500)
     }
   }

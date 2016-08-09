@@ -15,7 +15,7 @@ class DataManager(val conn: IDataConn, val queryParserFactory: IQueryParserFacto
 
   val managerParser = queryParserFactory()
   val metaData: scala.collection.mutable.Map[String, DataSetInfo] = ???
-  val viewRelation: scala.collection.mutable.Map[String, Seq[String]] = ???
+  val view2sourceMap: scala.collection.mutable.Map[String, String] = ???
 
   override def receive: Receive = {
     case register: Register => ???
@@ -25,11 +25,13 @@ class DataManager(val conn: IDataConn, val queryParserFactory: IQueryParserFacto
     case create: CreateView => createView(create)
     case drop: DropView => ???
     case askInfo: AskInfoMsg => metaData.get(askInfo.who) match {
-      case Some(info) => info +: viewRelation(info.name).map(metaData(_))
+      case Some(info) => info +: view2sourceMap.filter(_._2 == info.name).map(p => metaData(p._1)).toList
       case None => sender() ! Seq.empty
     }
 
-    case dataset: DataSetInfo => metaData += dataset.name -> dataset
+    case dataset: DataSetInfo =>
+      metaData += dataset.name -> dataset
+      dataset.createQueryOpt.map(q => view2sourceMap += (dataset.name -> q.dataset))
   }
 
   private def answerQuery(query: IQuery): Unit = {
