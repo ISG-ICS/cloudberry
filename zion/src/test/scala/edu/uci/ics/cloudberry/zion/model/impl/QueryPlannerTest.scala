@@ -19,15 +19,14 @@ class QueryPlannerTest extends Specification {
 
   val sourceInterval = new Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2017, 1, 1, 0, 0))
   val sourceStat = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 10000)
-  val sourceInfo = DataSetInfo(schema.typeName, None, schema, TwitterDataStore.TimeFieldName, sourceInterval, sourceStat)
+  val sourceInfo = DataSetInfo(schema.typeName, None, schema, sourceInterval, sourceStat)
 
-  val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
   val zikaHalfInterval = new Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2016, 6, 1, 0, 0))
   val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
-  val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, TwitterDataStore.TimeFieldName, zikaHalfInterval, zikaStats)
+  val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, zikaHalfInterval, zikaStats)
 
   val zikaFullStats = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 50)
-  val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, TwitterDataStore.TimeFieldName, sourceInterval, zikaFullStats)
+  val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, sourceInterval, zikaFullStats)
 
   "QueryPlannerTest" should {
     "makePlan ask source if the view is empty" in {
@@ -45,7 +44,7 @@ class QueryPlannerTest extends Specification {
 
       val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
-      val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, TwitterDataStore.TimeFieldName, sourceInterval, virusStats)
+      val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, sourceInterval, virusStats)
       val queries = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
       queries.size must_== 1
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)

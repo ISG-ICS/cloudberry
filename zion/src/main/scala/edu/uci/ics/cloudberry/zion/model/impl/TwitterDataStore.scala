@@ -5,15 +5,15 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 object TwitterDataStore {
   val DatasetName = "twitter.ds_tweet"
   val TimeFieldName = "create_at"
-  val TwitterSchema: Schema = new Schema(DatasetName,
+  val TwitterSchema: Schema = new Schema("twitter.typeTweet",
                                          Seq(
                                            TimeField(TimeFieldName),
                                            NumberField("id"),
                                            PointField("coordinate"),
                                            StringField("lang"),
                                            BooleanField("is_retweet"),
-                                           BagField("hashtags", DataType.String),
-                                           BagField("user_mentions", DataType.Number),
+                                           BagField("hashtags", DataType.String, true),
+                                           BagField("user_mentions", DataType.Number, true),
                                            NumberField("user.id"),
                                            NumberField("geo_tag.stateID"),
                                            NumberField("geo_tag.countyID"),
@@ -32,6 +32,7 @@ object TwitterDataStore {
                                            NumberField("favorite_count"),
                                            NumberField("retweet_count"),
                                            NumberField("user.status_count")
-                                         )
-  )
+                                         ),
+                                         Seq("id"),
+                                         TimeFieldName)
 }

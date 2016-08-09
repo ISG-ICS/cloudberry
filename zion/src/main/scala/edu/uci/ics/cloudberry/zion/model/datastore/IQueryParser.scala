@@ -12,7 +12,13 @@ trait IQueryParser {
     */
   def parse(query: IQuery, schema: Schema): String
 
+  def calcResultSchema(query: Query, schema: Schema): Schema
+
   protected def requireOrThrow(condition: Boolean, msg: String): Unit = {
     if (!condition) throw new QueryParsingException(msg)
   }
+}
+
+trait IQueryParserFactory {
+  def apply(): IQueryParser
 }
