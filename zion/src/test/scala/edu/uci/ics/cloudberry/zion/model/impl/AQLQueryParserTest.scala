@@ -395,6 +395,39 @@ class AQLQueryParserTest extends Specification {
           | """.stripMargin.trim)
     }
 
+    "translate a count cardinality query without group by" in {
+      val group = GroupStatement(Seq.empty, Seq(aggrCount))
+      val query = new Query(dataset = TwitterDataSet, groups = Some(group))
+      val result = parser.parse(query, schema)
+      val expected =
+        """
+          |count (for $t in dataset twitter.ds_tweet return $t)
+        """.stripMargin
+      ok
+    }
+
+    "translate get min field value query without group by" in {
+      val group = GroupStatement(Seq.empty, Seq(aggrMin))
+      val query = new Query(dataset = TwitterDataSet, groups = Some(group))
+      val result = parser.parse(query, schema)
+      val expected =
+        """
+          |min(for $t in dataset twitter.ds_tweet return $t.id)
+        """.stripMargin
+      ok
+    }
+
+    "translate get max field value query without group by" in {
+      val group = GroupStatement(Seq.empty, Seq(aggrMax))
+      val query = new Query(dataset = TwitterDataSet, groups = Some(group))
+      val result = parser.parse(query, schema)
+      val expected =
+        """
+          |max(for $t in dataset twitter.ds_tweet return $t.id)
+        """.stripMargin
+      ok
+    }
+
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
@@ -402,6 +435,7 @@ class AQLQueryParserTest extends Specification {
     "translate a lookup query" in {
       ok
     }
+
   }
 
   "AQLQueryParser createView" should {

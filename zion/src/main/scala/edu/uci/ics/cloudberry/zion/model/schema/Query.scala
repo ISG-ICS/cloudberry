@@ -160,7 +160,6 @@ case class GroupStatement(bys: Seq[ByStatement],
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
 
-  requireOrThrow(bys.nonEmpty, "Group by statement is required")
   requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
