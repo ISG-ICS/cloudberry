@@ -156,7 +156,7 @@ object AQLFuncVisitor {
       func match {
         case bin: Bin =>
           (DataType.Number,
-            s"""round($aqlExpr/${bin.scale})*${bin.scale}"""
+            s"round($aqlExpr/${bin.scale})*${bin.scale}"
             )
         case interval: Interval =>
           import TimeUnit._
@@ -182,23 +182,27 @@ object AQLFuncVisitor {
             case None => throw new QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}")
           }
         case GeoCellTenth =>
-          if (field.dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
-          val origin = s"create-point(0.0,0.0)"
-          (DataType.Point, s"get-points(spatial-cell(${aqlExpr}, $origin, 0.1, 0.1))[0]")
+          (DataType.Point, getGeocellString(10,aqlExpr,field.dataType))
         case GeoCellHundredth =>
-          if (field.dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
-          val origin = s"create-point(0.0,0.0)"
-          (DataType.Point, s"get-points(spatial-cell(${aqlExpr}, $origin, 0.01, 0.01))[0]")
+          (DataType.Point, getGeocellString(100,aqlExpr,field.dataType))
         case GeoCellThousandth =>
-          if (field.dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
-          val origin = s"create-point(0.0,0.0)"
-          (DataType.Point, s"get-points(spatial-cell(${aqlExpr}, $origin, 0.001, 0.001))[0]")
+          (DataType.Point, getGeocellString(1000,aqlExpr,field.dataType))
 
         case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
       }
     }.getOrElse(field.dataType, s"$aqlExpr")
   }
 
+  /**
+    *
+    * @param field
+    * @param func
+    * @param aqlExpr
+    * @return DataType: DataType of the aggregated result
+    *         String: AQL aggregate function string
+    *         String: New AQL variable representing the field to be aggregate
+    *         String: AQL assignment of the field to the new variable (let clause)
+    */
   def translateAggrFunc(field: Field,
                         func: AggregateFunc,
                         aqlExpr: String
@@ -225,4 +229,9 @@ object AQLFuncVisitor {
     }
   }
 
+  private def getGeocellString(scale: Double, aqlExpr: String, dataType: DataType.Value): String = {
+      if (dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
+      val origin = s"create-point(0.0,0.0)"
+      s"get-points(spatial-cell(${aqlExpr}, $origin, ${1/scale}, ${1/scale}))[0]"
+  }
 }
