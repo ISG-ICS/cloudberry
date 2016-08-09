@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQueryParser, QueryParsingException}
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQueryParser, IQueryParserFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 import scala.collection.mutable
@@ -13,27 +13,43 @@ class AQLQueryParser extends IQueryParser {
         validateQuery(q)
         parseQuery(q, schema)
       case q: CreateView => parseCreate(q, schema)
-      case q: AppendView => ???
+      case q: AppendView => parseAppend(q, schema)
       case q: DropView => ???
     }
   }
 
   //TODO combine with parseQuery
-  def calcResultSchema(query: Query, schema: Schema): Schema = {
+  override def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copy()
     } else {
-      //TODO
       ???
     }
   }
 
-  def parseCreate(create: CreateView, schema: Schema): String = {
-    // generate schema
-    // create data type by schema
-    // drop statement
-    // insert into
-    ???
+  def parseCreate(create: CreateView, sourceSchema: Schema): String = {
+    val resultSchema = calcResultSchema(create.query, sourceSchema)
+    val ddl: String = genDDL(resultSchema)
+    val createDataSet =
+      s"""
+         |drop dataset ${create.dataset} if exists;
+         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.mkString(",")}
+         |""".stripMargin
+    val insert =
+      s"""
+         |insert into dataset ${create.dataset} (
+         |${parseQuery(create.query, sourceSchema)}
+         |)
+       """.stripMargin
+    ddl + createDataSet + insert
+  }
+
+  def parseAppend(append: AppendView, sourceSchema: Schema): String = {
+    s"""
+       |upsert into dataset ${append.dataset} (
+       |${parseQuery(append.query, sourceSchema)}
+       |)
+     """.stripMargin
   }
 
   def parseQuery(query: Query, schema: Schema): String = {
@@ -65,7 +81,9 @@ class AQLQueryParser extends IQueryParser {
     val (selectPrefix, select) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0, varName))
       .getOrElse("", "")
 
-    Seq(selectPrefix, dataset, lookup, filter, unnest, group, select).mkString("\n")
+    val returnStat = if (query.groups.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
+
+    Seq(selectPrefix, dataset, lookup, filter, unnest, group, select, returnStat).mkString("\n")
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],
@@ -118,9 +136,8 @@ class AQLQueryParser extends IQueryParser {
             case field: BagField =>
               val newVar = s"$$unnest$id"
               producedVar += stat.as -> AQLVar(new Field(stat.as, field.innerType), newVar)
-              //TODO test if this null check will introduce more db time
               s"""
-                 |where not(is-null(${aqlVar.aqlExpr}))
+                 |${if (field.isOptional) s"where not(is-null(${aqlVar.aqlExpr}))"}
                  |for $newVar in ${aqlVar.aqlExpr}
                  |""".stripMargin
             case _ => throw new QueryParsingException("unnest can only apply on Bag type")
@@ -219,6 +236,44 @@ class AQLQueryParser extends IQueryParser {
     requireOrThrow(query.select.isDefined || query.groups.isDefined, "either group or select statement is required")
   }
 
+  private def genDDL(schema: Schema): String = {
+
+    def mkNestDDL(names: List[String], typeStr: String): String = {
+      print(names)
+      names match {
+        case List(e) => s"  $e : $typeStr"
+        case e :: tail => s"  $e : { ${mkNestDDL(tail, typeStr)} }"
+      }
+    }
+
+    val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
+      f => mkNestDDL(f.name.split("\\.").toList, fieldType2ADMType(f) + (if (f.isOptional) "?" else ""))
+    }
+    s"""
+       |create type ${schema.typeName} if not exists as closed {
+       |${fields.mkString(",\n")}
+       |}
+    """.stripMargin
+  }
+
+  private def fieldType2ADMType(field: Field): String = {
+    field.dataType match {
+      case DataType.Number => "double"
+      case DataType.Time => "datetime"
+      case DataType.Point => "point"
+      case DataType.Boolean => "boolean"
+      case DataType.String => "string"
+      case DataType.Text => "string"
+      case DataType.Bag => s"{{${fieldType2ADMType(new Field("", field.asInstanceOf[BagField].innerType))}}}"
+      case DataType.Hierarchy => ??? // should be skipped
+      case DataType.Record => ???
+    }
+  }
+
   case class AQLVar(field: Field, aqlExpr: String)
 
+}
+
+object AQLQueryParser extends IQueryParserFactory {
+  override def apply(): IQueryParser = new AQLQueryParser()
 }

@@ -11,6 +11,5 @@ case class Stats(createTime: DateTime,
 case class DataSetInfo(name: String,
                        createQueryOpt: Option[Query],
                        schema: Schema,
-                       timeField: String,
                        dataInterval: Interval,
                        stats: Stats)

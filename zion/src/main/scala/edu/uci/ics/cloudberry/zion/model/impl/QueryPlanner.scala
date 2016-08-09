@@ -47,7 +47,7 @@ class QueryPlanner {
     bestView match {
       case None => Seq(query)
       case Some(view) =>
-        val queryInterval = query.getTimeInterval(source.timeField).getOrElse(source.dataInterval)
+        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(source.dataInterval)
         val viewInterval = view.dataInterval
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
@@ -56,7 +56,7 @@ class QueryPlanner {
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
         seqBuilder += query.copy(dataset = view.name)
         for (interval <- unCovered) {
-          seqBuilder += query.setInterval(source.timeField, interval)
+          seqBuilder += query.setInterval(source.schema.timeField, interval)
         }
         seqBuilder.result()
     }
