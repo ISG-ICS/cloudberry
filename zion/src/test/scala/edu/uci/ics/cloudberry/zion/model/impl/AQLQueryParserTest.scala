@@ -9,7 +9,7 @@ class AQLQueryParserTest extends Specification {
 
   val parser = new AQLQueryParser
 
-  "AQLQueryParser" should {
+  "AQLQueryParser parseQuery" should {
     "translate a simple filter by time and group by time query" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
@@ -395,12 +395,97 @@ class AQLQueryParserTest extends Specification {
           | """.stripMargin.trim)
     }
 
+    "translate a count cardinality query without group by" in {
+      val group = GroupStatement(Seq.empty, Seq(aggrCount))
+      val query = new Query(dataset = TwitterDataSet, groups = Some(group))
+      val result = parser.parse(query, schema)
+      val expected =
+        """
+          |count (for $t in dataset twitter.ds_tweet return $t)
+        """.stripMargin
+      ok
+    }
+
+    "translate get min field value query without group by" in {
+      val group = GroupStatement(Seq.empty, Seq(aggrMin))
+      val query = new Query(dataset = TwitterDataSet, groups = Some(group))
+      val result = parser.parse(query, schema)
+      val expected =
+        """
+          |min(for $t in dataset twitter.ds_tweet return $t.id)
+        """.stripMargin
+      ok
+    }
+
+    "translate get max field value query without group by" in {
+      val group = GroupStatement(Seq.empty, Seq(aggrMax))
+      val query = new Query(dataset = TwitterDataSet, groups = Some(group))
+      val result = parser.parse(query, schema)
+      val expected =
+        """
+          |max(for $t in dataset twitter.ds_tweet return $t.id)
+        """.stripMargin
+      ok
+    }
+
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
 
     "translate a lookup query" in {
       ok
+    }
+
+  }
+
+  "AQLQueryParser createView" should {
+    "generate the ddl for the twitter dataset" in {
+      val ddl = parser.parseCreate(CreateView("zika", zikaCreateQuery), TwitterDataStore.TwitterSchema)
+      removeEmptyLine(ddl) must_== unifyNewLine(
+        """
+          |create type twitter.typeTweet if not exists as closed {
+          |  favorite_count : double,
+          |  geo_tag : {   countyID : double },
+          |  user_mentions : {{double}}?,
+          |  user : {   id : double },
+          |  geo_tag : {   cityID : double },
+          |  is_retweet : boolean,
+          |  text : string,
+          |  retweet_count : double,
+          |  in_reply_to_user : double,
+          |  id : double,
+          |  coordinate : point,
+          |  in_reply_to_status : double,
+          |  user : {   status_count : double },
+          |  geo_tag : {   stateID : double },
+          |  create_at : datetime,
+          |  lang : string,
+          |  hashtags : {{string}}?
+          |}
+          |drop dataset zika if exists;
+          |create dataset zika(twitter.typeTweet) primary key id
+          |insert into dataset zika (
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |return $t
+          |)
+          |
+        """.stripMargin.trim)
+    }
+  }
+
+  "AQLQueryParser appendView" should {
+    "generate the upsert query" in {
+      val timeFilter = FilterStatement(TwitterDataStore.TimeFieldName, None, Relation.inRange, Seq(startTime, endTime))
+      val aql = parser.parseAppend(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), TwitterDataStore.TwitterSchema)
+      removeEmptyLine(aql) must_== unifyNewLine(
+        """
+          |upsert into dataset zika (
+          |for $t in dataset twitter.ds_tweet
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |return $t
+          |)
+        """.stripMargin.trim)
     }
   }
 }

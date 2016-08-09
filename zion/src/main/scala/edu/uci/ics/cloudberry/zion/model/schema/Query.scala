@@ -48,12 +48,12 @@ case class Query(dataset: String,
     //TODO read paper http://www.vldb.org/conf/1996/P318.PDF
     import Query._
 
-    if (!isSubsetFilter(this.filter, another.filter)) {
+    if (!covers(this.filter, another.filter)) {
       return false
     }
 
     val isFilterMatch = this.filter.forall(f => another.filter.filter(_.fieldName == f.fieldName)
-      .exists(anotherF => f.include(anotherF, schema.fieldMap(f.fieldName).dataType)))
+      .exists(anotherF => f.covers(anotherF, schema.fieldMap(f.fieldName).dataType)))
     if (!isFilterMatch) {
       return false
     }
@@ -70,7 +70,7 @@ case class Query(dataset: String,
 
 object Query {
 
-  def isSubsetFilter(thisFilter: Seq[FilterStatement], thatFilter: Seq[FilterStatement]): Boolean = {
+  def covers(thisFilter: Seq[FilterStatement], thatFilter: Seq[FilterStatement]): Boolean = {
     thisFilter.forall(f => thatFilter.exists(_.fieldName == f.fieldName))
   }
 }
@@ -78,7 +78,7 @@ object Query {
 
 case class CreateView(dataset: String, query: Query) extends IQuery
 
-case class AppendView(dataset: String, interval: org.joda.time.Interval, query: Query) extends IQuery
+case class AppendView(dataset: String, query: Query) extends IQuery
 
 case class DropView(dataset: String) extends IQuery
 
@@ -114,7 +114,7 @@ case class FilterStatement(fieldName: String,
                            relation: Relation,
                            values: Seq[Any]
                           ) extends Statement {
-  def include(another: FilterStatement, dataType: DataType): Boolean = {
+  def covers(another: FilterStatement, dataType: DataType): Boolean = {
     if (fieldName != another.fieldName) {
       false
     } else {
@@ -160,7 +160,6 @@ case class GroupStatement(bys: Seq[ByStatement],
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
 
-  requireOrThrow(bys.nonEmpty, "Group by statement is required")
   requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
