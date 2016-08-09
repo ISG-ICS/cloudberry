@@ -13,7 +13,7 @@ class AQLQueryParser extends IQueryParser {
         validateQuery(q)
         parseQuery(q, schema)
       case q: CreateView => parseCreate(q, schema)
-      case q: AppendView => ???
+      case q: AppendView => parseAppend(q, schema)
       case q: DropView => ???
     }
   }
@@ -42,6 +42,14 @@ class AQLQueryParser extends IQueryParser {
          |)
        """.stripMargin
     ddl + createDataSet + insert
+  }
+
+  def parseAppend(append: AppendView, sourceSchema: Schema): String = {
+    s"""
+       |upsert into dataset ${append.dataset} (
+       |${parseQuery(append.query, sourceSchema)}
+       |)
+     """.stripMargin
   }
 
   def parseQuery(query: Query, schema: Schema): String = {

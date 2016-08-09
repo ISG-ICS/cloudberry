@@ -21,7 +21,7 @@ class DataManager(val conn: IDataConn, val queryParserFactory: IQueryParserFacto
     case register: Register => ???
     case deregister: Deregister => ???
     case query: Query => answerQuery(query)
-    case append: AppendView => ???
+    case append: AppendView => answerQuery(append)
     case create: CreateView => createView(create)
     case drop: DropView => ???
     case askInfo: AskInfoMsg => metaData.get(askInfo.who) match {
@@ -32,7 +32,7 @@ class DataManager(val conn: IDataConn, val queryParserFactory: IQueryParserFacto
     case dataset: DataSetInfo => metaData += dataset.name -> dataset
   }
 
-  private def answerQuery(query: Query): Unit = {
+  private def answerQuery(query: IQuery): Unit = {
     context.child(query.dataset).getOrElse {
       val schema: Schema = metaData(query.dataset).schema
       context.actorOf(Props(classOf[DataSetAgent], schema, queryParserFactory(), conn, ec), query.dataset)

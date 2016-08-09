@@ -78,7 +78,7 @@ object Query {
 
 case class CreateView(dataset: String, query: Query) extends IQuery
 
-case class AppendView(dataset: String, interval: org.joda.time.Interval, query: Query) extends IQuery
+case class AppendView(dataset: String, query: Query) extends IQuery
 
 case class DropView(dataset: String) extends IQuery
 

@@ -439,9 +439,9 @@ class AQLQueryParserTest extends Specification {
   }
 
   "AQLQueryParser createView" should {
-    "write the ddl for the twitter dataset" in {
+    "generate the ddl for the twitter dataset" in {
       val ddl = parser.parseCreate(CreateView("zika", zikaCreateQuery), TwitterDataStore.TwitterSchema)
-      removeEmptyLine(ddl) must_==
+      removeEmptyLine(ddl) must_== unifyNewLine(
         """
           |create type twitter.typeTweet if not exists as closed {
           |  favorite_count : double,
@@ -470,7 +470,22 @@ class AQLQueryParserTest extends Specification {
           |return $t
           |)
           |
-        """.stripMargin.trim
+        """.stripMargin.trim)
+    }
+  }
+
+  "AQLQueryParser appendView" should {
+    "generate the upsert query" in {
+      val timeFilter = FilterStatement(TwitterDataStore.TimeFieldName, None, Relation.inRange, Seq(startTime, endTime))
+      val aql = parser.parseAppend(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), TwitterDataStore.TwitterSchema)
+      removeEmptyLine(aql) must_== unifyNewLine(
+        """
+          |upsert into dataset zika (
+          |for $t in dataset twitter.ds_tweet
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |return $t
+          |)'
+        """.stripMargin.trim)
     }
   }
 }
