@@ -39,11 +39,10 @@ def getEachMail(archNo, headers, directoryName):
     
     url = "http://promedmail.org/ajax/getPost.php?alert_id="
     
-    completePath = os.path.abspath(directoryName)
-        
+            
     for id in archNo:
         fname = id +'.html'
-        completeName = os.path.join(completePath, fname)
+        completeName = os.path.join(directoryName, fname)
         request = urllib2.Request(url+id, headers = headers)
         response = urllib2.urlopen(request)
 
@@ -84,9 +83,8 @@ if __name__ == '__main__':
        
     if not os.path.exists(dirName):
         os.makedirs(dirName)
-    completePath = os.path.abspath(dirName)
         
-    completeName = os.path.join(completePath, filename)
+    completeName = os.path.join(dirName, filename)
     
     nextExists = False
     while( pagenum == 0 or nextExists):
