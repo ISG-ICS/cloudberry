@@ -56,7 +56,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           fillOpacity: 0.7
         },
         colors: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
-
       },
 
     });
