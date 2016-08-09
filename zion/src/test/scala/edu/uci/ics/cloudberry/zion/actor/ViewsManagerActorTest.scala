@@ -58,14 +58,14 @@ class ViewsManagerActorTest extends TestkitExample with SpecificationLike with M
       val sender = new TestProbe(system)
       val viewActor = system.actorOf(Props(new FakeManager(sourceName, sourceProbe.ref)(ec)))
       sender.send(viewActor, FakeManager.getMeta)
-      val actualMsg = sender.receiveOne(1000 millis)
+      val actualMsg = sender.receiveOne(5000 millis)
       actualMsg must_== Seq(initViewRecord)
     }
     "use the existed viewActor to answer the query" in {
       val viewActor = system.actorOf(Props(new FakeManager(sourceName, sourceProbe.ref)(ec)))
       viewActor ! byStateByDayQuery
       existedViewProbe.expectMsg(byStateByDayQuery)
-      newViewProbe.expectNoMsg(500 millis)
+      newViewProbe.expectNoMsg(5000 millis)
       ok
     }
     "create a new view store to answer the new query" in {
@@ -83,7 +83,7 @@ class ViewsManagerActorTest extends TestkitExample with SpecificationLike with M
 
       val sender = new TestProbe(system)
       sender.send(viewActor, FakeManager.getMeta)
-      val actualMsg = sender.receiveOne(500 millis)
+      val actualMsg = sender.receiveOne(5000 millis)
       actualMsg must_== Seq(initViewRecord, newViewRecord).sortBy(_.viewKey)
     }
     "update the meta store when receives the request" in {
