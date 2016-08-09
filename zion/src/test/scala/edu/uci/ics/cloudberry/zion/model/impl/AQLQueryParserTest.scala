@@ -484,7 +484,7 @@ class AQLQueryParserTest extends Specification {
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
           |return $t
-          |)'
+          |)
         """.stripMargin.trim)
     }
   }
