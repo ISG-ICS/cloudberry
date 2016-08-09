@@ -4,5 +4,5 @@
 
 cd /home/akapse/cloudberry/noah/src/main/resources/crawler
 
-python promed_mail.py /home/akapse/PromedResult 2
+python promed_mail.py /home/akapse/PromedResult 1
 
