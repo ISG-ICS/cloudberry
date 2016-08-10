@@ -35,7 +35,6 @@ class Client(dataManager: ActorRef, optimizer: QueryPlanner)
           val newViews = optimizer.suggestNewView(query, infos.head, infos.tail)
           newViews.foreach(dataManager ! _)
       }
-    case _ =>
   }
 
   protected def withDataSetInfo(query: Query)(block: Seq[DataSetInfo] => Unit): Unit = {

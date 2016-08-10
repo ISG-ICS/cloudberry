@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import edu.uci.ics.cloudberry.util.Logging
 import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
 import play.api.libs.json.{JsArray, JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 

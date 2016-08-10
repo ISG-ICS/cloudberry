@@ -9,7 +9,7 @@ import org.specs2.mutable.SpecificationLike
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class ViewsManagerActorTest extends TestkitExample with SpecificationLike with MockConnClient with TestData {
+class ViewsManagerActorTest extends TestkitExample with SpecificationLike with MockConnClientOld with TestData {
 
   val sourceName = "src"
   val newkey = "key"
