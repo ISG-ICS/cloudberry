@@ -399,33 +399,66 @@ class AQLQueryParserTest extends Specification {
       val group = GroupStatement(Seq.empty, Seq(aggrCount))
       val query = new Query(dataset = TwitterDataSet, groups = Some(group))
       val result = parser.parse(query, schema)
-      val expected =
-        """
-          |count (for $t in dataset twitter.ds_tweet return $t)
-        """.stripMargin
-      ok
+      removeEmptyLine(result) must_== unifyNewLine(
+        """count(
+          |for $t in dataset twitter.ds_tweet
+          |return $t)""".stripMargin)
     }
 
     "translate get min field value query without group by" in {
       val group = GroupStatement(Seq.empty, Seq(aggrMin))
       val query = new Query(dataset = TwitterDataSet, groups = Some(group))
       val result = parser.parse(query, schema)
-      val expected =
-        """
-          |min(for $t in dataset twitter.ds_tweet return $t.id)
-        """.stripMargin
-      ok
+      removeEmptyLine(result) must_== unifyNewLine(
+        """min(
+          |for $t in dataset twitter.ds_tweet
+          |return $t.'id')""".stripMargin)
     }
 
     "translate get max field value query without group by" in {
       val group = GroupStatement(Seq.empty, Seq(aggrMax))
       val query = new Query(dataset = TwitterDataSet, groups = Some(group))
       val result = parser.parse(query, schema)
-      val expected =
-        """
-          |max(for $t in dataset twitter.ds_tweet return $t.id)
-        """.stripMargin
-      ok
+      removeEmptyLine(result) must_== unifyNewLine(
+        """max(
+          |for $t in dataset twitter.ds_tweet
+          |return $t.'id')""".stripMargin)
+    }
+
+    "translate a count cardinality query with filter without group by" in {
+      val filter = Seq(timeFilter)
+      val group = GroupStatement(Seq.empty, Seq(aggrCount))
+      val query = new Query(dataset = TwitterDataSet, filter = filter, groups = Some(group))
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """count(
+          |for $t in dataset twitter.ds_tweet
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |return $t)""".stripMargin)
+    }
+
+    "translate a count cardinality query with unnest without group by" in {
+      val filter = Seq(textFilter, timeFilter, stateFilter)
+      val group = GroupStatement(Seq.empty, Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """count(
+          |for $g in (
+          |for $t in dataset twitter.ds_tweet
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and true
+          |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
+          |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
+          |where not(is-null($t.'hashtags'))
+          |for $unnest0 in $t.'hashtags'
+          |return $t)
+          |order by $g.count desc
+          |limit 10
+          |offset 0
+          |return
+          |$g)
+          | """.stripMargin.trim)
     }
 
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
