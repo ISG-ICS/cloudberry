@@ -437,6 +437,19 @@ class AQLQueryParserTest extends Specification {
           |return $t)""".stripMargin)
     }
 
+
+    "translate a min cardinality query with filter without group by" in {
+      val filter = Seq(timeFilter)
+      val group = GroupStatement(Seq.empty, Seq(aggrMin))
+      val query = new Query(dataset = TwitterDataSet, filter = filter, groups = Some(group))
+      val result = parser.parse(query, schema)
+      removeEmptyLine(result) must_== unifyNewLine(
+        """min(
+          |for $t in dataset twitter.ds_tweet
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |return $t.'id')""".stripMargin)
+    }
+
     "translate a count cardinality query with unnest without group by" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq.empty, Seq(aggrCount))

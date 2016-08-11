@@ -164,46 +164,55 @@ class AQLQueryParser extends IQueryParser {
                            varMap: Map[String, AQLVar],
                            varGroupSource: String = "$g"
                           ): (String, String, String, Map[String, AQLVar]) = {
-    val producedVar = mutable.Map.newBuilder[String, AQLVar]
-    val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map { case (by, id) =>
-      varMap.get(by.fieldName) match {
-        case Some(aqlVar) =>
-          val key = by.as.getOrElse(aqlVar.field.name)
-          val varKey = s"$$g$id"
-          val (dataType, aqlGrpFunc) = AQLFuncVisitor.translateGroupFunc(aqlVar.field, by.funcOpt, aqlVar.aqlExpr)
-          producedVar += key -> AQLVar(new Field(key, dataType), s"$varGroupSource.$key")
-          (s"$varKey := $aqlGrpFunc", s" '$key' : $varKey")
-        case None => throw FieldNotFound(by.fieldName)
-      }
-    }
+
     val isAggrOnly = group.bys.isEmpty
-    //used to append to the AQL `group by`'s `with` clause to expose the required fields
-    val letExpr = mutable.Seq.newBuilder[String]
-    val aggrRequiredVar = mutable.Seq.newBuilder[String]
-    val returnStat = StringBuilder.newBuilder
-    val aggrOnlyExpr = StringBuilder.newBuilder
-    val aggrNameMap = group.aggregates.map { aggr =>
-      varMap.get(aggr.fieldName) match {
-        case Some(aqlVar) =>
-          if (group.bys.isEmpty) {
-            returnStat.append(s"return ${aqlVar.aqlExpr})")
-          }
-          val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr, isAggrOnly)
-          aggrRequiredVar += newvar
-          letExpr += newvarexpr
-          aggrOnlyExpr.append(aqlAggExpr)
-          producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
-          s"'${aggr.as}' : $aqlAggExpr"
-        case None => throw FieldNotFound(aggr.fieldName)
-      }
-    }
+    val producedVar = mutable.Map.newBuilder[String, AQLVar]
 
     if (isAggrOnly) {
+      val returnStat = StringBuilder.newBuilder
+      val aggrNameMap = group.aggregates.map { aggr =>
+        varMap.get(aggr.fieldName) match {
+          case Some(aqlVar) =>
+            val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr, isAggrOnly)
+            producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
+            val wrap = ")"
+            returnStat.append(s"return ${aqlVar.aqlExpr}${wrap}")
+            s"$aqlAggExpr"
+          case None => throw FieldNotFound(aggr.fieldName)
+        }
+      }
       val returnStmt = returnStat.result()
-      val aggrPrefix =
-        s"${(aggrOnlyExpr)}".stripMargin
+      val aggrPrefix = s"${(aggrNameMap.mkString(","))}".stripMargin
+
       (aggrPrefix, returnStmt, "", producedVar.result.toMap)
+
     } else {
+      val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map { case (by, id) =>
+        varMap.get(by.fieldName) match {
+          case Some(aqlVar) =>
+            val key = by.as.getOrElse(aqlVar.field.name)
+            val varKey = s"$$g$id"
+            val (dataType, aqlGrpFunc) = AQLFuncVisitor.translateGroupFunc(aqlVar.field, by.funcOpt, aqlVar.aqlExpr)
+            producedVar += key -> AQLVar(new Field(key, dataType), s"$varGroupSource.$key")
+            (s"$varKey := $aqlGrpFunc", s" '$key' : $varKey")
+          case None => throw FieldNotFound(by.fieldName)
+        }
+      }
+      //used to append to the AQL `group by`'s `with` clause to expose the required fields
+      val letExpr = mutable.Seq.newBuilder[String]
+      val aggrRequiredVar = mutable.Seq.newBuilder[String]
+      val aggrNameMap = group.aggregates.map { aggr =>
+        varMap.get(aggr.fieldName) match {
+          case Some(aqlVar) =>
+            val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr, isAggrOnly)
+            aggrRequiredVar += newvar
+            letExpr += newvarexpr
+            producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
+            s"'${aggr.as}' : $aqlAggExpr"
+          case None => throw FieldNotFound(aggr.fieldName)
+        }
+      }
+
       val groups = groupByAQLPair.map(_._1).mkString(", ")
       val retGroups = groupByAQLPair.map(_._2)
 

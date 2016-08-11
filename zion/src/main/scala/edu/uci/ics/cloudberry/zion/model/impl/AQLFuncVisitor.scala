@@ -208,35 +208,47 @@ object AQLFuncVisitor {
                         aqlExpr: String,
                         isAggrOnly: Boolean
                        ): (DataType.DataType, String, String, String) = {
-    val parameter = StringBuilder.newBuilder
-    val wrap = StringBuilder.newBuilder
     if (isAggrOnly) {
-      parameter.append("")
-      wrap.append("")
+      func match {
+        case Count =>
+          if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
+          (DataType.Number, s"count(", "", "")
+        case Max =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+          (DataType.Number, s"max(", "", "")
+        case Min =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
+          (DataType.Number, s"min(", "", "")
+        case topK: TopK => ???
+        case Avg =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
+          (DataType.Number, s"avg(", "", "")
+        case Sum =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
+          (DataType.Number, s"sum(", "", "")
+        case DistinctCount => ???
+      }
     } else {
       val newvar = s"${aqlExpr.split('.')(0)}aggr";
-      parameter.append(s"$newvar")
-      wrap.append(")")
-    }
-
-    func match {
-      case Count =>
-        if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
-        (DataType.Number, s"count($parameter$wrap", parameter.result(), s"let $parameter := $aqlExpr")
-      case Max =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
-        (DataType.Number, s"max($parameter$wrap", parameter.result(), s"let $parameter := $aqlExpr")
-      case Min =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
-        (DataType.Number, s"min($parameter$wrap", parameter.result(), s"let $parameter := $aqlExpr")
-      case topK: TopK => ???
-      case Avg =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
-        (DataType.Number, s"avg($parameter$wrap", parameter.result(), s"let $parameter := $aqlExpr")
-      case Sum =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
-        (DataType.Number, s"sum($parameter$wrap", parameter.result(), s"let $parameter := $aqlExpr")
-      case DistinctCount => ???
+      func match {
+        case Count =>
+          if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
+          (DataType.Number, s"count($newvar)", newvar, s"let $newvar := $aqlExpr")
+        case Max =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+          (DataType.Number, s"max($newvar)", newvar, s"let $newvar := $aqlExpr")
+        case Min =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
+          (DataType.Number, s"min($newvar)", newvar, s"let $newvar := $aqlExpr")
+        case topK: TopK => ???
+        case Avg =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
+          (DataType.Number, s"avg($newvar)", newvar, s"let $newvar := $aqlExpr")
+        case Sum =>
+          if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
+          (DataType.Number, s"sum($newvar)", newvar, s"let $newvar := $aqlExpr")
+        case DistinctCount => ???
+      }
     }
   }
 
