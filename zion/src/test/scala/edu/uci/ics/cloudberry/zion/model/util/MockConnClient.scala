@@ -1,7 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.util
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.specs2.mock.Mockito
@@ -10,6 +9,8 @@ import play.api.libs.json.JsValue
 import scala.concurrent.{ExecutionContext, Future}
 
 trait MockConnClient extends Mockito {
+
+  import org.mockito.Mockito._
   /**
     * Mock the aql and the response based
     *

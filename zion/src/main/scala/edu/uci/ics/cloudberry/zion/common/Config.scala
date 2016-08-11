@@ -36,5 +36,5 @@ object Config {
     FiniteDuration(split(0).toLong, split(1))
   }
 
-  val default = new Config(Configuration.empty)
+  val Default = new Config(Configuration.empty)
 }

@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.DateTime
 import play.api.libs.json.Json
 
 object TestQuery {
@@ -24,6 +25,16 @@ object TestQuery {
   val stringValue = Seq("English")
   val longValues: Seq[Long] = Seq(1644l, 45464l)
   val doubleValues: Seq[Double] = Seq(0.45541, 9.456)
+
+  val sourceInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2017, 1, 1, 0, 0))
+  val sourceStat = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 10000)
+  val sourceInfo = DataSetInfo(TwitterDataSet, None, schema, sourceInterval, sourceStat)
+
+  val zikaHalfInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2016, 6, 1, 0, 0))
+  val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
+
+  val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
+  val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, zikaHalfInterval, zikaStats)
 
   val intFilter = FilterStatement("id", None, Relation.==, intValues)
   val stringFilter = FilterStatement("lang", None, Relation.matches, stringValue)
@@ -56,8 +67,6 @@ object TestQuery {
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
   val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
   val selectTop10 = SelectStatement(Seq.empty, 10, 0, Seq.empty)
-
-  val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
 
   val filterJSON =
     s"""
@@ -466,5 +475,6 @@ object TestQuery {
      """.stripMargin)
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
+
   def unifyNewLine(string: String): String = string.replaceAll("\\r?\\n", "\n")
 }

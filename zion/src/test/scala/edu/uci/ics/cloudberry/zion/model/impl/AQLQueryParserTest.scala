@@ -438,6 +438,16 @@ class AQLQueryParserTest extends Specification {
 
   }
 
+  "AQLQueryParser calcResultSchema" should {
+    "return the input schema if the query is subset filter only" in {
+      val schema = parser.calcResultSchema(zikaCreateQuery, TwitterDataStore.TwitterSchema)
+      schema must_== TwitterDataStore.TwitterSchema
+    }
+    "return the aggregated schema for aggregation queries" in {
+      ok
+    }
+  }
+
   "AQLQueryParser createView" should {
     "generate the ddl for the twitter dataset" in {
       val ddl = parser.parseCreate(CreateView("zika", zikaCreateQuery), TwitterDataStore.TwitterSchema)

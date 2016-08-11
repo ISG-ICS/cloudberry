@@ -239,7 +239,6 @@ class AQLQueryParser extends IQueryParser {
   private def genDDL(schema: Schema): String = {
 
     def mkNestDDL(names: List[String], typeStr: String): String = {
-      print(names)
       names match {
         case List(e) => s"  $e : $typeStr"
         case e :: tail => s"  $e : { ${mkNestDDL(tail, typeStr)} }"
