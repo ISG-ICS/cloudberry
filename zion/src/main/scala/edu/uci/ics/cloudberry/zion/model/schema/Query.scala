@@ -18,7 +18,8 @@ case class Query(dataset: String,
                  filter: Seq[FilterStatement] = Seq.empty,
                  unnest: Seq[UnnestStatement] = Seq.empty,
                  groups: Option[GroupStatement] = None,
-                 select: Option[SelectStatement] = None
+                 select: Option[SelectStatement] = None,
+                 globalAggr: Option[GlobalAggregateStatement] = None
                 ) extends IQuery {
 
   import IQuery.TimeFormat
@@ -160,7 +161,12 @@ case class GroupStatement(bys: Seq[ByStatement],
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
 
+  requireOrThrow(bys.nonEmpty, "By statement is required")
   requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
+}
+
+case class GlobalAggregateStatement(aggregate: AggregateStatement
+                         ) extends Statement {
 }
 
 case class SelectStatement(orderOn: Seq[String],

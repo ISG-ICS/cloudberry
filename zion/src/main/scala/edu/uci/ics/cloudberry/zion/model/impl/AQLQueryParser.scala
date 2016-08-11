@@ -74,17 +74,21 @@ class AQLQueryParser extends IQueryParser {
     val (unnest, varMapAfterUnnest) = parseUnnest(query.unnest, varMapAfterLookup)
 
     val groupVar = "$g"
-    val (aggrPrefix, aggrReturnStat, group, varMapAfterGroup) = query.groups.map(parseGroupby(_, varMapAfterUnnest, groupVar))
-      .getOrElse(("", "", "", varMapAfterUnnest))
+    val (group, varMapAfterGroup) = query.groups.map(parseGroupby(_, varMapAfterUnnest, groupVar))
+      .getOrElse(("", varMapAfterUnnest))
 
 
-    val varName = if (group.length > 0 || aggrPrefix.length > 0) groupVar else sourceVar
-    val (selectPrefix, select) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0 || aggrPrefix.length > 0, aggrPrefix.length > 0, varName))
+    val varName = if (group.length > 0) groupVar else sourceVar
+    val (selectPrefix, select) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0, varName))
       .getOrElse("", "")
 
     val returnStat = if (query.groups.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
 
-    Seq(aggrPrefix, selectPrefix, dataset, lookup, filter, unnest, aggrReturnStat, group, select, returnStat).mkString("\n")
+    val aggrVar = "$c"
+    val aggrVarName = if(selectPrefix.length > 0 ) aggrVar else groupVar
+    val (globalAggrPrefix, aggrReturnStat) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterGroup, aggrVarName)).getOrElse("","")
+
+    Seq(globalAggrPrefix, selectPrefix, dataset, lookup, filter, unnest, group, select, returnStat, aggrReturnStat).mkString("\n")
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],
@@ -155,38 +159,16 @@ class AQLQueryParser extends IQueryParser {
     * @param group
     * @param varMap
     * @param varGroupSource
-    * @return String: Aggregate function only prefix string
-    *         String: Aggregate function only return statement
-    *         String: Group by statement
+    * @return String: Group by statement
     *         Map: Produced  AQL variable
     */
   private def parseGroupby(group: GroupStatement,
                            varMap: Map[String, AQLVar],
                            varGroupSource: String = "$g"
-                          ): (String, String, String, Map[String, AQLVar]) = {
+                          ): (String, Map[String, AQLVar]) = {
 
-    val isAggrOnly = group.bys.isEmpty
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
 
-    if (isAggrOnly) {
-      val returnStat = StringBuilder.newBuilder
-      val aggrNameMap = group.aggregates.map { aggr =>
-        varMap.get(aggr.fieldName) match {
-          case Some(aqlVar) =>
-            val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr, isAggrOnly)
-            producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
-            val wrap = ")"
-            returnStat.append(s"return ${aqlVar.aqlExpr}${wrap}")
-            s"$aqlAggExpr"
-          case None => throw FieldNotFound(aggr.fieldName)
-        }
-      }
-      val returnStmt = returnStat.result()
-      val aggrPrefix = s"${(aggrNameMap.mkString(","))}".stripMargin
-
-      (aggrPrefix, returnStmt, "", producedVar.result.toMap)
-
-    } else {
       val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map { case (by, id) =>
         varMap.get(by.fieldName) match {
           case Some(aqlVar) =>
@@ -204,7 +186,7 @@ class AQLQueryParser extends IQueryParser {
       val aggrNameMap = group.aggregates.map { aggr =>
         varMap.get(aggr.fieldName) match {
           case Some(aqlVar) =>
-            val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr, isAggrOnly)
+            val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr)
             aggrRequiredVar += newvar
             letExpr += newvarexpr
             producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
@@ -224,19 +206,16 @@ class AQLQueryParser extends IQueryParser {
            |  ${(retGroups ++ aggrNameMap).mkString(",")}
            |}
            |""".stripMargin
-      ("", "", aql, producedVar.result.toMap)
-    }
-
+      (aql, producedVar.result.toMap)
   }
 
   private def parseSelect(select: SelectStatement,
                           varMap: Map[String, AQLVar],
                           isInGroup: Boolean,
-                          isInAggr: Boolean,
                           sourceVar: String = "$g"
                          ): (String, String) = {
 
-    val (prefix, closeParenthesis) = if (isInGroup) (s"for $sourceVar in (", ")") else ("", "")
+    val (prefix, wrap) = if (isInGroup) (s"for $sourceVar in (", ")") else ("", "")
     //sampling only
     val orders = select.orderOn.map { fieldNameWithOrder =>
       val order = if (fieldNameWithOrder.startsWith("-")) "desc" else ""
@@ -256,10 +235,7 @@ class AQLQueryParser extends IQueryParser {
     }
     val retAQL = StringBuilder.newBuilder
     if (rets.nonEmpty) retAQL.append(rets.mkString("{", ",", "}")) else retAQL.append(sourceVar)
-    if (isInAggr) {
-      retAQL.append(")")
-    }
-    val wrap = if (!isInAggr) closeParenthesis else ""
+
     val aql =
       s"""
          |$wrap
@@ -272,8 +248,44 @@ class AQLQueryParser extends IQueryParser {
     (prefix, aql)
   }
 
+  private def parseGlobalAggr(globalAggr: GlobalAggregateStatement,
+                          varMap: Map[String, AQLVar],
+                          sourceVar: String = "$g"
+                         ): (String, String) = {
+
+    val (forPrefix, forWrap) = (s"for $sourceVar in (", ")")
+    val producedVar = mutable.Map.newBuilder[String, AQLVar]
+    val aggr = globalAggr.aggregate
+    val (aggrNameMap, returnVar) =
+      varMap.get(aggr.fieldName) match {
+        case Some(aqlVar) =>
+          val (dataType, aqlAggExpr, returnVar) = AQLFuncVisitor.translateGlobalAggr(aqlVar.field, aggr.func, sourceVar)
+          producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$sourceVar.${aggr.as}")
+          (s"$aqlAggExpr",returnVar)
+        case None => throw FieldNotFound(aggr.fieldName)
+      }
+    val (openAggrWrap, closeAggrWrap) = ("(",")")
+
+    val aqlPrefix =
+      s"""
+         |${aggrNameMap}
+         |$openAggrWrap
+         |$forPrefix
+         """.stripMargin
+
+    val returnStat =
+    s"""
+      |$forWrap
+      |return
+      |$returnVar
+      |$closeAggrWrap
+      |""".stripMargin
+
+    (aqlPrefix, returnStat)
+  }
+
   private def validateQuery(query: Query): Unit = {
-    requireOrThrow(query.select.isDefined || query.groups.isDefined, "either group or select statement is required")
+    requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined, "either group or select statement is required")
   }
 
   private def genDDL(schema: Schema): String = {
