@@ -207,7 +207,6 @@ object AQLFuncVisitor {
                         func: AggregateFunc,
                         aqlExpr: String
                        ): (DataType.DataType, String, String, String) = {
-
       val newvar = s"${aqlExpr.split('.')(0)}aggr";
       func match {
         case Count =>
