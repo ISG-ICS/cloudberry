@@ -123,6 +123,9 @@ object JSONParser {
       (JsPath \ "aggregate").read[Seq[AggregateStatement]]
   }.apply(GroupStatement.apply _)
 
+  implicit val globalReads: Reads[GlobalAggregateStatement] =
+    (JsPath \ "globalAggregate").read[AggregateStatement].map(GlobalAggregateStatement.apply _)
+
   implicit val selectReads: Reads[SelectStatement] = {
     (JsPath \ "order").read[Seq[String]] and
       (JsPath \ "limit").read[Int] and
@@ -160,7 +163,8 @@ object JSONParser {
       (JsPath \ "filter").readNullable[Seq[FilterStatement]].map(_.getOrElse(Seq.empty)) and
       (JsPath \ "unnest").readNullable[Seq[UnnestStatement]].map(_.getOrElse(Seq.empty)) and
       (JsPath \ "group").readNullable[GroupStatement] and
-      (JsPath \ "select").readNullable[SelectStatement]
+      (JsPath \ "select").readNullable[SelectStatement]  and
+      (JsPath \ "global").readNullable[GlobalAggregateStatement]
   }.apply(Query.apply _)
 
 }
