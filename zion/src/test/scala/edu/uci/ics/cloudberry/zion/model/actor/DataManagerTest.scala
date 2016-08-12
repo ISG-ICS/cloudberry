@@ -8,7 +8,7 @@ import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQueryParser, IQueryParserFactory}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLQueryParser, DataSetInfo}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query}
+import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, CreateView, Query}
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.specs2.mutable.SpecificationLike
 
@@ -80,7 +80,27 @@ class DataManagerTest extends TestkitExample with SpecificationLike with MockCon
       response.last.schema must_== sourceInfo.schema
     }
     "update meta stats if append view succeeds" in {
-      ok
+      val parser = new AQLQueryParser
+      val mockParserFactory = mock[IQueryParserFactory]
+      when(mockParserFactory.apply()).thenReturn(parser)
+
+      val mockConn = mock[IDataConn]
+      val initialInfo = Map(sourceInfo.name -> sourceInfo, zikaHalfYearViewInfo.name -> zikaHalfYearViewInfo)
+      val dataManager = system.actorOf(Props(new DataManager(initialInfo, mockConn, mockParserFactory, Config.Default, testActorMaker)))
+
+      sender.send(dataManager, DataManager.AskInfoMsg(sourceInfo.name))
+      sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
+
+      val appendView = AppendView(zikaHalfYearViewInfo.name, Query(sourceInfo.name))
+      sender.send(dataManager, appendView)
+      child.expectMsg(appendView)
+      child.reply(true)
+      sender.expectNoMsg(100 milli)
+      sender.send(dataManager, DataManager.AskInfoMsg(zikaHalfYearViewInfo.name))
+      val newInfo = sender.receiveOne(1 second).asInstanceOf[Seq[DataSetInfo]].head
+      newInfo.name must_== zikaHalfYearViewInfo.name
+      newInfo.dataInterval.getEndMillis must be_> (zikaHalfYearViewInfo.dataInterval.getEndMillis)
+      newInfo.stats.cardinality must be_> (zikaHalfYearViewInfo.stats.cardinality)
     }
     "update meta info if receive drop request" in {
       ok

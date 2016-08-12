@@ -9,7 +9,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class DataManager(initialMetaData: Map[String, DataSetInfo],
                   val conn: IDataConn,
@@ -22,6 +22,8 @@ class DataManager(initialMetaData: Map[String, DataSetInfo],
 
   type TMetaMap = scala.collection.mutable.Map[String, DataSetInfo]
   type TViewMap = scala.collection.mutable.Map[String, String]
+  type TJodaInterval = org.joda.time.Interval
+
   val managerParser = queryParserFactory()
   val metaData: TMetaMap = scala.collection.mutable.Map[String, DataSetInfo](initialMetaData.toList: _*)
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
@@ -83,8 +85,16 @@ class DataManager(initialMetaData: Map[String, DataSetInfo],
     }
   }
 
+  private def collectStats(dataset: String): Future[(TJodaInterval, Int)] = ???
+
   private def updateStats(dataset: String): Unit = {
-    ???
+    //TODO replace it to an actual query
+    val originalInfo = metaData(dataset)
+    val now = DateTime.now()
+    val interval = new org.joda.time.Interval(originalInfo.dataInterval.getStart, now)
+    val cardinality = originalInfo.stats.cardinality + 1000
+
+    self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(cardinality = cardinality))
   }
 
 }
