@@ -3,9 +3,9 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.{IJSONParser, JsonRequestException}
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
-import play.api.libs.json._
-import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 
 class JSONParser extends IJSONParser {
 
@@ -157,6 +157,7 @@ object JSONParser {
       (JsPath \ "values").read[Seq[Any]]
   }.apply(FilterStatement.apply _)
 
+  // TODO find better name for 'global'
   implicit val queryReads: Reads[Query] = {
     (JsPath \ "dataset").read[String] and
       (JsPath \ "lookup").readNullable[Seq[LookupStatement]].map(_.getOrElse(Seq.empty)) and

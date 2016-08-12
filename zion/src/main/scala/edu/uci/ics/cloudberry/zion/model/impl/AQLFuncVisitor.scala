@@ -207,27 +207,27 @@ object AQLFuncVisitor {
                         func: AggregateFunc,
                         aqlExpr: String
                        ): (DataType.DataType, String, String, String) = {
-      val newvar = s"${aqlExpr.split('.')(0)}aggr";
-      func match {
-        case Count =>
-          if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
-          (DataType.Number, s"count($newvar)", newvar, s"let $newvar := $aqlExpr")
-        case Max =>
-          if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
-          (DataType.Number, s"max($newvar)", newvar, s"let $newvar := $aqlExpr")
-        case Min =>
-          if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
-          (DataType.Number, s"min($newvar)", newvar, s"let $newvar := $aqlExpr")
-        case topK: TopK => ???
-        case Avg =>
-          if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
-          (DataType.Number, s"avg($newvar)", newvar, s"let $newvar := $aqlExpr")
-        case Sum =>
-          if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
-          (DataType.Number, s"sum($newvar)", newvar, s"let $newvar := $aqlExpr")
-        case DistinctCount => ???
-      }
+    val newvar = s"${aqlExpr.split('.')(0)}aggr";
+    func match {
+      case Count =>
+        if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
+        (DataType.Number, s"count($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case Max =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+        (DataType.Number, s"max($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case Min =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
+        (DataType.Number, s"min($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case topK: TopK => ???
+      case Avg =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
+        (DataType.Number, s"avg($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case Sum =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
+        (DataType.Number, s"sum($newvar)", newvar, s"let $newvar := $aqlExpr")
+      case DistinctCount => ???
     }
+  }
 
   def translateGlobalAggr(field: Field,
                         func: AggregateFunc,

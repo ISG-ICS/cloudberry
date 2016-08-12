@@ -47,6 +47,7 @@ object TestQuery {
   val byBin = ByStatement("geo_tag.stateID", Some(Bin(10)), Some("state"))
 
   val aggrCount = AggregateStatement("*", Count, "count")
+  val aggrMaxGroupBy = AggregateStatement("count", Max, "max")
   val aggrMax = AggregateStatement("id", Max, "max")
   val aggrMin = AggregateStatement("id", Min, "min")
   val aggrSum = AggregateStatement("id", Sum, "sum")
