@@ -35,7 +35,7 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
 
       val client = system.actorOf(Client.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
-      dataManager.expectMsg(DataManager.AskInfoMsg(query.dataset))
+      dataManager.expectMsg(DataStoreManager.AskInfoMsg(query.dataset))
       dataManager.reply(Seq(sourceInfo))
 
       val query1 = Query(sourceInfo.name, filter = Seq(textFilter))
@@ -70,7 +70,7 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
 
       val client = system.actorOf(Client.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
-      dataManager.expectMsg(DataManager.AskInfoMsg(query.dataset))
+      dataManager.expectMsg(DataStoreManager.AskInfoMsg(query.dataset))
       dataManager.reply(Seq.empty)
 
       sender.expectMsg(Client.NoSuchDataset(sourceInfo.name))

@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.actor.DataManager.AskInfoMsg
+import edu.uci.ics.cloudberry.zion.model.actor.DataStoreManager.AskInfoMsg
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryResponse
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query

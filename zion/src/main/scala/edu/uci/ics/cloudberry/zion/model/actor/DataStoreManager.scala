@@ -4,21 +4,21 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQueryParser, IQueryParserFactory}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DataManager(initialMetaData: Map[String, DataSetInfo],
-                  val conn: IDataConn,
-                  val queryParserFactory: IQueryParserFactory,
-                  val config: Config,
-                  val childMaker: (ActorRefFactory, String, Seq[Any]) => ActorRef)
-                 (implicit ec: ExecutionContext) extends Actor with ActorLogging {
+class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
+                       val conn: IDataConn,
+                       val queryParserFactory: IQLGeneratorFactory,
+                       val config: Config,
+                       val childMaker: (ActorRefFactory, String, Seq[Any]) => ActorRef)
+                      (implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
-  import DataManager._
+  import DataStoreManager._
 
   type TMetaMap = scala.collection.mutable.Map[String, DataSetInfo]
   type TViewMap = scala.collection.mutable.Map[String, String]
@@ -72,7 +72,7 @@ class DataManager(initialMetaData: Map[String, DataSetInfo],
     }
     val sourceInfo = metaData(create.query.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
-    val queryString = managerParser.parse(create, sourceInfo.schema)
+    val queryString = managerParser.generate(create, sourceInfo.schema)
     conn.postControl(queryString).map {
       case true =>
         //TODO replace the following query with an actual query
@@ -99,19 +99,19 @@ class DataManager(initialMetaData: Map[String, DataSetInfo],
 
 }
 
-object DataManager {
+object DataStoreManager {
 
   def props(initialMetaData: Map[String, DataSetInfo],
             conn: IDataConn,
-            queryParserFactory: IQueryParserFactory,
+            queryParserFactory: IQLGeneratorFactory,
             config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new DataManager(initialMetaData, conn, queryParserFactory, config, defaultMaker))
+    Props(new DataStoreManager(initialMetaData, conn, queryParserFactory, config, defaultMaker))
   }
 
   def defaultMaker(context: ActorRefFactory, name: String, args: Seq[Any])(implicit ec: ExecutionContext): ActorRef = {
     context.actorOf(DataSetAgent.props(
-      args(0).asInstanceOf[Schema], args(1).asInstanceOf[IQueryParser], args(2).asInstanceOf[IDataConn]))
+      args(0).asInstanceOf[Schema], args(1).asInstanceOf[IQLGenerator], args(2).asInstanceOf[IDataConn]))
   }
 
 

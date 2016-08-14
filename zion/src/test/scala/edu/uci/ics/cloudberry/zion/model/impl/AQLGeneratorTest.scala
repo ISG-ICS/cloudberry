@@ -3,18 +3,18 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.Specification
 
-class AQLQueryParserTest extends Specification {
+class AQLGeneratorTest extends Specification {
 
   import TestQuery._
 
-  val parser = new AQLQueryParser
+  val parser = new AQLGenerator
 
   "AQLQueryParser parseQuery" should {
     "translate a simple filter by time and group by time query" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -31,7 +31,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -49,7 +49,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(stateFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -68,7 +68,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byHour, byState), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -87,7 +87,7 @@ class AQLQueryParserTest extends Specification {
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -107,7 +107,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $g in (
@@ -136,7 +136,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMax))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -153,7 +153,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMin))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -170,7 +170,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrSum))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -187,7 +187,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrAvg))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -204,7 +204,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -222,7 +222,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -242,7 +242,7 @@ class AQLQueryParserTest extends Specification {
       filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -261,7 +261,7 @@ class AQLQueryParserTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byBin), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -278,7 +278,7 @@ class AQLQueryParserTest extends Specification {
     "translate a group by geocell without filter" in {
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -294,7 +294,7 @@ class AQLQueryParserTest extends Specification {
     "translate a text contain filter and select 10" in {
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectTop10))
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -309,7 +309,7 @@ class AQLQueryParserTest extends Specification {
     "translate group by second" in {
       val group = GroupStatement(Seq(bySecond), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -323,7 +323,7 @@ class AQLQueryParserTest extends Specification {
     "translate group by minute" in {
       val group = GroupStatement(Seq(byMinute), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -338,7 +338,7 @@ class AQLQueryParserTest extends Specification {
     "translate group by day" in {
       val group = GroupStatement(Seq(byDay), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -353,7 +353,7 @@ class AQLQueryParserTest extends Specification {
     "translate group by week" in {
       val group = GroupStatement(Seq(byWeek), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -368,7 +368,7 @@ class AQLQueryParserTest extends Specification {
     "translate group by month" in {
       val group = GroupStatement(Seq(byMonth), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -383,7 +383,7 @@ class AQLQueryParserTest extends Specification {
     "translate group by year" in {
       val group = GroupStatement(Seq(byYear), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -398,7 +398,7 @@ class AQLQueryParserTest extends Specification {
     "translate a count cardinality query without group by" in {
       val group = GroupStatement(Seq.empty, Seq(aggrCount))
       val query = new Query(dataset = TwitterDataSet, groups = Some(group))
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       val expected =
         """
           |count (for $t in dataset twitter.ds_tweet return $t)
@@ -409,7 +409,7 @@ class AQLQueryParserTest extends Specification {
     "translate get min field value query without group by" in {
       val group = GroupStatement(Seq.empty, Seq(aggrMin))
       val query = new Query(dataset = TwitterDataSet, groups = Some(group))
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       val expected =
         """
           |min(for $t in dataset twitter.ds_tweet return $t.id)
@@ -420,7 +420,7 @@ class AQLQueryParserTest extends Specification {
     "translate get max field value query without group by" in {
       val group = GroupStatement(Seq.empty, Seq(aggrMax))
       val query = new Query(dataset = TwitterDataSet, groups = Some(group))
-      val result = parser.parse(query, schema)
+      val result = parser.generate(query, schema)
       val expected =
         """
           |max(for $t in dataset twitter.ds_tweet return $t.id)
