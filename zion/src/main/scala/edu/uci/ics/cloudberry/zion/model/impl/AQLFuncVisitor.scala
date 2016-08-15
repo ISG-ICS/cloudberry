@@ -229,6 +229,30 @@ object AQLFuncVisitor {
     }
   }
 
+  def translateGlobalAggr(field: Field,
+                        func: AggregateFunc,
+                          sourceVar: String
+                       ): (DataType.DataType, String, String) = {
+    func match {
+        case Count =>
+        if (field.dataType != DataType.Record) throw new QueryParsingException ("count requires to aggregate on the record bag")
+        (DataType.Number, s"count", sourceVar)
+        case Max =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException ("Max requires to aggregate on numbers")
+        (DataType.Number, s"max", s"$sourceVar.'${field.name}'")
+        case Min =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException ("Min requires to aggregate on numbers")
+        (DataType.Number, s"min",s"$sourceVar.'${field.name}'")
+        case topK: TopK => ???
+        case Avg =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException ("Avg requires to aggregate on numbers")
+        (DataType.Number, s"avg",s"$sourceVar.'${field.name}'")
+        case Sum =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException ("Sum requires to aggregate on numbers")
+        (DataType.Number, s"sum",s"$sourceVar.'${field.name}'")
+        case DistinctCount => ???
+      }
+}
   private def getGeocellString(scale: Double, aqlExpr: String, dataType: DataType.Value): String = {
       if (dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
       val origin = s"create-point(0.0,0.0)"
