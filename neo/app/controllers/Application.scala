@@ -2,48 +2,28 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import actors._
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.stream.Materializer
-import akka.util.Timeout
-import db.Migration_20160324
-import edu.uci.ics.cloudberry.zion.asterix.{AsterixConnection, TwitterDataStoreActor, TwitterViewsManagerActor}
 import edu.uci.ics.cloudberry.zion.common.Config
-import models.UserQuery
+import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.JsValue
-import play.api.libs.streams.ActorFlow
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import scala.util.{Failure, Success}
 
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
                             val configuration: Configuration,
-                            val environment: Environment,
-                            implicit val system: ActorSystem,
+                            val environment: Environment)
+                           (implicit val system: ActorSystem,
                             implicit val materializer: Materializer
                            ) extends Controller {
 
   val config = new Config(configuration)
-  val asterixConn = new AsterixConnection(config.AsterixURL, wsClient, config)
+  val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
   Logger.logger.info("I'm initializing")
-  val checkViewStatus = Migration_20160324(asterixConn).up()
-  val USGeoGnosis = Knowledge.buildUSKnowledge(environment)
-
-  Await.ready(checkViewStatus, config.AwaitInitial) onComplete {
-    case Success(succeed: Boolean) => if (!succeed) throw new IllegalStateException("Initialization failed")
-    case Failure(ex) => Logger.logger.error(ex.getMessage); throw ex
-  }
-
-  val twitterActor = system.actorOf(Props(new TwitterDataStoreActor(asterixConn, config)), "twitter")
-  val viewsActor = system.actorOf(Props(new TwitterViewsManagerActor(asterixConn, twitterActor, config)), "views")
-  val cachesActor = system.actorOf(Props(new CachesActor(viewsActor, USGeoGnosis, config)), "caches")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
@@ -61,26 +41,28 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
+//    ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
+    ???
   }
 
-  def tweet(id:String) = Action.async {
-    val url = "https://api.twitter.com/1/statuses/oembed.json?id="+id
+  def tweet(id: String) = Action.async {
+    val url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id
     wsClient.url(url).get().map { response =>
       Ok(response.json)
     }
   }
 
-  def search(query: JsValue) = Action.async {
-    import akka.pattern.ask
-
-    import scala.concurrent.duration._
-    implicit val timeout = Timeout(5.seconds)
-
-    (cachesActor ? query.as[UserQuery]).mapTo[JsValue].map { answer =>
-      Ok(answer)
-    }
-  }
+//  def search(query: JsValue) = Action.async {
+//    ???
+//    import akka.pattern.ask
+//
+//    import scala.concurrent.duration._
+//    implicit val timeout = Timeout(5.seconds)
+//
+//    (cachesActor ? query.as[UserQuery]).mapTo[JsValue].map { answer =>
+//      Ok(answer)
+//    }
+//  }
 
   class Listener extends Actor {
     def receive = {
