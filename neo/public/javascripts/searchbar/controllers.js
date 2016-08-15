@@ -17,11 +17,16 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       controller: 'SearchCtrl',
       template: [
         '<form class="form-inline" id="input-form" ng-submit="search()" >',
-          '<div class="form-group" style="width: 80%">',
+          '<div class="input-group col-lg-12">',
             '<label class="sr-only">Keywords</label>',
             '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Search keywords, e.g. zika" ng-model="keyword" required/>',
+            '<span class="input-group-btn">',
+                '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
+            '</span>',
+            '<span class="input-group-btn">',
+                '<a href="https://www.youtube.com/watch?v=XwlRm0jcsU4" target="_blank" class="btn btn-info">Learn more about Cloudberry</a>',
+            '</span>',
           '</div>',
-          '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
         '</form>'
       ].join('')
     };
