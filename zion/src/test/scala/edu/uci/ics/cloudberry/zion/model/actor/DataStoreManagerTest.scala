@@ -6,8 +6,8 @@ import akka.actor.{ActorRef, ActorRefFactory, Props}
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator$, DataSetInfo}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGeneratorFactory}
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo}
 import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, CreateView, Query}
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.specs2.mutable.SpecificationLike
@@ -20,8 +20,9 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
   sequential
 
-  import org.mockito.Mockito._
   import edu.uci.ics.cloudberry.zion.model.impl.TestQuery._
+  import org.mockito.Mockito._
+
   import scala.concurrent.duration._
 
   val sender = new TestProbe(system)
@@ -95,7 +96,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.send(dataManager, appendView)
       child.expectMsg(appendView)
       child.reply(true)
-      sender.expectNoMsg(100 milli)
+      sender.expectNoMsg(1000 milli)
       sender.send(dataManager, DataStoreManager.AskInfoMsg(zikaHalfYearViewInfo.name))
       val newInfo = sender.receiveOne(1 second).asInstanceOf[Seq[DataSetInfo]].head
       newInfo.name must_== zikaHalfYearViewInfo.name
