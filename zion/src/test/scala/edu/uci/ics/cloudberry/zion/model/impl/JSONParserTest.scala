@@ -103,11 +103,11 @@ class JSONParserTest extends Specification {
       val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
       actualQuery must_== expectQuery
     }
-  "parse a min cardinality without group by" in {
-    val actualQuery = parser.parse(globalMinJSON)
-    val globalAggr = GlobalAggregateStatement(aggrMin)
-    val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-    actualQuery must_== expectQuery
-  }
+    "parse a min cardinality without group by" in {
+      val actualQuery = parser.parse(globalMinJSON)
+      val globalAggr = GlobalAggregateStatement(aggrMin)
+      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      actualQuery must_== expectQuery
+    }
   }
 }
