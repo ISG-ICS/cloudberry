@@ -97,8 +97,8 @@ object JSONParser {
         case AggregateFunc.Count => JsSuccess(Count)
         case AggregateFunc.TopK => ???
         case AggregateFunc.Sum => ???
-        case AggregateFunc.Max => ???
-        case AggregateFunc.Min => ???
+        case AggregateFunc.Max => JsSuccess(Max)
+        case AggregateFunc.Min => JsSuccess(Min)
         case AggregateFunc.Avg => ???
         case AggregateFunc.DistinctCount => ???
         case unknown: String => JsError(s"unknown aggregation function: $unknown")
@@ -123,9 +123,9 @@ object JSONParser {
       (JsPath \ "aggregate").read[Seq[AggregateStatement]]
   }.apply(GroupStatement.apply _)
 
-  implicit val globalReads: Reads[GlobalAggregateStatement] =
-    (JsPath \ "globalAggregate").read[AggregateStatement].map(GlobalAggregateStatement.apply _)
-
+  implicit val globalReads: Reads[GlobalAggregateStatement] = {
+    (JsPath \ "globalAggregate").read[AggregateStatement].map(GlobalAggregateStatement.apply)
+  }
   implicit val selectReads: Reads[SelectStatement] = {
     (JsPath \ "order").read[Seq[String]] and
       (JsPath \ "limit").read[Int] and

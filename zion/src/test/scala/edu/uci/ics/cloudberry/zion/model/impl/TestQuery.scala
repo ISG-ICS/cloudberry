@@ -466,6 +466,57 @@ object TestQuery {
        |}
      """.stripMargin)
 
+  val globalCountJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | "global": {
+       |   "globalAggregate":
+       |     {
+       |       "field": "*",
+       |       "apply": {
+       |         "name": "count"
+       |       },
+       |       "as": "count"
+       |     }
+       |  }
+       |}
+    """.stripMargin)
+
+  val globalMaxJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | "global": {
+       |   "globalAggregate":
+       |     {
+       |       "field": "id",
+       |       "apply": {
+       |         "name": "max"
+       |       },
+       |       "as": "max"
+       |     }
+       |  }
+       |}
+    """.stripMargin)
+
+  val globalMinJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | "global": {
+       |   "globalAggregate":
+       |     {
+       |       "field": "id",
+       |       "apply": {
+       |         "name": "min"
+       |       },
+       |       "as": "min"
+       |     }
+       |  }
+       |}
+    """.stripMargin)
+
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
   def unifyNewLine(string: String): String = string.replaceAll("\\r?\\n", "\n")
 }
