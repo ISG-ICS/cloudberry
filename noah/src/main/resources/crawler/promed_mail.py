@@ -56,7 +56,7 @@ if __name__ == '__main__':
     pagenum = 0
     submit = "next"
     
-    if len(sys.argv) < 2:
+    if len(sys.argv) != 2:
         sys.exit("Enter the directory name and number of days in arguments: \n Example: python promed_mail.py PromedResult 365")
     
     dirName = sys.argv[1]

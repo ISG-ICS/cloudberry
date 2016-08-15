@@ -7,7 +7,7 @@ import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator$, DataSetInfo}
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, AQLGenerator$, DataSetInfo}
 import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, CreateView, Query}
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.specs2.mutable.SpecificationLike

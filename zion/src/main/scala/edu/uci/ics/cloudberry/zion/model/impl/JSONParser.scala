@@ -3,9 +3,9 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.{IJSONParser, JsonRequestException}
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
-import play.api.libs.json._
-import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 
 class JSONParser extends IJSONParser {
 
@@ -97,8 +97,8 @@ object JSONParser {
         case AggregateFunc.Count => JsSuccess(Count)
         case AggregateFunc.TopK => ???
         case AggregateFunc.Sum => ???
-        case AggregateFunc.Max => ???
-        case AggregateFunc.Min => ???
+        case AggregateFunc.Max => JsSuccess(Max)
+        case AggregateFunc.Min => JsSuccess(Min)
         case AggregateFunc.Avg => ???
         case AggregateFunc.DistinctCount => ???
         case unknown: String => JsError(s"unknown aggregation function: $unknown")
@@ -123,6 +123,9 @@ object JSONParser {
       (JsPath \ "aggregate").read[Seq[AggregateStatement]]
   }.apply(GroupStatement.apply _)
 
+  implicit val globalReads: Reads[GlobalAggregateStatement] = {
+    (JsPath \ "globalAggregate").read[AggregateStatement].map(GlobalAggregateStatement.apply)
+  }
   implicit val selectReads: Reads[SelectStatement] = {
     (JsPath \ "order").read[Seq[String]] and
       (JsPath \ "limit").read[Int] and
@@ -154,13 +157,15 @@ object JSONParser {
       (JsPath \ "values").read[Seq[Any]]
   }.apply(FilterStatement.apply _)
 
+  // TODO find better name for 'global'
   implicit val queryReads: Reads[Query] = {
     (JsPath \ "dataset").read[String] and
       (JsPath \ "lookup").readNullable[Seq[LookupStatement]].map(_.getOrElse(Seq.empty)) and
       (JsPath \ "filter").readNullable[Seq[FilterStatement]].map(_.getOrElse(Seq.empty)) and
       (JsPath \ "unnest").readNullable[Seq[UnnestStatement]].map(_.getOrElse(Seq.empty)) and
       (JsPath \ "group").readNullable[GroupStatement] and
-      (JsPath \ "select").readNullable[SelectStatement]
+      (JsPath \ "select").readNullable[SelectStatement]  and
+      (JsPath \ "global").readNullable[GlobalAggregateStatement]
   }.apply(Query.apply _)
 
 }
