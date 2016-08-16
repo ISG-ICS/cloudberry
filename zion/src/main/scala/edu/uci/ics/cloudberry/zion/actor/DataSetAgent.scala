@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.zion.model.actor
+package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}

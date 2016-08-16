@@ -1,10 +1,10 @@
-package edu.uci.ics.cloudberry.zion.model.actor
+package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.actor.DataStoreManager.AskInfoMsg
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfoMsg
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json.{JsArray, JsValue}

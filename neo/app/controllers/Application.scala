@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.actor.{Client, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.{Client, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
