@@ -2,14 +2,14 @@ package edu.uci.ics.cloudberry.zion.asterix
 
 import akka.actor.Props
 import akka.testkit.{TestActor, TestProbe}
-import edu.uci.ics.cloudberry.zion.actor.{MockConnClient, TestkitExample, ViewMetaRecord}
+import edu.uci.ics.cloudberry.zion.actor.{MockConnClientOld, TestkitExample, ViewMetaRecord}
 import edu.uci.ics.cloudberry.zion.model.{DBQuery, SummaryLevel}
 import org.specs2.mutable.SpecificationLike
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike with MockConnClient with TestData {
+class TwitterKeywordViewActorTest extends TestkitExample with SpecificationLike with MockConnClientOld with TestData {
 
   val queryTemplate = new DBQuery(SummaryLevel.Detail, Seq.empty)
 
