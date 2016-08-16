@@ -4,13 +4,22 @@ import javax.inject.{Inject, Singleton}
 
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.stream.Materializer
+import akka.util.Timeout
+import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.actor.{Client, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
+import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsError, JsObject, JsValue}
+import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
+
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration._
 
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
@@ -22,6 +31,11 @@ class Application @Inject()(val wsClient: WSClient,
 
   val config = new Config(configuration)
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
+
+  val initDataSet = Await.result(Migration_20160814.migration.up(asterixConn), 10 seconds)
+
+  val manager = system.actorOf(DataStoreManager.props(initDataSet.map(ds => ds.name -> ds).toMap, asterixConn, AQLGenerator, config))
+  val queryClient = system.actorOf(Client.props(new JSONParser(), manager, new QueryPlanner(), config))
 
   Logger.logger.info("I'm initializing")
 
@@ -41,8 +55,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-//    ActorFlow.actorRef(out => UserActor.props(out, cachesActor, USGeoGnosis))
-    ???
+    ActorFlow.actorRef(out => Client.props(out, new JSONParser(), manager, new QueryPlanner(), config))
   }
 
   def tweet(id: String) = Action.async {
@@ -52,17 +65,18 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-//  def search(query: JsValue) = Action.async {
-//    ???
-//    import akka.pattern.ask
-//
-//    import scala.concurrent.duration._
-//    implicit val timeout = Timeout(5.seconds)
-//
-//    (cachesActor ? query.as[UserQuery]).mapTo[JsValue].map { answer =>
-//      Ok(answer)
-//    }
-//  }
+  def query = Action.async(parse.json) { request =>
+    import akka.pattern.ask
+    implicit val timeout: Timeout = Timeout(5.seconds)
+
+    import JSONParser._
+    request.body.validate[Query].map {
+      case query: Query =>
+        (queryClient ? query).mapTo[JsValue].map(msg => Ok(msg))
+    }.recoverTotal {
+      e => Future(BadRequest("Detected error:" + JsError.toJson(e)))
+    }
+  }
 
   class Listener extends Actor {
     def receive = {
