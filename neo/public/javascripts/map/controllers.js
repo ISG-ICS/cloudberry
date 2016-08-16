@@ -261,16 +261,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       var colors = $scope.styles.colors;
 
       function getColor(d) {
-        return d > minWeight + range * 0.9 ? colors[9] :
-          d > minWeight + range * 0.8 ? colors[8] :
-          d > minWeight + range * 0.7 ? colors[7] :
-          d > minWeight + range * 0.6 ? colors[6] :
-          d > minWeight + range * 0.5 ? colors[5] :
-          d > minWeight + range * 0.4 ? colors[4] :
-          d > minWeight + range * 0.3 ? colors[3] :
-          d > minWeight + range * 0.2 ? colors[2] :
-          d > minWeight + range * 0.1 ? colors[1] :
-          colors[0];
+        if(!d) {
+          d = 0;
+        }
+        d = Math.ceil((d +1 - minWeight)/range * 10) - 1;
+        if( d<0){
+          d = 0;
+        }
+        if( d> 9) {
+          d = 9;
+        }
+        return colors[d];
       }
 
       function style(feature) {
