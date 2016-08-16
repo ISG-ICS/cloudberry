@@ -81,12 +81,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .on("click", function() { timeSeries.filterAll(); dc.redrawAll();})
                 .style("position", "inherit")
                 .style("bottom", "90%")
-                .style("left", "10%");
+                .style("left", "3%");
 
 
-            chart.append('text')
-              .style('font','12px sans-serif')
-              .html(minDate.getFullYear()+"-"+(minDate.getMonth()+1)+"-"+minDate.getDate());
+            var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
+            var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
 
             timeSeries
               .width(width)
@@ -97,15 +96,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .centerBar(true)
               .x(d3.time.scale().domain([minDate, maxDate]))
               .xUnits(d3.time.days)
-              .gap(1);
+              .gap(1)
+              .xAxisLabel(startDate + "   to   " + endDate);
 
 
 
             dc.renderAll();
-
-            chart.append('text')
-              .style('font','12px sans-serif')
-              .html(maxDate.getFullYear()+"-"+(maxDate.getMonth()+1)+"-"+maxDate.getDate());
 
           })
         }
