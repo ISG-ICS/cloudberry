@@ -32,7 +32,7 @@ map {
 time-series {
   position: absolute;
   top: 82%;
-  left: 2.5%;
+  left: 10%;
   width: 80%;
   height: 15%;
 }
@@ -42,6 +42,13 @@ search-bar {
   left: 27%;
   top: 2%;
   width: 50%;
+}
+
+#how-to{
+  position: absolute;
+  top: 95%;
+  left: 0%;
+  width: 10%;
 }
 
 .info {
