@@ -23,9 +23,6 @@ angular.module('cloudberry.util', ['cloudberry.common'])
             '<span class="input-group-btn">',
                 '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
             '</span>',
-            '<span class="input-group-btn">',
-                '<a href="https://www.youtube.com/watch?v=XwlRm0jcsU4" target="_blank" class="btn btn-info">Learn more about Cloudberry</a>',
-            '</span>',
           '</div>',
         '</form>'
       ].join('')
