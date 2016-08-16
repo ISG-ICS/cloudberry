@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
-import edu.uci.ics.cloudberry.zion.model.schema.{GroupStatement, Query}
+import edu.uci.ics.cloudberry.zion.model.schema.{GlobalAggregateStatement, GroupStatement, Query}
 import org.specs2.mutable.Specification
 
 class JSONParserTest extends Specification {
@@ -89,6 +89,25 @@ class JSONParserTest extends Specification {
     }
     "throw an exception when relation is unknown" in {
       parser.parse(relationErrorJSON) must throwA[JsonRequestException]
+    }
+
+    "parse a count cardinality without group by" in {
+      val actualQuery = parser.parse(globalCountJSON)
+      val globalAggr = GlobalAggregateStatement(aggrCount)
+      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      actualQuery must_== expectQuery
+    }
+    "parse a max cardinality without group by" in {
+      val actualQuery = parser.parse(globalMaxJSON)
+      val globalAggr = GlobalAggregateStatement(aggrMax)
+      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      actualQuery must_== expectQuery
+    }
+    "parse a min cardinality without group by" in {
+      val actualQuery = parser.parse(globalMinJSON)
+      val globalAggr = GlobalAggregateStatement(aggrMin)
+      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      actualQuery must_== expectQuery
     }
   }
 }
