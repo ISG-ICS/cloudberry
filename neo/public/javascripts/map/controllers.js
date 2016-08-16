@@ -85,7 +85,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
 
 
-
+      //Adjust Map to be County or State
       setInfoControl();
       $scope.$on("leafletDirectiveMap.zoomend", function() {
         if ($scope.map) {

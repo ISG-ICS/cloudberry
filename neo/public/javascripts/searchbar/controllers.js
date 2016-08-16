@@ -16,6 +16,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       restrict: "E",
       controller: 'SearchCtrl',
       template: [
+        '<style> .btn.btn-info{position : relative; left:105%; z-index: -3;} </style>',
         '<form class="form-inline" id="input-form" ng-submit="search()" >',
           '<div class="input-group col-lg-12">',
             '<label class="sr-only">Keywords</label>',
