@@ -12,7 +12,7 @@ import play.api.libs.json.{JsArray, JsObject, JsValue}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationLike with MockConnClient with TestData {
+class TwitterCountyDaySummaryViewTest extends TestkitExample with SpecificationLike with MockConnClientOld with TestData {
 
   import TwitterCountyDaySummaryView._
 

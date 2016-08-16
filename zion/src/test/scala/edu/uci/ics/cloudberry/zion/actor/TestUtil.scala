@@ -47,7 +47,7 @@ object TestUtil extends Mockito {
 
 }
 
-trait MockConnClient extends Mockito {
+trait MockConnClientOld extends Mockito {
   val mockPlayConfig = mock[Configuration]
   mockPlayConfig.getString(anyString, any) returns None
   val cloudberryConfig = new Config(mockPlayConfig)

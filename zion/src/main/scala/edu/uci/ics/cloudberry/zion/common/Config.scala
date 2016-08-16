@@ -25,11 +25,16 @@ class Config(config: Configuration) {
   val AQLQueryConnTimeOut = config.getString("asterix.conn.timeout.query").map(parseTimePair).getOrElse(10 seconds)
 
   val AQLUpdateConnTimeOut = config.getString("asterix.conn.timeout.update").map(parseTimePair).getOrElse(Duration.Inf)
+
+  val DataManagerAppendViewTimeOut = config.getString("datamanager.timeout.appendview").map(parseTimePair).getOrElse(1 day)
+
 }
 
 object Config {
-  def parseTimePair(timeString: String) = {
+  def parseTimePair(timeString: String): FiniteDuration = {
     val split = timeString.split("\\s+")
     FiniteDuration(split(0).toLong, split(1))
   }
+
+  val Default = new Config(Configuration.empty)
 }
