@@ -19,7 +19,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
           '<thead>',
             '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.key}}</td><br/><td>{{r.count}}</td></tr>',
           '</thead>',
-
         '</table>'
       ].join('')
     };
