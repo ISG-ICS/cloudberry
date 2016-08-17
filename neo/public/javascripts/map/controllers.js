@@ -77,7 +77,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         button.style.position = 'inherit';
         button.style.top = '150%';
         button.style.left = '-53%';
-    var body = document.getElementsByTagName("search-bar")[0];
+    var body = document.getElementsByClassName("SearchBar")[0];
         body.appendChild(button);
         button.addEventListener ("click", function() {
           $scope.map.setView([$scope.lat, $scope.lng], 4);
