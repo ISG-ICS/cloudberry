@@ -12,7 +12,7 @@ class Config(config: Configuration) {
 
   val AwaitInitial = config.getString("neo.timeout.initial").map(parseTimePair).getOrElse(10 minutes)
 
-  val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(5 seconds)
+  val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)
 
   val CacheTimeOut = config.getString("actor.cache.timeout").map(parseTimePair).getOrElse(1 minutes)
 
