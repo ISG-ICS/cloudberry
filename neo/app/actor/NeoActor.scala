@@ -1,6 +1,6 @@
 package actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
@@ -8,7 +8,7 @@ import play.api.libs.json.{JsArray, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class NeoActor(out: Option[ActorRef], val berryClient: ActorRef)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
+class NeoActor(out: Option[ActorRef], val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
   import NeoActor._
   import akka.pattern.ask
@@ -16,6 +16,8 @@ class NeoActor(out: Option[ActorRef], val berryClient: ActorRef)(implicit ec: Ex
   import scala.concurrent.duration._
 
   implicit val timeout: Timeout = Timeout(5.seconds)
+
+  val berryClient = context.watch(context.actorOf(berryClientProps))
 
   override def receive: Receive = {
     //TODO add the json validator
@@ -43,13 +45,17 @@ class NeoActor(out: Option[ActorRef], val berryClient: ActorRef)(implicit ec: Ex
       }
     }
   }
+
+  override def postStop(): Unit = {
+    berryClient ! PoisonPill
+  }
 }
 
 object NeoActor {
 
-  def props(out: ActorRef, berryClient: ActorRef)(implicit ec: ExecutionContext) = Props(new NeoActor(Some(out), berryClient))
+  def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(Some(out), berryClientProp))
 
-  def props(berryClient: ActorRef)(implicit ec: ExecutionContext) = Props(new NeoActor(None, berryClient))
+  def props(berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(None, berryClientProp))
 
   object RequestType extends Enumeration {
     val ByPlace = Value("byPlace")

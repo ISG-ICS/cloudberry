@@ -37,8 +37,10 @@ class Application @Inject()(val wsClient: WSClient,
   val initDataSet = Await.result(Migration_20160814.migration.up(asterixConn), 10 seconds)
 
   val manager = system.actorOf(DataStoreManager.props(initDataSet.map(ds => ds.name -> ds).toMap, asterixConn, AQLGenerator, config))
-  val berryClient = system.actorOf(Client.props(new JSONParser(), manager, new QueryPlanner(), config))
-  val neoActor = system.actorOf(NeoActor.props(berryClient))
+
+  val berryProp = Client.props(new JSONParser(), manager, new QueryPlanner(), config)
+  val berryClient = system.actorOf(berryProp)
+  val neoActor = system.actorOf(NeoActor.props(berryProp))
 
   Logger.logger.info("I'm initializing")
 
@@ -58,7 +60,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => Client.props(out, new JSONParser(), manager, new QueryPlanner(), config))
+    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
   }
 
   def tweet(id: String) = Action.async {
