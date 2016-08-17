@@ -15,17 +15,18 @@ class DataSetInfoTest extends Specification {
         s"""
            |{
            | "name": "twitter.ds_tweet",
-           |	"schema": {
+           | "schema": {
            |		"typeName": "zika",
            |     "dimension": [],
            |     "measurement": [],
            |     "primaryKey": [],
            |     "timeField": ""
-           |	 },
-           |   "interval": {
-           |
-             |   },
-           |	"stats": {
+           | },
+           | "dataInterval": {},
+           | "stats": { "createTime": "",
+           |            "lastModifyTime": "",
+           |            "lasReadTime": "",
+           |            "cardinality": "0"
            | }
            |}
     """.stripMargin)
