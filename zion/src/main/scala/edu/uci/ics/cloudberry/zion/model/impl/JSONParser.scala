@@ -4,7 +4,6 @@ import edu.uci.ics.cloudberry.zion.model.datastore.{IJSONParser, JsonRequestExce
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 class JSONParser extends IJSONParser {
@@ -22,7 +21,7 @@ class JSONParser extends IJSONParser {
 object JSONParser {
   //Warn: the order of implicit values matters. The dependence should be initialized earlier
 
-  implicit val seqAnyValue: Reads[Seq[Any]] = new Reads[Seq[Any]] {
+  implicit val seqAnyValue: Format[Seq[Any]] = new Format[Seq[Any]] {
     override def reads(json: JsValue): JsResult[Seq[Any]] = {
       json.asOpt[JsArray] match {
         case Some(array) =>
@@ -51,13 +50,17 @@ object JSONParser {
         case None => JsSuccess(Seq.empty)
       }
     }
+
+    override def writes(seq: Seq[Any]): JsValue = ???
   }
 
-  implicit val transformFuncReads: Reads[TransformFunc] = new Reads[TransformFunc] {
+  implicit val transformFuncFormat: Format[TransformFunc] = new Format[TransformFunc] {
     override def reads(json: JsValue): JsResult[TransformFunc] = ???
+
+    override def writes(transformFunc: TransformFunc): JsValue = ???
   }
 
-  implicit val relationReads: Reads[Relation] = new Reads[Relation] {
+  implicit val relationFormat: Format[Relation] = new Format[Relation] {
     override def reads(json: JsValue): JsResult[Relation] = {
       try {
         JsSuccess(Relation.withName(json.as[String]))
@@ -65,12 +68,16 @@ object JSONParser {
         case e: NoSuchElementException => JsError(s"unknown relation: $json")
       }
     }
+
+    override def writes(relation: Relation): JsValue = ???
   }
 
 
-  implicit val groupFuncReads: Reads[GroupFunc] = new Reads[GroupFunc] {
+  implicit val groupFuncFormat: Format[GroupFunc] = new Format[GroupFunc] {
     override def reads(json: JsValue): JsResult[GroupFunc] = (json \ "name").as[String] match {
-      case GroupFunc.Bin => ???
+      case GroupFunc.Bin =>
+        val scale = (json \ "args" \ "scale").as[Int]
+        JsSuccess(Bin(scale))
       case GroupFunc.Level =>
         val level = (json \ "args" \ "level").as[String]
         JsSuccess(Level(level))
@@ -89,83 +96,104 @@ object JSONParser {
       case GroupFunc.GeoCellThousandth => JsSuccess(GeoCellThousandth)
       case unknown: String => JsError(s"group function not found: $unknown")
     }
+
+    override def writes(groupFunc: GroupFunc): JsValue = ???
   }
 
-  implicit val aggFuncReads: Reads[AggregateFunc] = new Reads[AggregateFunc] {
+  implicit val aggFuncFormat: Format[AggregateFunc] = new Format[AggregateFunc] {
     override def reads(json: JsValue): JsResult[AggregateFunc] = {
       (json \ "name").as[String] match {
         case AggregateFunc.Count => JsSuccess(Count)
         case AggregateFunc.TopK => ???
-        case AggregateFunc.Sum => ???
+        case AggregateFunc.Sum => JsSuccess(Sum)
         case AggregateFunc.Max => JsSuccess(Max)
         case AggregateFunc.Min => JsSuccess(Min)
-        case AggregateFunc.Avg => ???
+        case AggregateFunc.Avg => JsSuccess(Avg)
         case AggregateFunc.DistinctCount => ???
         case unknown: String => JsError(s"unknown aggregation function: $unknown")
       }
     }
+
+    override def writes(aggregateFunc: AggregateFunc): JsValue = ???
   }
 
-  implicit val aggReads: Reads[AggregateStatement] = {
-    (JsPath \ "field").read[String] and
-      (JsPath \ "apply").read[AggregateFunc] and
-      (JsPath \ "as").read[String]
-  }.apply(AggregateStatement.apply _)
+  implicit val aggFormat: Format[AggregateStatement] =
+    (
+      (JsPath \ "field").format[String] and
+        (JsPath \ "apply").format[AggregateFunc] and
+        (JsPath \ "as").format[String]
+      ) (AggregateStatement.apply, unlift(AggregateStatement.unapply))
 
-  implicit val byReads: Reads[ByStatement] = {
-    (JsPath \ "field").read[String] and
-      (JsPath \ "apply").readNullable[GroupFunc] and
-      (JsPath \ "as").readNullable[String]
-  }.apply(ByStatement.apply _)
+  implicit val byFormat: Format[ByStatement] = (
+    (JsPath \ "field").format[String] and
+      (JsPath \ "apply").formatNullable[GroupFunc] and
+      (JsPath \ "as").formatNullable[String]
+    ) (ByStatement.apply, unlift(ByStatement.unapply))
 
-  implicit val groupReads: Reads[GroupStatement] = {
-    (JsPath \ "by").read[Seq[ByStatement]] and
-      (JsPath \ "aggregate").read[Seq[AggregateStatement]]
-  }.apply(GroupStatement.apply _)
+  implicit val groupFormat: Format[GroupStatement] = (
+    (JsPath \ "by").format[Seq[ByStatement]] and
+      (JsPath \ "aggregate").format[Seq[AggregateStatement]]
+    ) (GroupStatement.apply, unlift(GroupStatement.unapply))
 
-  implicit val globalReads: Reads[GlobalAggregateStatement] = {
-    (JsPath \ "globalAggregate").read[AggregateStatement].map(GlobalAggregateStatement.apply)
+  implicit val globalFormat: Format[GlobalAggregateStatement] = {
+    (JsPath \ "globalAggregate").format[AggregateStatement].inmap(GlobalAggregateStatement.apply, unlift(GlobalAggregateStatement.unapply))
   }
-  implicit val selectReads: Reads[SelectStatement] = {
-    (JsPath \ "order").read[Seq[String]] and
-      (JsPath \ "limit").read[Int] and
-      (JsPath \ "offset").read[Int] and
-      (JsPath \ "field").readNullable[Seq[String]].map(_.getOrElse(Seq.empty))
-  }.apply(SelectStatement.apply _)
+  implicit val selectFormat: Format[SelectStatement] = (
+    (JsPath \ "order").format[Seq[String]] and
+      (JsPath \ "limit").format[Int] and
+      (JsPath \ "offset").format[Int] and
+      (JsPath \ "field").formatNullable[Seq[String]].inmap[Seq[String]](
+        o => o.getOrElse(Seq.empty[String]),
+        s => if (s.isEmpty) None else Some(s)
+      )
+    ) (SelectStatement.apply, unlift(SelectStatement.unapply))
 
-  implicit val lookupReads: Reads[LookupStatement] = {
-    (JsPath \ "sourceKey").read[Seq[String]] and
-      (JsPath \ "dataset").read[String] and
-      (JsPath \ "lookupKey").read[Seq[String]] and
-      (JsPath \ "select").read[Seq[String]] and
-      (JsPath \ "as").read[Seq[String]]
-  }.apply(LookupStatement.apply _)
+  implicit val lookupFormat: Format[LookupStatement] = (
+    (JsPath \ "sourceKey").format[Seq[String]] and
+      (JsPath \ "dataset").format[String] and
+      (JsPath \ "lookupKey").format[Seq[String]] and
+      (JsPath \ "select").format[Seq[String]] and
+      (JsPath \ "as").format[Seq[String]]
+    ) (LookupStatement.apply, unlift(LookupStatement.unapply))
 
-  implicit val unnestReads: Reads[Seq[UnnestStatement]] = new Reads[Seq[UnnestStatement]] {
+  implicit val unnestFormat: Format[Seq[UnnestStatement]] = new Format[Seq[UnnestStatement]] {
     override def reads(json: JsValue): JsResult[Seq[UnnestStatement]] = {
       JsSuccess(json.as[JsObject].value.map {
         case (key, jsValue: JsValue) =>
           UnnestStatement(key, jsValue.as[String])
       }.toSeq)
     }
+
+    override def writes(unnestStatement: Seq[UnnestStatement]): JsValue = {
+      ???
+    }
   }
 
-  implicit val filterReads: Reads[FilterStatement] = {
-    (JsPath \ "field").read[String] and
-      (JsPath \ "apply").readNullable[TransformFunc] and
-      (JsPath \ "relation").read[Relation] and
-      (JsPath \ "values").read[Seq[Any]]
-  }.apply(FilterStatement.apply _)
+  implicit val filterFormat: Format[FilterStatement] = (
+    (JsPath \ "field").format[String] and
+      (JsPath \ "apply").formatNullable[TransformFunc] and
+      (JsPath \ "relation").format[Relation] and
+      (JsPath \ "values").format[Seq[Any]]
+    ) (FilterStatement.apply, unlift(FilterStatement.unapply))
 
   // TODO find better name for 'global'
-  implicit val queryReads: Reads[Query] = {
-    (JsPath \ "dataset").read[String] and
-      (JsPath \ "lookup").readNullable[Seq[LookupStatement]].map(_.getOrElse(Seq.empty)) and
-      (JsPath \ "filter").readNullable[Seq[FilterStatement]].map(_.getOrElse(Seq.empty)) and
-      (JsPath \ "unnest").readNullable[Seq[UnnestStatement]].map(_.getOrElse(Seq.empty)) and
-      (JsPath \ "group").readNullable[GroupStatement] and
-      (JsPath \ "select").readNullable[SelectStatement]  and
-      (JsPath \ "global").readNullable[GlobalAggregateStatement]
-  }.apply(Query.apply _)
+  implicit val queryFormat: Format[Query] = (
+    (JsPath \ "dataset").format[String] and
+      (JsPath \ "lookup").formatNullable[Seq[LookupStatement]].inmap[Seq[LookupStatement]](
+        o => o.getOrElse(Seq.empty[LookupStatement]),
+        s => if (s.isEmpty) None else Some(s)
+      ) and
+      (JsPath \ "filter").formatNullable[Seq[FilterStatement]].inmap[Seq[FilterStatement]](
+        o => o.getOrElse(Seq.empty[FilterStatement]),
+        s => if (s.isEmpty) None else Some(s)
+      ) and
+      (JsPath \ "unnest").formatNullable[Seq[UnnestStatement]].inmap[Seq[UnnestStatement]](
+        o => o.getOrElse(Seq.empty[UnnestStatement]),
+        s => if (s.isEmpty) None else Some(s)
+      ) and
+      (JsPath \ "group").formatNullable[GroupStatement] and
+      (JsPath \ "select").formatNullable[SelectStatement] and
+      (JsPath \ "global").formatNullable[GlobalAggregateStatement]
+    ) (Query.apply, unlift(Query.unapply))
 
 }

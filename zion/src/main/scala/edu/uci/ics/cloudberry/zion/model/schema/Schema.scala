@@ -1,12 +1,19 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
-import org.joda.time.DateTime
 
 //TODO support nested type
 object DataType extends Enumeration {
   type DataType = Value
-  val Number, Time, Point, Boolean, String, Text, Bag, Hierarchy, Record = Value
+  val Number = Value("Number")
+  val Time = Value("Number")
+  val Point = Value("Point")
+  val Boolean = Value("Boolean")
+  val String = Value("String")
+  val Text = Value("Text")
+  val Bag = Value("Bag")
+  val Hierarchy = Value("Hierarchy")
+  val Record = Value("Record")
 }
 
 object Relation extends Enumeration {
