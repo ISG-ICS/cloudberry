@@ -90,7 +90,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             timeSeries
               .width(width)
               .height(height)
-              //.margins(margin)
               .dimension(timeDimension)
               .group(timeGroup)
               .centerBar(true)
