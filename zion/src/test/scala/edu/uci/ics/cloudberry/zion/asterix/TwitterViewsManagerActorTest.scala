@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.asterix
 
-import edu.uci.ics.cloudberry.zion.actor.{MockConnClient, TestUtil, ViewMetaRecord}
+import edu.uci.ics.cloudberry.zion.actor.{MockConnClientOld, TestUtil, ViewMetaRecord}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
@@ -13,7 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class TwitterViewsManagerActorTest extends Specification with MockConnClient with TestData {
+class TwitterViewsManagerActorTest extends Specification with MockConnClientOld with TestData {
 
   "A TwitterViewsManagerActor" should {
     "load meta store after start " in {

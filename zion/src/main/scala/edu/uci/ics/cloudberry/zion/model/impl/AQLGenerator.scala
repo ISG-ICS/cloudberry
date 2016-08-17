@@ -1,13 +1,13 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQueryParser, IQueryParserFactory, QueryParsingException}
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 import scala.collection.mutable
 
-class AQLQueryParser extends IQueryParser {
+class AQLGenerator extends IQLGenerator {
 
-  override def parse(query: IQuery, schema: Schema): String = {
+  override def generate(query: IQuery, schema: Schema): String = {
     query match {
       case q: Query =>
         validateQuery(q)
@@ -295,7 +295,6 @@ class AQLQueryParser extends IQueryParser {
   private def genDDL(schema: Schema): String = {
 
     def mkNestDDL(names: List[String], typeStr: String): String = {
-      print(names)
       names match {
         case List(e) => s"  $e : $typeStr"
         case e :: tail => s"  $e : { ${mkNestDDL(tail, typeStr)} }"
@@ -330,6 +329,6 @@ class AQLQueryParser extends IQueryParser {
 
 }
 
-object AQLQueryParser extends IQueryParserFactory {
-  override def apply(): IQueryParser = new AQLQueryParser()
+object AQLGenerator extends IQLGeneratorFactory {
+  override def apply(): IQLGenerator = new AQLGenerator()
 }

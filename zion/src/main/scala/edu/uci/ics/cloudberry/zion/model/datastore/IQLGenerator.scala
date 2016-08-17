@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.datastore
 
 import edu.uci.ics.cloudberry.zion.model.schema.{IQuery, Query, Schema}
 
-trait IQueryParser {
+trait IQLGenerator {
   /**
     * Parser the Query to string statements.
     *
@@ -10,7 +10,7 @@ trait IQueryParser {
     * @param schema
     * @return
     */
-  def parse(query: IQuery, schema: Schema): String
+  def generate(query: IQuery, schema: Schema): String
 
   def calcResultSchema(query: Query, schema: Schema): Schema
 
@@ -19,6 +19,6 @@ trait IQueryParser {
   }
 }
 
-trait IQueryParserFactory {
-  def apply(): IQueryParser
+trait IQLGeneratorFactory {
+  def apply(): IQLGenerator
 }

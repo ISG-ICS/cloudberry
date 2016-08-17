@@ -1,41 +1,46 @@
 package edu.uci.ics.cloudberry.zion.model.actor
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
-import edu.uci.ics.cloudberry.zion.model.actor.DataManager.AskInfoMsg
+import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.actor.DataStoreManager.AskInfoMsg
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryResponse
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Client(dataManager: ActorRef, optimizer: QueryPlanner)
-            (implicit val askTimeOut: Timeout, implicit val ec: ExecutionContext) extends Actor {
+class Client(val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, val config: Config)
+            (implicit val ec: ExecutionContext) extends Actor {
 
   import Client._
 
-  override def receive: Receive = {
-    case query: Query =>
+  implicit val askTimeOut: Timeout = config.UserTimeOut
 
+  override def receive: Receive = {
+    case json: JsValue =>
+
+      val query = jsonParser.parse(json)
       val curSender = sender()
 
       withDataSetInfo(query) {
         case seq if seq.isEmpty =>
           curSender ! NoSuchDataset(query.dataset)
         case infos: Seq[DataSetInfo] =>
-          val queries = optimizer.makePlan(query, infos.head, infos.tail)
+          val queries = planner.makePlan(query, infos.head, infos.tail)
           val fResponse = Future.traverse(queries) { query =>
             dataManager ? query
-          }.map(seq => seq.map(_.asInstanceOf[QueryResponse]))
+          }.map(seq => seq.map(_.asInstanceOf[JsValue]))
 
-          fResponse.map(curSender ! mergeResponse(_))
+          fResponse.map { responses =>
+            curSender ! mergeResponse(responses)
+          }
 
-          val newViews = optimizer.suggestNewView(query, infos.head, infos.tail)
+          val newViews = planner.suggestNewView(query, infos.head, infos.tail)
           newViews.foreach(dataManager ! _)
       }
-    case _ =>
   }
 
   protected def withDataSetInfo(query: Query)(block: Seq[DataSetInfo] => Unit): Unit = {
@@ -49,9 +54,15 @@ class Client(dataManager: ActorRef, optimizer: QueryPlanner)
 
 object Client {
 
-  def mergeResponse(responses: TraversableOnce[QueryResponse]): QueryResponse = {
-    val jsValue = responses.foldLeft(List[JsValue]())((merge, response) => merge ++ response.jsArray.value)
-    QueryResponse(JsArray(jsValue))
+  def props(jsonParser: JSONParser, dataManagerRef: ActorRef, planner: QueryPlanner, config: Config)
+           (implicit ec: ExecutionContext) = {
+    Props(new Client(jsonParser, dataManagerRef, planner, config))
+  }
+
+  def mergeResponse(responses: TraversableOnce[JsValue]): JsArray = {
+    val builder = Seq.newBuilder[JsValue]
+    responses.foreach(jsValue => builder ++= jsValue.asInstanceOf[JsArray].value)
+    JsArray(builder.result())
   }
 
   case class NoSuchDataset(name: String)
