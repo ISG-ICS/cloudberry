@@ -3,7 +3,7 @@ body {
   padding: 0;
   overflow-x: hidden;
 }
-.Map {
+.map-group {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -38,7 +38,7 @@ time-series {
   height: 15%;
 }
 
-.SearchBar {
+search-bar {
   position: absolute;
   left: 27%;
   top: 2%;
@@ -107,5 +107,11 @@ time-series {
   left:10%;
   width : 15%;
   height: 10%;
+
+}
+
+.btn.btn-info{
+    position: relative;
+    left: 110%;
 
 }
