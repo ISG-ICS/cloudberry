@@ -64,6 +64,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     }
   }
 
+  //FIXME make this createView synchronized!
   private def createView(create: CreateView): Unit = {
     if (metaData.contains(create.dataset) || !metaData.contains(create.query.dataset)) {
       //TODO should respond an error msg to user
@@ -111,7 +112,7 @@ object DataStoreManager {
 
   def defaultMaker(context: ActorRefFactory, name: String, args: Seq[Any])(implicit ec: ExecutionContext): ActorRef = {
     context.actorOf(DataSetAgent.props(
-      args(0).asInstanceOf[Schema], args(1).asInstanceOf[IQLGenerator], args(2).asInstanceOf[IDataConn]))
+      args(0).asInstanceOf[Schema], args(1).asInstanceOf[IQLGenerator], args(2).asInstanceOf[IDataConn]), name)
   }
 
 

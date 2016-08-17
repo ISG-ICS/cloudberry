@@ -9,10 +9,6 @@ trait IQuery {
   def dataset: String
 }
 
-object IQuery {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
-}
-
 case class Query(dataset: String,
                  lookup: Seq[LookupStatement] = Seq.empty,
                  filter: Seq[FilterStatement] = Seq.empty,
@@ -22,7 +18,7 @@ case class Query(dataset: String,
                  globalAggr: Option[GlobalAggregateStatement] = None
                 ) extends IQuery {
 
-  import IQuery.TimeFormat
+  import TimeField.TimeFormat
 
   def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
     //TODO support filter query that contains multiple relation on that same field
@@ -166,7 +162,7 @@ case class GroupStatement(bys: Seq[ByStatement],
 }
 
 case class GlobalAggregateStatement(aggregate: AggregateStatement
-                         ) extends Statement {
+                                   ) extends Statement {
 }
 
 case class SelectStatement(orderOn: Seq[String],

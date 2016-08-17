@@ -106,5 +106,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     "update meta info if receive drop request" in {
       ok
     }
+    "use existing child to solve the query" in {
+      ok
+    }
   }
 }

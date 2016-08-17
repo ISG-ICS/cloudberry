@@ -2,24 +2,26 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
+import actor.NeoActor
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.stream.Materializer
 import akka.util.Timeout
 import db.Migration_20160814
-import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.actor.{Client, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
+import models.UserRequest
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{JsError, JsObject, JsValue}
+import play.api.libs.json.{JsError, JsValue}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
@@ -35,7 +37,8 @@ class Application @Inject()(val wsClient: WSClient,
   val initDataSet = Await.result(Migration_20160814.migration.up(asterixConn), 10 seconds)
 
   val manager = system.actorOf(DataStoreManager.props(initDataSet.map(ds => ds.name -> ds).toMap, asterixConn, AQLGenerator, config))
-  val queryClient = system.actorOf(Client.props(new JSONParser(), manager, new QueryPlanner(), config))
+  val berryClient = system.actorOf(Client.props(new JSONParser(), manager, new QueryPlanner(), config))
+  val neoActor = system.actorOf(NeoActor.props(berryClient))
 
   Logger.logger.info("I'm initializing")
 
@@ -65,14 +68,25 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  def query = Action.async(parse.json) { request =>
+  //FIXME, this have no use because we have multiple result which only make sense for ws
+  def neoQuery = Action.async(parse.json) { request =>
+    import akka.pattern.ask
+    implicit val timeout: Timeout = Timeout(5.seconds)
+
+    request.body.validate[UserRequest].map { request =>
+      (neoActor ? request).mapTo[JsValue].map(msg => Ok(msg))
+    }.recoverTotal {
+      e => Future(BadRequest("Detected error:" + JsError.toJson(e)))
+    }
+  }
+
+  def berryQuery = Action.async(parse.json) { request =>
     import akka.pattern.ask
     implicit val timeout: Timeout = Timeout(5.seconds)
 
     import JSONParser._
-    request.body.validate[Query].map {
-      case query: Query =>
-        (queryClient ? query).mapTo[JsValue].map(msg => Ok(msg))
+    request.body.validate[Query].map { query: Query =>
+      (berryClient ? query).mapTo[JsValue].map(msg => Ok(msg))
     }.recoverTotal {
       e => Future(BadRequest("Detected error:" + JsError.toJson(e)))
     }
