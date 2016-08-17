@@ -4,9 +4,9 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsArray, JsValue, Json}
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 class NeoActor(out: Option[ActorRef], val berryClient: ActorRef)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
@@ -27,8 +27,20 @@ class NeoActor(out: Option[ActorRef], val berryClient: ActorRef)(implicit ec: Ex
   }
 
   private def tellBerry(userRequest: UserRequest, curSender: ActorRef): Unit = {
-    for (berryRequest <- generateCBerryRequest(userRequest)) {
-      (berryClient ? berryRequest).mapTo[JsValue].map(out.getOrElse(curSender) ! _)
+    if (userRequest.mergeResult) {
+      val map = generateCBerryRequest(userRequest)
+      val fResponse = Future.traverse(map) { kv =>
+        (berryClient ? kv._2).mapTo[JsValue].map(json => Json.obj("key" -> kv._1, "value" -> json))
+      }
+      fResponse.map { jsVals =>
+        out.getOrElse(curSender) ! JsArray(jsVals.toSeq)
+      }
+    } else {
+      for (berryRequest <- generateCBerryRequest(userRequest)) {
+        (berryClient ? berryRequest._2).mapTo[JsValue].map { json =>
+          out.getOrElse(curSender) ! Json.obj("key" -> berryRequest._1.toString, "value" -> json)
+        }
+      }
     }
   }
 }
@@ -39,7 +51,14 @@ object NeoActor {
 
   def props(berryClient: ActorRef)(implicit ec: ExecutionContext) = Props(new NeoActor(None, berryClient))
 
-  def generateCBerryRequest(userRequest: UserRequest): Seq[JsValue] = {
+  object RequestType extends Enumeration {
+    val ByPlace = Value("byPlace")
+    val ByTime = Value("byTime")
+    val ByHashTag = Value("byHashTag")
+    val Sample = Value("sample")
+  }
+
+  def generateCBerryRequest(userRequest: UserRequest): Map[RequestType.Value, JsValue] = {
     val filterJSON = getFilter(userRequest)
 
     val byGeo = Json.parse(
@@ -150,7 +169,8 @@ object NeoActor {
          |}
        """.stripMargin
     )
-    Seq(byGeo, byTime, byHashTag, sampleTweet)
+    import RequestType._
+    Map(ByPlace -> byGeo, ByTime -> byTime, ByHashTag -> byHashTag, Sample -> sampleTweet)
   }
 
   private def getFilter(userRequest: UserRequest): String = {

@@ -74,7 +74,7 @@ class Application @Inject()(val wsClient: WSClient,
     implicit val timeout: Timeout = Timeout(5.seconds)
 
     request.body.validate[UserRequest].map { request =>
-      (neoActor ? request).mapTo[JsValue].map(msg => Ok(msg))
+      (neoActor ? request.copy(mergeResult = true)).mapTo[JsValue].map(msg => Ok(msg))
     }.recoverTotal {
       e => Future(BadRequest("Detected error:" + JsError.toJson(e)))
     }

@@ -2,6 +2,9 @@ package models
 
 import org.joda.time.Interval
 import play.api.libs.json._
+import play.api.libs.functional.syntax._
+import play.api.libs.json.Reads._
+import play.api.libs.json._
 
 
 object GeoLevel extends Enumeration {
@@ -23,7 +26,8 @@ case class UserRequest(dataset: String,
                        timeInterval: Interval,
                        timeBin: TimeBin.Bin,
                        geoLevel: GeoLevel.Level,
-                       geoIds: Seq[Int]
+                       geoIds: Seq[Int],
+                       mergeResult: Boolean = false
                       )
 
 object UserRequest {
@@ -54,6 +58,14 @@ object UserRequest {
 
   implicit val timeBinReader: Reads[TimeBin.Bin] = enumerationReader(TimeBin)
 
-  implicit val userQueryReader: Reads[UserRequest] = Json.reads[UserRequest]
+  implicit val userQueryReader: Reads[UserRequest] = {
+    (__ \ "dataset").read[String] and
+      (__ \ "keywords").read[Seq[String]] and
+      (__ \ "timeInterval").read[Interval] and
+      (__ \ "timeBin").read[TimeBin.Bin] and
+      (__ \ "geoLevel").read[GeoLevel.Level] and
+      (__ \ "geoIds").read[Seq[Int]] and
+      (__ \ "mergeResult").readNullable[Boolean].map(_.getOrElse(false))
+  }.apply(UserRequest.apply _)
 }
 
