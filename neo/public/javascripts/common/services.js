@@ -11,7 +11,7 @@ angular.module('cloudberry.common', [])
           swLog: -46.23046874999999,
           swLat: 53.85252660044951,
           neLog: -146.42578125,
-          neLat: 21.453068633086783,
+          neLat: 21.453068633086783
         },
         time: {
           start: startDate,
