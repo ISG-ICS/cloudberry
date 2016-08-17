@@ -18,21 +18,19 @@
 
     app.controller('SearchCtrl', function($scope, $window, Asterix) {
       $scope.init = function() {
-        $scope.time = Asterix.parameters.time;
-        $scope.area = Asterix.parameters.area;
-        $scope.level = Asterix.parameters.level;
+        $scope.dataset = Asterix.parameters.dataset;
+        $scope.timeInterval = Asterix.parameters.timeInterval;
+        $scope.geoLevel = Asterix.parameters.geoLevel;
       };
       $scope.search = function() {
         if ($scope.dataset)
           Asterix.parameters.dataset = $scope.dataset;
-        if ($scope.keyword)
-          Asterix.parameters.keyword = $scope.keyword;
-        if ($scope.area)
-          Asterix.parameters.area = $scope.area;
-        if ($scope.time)
-          Asterix.parameters.time = $scope.time;
-        if ($scope.level)
-          Asterix.parameters.level = $scope.level;
+        if ($scope.keywords)
+          Asterix.parameters.keywords = $scope.keywords.trim().split(/\s+/);
+        if ($scope.timeInterval)
+          Asterix.parameters.timeInterval = $scope.timeInterval;
+        if ($scope.geoLevel)
+          Asterix.parameters.geoLevel = $scope.geoLevel;
         Asterix.query(Asterix.parameters);
       };
     });
@@ -100,43 +98,25 @@
         <div class="control-group">
           <label class="control-label">Keywords</label>
           <div class="controls">
-            <input type="text" ng-model="keyword"/>
+            <input type="text" ng-model="keywords"/>
           </div>
         </div>
         <div class="control-group">
-          <label class="control-label">TimeRange</label>
+          <label class="control-label">TimeInterval</label>
           <div class="controls">
-            <input type="date" ng-model="time.start" />
-            <input type="date" ng-model="time.end" />
+            <input type="date" ng-model="timeInterval.start" />
+            <input type="date" ng-model="timeInterval.end" />
           </div>
         </div>
         <div class="control-group">
-          <label class="control-label">Area</label>
-          <div class="controls">
-            <label>leftBottom</label>
-            <br>
-            <label>Latitude</label>
-            <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.swLat" placeholder="left bottom latitude" />
-            <label>Longitude</label>
-            <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.swLog" placeholder="left bottom longitude" />
-            <br/>
-            <label>rightTop</label>
-            <br/>
-            <label>Latitude</label>
-            <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.neLat" placeholder="right top latitude" />
-            <label>Longitude</label>
-            <input ng-pattern='/^\-?\d+((\.|\,)\d+)?$/' ng-model="area.neLog" placeholder="right top longitude" />
-          </div>
-        </div>
-        <div class="control-group">
-          <label class="control-label">Level</label>
-          <div class="controls" ng-init='level="state"'>
+          <label class="control-label">GeoLevel</label>
+          <div class="controls" ng-init='geoLevel="state"'>
             <label class="col-xs-2">
-              <input type="radio" ng-model="level" value="state"> State</label>
+              <input type="radio" ng-model="geoLevel" value="state"> State</label>
             <label class="col-xs-2">
-              <input type="radio" ng-model="level" value="county"> County </label>
+              <input type="radio" ng-model="geoLevel" value="county"> County </label>
             <label class="col-xs-2">
-              <input type="radio" ng-model="level" value="city"> City</label>
+              <input type="radio" ng-model="geoLevel" value="city"> City</label>
           </div>
         </div>
         <button type="submit" class="btn btn-primary" id="submit-button">Submit</button>
@@ -144,27 +124,24 @@
     </div>
 
 
-    <div id="Map" ng-controller="MapCtrl" ng-init="init()">
-      <leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="480px"></leaflet>
-    </div>
     <div class="container col-sm-4" ng-controller="MapCtrl">
       SpatialAggregation:
       <ul>
-        <li ng-repeat="r in result">{{r.key}}: {{r.count}}</li>
+        <li ng-repeat="r in result">{{r.state}}: {{r.count}}</li>
       </ul>
     </div>
 
     <div class="container col-sm-4" ng-controller="TimeCtrl">
       TimeAggregation:
       <ul>
-        <li ng-repeat="r in result">{{r.key}}: {{r.count}}</li>
+        <li ng-repeat="r in result">{{r.day}}: {{r.count}}</li>
       </ul>
     </div>
 
     <div class="container col-sm-4" ng-controller="HashTagCtrl">
       HashTags:
       <ul>
-        <li ng-repeat="r in result">{{r.key}}: {{r.count}}</li>
+        <li ng-repeat="r in result">{{r.tag}}: {{r.count}}</li>
       </ul>
     </div>
 
