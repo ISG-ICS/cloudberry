@@ -15,7 +15,7 @@ class NeoActor(out: Option[ActorRef], val berryClientProps: Props)(implicit ec: 
 
   import scala.concurrent.duration._
 
-  implicit val timeout: Timeout = Timeout(5.seconds)
+  implicit val timeout: Timeout = Timeout(50.seconds)
 
   val berryClient = context.watch(context.actorOf(berryClientProps))
 

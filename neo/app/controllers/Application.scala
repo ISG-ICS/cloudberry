@@ -70,7 +70,6 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  //FIXME, this have no use because we have multiple result which only make sense for ws
   def neoQuery = Action.async(parse.json) { request =>
     import akka.pattern.ask
     implicit val timeout: Timeout = Timeout(5.seconds)

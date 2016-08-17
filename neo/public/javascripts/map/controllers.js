@@ -3,12 +3,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     $scope.result = {};
     // map setting
     angular.extend($scope, {
-      // TODO make this center and level as parameters to make it general
-      // center: {
-      //   lat: 39.5,
-      //   lng: -96.35,
-      //   zoom: 4
-      // },
       tiles: {
         name: 'Mapbox',
         url: 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
@@ -94,11 +88,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if ($scope.status.zoomLevel > 5) {
             $scope.status.logicLevel = 'county';
             if (!$scope.status.init) {
-              Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
-              Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
-              Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
-              Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
-              Asterix.parameters.level = 'county';
+//              Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
+//              Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
+//              Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
+//              Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+              Asterix.parameters.geoLevel = 'county';
               Asterix.queryType = 'zoom';
               Asterix.query(Asterix.parameters, Asterix.queryType);
             }
@@ -109,11 +103,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else if ($scope.status.zoomLevel <= 5) {
             $scope.status.logicLevel = 'state';
             if (!$scope.status.init) {
-              Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
-              Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
-              Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
-              Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
-              Asterix.parameters.level = 'state';
+//              Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
+//              Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
+//              Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
+//              Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+              Asterix.parameters.geoLevel = 'state';
               Asterix.queryType = 'zoom';
               Asterix.query(Asterix.parameters, Asterix.queryType);
             }
@@ -128,11 +122,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       $scope.$on("leafletDirectiveMap.dragend", function() {
         if (!$scope.status.init) {
           $scope.bounds = $scope.map.getBounds();
-          Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
-          Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
-          Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
-          Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
-          Asterix.parameters.level = $scope.status.logicLevel;
+//          Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
+//          Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
+//          Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
+//          Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+          Asterix.parameters.geoLevel = $scope.status.logicLevel;
           Asterix.queryType = 'drag';
           Asterix.query(Asterix.parameters, Asterix.queryType);
         }
@@ -292,7 +286,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             d.properties.count = 0;
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
-            if (result[k].key == d.properties.stateID)
+            if (result[k].state == d.properties.stateID)
               d.properties.count = result[k].count;
           }
         });
@@ -305,7 +299,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             d.properties.count = 0;
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
-            if (result[k].key == d.properties.countyID)
+            if (result[k].county == d.properties.countyID)
               d.properties.count = result[k].count;
           }
         });

@@ -17,7 +17,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       template: [
         '<table class="table" id="hashcount">',
           '<thead>',
-            '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.key}}</td><br/><td>{{r.count}}</td></tr>',
+            '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
           '</thead>',
         '</table>'
       ].join('')
@@ -29,7 +29,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     function drawTweets(message) {
       $('#tweet').html('');
       $.each(message, function (i, d) {
-        var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.tid
+        var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id
         $http.jsonp(url).success(function (data){
           $('#tweet').append(data.html);
         });

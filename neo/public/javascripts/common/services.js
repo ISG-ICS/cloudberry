@@ -28,8 +28,8 @@ angular.module('cloudberry.common', [])
           dataset: parameters.dataset,
           keywords: parameters.keywords,
           timeInterval: {
-            start: queryType==='time' ? Date.parse(parameters.time.start) : Date.parse(startDate),
-            end: queryType==='time' ? Date.parse(parameters.time.end) : Date.parse(new Date())
+            start: queryType==='time' ? Date.parse(parameters.timeInterval.start) : Date.parse(startDate),
+            end: queryType==='time' ? Date.parse(parameters.timeInterval.end) : Date.parse(new Date())
           },
           timeBin : parameters.timeBin,
           geoLevel: parameters.geoLevel,
@@ -41,7 +41,6 @@ angular.module('cloudberry.common', [])
 
     ws.onmessage = function(event) {
       $timeout(function() {
-        console.log(event.data);
         var result = JSON.parse(event.data);
         switch (result.key) {
           case "byPlace":
@@ -57,10 +56,10 @@ angular.module('cloudberry.common', [])
             asterixService.tweetResult = result.value;
             break;
           case "error":
-            asterixService.errorMessage = result.errorMessage;
+            asterixService.errorMessage = result.value;
             break;
           default:
-            console.log("ws get unknown data: " + result);
+            console.error("ws get unknown data: " + result);
             break;
         }
       });
