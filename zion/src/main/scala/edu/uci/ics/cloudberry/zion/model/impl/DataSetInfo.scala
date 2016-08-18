@@ -40,7 +40,7 @@ object DataSetInfo {
     }
 
     override def writes(interval: Interval): JsValue = {
-      val formatter = ISODateTimeFormat.dateTime()
+      val formatter = ISODateTimeFormat.dateTime().withZoneUTC()
       JsObject(List("start" -> JsString(interval.getStart.toString(formatter)), "end" -> JsString(interval.getEnd.toString(formatter))))
     }
   }
@@ -81,12 +81,12 @@ object DataSetInfo {
   implicit val datetimeFormat: Format[DateTime] = new Format[DateTime] {
     override def reads(json: JsValue) = {
       val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
-      val dt = formatter.parseDateTime(json.as[String]);
-      JsSuccess(dt)
+      val datetime = formatter.parseDateTime(json.as[String]);
+      JsSuccess(datetime)
     }
 
     override def writes(dateTime: DateTime): JsValue = {
-      val formatter = ISODateTimeFormat.dateTime()
+      val formatter = ISODateTimeFormat.dateTime().withZoneUTC()
       JsString(dateTime.toString(formatter))
     }
   }

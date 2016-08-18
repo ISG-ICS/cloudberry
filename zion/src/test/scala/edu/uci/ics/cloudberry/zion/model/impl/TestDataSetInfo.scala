@@ -31,11 +31,11 @@ object TestDataSetInfo {
        |     "primaryKey": [],
        |     "timeField": ""
        | },
-       | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
-       |                  "end":"2016-01-01T00:00:00.000-08:00"},
-       | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
-       |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
-       |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
+       | "dataInterval": {"start":"2004-12-25T08:00:00.000Z",
+       |                  "end":"2016-01-01T08:00:00.000Z"},
+       | "stats": { "createTime": "2016-01-01T08:00:00.000Z",
+       |            "lastModifyTime": "2016-01-01T08:00:00.000Z",
+       |            "lastReadTime": "2016-01-01T08:00:00.000Z",
        |            "cardinality": 0
        |          }
        |}
@@ -60,11 +60,11 @@ object TestDataSetInfo {
        |     "primaryKey": [],
        |     "timeField": ""
        | },
-       | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
-       |                  "end":"2016-01-01T00:00:00.000-08:00"},
-       | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
-       |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
-       |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
+       | "dataInterval": {"start":"2004-12-25T08:00:00.000Z",
+       |                  "end":"2016-01-01T08:00:00.000Z"},
+       | "stats": { "createTime": "2016-01-01T08:00:00.000Z",
+       |            "lastModifyTime": "2016-01-01T08:00:00.000Z",
+       |            "lastReadTime": "2016-01-01T08:00:00.000Z",
        |            "cardinality": 0
        |          }
        |}
@@ -83,11 +83,11 @@ object TestDataSetInfo {
        |     "primaryKey": [],
        |     "timeField": ""
        | },
-       | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
-       |                  "end":"2016-01-01T00:00:00.000-08:00"},
-       | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
-       |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
-       |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
+       | "dataInterval": {"start":"2004-12-25T08:00:00.000Z",
+       |                  "end":"2016-01-01T08:00:00.000Z"},
+       | "stats": { "createTime": "2016-01-01T08:00:00.000Z",
+       |            "lastModifyTime": "2016-01-01T08:00:00.000Z",
+       |            "lastReadTime": "2016-01-01T08:00:00.000Z",
        |            "cardinality": 0
        |          }
        |}
