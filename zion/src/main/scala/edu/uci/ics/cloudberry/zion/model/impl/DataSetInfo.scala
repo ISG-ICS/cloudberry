@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -27,6 +28,8 @@ object DataSetInfo {
     }
   }
 
+  def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(dataSetInfo)
+
   implicit val seqAnyValue: Reads[Seq[Any]] = JSONParser.seqAnyValue
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
@@ -36,7 +39,10 @@ object DataSetInfo {
       JsSuccess(new Interval(start.getMillis, end.getMillis))
     }
 
-    override def writes(interval: Interval): JsValue = ???
+    override def writes(interval: Interval): JsValue = {
+      val formatter = ISODateTimeFormat.dateTime()
+      JsObject(List("start" -> JsString(interval.getStart.toString(formatter)), "end" -> JsString(interval.getEnd.toString(formatter))))
+    }
   }
 
 
@@ -67,8 +73,24 @@ object DataSetInfo {
       }
     }
 
-    override def writes(field: Field): JsValue = ???
+    override def writes(field: Field): JsValue = {
+      JsObject(List("name" -> JsString(field.name), "isOptional" -> JsBoolean(field.isOptional), "datatype" -> JsString(field.dataType.toString)))
+    }
   }
+
+  implicit val datetimeFormat: Format[DateTime] = new Format[DateTime] {
+    override def reads(json: JsValue) = {
+      val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
+      val dt = formatter.parseDateTime(json.as[String]);
+      JsSuccess(dt)
+    }
+
+    override def writes(dateTime: DateTime): JsValue = {
+      val formatter = ISODateTimeFormat.dateTime()
+      JsString(dateTime.toString(formatter))
+    }
+  }
+
   implicit val statsFormat: Format[Stats] = (
     (JsPath \ "createTime").format[DateTime] and
       (JsPath \ "lastModifyTime").format[DateTime] and

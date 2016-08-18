@@ -23,18 +23,18 @@ class DataSetInfoTest extends Specification {
            |     "primaryKey": [],
            |     "timeField": ""
            | },
-           | "dataInterval": {"start":"2004-12-25",
-           |                  "end":"2016-01-01"},
-           | "stats": { "createTime": "2016-01-01",
-           |            "lastModifyTime": "2016-01-01",
-           |            "lastReadTime": "2016-01-01",
+           | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
+           |                  "end":"2016-01-01T00:00:00.000-08:00"},
+           | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
            |            "cardinality": 0
            |          }
            |}
     """.stripMargin)
 
       val start = new DateTime(2004, 12, 25, 0, 0, 0, 0)
-      val end = new DateTime(2016, 1, 1, 0, 0, 0, 0)
+      val end = new DateTime(2016, 1, 1, 0, 0, 0, 0).toDateTime
       val interval = new Interval(start, end);
       val actualQuery = parser.parse(dataSetInfoJSON)
       val expectQuery = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(end, end, end, 0))
@@ -60,11 +60,11 @@ class DataSetInfoTest extends Specification {
            |     "primaryKey": [],
            |     "timeField": ""
            | },
-           | "dataInterval": {"start":"2004-12-25",
-           |                  "end":"2016-01-01"},
-           | "stats": { "createTime": "2016-01-01",
-           |            "lastModifyTime": "2016-01-01",
-           |            "lastReadTime": "2016-01-01",
+           | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
+           |                  "end":"2016-01-01T00:00:00.000-08:00"},
+           | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
            |            "cardinality": 0
            |          }
            |}
@@ -92,11 +92,11 @@ class DataSetInfoTest extends Specification {
            |     "primaryKey": [],
            |     "timeField": ""
            | },
-           | "dataInterval": {"start":"2004-12-25",
-           |                  "end":"2016-01-01"},
-           | "stats": { "createTime": "2016-01-01",
-           |            "lastModifyTime": "2016-01-01",
-           |            "lastReadTime": "2016-01-01",
+           | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
+           |                  "end":"2016-01-01T00:00:00.000-08:00"},
+           | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
            |            "cardinality": 0
            |          }
            |}
@@ -112,9 +112,41 @@ class DataSetInfoTest extends Specification {
       actualQuery must_== expectQuery
     }
     "write a sample dataSetInfo" in {
-      ok
+      val dataSetInfoJSON = Json.parse(
+        s"""
+           |{
+           | "name": "twitter.ds_tweet",
+           | "schema": {
+           |		"typeName": "tweet",
+           |     "dimension": [],
+           |     "measurement": [],
+           |     "primaryKey": [],
+           |     "timeField": ""
+           | },
+           | "dataInterval": {"start":"2004-12-25T00:00:00.000-08:00",
+           |                  "end":"2016-01-01T00:00:00.000-08:00"},
+           | "stats": { "createTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastModifyTime": "2016-01-01T00:00:00.000-08:00",
+           |            "lastReadTime": "2016-01-01T00:00:00.000-08:00",
+           |            "cardinality": 0
+           |          }
+           |}
+    """.stripMargin)
+
+      val start = new DateTime(2004, 12, 25, 0, 0, 0, 0)
+      val end = new DateTime(2016, 1, 1, 0, 0, 0, 0)
+      val interval = new Interval(start, end);
+      val expectJSON = dataSetInfoJSON
+      val actualJSON = parser.write(DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(end, end, end, 0)))
+      actualJSON must_== expectJSON
     }
     "write dataSetInfo containing a createQuery" in {
+      ok
+    }
+    "read dataSetInfo containing complex fields" in {
+      ok
+    }
+    "write dataSetInfo containing complex fields" in {
       ok
     }
   }
