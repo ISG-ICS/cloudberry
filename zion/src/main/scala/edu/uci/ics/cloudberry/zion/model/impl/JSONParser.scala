@@ -69,7 +69,10 @@ object JSONParser {
       }
     }
 
-    override def writes(relation: Relation): JsValue = ???
+    override def writes(relation: Relation): JsValue =
+    {
+      JsObject(Seq("name" -> JsString(relation.toString)))
+    }
   }
 
 
@@ -114,7 +117,9 @@ object JSONParser {
       }
     }
 
-    override def writes(aggregateFunc: AggregateFunc): JsValue = ???
+    override def writes(aggregateFunc: AggregateFunc): JsValue = {
+      JsObject(List("name" -> JsString(aggregateFunc.name)))
+    }
   }
 
   implicit val aggFormat: Format[AggregateStatement] =

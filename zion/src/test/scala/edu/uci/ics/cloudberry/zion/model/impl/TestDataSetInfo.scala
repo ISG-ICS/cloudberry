@@ -2,13 +2,14 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.impl.TestQuery._
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.tz.UTCProvider
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json
 
 object TestDataSetInfo {
 
   val start = new DateTime(2004, 12, 25, 0, 0, 0, 0)
-  val end = new DateTime(2016, 1, 1, 0, 0, 0, 0).toDateTime
+  val end = new DateTime(2016, 1, 1, 0, 0, 0, 0)
   val interval = new Interval(start, end);
   val fields = Seq(NumberField("id"), StringField("name"))
   val globalAggr = GlobalAggregateStatement(aggrCount)

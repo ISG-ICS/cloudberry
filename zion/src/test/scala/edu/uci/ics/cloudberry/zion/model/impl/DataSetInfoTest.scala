@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 
 import edu.uci.ics.cloudberry.zion.model.impl.TestDataSetInfo._
+import edu.uci.ics.cloudberry.zion.model.schema.{GroupStatement, Query}
 import org.specs2.mutable.Specification
 
 class DataSetInfoTest extends Specification {
@@ -25,17 +26,19 @@ class DataSetInfoTest extends Specification {
       actualQuery must_== expectQuery
     }
     "write a sample dataSetInfo" in {
-      val expectJSON = simpleDataSetInfoJSON
-      val actualJSON = parser.write(simpleDataSetInfo)
+      val expectJSON = parser.write(simpleDataSetInfo)
+      val actualJSON = simpleDataSetInfoJSON
       actualJSON must_== expectJSON
     }
     "write dataSetInfo containing Schema fields" in {
-      val actualJSON = fieldsDataSetInfoJSON
-      val expectJSON = parser.write(fieldsDataSetInfo)
+      val actualJSON = parser.write(fieldsDataSetInfo)
+      val expectJSON = fieldsDataSetInfoJSON
       actualJSON must_== expectJSON
     }
     "write dataSetInfo containing a createQuery" in {
-      ok
+      val actualJSON = parser.write(queryDataSetInfo)
+      val expectJSON = queryDataSetInfoJSON
+      actualJSON must_== expectJSON
     }
     "read dataSetInfo containing complex fields" in {
       ok
