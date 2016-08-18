@@ -10,8 +10,8 @@ class DataSetInfoTest extends Specification {
   val parser = DataSetInfo
 
   "DataSetInfo" should {
-    "read a sample datasetinfo" in {
-      val datasetinfoJSON = Json.parse(
+    "read a sample dataSetInfo" in {
+      val dataSetInfoJSON = Json.parse(
         s"""
            |{
            | "name": "twitter.ds_tweet",
@@ -22,21 +22,35 @@ class DataSetInfoTest extends Specification {
            |     "primaryKey": [],
            |     "timeField": ""
            | },
-           | "dataInterval": {},
-           | "stats": { "createTime": "",
-           |            "lastModifyTime": "",
-           |            "lasReadTime": "",
-           |            "cardinality": "0"
-           | }
+           | "dataInterval": {"start":"2004-12-25",
+           |                  "end":"2016-01-01"},
+           | "stats": { "createTime": "2016-01-01",
+           |            "lastModifyTime": "2016-01-01",
+           |            "lastReadTime": "2016-01-01",
+           |            "cardinality": 0
+           |          }
            |}
     """.stripMargin)
 
       val start = new DateTime(2004, 12, 25, 0, 0, 0, 0)
-      val end = new DateTime(2005, 1, 1, 0, 0, 0, 0)
+      print(start.toString)
+      val end = new DateTime(2016, 1, 1, 0, 0, 0, 0)
       val interval = new Interval(start, end);
-      val actualQuery = parser.parse(datasetinfoJSON)
-      val expectQuery = new DataSetInfo("twitter.ds_tweet", None, Schema("zika", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(DateTime.now(), DateTime.now(), DateTime.now(), 0))
+      val actualQuery = parser.parse(dataSetInfoJSON)
+      val expectQuery = new DataSetInfo("twitter.ds_tweet", None, Schema("zika", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(end, end, end, 0))
       actualQuery must_== expectQuery
+    }
+    "read dataSetInfo containing Schema fields" in {
+      ok
+    }
+    "read dataSetInfo containing a createQuery" in {
+      ok
+    }
+    "write a sample dataSetInfo" in {
+      ok
+    }
+    "write dataSetInfo containing a createQuery" in {
+      ok
     }
   }
 }

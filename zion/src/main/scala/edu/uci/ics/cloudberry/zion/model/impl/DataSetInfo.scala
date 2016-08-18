@@ -30,7 +30,11 @@ object DataSetInfo {
   implicit val seqAnyValue: Reads[Seq[Any]] = JSONParser.seqAnyValue
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
-    override def reads(json: JsValue): JsResult[Interval] = ???
+    override def reads(json: JsValue) = {
+      val start = (json \ "start").as[DateTime]
+      val end = (json \ "end").as[DateTime]
+      JsSuccess(new Interval(start.getMillis, end.getMillis))
+    }
 
     override def writes(interval: Interval): JsValue = ???
   }
