@@ -54,6 +54,19 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     });
 
+      function resetGeoIds(bounds, polygons, idTag) {
+        Asterix.parameters.geoIds = [];
+        polygons.features.forEach(function(polygon){
+          if (bounds._southWest.lat <= polygon.properties.centerLat &&
+                polygon.properties.centerLat <= bounds._northEast.lat &&
+                bounds._southWest.lng <= polygon.properties.centerLog &&
+                polygon.properties.centerLog <= bounds._northEast.lng) {
+              Asterix.parameters.geoIds.push(polygon.properties[idTag]);
+          }
+        });
+      }
+
+
     // initialize
     $scope.init = function() {
       leafletData.getMap().then(function(map) {
@@ -79,7 +92,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
 
 
-
       setInfoControl();
       $scope.$on("leafletDirectiveMap.zoomend", function() {
         if ($scope.map) {
@@ -88,10 +100,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if ($scope.status.zoomLevel > 5) {
             $scope.status.logicLevel = 'county';
             if (!$scope.status.init) {
-//              Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
-//              Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
-//              Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
-//              Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+              resetGeoIds($scope.bounds, $scope.geojsonData.county, 'countyID');
               Asterix.parameters.geoLevel = 'county';
               Asterix.queryType = 'zoom';
               Asterix.query(Asterix.parameters, Asterix.queryType);
@@ -103,10 +112,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else if ($scope.status.zoomLevel <= 5) {
             $scope.status.logicLevel = 'state';
             if (!$scope.status.init) {
-//              Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
-//              Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
-//              Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
-//              Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+              resetGeoIds($scope.bounds, $scope.geojsonData.state, 'stateID');
               Asterix.parameters.geoLevel = 'state';
               Asterix.queryType = 'zoom';
               Asterix.query(Asterix.parameters, Asterix.queryType);
@@ -122,15 +128,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       $scope.$on("leafletDirectiveMap.dragend", function() {
         if (!$scope.status.init) {
           $scope.bounds = $scope.map.getBounds();
-//          Asterix.parameters.area.swLat = $scope.bounds._southWest.lat;
-//          Asterix.parameters.area.swLog = $scope.bounds._southWest.lng;
-//          Asterix.parameters.area.neLat = $scope.bounds._northEast.lat;
-//          Asterix.parameters.area.neLog = $scope.bounds._northEast.lng;
+          var geoData = ($scope.status.logicLevel === 'state') ? $scope.geojsonData.state : $scope.geojsonData.county;
+          resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
           Asterix.parameters.geoLevel = $scope.status.logicLevel;
           Asterix.queryType = 'drag';
           Asterix.query(Asterix.parameters, Asterix.queryType);
         }
       });
+
     };
 
 
@@ -201,6 +206,31 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     }
 
+    function setCenterAndBoundry(features) {
+
+       for(var id in features){
+         var sumX = 0.0;
+         var sumY = 0.0;
+         var length = 0;
+         if(features[id].geometry.type === "Polygon") {
+            features[id].geometry.coordinates[0].forEach(function(pair) {
+                sumX += pair[0];
+                sumY += pair[1];
+            });
+            length = features[id].geometry.coordinates[0].length
+         } else if( features[id].geometry.type === "MultiPolygon") {
+            features[id].geometry.coordinates.forEach(function(array){
+                array[0].forEach(function(pair){
+                    sumX += pair[0];
+                    sumY += pair[1];
+                });
+                length += array[0].length
+            });
+         }
+         features[id].properties["centerLog"] = sumX / length
+         features[id].properties["centerLat"] = sumY / length
+       }
+    }
     // load geoJson
     function loadGeoJsonFiles(onEachFeature) {
       $http.get("assets/data/state.json")
@@ -210,10 +240,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             style: $scope.styles.stateStyle,
             onEachFeature: onEachFeature
           });
+          setCenterAndBoundry($scope.geojsonData.state.features);
           $scope.polygons.statePolygons.addTo($scope.map);
         })
         .error(function(data) {
-          console.log("Load state data failure");
+          console.error("Load state data failure");
         });
       $http.get("assets/data/county.json")
         .success(function(data) {
@@ -222,9 +253,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             style: $scope.styles.countyStyle,
             onEachFeature: onEachFeature
           });
+          setCenterAndBoundry($scope.geojsonData.county.features);
         })
         .error(function(data) {
-          console.log("Load county data failure");
+          console.error("Load county data failure");
         });
 
     }
