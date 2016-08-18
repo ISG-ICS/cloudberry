@@ -41,7 +41,7 @@ angular.module('cloudberry.common', [])
 
     ws.onmessage = function(event) {
       $timeout(function() {
-        var result = JSON.parse(event.data);
+        var result = JSONbig.parse(event.data);
         switch (result.key) {
           case "byPlace":
             asterixService.mapResult = result.value;
