@@ -22,10 +22,13 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
 
   type TMetaMap = scala.collection.mutable.Map[String, DataSetInfo]
   type TViewMap = scala.collection.mutable.Map[String, String]
+  type TSet = scala.collection.mutable.Set[String]
   type TJodaInterval = org.joda.time.Interval
 
-  val managerParser = queryParserFactory()
   val metaData: TMetaMap = scala.collection.mutable.Map[String, DataSetInfo](initialMetaData.toList: _*)
+  //TODO a bad pattern to create the view, need to embed to the DataSetAgent to make the state machine
+  val creatingSet: TSet = scala.collection.mutable.Set[String]()
+  val managerParser = queryParserFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
   override def receive: Receive = {
@@ -45,6 +48,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
 
     case info: DataSetInfo =>
       metaData += info.name -> info
+      creatingSet.remove(info.name)
   }
 
   private def answerQuery(query: IQuery): Unit = {
@@ -64,13 +68,13 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     }
   }
 
-  //FIXME make this createView synchronized!
   private def createView(create: CreateView): Unit = {
-    if (metaData.contains(create.dataset) || !metaData.contains(create.query.dataset)) {
+    if (metaData.contains(create.dataset) || !metaData.contains(create.query.dataset) || creatingSet.contains(create.dataset)) {
       //TODO should respond an error msg to user
-      log.error(s"invalid dataset in the CreateView msg: ${create}")
+      log.warning(s"invalid dataset in the CreateView msg: ${create}")
       return
     }
+    creatingSet.add(create.dataset)
     val sourceInfo = metaData(create.query.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
     val queryString = managerParser.generate(create, sourceInfo.schema)

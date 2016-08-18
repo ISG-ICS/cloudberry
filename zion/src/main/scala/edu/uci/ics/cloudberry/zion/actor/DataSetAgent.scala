@@ -17,7 +17,7 @@ class DataSetAgent(val schema: Schema, val queryParser: IQLGenerator, val conn: 
       conn.postQuery(queryParser.generate(query, schema)).map(curSender ! _)
   }
 
-  def normal: Receive = querying orElse {
+  override def receive: Receive = querying orElse {
     case append: AppendView =>
       val curSender = sender()
       println(s"send query of $curSender at ${DateTime.now}")
@@ -33,10 +33,9 @@ class DataSetAgent(val schema: Schema, val queryParser: IQLGenerator, val conn: 
     case append: AppendView => stash()
     case DataSetAgent.DoneUpdating =>
       unstashAll()
-      context.become(normal)
+      context.unbecome()
   }
 
-  override def receive: Receive = normal
 }
 
 object DataSetAgent {
