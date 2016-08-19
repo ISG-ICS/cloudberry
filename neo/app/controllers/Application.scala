@@ -72,7 +72,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   def neoQuery = Action.async(parse.json) { request =>
     import akka.pattern.ask
-    implicit val timeout: Timeout = Timeout(5.seconds)
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
 
     request.body.validate[UserRequest].map { request =>
       (neoActor ? request.copy(mergeResult = true)).mapTo[JsValue].map(msg => Ok(msg))
@@ -83,7 +83,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   def berryQuery = Action.async(parse.json) { request =>
     import akka.pattern.ask
-    implicit val timeout: Timeout = Timeout(5.seconds)
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
 
     import JSONParser._
     request.body.validate[Query].map { query: Query =>

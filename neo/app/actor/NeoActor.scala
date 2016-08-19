@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsArray, JsError, JsValue, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -22,8 +22,11 @@ class NeoActor(out: Option[ActorRef], val berryClientProps: Props)(implicit ec: 
   override def receive: Receive = {
     //TODO add the json validator
     case json: JsValue =>
-      val userRequest = json.as[UserRequest]
-      tellBerry(userRequest, sender())
+      json.validate[UserRequest].map { userRequest =>
+        tellBerry(userRequest, sender())
+      }.recoverTotal {
+        e => sender ! JsError.toJson(e)
+      }
     case userRequest: UserRequest =>
       tellBerry(userRequest, sender())
   }
@@ -70,7 +73,7 @@ object NeoActor {
     val byGeo = Json.parse(
       s"""
          |{
-         | "dataset": "twitter.ds_tweet",
+         | "dataset": "${userRequest.dataset}",
          | $filterJSON,
          | "group": {
          |   "by": [
@@ -101,7 +104,7 @@ object NeoActor {
     val byTime = Json.parse(
       s"""
          |{
-         | "dataset": "twitter.ds_tweet",
+         | "dataset": "${userRequest.dataset}",
          | $filterJSON,
          | "group": {
          |   "by": [
@@ -133,7 +136,7 @@ object NeoActor {
     val byHashTag = Json.parse(
       s"""
          |{
-         | "dataset": "twitter.ds_tweet",
+         | "dataset": "${userRequest.dataset}",
          | $filterJSON,
          | "unnest" : { "hashtags": "tag"},
          | "group": {
@@ -164,7 +167,7 @@ object NeoActor {
     val sampleTweet = Json.parse(
       s"""
          |{
-         |  "dataset": "twitter.ds_tweet",
+         |  "dataset": "${userRequest.dataset}",
          |  $filterJSON,
          |   "select" : {
          |    "order" : [ "-create_at"],
