@@ -4,7 +4,7 @@ import edu.uci.ics.cloudberry.zion.model.datastore.{IJSONParser, JsonRequestExce
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.functional.syntax._
-import play.api.libs.json._
+import play.api.libs.json.{JsObject, _}
 
 class JSONParser extends IJSONParser {
 
@@ -51,7 +51,19 @@ object JSONParser {
       }
     }
 
-    override def writes(seq: Seq[Any]): JsValue = ???
+    override def writes(seq: Seq[Any]): JsValue = {
+      JsArray(seq.map {
+        case b: Boolean => JsBoolean(b)
+        case s: String => JsString(s)
+        case i: Int => JsNumber(i)
+        case d: Double => JsNumber(d)
+        case l: Long => JsNumber(l)
+        case fs: FilterStatement => filterFormat.writes(fs)
+        case by: ByStatement => byFormat.writes(by)
+        case ags: AggregateStatement => aggFormat.writes(ags)
+        case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
+      })
+    }
   }
 
   implicit val transformFuncFormat: Format[TransformFunc] = new Format[TransformFunc] {
@@ -71,10 +83,9 @@ object JSONParser {
 
     override def writes(relation: Relation): JsValue =
     {
-      JsObject(Seq("name" -> JsString(relation.toString)))
+      JsString(relation.toString)
     }
   }
-
 
   implicit val groupFuncFormat: Format[GroupFunc] = new Format[GroupFunc] {
     override def reads(json: JsValue): JsResult[GroupFunc] = (json \ "name").as[String] match {
@@ -100,7 +111,14 @@ object JSONParser {
       case unknown: String => JsError(s"group function not found: $unknown")
     }
 
-    override def writes(groupFunc: GroupFunc): JsValue = ???
+    override def writes(groupFunc: GroupFunc): JsValue = {
+      groupFunc match {
+        case fBin: Bin => JsObject(Seq("name" -> JsString(fBin.name), "args" -> JsObject(Seq("scale" -> JsNumber(fBin.scale)))))
+        case fLevel: Level => JsObject(Seq("name" -> JsString(fLevel.name), "args" -> JsObject(Seq("level" -> JsString(fLevel.levelTag)))))
+        case fInterval: Interval => JsObject(Seq("name" -> JsString(fInterval.name), "args" -> JsObject(Seq("unit" -> JsString(fInterval.unit.toString)))))
+        case fGeoCellScale: GeoCellScale => JsObject(Seq("name" -> JsString(groupFunc.name)))
+      }
+    }
   }
 
   implicit val aggFuncFormat: Format[AggregateFunc] = new Format[AggregateFunc] {
@@ -122,12 +140,11 @@ object JSONParser {
     }
   }
 
-  implicit val aggFormat: Format[AggregateStatement] =
-    (
-      (JsPath \ "field").format[String] and
-        (JsPath \ "apply").format[AggregateFunc] and
-        (JsPath \ "as").format[String]
-      ) (AggregateStatement.apply, unlift(AggregateStatement.unapply))
+  implicit val aggFormat: Format[AggregateStatement] = (
+    (JsPath \ "field").format[String] and
+      (JsPath \ "apply").format[AggregateFunc] and
+      (JsPath \ "as").format[String]
+    ) (AggregateStatement.apply, unlift(AggregateStatement.unapply))
 
   implicit val byFormat: Format[ByStatement] = (
     (JsPath \ "field").format[String] and
@@ -170,7 +187,9 @@ object JSONParser {
     }
 
     override def writes(unnestStatement: Seq[UnnestStatement]): JsValue = {
-      ???
+      JsObject(unnestStatement.map {
+        case unSttm: UnnestStatement => unSttm.fieldName -> JsString(unSttm.as)
+      })
     }
   }
 

@@ -30,8 +30,6 @@ object DataSetInfo {
 
   def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(dataSetInfo)
 
-  implicit val seqAnyValue: Reads[Seq[Any]] = JSONParser.seqAnyValue
-
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
     override def reads(json: JsValue) = {
       val start = (json \ "start").as[DateTime]
@@ -44,7 +42,6 @@ object DataSetInfo {
       JsObject(List("start" -> JsString(interval.getStart.toString(formatter)), "end" -> JsString(interval.getEnd.toString(formatter))))
     }
   }
-
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
     override def reads(json: JsValue): JsResult[Field] = {
@@ -80,8 +77,8 @@ object DataSetInfo {
 
   implicit val datetimeFormat: Format[DateTime] = new Format[DateTime] {
     override def reads(json: JsValue) = {
-      val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZ");
-      val datetime = formatter.parseDateTime(json.as[String]);
+      val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
+      val datetime = formatter.parseDateTime(json.as[String])
       JsSuccess(datetime)
     }
 
