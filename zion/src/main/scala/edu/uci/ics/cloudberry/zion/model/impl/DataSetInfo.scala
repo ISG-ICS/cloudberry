@@ -43,6 +43,17 @@ object DataSetInfo {
     }
   }
 
+  //Needed for HierarchyField levels
+  implicit def tuple2Reads[A, B](implicit aReads: Reads[A], bReads: Reads[B]): Reads[Tuple2[A, B]] = Reads[Tuple2[A, B]] {
+    case JsArray(arr) if arr.size == 2 => for {
+      a <- aReads.reads(arr(0))
+      b <- bReads.reads(arr(1))
+    } yield (a, b)
+    case _ => JsError("Expected array of two elements")
+  }
+
+  implicit def tuple2Writes[A: Writes, B: Writes] = Writes[(A, B)](t => Json.obj("something1" -> t._1, "something1" -> t._2))
+
   implicit val fieldFormat: Format[Field] = new Format[Field] {
     override def reads(json: JsValue): JsResult[Field] = {
       val name = (json \ "name").as[String]
@@ -55,14 +66,14 @@ object DataSetInfo {
         case DataType.Point =>
           JsSuccess(PointField(name, isOptional))
         case DataType.Bag =>
-          //val innerType = (json \ "innerType").as[DataType.DataType]
-          JsSuccess(BagField(name, ???, isOptional))
+          val innerType = (json \ "innerType").as[String]
+          JsSuccess(BagField(name, DataType.withName(innerType), isOptional))
         case DataType.Boolean =>
           JsSuccess(BooleanField(name, isOptional))
         case DataType.Hierarchy =>
-          //val innerType = (json \ "innerType").as[DataType.DataType]
-          //val levels = (json \ "levels").as[Seq[(String, String)]]
-          JsSuccess(HierarchyField(name, ???, ???))
+          val innerType = (json \ "innerType").as[String]
+          val levels = (json \ "levels").as[Seq[(String, String)]]
+          JsSuccess(HierarchyField(name, DataType.withName(innerType), levels))
         case DataType.Text =>
           JsSuccess(TextField(name, isOptional))
         case DataType.String =>
@@ -79,8 +90,8 @@ object DataSetInfo {
       val dataType = field.dataType.toString
       field match {
         case record: RecordField => JsNull
-        case bag: BagField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
-        case hierarchy: HierarchyField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
+        case bag: BagField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType), "innerType" -> JsString(bag.innerType.toString)))
+        case hierarchy: HierarchyField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType), "innerType" -> JsString(hierarchy.innerType.toString)))
         case basicField: Field => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
         }
     }
