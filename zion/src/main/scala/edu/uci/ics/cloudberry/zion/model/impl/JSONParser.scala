@@ -61,6 +61,7 @@ object JSONParser {
         case fs: FilterStatement => filterFormat.writes(fs)
         case by: ByStatement => byFormat.writes(by)
         case ags: AggregateStatement => aggFormat.writes(ags)
+        case unS: UnnestStatement => unnestFormat.writes(unS)
         case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
       })
     }
@@ -178,18 +179,16 @@ object JSONParser {
       (JsPath \ "as").format[Seq[String]]
     ) (LookupStatement.apply, unlift(LookupStatement.unapply))
 
-  implicit val unnestFormat: Format[Seq[UnnestStatement]] = new Format[Seq[UnnestStatement]] {
-    override def reads(json: JsValue): JsResult[Seq[UnnestStatement]] = {
+  implicit val unnestFormat: Format[UnnestStatement] = new Format[UnnestStatement] {
+    override def reads(json: JsValue): JsResult[UnnestStatement] = {
       JsSuccess(json.as[JsObject].value.map {
         case (key, jsValue: JsValue) =>
           UnnestStatement(key, jsValue.as[String])
-      }.toSeq)
+      }.head)
     }
 
-    override def writes(unnestStatement: Seq[UnnestStatement]): JsValue = {
-      JsObject(unnestStatement.map {
-        case unSttm: UnnestStatement => unSttm.fieldName -> JsString(unSttm.as)
-      })
+    override def writes(unnestStatement: UnnestStatement): JsValue = {
+      JsObject(Seq(unnestStatement.fieldName -> JsString(unnestStatement.as)))
     }
   }
 

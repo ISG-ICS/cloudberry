@@ -2,15 +2,16 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.impl.TestQuery._
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.{DateTime, Interval}
+import org.joda.time.{DateTime, DateTimeZone, Interval}
 import play.api.libs.json.Json
 
 object TestDataSetInfo {
 
+  DateTimeZone.setDefault(DateTimeZone.UTC)
   val starDateTime = new DateTime(2004, 12, 25, 0, 0, 0, 0)
   val endDateTime = new DateTime(2016, 1, 1, 0, 0, 0, 0)
-  val endTimeString = "2016-01-01T08:00:00.000Z"
-  val startTimeString = "2004-12-25T08:00:00.000Z"
+  val endTimeString = "2016-01-01T00:00:00.000Z"
+  val startTimeString = "2004-12-25T00:00:00.000Z"
 
   val interval = new Interval(starDateTime, endDateTime)
   val fields = Seq(NumberField("id"), StringField("name"))

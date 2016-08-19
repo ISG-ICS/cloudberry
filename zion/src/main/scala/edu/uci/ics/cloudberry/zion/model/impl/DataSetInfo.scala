@@ -38,7 +38,7 @@ object DataSetInfo {
     }
 
     override def writes(interval: Interval): JsValue = {
-      val formatter = ISODateTimeFormat.dateTime().withZoneUTC()
+      val formatter = ISODateTimeFormat.dateTime()
       JsObject(List("start" -> JsString(interval.getStart.toString(formatter)), "end" -> JsString(interval.getEnd.toString(formatter))))
     }
   }
@@ -50,15 +50,18 @@ object DataSetInfo {
       DataType.withName((json \ "datatype").as[String]) match {
         case DataType.Number =>
           JsSuccess(NumberField(name, isOptional))
-        case DataType.Record =>
-          JsSuccess(RecordField(name, ???, isOptional))
+        case DataType.Record => ???
+          //TODO think about Record type later
         case DataType.Point =>
           JsSuccess(PointField(name, isOptional))
         case DataType.Bag =>
+          //val innerType = (json \ "innerType").as[DataType.DataType]
           JsSuccess(BagField(name, ???, isOptional))
         case DataType.Boolean =>
           JsSuccess(BooleanField(name, isOptional))
         case DataType.Hierarchy =>
+          //val innerType = (json \ "innerType").as[DataType.DataType]
+          //val levels = (json \ "levels").as[Seq[(String, String)]]
           JsSuccess(HierarchyField(name, ???, ???))
         case DataType.Text =>
           JsSuccess(TextField(name, isOptional))
@@ -71,7 +74,15 @@ object DataSetInfo {
     }
 
     override def writes(field: Field): JsValue = {
-      JsObject(List("name" -> JsString(field.name), "isOptional" -> JsBoolean(field.isOptional), "datatype" -> JsString(field.dataType.toString)))
+      val name = field.name
+      val isOptional = field.isOptional
+      val dataType = field.dataType.toString
+      field match {
+        case record: RecordField => JsNull
+        case bag: BagField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
+        case hierarchy: HierarchyField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
+        case basicField: Field => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
+        }
     }
   }
 
@@ -83,7 +94,7 @@ object DataSetInfo {
     }
 
     override def writes(dateTime: DateTime): JsValue = {
-      val formatter = ISODateTimeFormat.dateTime().withZoneUTC()
+      val formatter = ISODateTimeFormat.dateTime()
       JsString(dateTime.toString(formatter))
     }
   }
