@@ -70,8 +70,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
 
   private def createView(create: CreateView): Unit = {
     if (metaData.contains(create.dataset) || !metaData.contains(create.query.dataset) || creatingSet.contains(create.dataset)) {
-      //TODO should respond an error msg to user
-      log.warning(s"invalid dataset in the CreateView msg: ${create}")
+      log.warning(s"invalid dataset in the CreateView msg: $create")
       return
     }
     creatingSet.add(create.dataset)
@@ -80,26 +79,32 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     val queryString = managerParser.generate(create, sourceInfo.schema)
     conn.postControl(queryString).map {
       case true =>
-        //TODO replace the following query with an actual query
         val now = DateTime.now()
-        val interval = new org.joda.time.Interval(sourceInfo.dataInterval.getStart, now)
-        val cardinality = sourceInfo.stats.cardinality
-
-        self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, cardinality))
+        collectStats(create.dataset, schema).map { case (interval, size) =>
+          self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
+        }
       case false => ???
     }
   }
 
-  private def collectStats(dataset: String): Future[(TJodaInterval, Int)] = ???
-
   private def updateStats(dataset: String): Unit = {
-    //TODO replace it to an actual query
     val originalInfo = metaData(dataset)
-    val now = DateTime.now()
-    val interval = new org.joda.time.Interval(originalInfo.dataInterval.getStart, now)
-    val cardinality = originalInfo.stats.cardinality + 1000
+    collectStats(dataset, originalInfo.schema).map { case (interval, size) =>
+      self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(cardinality = size))
+    }
+  }
 
-    self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(cardinality = cardinality))
+  private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
+    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, "min"))))
+    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, "max"))))
+    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement("*", Count, "count"))))
+    val parser = queryParserFactory()
+    import TimeField.TimeFormat
+    for {
+      minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \ "min").as[String])
+      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, schema)).map(r => (r \ "max").as[String])
+      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, schema)).map(r => (r \ "count").as[Long])
+    } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 
 }

@@ -6,7 +6,7 @@ import org.joda.time.{DateTime, Interval}
 case class Stats(createTime: DateTime,
                  lastModifyTime: DateTime,
                  lastReadTime: DateTime,
-                 cardinality: Int)
+                 cardinality: Long)
 
 case class DataSetInfo(name: String,
                        createQueryOpt: Option[Query],
