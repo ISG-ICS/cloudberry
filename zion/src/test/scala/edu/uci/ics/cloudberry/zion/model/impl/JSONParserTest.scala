@@ -37,6 +37,11 @@ class JSONParserTest extends Specification {
       val expectQuery = Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
       actualQuery must_== expectQuery
     }
+    "parse the group by bin" in {
+      val actualQuery = parser.parse(groupByBinJSON)
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
+      actualQuery must_== expectQuery
+    }
     "parse int values " in {
       val actualQuery = parser.parse(intValuesJSON)
       val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq(intFilter), Seq.empty, None, None)

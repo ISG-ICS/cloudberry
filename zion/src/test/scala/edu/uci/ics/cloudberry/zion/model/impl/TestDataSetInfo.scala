@@ -19,17 +19,20 @@ object TestDataSetInfo {
   val filter = Seq(stateFilter, timeFilter, textFilter)
   val group = GroupStatement(Seq(byState, byHour), Seq(aggrCount))
   val groupByTag = GroupStatement(Seq(byTag), Seq(aggrCount))
+  val groupByBin = GroupStatement(Seq(byBin), Seq(aggrCount))
 
   val createQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-  val complexQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+  val berryAggrByTagQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
   val unnestQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(groupByTag), Some(selectTop10Tag))
+  val groupByBinQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(groupByBin), None)
 
 
   val simpleDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
   val fieldsDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", fields, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
   val queryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(createQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val complexQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(complexQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val complexQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(berryAggrByTagQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
   val unnestQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(unnestQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val byBinDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(groupByBinQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
 
 
   val simpleDataSetInfoJSON = Json.parse(
@@ -88,6 +91,29 @@ object TestDataSetInfo {
        | "name": "twitter.ds_tweet",
        | "createQuery":
        |$globalCountJSON,
+       | "schema": {
+       |		"typeName": "tweet",
+       |     "dimension": [],
+       |     "measurement": [],
+       |     "primaryKey": [],
+       |     "timeField": ""
+       | },
+       | "dataInterval": {"start":"$startTimeString",
+       |                  "end":"$endTimeString"},
+       | "stats": { "createTime": "$endTimeString",
+       |            "lastModifyTime": "$endTimeString",
+       |            "lastReadTime": "$endTimeString",
+       |            "cardinality": 0
+       |          }
+       |}
+    """.stripMargin)
+
+  val BinDataSetInfoJSON = Json.parse(
+    s"""
+       |{
+       | "name": "twitter.ds_tweet",
+       | "createQuery":
+       |$groupByBinJSON,
        | "schema": {
        |		"typeName": "tweet",
        |     "dimension": [],

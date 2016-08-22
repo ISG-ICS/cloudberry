@@ -237,6 +237,35 @@ object TestQuery {
        |}
     """.stripMargin
   )
+  val groupByBinJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | "group": {
+       |   "by": [
+       |      {
+       |        "field": "geo_tag.stateID",
+       |        "apply": {
+       |          "name": "bin",
+       |          "args": {
+       |            "scale": 10
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |   "aggregate": [
+       |     {
+       |       "field": "*",
+       |       "apply": {
+       |         "name": "count"
+       |       },
+       |       "as": "count"
+       |     }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
 
   val topKHashTagJSON = Json.parse(
     s"""
