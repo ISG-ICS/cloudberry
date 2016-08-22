@@ -9,8 +9,8 @@ object TestQuery {
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
   val schema = TwitterDataStore.TwitterSchema
-  val startTime = "2016-01-01T00:00:00Z"
-  val endTime = "2016-12-01T00:00:00Z"
+  val startTime = "2016-01-01T00:00:00.000Z"
+  val endTime = "2016-12-01T00:00:00.000Z"
 
   val textValue = Seq("zika", "virus")
   val stateValue = Seq(37, 51, 24, 11, 10, 34, 42, 9, 44)

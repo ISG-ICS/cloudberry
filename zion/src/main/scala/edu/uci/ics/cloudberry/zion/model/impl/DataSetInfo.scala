@@ -85,12 +85,20 @@ object DataSetInfo {
       val dataType = field.dataType.toString
       field match {
         case record: RecordField => JsNull
-        case bag: BagField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional),
-          "datatype" -> JsString(dataType), "innerType" -> JsString(bag.innerType.toString)))
-        case hierarchy: HierarchyField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional),
-          "datatype" -> JsString(dataType), "innerType" -> JsString(hierarchy.innerType.toString),
+        case bag: BagField => JsObject(List(
+          "name" -> JsString(name),
+          "isOptional" -> JsBoolean(isOptional),
+          "datatype" -> JsString(dataType),
+          "innerType" -> JsString(bag.innerType.toString)))
+        case hierarchy: HierarchyField => JsObject(List(
+          "name" -> JsString(name),
+          "isOptional" -> JsBoolean(isOptional),
+          "datatype" -> JsString(dataType),
+          "innerType" -> JsString(hierarchy.innerType.toString),
           "levels" -> Json.toJson(hierarchy.levels)))
-        case basicField: Field => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional),
+        case basicField: Field => JsObject(List(
+          "name" -> JsString(name),
+          "isOptional" -> JsBoolean(isOptional),
           "datatype" -> JsString(dataType)))
         }
     }
