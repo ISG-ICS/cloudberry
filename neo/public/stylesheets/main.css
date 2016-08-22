@@ -1,8 +1,9 @@
 body {
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
 }
-map {
+.map-group {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -32,7 +33,7 @@ map {
 time-series {
   position: absolute;
   top: 82%;
-  left: 10%;
+  left: 15%;
   width: 80%;
   height: 15%;
 }
@@ -46,9 +47,10 @@ search-bar {
 
 #how-to{
   position: absolute;
-  top: 95%;
-  left: 0%;
+  bottom: 0%;
+  left: -11%;
   width: 10%;
+  z-index: 0;
 }
 
 .info {
@@ -96,4 +98,20 @@ search-bar {
 .col-xs-10{
   padding-left: 0;
   padding-right: 0;
+}
+
+#logo_img{
+  z-index = 0;
+  position: absolute;
+  top:2%;
+  left:10%;
+  width : 15%;
+  height: 10%;
+
+}
+
+.btn.btn-info{
+    position: relative;
+    left: 110%;
+
 }
