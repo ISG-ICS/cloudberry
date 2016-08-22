@@ -6,7 +6,7 @@ import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 object DataType extends Enumeration {
   type DataType = Value
   val Number = Value("Number")
-  val Time = Value("Number")
+  val Time = Value("Time")
   val Point = Value("Point")
   val Boolean = Value("Boolean")
   val String = Value("String")

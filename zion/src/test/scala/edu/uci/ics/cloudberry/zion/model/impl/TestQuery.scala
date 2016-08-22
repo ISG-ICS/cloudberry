@@ -96,6 +96,17 @@ object TestQuery {
        | ]
      """.stripMargin
 
+  val filterZikaJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "text",
+       |    "relation": "contains",
+       |    "values": ["zika"]
+       |  }
+       | ]
+     """.stripMargin
+
   val filterWrongValueJSON =
     s"""
        |"filter": [
@@ -524,6 +535,14 @@ object TestQuery {
        |       "as": "min"
        |     }
        |  }
+       |}
+    """.stripMargin)
+
+  val zikaJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterZikaJSON
        |}
     """.stripMargin)
 

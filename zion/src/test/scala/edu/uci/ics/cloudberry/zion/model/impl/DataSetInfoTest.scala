@@ -29,6 +29,16 @@ class DataSetInfoTest extends Specification {
       val expectDataSetInfo = complexQueryDataSetInfo
       actualDataSetInfo must_== expectDataSetInfo
     }
+    "read dataSetInfo containing complex fields" in {
+      val actualDataSetInfo = parser.parse(sourceDataSetInfoJSON)
+      val expectDataSetInfo = TestQuery.sourceInfo
+      actualDataSetInfo must_== expectDataSetInfo
+    }
+    "read dataSetInfo containing complex fields and query" in {
+      val actualDataSetInfo = parser.parse(zikaDataSetInfoJSON)
+      val expectDataSetInfo = TestQuery.zikaHalfYearViewInfo
+      actualDataSetInfo must_== expectDataSetInfo
+    }
     "write a sample dataSetInfo" in {
       val expectJSON = parser.write(simpleDataSetInfo)
       val actualJSON = simpleDataSetInfoJSON
@@ -55,11 +65,15 @@ class DataSetInfoTest extends Specification {
       val expectJSON = unnestQueryDataSetInfoJSON
       actualJSON must_== expectJSON
     }
-    "read dataSetInfo containing complex fields" in {
-      ok
-    }
     "write dataSetInfo containing complex fields" in {
-      ok
+      val actualJSON = parser.write(TestQuery.sourceInfo)
+      val expectJSON = sourceDataSetInfoJSON
+      actualJSON must_== expectJSON
+    }
+    "write dataSetInfo containing complex fields and query" in {
+      val actualJSON = parser.write(TestQuery.zikaHalfYearViewInfo)
+      val expectJSON = zikaDataSetInfoJSON
+      actualJSON must_== expectJSON
     }
   }
 }

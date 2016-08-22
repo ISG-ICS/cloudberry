@@ -2,7 +2,6 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.format.{DateTimeFormat, ISODateTimeFormat}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -38,21 +37,17 @@ object DataSetInfo {
     }
 
     override def writes(interval: Interval): JsValue = {
-      val formatter = ISODateTimeFormat.dateTime()
-      JsObject(List("start" -> JsString(interval.getStart.toString(formatter)), "end" -> JsString(interval.getEnd.toString(formatter))))
+      JsObject(List("start" -> Json.toJson(interval.getStart), "end" -> Json.toJson(interval.getEnd)))
     }
   }
 
-  //Needed for HierarchyField levels
-  implicit def tuple2Reads[A, B](implicit aReads: Reads[A], bReads: Reads[B]): Reads[Tuple2[A, B]] = Reads[Tuple2[A, B]] {
-    case JsArray(arr) if arr.size == 2 => for {
-      a <- aReads.reads(arr(0))
-      b <- bReads.reads(arr(1))
-    } yield (a, b)
-    case _ => JsError("Expected array of two elements")
-  }
+  implicit def tuple2Writes: Writes[Tuple2[String, String]] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
 
-  implicit def tuple2Writes[A: Writes, B: Writes] = Writes[(A, B)](t => Json.obj("something1" -> t._1, "something1" -> t._2))
+  def parseLevels(levelSeq: Seq[Map[String, String]]): Seq[(String, String)] = {
+    levelSeq.map {
+      levelMap => (levelMap.get("level").getOrElse(""), levelMap.get("field").getOrElse(""))
+    }
+  }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
     override def reads(json: JsValue): JsResult[Field] = {
@@ -72,8 +67,8 @@ object DataSetInfo {
           JsSuccess(BooleanField(name, isOptional))
         case DataType.Hierarchy =>
           val innerType = (json \ "innerType").as[String]
-          val levels = (json \ "levels").as[Seq[(String, String)]]
-          JsSuccess(HierarchyField(name, DataType.withName(innerType), levels))
+          val levelSeq = (json \ "levels").as[Seq[Map[String, String]]]
+          JsSuccess(HierarchyField(name, DataType.withName(innerType), parseLevels(levelSeq)))
         case DataType.Text =>
           JsSuccess(TextField(name, isOptional))
         case DataType.String =>
@@ -90,24 +85,25 @@ object DataSetInfo {
       val dataType = field.dataType.toString
       field match {
         case record: RecordField => JsNull
-        case bag: BagField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType), "innerType" -> JsString(bag.innerType.toString)))
-        case hierarchy: HierarchyField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType), "innerType" -> JsString(hierarchy.innerType.toString)))
-        case basicField: Field => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional), "datatype" -> JsString(dataType)))
+        case bag: BagField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional),
+          "datatype" -> JsString(dataType), "innerType" -> JsString(bag.innerType.toString)))
+        case hierarchy: HierarchyField => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional),
+          "datatype" -> JsString(dataType), "innerType" -> JsString(hierarchy.innerType.toString),
+          "levels" -> Json.toJson(hierarchy.levels)))
+        case basicField: Field => JsObject(List("name" -> JsString(name), "isOptional" -> JsBoolean(isOptional),
+          "datatype" -> JsString(dataType)))
         }
     }
   }
 
   implicit val datetimeFormat: Format[DateTime] = new Format[DateTime] {
     override def reads(json: JsValue) = {
-      val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZZ")
-      val datetime = formatter.parseDateTime(json.as[String])
+      val datetime = IQuery.TimeFormat.parseDateTime(json.as[String])
       JsSuccess(datetime)
     }
 
-    override def writes(dateTime: DateTime): JsValue = {
-      val formatter = ISODateTimeFormat.dateTime()
-      JsString(dateTime.toString(formatter))
-    }
+    override def writes(dateTime: DateTime): JsValue = JsString(dateTime.toString(IQuery.TimeFormat))
+
   }
 
   implicit val statsFormat: Format[Stats] = (

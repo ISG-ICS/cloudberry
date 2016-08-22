@@ -82,10 +82,7 @@ object JSONParser {
       }
     }
 
-    override def writes(relation: Relation): JsValue =
-    {
-      JsString(relation.toString)
-    }
+    override def writes(relation: Relation): JsValue = JsString(relation.toString)
   }
 
   implicit val groupFuncFormat: Format[GroupFunc] = new Format[GroupFunc] {
