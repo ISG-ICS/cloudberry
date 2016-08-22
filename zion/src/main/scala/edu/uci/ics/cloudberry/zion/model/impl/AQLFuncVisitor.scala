@@ -238,10 +238,14 @@ object AQLFuncVisitor {
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
         (DataType.Number, s"count", sourceVar)
       case Max =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException("Max requires to aggregate on numbers")
+        if (field.dataType != DataType.Number && field.dataType != DataType.Time) {
+          throw new QueryParsingException(s"Max requires to aggregate on numbers or times, type ${field.dataType} is given")
+        }
         (DataType.Number, s"max", s"$sourceVar.'${field.name}'")
       case Min =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException("Min requires to aggregate on numbers")
+        if (field.dataType != DataType.Number && field.dataType != DataType.Time) {
+          throw new QueryParsingException(s"Min requires to aggregate on numbers or times, type ${field.dataType} is given")
+        }
         (DataType.Number, s"min", s"$sourceVar.'${field.name}'")
       case topK: TopK => ???
       case Avg =>

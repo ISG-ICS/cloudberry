@@ -77,7 +77,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     val sourceInfo = metaData(create.query.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
     val queryString = managerParser.generate(create, sourceInfo.schema)
-    conn.postControl(queryString).map {
+    conn.postControl(queryString) onSuccess {
       case true =>
         val now = DateTime.now()
         collectStats(create.dataset, schema).map { case (interval, size) =>

@@ -1,11 +1,12 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
 object TestQuery {
 
+  DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
   val schema = TwitterDataStore.TwitterSchema
   val startTime = "2016-01-01T00:00:00Z"
