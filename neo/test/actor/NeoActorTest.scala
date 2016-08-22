@@ -13,14 +13,14 @@ class NeoActorTest extends Specification {
       import NeoActor.RequestType._
 
       DateTimeZone.setDefault(DateTimeZone.UTC)
-      val userRequest = UserRequest("twitter", Seq("zika", "virus"), new Interval(0, 200), TimeBin.Hour, GeoLevel.City, Seq(1, 2, 3, 4))
+      val userRequest = UserRequest("twitter", Seq("zika", "virus"), new Interval(0, 2000), TimeBin.Hour, GeoLevel.City, Seq(1, 2, 3, 4))
       val cbRequest = generateCBerryRequest(userRequest)
       cbRequest(ByPlace) must_== Json.parse(
         """
           |{ "dataset":"twitter",
           |  "filter":[
           |    {"field":"geo_tag.cityID","relation":"in","values":[1,2,3,4]},
-          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00Z","1970-01-01T00:00:00Z"]},
+          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00.000Z","1970-01-01T00:00:02.000Z"]},
           |    {"field":"text","relation":"contains","values":["zika","virus"]}],
           |  "group":{
           |    "by":[
@@ -43,7 +43,7 @@ class NeoActorTest extends Specification {
           |{ "dataset":"twitter",
           |  "filter":[
           |    {"field":"geo_tag.cityID","relation":"in","values":[1,2,3,4]},
-          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00Z","1970-01-01T00:00:00Z"]},
+          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00.000Z","1970-01-01T00:00:02.000Z"]},
           |    {"field":"text","relation":"contains","values":["zika","virus"]}
           |  ],
           |  "group":{
@@ -66,7 +66,7 @@ class NeoActorTest extends Specification {
           |{ "dataset":"twitter",
           |  "filter":[
           |    {"field":"geo_tag.cityID","relation":"in","values":[1,2,3,4]},
-          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00Z","1970-01-01T00:00:00Z"]},
+          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00.000Z","1970-01-01T00:00:02.000Z"]},
           |    {"field":"text","relation":"contains","values":["zika","virus"]}
           |  ],
           |  "unnest":{"hashtags":"tag"},
@@ -86,7 +86,7 @@ class NeoActorTest extends Specification {
           |{ "dataset":"twitter",
           |  "filter":[
           |    {"field":"geo_tag.cityID","relation":"in","values":[1,2,3,4]},
-          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00Z","1970-01-01T00:00:00Z"]},
+          |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00.000Z","1970-01-01T00:00:02.000Z"]},
           |    {"field":"text","relation":"contains","values":["zika","virus"]}
           |  ],
           |  "select":{
