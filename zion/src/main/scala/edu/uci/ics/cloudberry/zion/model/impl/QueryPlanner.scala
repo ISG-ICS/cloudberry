@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import java.security.MessageDigest
 
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.Interval
+import org.joda.time.{DateTime, Interval}
 
 class QueryPlanner {
 
@@ -47,8 +47,8 @@ class QueryPlanner {
     bestView match {
       case None => Seq(query)
       case Some(view) =>
-        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(source.dataInterval)
-        val viewInterval = view.dataInterval
+        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(source.stats.createTime, DateTime.now()))
+        val viewInterval = new Interval(source.stats.createTime, view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
         val seqBuilder = Seq.newBuilder[Query]

@@ -60,7 +60,7 @@ case class Query(dataset: String,
       case Some(group) => this.groups.forall(_.finerThan(group))
     }
 
-    isGroupMatch && this.unnest.isEmpty && another.unnest.isEmpty && this.select.isEmpty
+    isGroupMatch && this.unnest.isEmpty && this.select.isEmpty
   }
 
 }
