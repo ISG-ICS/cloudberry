@@ -10,6 +10,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
                        val conn: IDataConn,
@@ -80,8 +81,11 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     conn.postControl(queryString) onSuccess {
       case true =>
         val now = DateTime.now()
-        collectStats(create.dataset, schema).map { case (interval, size) =>
-          self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
+        collectStats(create.dataset, schema) onComplete {
+          case Success((interval, size)) =>
+            self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
+          case Failure(ex) =>
+            log.error(s"collectStats error: $ex")
         }
       case false => ???
     }
@@ -89,7 +93,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
 
   private def updateStats(dataset: String): Unit = {
     val originalInfo = metaData(dataset)
-    collectStats(dataset, originalInfo.schema).map { case (interval, size) =>
+    collectStats(dataset, originalInfo.schema) onSuccess { case (interval, size) =>
       self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(cardinality = size))
     }
   }
@@ -101,9 +105,9 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     val parser = queryParserFactory()
     import TimeField.TimeFormat
     for {
-      minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \ "min").as[String])
-      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, schema)).map(r => (r \ "max").as[String])
-      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, schema)).map(r => (r \ "count").as[Long])
+      minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \\ "min").head.as[String])
+      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, schema)).map(r => (r \\ "max").head.as[String])
+      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, schema)).map(r => (r \\ "count").head.as[Long])
     } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 

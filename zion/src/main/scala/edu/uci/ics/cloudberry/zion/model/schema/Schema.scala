@@ -41,7 +41,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
   extends Field(name, DataType.Time, isOptional)
 
 object TimeField {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 
 case class StringField(override val name: String, override val isOptional: Boolean = false)

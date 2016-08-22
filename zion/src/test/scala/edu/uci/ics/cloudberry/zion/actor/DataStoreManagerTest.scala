@@ -10,7 +10,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo}
 import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, CreateView, Query, TimeField}
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.specs2.mutable.SpecificationLike
-import play.api.libs.json.Json
+import play.api.libs.json.{JsArray, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -63,10 +63,11 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val mockConn = mock[IDataConn]
       when(mockConn.postControl(any[String])).thenReturn(Future(true))
 
-      val viewStatJson = Json.obj("min" -> "2015-01-01T00:00:00Z", "max" -> "2016-01-01T00:00:00Z", "count" -> 2000)
-      when(mockConn.postQuery(any[String])).thenReturn(Future{
+      val viewStatJson = JsArray(Seq(Json.obj("min" -> "2015-01-01T00:00:00.000Z", "max" -> "2016-01-01T00:00:00.000Z", "count" -> 2000)))
+      when(mockConn.postQuery(any[String])).thenReturn(Future {
         println("mockConn")
-        viewStatJson})
+        viewStatJson
+      })
 
       val initialInfo: Map[String, DataSetInfo] = Map(sourceInfo.name -> sourceInfo)
       val dataManager = system.actorOf(Props(new DataStoreManager(initialInfo, mockConn, mockParserFactory, Config.Default, testActorMaker)))
@@ -85,9 +86,9 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       viewInfo.name must_== createView.dataset
       viewInfo.createQueryOpt must_== Some(createView.query)
       viewInfo.schema must_== sourceInfo.schema
-      viewInfo.dataInterval.getStart must_== TimeField.TimeFormat.parseDateTime((viewStatJson \ "min").as[String])
-      viewInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \ "max").as[String])
-      viewInfo.stats.cardinality must_== (viewStatJson \ "count").as[Long]
+      viewInfo.dataInterval.getStart must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "min").head.as[String])
+      viewInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
+      viewInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
     }
     "update meta stats if append view succeeds" in {
       val parser = new AQLGenerator
@@ -95,7 +96,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       when(mockParserFactory.apply()).thenReturn(parser)
 
       val mockConn = mock[IDataConn]
-      val viewStatJson = Json.obj("min" -> "2015-01-01T00:00:00Z", "max" -> "2016-01-01T00:00:00Z", "count" -> 2000)
+      val viewStatJson = JsArray(Seq(Json.obj("min" -> "2015-01-01T00:00:00.000Z", "max" -> "2016-01-01T00:00:00.000Z", "count" -> 2000)))
       when(mockConn.postQuery(any[String])).thenReturn(Future(viewStatJson))
 
       val initialInfo = Map(sourceInfo.name -> sourceInfo, zikaHalfYearViewInfo.name -> zikaHalfYearViewInfo)
@@ -112,8 +113,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.send(dataManager, DataStoreManager.AskInfoMsg(zikaHalfYearViewInfo.name))
       val newInfo = sender.receiveOne(1 second).asInstanceOf[Seq[DataSetInfo]].head
       newInfo.name must_== zikaHalfYearViewInfo.name
-      newInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \ "max").as[String])
-      newInfo.stats.cardinality must_== (viewStatJson \ "count").as[Long]
+      newInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
+      newInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
     }
     "update meta info if receive drop request" in {
       ok
