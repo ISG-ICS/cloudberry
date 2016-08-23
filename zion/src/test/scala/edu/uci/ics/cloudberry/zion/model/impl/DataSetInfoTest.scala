@@ -26,7 +26,7 @@ class DataSetInfoTest extends Specification {
     }
     "read dataSetInfo with createQuery by (state, hour) count request" in {
       val actualDataSetInfo = parser.parse(complexQueryDataSetInfoJSON)
-      val expectDataSetInfo = complexQueryDataSetInfo
+      val expectDataSetInfo = berryAggrByTagViewDataSetInfo
       actualDataSetInfo must_== expectDataSetInfo
     }
     "read dataSetInfo containing dimension and measurement fields" in {
@@ -55,7 +55,7 @@ class DataSetInfoTest extends Specification {
       actualJSON must_== expectJSON
     }
     "write dataSetInfo with createQuery by (state, hour) count request" in {
-      val actualJSON = parser.write(complexQueryDataSetInfo)
+      val actualJSON = parser.write(berryAggrByTagViewDataSetInfo)
       val expectJSON = complexQueryDataSetInfoJSON
       actualJSON must_== expectJSON
     }

@@ -45,13 +45,9 @@ object DataSetInfo {
   implicit def tuple2Writes: Writes[Tuple2[String, String]] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
 
   def parseLevels(levelSeq: Seq[Map[String, String]]): Seq[(String, String)] = {
-    try {
       levelSeq.map {
         levelMap => (levelMap.get("level").get, levelMap.get("field").get)
       }
-    } catch {
-      case e: NoSuchElementException => throw new NoSuchElementException("level and field are required")
-    }
   }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
