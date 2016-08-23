@@ -7,7 +7,15 @@ import org.joda.time.format.DateTimeFormat
 //TODO support nested type
 object DataType extends Enumeration {
   type DataType = Value
-  val Number, Time, Point, Boolean, String, Text, Bag, Hierarchy, Record = Value
+  val Number = Value("Number")
+  val Time = Value("Time")
+  val Point = Value("Point")
+  val Boolean = Value("Boolean")
+  val String = Value("String")
+  val Text = Value("Text")
+  val Bag = Value("Bag")
+  val Hierarchy = Value("Hierarchy")
+  val Record = Value("Record")
 }
 
 object Relation extends Enumeration {

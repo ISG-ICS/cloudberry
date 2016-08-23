@@ -96,6 +96,17 @@ object TestQuery {
        | ]
      """.stripMargin
 
+  val filterZikaJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "text",
+       |    "relation": "contains",
+       |    "values": ["zika"]
+       |  }
+       | ]
+     """.stripMargin
+
   val filterWrongValueJSON =
     s"""
        |"filter": [
@@ -226,13 +237,42 @@ object TestQuery {
        |}
     """.stripMargin
   )
+  val groupByBinJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | "group": {
+       |   "by": [
+       |      {
+       |        "field": "geo_tag.stateID",
+       |        "apply": {
+       |          "name": "bin",
+       |          "args": {
+       |            "scale": 10
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |   "aggregate": [
+       |     {
+       |       "field": "*",
+       |       "apply": {
+       |         "name": "count"
+       |       },
+       |       "as": "count"
+       |     }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
 
   val topKHashTagJSON = Json.parse(
     s"""
        |{
        | "dataset": "twitter.ds_tweet",
        | $filterJSON,
-       | "unnest" : { "hashtags": "tag"},
+       | "unnest" : [{ "hashtags": "tag"}],
        | "group": {
        |    "by": [
        |      {
@@ -524,6 +564,14 @@ object TestQuery {
        |       "as": "min"
        |     }
        |  }
+       |}
+    """.stripMargin)
+
+  val zikaJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterZikaJSON
        |}
     """.stripMargin)
 
