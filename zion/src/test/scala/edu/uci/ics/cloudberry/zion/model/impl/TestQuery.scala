@@ -1,15 +1,16 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
 object TestQuery {
 
+  DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
   val schema = TwitterDataStore.TwitterSchema
-  val startTime = "2016-01-01T00:00:00Z"
-  val endTime = "2016-12-01T00:00:00Z"
+  val startTime = "2016-01-01T00:00:00.000Z"
+  val endTime = "2016-12-01T00:00:00.000Z"
 
   val textValue = Seq("zika", "virus")
   val stateValue = Seq(37, 51, 24, 11, 10, 34, 42, 9, 44)
@@ -91,6 +92,17 @@ object TestQuery {
        |    "values": [
        |      ${textValue.map("\"" + _ + "\"").mkString(",")}
        |    ]
+       |  }
+       | ]
+     """.stripMargin
+
+  val filterZikaJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "text",
+       |    "relation": "contains",
+       |    "values": ["zika"]
        |  }
        | ]
      """.stripMargin
@@ -225,13 +237,42 @@ object TestQuery {
        |}
     """.stripMargin
   )
+  val groupByBinJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | "group": {
+       |   "by": [
+       |      {
+       |        "field": "geo_tag.stateID",
+       |        "apply": {
+       |          "name": "bin",
+       |          "args": {
+       |            "scale": 10
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |   "aggregate": [
+       |     {
+       |       "field": "*",
+       |       "apply": {
+       |         "name": "count"
+       |       },
+       |       "as": "count"
+       |     }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
 
   val topKHashTagJSON = Json.parse(
     s"""
        |{
        | "dataset": "twitter.ds_tweet",
        | $filterJSON,
-       | "unnest" : { "hashtags": "tag"},
+       | "unnest" : [{ "hashtags": "tag"}],
        | "group": {
        |    "by": [
        |      {
@@ -523,6 +564,14 @@ object TestQuery {
        |       "as": "min"
        |     }
        |  }
+       |}
+    """.stripMargin)
+
+  val zikaJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterZikaJSON
        |}
     """.stripMargin)
 

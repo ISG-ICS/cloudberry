@@ -18,7 +18,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
@@ -73,7 +73,7 @@ class AQLGeneratorTest extends Specification {
         """
           |for $t in dataset twitter.ds_tweet
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and true
+          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |let $taggr := $t
@@ -92,7 +92,7 @@ class AQLGeneratorTest extends Specification {
         """
           |for $t in dataset twitter.ds_tweet
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and true
+          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |order by $t.'create_at' desc
@@ -113,7 +113,7 @@ class AQLGeneratorTest extends Specification {
           |for $g in (
           |for $t in dataset twitter.ds_tweet
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and true
+          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |where not(is-null($t.'hashtags'))
@@ -140,7 +140,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |let $taggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
@@ -157,7 +157,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |let $taggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
@@ -174,7 +174,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |let $taggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
@@ -191,7 +191,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |let $taggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
@@ -449,7 +449,7 @@ class AQLGeneratorTest extends Specification {
         """{"count": count (
           |for $c in (
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |return $t
           |)
           |return $c
@@ -467,7 +467,7 @@ class AQLGeneratorTest extends Specification {
         """{"min": min (
           |for $c in (
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z')
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
           |return $t
           |)
           |return $c.'id'
@@ -489,7 +489,7 @@ class AQLGeneratorTest extends Specification {
           |for $g in (
           |for $t in dataset twitter.ds_tweet
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and true
+          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |where not(is-null($t.'hashtags'))
@@ -594,7 +594,7 @@ class AQLGeneratorTest extends Specification {
         """
           |upsert into dataset zika (
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00Z') and $t.'create_at' < datetime('2016-12-01T00:00:00Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
           |return $t
           |)
         """.stripMargin.trim)
