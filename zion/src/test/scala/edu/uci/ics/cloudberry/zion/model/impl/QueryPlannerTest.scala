@@ -37,17 +37,17 @@ class QueryPlannerTest extends Specification {
       val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
       val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, sourceInterval, virusStats)
-      val queries = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
+      val (queries, merge) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
       queries.size must_== 1
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
     }
     "makePlan should only ask the view without touching source if it is enough to solve the query" in {
-      val queries = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo))
+      val (queries, merge) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo))
       queries.size must_== 1
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
     }
     "makePlan should ask the view and the source if view can not cover the query" in {
-      val queries = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
+      val (queries, merge) = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
       queries.size must_== 2
       queries.exists(_.dataset == zikaHalfYearViewInfo.name) must_== true
       queries.exists(_.dataset == TwitterDataSet) must_== true

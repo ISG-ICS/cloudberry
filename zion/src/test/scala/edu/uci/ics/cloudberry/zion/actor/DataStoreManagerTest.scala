@@ -64,10 +64,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       when(mockConn.postControl(any[String])).thenReturn(Future(true))
 
       val viewStatJson = JsArray(Seq(Json.obj("min" -> "2015-01-01T00:00:00.000Z", "max" -> "2016-01-01T00:00:00.000Z", "count" -> 2000)))
-      when(mockConn.postQuery(any[String])).thenReturn(Future {
-        println("mockConn")
-        viewStatJson
-      })
+      when(mockConn.postQuery(any[String])).thenReturn(Future(viewStatJson))
 
       val initialInfo: Map[String, DataSetInfo] = Map(sourceInfo.name -> sourceInfo)
       val dataManager = system.actorOf(Props(new DataStoreManager(initialInfo, mockConn, mockParserFactory, Config.Default, testActorMaker)))

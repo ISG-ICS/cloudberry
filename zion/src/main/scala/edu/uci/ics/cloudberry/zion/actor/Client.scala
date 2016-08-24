@@ -31,13 +31,15 @@ class Client(val out: Option[ActorRef], val jsonParser: JSONParser, val dataMana
       case seq if seq.isEmpty =>
         out.getOrElse(curSender) ! NoSuchDataset(query.dataset)
       case infos: Seq[DataSetInfo] =>
-        val queries = planner.makePlan(query, infos.head, infos.tail)
+        val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
         val fResponse = Future.traverse(queries) { query =>
           dataManager ? query
         }.map(seq => seq.map(_.asInstanceOf[JsValue]))
 
         fResponse.map { responses =>
-          out.getOrElse(curSender) ! mergeResponse(responses)
+          val r = merger(responses)
+          println(r)
+          out.getOrElse(curSender) ! r
         }
 
         val newViews = planner.suggestNewView(query, infos.head, infos.tail)
@@ -64,12 +66,6 @@ object Client {
   def props(jsonParser: JSONParser, dataManagerRef: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
     Props(new Client(None, jsonParser, dataManagerRef, planner, config))
-  }
-
-  def mergeResponse(responses: TraversableOnce[JsValue]): JsArray = {
-    val builder = Seq.newBuilder[JsValue]
-    responses.foreach(jsValue => builder ++= jsValue.asInstanceOf[JsArray].value)
-    JsArray(builder.result())
   }
 
   case class NoSuchDataset(name: String)

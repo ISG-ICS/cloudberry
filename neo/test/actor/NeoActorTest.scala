@@ -69,7 +69,7 @@ class NeoActorTest extends Specification {
           |    {"field":"create_at","relation":"inRange","values":["1970-01-01T00:00:00.000Z","1970-01-01T00:00:02.000Z"]},
           |    {"field":"text","relation":"contains","values":["zika","virus"]}
           |  ],
-          |  "unnest":{"hashtags":"tag"},
+          |  "unnest":[{"hashtags":"tag"}],
           |  "group":{
           |    "by":[{"field":"tag"}],
           |    "aggregate":[{"field":"*","apply":{"name":"count"},"as":"count"}]

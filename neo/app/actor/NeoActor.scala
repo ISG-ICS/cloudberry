@@ -20,7 +20,6 @@ class NeoActor(out: Option[ActorRef], val berryClientProps: Props)(implicit ec: 
   val berryClient = context.watch(context.actorOf(berryClientProps))
 
   override def receive: Receive = {
-    //TODO add the json validator
     case json: JsValue =>
       json.validate[UserRequest].map { userRequest =>
         tellBerry(userRequest, sender())
@@ -138,7 +137,7 @@ object NeoActor {
          |{
          | "dataset": "${userRequest.dataset}",
          | $filterJSON,
-         | "unnest" : { "hashtags": "tag"},
+         | "unnest" : [{ "hashtags": "tag"}],
          | "group": {
          |    "by": [
          |      {
