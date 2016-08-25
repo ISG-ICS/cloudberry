@@ -10,7 +10,7 @@ trait IQuery {
 }
 
 object IQuery {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 
 case class Query(dataset: String,
