@@ -4,7 +4,7 @@ import java.security.MessageDigest
 
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, Interval}
-import play.api.libs.json.{JsArray, JsNumber, JsObject, JsValue}
+import play.api.libs.json._
 
 class QueryPlanner {
 
@@ -43,7 +43,6 @@ class QueryPlanner {
     }
   }
 
-
   private def splitQuery(query: Query, source: DataSetInfo, bestView: Option[DataSetInfo]): (Seq[Query], (TraversableOnce[JsValue] => JsValue)) = {
     bestView match {
       case None => (Seq(query), (jsons: TraversableOnce[JsValue]) => jsons.toList.head)
@@ -53,6 +52,8 @@ class QueryPlanner {
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
         val seqBuilder = Seq.newBuilder[Query]
+
+        //TODO if select project fields from groupby results, postpone the project to the merge stage.
 
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
         seqBuilder += query.copy(dataset = view.name)
@@ -65,68 +66,44 @@ class QueryPlanner {
 
   private def calculateMergeFunc(query: Query, schema: Schema): (TraversableOnce[JsValue] => JsValue) = {
     //TODO the current logic is very simple, all queries has to be the isomorphism.
-    //Furthermore the merge type has to be unified.
-    if (query.globalAggr.isDefined) {
-      ???
-    }
     if (query.lookup.nonEmpty) {
       ???
     }
 
-    //TODO very shitty code. clear it!
-    var mergeType = MergeType.Distinct
-    query.groups match {
-      case Some(groupStatement) => {
-        val keys = groupStatement.bys.map(by => by.as.getOrElse(by.fieldName))
-        val values = groupStatement.aggregates.map(aggr => aggr.as)
-        mergeType = groupStatement.aggregates.map { stat: AggregateStatement =>
-          stat.func match {
-            case Count => MergeType.Sum
-            case Sum => MergeType.Sum
-            case Max => ???
-            case Min => ???
-            case Avg => ???
-            case topK: TopK => ???
-            case _ => ???
-          }
-        }.head
-
-        query.select match {
-          case Some(selectStatement) =>
-            if (selectStatement.fields.nonEmpty) {
-              ???
-            }
-            if (selectStatement.orderOn.forall(o => values.contains(o.stripPrefix("-")))) {
-              val postProcess = PostProcess(selectStatement.orderOn.map { f =>
-                val id = values.indexOf(f.stripPrefix("-"))
-                if (f.startsWith("-")) -id else id
-              }, selectStatement.limit)
-              return (jsons: TraversableOnce[JsValue]) =>
-                merge(jsons.toSeq.map(_.asInstanceOf[JsArray]), keys, values, mergeType, Some(postProcess))
-            }
-            else {
-              ???
-            }
-          case None =>
-            return (jsons: TraversableOnce[JsValue]) =>
-              merge(jsons.toSeq.map(_.asInstanceOf[JsArray]), keys, values, mergeType, None)
-        }
-      }
+    query.globalAggr match {
+      case Some(statement) =>
+        val aggrMap = Map(statement.aggregate.as -> statement.aggregate.func)
+        return (jsons: TraversableOnce[JsValue]) =>
+          merge(jsons.map(_.asInstanceOf[JsArray]).toSeq, Seq.empty, aggrMap, Map.empty, Set.empty, None)
       case None =>
-        query.select match {
-          case Some(selectStatement) =>
-            val values = selectStatement.orderOn.map(_.stripPrefix("-"))
-            val keys = selectStatement.fields.filterNot(values.contains(_))
-            val postProcess = PostProcess(selectStatement.orderOn.map { f =>
-              val id = values.indexOf(f.stripPrefix("-"))
-              if (f.startsWith("-")) -id else id
-            }, selectStatement.limit)
-
-            return (jsons: TraversableOnce[JsValue]) =>
-              merge(jsons.toSeq.map(_.asInstanceOf[JsArray]), keys, values, mergeType, Some(postProcess))
-          case None => ???
-        }
     }
+
+    val keys = Seq.newBuilder[String]
+    val aggrValues = Map.newBuilder[String, AggregateFunc]
+    query.groups match {
+      case Some(groupStats) =>
+        keys ++= groupStats.bys.map(key => key.as.getOrElse(key.fieldName))
+        aggrValues ++= groupStats.aggregates.map(v => v.as -> v.func)
+      case None =>
+    }
+
+    val orderOn = Map.newBuilder[String, SortOrder.Value]
+    val project = Set.newBuilder[String]
+    var limitOpt: Option[Int] = None
+
+    query.select match {
+      case Some(select) =>
+        orderOn ++= select.orderOn.map { f =>
+          val order = if (f.startsWith("-")) SortOrder.DSC else SortOrder.ASC
+          f.stripPrefix("-") -> order
+        }
+        project ++= select.fields
+        limitOpt = Some(select.limit)
+      case None =>
+    }
+
+    (jsons: TraversableOnce[JsValue]) =>
+      merge(jsons.map(_.asInstanceOf[JsArray]).toSeq, keys.result, aggrValues.result, orderOn.result, project.result, limitOpt)
   }
 
 }
@@ -160,70 +137,125 @@ object QueryPlanner {
     JsArray(builder.result())
   }
 
-  object MergeType extends Enumeration {
-    val Distinct, Sum = Value
+  object SortOrder extends Enumeration {
+    val ASC, DSC = Value
   }
 
-  case class PostProcess(orders: Seq[Int], limit: Int)
-
-  def compareWithIdx(seqLeft: Seq[JsValue], seqRight: Seq[JsValue], idx: Seq[Int]): Boolean = {
-    idx.foreach { idOptNeg =>
-      val id = if (idOptNeg < 0) -idOptNeg else idOptNeg
-      if (seqLeft(id).asInstanceOf[JsNumber].value < seqRight(id).asInstanceOf[JsNumber].value) {
-        return if (idOptNeg >= 0) true else false
-      }
-      if (seqLeft(id).asInstanceOf[JsNumber].value > seqRight(id).asInstanceOf[JsNumber].value) {
-        return if (idOptNeg >= 0) false else true
-      }
-    }
-    true
-  }
-
-  def merge(jsons: Seq[JsArray],
+  def merge(jsArrays: Seq[JsArray],
             keys: Seq[String],
-            values: Seq[String],
-            mergeType: MergeType.Value,
-            postProcessOpt: Option[PostProcess]
-           ): JsArray = {
-    if (jsons.isEmpty) return JsArray()
+            aggrValues: Map[String, AggregateFunc],
+            orderOn: Map[String, SortOrder.Value],
+            project: Set[String],
+            limitOpt: Option[Int]): JsArray = {
+    if (jsArrays.isEmpty) return JsArray()
+    val jsons = jsArrays.filter(_.value.nonEmpty)
 
-    val map = scala.collection.mutable.Map[Seq[JsValue], Seq[JsValue]]()
+    val mergedArray: JsArray = if (aggrValues.nonEmpty && jsons.size > 1) {
+      mergeValues(jsons, keys, aggrValues)
+    } else {
+      unionAll(jsons)
+    }
+
+    val ordered: JsArray = if (orderOn.nonEmpty) {
+      orderJsArray(mergedArray, orderOn)
+    } else {
+      mergedArray
+    }
+
+    val projected: JsArray = if (project.nonEmpty) {
+      projectArray(ordered, project)
+    } else {
+      ordered
+    }
+
+    limitOpt match {
+      case Some(limit) => JsArray(projected.value.slice(0, limit))
+      case None => projected
+    }
+  }
+
+  private def mergeValues(jsons: Seq[JsArray], keys: Seq[String], aggrValues: Map[String, AggregateFunc]): JsArray = {
+    if (keys.isEmpty) {
+      //e.g. global aggregation functions
+      val size = jsons.head.value.size
+      require(jsons.forall(_.value.size == size))
+      return JsArray(
+        0 to size map { i =>
+          val row = jsons.map(_.value(i))
+          row.reduce((l, r) => aggrRecord(l.asInstanceOf[JsObject], r.asInstanceOf[JsObject], aggrValues))
+        })
+    }
+
+    val map = scala.collection.mutable.Map[Seq[JsValue], JsObject]()
     map ++= jsons.head.value.map { r =>
       val k = keys.map(r \ _).map(_.get)
-      val v = values.map(r \ _).map(_.get)
-      k -> v
+      k -> r.as[JsObject]
     }
 
     for (json <- jsons.tail) {
-      for (record <- json.value) {
-        val ks = keys.map(record \ _).map(_.get)
-        val vs = values.map(record \ _).map(_.get)
+      for (r <- json.value) {
+        val ks = keys.map(r \ _).map(_.get)
 
         map.get(ks) match {
-          case Some(oldVs) =>
-            mergeType match {
-              case MergeType.Sum =>
-                oldVs.zip(vs).map { case (oldV, newV) =>
-                  JsNumber(oldV.asInstanceOf[JsNumber].value + newV.asInstanceOf[JsNumber].value)
-                }
-              case MergeType.Distinct =>
-              // skip it
-            }
-          case None => map += ks -> vs
+          case Some(oldObj) => map += ks -> aggrRecord(oldObj, r.as[JsObject], aggrValues)
+          case None => map += ks -> r.as[JsObject]
         }
       }
     }
-    val seq = postProcessOpt match {
-      case Some(process) => map.toSeq.sortWith { (left, right) =>
-        compareWithIdx(left._2, right._2, process.orders)
-      }.slice(0, process.limit)
-      case None => map.toSeq
-    }
-    JsArray(seq.map { case (ks, vs) =>
-      JsObject(
-        keys.zip(ks).map(pair => pair._1 -> pair._2) ++
-          values.zip(vs).map(pair => pair._1 -> pair._2)
-      )
-    })
+    JsArray(map.values.toSeq)
   }
+
+  private def aggrRecord(left: JsObject, right: JsObject, aggrValues: Map[String, AggregateFunc]): JsObject = {
+    val updatedObj = JsObject(aggrValues.map { case (name, func) =>
+      func match {
+        case Count | Sum =>
+          name -> JsNumber((left \ name).as[JsNumber].value + (right \ name).as[JsNumber].value)
+        case Max => ???
+        case Min => ???
+        case topk: TopK => ???
+        case Avg => ???
+        case DistinctCount => ???
+      }
+    })
+    left ++ updatedObj
+  }
+
+  private def orderJsArray(mergedArray: JsArray, orderOn: Map[String, SortOrder.Value]): JsArray = {
+    //ref http://stackoverflow.com/q/39152687/2598198
+    def lt[A <: JsValue : Ordering](left: A, right: A, order: SortOrder.Value): Boolean = {
+      import Ordering.Implicits._
+      if (left <= right) {
+        order == SortOrder.ASC
+      } else {
+        order == SortOrder.DSC
+      }
+    }
+
+    def ltObj(left: JsValue, right: JsValue): Boolean = {
+
+      implicit val jsNumberOrdering: Ordering[JsNumber] = Ordering.by(_.value)
+      implicit val jsStringOrdering: Ordering[JsString] = Ordering.by(_.value)
+
+      orderOn.foreach { case (name, order) =>
+        ((left \ name).get, (right \ name).get) match {
+          case (lNum: JsNumber, rNum: JsNumber) =>
+            if (lNum.value != rNum.value) {
+              return lt(lNum, rNum, order)
+            }
+          case (lStr: JsString, rStr: JsString) =>
+            if (lStr.value != rStr.value) {
+              return lt(lStr, rStr, order)
+            }
+          case _ => ???
+        }
+      }
+      true
+    }
+    JsArray(mergedArray.value.sortWith(ltObj))
+  }
+
+  private def projectArray(jsArray: JsArray, project: Set[String]): JsArray = {
+    JsArray(jsArray.value.map(obj => JsObject(obj.asInstanceOf[JsObject].fields.filter(e => project.contains(e._1)))))
+  }
+
 }

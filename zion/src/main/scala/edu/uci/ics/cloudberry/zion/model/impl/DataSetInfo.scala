@@ -42,11 +42,11 @@ object DataSetInfo {
   }
 
   //Used by: HierarchyField: "levels" -> Json.toJson(hierarchy.levels))) to write from Seq[(String,String)] to JSON
-  implicit def tuple2Writes: Writes[Tuple2[String, String]] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
+  implicit def tuple2Writes: Writes[(String, String)] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
 
   def parseLevels(levelSeq: Seq[Map[String, String]]): Seq[(String, String)] = {
       levelSeq.map {
-        levelMap => (levelMap.get("level").get, levelMap.get("field").get)
+        levelMap => (levelMap("level"), levelMap("field"))
       }
   }
 

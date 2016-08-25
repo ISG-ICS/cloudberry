@@ -85,7 +85,7 @@ class AQLGenerator extends IQLGenerator {
     val returnStat = if (query.groups.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
 
     val aggrVar = if (selectPrefix.length > 0) outerSelectVar else "$c"
-    val (globalAggrPrefix, aggrReturnStat, varMapAfterGlobalAggr) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterSelect, aggrVar)).getOrElse("", "", varMapAfterSelect)
+    val (globalAggrPrefix, aggrReturnStat, _) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterSelect, aggrVar)).getOrElse("", "", varMapAfterSelect)
 
     Seq(globalAggrPrefix, selectPrefix, dataset, lookup, filter, unnest, group, select, returnStat, aggrReturnStat).mkString("\n")
   }
