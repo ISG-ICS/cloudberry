@@ -2,7 +2,6 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.SortOrder
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.{DateTime, Interval}
 import org.specs2.mutable.Specification
 import play.api.libs.json._
 
@@ -24,7 +23,7 @@ class QueryPlannerTest extends Specification {
 
   "QueryPlanner" should {
     "makePlan ask source if the view is empty" in {
-      planner.makePlan(queryCount, sourceInfo, Seq.empty) must_== Seq(queryCount)
+      planner.makePlan(queryCount, sourceInfo, Seq.empty)._1 must_== Seq(queryCount)
     }
     "should suggest a keyword view if hasn't found it " in {
       val queries = planner.suggestNewView(queryCount, sourceInfo, Seq.empty)
@@ -55,7 +54,10 @@ class QueryPlannerTest extends Specification {
       queries.exists(_.dataset == TwitterDataSet) must_== true
     }
     "makePlan generate a merger to merge the query result" in {
-      ok
+      import QueryPlanner._
+      val (_, mergerX) = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
+      val merger = mergerX.asInstanceOf[Merger]
+      merger must_== Merger(Seq("hour", "state"), Map("count" -> Count), Map.empty, Set.empty, None)
     }
   }
 

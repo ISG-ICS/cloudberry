@@ -10,7 +10,7 @@ class QueryPlanner {
 
   import QueryPlanner._
 
-  def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): (Seq[Query], (TraversableOnce[JsValue] => JsValue)) = {
+  def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): (Seq[Query], IMerger) = {
 
     val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
     //TODO currently only get the best one
@@ -43,9 +43,9 @@ class QueryPlanner {
     }
   }
 
-  private def splitQuery(query: Query, source: DataSetInfo, bestView: Option[DataSetInfo]): (Seq[Query], (TraversableOnce[JsValue] => JsValue)) = {
+  private def splitQuery(query: Query, source: DataSetInfo, bestView: Option[DataSetInfo]): (Seq[Query], IMerger) = {
     bestView match {
-      case None => (Seq(query), (jsons: TraversableOnce[JsValue]) => jsons.toList.head)
+      case None => (Seq(query), Unioner)
       case Some(view) =>
         val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(source.stats.createTime, DateTime.now()))
         val viewInterval = new Interval(source.stats.createTime, view.stats.lastModifyTime)
@@ -64,7 +64,7 @@ class QueryPlanner {
     }
   }
 
-  private def calculateMergeFunc(query: Query, schema: Schema): (TraversableOnce[JsValue] => JsValue) = {
+  private def calculateMergeFunc(query: Query, schema: Schema): IMerger = {
     //TODO the current logic is very simple, all queries has to be the isomorphism.
     if (query.lookup.nonEmpty) {
       ???
@@ -73,8 +73,7 @@ class QueryPlanner {
     query.globalAggr match {
       case Some(statement) =>
         val aggrMap = Map(statement.aggregate.as -> statement.aggregate.func)
-        return (jsons: TraversableOnce[JsValue]) =>
-          merge(jsons.map(_.asInstanceOf[JsArray]).toSeq, Seq.empty, aggrMap, Map.empty, Set.empty, None)
+        return Merger(Seq.empty, aggrMap, Map.empty, Set.empty, None)
       case None =>
     }
 
@@ -102,8 +101,7 @@ class QueryPlanner {
       case None =>
     }
 
-    (jsons: TraversableOnce[JsValue]) =>
-      merge(jsons.map(_.asInstanceOf[JsArray]).toSeq, keys.result, aggrValues.result, orderOn.result, project.result, limitOpt)
+    Merger(keys.result, aggrValues.result, orderOn.result, project.result, limitOpt)
   }
 
 }
@@ -130,6 +128,7 @@ object QueryPlanner {
   }
 
   def unionAll(responses: TraversableOnce[JsValue]): JsArray = {
+    if (responses.size == 1) return responses.toSeq.head.asInstanceOf[JsArray]
     val builder = Seq.newBuilder[JsValue]
     responses.foreach { jsValue =>
       builder ++= jsValue.asInstanceOf[JsArray].value
@@ -139,6 +138,23 @@ object QueryPlanner {
 
   object SortOrder extends Enumeration {
     val ASC, DSC = Value
+  }
+
+  trait IMerger {
+    def apply(jsons: TraversableOnce[JsValue]): JsArray
+  }
+
+  case class Merger(keys: Seq[String],
+                    aggrValues: Map[String, AggregateFunc],
+                    orderOn: Map[String, SortOrder.Value],
+                    project: Set[String],
+                    limitOpt: Option[Int]) extends IMerger {
+    override def apply(jsons: TraversableOnce[JsValue]) =
+      merge(jsons.map(_.asInstanceOf[JsArray]).toSeq, keys, aggrValues, orderOn, project, limitOpt)
+  }
+
+  case object Unioner extends IMerger {
+    override def apply(jsons: TraversableOnce[JsValue]) = unionAll(jsons)
   }
 
   def merge(jsArrays: Seq[JsArray],

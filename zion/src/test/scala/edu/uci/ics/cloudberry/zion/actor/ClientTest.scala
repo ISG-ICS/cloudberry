@@ -39,8 +39,7 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
 
       val query1 = Query(sourceInfo.name, filter = Seq(textFilter))
       val query2 = Query(sourceInfo.name, filter = Seq(timeFilter))
-      val union: (TraversableOnce[JsValue] => JsArray) = QueryPlanner.unionAll
-      when(mockPlanner.makePlan(query, sourceInfo, Seq.empty)).thenReturn((Seq(query1, query2), union))
+      when(mockPlanner.makePlan(query, sourceInfo, Seq.empty)).thenReturn((Seq(query1, query2), QueryPlanner.Unioner))
 
       val create = CreateView("zika", zikaCreateQuery)
       when(mockPlanner.suggestNewView(query, sourceInfo, Seq.empty)).thenReturn(Seq(create))
