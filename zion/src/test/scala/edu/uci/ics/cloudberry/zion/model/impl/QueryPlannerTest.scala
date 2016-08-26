@@ -53,11 +53,23 @@ class QueryPlannerTest extends Specification {
       queries.exists(_.dataset == zikaHalfYearViewInfo.name) must_== true
       queries.exists(_.dataset == TwitterDataSet) must_== true
     }
-    "makePlan generate a merger to merge the query result" in {
+    "makePlan generate a merger to merge the count query result" in {
       import QueryPlanner._
       val (_, mergerX) = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
       val merger = mergerX.asInstanceOf[Merger]
       merger must_== Merger(Seq("hour", "state"), Map("count" -> Count), Map.empty, Set.empty, None)
+    }
+    "makePlan generate a merger to merge the hashtag query result" in {
+      import QueryPlanner._
+      val (_, mergerX) = planner.makePlan(queryTag, sourceInfo, Seq(zikaHalfYearViewInfo))
+      val merger = mergerX.asInstanceOf[Merger]
+      merger must_== Merger(Seq("tag"), Map("count" -> Count), Map("count" -> SortOrder.DSC), Set.empty, Some(10))
+    }
+    "makePlan generate a merger to merge the sample query result" in {
+      import QueryPlanner._
+      val (_, mergerX) = planner.makePlan(querySample, sourceInfo, Seq(zikaHalfYearViewInfo))
+      val merger = mergerX.asInstanceOf[Merger]
+      merger must_== Merger(Seq.empty, Map.empty, Map("create_at" -> SortOrder.DSC), Set("create_at", "id", "user.id"), Some(100))
     }
   }
 
