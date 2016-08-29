@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -8,16 +8,17 @@ import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQL
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
+import play.api.libs.json.{JsArray, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
+class DataStoreManager(metaDataset: String,
                        val conn: IDataConn,
-                       val queryParserFactory: IQLGeneratorFactory,
+                       val queryGenFactory: IQLGeneratorFactory,
                        val config: Config,
                        val childMaker: (ActorRefFactory, String, Seq[Any]) => ActorRef)
-                      (implicit ec: ExecutionContext) extends Actor with ActorLogging {
+                      (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
   import DataStoreManager._
 
@@ -26,13 +27,39 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
   type TSet = scala.collection.mutable.Set[String]
   type TJodaInterval = org.joda.time.Interval
 
-  val metaData: TMetaMap = scala.collection.mutable.Map[String, DataSetInfo](initialMetaData.toList: _*)
+  val metaData: TMetaMap = scala.collection.mutable.Map[String, DataSetInfo]()
   //TODO a bad pattern to create the view, need to embed to the DataSetAgent to make the state machine
   val creatingSet: TSet = scala.collection.mutable.Set[String]()
-  val managerParser = queryParserFactory()
+  val managerParser = queryGenFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
-  override def receive: Receive = {
+  val metaActor = childMaker(context, "meta", Seq(DataSetInfo.MetaSchema, queryGenFactory(), conn, ec))
+
+  override def preStart(): Unit = {
+    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, 100000000, 0, Seq.empty))) map {
+      case jsArray: JsArray =>
+        val records = jsArray.as[Seq[DataSetInfo]]
+        metaData ++= records.map(info => info.name -> info)
+        self ! Prepared
+      case any => log.error(s"received unknown object from meta actor: $any ")
+    }
+  }
+
+  override def postStop(): Unit = {
+    metaData.clear()
+  }
+
+  override def receive: Receive = preparing
+
+  def preparing: Receive = {
+    case Prepared =>
+      unstashAll()
+      context.become(normal)
+    case _ => stash()
+  }
+
+  def normal: Receive = {
+    case AreYouReady => sender() ! true
     case register: Register => ???
     case deregister: Deregister => ???
     case query: Query => answerQuery(query)
@@ -50,14 +77,16 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     case info: DataSetInfo =>
       metaData += info.name -> info
       creatingSet.remove(info.name)
+      flushMetaData()
+    case FlushMeta => flushMetaData()
   }
 
   private def answerQuery(query: IQuery): Unit = {
     if (metaData.get(query.dataset).isEmpty) return
 
-    val actor = context.child(query.dataset).getOrElse {
+    val actor = context.child("data-" + query.dataset).getOrElse {
       val schema: Schema = metaData(query.dataset).schema
-      childMaker(context, query.dataset, Seq(schema, queryParserFactory(), conn, ec))
+      childMaker(context, "data-" + query.dataset, Seq(schema, queryGenFactory(), conn, ec))
     }
     query match {
       case q: Query => actor.forward(q)
@@ -65,7 +94,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
         case true => updateStats(q.dataset)
         case false =>
       }
-      case _ =>
+      case _ => ???
     }
   }
 
@@ -87,7 +116,9 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
           case Failure(ex) =>
             log.error(s"collectStats error: $ex")
         }
-      case false => ???
+      case false =>
+        log.error("Failed to create view:" + create)
+      //        self ! create
     }
   }
 
@@ -102,7 +133,7 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, "min"))))
     val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, "max"))))
     val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement("*", Count, "count"))))
-    val parser = queryParserFactory()
+    val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
       minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \\ "min").head.as[String])
@@ -111,16 +142,19 @@ class DataStoreManager(initialMetaData: Map[String, DataSetInfo],
     } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 
+  private def flushMetaData(): Unit = {
+    metaActor ! UpsertRecord(metaDataset, Json.toJson(metaData.values.toSeq).asInstanceOf[JsArray])
+  }
 }
 
 object DataStoreManager {
 
-  def props(initialMetaData: Map[String, DataSetInfo],
+  def props(metaDataSet: String,
             conn: IDataConn,
             queryParserFactory: IQLGeneratorFactory,
             config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new DataStoreManager(initialMetaData, conn, queryParserFactory, config, defaultMaker))
+    Props(new DataStoreManager(metaDataSet, conn, queryParserFactory, config, defaultMaker))
   }
 
   def defaultMaker(context: ActorRefFactory, name: String, args: Seq[Any])(implicit ec: ExecutionContext): ActorRef = {
@@ -134,5 +168,11 @@ object DataStoreManager {
   case class Register(dataset: String, schema: Schema)
 
   case class Deregister(dataset: String)
+
+  case object FlushMeta
+
+  case object AreYouReady
+
+  case object Prepared
 
 }

@@ -20,6 +20,12 @@ case class DataSetInfo(name: String,
 
 object DataSetInfo {
 
+  val MetaSchema: Schema = Schema("berryMetaType",
+                                  Seq(StringField("name")),
+                                  Seq.empty,
+                                  Seq("name"),
+                                  "stats.createTime")
+
   def parse(json: JsValue): DataSetInfo = {
     json.validate[DataSetInfo] match {
       case js: JsSuccess[DataSetInfo] => js.get
@@ -45,9 +51,9 @@ object DataSetInfo {
   implicit def tuple2Writes: Writes[(String, String)] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
 
   def parseLevels(levelSeq: Seq[Map[String, String]]): Seq[(String, String)] = {
-      levelSeq.map {
-        levelMap => (levelMap("level"), levelMap("field"))
-      }
+    levelSeq.map {
+      levelMap => (levelMap("level"), levelMap("field"))
+    }
   }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
@@ -58,7 +64,7 @@ object DataSetInfo {
         case DataType.Number =>
           JsSuccess(NumberField(name, isOptional))
         case DataType.Record => ???
-          //TODO think about Record type later
+        //TODO think about Record type later
         case DataType.Point =>
           JsSuccess(PointField(name, isOptional))
         case DataType.Bag =>

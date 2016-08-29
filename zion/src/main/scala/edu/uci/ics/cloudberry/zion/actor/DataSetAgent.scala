@@ -2,8 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorLogging, Props, Stash}
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
-import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query, Schema}
-import org.joda.time.DateTime
+import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query, Schema, UpsertRecord}
 
 import scala.concurrent.ExecutionContext
 
@@ -19,18 +18,23 @@ class DataSetAgent(val schema: Schema, val queryParser: IQLGenerator, val conn: 
 
   override def receive: Receive = querying orElse {
     case append: AppendView =>
-      val curSender = sender()
-      println(s"send query of $curSender at ${DateTime.now}")
-      conn.postControl(queryParser.generate(append, schema)).map { result =>
-        println(s"response to $curSender at ${DateTime.now}")
-        curSender ! result
-        self ! DataSetAgent.DoneUpdating
-      }
-      context.become(updating)
+      process(queryParser.generate(append, schema))
+    case upsert: UpsertRecord =>
+      process(queryParser.generate(upsert, schema))
+  }
+
+  private def process(statement: String): Unit = {
+    val curSender = sender()
+    conn.postControl(statement).map { result =>
+      curSender ! result
+      self ! DataSetAgent.DoneUpdating
+    }
+    context.become(updating)
   }
 
   def updating: Receive = querying orElse {
     case append: AppendView => stash()
+    case upsert: UpsertRecord => stash()
     case DataSetAgent.DoneUpdating =>
       unstashAll()
       context.unbecome()

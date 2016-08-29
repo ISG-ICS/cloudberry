@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
-import org.joda.time.format.DateTimeFormat
+import play.api.libs.json.JsArray
 
 trait IQuery {
   def dataset: String
@@ -78,6 +78,10 @@ case class CreateView(dataset: String, query: Query) extends IQuery
 case class AppendView(dataset: String, query: Query) extends IQuery
 
 case class DropView(dataset: String) extends IQuery
+
+case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IQuery
+
+case class UpsertRecord(dataset: String, records: JsArray) extends IQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {

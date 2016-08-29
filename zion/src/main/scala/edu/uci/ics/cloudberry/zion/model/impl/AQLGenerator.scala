@@ -15,6 +15,7 @@ class AQLGenerator extends IQLGenerator {
       case q: CreateView => parseCreate(q, schema)
       case q: AppendView => parseAppend(q, schema)
       case q: DropView => ???
+      case _ => ???
     }
   }
 
