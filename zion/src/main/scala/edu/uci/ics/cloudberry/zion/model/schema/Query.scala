@@ -3,14 +3,10 @@ package edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
-import org.joda.time.format.DateTimeFormat
+import play.api.libs.json.JsArray
 
 trait IQuery {
   def dataset: String
-}
-
-object IQuery {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 
 case class Query(dataset: String,
@@ -22,7 +18,7 @@ case class Query(dataset: String,
                  globalAggr: Option[GlobalAggregateStatement] = None
                 ) extends IQuery {
 
-  import IQuery.TimeFormat
+  import TimeField.TimeFormat
 
   def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
     //TODO support filter query that contains multiple relation on that same field
@@ -64,7 +60,7 @@ case class Query(dataset: String,
       case Some(group) => this.groups.forall(_.finerThan(group))
     }
 
-    isGroupMatch && this.unnest.isEmpty && another.unnest.isEmpty && this.select.isEmpty
+    isGroupMatch && this.unnest.isEmpty && this.select.isEmpty
   }
 
 }
@@ -82,6 +78,10 @@ case class CreateView(dataset: String, query: Query) extends IQuery
 case class AppendView(dataset: String, query: Query) extends IQuery
 
 case class DropView(dataset: String) extends IQuery
+
+case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IQuery
+
+case class UpsertRecord(dataset: String, records: JsArray) extends IQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
@@ -166,7 +166,7 @@ case class GroupStatement(bys: Seq[ByStatement],
 }
 
 case class GlobalAggregateStatement(aggregate: AggregateStatement
-                         ) extends Statement {
+                                   ) extends Statement {
 }
 
 case class SelectStatement(orderOn: Seq[String],

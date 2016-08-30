@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.zion.model.actor
+package edu.uci.ics.cloudberry.zion.actor
 
 import java.util.concurrent.Executors
 

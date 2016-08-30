@@ -127,7 +127,7 @@ object AQLFuncVisitor {
         throw new IllegalArgumentException
       }
       // This parseDateTime will throw an exception if the format is invalid
-      values.foreach(t => IQuery.TimeFormat.parseDateTime(t.asInstanceOf[String]))
+      values.foreach(t => TimeField.TimeFormat.parseDateTime(t.asInstanceOf[String]))
     } catch {
       case ex: IllegalArgumentException => throw new QueryParsingException("invalid time format")
     }
@@ -182,11 +182,11 @@ object AQLFuncVisitor {
             case None => throw new QueryParsingException(s"could not find the level tag ${level.levelTag} in hierarchy field ${field.name}")
           }
         case GeoCellTenth =>
-          (DataType.Point, getGeocellString(10,aqlExpr,field.dataType))
+          (DataType.Point, getGeocellString(10, aqlExpr, field.dataType))
         case GeoCellHundredth =>
-          (DataType.Point, getGeocellString(100,aqlExpr,field.dataType))
+          (DataType.Point, getGeocellString(100, aqlExpr, field.dataType))
         case GeoCellThousandth =>
-          (DataType.Point, getGeocellString(1000,aqlExpr,field.dataType))
+          (DataType.Point, getGeocellString(1000, aqlExpr, field.dataType))
 
         case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
       }
@@ -230,32 +230,37 @@ object AQLFuncVisitor {
   }
 
   def translateGlobalAggr(field: Field,
-                        func: AggregateFunc,
+                          func: AggregateFunc,
                           sourceVar: String
-                       ): (DataType.DataType, String, String) = {
+                         ): (DataType.DataType, String, String) = {
     func match {
-        case Count =>
-        if (field.dataType != DataType.Record) throw new QueryParsingException ("count requires to aggregate on the record bag")
+      case Count =>
+        if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
         (DataType.Number, s"count", sourceVar)
-        case Max =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException ("Max requires to aggregate on numbers")
+      case Max =>
+        if (field.dataType != DataType.Number && field.dataType != DataType.Time) {
+          throw new QueryParsingException(s"Max requires to aggregate on numbers or times, type ${field.dataType} is given")
+        }
         (DataType.Number, s"max", s"$sourceVar.'${field.name}'")
-        case Min =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException ("Min requires to aggregate on numbers")
-        (DataType.Number, s"min",s"$sourceVar.'${field.name}'")
-        case topK: TopK => ???
-        case Avg =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException ("Avg requires to aggregate on numbers")
-        (DataType.Number, s"avg",s"$sourceVar.'${field.name}'")
-        case Sum =>
-        if (field.dataType != DataType.Number) throw new QueryParsingException ("Sum requires to aggregate on numbers")
-        (DataType.Number, s"sum",s"$sourceVar.'${field.name}'")
-        case DistinctCount => ???
-      }
-}
+      case Min =>
+        if (field.dataType != DataType.Number && field.dataType != DataType.Time) {
+          throw new QueryParsingException(s"Min requires to aggregate on numbers or times, type ${field.dataType} is given")
+        }
+        (DataType.Number, s"min", s"$sourceVar.'${field.name}'")
+      case topK: TopK => ???
+      case Avg =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Avg requires to aggregate on numbers")
+        (DataType.Number, s"avg", s"$sourceVar.'${field.name}'")
+      case Sum =>
+        if (field.dataType != DataType.Number) throw new QueryParsingException("Sum requires to aggregate on numbers")
+        (DataType.Number, s"sum", s"$sourceVar.'${field.name}'")
+      case DistinctCount => ???
+    }
+  }
+
   private def getGeocellString(scale: Double, aqlExpr: String, dataType: DataType.Value): String = {
-      if (dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
-      val origin = s"create-point(0.0,0.0)"
-      s"get-points(spatial-cell(${aqlExpr}, $origin, ${1/scale}, ${1/scale}))[0]"
+    if (dataType != DataType.Point) throw new QueryParsingException("Geo-cell requires a point")
+    val origin = s"create-point(0.0,0.0)"
+    s"get-points(spatial-cell(${aqlExpr}, $origin, ${1 / scale}, ${1 / scale}))[0]"
   }
 }

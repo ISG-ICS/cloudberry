@@ -1,16 +1,17 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import edu.uci.ics.cloudberry.zion.asterix.TestData
-import org.specs2.mock.Mockito
+import java.util.concurrent.Executors
+
 import org.mockito.Mockito._
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
-class UtilTest extends Specification with TestData with Mockito {
+class UtilTest extends Specification with Mockito {
+
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
   "A future" should {
     "be registered to multiple callback functions if using map" in {

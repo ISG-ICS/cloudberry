@@ -7,10 +7,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.crossfilter = $window.crossfilter;
     $scope.preProcess = function (result) {
       // TODO make the pattern can be changed by the returned result parameters
-      var parseDate = d3.time.format("%Y-%m-%d").parse;
       var result_array = [];
+      var granu = Object.keys(result[0])[0]
       angular.forEach(result, function (value, key) {
-        key = parseDate(value.key);
+        key = new Date(value[granu]);
         value = +value.count;
         result_array.push({'time':key, 'count':value});
       });
@@ -55,12 +55,17 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var timeSeries = dc.barChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
-            timeBrush.on('brushend', function (e) {
-              var extent = timeBrush.extent();
-              Asterix.parameters.time.start = extent[0];
-              Asterix.parameters.time.end = extent[1];
+
+            var requestFunc = function(min, max) {
+              Asterix.parameters.timeInterval.start = min;
+              Asterix.parameters.timeInterval.end = max;
               Asterix.queryType = 'time';
               Asterix.query(Asterix.parameters, Asterix.queryType);
+            }
+
+            timeBrush.on('brushend', function (e) {
+              var extent = timeBrush.extent();
+              requestFunc(extent[0], extent[1])
             });
 
             var ndx = crossfilter(newVal);
@@ -78,7 +83,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             chart.append('a')
                 .text('Reset')
                 .attr('href',"#")
-                .on("click", function() { timeSeries.filterAll(); dc.redrawAll();})
+                .on("click", function() { timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
                 .style("position", "inherit")
                 .style("bottom", "90%")
                 .style("left", "3%");

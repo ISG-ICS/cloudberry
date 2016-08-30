@@ -10,7 +10,7 @@ import play.api.libs.json._
 case class Stats(createTime: DateTime,
                  lastModifyTime: DateTime,
                  lastReadTime: DateTime,
-                 cardinality: Int)
+                 cardinality: Long)
 
 case class DataSetInfo(name: String,
                        createQueryOpt: Option[Query],
@@ -19,6 +19,12 @@ case class DataSetInfo(name: String,
                        stats: Stats)
 
 object DataSetInfo {
+
+  val MetaSchema: Schema = Schema("berry.MetaType",
+                                  Seq(StringField("name")),
+                                  Seq.empty,
+                                  Seq("name"),
+                                  "stats.createTime")
 
   def parse(json: JsValue): DataSetInfo = {
     json.validate[DataSetInfo] match {
@@ -42,12 +48,12 @@ object DataSetInfo {
   }
 
   //Used by: HierarchyField: "levels" -> Json.toJson(hierarchy.levels))) to write from Seq[(String,String)] to JSON
-  implicit def tuple2Writes: Writes[Tuple2[String, String]] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
+  implicit def tuple2Writes: Writes[(String, String)] = Writes[(String, String)](t => Json.obj("level" -> t._1, "field" -> t._2))
 
   def parseLevels(levelSeq: Seq[Map[String, String]]): Seq[(String, String)] = {
-      levelSeq.map {
-        levelMap => (levelMap.get("level").get, levelMap.get("field").get)
-      }
+    levelSeq.map {
+      levelMap => (levelMap("level"), levelMap("field"))
+    }
   }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
@@ -58,7 +64,7 @@ object DataSetInfo {
         case DataType.Number =>
           JsSuccess(NumberField(name, isOptional))
         case DataType.Record => ???
-          //TODO think about Record type later
+        //TODO think about Record type later
         case DataType.Point =>
           JsSuccess(PointField(name, isOptional))
         case DataType.Bag =>
@@ -101,7 +107,6 @@ object DataSetInfo {
           "name" -> JsString(name),
           "isOptional" -> JsBoolean(isOptional),
           "datatype" -> JsString(dataType)))
-        case any: Field => throw JsonRequestException(s"Field $any unsupported")
       }
 
     }
@@ -109,11 +114,11 @@ object DataSetInfo {
 
   implicit val datetimeFormat: Format[DateTime] = new Format[DateTime] {
     override def reads(json: JsValue) = {
-      val datetime = IQuery.TimeFormat.parseDateTime(json.as[String])
+      val datetime = TimeField.TimeFormat.parseDateTime(json.as[String])
       JsSuccess(datetime)
     }
 
-    override def writes(dateTime: DateTime): JsValue = JsString(dateTime.toString(IQuery.TimeFormat))
+    override def writes(dateTime: DateTime): JsValue = JsString(dateTime.toString(TimeField.TimeFormat))
 
   }
 
@@ -121,7 +126,7 @@ object DataSetInfo {
     (JsPath \ "createTime").format[DateTime] and
       (JsPath \ "lastModifyTime").format[DateTime] and
       (JsPath \ "lastReadTime").format[DateTime] and
-      (JsPath \ "cardinality").format[Int]
+      (JsPath \ "cardinality").format[Long]
     ) (Stats.apply, unlift(Stats.unapply))
 
   implicit val queryFormat: Format[Query] = JSONParser.queryFormat

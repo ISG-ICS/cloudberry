@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
+import play.api.libs.json.Json
 
 import scala.collection.mutable
 
@@ -14,7 +15,9 @@ class AQLGenerator extends IQLGenerator {
         parseQuery(q, schema)
       case q: CreateView => parseCreate(q, schema)
       case q: AppendView => parseAppend(q, schema)
+      case q: UpsertRecord => parseUpsert(q, schema)
       case q: DropView => ???
+      case _ => ???
     }
   }
 
@@ -52,6 +55,14 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
+  def parseUpsert(q: UpsertRecord, schema: Schema): String = {
+    s"""
+       |upsert into dataset ${q.dataset} (
+       |${Json.toJson(q.records)}
+       |)
+     """.stripMargin
+  }
+
   def parseQuery(query: Query, schema: Schema): String = {
 
     val sourceVar = "$t"
@@ -85,7 +96,7 @@ class AQLGenerator extends IQLGenerator {
     val returnStat = if (query.groups.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
 
     val aggrVar = if (selectPrefix.length > 0) outerSelectVar else "$c"
-    val (globalAggrPrefix, aggrReturnStat, varMapAfterGlobalAggr) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterSelect, aggrVar)).getOrElse("", "", varMapAfterSelect)
+    val (globalAggrPrefix, aggrReturnStat, _) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterSelect, aggrVar)).getOrElse("", "", varMapAfterSelect)
 
     Seq(globalAggrPrefix, selectPrefix, dataset, lookup, filter, unnest, group, select, returnStat, aggrReturnStat).mkString("\n")
   }
@@ -269,7 +280,7 @@ class AQLGenerator extends IQLGenerator {
           (s"$aqlAggExpr", aqlAggrVar)
         case None => throw FieldNotFound(aggr.fieldName)
       }
-    val (openAggrWrap, closeAggrWrap) = ("(",")")
+    val (openAggrWrap, closeAggrWrap) = ("(", ")")
 
     val aqlPrefix =
       s"""
@@ -278,12 +289,12 @@ class AQLGenerator extends IQLGenerator {
          """.stripMargin
 
     val returnStat =
-    s"""
-       |$forWrap
-       |return $returnVar
-       |$closeAggrWrap
-       |}
-       |""".stripMargin
+      s"""
+         |$forWrap
+         |return $returnVar
+         |$closeAggrWrap
+         |}
+         |""".stripMargin
 
     (aqlPrefix, returnStat, producedVar.result().toMap)
   }
@@ -294,6 +305,7 @@ class AQLGenerator extends IQLGenerator {
 
   private def genDDL(schema: Schema): String = {
 
+    //FIXME this function is wrong for nested types if it contains multiple sub-fields
     def mkNestDDL(names: List[String], typeStr: String): String = {
       names match {
         case List(e) => s"  $e : $typeStr"
@@ -305,7 +317,7 @@ class AQLGenerator extends IQLGenerator {
       f => mkNestDDL(f.name.split("\\.").toList, fieldType2ADMType(f) + (if (f.isOptional) "?" else ""))
     }
     s"""
-       |create type ${schema.typeName} if not exists as closed {
+       |create type ${schema.typeName} if not exists as open {
        |${fields.mkString(",\n")}
        |}
     """.stripMargin

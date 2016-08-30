@@ -5,22 +5,15 @@ angular.module('cloudberry.common', [])
     var asterixService = {
 
       parameters: {
-        dataset: "twitter",
+        dataset: "twitter.ds_tweet",
         keywords: [],
-        area: {
-          swLog: -46.23046874999999,
-          swLat: 53.85252660044951,
-          neLog: -146.42578125,
-          neLat: 21.453068633086783
-        },
-        time: {
+        timeInterval: {
           start: startDate,
           end: new Date()
         },
-        level: "state",
-        sampleOffset: 0,
-        sampleLimit: 10,
-        repeatDuration: 0
+        timeBin : "day",
+        geoLevel: "state",
+        geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,49,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
       },
 
       queryType: "search",
@@ -34,15 +27,13 @@ angular.module('cloudberry.common', [])
         var json = (JSON.stringify({
           dataset: parameters.dataset,
           keywords: parameters.keywords,
-          area: parameters.area,
-          timeRange : {
-            start: queryType==='time' ? Date.parse(parameters.time.start) : Date.parse(startDate),
-            end: queryType==='time' ? Date.parse(parameters.time.end) : Date.parse(new Date())
+          timeInterval: {
+            start: queryType==='time' ? Date.parse(parameters.timeInterval.start) : Date.parse(startDate),
+            end: queryType==='time' ? Date.parse(parameters.timeInterval.end) : Date.parse(new Date())
           },
-          level: parameters.level,
-          sampleOffset: parameters.sampleOffset,
-          sampleLimit : parameters.sampleLimit,
-          repeatDuration: parameters.repeatDuration
+          timeBin : parameters.timeBin,
+          geoLevel: parameters.geoLevel,
+          geoIds : parameters.geoIds
         }));
         ws.send(json);
       }
@@ -50,26 +41,25 @@ angular.module('cloudberry.common', [])
 
     ws.onmessage = function(event) {
       $timeout(function() {
-        console.log(event.data);
-        var result = JSON.parse(event.data);
-        switch (result.aggType) {
-          case "map":
-            asterixService.mapResult = result.result;
+        var result = JSONbig.parse(event.data);
+        switch (result.key) {
+          case "byPlace":
+            asterixService.mapResult = result.value;
             break;
-          case "time":
-            asterixService.timeResult = result.result;
+          case "byTime":
+            asterixService.timeResult = result.value;
             break;
-          case "hashtag":
-            asterixService.hashTagResult = result.result;
+          case "byHashTag":
+            asterixService.hashTagResult = result.value;
             break;
           case "sample":
-            asterixService.tweetResult = result.result;
+            asterixService.tweetResult = result.value;
             break;
           case "error":
-            asterixService.errorMessage = result.errorMessage;
+            asterixService.errorMessage = result.value;
             break;
           default:
-            console.log("ws get unknown data: " + result);
+            console.error("ws get unknown data: " + result);
             break;
         }
       });

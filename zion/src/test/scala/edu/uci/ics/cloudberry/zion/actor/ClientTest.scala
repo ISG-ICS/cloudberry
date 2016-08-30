@@ -1,15 +1,14 @@
-package edu.uci.ics.cloudberry.zion.model.actor
+package edu.uci.ics.cloudberry.zion.actor
 
 import java.util.concurrent.Executors
 
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query}
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.specs2.mutable.SpecificationLike
-import play.api.libs.json.{JsArray, JsNumber, JsObject, Json}
+import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
@@ -33,14 +32,14 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
       val query = Query(sourceInfo.name)
       when(mockParser.parse(jsonRequest)).thenReturn(query)
 
-      val client = system.actorOf(Client.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(Client.props(sender.ref, mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoMsg(query.dataset))
       dataManager.reply(Seq(sourceInfo))
 
       val query1 = Query(sourceInfo.name, filter = Seq(textFilter))
       val query2 = Query(sourceInfo.name, filter = Seq(timeFilter))
-      when(mockPlanner.makePlan(query, sourceInfo, Seq.empty)).thenReturn(Seq(query1, query2))
+      when(mockPlanner.makePlan(query, sourceInfo, Seq.empty)).thenReturn((Seq(query1, query2), QueryPlanner.Unioner))
 
       val create = CreateView("zika", zikaCreateQuery)
       when(mockPlanner.suggestNewView(query, sourceInfo, Seq.empty)).thenReturn(Seq(create))
@@ -68,7 +67,7 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
       val query = Query(sourceInfo.name)
       when(mockParser.parse(jsonRequest)).thenReturn(query)
 
-      val client = system.actorOf(Client.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(Client.props(sender.ref, mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoMsg(query.dataset))
       dataManager.reply(Seq.empty)

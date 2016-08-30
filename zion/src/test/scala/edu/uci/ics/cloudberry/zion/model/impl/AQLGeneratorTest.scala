@@ -555,7 +555,7 @@ class AQLGeneratorTest extends Specification {
       val ddl = parser.parseCreate(CreateView("zika", zikaCreateQuery), TwitterDataStore.TwitterSchema)
       removeEmptyLine(ddl) must_== unifyNewLine(
         """
-          |create type twitter.typeTweet if not exists as closed {
+          |create type twitter.typeTweet if not exists as open {
           |  favorite_count : double,
           |  geo_tag : {   countyID : double },
           |  user_mentions : {{double}}?,

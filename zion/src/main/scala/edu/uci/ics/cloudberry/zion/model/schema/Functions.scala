@@ -20,6 +20,10 @@ object IFunction {
 
 sealed trait TransformFunc extends IFunction
 
+object TransformFunc {
+  val ToString = "toString"
+}
+
 sealed trait GroupFunc extends IFunction
 
 object GroupFunc {
@@ -49,7 +53,7 @@ object AggregateFunc {
   val All = Set(Count, Min, Max, Sum, Avg, DistinctCount, TopK)
 }
 
-case class Level(val levelTag: String) extends GroupFunc {
+case class Level(levelTag: String) extends GroupFunc {
   override val name = GroupFunc.Level
 
   override def acceptType: Set[DataType] = Set(DataType.Hierarchy)
@@ -62,7 +66,7 @@ trait Scale {
 /**
   * Produce the bin number of the group for those number type field
   *
-  * @param scale
+  * @param scale the int number to compare the scales
   */
 case class Bin(override val scale: Int) extends GroupFunc with Scale {
   override val name = GroupFunc.Bin
@@ -70,7 +74,7 @@ case class Bin(override val scale: Int) extends GroupFunc with Scale {
   override def acceptType: Set[DataType] = Set(DataType.Number)
 }
 
-case class Interval(unit: TimeUnit, val x: Int = 1) extends GroupFunc with Scale {
+case class Interval(unit: TimeUnit, x: Int = 1) extends GroupFunc with Scale {
   override def name: String = GroupFunc.Interval
 
   override def acceptType: Set[DataType] = Set(DataType.Time)
@@ -161,4 +165,10 @@ case class TopK(val k: Int) extends AggregateFunc {
   override val name = AggregateFunc.TopK
 
   override def acceptType: Set[DataType] = DataType.values
+}
+
+case object ToString extends TransformFunc {
+  override def name: String = TransformFunc.ToString
+
+  override def acceptType: Set[DataType] = Set(DataType.Number)
 }
