@@ -38,7 +38,6 @@ class Client(val out: Option[ActorRef], val jsonParser: JSONParser, val dataMana
 
         fResponse.map { responses =>
           val r = merger(responses)
-          println(r)
           out.getOrElse(curSender) ! r
         }
 

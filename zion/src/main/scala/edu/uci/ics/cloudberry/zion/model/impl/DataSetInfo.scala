@@ -20,7 +20,7 @@ case class DataSetInfo(name: String,
 
 object DataSetInfo {
 
-  val MetaSchema: Schema = Schema("berryMetaType",
+  val MetaSchema: Schema = Schema("berry.MetaType",
                                   Seq(StringField("name")),
                                   Seq.empty,
                                   Seq("name"),

@@ -34,9 +34,9 @@ class Application @Inject()(val wsClient: WSClient,
   val config = new Config(configuration)
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
-  val initDataSet = Await.result(Migration_20160814.migration.up(asterixConn), 10 seconds)
+  val loadMeta = Await.result(Migration_20160814.migration.up(asterixConn), 10 seconds)
 
-  val manager = system.actorOf(DataStoreManager.props(initDataSet.map(ds => ds.name -> ds).toMap, asterixConn, AQLGenerator, config))
+  val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
   val berryProp = Client.props(new JSONParser(), manager, new QueryPlanner(), config)
   val berryClient = system.actorOf(berryProp)
