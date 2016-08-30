@@ -9,6 +9,7 @@ import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGeneratorFacto
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
+import org.joda.time.DateTime
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json.{JsArray, Json}
 
@@ -79,6 +80,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
     "update meta info if create view succeeds" in {
+      val now = DateTime.now()
       val parser = new AQLGenerator
       val mockParserFactory = mock[IQLGeneratorFactory]
       when(mockParserFactory.apply()).thenReturn(parser)
@@ -113,12 +115,15 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       viewInfo.dataInterval.getStart must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "min").head.as[String])
       viewInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
       viewInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
+      viewInfo.stats.lastModifyTime.getMillis must be_>= (now.getMillis)
+      ok
     }
     "update meta stats if append view succeeds" in {
       val parser = new AQLGenerator
       val mockParserFactory = mock[IQLGeneratorFactory]
       when(mockParserFactory.apply()).thenReturn(parser)
 
+      val now = DateTime.now()
       val mockConn = mock[IDataConn]
       val viewStatJson = JsArray(Seq(Json.obj("min" -> "2015-01-01T00:00:00.000Z", "max" -> "2016-01-01T00:00:00.000Z", "count" -> 2000)))
       when(mockConn.postQuery(any[String])).thenReturn(Future(viewStatJson))
@@ -143,6 +148,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       newInfo.name must_== zikaHalfYearViewInfo.name
       newInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
       newInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
+      newInfo.stats.lastModifyTime.getMillis must be_>= (now.getMillis)
     }
     "update meta info if receive drop request" in {
       ok

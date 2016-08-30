@@ -63,7 +63,25 @@ class DataStoreManager(metaDataset: String,
     case register: Register => ???
     case deregister: Deregister => ???
     case query: Query => answerQuery(query)
-    case append: AppendView => answerQuery(append)
+    case append: AppendView => answerQuery(append, Some(DateTime.now()))
+    case append: AppendViewAutomatic =>
+      metaData.get(append.dataset) match {
+        case Some(info) =>
+          info.createQueryOpt match {
+            case Some(createQuery) =>
+              if (createQuery.filter.exists(_.fieldName == info.schema.timeField)) {
+                log.error("the create view should not contains the time dimension")
+              } else {
+                val now = DateTime.now()
+                val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
+                                                 Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
+                val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
+                answerQuery(AppendView(info.name, appendQ), Some(now))
+              }
+            case None => log.warning(s"can not append to a base dataset: $append.dataset.")
+          }
+        case None => log.warning(s"view $append.dataset does not exist.")
+      }
     case create: CreateView => createView(create)
     case drop: DropView => ???
     case askInfo: AskInfoMsg =>
@@ -81,19 +99,31 @@ class DataStoreManager(metaDataset: String,
     case FlushMeta => flushMetaData()
   }
 
-  private def answerQuery(query: IQuery): Unit = {
-    if (metaData.get(query.dataset).isEmpty) return
+  //persistent metadata periodically
+  context.system.scheduler.schedule(config.ViewMetaFlushInterval, config.ViewMetaFlushInterval, self, FlushMeta)
+
+  private def answerQuery(query: IQuery, now: Option[DateTime] = None): Unit = {
+    if (!metaData.contains(query.dataset)) return
 
     val actor = context.child("data-" + query.dataset).getOrElse {
-      val schema: Schema = metaData(query.dataset).schema
-      childMaker(context, "data-" + query.dataset, Seq(schema, queryGenFactory(), conn, ec))
+      val info = metaData(query.dataset)
+      val schema: Schema = info.schema
+      val ret = childMaker(context, "data-" + query.dataset, Seq(schema, queryGenFactory(), conn, ec))
+      // make views append self periodically
+      info.createQueryOpt match {
+        case Some(_) =>
+          context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
+        case None =>
+      }
+      ret
     }
     query match {
       case q: Query => actor.forward(q)
-      case q: AppendView => (actor ? q) map {
-        case true => updateStats(q.dataset)
-        case false =>
-      }
+      case q: AppendView =>
+        (actor ? q) map {
+          case true => updateStats(q.dataset, now.get)
+          case false =>
+        }
       case _ => ???
     }
   }
@@ -106,10 +136,12 @@ class DataStoreManager(metaDataset: String,
     creatingSet.add(create.dataset)
     val sourceInfo = metaData(create.query.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
-    val queryString = managerParser.generate(create, sourceInfo.schema)
+    val now = DateTime.now()
+    val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
+    val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
+    val queryString = managerParser.generate(create.copy(query = newCreateQuery), sourceInfo.schema)
     conn.postControl(queryString) onSuccess {
       case true =>
-        val now = DateTime.now()
         collectStats(create.dataset, schema) onComplete {
           case Success((interval, size)) =>
             self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
@@ -118,14 +150,14 @@ class DataStoreManager(metaDataset: String,
         }
       case false =>
         log.error("Failed to create view:" + create)
-      //        self ! create
     }
   }
 
-  private def updateStats(dataset: String): Unit = {
+  private def updateStats(dataset: String, modifyTime: DateTime): Unit = {
     val originalInfo = metaData(dataset)
     collectStats(dataset, originalInfo.schema) onSuccess { case (interval, size) =>
-      self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(cardinality = size))
+      //TODO need to think the difference between the txn time and the ingest time
+      self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(lastModifyTime = modifyTime, cardinality = size))
     }
   }
 
@@ -174,5 +206,7 @@ object DataStoreManager {
   case object AreYouReady
 
   case object Prepared
+
+  case class AppendViewAutomatic(dataset: String)
 
 }

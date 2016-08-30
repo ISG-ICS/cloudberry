@@ -14,9 +14,9 @@ class Config(config: Configuration) {
 
   val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)
 
-  val ViewUpdateInterval = config.getString("view.update.interval").map(parseTimePair).getOrElse(30 minutes)
+  val ViewUpdateInterval = config.getString("view.update.interval").map(parseTimePair).getOrElse(60 minutes)
 
-  val ViewMetaFlushInterval = config.getString("view.meta.flush.interval").map(parseTimePair).getOrElse(30 minutes)
+  val ViewMetaFlushInterval = config.getString("view.meta.flush.interval").map(parseTimePair).getOrElse(60 minutes)
 
   val DataManagerAppendViewTimeOut = config.getString("datamanager.timeout.appendview").map(parseTimePair).getOrElse(1 day)
 
