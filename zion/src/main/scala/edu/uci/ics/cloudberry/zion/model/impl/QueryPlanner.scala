@@ -57,7 +57,7 @@ class QueryPlanner {
 
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
         val viewFilters = view.createQueryOpt.get.filter
-        val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => vf.covers(qf, source.schema.fieldMap(qf.fieldName).dataType)))
+        val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf, source.schema.fieldMap(qf.fieldName).dataType)))
         seqBuilder += query.copy(dataset = view.name, filter = newFilter)
         for (interval <- unCovered) {
           seqBuilder += query.setInterval(source.schema.timeField, interval)
