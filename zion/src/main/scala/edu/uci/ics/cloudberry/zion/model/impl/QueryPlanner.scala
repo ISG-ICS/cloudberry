@@ -56,7 +56,9 @@ class QueryPlanner {
         //TODO if select project fields from groupby results, postpone the project to the merge stage.
 
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
-        seqBuilder += query.copy(dataset = view.name)
+        val viewFilters = view.createQueryOpt.get.filter
+        val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf, source.schema.fieldMap(qf.fieldName).dataType)))
+        seqBuilder += query.copy(dataset = view.name, filter = newFilter)
         for (interval <- unCovered) {
           seqBuilder += query.setInterval(source.schema.timeField, interval)
         }

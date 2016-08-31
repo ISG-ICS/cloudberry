@@ -47,6 +47,12 @@ class QueryPlannerTest extends Specification {
       queries.size must_== 1
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
     }
+    "makePlan should omit the redundant filter from query if it covers view.createQuery" in {
+      val queryZika = Query(dataset = TwitterDataSet, filter = Seq(FilterStatement("text", None, Relation.contains, Seq("zika"))), groups = Some(group))
+      val (queries, _) = planner.makePlan(queryZika, sourceInfo, Seq(zikaFullYearViewInfo))
+      queries.size must_== 1
+      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, groups = Some(group))
+    }
     "makePlan should ask the view and the source if view can not cover the query" in {
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
       queries.size must_== 2
