@@ -1,0 +1,5 @@
+package actor
+
+class NeoReactiveActor {
+
+}

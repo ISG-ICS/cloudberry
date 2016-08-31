@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.stream.Materializer
 import akka.util.Timeout
 import db.Migration_20160814
-import edu.uci.ics.cloudberry.zion.actor.{Client, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.{DataStoreManager, RESTFulBerryClient}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
@@ -38,7 +38,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
-  val berryProp = Client.props(new JSONParser(), manager, new QueryPlanner(), config)
+  val berryProp = RESTFulBerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
   val berryClient = system.actorOf(berryProp)
   val neoActor = system.actorOf(NeoActor.props(berryProp))
 

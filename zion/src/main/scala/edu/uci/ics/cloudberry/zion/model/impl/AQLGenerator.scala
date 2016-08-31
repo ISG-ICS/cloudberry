@@ -36,7 +36,7 @@ class AQLGenerator extends IQLGenerator {
     val createDataSet =
       s"""
          |drop dataset ${create.dataset} if exists;
-         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.mkString(",")}
+         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.mkString(",")} with filter on '${resultSchema.timeField}'
          |""".stripMargin
     val insert =
       s"""

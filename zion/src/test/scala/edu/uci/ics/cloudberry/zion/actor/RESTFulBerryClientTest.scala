@@ -12,7 +12,7 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
-class ClientTest extends TestkitExample with SpecificationLike with MockConnClient {
+class RESTFulBerryClientTest extends TestkitExample with SpecificationLike with MockConnClient {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
@@ -32,7 +32,7 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
       val query = Query(sourceInfo.name)
       when(mockParser.parse(jsonRequest)).thenReturn(query)
 
-      val client = system.actorOf(Client.props(sender.ref, mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(RESTFulBerryClient.props(sender.ref, mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoMsg(query.dataset))
       dataManager.reply(Seq(sourceInfo))
@@ -67,12 +67,12 @@ class ClientTest extends TestkitExample with SpecificationLike with MockConnClie
       val query = Query(sourceInfo.name)
       when(mockParser.parse(jsonRequest)).thenReturn(query)
 
-      val client = system.actorOf(Client.props(sender.ref, mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(RESTFulBerryClient.props(sender.ref, mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoMsg(query.dataset))
       dataManager.reply(Seq.empty)
 
-      sender.expectMsg(Client.NoSuchDataset(sourceInfo.name))
+      sender.expectMsg(RESTFulBerryClient.NoSuchDataset(sourceInfo.name))
       ok
     }
   }

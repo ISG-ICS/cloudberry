@@ -11,10 +11,20 @@ import play.api.libs.json.{JsArray, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class Client(val out: Option[ActorRef], val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, val config: Config)
-            (implicit val ec: ExecutionContext) extends Actor {
+/**
+  * An Actor to serve the RESTFul request which will return one response for one request
+  *
+  * @param out         the specific output actor replying to
+  * @param jsonParser  the parser to parse the JSON request
+  * @param dataManager the dataStoreManager
+  * @param planner     the queryPlanner to optimize an efficient query work load to solve the request
+  * @param config      the configuration
+  * @param ec          implicit executionContext
+  */
+class RESTFulBerryClient(val out: Option[ActorRef], val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, val config: Config)
+                        (implicit val ec: ExecutionContext) extends Actor {
 
-  import Client._
+  import RESTFulBerryClient._
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
@@ -55,16 +65,16 @@ class Client(val out: Option[ActorRef], val jsonParser: JSONParser, val dataMana
   }
 }
 
-object Client {
+object RESTFulBerryClient {
 
   def props(out: ActorRef, jsonParser: JSONParser, dataManagerRef: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new Client(Some(out), jsonParser, dataManagerRef, planner, config))
+    Props(new RESTFulBerryClient(Some(out), jsonParser, dataManagerRef, planner, config))
   }
 
   def props(jsonParser: JSONParser, dataManagerRef: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new Client(None, jsonParser, dataManagerRef, planner, config))
+    Props(new RESTFulBerryClient(None, jsonParser, dataManagerRef, planner, config))
   }
 
   case class NoSuchDataset(name: String)
