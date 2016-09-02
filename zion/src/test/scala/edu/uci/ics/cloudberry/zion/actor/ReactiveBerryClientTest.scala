@@ -4,16 +4,13 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner, TestQuery}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, TimeField}
-import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
+import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
+import edu.uci.ics.cloudberry.zion.model.schema.{Query, TimeField}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
-import org.specs2.mutable.Specification
 
 import scala.concurrent.ExecutionContext
 
@@ -21,8 +18,9 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
-  import scala.concurrent.duration._
   import org.mockito.Mockito._
+
+  import scala.concurrent.duration._
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime = new DateTime(2016, 1, 1, 0, 0)
@@ -84,7 +82,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val client = system.actorOf(ReactiveBerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, childMaker, responseTime))
 
       val query = mockParser.parse(hourCountJSON)
-      sender.send(client, hourCountJSON)
+      sender.send(client, ReactiveBerryClient.Request(hourCountJSON, (js: JsArray) => js))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== query.dataset
 

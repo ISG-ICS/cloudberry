@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfoAndViews
@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param ec          implicit executionContext
   */
 class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, val config: Config)
-                        (implicit val ec: ExecutionContext) extends Actor {
+                        (implicit val ec: ExecutionContext) extends Actor with ActorLogging {
 
   import RESTFulBerryClient._
 
@@ -41,8 +41,8 @@ class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, 
         output ! NoSuchDataset(query.dataset)
       case infos: Seq[DataSetInfo] =>
         val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
-        val fResponse = Future.traverse(queries) { query =>
-          dataManager ? query
+        val fResponse = Future.traverse(queries) { subQuery =>
+          dataManager ? subQuery
         }.map(seq => seq.map(_.asInstanceOf[JsValue]))
 
         fResponse.map { responses =>

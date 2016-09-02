@@ -38,18 +38,20 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
   var curQuery: Query = _
   var curInfo: DataSetInfo = _
   var curSender: ActorRef = _
+  var curPostProp: (JsArray) => JsValue = _
   var queryBoundary: TInterval = _
   var accumulateResult: JsArray = _
   var merger: IMerger = _
   var lastAskTS: DateTime = _
 
   override def receive: Receive = {
-    case json: JsValue =>
-      val query = jsonParser.parse(json)
+    case request: Request =>
+      val query = jsonParser.parse(request.json)
       curSender = sender()
-      curJson = json
+      curJson = request.json
+      curPostProp = request.postProcess
       dataManager ? AskInfo(query.dataset) map {
-        case Some(info: DataSetInfo) => self ! Initial(json, query, info)
+        case Some(info: DataSetInfo) => self ! Initial(curJson, query, info)
         case None => curSender ! NoSuchDataset(query.dataset)
       }
     case initial: Initial if initial.json == curJson =>
@@ -73,7 +75,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
   private def askSlice(interval: TInterval): Receive = {
     case result: PartialResult if result.query == curQuery =>
       accumulateResult = merger(Seq(accumulateResult, result.json))
-      curSender ! accumulateResult
+      curSender ! curPostProp(accumulateResult)
 
       val timeSpend = DateTime.now.getMillis - lastAskTS.getMillis
       val nextInterval = calculateNext(interval, timeSpend)
@@ -126,6 +128,8 @@ object ReactiveBerryClient {
   def defaultMaker(context: ActorRefFactory, client: ReactiveBerryClient)(implicit ec: ExecutionContext): ActorRef = {
     context.actorOf(RESTFulBerryClient.props(client.jsonParser, client.dataManager, client.planner, client.config))
   }
+
+  case class Request(json: JsValue, postProcess: (JsArray) => JsValue)
 
   case class Initial(json: JsValue, query: Query, info: DataSetInfo)
 
