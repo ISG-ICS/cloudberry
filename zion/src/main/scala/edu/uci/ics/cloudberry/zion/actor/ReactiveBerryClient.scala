@@ -11,7 +11,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.{JsArray, JsValue, Json}
 
 import scala.concurrent.ExecutionContext
 
@@ -34,6 +34,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
 
   val worker = childMaker(context, this)
 
+  //WARNING: all these evil mutable value SHALL NOT be read in the future thread
   var curJson: JsValue = _
   var curQuery: Query = _
   var curInfo: DataSetInfo = _
@@ -47,14 +48,16 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
   override def receive: Receive = {
     case request: Request =>
       val query = jsonParser.parse(request.json)
-      curSender = sender()
+      val immutableSender = sender()
+      curSender = immutableSender
       curJson = request.json
       curPostProp = request.postProcess
       dataManager ? AskInfo(query.dataset) map {
-        case Some(info: DataSetInfo) => self ! Initial(curJson, query, info)
-        case None => curSender ! NoSuchDataset(query.dataset)
+        case Some(info: DataSetInfo) => self ! Initial(request.json, query, info)
+        case None => immutableSender ! NoSuchDataset(query.dataset)
       }
     case initial: Initial if initial.json == curJson =>
+      log.info("initializing current json")
       init(initial.query, initial.info)
       import scala.concurrent.duration._
       val initialDuration = (30 days).toMillis
@@ -85,7 +88,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
         issueAQuery(nextInterval)
         context.become(askSlice(nextInterval))
       }
-    case json: JsValue =>
+    case newRequest: Request =>
       stash()
       unstashAll()
       context.become(receive)
@@ -95,9 +98,10 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
     lastAskTS = DateTime.now
     val intervalFilter = FilterStatement(curInfo.schema.timeField, None, Relation.inRange,
                                          Seq(interval.getStart, interval.getEnd).map(TimeField.TimeFormat.print))
+    val immutableQuery = curQuery.copy()
     (worker ? curQuery.copy(filter = intervalFilter +: curQuery.filter)).map {
       case result: JsArray =>
-        self ! PartialResult(curQuery.copy(), result)
+        self ! PartialResult(immutableQuery, result)
     }
   }
 
