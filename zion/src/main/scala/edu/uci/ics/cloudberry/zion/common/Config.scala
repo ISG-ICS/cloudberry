@@ -20,6 +20,8 @@ class Config(config: Configuration) {
 
   val DataManagerAppendViewTimeOut = config.getString("datamanager.timeout.appendview").map(parseTimePair).getOrElse(1 day)
 
+  val FirstQueryTimeGap = config.getString("berry.firstquery.gap").map(parseTimePair).getOrElse(2 days)
+
 }
 
 object Config {

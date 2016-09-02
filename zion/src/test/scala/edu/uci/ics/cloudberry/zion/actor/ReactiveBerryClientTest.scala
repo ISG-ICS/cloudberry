@@ -109,7 +109,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
        |  }
        |}
     """.stripMargin)
-  println("114")
 
   sequential
 
@@ -140,7 +139,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val slicedQ1 = worker.receiveOne(5 seconds).asInstanceOf[Query]
       val interval1 = slicedQ1.getTimeInterval("create_at").get
       interval1.getEnd must_== endTime
-      interval1.toDurationMillis must_== (30 days).toMillis
+      interval1.toDurationMillis must_== (Config.Default.FirstQueryTimeGap).toMillis
 
       worker.reply(getRet(1))
       sender.expectMsg(getRet(1))
@@ -189,7 +188,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val slicedQ1 = worker.receiveOne(5 seconds).asInstanceOf[Query]
       val interval1 = slicedQ1.getTimeInterval("create_at").get
       interval1.getEnd must_== endTime
-      interval1.toDurationMillis must_== (30 days).toMillis
+      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       worker.reply(getRet(1))
       sender.expectMsg(getRet(1))
@@ -213,7 +212,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val slicedQ11 = worker.receiveOne(5 seconds).asInstanceOf[Query]
       val interval11 = slicedQ11.getTimeInterval("create_at").get
       interval11.getEnd must_== endTime2
-      interval11.toDurationMillis must_== (30 days).toMillis
+      interval11.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       worker.reply(getRet(1))
       sender.expectMsg(getRet(1))
@@ -255,7 +254,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val slicedQ1 = worker.receiveOne(5 seconds).asInstanceOf[Query]
       val interval1 = slicedQ1.getTimeInterval("create_at").get
       interval1.getEnd must_== endTime2
-      interval1.toDurationMillis must_== (30 days).toMillis
+      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       worker.reply(getRet(1))
       sender.expectMsg(getRet(1))

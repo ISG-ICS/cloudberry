@@ -59,8 +59,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
     case initial: Initial if initial.json == curJson =>
       log.info("initializing current json")
       init(initial.query, initial.info)
-      import scala.concurrent.duration._
-      val initialDuration = (30 days).toMillis
+      val initialDuration = config.FirstQueryTimeGap.toMillis
       val interval = calculateFirst(queryBoundary, initialDuration)
       issueAQuery(interval)
       context.become(askSlice(interval))
