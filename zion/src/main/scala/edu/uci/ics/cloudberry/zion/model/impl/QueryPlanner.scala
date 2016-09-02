@@ -87,8 +87,8 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(source.stats.createTime, DateTime.now()))
-        val viewInterval = new Interval(source.stats.createTime, view.stats.lastModifyTime)
+        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
+        val viewInterval = new Interval(new DateTime(0), view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
         val seqBuilder = Seq.newBuilder[Query]
