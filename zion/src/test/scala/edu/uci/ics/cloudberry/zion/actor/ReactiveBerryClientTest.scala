@@ -77,7 +77,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val mockParser = new JSONParser
       val mockPlanner = mock[QueryPlanner]
       when(mockPlanner.calculateMergeFunc(any, any)).thenReturn(QueryPlanner.Unioner)
-      val responseTime = 1000
+      val responseTime = 50
 
       def childMaker(context: ActorRefFactory, client: ReactiveBerryClient): ActorRef = worker.ref
 
@@ -108,6 +108,15 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       worker.reply(getRet(2))
       sender.expectMsg(getRet(1) ++ getRet(2))
+
+      val slicedQ3 = worker.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval3 = slicedQ3.getTimeInterval("create_at").get
+      println(interval3)
+      interval3.getEnd must_== interval2.getStart
+      interval3.getStartMillis must be_>=(startTime.getMillis)
+
+      worker.reply(getRet(3))
+      sender.expectMsg(getRet(1) ++ getRet(2) ++ getRet(3))
       ok
     }
     "cancel the haven't finished query if newer query comes" in {
