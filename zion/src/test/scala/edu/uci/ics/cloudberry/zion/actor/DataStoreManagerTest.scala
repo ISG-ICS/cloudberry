@@ -58,11 +58,11 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
 
-      sender.send(dataManager, DataStoreManager.AskInfoMsg(sourceInfo.name))
+      sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
       val actual = sender.receiveOne(5 second)
       actual must_== Seq(sourceInfo)
 
-      sender.send(dataManager, DataStoreManager.AskInfoMsg("nobody"))
+      sender.send(dataManager, DataStoreManager.AskInfoAndViews("nobody"))
       sender.expectMsg(Seq.empty)
     }
     "forward the query to agent" in {
@@ -96,7 +96,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       meta.receiveOne(5 seconds)
       meta.reply(initialInfo)
 
-      sender.send(dataManager, DataStoreManager.AskInfoMsg(sourceInfo.name))
+      sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
       sender.expectMsg(Seq(sourceInfo))
 
       val createView = CreateView("zika", zikaCreateQuery)
@@ -104,7 +104,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.expectNoMsg(500 milli)
       val upsertRecord = meta.receiveOne(5 seconds)
       upsertRecord.asInstanceOf[UpsertRecord].dataset must_== metaDataSet
-      sender.send(dataManager, DataStoreManager.AskInfoMsg(sourceInfo.name))
+      sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
       val response = sender.receiveOne(2000 milli).asInstanceOf[Seq[DataSetInfo]]
       response.size must_== 2
       response.head must_== sourceInfo
@@ -135,7 +135,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       sender.send(dataManager, DataStoreManager.AreYouReady)
       sender.expectMsg(true)
-      sender.send(dataManager, DataStoreManager.AskInfoMsg(sourceInfo.name))
+      sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
       sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
 
       val appendView = AppendView(zikaHalfYearViewInfo.name, Query(sourceInfo.name))
@@ -143,7 +143,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       child.expectMsg(appendView)
       child.reply(true)
       sender.expectNoMsg(1 seconds)
-      sender.send(dataManager, DataStoreManager.AskInfoMsg(zikaHalfYearViewInfo.name))
+      sender.send(dataManager, DataStoreManager.AskInfoAndViews(zikaHalfYearViewInfo.name))
       val newInfo = sender.receiveOne(1 second).asInstanceOf[Seq[DataSetInfo]].head
       newInfo.name must_== zikaHalfYearViewInfo.name
       newInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])

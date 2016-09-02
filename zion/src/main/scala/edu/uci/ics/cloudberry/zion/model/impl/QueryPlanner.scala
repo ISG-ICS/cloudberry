@@ -35,36 +35,7 @@ class QueryPlanner {
     }
   }
 
-  private def selectBestView(matchedViews: Seq[DataSetInfo]): Option[DataSetInfo] = {
-    if (matchedViews.isEmpty) {
-      None
-    } else {
-      Some(matchedViews.min(Ordering.by((info: DataSetInfo) => info.stats.cardinality)))
-    }
-  }
-
-  private def splitQuery(query: Query, source: DataSetInfo, bestView: Option[DataSetInfo]): (Seq[Query], IMerger) = {
-    bestView match {
-      case None => (Seq(query), Unioner)
-      case Some(view) =>
-        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(source.stats.createTime, DateTime.now()))
-        val viewInterval = new Interval(source.stats.createTime, view.stats.lastModifyTime)
-        val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
-
-        val seqBuilder = Seq.newBuilder[Query]
-
-        //TODO if select project fields from groupby results, postpone the project to the merge stage.
-
-        //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
-        seqBuilder += query.copy(dataset = view.name)
-        for (interval <- unCovered) {
-          seqBuilder += query.setInterval(source.schema.timeField, interval)
-        }
-        (seqBuilder.result(), calculateMergeFunc(query, source.schema))
-    }
-  }
-
-  private def calculateMergeFunc(query: Query, schema: Schema): IMerger = {
+  def calculateMergeFunc(query: Query, schema: Schema): IMerger = {
     //TODO the current logic is very simple, all queries has to be the isomorphism.
     if (query.lookup.nonEmpty) {
       ???
@@ -102,6 +73,35 @@ class QueryPlanner {
     }
 
     Merger(keys.result, aggrValues.result, orderOn.result, project.result, limitOpt)
+  }
+
+  private def selectBestView(matchedViews: Seq[DataSetInfo]): Option[DataSetInfo] = {
+    if (matchedViews.isEmpty) {
+      None
+    } else {
+      Some(matchedViews.min(Ordering.by((info: DataSetInfo) => info.stats.cardinality)))
+    }
+  }
+
+  private def splitQuery(query: Query, source: DataSetInfo, bestView: Option[DataSetInfo]): (Seq[Query], IMerger) = {
+    bestView match {
+      case None => (Seq(query), Unioner)
+      case Some(view) =>
+        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(source.stats.createTime, DateTime.now()))
+        val viewInterval = new Interval(source.stats.createTime, view.stats.lastModifyTime)
+        val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
+
+        val seqBuilder = Seq.newBuilder[Query]
+
+        //TODO if select project fields from groupby results, postpone the project to the merge stage.
+
+        //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
+        seqBuilder += query.copy(dataset = view.name)
+        for (interval <- unCovered) {
+          seqBuilder += query.setInterval(source.schema.timeField, interval)
+        }
+        (seqBuilder.result(), calculateMergeFunc(query, source.schema))
+    }
   }
 
 }
