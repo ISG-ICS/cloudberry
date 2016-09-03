@@ -9,16 +9,15 @@ class NeoReactiveActor(out: ActorRef, val berryClientProps: Props) extends Actor
 
   val berryClient = context.watch(context.actorOf(berryClientProps))
 
+  import actor.NeoReactiveActor.NeoTransformer
+
   override def receive: Receive = {
     case json: JsValue =>
       json.validate[UserRequest].map { userRequest =>
-        for (berryRequest <- NeoActor.generateCBerryRequest(userRequest)) {
-          if (berryRequest._1 == NeoActor.RequestType.ByPlace) {
-            val request = ReactiveBerryClient.Request(berryRequest._2,
-                                                      (json: JsArray) => Json.obj("key" -> berryRequest._1.toString, "value" -> json))
-            berryClient.tell(request, out)
-          }
-        }
+        val groupRequest = NeoActor.generateCBerryRequest(userRequest).map { case (reqType, request) =>
+          (request, NeoTransformer(reqType.toString))
+        }.toSeq
+        berryClient.tell(ReactiveBerryClient.Request(groupRequest), out)
       }.recoverTotal {
         e => sender ! JsError.toJson(e)
       }
@@ -27,4 +26,11 @@ class NeoReactiveActor(out: ActorRef, val berryClientProps: Props) extends Actor
 
 object NeoReactiveActor {
   def props(out: ActorRef, berryClientProp: Props) = Props(new NeoReactiveActor(out, berryClientProp))
+
+  case class NeoTransformer(key: String) extends ReactiveBerryClient.IPostTransform {
+    override def transform(jsValue: JsValue): JsValue = {
+      Json.obj("key" -> key, "value" -> jsValue)
+    }
+  }
+
 }
