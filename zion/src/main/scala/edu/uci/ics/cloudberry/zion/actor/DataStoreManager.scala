@@ -54,7 +54,7 @@ class DataStoreManager(metaDataset: String,
   def preparing: Receive = {
     case Prepared =>
       unstashAll()
-      context.become(normal)
+      context.become(normal, discardOld = true)
     case _ => stash()
   }
 

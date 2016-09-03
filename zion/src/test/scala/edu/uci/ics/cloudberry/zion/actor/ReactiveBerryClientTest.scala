@@ -21,6 +21,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
   import org.mockito.Mockito._
 
   import scala.concurrent.duration._
+  import ReactiveBerryClient.NoTransform
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime = new DateTime(2016, 1, 1, 0, 0)
@@ -128,7 +129,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val client = system.actorOf(ReactiveBerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, childMaker, responseTime))
 
       val query = mockParser.parse(hourCountJSON)
-      sender.send(client, ReactiveBerryClient.Request(hourCountJSON, (js: JsArray) => js))
+      sender.send(client, ReactiveBerryClient.Request(Seq((hourCountJSON, NoTransform))))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== query.dataset
 
@@ -139,7 +140,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val slicedQ1 = worker.receiveOne(5 seconds).asInstanceOf[Query]
       val interval1 = slicedQ1.getTimeInterval("create_at").get
       interval1.getEnd must_== endTime
-      interval1.toDurationMillis must_== (Config.Default.FirstQueryTimeGap).toMillis
+      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       worker.reply(getRet(1))
       sender.expectMsg(getRet(1))
@@ -178,7 +179,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val query = mockParser.parse(hourCountJSON)
 
-      sender.send(client, ReactiveBerryClient.Request(hourCountJSON, (js: JsArray) => js))
+      sender.send(client, ReactiveBerryClient.Request(Seq((hourCountJSON, NoTransform))))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== query.dataset
       dataManager.reply(Some(TestQuery.sourceInfo))
@@ -200,7 +201,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval2.getStartMillis must be_>=(startTime.getMillis)
 
       //send a new request
-      sender.send(client, ReactiveBerryClient.Request(hourCountJSON2, (js: JsArray) => js))
+      sender.send(client, ReactiveBerryClient.Request(Seq((hourCountJSON2, NoTransform))))
       Thread.sleep(250)
       worker.reply(getRet(2))
 
@@ -233,12 +234,12 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val query = mockParser.parse(hourCountJSON)
 
-      sender.send(client, ReactiveBerryClient.Request(hourCountJSON, (js: JsArray) => js))
+      sender.send(client, ReactiveBerryClient.Request(Seq((hourCountJSON, NoTransform))))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== query.dataset
 
       //new query comes before the worker even started
-      sender.send(client, ReactiveBerryClient.Request(hourCountJSON2, (js: JsArray) => js))
+      sender.send(client, ReactiveBerryClient.Request(Seq((hourCountJSON2, NoTransform))))
 
       dataManager.reply(Some(TestQuery.sourceInfo))
 
