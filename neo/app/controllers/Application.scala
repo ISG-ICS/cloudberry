@@ -2,12 +2,13 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import actor.NeoActor
-import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
-import akka.stream.Materializer
+import actor.{NeoActor, NeoReactiveActor}
+import akka.actor.{Actor, ActorSystem, DeadLetter, PoisonPill, Props}
+import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import db.Migration_20160814
-import edu.uci.ics.cloudberry.zion.actor.{Client, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.{DataStoreManager, RESTFulBerryClient, ReactiveBerryClient}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
@@ -38,7 +39,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
-  val berryProp = Client.props(new JSONParser(), manager, new QueryPlanner(), config)
+  val berryProp = RESTFulBerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
   val berryClient = system.actorOf(berryProp)
   val neoActor = system.actorOf(NeoActor.props(berryProp))
 
@@ -60,7 +61,9 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
+    //    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
+    val prop = ReactiveBerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, 1000)
+    ActorFlow.actorRef(out => NeoReactiveActor.props(out, prop))
   }
 
   def tweet(id: String) = Action.async {

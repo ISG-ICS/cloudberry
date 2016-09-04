@@ -54,7 +54,7 @@ class DataStoreManager(metaDataset: String,
   def preparing: Receive = {
     case Prepared =>
       unstashAll()
-      context.become(normal)
+      context.become(normal, discardOld = true)
     case _ => stash()
   }
 
@@ -84,13 +84,15 @@ class DataStoreManager(metaDataset: String,
       }
     case create: CreateView => createView(create)
     case drop: DropView => ???
-    case askInfo: AskInfoMsg =>
+    case askInfo: AskInfoAndViews =>
       sender ! {
         metaData.get(askInfo.who) match {
           case Some(info) => info +: metaData.filter(_._2.createQueryOpt.exists(q => q.dataset == askInfo.who)).values.toList
           case None => Seq.empty
         }
       }
+    case askInfo: AskInfo =>
+      sender ! metaData.get(askInfo.who)
 
     case info: DataSetInfo =>
       metaData += info.name -> info
@@ -195,7 +197,9 @@ object DataStoreManager {
   }
 
 
-  case class AskInfoMsg(who: String)
+  case class AskInfoAndViews(who: String)
+
+  case class AskInfo(who: String)
 
   case class Register(dataset: String, schema: Schema)
 
