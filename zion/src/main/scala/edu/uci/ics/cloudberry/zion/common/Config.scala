@@ -22,6 +22,7 @@ class Config(config: Configuration) {
 
   val FirstQueryTimeGap = config.getString("berry.firstquery.gap").map(parseTimePair).getOrElse(2 days)
 
+  val MinTimeGap = config.getString("berry.query.gap").map(parseTimePair).getOrElse(1 day)
 }
 
 object Config {
