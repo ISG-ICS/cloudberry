@@ -242,10 +242,12 @@ object QueryPlanner {
     //ref http://stackoverflow.com/q/39152687/2598198
     def lt[A <: JsValue : Ordering](left: A, right: A, order: SortOrder.Value): Boolean = {
       import Ordering.Implicits._
-      if (left <= right) {
+      if (left < right) {
         order == SortOrder.ASC
-      } else {
+      } else if (left > right) {
         order == SortOrder.DSC
+      } else {
+        false
       }
     }
 
@@ -267,7 +269,7 @@ object QueryPlanner {
           case _ => ???
         }
       }
-      true
+      false // equal
     }
     JsArray(mergedArray.value.sortWith(ltObj))
   }
