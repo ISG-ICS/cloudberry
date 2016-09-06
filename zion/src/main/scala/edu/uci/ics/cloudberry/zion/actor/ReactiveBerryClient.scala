@@ -137,7 +137,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
   }
 
   private def calculateNext(interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
-    val newDuration = (interval.toDurationMillis * responseTime / timeSpend.toDouble).toLong
+    val newDuration = Math.max(config.MinTimeGap.toMillis, (interval.toDurationMillis * responseTime / timeSpend.toDouble).toLong)
     val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
     new TInterval(startTime, interval.getStartMillis)
   }
