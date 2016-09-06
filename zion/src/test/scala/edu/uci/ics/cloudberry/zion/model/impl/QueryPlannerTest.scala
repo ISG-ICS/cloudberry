@@ -140,31 +140,31 @@ class QueryPlannerTest extends Specification {
           |  "count" : 600
           |}, {
           |  "day" : "d5",
-          |  "state" : 15,
-          |  "count" : 500
-          |}, {
-          |  "day" : "d5",
           |  "state" : 5,
           |  "count" : 500
           |}, {
-          |  "day" : "d4",
-          |  "state" : 14,
-          |  "count" : 400
+          |  "day" : "d5",
+          |  "state" : 15,
+          |  "count" : 500
           |}, {
           |  "day" : "d4",
           |  "state" : 4,
           |  "count" : 400
           |}, {
-          |  "day" : "d3",
-          |  "state" : 13,
-          |  "count" : 300
+          |  "day" : "d4",
+          |  "state" : 14,
+          |  "count" : 400
           |}, {
           |  "day" : "d3",
           |  "state" : 3,
           |  "count" : 300
           |}, {
+          |  "day" : "d3",
+          |  "state" : 13,
+          |  "count" : 300
+          |}, {
           |  "day" : "d2",
-          |  "state" : 12,
+          |  "state" : 2,
           |  "count" : 200
           |}]
         """.stripMargin)
