@@ -1,4 +1,5 @@
 package edu.uci.ics.cloudberry.noah.feed;
+
 import com.google.common.collect.Lists;
 import com.twitter.hbc.ClientBuilder;
 import com.twitter.hbc.core.Client;
@@ -26,7 +27,7 @@ public class TwitterFeedStreamDriver {
     FeedSocketAdapterClient socketAdapterClient;
 
     public FeedSocketAdapterClient openSocket(Config config) throws IOException, CmdLineException {
-        if(config.getPort() != 0 && config.getAdapterUrl()!=null) {
+        if (config.getPort() != 0 && config.getAdapterUrl() != null) {
             if (!config.isFileOnly()) {
                 String adapterUrl = config.getAdapterUrl();
                 int port = config.getPort();
@@ -37,7 +38,7 @@ public class TwitterFeedStreamDriver {
                         batchSize, waitMillSecPerRecord, maxCount);
                 socketAdapterClient.initialize();
             }
-        }else{
+        } else {
             throw new CmdLineException("You should provide a port and an URL");
         }
         return socketAdapterClient;
@@ -87,7 +88,10 @@ public class TwitterFeedStreamDriver {
             GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
-            KafkaProducer<String, String> kafkaProducer = producer.createKafkaProducer();
+            KafkaProducer<String, String> kafkaProducer = null;
+            if (config.isStoreKafka()) {
+                kafkaProducer = producer.createKafkaProducer();
+            }
             // Do whatever needs to be done with messages;
             while (!twitterClient.isDone()) {
                 String msg = queue.take();
@@ -107,7 +111,7 @@ public class TwitterFeedStreamDriver {
                     }
                 }
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace(System.err);
         } finally {
             bw.close();
