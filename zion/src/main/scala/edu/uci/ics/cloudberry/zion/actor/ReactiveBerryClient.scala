@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfo
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
 import edu.uci.ics.cloudberry.zion.actor.RESTFulBerryClient.NoSuchDataset
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
@@ -100,6 +100,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(curInterval, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) {
+        suggestViews(queryGroup)
         context.become(receive, discardOld = true)
       } else {
         issueAQuery(nextInterval, queryGroup)
@@ -109,6 +110,17 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
       stash()
       unstashAll()
       context.become(receive, discardOld = true)
+  }
+
+  private def suggestViews(queryGroup: QueryGroup): Unit = {
+    for (queryInfo <- queryGroup.queries) {
+      dataManager ? AskInfoAndViews(queryInfo.query.dataset) map {
+        case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
+          val infos = seq.map(_.asInstanceOf[DataSetInfo])
+          val newViews = planner.suggestNewView(queryInfo.query, infos.head, infos.tail)
+          newViews.foreach(dataManager ! _)
+      }
+    }
   }
 
   //Main thread
@@ -156,7 +168,7 @@ object ReactiveBerryClient {
   }
 
   def defaultMaker(context: ActorRefFactory, client: ReactiveBerryClient)(implicit ec: ExecutionContext): ActorRef = {
-    context.actorOf(RESTFulBerryClient.props(client.jsonParser, client.dataManager, client.planner, client.config))
+    context.actorOf(RESTFulBerryClient.props(client.jsonParser, client.dataManager, client.planner, suggestView = false, client.config))
   }
 
   trait IPostTransform {

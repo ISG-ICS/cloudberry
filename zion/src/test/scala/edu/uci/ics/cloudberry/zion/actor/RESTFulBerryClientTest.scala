@@ -32,7 +32,7 @@ class RESTFulBerryClientTest extends TestkitExample with SpecificationLike with 
       val query = Query(sourceInfo.name)
       when(mockParser.parse(jsonRequest)).thenReturn(query)
 
-      val client = system.actorOf(RESTFulBerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(RESTFulBerryClient.props(mockParser, dataManager.ref, mockPlanner, suggestView = true, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq(sourceInfo))
@@ -67,7 +67,7 @@ class RESTFulBerryClientTest extends TestkitExample with SpecificationLike with 
       val query = Query(sourceInfo.name)
       when(mockParser.parse(jsonRequest)).thenReturn(query)
 
-      val client = system.actorOf(RESTFulBerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(RESTFulBerryClient.props(mockParser, dataManager.ref, mockPlanner, suggestView = true, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq.empty)
