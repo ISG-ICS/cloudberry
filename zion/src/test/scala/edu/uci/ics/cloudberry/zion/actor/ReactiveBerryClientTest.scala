@@ -4,9 +4,11 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory}
 import akka.testkit.TestProbe
+import edu.uci.ics.cloudberry.zion.TInterval
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfoAndViews
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
-import edu.uci.ics.cloudberry.zion.model.schema.{Query, TimeField}
+import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, TimeField}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.specs2.mock.Mockito
 import org.specs2.mutable.SpecificationLike
@@ -162,6 +164,50 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       worker.reply(getRet(3))
       sender.expectMsg(getRet(1) ++ getRet(2) ++ getRet(3))
+      ok
+    }
+    "suggest the view at the end of the last query finishes" in {
+      val sender = new TestProbe(system)
+      val dataManager = new TestProbe(system)
+      val worker = new TestProbe(system)
+      val mockParser = new JSONParser
+      val mockPlanner = mock[QueryPlanner]
+      when(mockPlanner.calculateMergeFunc(any, any)).thenReturn(QueryPlanner.Unioner)
+
+      import TestQuery.zikaCreateQuery
+      val createView = CreateView("zika", zikaCreateQuery)
+      when(mockPlanner.suggestNewView(any, any, any)).thenReturn(Seq(createView))
+      val responseTime = 50
+
+      def childMaker(context: ActorRefFactory, client: ReactiveBerryClient): ActorRef = worker.ref
+
+      val client = system.actorOf(ReactiveBerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, childMaker, responseTime))
+
+      val query = mockParser.parse(hourCountJSON)
+      sender.send(client, ReactiveBerryClient.Request(Seq((hourCountJSON, NoTransform))))
+      val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
+      askInfo.who must_== query.dataset
+
+      dataManager.reply(Some(TestQuery.sourceInfo))
+
+      def getRet(i: Int) = JsArray(Seq(JsObject(Seq("hour" -> JsNumber(i), "count" -> JsNumber(i)))))
+
+      var intervalx = new TInterval(DateTime.now(), DateTime.now())
+      var response = JsArray()
+      var qx : Query = Query("dataset")
+
+      while (intervalx.getStartMillis > startTime.getMillis) {
+        qx = worker.receiveOne(5 second).asInstanceOf[Query]
+        intervalx = qx.getTimeInterval("create_at").get
+        worker.reply(getRet(0))
+        response ++= getRet(0)
+        sender.expectMsg(response)
+      }
+      qx.getTimeInterval("create_at").get.getStartMillis must_== startTime.getMillis
+
+      dataManager.expectMsg(AskInfoAndViews(query.dataset))
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+      dataManager.expectMsg(createView)
       ok
     }
     "cancel the haven't finished query if newer query comes" in {

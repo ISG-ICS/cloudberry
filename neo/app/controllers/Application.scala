@@ -39,7 +39,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
-  val berryProp = RESTFulBerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
+  val berryProp = RESTFulBerryClient.props(new JSONParser(), manager, new QueryPlanner(), suggestView = true, config)
   val berryClient = system.actorOf(berryProp)
   val neoActor = system.actorOf(NeoActor.props(berryProp))
 

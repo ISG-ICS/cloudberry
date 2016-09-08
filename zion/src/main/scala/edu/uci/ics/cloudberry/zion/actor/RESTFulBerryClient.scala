@@ -20,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param config      the configuration
   * @param ec          implicit executionContext
   */
-class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, val config: Config)
+class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, suggestView: Boolean, val config: Config)
                         (implicit val ec: ExecutionContext) extends Actor with ActorLogging {
 
   import RESTFulBerryClient._
@@ -50,8 +50,10 @@ class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, 
           output ! r
         }
 
-        val newViews = planner.suggestNewView(query, infos.head, infos.tail)
-        newViews.foreach(dataManager ! _)
+        if (suggestView) {
+          val newViews = planner.suggestNewView(query, infos.head, infos.tail)
+          newViews.foreach(dataManager ! _)
+        }
     }
   }
 
@@ -66,9 +68,9 @@ class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, 
 
 object RESTFulBerryClient {
 
-  def props(jsonParser: JSONParser, dataManagerRef: ActorRef, planner: QueryPlanner, config: Config)
+  def props(jsonParser: JSONParser, dataManagerRef: ActorRef, planner: QueryPlanner, suggestView: Boolean, config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new RESTFulBerryClient(jsonParser, dataManagerRef, planner, config))
+    Props(new RESTFulBerryClient(jsonParser, dataManagerRef, planner, suggestView, config))
   }
 
   case class NoSuchDataset(name: String)
