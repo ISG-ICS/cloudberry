@@ -49,7 +49,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           dashArray: '',
           fillOpacity: 0.7
         },
-        colors: ['#053061', '#2166ac', '#4393c3', '#92c5de', '#d1e5f0', '#fddbc7', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
+        colors: [ '#f7f7f7', '#053061', '#2166ac', '#4393c3', '#92c5de', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
       },
 
     });
@@ -267,49 +267,45 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
      * @param    [Array]     mapPlotData, an array of coordinate and weight objects
      */
     function drawMap(result) {
-      var maxWeight = 10;
-      var minWeight = 0;
 
       // find max/min weight
-      angular.forEach(result, function(value, key) {
-        maxWeight = Math.max(maxWeight, value.count);
-      });
-
-      var range = maxWeight - minWeight;
-      if (range < 0) {
-        range = 0
-        maxWeight = 0
-        minWeight = 0
-      }
-      if (range < 10) {
-        range = 10
-      }
+      // angular.forEach(result, function(value, key) {
+      //  maxWeight = Math.max(maxWeight, value.count);
+      //});
 
       var colors = $scope.styles.colors;
 
       function getColor(d) {
-        if(!d) {
+        if(!d || d <= 0) {
           d = 0;
-        }
-        d = Math.ceil((d +1 - minWeight)/range * 10) - 1;
-        if( d<0){
-          d = 0;
-        }
-        if( d> 9) {
-          d = 9;
+        } else if (d ===1 ){
+          d = 1;
+        } else {
+          d = Math.ceil(Math.log10(d));
         }
         return colors[d];
       }
 
       function style(feature) {
-        return {
+        if (!feature.properties.count || feature.properties.count == 0){
+            return {
+                      fillColor: '#f7f7f7',
+                      weight: 2,
+                      opacity: 1,
+                      color: '#92c5de',
+                      dashArray: '3',
+                      fillOpacity: 0.2
+            };
+        } else {
+            return {
           fillColor: getColor(feature.properties.count),
           weight: 2,
           opacity: 1,
           color: 'white',
           dashArray: '3',
           fillOpacity: 0.5
-        };
+          };
+        }
       }
 
       // update count
@@ -349,22 +345,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       });
 
       $scope.legend.onAdd = function(map) {
-        var div = L.DomUtil.create('div', 'info legend'),
-          grades = [0]
-
-        for (var i = 1; i < 10; i++) {
-          var value = Math.floor((i * 1.0 / 10) * range + minWeight);
-          if (value > grades[i - 1]) {
-            grades.push(value);
-          }
-        }
+        var div = L.DomUtil.create('div', 'info legend');
+        var grades = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000];
 
         // loop through our density intervals and generate a label with a colored square for each interval
-        for (var i = 0; i < grades.length; i++) {
+        for (var i = 1; i < grades.length; i++) {
           div.innerHTML +=
             '<i style="background:' + getColor(grades[i]) + '"></i> ' +
-            grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+            grades[i-1] + '&ndash;' + grades[i] + '<br>';
         }
+        div.innerHTML += '<i style="background:' + getColor(grades[grades.length-1]*10) + '"></i> ' +
+           grades[grades.length-1] + '+';
 
         return div;
       };
