@@ -575,7 +575,7 @@ class AQLGeneratorTest extends Specification {
           |  hashtags : {{string}}?
           |}
           |drop dataset zika if exists;
-          |create dataset zika(twitter.typeTweet) primary key id with filter on 'create_at'
+          |create dataset zika(twitter.typeTweet) primary key id //with filter on 'create_at'
           |insert into dataset zika (
           |for $t in dataset twitter.ds_tweet
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
