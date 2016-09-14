@@ -50,7 +50,7 @@ object Dependencies {
     "org.apache.kafka" % "kafka_2.10" % "0.10.0.0"
       exclude("javax.jms", "jms")
       exclude("com.sun.jdmk", "jmxtools")
-      exclude("org.slf4j","slf4j-log4j12" )
+      exclude("org.slf4j", "slf4j-log4j12")
       exclude("com.sun.jmx", "jmxri"),
     "org.jsoup" % "jsoup" % "1.9.2",
     "com.buzzilla" % "webhose" % "0.1.1",
@@ -72,8 +72,7 @@ object Dependencies {
     "joda-time" % "joda-time" % "2.9.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.4",
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
-    ("com.typesafe.play" %% "play-ws" % playVersion),
-    ("com.typesafe.play" %% "play" % playVersion % "test") // use it to test the web client
+    "com.typesafe.play" %% "play-ws" % playVersion
   ) ++ testDeps
 
 }
