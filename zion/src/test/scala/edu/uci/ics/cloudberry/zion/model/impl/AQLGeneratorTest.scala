@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
 class AQLGeneratorTest extends Specification {
@@ -480,7 +481,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag),Some(globalAggr))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
@@ -598,6 +599,24 @@ class AQLGeneratorTest extends Specification {
           |return $t
           |)
         """.stripMargin.trim)
+    }
+  }
+
+  "Test query" should {
+    "generate a sequence fo per day query" in {
+      var endSlice = new DateTime(2016, 9, 10, 0, 0)
+      val keywordFilter = FilterStatement("text", None, Relation.contains, Seq("zika"))
+      1 to 10 foreach { i =>
+        val timeFilter = FilterStatement("create_at", None, Relation.inRange,
+                                         Seq(TimeField.TimeFormat.print(endSlice.minusDays(1)),
+                                             TimeField.TimeFormat.print(endSlice)))
+
+        val globalAggr = GlobalAggregateStatement(aggrCount)
+        val query = Query(dataset = "twitter.ds_tweet", filter = Seq(keywordFilter, timeFilter), globalAggr = Some(globalAggr))
+        println(parser.generate(query, TwitterDataStore.TwitterSchema))
+        endSlice = endSlice.minusDays(1)
+      }
+      ok
     }
   }
 }
