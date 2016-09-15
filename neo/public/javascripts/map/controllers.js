@@ -347,15 +347,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
         var grades = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000];
+        var gName  = ["1", "10", "100", "1K", "10K", "100K", "1M", "10M"];
 
         // loop through our density intervals and generate a label with a colored square for each interval
-        for (var i = 1; i < grades.length; i++) {
+        var i = 1
+        for (; i < grades.length; i++) {
           div.innerHTML +=
-            '<i style="background:' + getColor(grades[i]) + '"></i> ' +
-            grades[i-1] + '&ndash;' + grades[i] + '<br>';
+            '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
         }
-        div.innerHTML += '<i style="background:' + getColor(grades[grades.length-1]*10) + '"></i> ' +
-           grades[grades.length-1] + '+';
+        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
 
         return div;
       };
