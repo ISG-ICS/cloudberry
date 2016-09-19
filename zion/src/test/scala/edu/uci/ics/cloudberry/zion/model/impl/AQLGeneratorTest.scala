@@ -601,22 +601,4 @@ class AQLGeneratorTest extends Specification {
         """.stripMargin.trim)
     }
   }
-
-  "Test query" should {
-    "generate a sequence fo per day query" in {
-      var endSlice = new DateTime(2016, 9, 10, 0, 0)
-      val keywordFilter = FilterStatement("text", None, Relation.contains, Seq("zika"))
-      1 to 10 foreach { i =>
-        val timeFilter = FilterStatement("create_at", None, Relation.inRange,
-                                         Seq(TimeField.TimeFormat.print(endSlice.minusDays(1)),
-                                             TimeField.TimeFormat.print(endSlice)))
-
-        val globalAggr = GlobalAggregateStatement(aggrCount)
-        val query = Query(dataset = "twitter.ds_tweet", filter = Seq(keywordFilter, timeFilter), globalAggr = Some(globalAggr))
-        println(parser.generate(query, TwitterDataStore.TwitterSchema))
-        endSlice = endSlice.minusDays(1)
-      }
-      ok
-    }
-  }
 }
