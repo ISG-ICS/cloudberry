@@ -20,6 +20,8 @@ import scala.concurrent.{Await, ExecutionContext}
 
 object ResponseTime extends App {
   val gen = new AQLGenerator()
+  val aggrCount = AggregateStatement("*", Count, "count")
+  val globalAggr = GlobalAggregateStatement(aggrCount)
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   implicit val system = ActorSystem()
@@ -42,8 +44,8 @@ object ResponseTime extends App {
         |play {
         |  ws {
         |    timeout {
-        |      connection = 60000
-        |      idle = 600000
+        |      connection = 600000
+        |      idle = 6000000
         |    }
         |  }
         |}
@@ -93,45 +95,73 @@ object ResponseTime extends App {
   def clearCache(): Unit = {
     val aql =
       """
-        |for $d in dataset twitter.ds_tweet
-        |where $d.create_at >= datetime('2016-08-01T08:00:00.000Z') and
-        |      $d.create_at <= datetime('2016-08-15T08:00:00.000Z')
-        |group by $g := get-day($d.create_at) with $d
-        |return { "day": $g, "count": count($d)}
+        |count(for $d in dataset twitter.ds_tweet
+        |where $d.create_at >= datetime('2016-07-01T08:00:00.000Z') and
+        |      $d.create_at <= datetime('2016-08-30T08:00:00.000Z')
+        |return $d)
       """.stripMargin
     val f = asterixConn.postQuery(aql)
     Await.result(f, scala.concurrent.duration.Duration.Inf)
   }
 
   def testRealTime(): Unit = {
-    clearCache()
-    val gaps = Seq(1, 2, 4, 8, 16, 32)
-    val times = 5
-    val keywords = Seq("happy", "zika", "uci", "trump")
+    val gaps = Seq(1, 2, 4, 8, 16, 32, 64, 128)
+    val keywords = Seq("happy", "zika", "uci", "trump", "a")
+    keywordWithTime()
 
-    for (gap <- gaps) {
-      for (keyword <- keywords) {
-        var sum = 0l
-        var count = 0
-        var firstTime = 0l
-        0 to times foreach { i =>
-          val now = DateTime.now()
-          val aql = getAQL(now.minusHours(gap), gap, keyword)
-          val (time, c) = timeQuery(aql, "count")
-          if (i == 0) {
-            firstTime = time
-          } else {
-            sum += time
-            count = c
+    def selectivity(seq: Seq[Any]): Unit = {
+      for (s <- seq) {
+        val aql = {
+          s match {
+            case x: Int =>
+              getCountTime(DateTime.now().minusHours(x), DateTime.now())
+            case string: String =>
+              getCountKeyword(string)
+            case _ =>
+              throw new IllegalArgumentException()
           }
         }
-        println(s"gap:$gap\tkeyword:$keyword")
+        val (firstTime, avg, count) = multipleTime(5, aql)
         println(s"firstTime\t$firstTime")
-        println(s"avgTime\t${sum * 1.0 / times}")
+        println(s"avgTime\t$avg")
         println(s"count\t$count")
       }
     }
+
+    def keywordWithTime(): Unit = {
+      for (gap <- gaps) {
+        for (keyword <- keywords) {
+          clearCache()
+          val now = DateTime.now()
+          val aql = getAQL(now.minusHours(gap), gap, keyword)
+
+          val (firstTime, avg, count) = multipleTime(0, aql)
+          println(s"gap:$gap\tkeyword:$keyword")
+          println(s"firstTime\t$firstTime")
+          println(s"avgTime\t$avg")
+          println(s"count\t$count")
+        }
+      }
+    }
   }
+
+  def multipleTime(times: Int, aql: String): (Long, Double, Int) = {
+    var sum = 0l
+    var count = 0
+    var firstTime = 0l
+    0 to times foreach { i =>
+      val (time, c) = timeQuery(aql, "count")
+      if (i == 0) {
+        firstTime = time
+        count = c
+      } else {
+        sum += time
+        count = c
+      }
+    }
+    (firstTime, sum * 1.0 / (times + 0.001), count)
+  }
+
 
   def testHistory(): Unit = {
     //  val countPerGap = 90000 // global
@@ -161,18 +191,30 @@ object ResponseTime extends App {
     }
   }
 
+
   def getAQL(start: DateTime, gapHour: Int, keyword: String): String = {
-    val aggrCount = AggregateStatement("*", Count, "count")
     val keywordFilter = FilterStatement("text", None, Relation.contains, Seq(keyword))
     val timeFilter = FilterStatement("create_at", None, Relation.inRange,
                                      Seq(TimeField.TimeFormat.print(start),
                                          TimeField.TimeFormat.print(start.plusHours(gapHour))))
-
-    val globalAggr = GlobalAggregateStatement(aggrCount)
     val byHour = ByStatement("create_at", Some(Interval(TimeUnit.Minute, 10 * gapHour)), Some("hour"))
     val groupStatement = GroupStatement(Seq(byHour), Seq(aggrCount))
     //      val query = Query(dataset = "twitter.ds_tweet", filter = Seq(timeFilter), groups = Some(groupStatement))
     val query = Query(dataset = "twitter.ds_tweet", filter = Seq(timeFilter, keywordFilter), globalAggr = Some(globalAggr))
+    gen.generate(query, TwitterDataStore.TwitterSchema)
+  }
+
+  def getCountKeyword(keyword: String): String = {
+    val keywordFilter = FilterStatement("text", None, Relation.contains, Seq(keyword))
+    val query = Query(dataset = "twitter.ds_tweet", filter = Seq(keywordFilter), globalAggr = Some(globalAggr))
+    gen.generate(query, TwitterDataStore.TwitterSchema)
+  }
+
+  def getCountTime(start: DateTime, end: DateTime): String = {
+    val timeFilter = FilterStatement("create_at", None, Relation.inRange,
+                                     Seq(TimeField.TimeFormat.print(start),
+                                         TimeField.TimeFormat.print(end)))
+    val query = Query(dataset = "twitter.ds_tweet", filter = Seq(timeFilter), globalAggr = Some(globalAggr))
     gen.generate(query, TwitterDataStore.TwitterSchema)
   }
 
