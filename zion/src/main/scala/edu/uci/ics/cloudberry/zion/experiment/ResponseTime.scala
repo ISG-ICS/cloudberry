@@ -30,7 +30,8 @@ object ResponseTime extends App {
   val url = "http://actinium.ics.uci.edu:19002/aql"
   val asterixConn = new AsterixConn(url, wsClient)
 
-  testRealTime()
+  warmUp()
+  testFirstShot()
 
   def exit(): Unit = {
     wsClient.close()
@@ -104,10 +105,14 @@ object ResponseTime extends App {
     Await.result(f, scala.concurrent.duration.Duration.Inf)
   }
 
-  def testRealTime(): Unit = {
+  def testFirstShot(): Unit = {
     val gaps = Seq(1, 2, 4, 8, 16, 32, 64, 128)
-    val keywords = Seq("happy", "zika", "uci", "trump", "a")
-    keywordWithTime()
+    //    val keywords = Seq("happy", "zika", "uci", "trump", "a")
+    val keywords = Seq("zika", "phd", "pitbull", "sin", "taco", "goal", "stupid", "bro", "happy", "a")
+    //    keywordWithTime()
+    //    selectivity(keywords)
+    //      keywordWithContinueTime()
+    elasticTimeGap()
 
     def selectivity(seq: Seq[Any]): Unit = {
       for (s <- seq) {
@@ -142,6 +147,56 @@ object ResponseTime extends App {
           println(s"count\t$count")
         }
       }
+    }
+
+    def keywordWithContinueTime(): Unit = {
+      val repeat = 15
+      for (gap <- gaps) {
+        for (keyword <- keywords) {
+          var start = DateTime.now()
+          1 to repeat foreach { i =>
+
+            val aql = getAQL(start.minusHours(gap), gap, keyword)
+            val (firstTime, avg, count) = multipleTime(0, aql)
+            println(
+              s"""
+                 |gap,keyword,time,count
+                 |$gap,$keyword,$firstTime,$count
+               """.stripMargin.trim)
+            start = start.minusHours(gap)
+          }
+        }
+      }
+    }
+
+    def elasticTimeGap(): Unit = {
+      val repeat = 15
+      val requireTime = 2000
+      Seq(1.0, 0.9, 0.8, 0.7, 0.6, 0.5).foreach { lambda =>
+        for (keyword <- keywords) {
+          var start = DateTime.now()
+          var gap = 2
+          var (historyGap, historyTime) = (0, 1l)
+          1 to repeat foreach { i =>
+
+            val aql = getAQL(start.minusHours(gap), gap, keyword)
+            val (lastTime, avg, count) = multipleTime(0, aql)
+
+            println(s"$gap,$keyword,$lastTime,$count")
+
+            start = start.minusHours(gap)
+            val newGap = Math.max(formular(requireTime, gap, lastTime, historyGap, historyTime, lambda), 1)
+            historyGap += gap
+            historyTime += lastTime
+            gap = newGap
+          }
+        }
+      }
+    }
+
+    def formular(requireTime: Int, lastGap: Int, lastTime: Long, histoGap: Int, histoTime: Long, lambda: Double): Int = {
+      lambda * lastGap * requireTime * 1.0 / lastTime +
+        (1 - lambda) * requireTime * histoGap * 1.0 / histoTime toInt
     }
   }
 
