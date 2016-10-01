@@ -112,7 +112,8 @@ object ResponseTime extends App {
     //    keywordWithTime()
     //    selectivity(keywords)
     //      keywordWithContinueTime()
-    elasticTimeGap()
+//    elasticTimeGap()
+    elasticAdaptiveGap()
 
     def selectivity(seq: Seq[Any]): Unit = {
       for (s <- seq) {
@@ -190,6 +191,31 @@ object ResponseTime extends App {
             historyTime += lastTime
             gap = newGap
           }
+        }
+      }
+    }
+
+    def elasticAdaptiveGap(): Unit = {
+      val repeat = 15
+      for (keyword <- keywords) {
+        var start = DateTime.now()
+        var gap = 2
+        val reportGap = 2000
+        var lastRequireTime = 2000
+        var (historyGap, historyTime) = (0, 1l)
+        1 to repeat foreach { i =>
+          val aql = getAQL(start.minusHours(gap), gap, keyword)
+          val (lastTime, avg, count) = multipleTime(0, aql)
+
+
+          println(s"$gap,$keyword,$lastTime,$lastRequireTime,$count")
+
+          start = start.minusHours(gap)
+          lastRequireTime = Math.max(reportGap + (lastRequireTime - lastTime), 1).toInt
+
+          val newGap = Math.max(formular(lastRequireTime, gap, lastTime, historyGap, historyTime, 1.0), 1)
+          gap = newGap
+
         }
       }
     }
