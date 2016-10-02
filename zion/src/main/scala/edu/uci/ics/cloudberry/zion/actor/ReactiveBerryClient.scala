@@ -39,7 +39,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
 
   private case class QueryGroup(ts: DateTime, curSender: ActorRef, queries: Seq[QueryInfo])
 
-  private case class Initial(ts: DateTime, sender: ActorRef, queries: Seq[Query], infos: Seq[DataSetInfo], postTransforms: Seq[IPostTransform])
+  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, queries: Seq[Query], infos: Seq[DataSetInfo], postTransforms: Seq[IPostTransform])
 
   private case class PartialResult(queryGroup: QueryGroup, jsons: Seq[JsArray])
 
@@ -53,14 +53,18 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
       val key = DateTime.now()
       curKey = key
       val fDataInfos = Future.traverse(queries) { query =>
-        dataManager ? AskInfo(query.dataset)
+        dataManager ? AskInfo(query._1.dataset)
       }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
 
       fDataInfos.map { seqInfos =>
         if (seqInfos.exists(_.isEmpty)) {
-          curSender ! NoSuchDataset(queries(seqInfos.indexOf(None)).dataset)
+          curSender ! NoSuchDataset(queries(seqInfos.indexOf(None))._1.dataset)
         } else {
-          self ! Initial(key, curSender, queries, seqInfos.map(_.get), request.requests.map(_._2))
+          val partition = queries.partition(_._2.sliceMills <= 0)
+          partition._1.foreach(q => worker.forward(q._1))
+          //TODO make a group option for a group other than each query
+          val targetMillis = partition._2.head._2.sliceMills
+          self ! Initial(key, curSender, targetMillis, partition._2.map(_._1), seqInfos.map(_.get), request.requests.map(_._2))
         }
       }
     case initial: Initial if initial.ts == curKey =>
@@ -80,10 +84,11 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
       val queryGroup = QueryGroup(initial.ts, initial.sender, queryInfos)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueAQuery(interval, queryGroup)
-      context.become(askSlice(interval, boundary, queryGroup, initResult, askTime = DateTime.now), discardOld = true)
+      context.become(askSlice(initial.targetMillis, interval, boundary, queryGroup, initResult, askTime = DateTime.now), discardOld = true)
   }
 
-  private def askSlice(curInterval: TInterval,
+  private def askSlice(targetInvertal: Long,
+                       curInterval: TInterval,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
                        accumulateResults: Seq[JsArray],
@@ -98,13 +103,13 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
       }
 
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
-      val nextInterval = calculateNext(curInterval, timeSpend, boundary)
+      val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) {
         suggestViews(queryGroup)
         context.become(receive, discardOld = true)
       } else {
         issueAQuery(nextInterval, queryGroup)
-        context.become(askSlice(nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(targetInvertal, nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case newRequest: Request =>
       stash()
@@ -148,8 +153,8 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
     new TInterval(startTime, entireInterval.getEndMillis)
   }
 
-  private def calculateNext(interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
-    val newDuration = Math.max(config.MinTimeGap.toMillis, (interval.toDurationMillis * responseTime / timeSpend.toDouble).toLong)
+  private def calculateNext(targetTime: Long, interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
+    val newDuration = Math.max(targetTime, (interval.toDurationMillis * responseTime / timeSpend.toDouble).toLong)
     val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
     new TInterval(startTime, interval.getStartMillis)
   }

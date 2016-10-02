@@ -29,7 +29,7 @@ class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, 
 
   override def receive: Receive = {
     case json: JsValue =>
-      val query = jsonParser.parse(json)
+      val (query, options) = jsonParser.parse(json)
       solveQuery(query, sender())
     case query: Query =>
       solveQuery(query, sender())

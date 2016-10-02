@@ -9,6 +9,12 @@ trait IQuery {
   def dataset: String
 }
 
+case class QueryExeOptions(sliceMills: Int, continueSeconds: Int)
+
+object QueryExeOptions {
+  val default = QueryExeOptions(2000, -1)
+}
+
 case class Query(dataset: String,
                  lookup: Seq[LookupStatement] = Seq.empty,
                  filter: Seq[FilterStatement] = Seq.empty,

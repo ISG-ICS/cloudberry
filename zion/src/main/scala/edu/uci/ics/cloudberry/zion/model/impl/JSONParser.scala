@@ -10,11 +10,16 @@ class JSONParser extends IJSONParser {
 
   import JSONParser._
 
-  override def parse(json: JsValue): Query = {
-    json.validate[Query] match {
+  override def parse(json: JsValue): (Query, QueryExeOptions) = {
+    val query = json.validate[Query] match {
       case js: JsSuccess[Query] => js.get
       case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
     }
+    val option = json.validate[QueryExeOptions] match {
+      case js: JsSuccess[QueryExeOptions] => js.get
+      case e: JsError => QueryExeOptions.default
+    }
+    (query, option)
   }
 }
 
@@ -195,6 +200,12 @@ object JSONParser {
       (JsPath \ "relation").format[Relation] and
       (JsPath \ "values").format[Seq[Any]]
     ) (FilterStatement.apply, unlift(FilterStatement.unapply))
+
+  implicit val exeOptionReads: Reads[QueryExeOptions] = (
+    (__ \ "sliceMillis").readNullable[Int].map(_.getOrElse(-1)) and
+      (__ \ "continueSeconds").readNullable[Int].map(_.getOrElse(-1))
+    ) (QueryExeOptions.apply _)
+
 
   // TODO find better name for 'global'
   implicit val queryFormat: Format[Query] = (
