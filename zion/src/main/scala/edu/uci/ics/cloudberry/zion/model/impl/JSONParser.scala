@@ -10,14 +10,17 @@ class JSONParser extends IJSONParser {
 
   import JSONParser._
 
-  override def parse(json: JsValue): (Query, QueryExeOptions) = {
-    val query = json.validate[Query] match {
-      case js: JsSuccess[Query] => js.get
-      case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
-    }
-    val option = json.validate[QueryExeOptions] match {
-      case js: JsSuccess[QueryExeOptions] => js.get
-      case e: JsError => QueryExeOptions.default
+  override def parse(json: JsValue): (Seq[Query], QueryExeOption) = {
+    val option = (json \ "options").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
+    val query = (json \ "group").toOption match {
+      case Some(groupRequest) => groupRequest.validate[Seq[Query]] match {
+        case js: JsSuccess[Seq[Query]] => js.get
+        case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
+      }
+      case None => json.validate[Query] match {
+        case js: JsSuccess[Query] => Seq(js.get)
+        case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
+      }
     }
     (query, option)
   }
@@ -201,10 +204,10 @@ object JSONParser {
       (JsPath \ "values").format[Seq[Any]]
     ) (FilterStatement.apply, unlift(FilterStatement.unapply))
 
-  implicit val exeOptionReads: Reads[QueryExeOptions] = (
+  implicit val exeOptionReads: Reads[QueryExeOption] = (
     (__ \ "sliceMillis").readNullable[Int].map(_.getOrElse(-1)) and
       (__ \ "continueSeconds").readNullable[Int].map(_.getOrElse(-1))
-    ) (QueryExeOptions.apply _)
+    ) (QueryExeOption.apply _)
 
 
   // TODO find better name for 'global'

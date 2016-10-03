@@ -1,17 +1,16 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
-import edu.uci.ics.cloudberry.zion.actor.RESTFulBerryClient.NoSuchDataset
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, JsValue}
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -23,23 +22,18 @@ import scala.util.{Failure, Success}
 class ReactiveBerryClient(val jsonParser: JSONParser,
                           val dataManager: ActorRef,
                           val planner: QueryPlanner,
-                          val config: Config,
-                          val responseTime: Long,
-                          childMaker: (ActorRefFactory, ReactiveBerryClient) => ActorRef
-                         )
+                          val config: Config)
                          (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
   import ReactiveBerryClient._
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
-  val worker = childMaker(context, this)
+  private case class QueryInfo(query: Query, dataSetInfo: DataSetInfo, queryBound: TInterval, merger: IMerger)
 
-  private case class QueryInfo(query: Query, dataSetInfo: DataSetInfo, postTransform: IPostTransform, queryBound: TInterval, merger: IMerger)
+  private case class QueryGroup(ts: DateTime, curSender: ActorRef, queries: Seq[QueryInfo], postTransform: IPostTransform)
 
-  private case class QueryGroup(ts: DateTime, curSender: ActorRef, queries: Seq[QueryInfo])
-
-  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, queries: Seq[Query], infos: Seq[DataSetInfo], postTransforms: Seq[IPostTransform])
+  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, queries: Seq[Query], infos: Seq[DataSetInfo], postTransform: IPostTransform)
 
   private case class PartialResult(queryGroup: QueryGroup, jsons: Seq[JsArray])
 
@@ -47,33 +41,17 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
   var curKey: DateTime = _
 
   override def receive: Receive = {
+    case json: JsValue =>
+      handleNewRequest(Request(json, NoTransform), sender())
     case request: Request =>
-      val queries = request.requests.map(r => jsonParser.parse(r._1))
-      val curSender = sender()
-      val key = DateTime.now()
-      curKey = key
-      val fDataInfos = Future.traverse(queries) { query =>
-        dataManager ? AskInfo(query._1.dataset)
-      }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
-
-      fDataInfos.map { seqInfos =>
-        if (seqInfos.exists(_.isEmpty)) {
-          curSender ! NoSuchDataset(queries(seqInfos.indexOf(None))._1.dataset)
-        } else {
-          val partition = queries.partition(_._2.sliceMills <= 0)
-          partition._1.foreach(q => worker.forward(q._1))
-          //TODO make a group option for a group other than each query
-          val targetMillis = partition._2.head._2.sliceMills
-          self ! Initial(key, curSender, targetMillis, partition._2.map(_._1), seqInfos.map(_.get), request.requests.map(_._2))
-        }
-      }
+      handleNewRequest(request, sender())
     case initial: Initial if initial.ts == curKey =>
-      val queryInfos = initial.queries.zip(initial.infos).zip(initial.postTransforms).map {
-        case ((query, info), trans) =>
+      val queryInfos = initial.queries.zip(initial.infos).map {
+        case (query, info) =>
           val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
           val merger = planner.calculateMergeFunc(query, info.schema)
           val queryWOTime = query.copy(filter = query.filter.filterNot(_.fieldName == info.schema.timeField))
-          QueryInfo(queryWOTime, info, trans, bound, merger)
+          QueryInfo(queryWOTime, info, bound, merger)
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
       val max = queryInfos.map(_.queryBound.getEndMillis).max
@@ -81,10 +59,33 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
 
       val initialDuration = config.FirstQueryTimeGap.toMillis
       val interval = calculateFirst(boundary, initialDuration)
-      val queryGroup = QueryGroup(initial.ts, initial.sender, queryInfos)
+      val queryGroup = QueryGroup(initial.ts, initial.sender, queryInfos, initial.postTransform)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
-      issueAQuery(interval, queryGroup)
+      issueQueryGroup(interval, queryGroup)
       context.become(askSlice(initial.targetMillis, interval, boundary, queryGroup, initResult, askTime = DateTime.now), discardOld = true)
+  }
+
+  private def handleNewRequest(request: Request, curSender: ActorRef): Unit = {
+    val (queries, runOption) = jsonParser.parse(request.json)
+    val key = DateTime.now()
+    curKey = key
+    val fDataInfos = Future.traverse(queries) { query =>
+      dataManager ? AskInfo(query.dataset)
+    }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
+
+    fDataInfos.foreach { seqInfos =>
+      if (seqInfos.exists(_.isEmpty)) {
+        curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).dataset)
+      } else {
+        if (runOption.sliceMills <= 0) {
+          val result = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
+          result.foreach(curSender ! request.postTransform.transform(_))
+        } else {
+          val targetMillis = runOption.sliceMills
+          self ! Initial(key, curSender, targetMillis, queries, seqInfos.map(_.get), request.postTransform)
+        }
+      }
+    }
   }
 
   private def askSlice(targetInvertal: Long,
@@ -97,10 +98,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
       val mergedResults = queryGroup.queries.zipWithIndex.map { case (q, idx) =>
         q.merger(Seq(accumulateResults(idx), result.jsons(idx)))
       }
-      //TODO merge it as an array
-      mergedResults.zipWithIndex.foreach { case (ret, idx) =>
-        queryGroup.curSender ! queryGroup.queries(idx).postTransform.transform(ret)
-      }
+      queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(mergedResults))
 
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
@@ -108,7 +106,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
         suggestViews(queryGroup)
         context.become(receive, discardOld = true)
       } else {
-        issueAQuery(nextInterval, queryGroup)
+        issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(targetInvertal, nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case newRequest: Request =>
@@ -129,13 +127,13 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
   }
 
   //Main thread
-  private def issueAQuery(interval: TInterval, queryGroup: QueryGroup): Unit = {
+  private def issueQueryGroup(interval: TInterval, queryGroup: QueryGroup): Unit = {
     val futures = Future.traverse(queryGroup.queries) { queryInfo =>
       if (queryInfo.queryBound.overlaps(interval)) {
         val overlaps = queryInfo.queryBound.overlap(interval)
         val timeFilter = FilterStatement(queryInfo.dataSetInfo.schema.timeField, None, Relation.inRange,
-                                         Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
-        worker ? queryInfo.query.copy(filter = timeFilter +: queryInfo.query.filter)
+          Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
+        solveAQuery(queryInfo.query.copy(filter = timeFilter +: queryInfo.query.filter))
       } else {
         Future(JsArray())
       }
@@ -153,27 +151,38 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
     new TInterval(startTime, entireInterval.getEndMillis)
   }
 
-  private def calculateNext(targetTime: Long, interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
-    val newDuration = Math.max(targetTime, (interval.toDurationMillis * responseTime / timeSpend.toDouble).toLong)
+  private def calculateNext(targetTimeSpend: Long, interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
+    val newDuration = Math.max(targetTimeSpend, (interval.toDurationMillis * targetTimeSpend / timeSpend.toDouble).toLong)
     val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
     new TInterval(startTime, interval.getStartMillis)
   }
+
+  protected def solveAQuery(query: Query): Future[JsValue] = {
+    val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
+      case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
+        seq.map(_.asInstanceOf[DataSetInfo])
+      case _ => Seq.empty
+    }
+
+    fInfos.flatMap {
+      case seq if seq.isEmpty =>
+        Future(RESTFulBerryClient.noSuchDatasetJson(query.dataset))
+      case infos: Seq[DataSetInfo] =>
+        val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
+        val fResponse = Future.traverse(queries) { subQuery =>
+          dataManager ? subQuery
+        }.map(seq => seq.map(_.asInstanceOf[JsValue]))
+
+        fResponse.map { responses => merger(responses) }
+    }
+  }
+
 }
 
 object ReactiveBerryClient {
-  def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, responseTime: Long)
+  def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new ReactiveBerryClient(jsonParser, dataManager, planner, config, responseTime, defaultMaker))
-  }
-
-  def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config,
-            childMaker: (ActorRefFactory, ReactiveBerryClient) => ActorRef, responseTime: Long)
-           (implicit ec: ExecutionContext) = {
-    Props(new ReactiveBerryClient(jsonParser, dataManager, planner, config, responseTime, childMaker))
-  }
-
-  def defaultMaker(context: ActorRefFactory, client: ReactiveBerryClient)(implicit ec: ExecutionContext): ActorRef = {
-    context.actorOf(RESTFulBerryClient.props(client.jsonParser, client.dataManager, client.planner, suggestView = false, client.config))
+    Props(new ReactiveBerryClient(jsonParser, dataManager, planner, config))
   }
 
   trait IPostTransform {
@@ -184,6 +193,10 @@ object ReactiveBerryClient {
     override def transform(jsValue: JsValue): JsValue = jsValue
   }
 
-  case class Request(requests: Seq[(JsValue, IPostTransform)])
+  //TODO merge the post transform into the json model
+  case class Request(json: JsValue, postTransform: IPostTransform)
 
+  def noSuchDatasetJson(name: String): JsValue = {
+    JsObject(Seq("error" -> JsString(s"Dataset $name does not exist")))
+  }
 }

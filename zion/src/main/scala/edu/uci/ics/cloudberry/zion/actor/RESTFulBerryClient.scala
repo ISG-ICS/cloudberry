@@ -1,13 +1,13 @@
 package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.ask
+import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfoAndViews
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -23,45 +23,39 @@ import scala.concurrent.{ExecutionContext, Future}
 class RESTFulBerryClient(val jsonParser: JSONParser, val dataManager: ActorRef, val planner: QueryPlanner, suggestView: Boolean, val config: Config)
                         (implicit val ec: ExecutionContext) extends Actor with ActorLogging {
 
-  import RESTFulBerryClient._
-
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
   override def receive: Receive = {
     case json: JsValue =>
-      val (query, options) = jsonParser.parse(json)
-      solveQuery(query, sender())
+      val (queries, _) = jsonParser.parse(json)
+      Future.sequence(queries.map(solveAQuery)).map(JsArray.apply) pipeTo sender
+    case queries: Seq[Query] =>
+      Future.sequence(queries.map(solveAQuery)).map(JsArray.apply) pipeTo sender
     case query: Query =>
-      solveQuery(query, sender())
+      solveAQuery(query) pipeTo sender
   }
 
-  protected def solveQuery(query: Query, output: ActorRef) = {
-    withDataSetInfo(query) {
+  protected def solveAQuery(query: Query): Future[JsValue] = {
+    val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
+      case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
+        seq.map(_.asInstanceOf[DataSetInfo])
+      case _ => Seq.empty
+    }
+
+    fInfos.flatMap {
       case seq if seq.isEmpty =>
-        output ! NoSuchDataset(query.dataset)
+        Future(RESTFulBerryClient.noSuchDatasetJson(query.dataset))
       case infos: Seq[DataSetInfo] =>
         val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
         val fResponse = Future.traverse(queries) { subQuery =>
           dataManager ? subQuery
         }.map(seq => seq.map(_.asInstanceOf[JsValue]))
 
-        fResponse.map { responses =>
-          val r = merger(responses)
-          output ! r
-        }
-
         if (suggestView) {
           val newViews = planner.suggestNewView(query, infos.head, infos.tail)
           newViews.foreach(dataManager ! _)
         }
-    }
-  }
-
-  protected def withDataSetInfo(query: Query)(block: Seq[DataSetInfo] => Unit): Unit = {
-    //TODO replace the logic to visit a cache to alleviate dataManager's workload
-    dataManager ? AskInfoAndViews(query.dataset) map {
-      case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
-        block(seq.map(_.asInstanceOf[DataSetInfo]))
+        fResponse.map { responses => merger(responses) }
     }
   }
 }
@@ -73,6 +67,7 @@ object RESTFulBerryClient {
     Props(new RESTFulBerryClient(jsonParser, dataManagerRef, planner, suggestView, config))
   }
 
-  case class NoSuchDataset(name: String)
-
+  def noSuchDatasetJson(name: String): JsValue = {
+    JsObject(Seq("error" -> JsString(s"Dataset $name does not exist")))
+  }
 }

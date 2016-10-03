@@ -9,10 +9,10 @@ trait IQuery {
   def dataset: String
 }
 
-case class QueryExeOptions(sliceMills: Int, continueSeconds: Int)
+case class QueryExeOption(sliceMills: Int, continueSeconds: Int)
 
-object QueryExeOptions {
-  val default = QueryExeOptions(2000, -1)
+object QueryExeOption {
+  val NoSliceNoContinue = QueryExeOption(-1, -1)
 }
 
 case class Query(dataset: String,
