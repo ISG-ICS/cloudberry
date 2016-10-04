@@ -5,7 +5,7 @@ import java.util.concurrent.Executors
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query}
+import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption}
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
@@ -30,9 +30,9 @@ class RESTFulBerryClientTest extends TestkitExample with SpecificationLike with 
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
-      when(mockParser.parse(jsonRequest)).thenReturn(query)
+      when(mockParser.parse(jsonRequest)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
 
-      val client = system.actorOf(RESTFulBerryClient.props(mockParser, dataManager.ref, mockPlanner, suggestView = true, Config.Default))
+      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq(sourceInfo))
@@ -65,14 +65,14 @@ class RESTFulBerryClientTest extends TestkitExample with SpecificationLike with 
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
-      when(mockParser.parse(jsonRequest)).thenReturn(query)
+      when(mockParser.parse(jsonRequest)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
 
-      val client = system.actorOf(RESTFulBerryClient.props(mockParser, dataManager.ref, mockPlanner, suggestView = true, Config.Default))
+      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq.empty)
 
-      sender.expectMsg(RESTFulBerryClient.NoSuchDataset(sourceInfo.name))
+      sender.expectMsg(BerryClient.noSuchDatasetJson(sourceInfo.name))
       ok
     }
   }

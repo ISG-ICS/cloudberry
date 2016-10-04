@@ -18,14 +18,17 @@ import scala.util.{Failure, Success}
 /**
   * A reactive client which will continuously feed the result back to user
   * One user should only attach to one ReactiveClient
+  *
+  * TODO: a better design should be a reception actor that directs the slicing query and the entire query to different
+  *   workers(actors).
   */
-class ReactiveBerryClient(val jsonParser: JSONParser,
-                          val dataManager: ActorRef,
-                          val planner: QueryPlanner,
-                          val config: Config)
-                         (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
+class BerryClient(val jsonParser: JSONParser,
+                  val dataManager: ActorRef,
+                  val planner: QueryPlanner,
+                  val config: Config)
+                 (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
-  import ReactiveBerryClient._
+  import BerryClient._
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
@@ -166,7 +169,7 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
 
     fInfos.flatMap {
       case seq if seq.isEmpty =>
-        Future(RESTFulBerryClient.noSuchDatasetJson(query.dataset))
+        Future(noSuchDatasetJson(query.dataset))
       case infos: Seq[DataSetInfo] =>
         val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
         val fResponse = Future.traverse(queries) { subQuery =>
@@ -179,10 +182,10 @@ class ReactiveBerryClient(val jsonParser: JSONParser,
 
 }
 
-object ReactiveBerryClient {
+object BerryClient {
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new ReactiveBerryClient(jsonParser, dataManager, planner, config))
+    Props(new BerryClient(jsonParser, dataManager, planner, config))
   }
 
   trait IPostTransform {

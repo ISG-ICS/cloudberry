@@ -11,8 +11,8 @@ class JSONParser extends IJSONParser {
   import JSONParser._
 
   override def parse(json: JsValue): (Seq[Query], QueryExeOption) = {
-    val option = (json \ "options").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
-    val query = (json \ "group").toOption match {
+    val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
+    val query = (json \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[Query]] match {
         case js: JsSuccess[Seq[Query]] => js.get
         case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
@@ -205,8 +205,8 @@ object JSONParser {
     ) (FilterStatement.apply, unlift(FilterStatement.unapply))
 
   implicit val exeOptionReads: Reads[QueryExeOption] = (
-    (__ \ "sliceMillis").readNullable[Int].map(_.getOrElse(-1)) and
-      (__ \ "continueSeconds").readNullable[Int].map(_.getOrElse(-1))
+    (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
+      (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1))
     ) (QueryExeOption.apply _)
 
 

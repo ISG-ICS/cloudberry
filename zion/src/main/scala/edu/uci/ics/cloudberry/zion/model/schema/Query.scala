@@ -13,6 +13,8 @@ case class QueryExeOption(sliceMills: Int, continueSeconds: Int)
 
 object QueryExeOption {
   val NoSliceNoContinue = QueryExeOption(-1, -1)
+  val TagSliceMillis = "sliceMillis"
+  val TagContinueSeconds = "continueSeconds"
 }
 
 case class Query(dataset: String,
