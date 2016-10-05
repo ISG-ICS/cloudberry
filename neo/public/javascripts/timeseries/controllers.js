@@ -8,12 +8,14 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.preProcess = function (result) {
       // TODO make the pattern can be changed by the returned result parameters
       var result_array = [];
-      var granu = Object.keys(result[0])[0]
-      angular.forEach(result, function (value, key) {
-        key = new Date(value[granu]);
-        value = +value.count;
-        result_array.push({'time':key, 'count':value});
-      });
+      if (result && result[0]) {
+        var granu = Object.keys(result[0])[0];
+        angular.forEach(result, function (value, key) {
+          key = new Date(value[granu]);
+          value = +value.count;
+          result_array.push({'time': key, 'count': value});
+        });
+      }
       return result_array;
     };
     $scope.$watch(
@@ -25,6 +27,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         if(newResult && Asterix.queryType != 'time') {
           $scope.result = newResult;
           $scope.resultArray = $scope.preProcess(newResult);
+        } else if(Asterix.queryType != 'time'){
+          $scope.result = {};
+          $scope.resultArray = [];
         }
       }
     );
@@ -61,7 +66,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               Asterix.parameters.timeInterval.end = max;
               Asterix.queryType = 'time';
               Asterix.query(Asterix.parameters, Asterix.queryType);
-            }
+            };
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -72,7 +77,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var timeDimension = ndx.dimension(function (d) {
               if (d.time != null)
                 return d.time;
-            })
+            });
             var timeGroup = timeDimension.group().reduceSum(function (d) {
               return d.count;
             });
