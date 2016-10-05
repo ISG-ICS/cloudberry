@@ -11,13 +11,13 @@ import play.api.libs.json._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-class NeoReactiveActor(out: ActorRef, val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
+class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
   val berryClient = context.watch(context.actorOf(berryClientProps))
 
-  import NeoReactiveActor._
+  import NeoActor._
 
-  implicit val timeout: Timeout = Timeout(2.minutes)
+  implicit val timeout: Timeout = Timeout(20.minutes)
 
   override def receive: Receive = {
     case json: JsValue =>
@@ -43,8 +43,8 @@ class NeoReactiveActor(out: ActorRef, val berryClientProps: Props)(implicit ec: 
   }
 }
 
-object NeoReactiveActor {
-  def props(out: ActorRef, berryClientProp: Props) = Props(new NeoReactiveActor(out, berryClientProp))
+object NeoActor {
+  def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
 
   case class NeoTransformer(key: String) extends BerryClient.IPostTransform {
     override def transform(jsValue: JsValue): JsValue = {
