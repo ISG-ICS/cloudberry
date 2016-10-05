@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
+import akka.actor.Actor.Receive
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
@@ -21,6 +22,7 @@ import scala.util.{Failure, Success}
   *
   * TODO: a better design should be a reception actor that directs the slicing query and the entire query to different
   *   workers(actors).
+  * TODO: merge the multiple times AskViewsInfos
   */
 class BerryClient(val jsonParser: JSONParser,
                   val dataManager: ActorRef,
@@ -112,6 +114,10 @@ class BerryClient(val jsonParser: JSONParser,
         issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(targetInvertal, nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
+    case json: JsValue =>
+      stash()
+      unstashAll()
+      context.become(receive, discardOld = true)
     case newRequest: Request =>
       stash()
       unstashAll()
