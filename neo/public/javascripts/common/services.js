@@ -59,7 +59,8 @@ angular.module('cloudberry.common', [])
             asterixService.errorMessage = result.value;
             break;
           default:
-            console.error("ws get unknown data: " + result);
+            console.error("ws get unknown data: " )
+            console.error(result);
             break;
         }
       });
