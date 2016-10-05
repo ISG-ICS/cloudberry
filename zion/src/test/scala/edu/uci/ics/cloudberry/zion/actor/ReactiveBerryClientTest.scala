@@ -2,10 +2,8 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import java.util.concurrent.Executors
 
-import akka.actor.{ActorRef, ActorRefFactory}
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.TInterval
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfoAndViews
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.{IMerger, Unioner}
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
@@ -26,7 +24,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
   import org.mockito.Mockito._
 
   import scala.concurrent.duration._
-  import BerryClient.NoTransform
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime = new DateTime(2016, 1, 1, 0, 0)
@@ -135,7 +132,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       //Return the input query
       when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
         override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
-          val query = invocation.getArgumentAt(0, classOf[Query])
+          val query = invocation.getArguments().head.asInstanceOf[Query]
           (Seq(query), Unioner)
         }
       })
@@ -190,7 +187,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       //Return the input query
       when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
         override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
-          val query = invocation.getArgumentAt(0, classOf[Query])
+          val query = invocation.getArguments().head.asInstanceOf[Query]
           (Seq(query), Unioner)
         }
       })
@@ -239,7 +236,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       //Return the input query
       when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
         override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
-          val query = invocation.getArgumentAt(0, classOf[Query])
+          val query = invocation.getArguments().head.asInstanceOf[Query]
           (Seq(query), Unioner)
         }
       })
@@ -301,7 +298,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       //Return the input query
       when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
         override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
-          val query = invocation.getArgumentAt(0, classOf[Query])
+          val query = invocation.getArguments().head.asInstanceOf[Query]
           (Seq(query), Unioner)
         }
       })
