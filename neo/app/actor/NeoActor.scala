@@ -6,6 +6,7 @@ import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.BerryClient
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
+import org.joda.time.DateTime
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
@@ -160,7 +161,7 @@ object NeoActor {
       s"""
          |{
          |  "dataset": "${userRequest.dataset}",
-         |  $filterJSON,
+         |  ${getFilter(userRequest, 1)},
          |   "select" : {
          |    "order" : [ "-create_at"],
          |    "limit": 10,
@@ -174,9 +175,10 @@ object NeoActor {
     Map(ByPlace -> byGeo, ByTime -> byTime, ByHashTag -> byHashTag, Sample -> sampleTweet)
   }
 
-  private def getFilter(userRequest: UserRequest): String = {
+  private def getFilter(userRequest: UserRequest, maxDay: Int = 1500): String = {
     val spatialField = getLevel(userRequest.geoLevel)
     val keywords = userRequest.keywords.map(_.replace("\"", "").trim)
+    val startDateInMillis = Math.max(userRequest.timeInterval.getEnd.minusDays(maxDay).getMillis, userRequest.timeInterval.getStart.getMillis)
     s"""
        |"filter": [
        |  {
@@ -188,7 +190,7 @@ object NeoActor {
        |    "field": "create_at",
        |    "relation": "inRange",
        |    "values": [
-       |      "${TimeField.TimeFormat.print(userRequest.timeInterval.getStart)}",
+       |      "${TimeField.TimeFormat.print(new DateTime(startDateInMillis))}",
        |      "${TimeField.TimeFormat.print(userRequest.timeInterval.getEnd)}"
        |    ]
        |  },
