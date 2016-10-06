@@ -33,6 +33,7 @@ class BerryClient(val jsonParser: JSONParser,
   import BerryClient._
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
+  private val minTimeGap = config.MinTimeGap
 
   private case class QueryInfo(query: Query, dataSetInfo: DataSetInfo, queryBound: TInterval, merger: IMerger)
 
@@ -161,7 +162,7 @@ class BerryClient(val jsonParser: JSONParser,
   }
 
   private def calculateNext(targetTimeSpend: Long, interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
-    val newDuration = Math.max(targetTimeSpend, (interval.toDurationMillis * targetTimeSpend / timeSpend.toDouble).toLong)
+    val newDuration = Math.max(minTimeGap.toMillis, (interval.toDurationMillis * targetTimeSpend / timeSpend.toDouble).toLong)
     val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
     new TInterval(startTime, interval.getStartMillis)
   }
