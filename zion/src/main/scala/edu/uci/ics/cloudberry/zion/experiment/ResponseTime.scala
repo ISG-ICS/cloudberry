@@ -108,12 +108,12 @@ object ResponseTime extends App {
   def testFirstShot(): Unit = {
     val gaps = Seq(1, 2, 4, 8, 16, 32, 64, 128)
     //    val keywords = Seq("happy", "zika", "uci", "trump", "a")
-    val keywords = Seq("zika", "phd", "pitbull", "sin", "taco", "goal", "stupid", "bro", "happy", "a")
+    val keywords = Seq("zika", "pitbull", "goal", "bro", "happy")
     //    keywordWithTime()
     //    selectivity(keywords)
     //      keywordWithContinueTime()
-//    elasticTimeGap()
-    elasticAdaptiveGap()
+    //    elasticTimeGap()
+    testOverheadOfMultipleQueries()
 
     def selectivity(seq: Seq[Any]): Unit = {
       for (s <- seq) {
@@ -214,8 +214,38 @@ object ResponseTime extends App {
           lastRequireTime = Math.max(reportGap + (lastRequireTime - lastTime), 1).toInt
 
           val newGap = Math.max(formular(lastRequireTime, gap, lastTime, historyGap, historyTime, 1.0), 1)
+          historyGap += gap
+          historyTime += lastTime
           gap = newGap
 
+        }
+      }
+    }
+
+    //TODO add the report penalty
+    def testOverheadOfMultipleQueries(): Unit = {
+      val end = new DateTime(2016, 10, 6, 0, 0)
+      val start = new DateTime(2016, 7, 1, 0, 0)
+
+      def genPair(gapHour: Int): Stream[(DateTime, Int)] = {
+        def s: Stream[DateTime] = end #:: s.map(_.minusHours(gapHour))
+        s.takeWhile(_.getMillis > start.getMillis).map { endTime =>
+          val startTime = new DateTime(Math.max(endTime.minusHours(gapHour).getMillis, start.getMillis))
+          (startTime, new Duration(startTime, endTime).getStandardHours.toInt)
+        }
+      }
+
+      Seq(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024).foreach { slices =>
+        val gap = new Duration(start, end).dividedBy(slices).getStandardHours.toInt
+        for (keyword <- keywords) {
+          val begin = DateTime.now()
+          genPair(gap).foreach { case (startTime, g) =>
+            val aql = getAQL(startTime, g, keyword)
+            val (lastTime, _, count) = multipleTime(0, aql)
+            println(s"$keyword,$startTime,$g,$lastTime,$count")
+          }
+          println(s"$keyword,$slices,${DateTime.now().getMillis - begin.getMillis}")
+          println()
         }
       }
     }
@@ -276,8 +306,8 @@ object ResponseTime extends App {
   def getAQL(start: DateTime, gapHour: Int, keyword: String): String = {
     val keywordFilter = FilterStatement("text", None, Relation.contains, Seq(keyword))
     val timeFilter = FilterStatement("create_at", None, Relation.inRange,
-                                     Seq(TimeField.TimeFormat.print(start),
-                                         TimeField.TimeFormat.print(start.plusHours(gapHour))))
+      Seq(TimeField.TimeFormat.print(start),
+        TimeField.TimeFormat.print(start.plusHours(gapHour))))
     val byHour = ByStatement("create_at", Some(Interval(TimeUnit.Minute, 10 * gapHour)), Some("hour"))
     val groupStatement = GroupStatement(Seq(byHour), Seq(aggrCount))
     //      val query = Query(dataset = "twitter.ds_tweet", filter = Seq(timeFilter), groups = Some(groupStatement))
@@ -293,8 +323,8 @@ object ResponseTime extends App {
 
   def getCountTime(start: DateTime, end: DateTime): String = {
     val timeFilter = FilterStatement("create_at", None, Relation.inRange,
-                                     Seq(TimeField.TimeFormat.print(start),
-                                         TimeField.TimeFormat.print(end)))
+      Seq(TimeField.TimeFormat.print(start),
+        TimeField.TimeFormat.print(end)))
     val query = Query(dataset = "twitter.ds_tweet", filter = Seq(timeFilter), globalAggr = Some(globalAggr))
     gen.generate(query, TwitterDataStore.TwitterSchema)
   }
