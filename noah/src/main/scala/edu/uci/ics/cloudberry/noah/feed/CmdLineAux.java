@@ -8,6 +8,7 @@ import twitter4j.conf.ConfigurationBuilder;
 import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class CmdLineAux {
@@ -34,6 +35,14 @@ public class CmdLineAux {
         BufferedWriter bw = new BufferedWriter(
                 new OutputStreamWriter(zip, "UTF-8"));
         return bw;
+    }
+
+    public static BufferedReader createGZipReader(String fileName) throws IOException {
+        GZIPInputStream input = new GZIPInputStream(
+                new FileInputStream(new File(fileName)));
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader(input, "UTF-8"));
+        return br;
     }
 
     public static ResponseList<User> getUsers(Config config, Twitter twitter) throws CmdLineException {
