@@ -53,13 +53,20 @@ angular.module('cloudberry.common', [])
             asterixService.hashTagResult = result.value;
             break;
           case "sample":
-            asterixService.tweetResult = result.value;
+            asterixService.tweetResult = result.value[0];
+            break;
+          case "batch":
+            asterixService.timeResult = result.value[0];
+            asterixService.mapResult = result.value[1];
+            asterixService.hashTagResult = result.value[2];
             break;
           case "error":
+            console.error(result);
             asterixService.errorMessage = result.value;
             break;
           default:
-            console.error("ws get unknown data: " + result);
+            console.error("ws get unknown data:" );
+            console.error(result);
             break;
         }
       });

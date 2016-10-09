@@ -2,10 +2,10 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
   .controller('HashTagCtrl', function ($scope, $window, Asterix) {
     $scope.result = null;
     $scope.$watch(
-      function() {
+      function () {
         return Asterix.hashTagResult;
       },
-      function(newResult) {
+      function (newResult) {
         $scope.result = newResult;
       }
     );
@@ -16,9 +16,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       controller: 'HashTagCtrl',
       template: [
         '<table class="table" id="hashcount">',
-          '<thead>',
-            '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
-          '</thead>',
+        '<thead>',
+        '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
+        '</thead>',
         '</table>'
       ].join('')
     };
@@ -28,21 +28,23 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
     function drawTweets(message) {
       $('#tweet').html('');
-      $.each(message, function (i, d) {
-        var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id
-        $http.jsonp(url).success(function (data){
-          $('#tweet').append(data.html);
+      if (message) {
+        $.each(message, function (i, d) {
+          var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
+          $http.jsonp(url).success(function (data) {
+            $('#tweet').append(data.html);
+          });
         });
-      });
+      }
     }
+
     $scope.$watch(
-      function() {
+      function () {
         return Asterix.tweetResult;
       },
-      function(newResult) {
+      function (newResult) {
         $scope.results = newResult;
-        if($scope.results)
-          drawTweets($scope.results);
+        drawTweets($scope.results);
       }
     );
   })
@@ -51,4 +53,4 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       restrict: 'E',
       controller: 'TweetCtrl'
     };
-});
+  });
