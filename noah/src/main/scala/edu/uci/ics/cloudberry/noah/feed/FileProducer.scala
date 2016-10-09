@@ -31,12 +31,12 @@ class FileProducer {
   def load(filePath: String, config: Config): Unit = {
     val file: File = new File(filePath)
 
-    println(filePath)
     if (file.isDirectory) {
       file.listFiles().foreach { file =>
         load(filePath + "/" + file.getName, config)
       }
     } else if (filePath.endsWith(".gz")){
+      println("Loading file " + filePath + " ...... ")
       val br = CmdLineAux.createGZipReader(filePath)
       var str: String = null
       try {
