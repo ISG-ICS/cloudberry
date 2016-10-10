@@ -28,12 +28,6 @@ class TestKafka extends Specification with Mockito {
       argument.getValue.isInstanceOf[ProducerRecord[String, String]] must(beTrue)
     }
 
-    "close should be called" in {
-      val mockProducer = mock[KafkaProducer[String, String]]
-      val producerKafka = new GeneralProducerKafka(config = new Config)
-      producerKafka.store("TestKafka", "testing...", mockProducer)
-      Mockito.verify(mockProducer, Mockito.times(1)).close() must_== (())
-    }
   }
 
   "Asterix Consumer Kafka" should {
