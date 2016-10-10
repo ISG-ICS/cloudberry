@@ -1,63 +1,57 @@
 package actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.pattern.{ask, pipe}
 import akka.util.Timeout
+import edu.uci.ics.cloudberry.zion.actor.BerryClient
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
-import play.api.libs.json.{JsArray, JsError, JsValue, Json}
+import org.joda.time.DateTime
+import play.api.libs.json._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
-class NeoActor(out: Option[ActorRef], val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
-
-  import NeoActor._
-  import akka.pattern.ask
-
-  import scala.concurrent.duration._
-
-  implicit val timeout: Timeout = Timeout(50.seconds)
+class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
   val berryClient = context.watch(context.actorOf(berryClientProps))
+
+  import NeoActor._
+
+  implicit val timeout: Timeout = Timeout(20.minutes)
 
   override def receive: Receive = {
     case json: JsValue =>
       json.validate[UserRequest].map { userRequest =>
-        tellBerry(userRequest, sender())
+        val allRequest = generateCBerryRequest(userRequest)
+        import RequestType._
+
+        // Example of sending the non-slicing query using ask pattern
+        val sampleJson = allRequest(Sample)
+        val fAnswer = (berryClient ? sampleJson).mapTo[JsValue].map(json => Json.obj("key" -> "sample", "value" -> json))
+        fAnswer pipeTo out
+
+        // Example of sending the group of slicing ones using actor stream pattern
+        val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(allRequest(_))
+        val json = JsObject(Seq(
+          "batch" -> JsArray(groupTimePlaceTags),
+          "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
+          )))
+        berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
       }.recoverTotal {
-        e => sender ! JsError.toJson(e)
+        e => out ! JsError.toJson(e)
       }
-    case userRequest: UserRequest =>
-      tellBerry(userRequest, sender())
-  }
-
-  private def tellBerry(userRequest: UserRequest, curSender: ActorRef): Unit = {
-    if (userRequest.mergeResult) {
-      val map = generateCBerryRequest(userRequest)
-      val fResponse = Future.traverse(map) { kv =>
-        (berryClient ? kv._2).mapTo[JsValue].map(json => Json.obj("key" -> kv._1, "value" -> json))
-      }
-      fResponse.map { jsVals =>
-        out.getOrElse(curSender) ! JsArray(jsVals.toSeq)
-      }
-    } else {
-      for (berryRequest <- generateCBerryRequest(userRequest)) {
-        (berryClient ? berryRequest._2).mapTo[JsValue].map { json =>
-          out.getOrElse(curSender) ! Json.obj("key" -> berryRequest._1.toString, "value" -> json)
-        }
-      }
-    }
-  }
-
-  override def postStop(): Unit = {
-    berryClient ! PoisonPill
   }
 }
 
 object NeoActor {
+  def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
 
-  def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(Some(out), berryClientProp))
-
-  def props(berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(None, berryClientProp))
+  case class NeoTransformer(key: String) extends BerryClient.IPostTransform {
+    override def transform(jsValue: JsValue): JsValue = {
+      Json.obj("key" -> key, "value" -> jsValue)
+    }
+  }
 
   object RequestType extends Enumeration {
     val ByPlace = Value("byPlace")
@@ -167,7 +161,7 @@ object NeoActor {
       s"""
          |{
          |  "dataset": "${userRequest.dataset}",
-         |  $filterJSON,
+         |  ${getFilter(userRequest, 1)},
          |   "select" : {
          |    "order" : [ "-create_at"],
          |    "limit": 10,
@@ -181,9 +175,10 @@ object NeoActor {
     Map(ByPlace -> byGeo, ByTime -> byTime, ByHashTag -> byHashTag, Sample -> sampleTweet)
   }
 
-  private def getFilter(userRequest: UserRequest): String = {
+  private def getFilter(userRequest: UserRequest, maxDay: Int = 1500): String = {
     val spatialField = getLevel(userRequest.geoLevel)
     val keywords = userRequest.keywords.map(_.replace("\"", "").trim)
+    val startDateInMillis = Math.max(userRequest.timeInterval.getEnd.minusDays(maxDay).getMillis, userRequest.timeInterval.getStart.getMillis)
     s"""
        |"filter": [
        |  {
@@ -195,7 +190,7 @@ object NeoActor {
        |    "field": "create_at",
        |    "relation": "inRange",
        |    "values": [
-       |      "${TimeField.TimeFormat.print(userRequest.timeInterval.getStart)}",
+       |      "${TimeField.TimeFormat.print(new DateTime(startDateInMillis))}",
        |      "${TimeField.TimeFormat.print(userRequest.timeInterval.getEnd)}"
        |    ]
        |  },

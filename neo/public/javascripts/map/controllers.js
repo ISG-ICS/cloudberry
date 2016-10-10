@@ -56,8 +56,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           dashArray: '',
           fillOpacity: 0.7
         },
-        colors: [ '#f7f7f7', '#053061', '#2166ac', '#4393c3', '#92c5de', '#f4a582', '#d6604d', '#b2182b', '#67001f'],
-      },
+        colors: [ '#f7f7f7', '#053061', '#2166ac', '#4393c3', '#92c5de', '#f4a582', '#d6604d', '#b2182b', '#67001f']
+      }
 
     });
 
@@ -194,7 +194,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             weight: 1,
             fillOpacity: 0.2,
             color: '#92c5de'
-          }
+          };
         if (leafletEvent)
           leafletEvent.target.setStyle(style);
       }
@@ -406,7 +406,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         var gName  = ["1", "10", "100", "1K", "10K", "100K", "1M", "10M"];
 
         // loop through our density intervals and generate a label with a colored square for each interval
-        var i = 1
+        var i = 1;
         for (; i < grades.length; i++) {
           div.innerHTML +=
             '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';

@@ -8,7 +8,6 @@ GET        /dashboard                controllers.Application.dashboard
 GET        /ws                       controllers.Application.ws
 GET        /tweet/:id                controllers.Application.tweet(id: String)
 
-POST       /neoquery                 controllers.Application.neoQuery
 POST       /berryquery               controllers.Application.berryQuery
 
 # Map static resources from the /public folder to the /assets URL path

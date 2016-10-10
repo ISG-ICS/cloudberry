@@ -2,13 +2,13 @@ package controllers
 
 import javax.inject.{Inject, Singleton}
 
-import actor.{NeoActor, NeoReactiveActor}
-import akka.actor.{Actor, ActorSystem, DeadLetter, PoisonPill, Props}
-import akka.stream.{Materializer, OverflowStrategy}
-import akka.stream.scaladsl.Source
+import actor.{NeoActor, NeoActor$}
+import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
+import akka.pattern.ask
+import akka.stream.Materializer
 import akka.util.Timeout
 import db.Migration_20160814
-import edu.uci.ics.cloudberry.zion.actor.{DataStoreManager, RESTFulBerryClient, ReactiveBerryClient}
+import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
@@ -35,13 +35,12 @@ class Application @Inject()(val wsClient: WSClient,
   val config = new Config(configuration)
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
-  val loadMeta = Await.result(Migration_20160814.migration.up(asterixConn), 10 seconds)
+  val loadMeta = Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
-  val berryProp = RESTFulBerryClient.props(new JSONParser(), manager, new QueryPlanner(), suggestView = true, config)
+  val berryProp = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
   val berryClient = system.actorOf(berryProp)
-  val neoActor = system.actorOf(NeoActor.props(berryProp))
 
   Logger.logger.info("I'm initializing")
 
@@ -62,8 +61,8 @@ class Application @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     //    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
-    val prop = ReactiveBerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, 1000)
-    ActorFlow.actorRef(out => NeoReactiveActor.props(out, prop))
+    val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
+    ActorFlow.actorRef(out => NeoActor.props(out, prop))
   }
 
   def tweet(id: String) = Action.async {
@@ -73,19 +72,7 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  def neoQuery = Action.async(parse.json) { request =>
-    import akka.pattern.ask
-    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
-
-    request.body.validate[UserRequest].map { request =>
-      (neoActor ? request.copy(mergeResult = true)).mapTo[JsValue].map(msg => Ok(msg))
-    }.recoverTotal {
-      e => Future(BadRequest("Detected error:" + JsError.toJson(e)))
-    }
-  }
-
   def berryQuery = Action.async(parse.json) { request =>
-    import akka.pattern.ask
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
 
     import JSONParser._
