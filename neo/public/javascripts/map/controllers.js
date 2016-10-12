@@ -158,11 +158,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         if (!$scope.status.init) {
           $scope.bounds = $scope.map.getBounds();
           var geoData;
-          if($scope.status.logicLevel === 'state') {
+          if ($scope.status.logicLevel === 'state') {
             geoData = $scope.geojsonData.state;
-          } else if($scope.status.logicLevel === 'county' ){
+          } else if ($scope.status.logicLevel === 'county') {
             geoData = $scope.geojsonData.county;
-          } else if($scope.status.logicLevel === 'city') {
+          } else if ($scope.status.logicLevel === 'city') {
             geoData = $scope.geojsonData.city;
           } else {
             console.log("Error: Illegal value of logicLevel, set to default: state")
