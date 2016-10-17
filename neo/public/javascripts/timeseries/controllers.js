@@ -82,7 +82,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               return d.count;
             });
 
-            var minDate = new Date(2016, 5, 30, 0, 0, 0, 0);
+            var minDate = new Date(2015, 10, 22, 0, 0, 0, 0);
             var maxDate = new Date();
             chart.append('a')
                 .text('Reset')
