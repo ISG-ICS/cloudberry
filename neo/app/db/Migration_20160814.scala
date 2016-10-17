@@ -14,8 +14,8 @@ private[db] class Migration_20160814() {
   //TODO it supposes to automatically register the dataset from AsterixDB
   def up(conn: IDataConn)(implicit ec: ExecutionContext): Future[Boolean] = {
     //TODO generate the schema and fetch the stats automatically
-    val interval = new Interval(new DateTime(2016, 6, 30, 0, 0), DateTime.now())
-    val stats = Stats(new DateTime(2016, 6, 30, 0, 0), DateTime.now, DateTime.now, 100 * 1000 * 1000)
+    val interval = new Interval(new DateTime(2015, 11, 22, 0, 0), DateTime.now())
+    val stats = Stats(new DateTime(2015, 11, 22, 0, 0), DateTime.now, DateTime.now, 1000 * 1000 * 1000)
     val twitterInfo = DataSetInfo(TwitterDataStore.DatasetName, None, TwitterDataStore.TwitterSchema, interval, stats)
     conn.postControl {
       s"""
