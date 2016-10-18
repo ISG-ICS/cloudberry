@@ -82,7 +82,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               return d.count;
             });
 
-            var minDate = new Date(2016, 5, 30, 0, 0, 0, 0);
+            var minDate = Asterix.startDate;
             var maxDate = new Date();
             chart.append('a')
                 .text('Reset')
@@ -99,6 +99,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             timeSeries
               .width(width)
               .height(height)
+              .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
               .dimension(timeDimension)
               .group(timeGroup)
               .centerBar(true)
