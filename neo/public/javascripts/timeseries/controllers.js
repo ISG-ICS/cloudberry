@@ -48,15 +48,29 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         controller: 'TimeSeriesCtrl',
         link: function ($scope, $element, $attrs) {
           var chart = d3.select($element[0]);
+          var isNew = false;
           $scope.$watch('resultArray', function (newVal, oldVal) {
 
             if(oldVal.length == 0)
             {
+                isNew = true;
                 if(newVal.length == 0)
                   return;
             }
 
-            chart.selectAll('*').remove();
+            var ndx = crossfilter(newVal);
+            var timeDimension = ndx.dimension(function (d) {
+              if (d.time != null)
+                return d.time;
+            });
+            var timeGroup = timeDimension.group().reduceSum(function (d) {
+              return d.count;
+            });
+
+            if (!isNew) {
+              dc.redrawAll();
+              return;
+            }
 
             var timeSeries = dc.barChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
@@ -73,17 +87,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               requestFunc(extent[0], extent[1])
             });
 
-            var ndx = crossfilter(newVal);
-            var timeDimension = ndx.dimension(function (d) {
-              if (d.time != null)
-                return d.time;
-            });
-            var timeGroup = timeDimension.group().reduceSum(function (d) {
-              return d.count;
-            });
-
-            var minDate = new Date(2016, 5, 30, 0, 0, 0, 0);
+            var minDate = Asterix.startDate;
             var maxDate = new Date();
+            chart.selectAll('a').remove();
             chart.append('a')
                 .text('Reset')
                 .attr('href',"#")
