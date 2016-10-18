@@ -105,6 +105,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             timeSeries
               .width(width)
               .height(height)
+              .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
               .dimension(timeDimension)
               .group(timeGroup)
               .centerBar(true)
