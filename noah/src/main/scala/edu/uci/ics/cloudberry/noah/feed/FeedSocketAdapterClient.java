@@ -43,7 +43,7 @@ public class FeedSocketAdapterClient {
 
     public void ingest(String record) throws IOException{
         recordCount++;
-        System.out.println("send record: " + recordCount);
+        System.err.println("send record: " + recordCount);
         byte[] b = record.replaceAll("\\s+", " ").getBytes();
         try {
             out.write(b);

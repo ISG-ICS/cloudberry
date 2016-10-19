@@ -337,8 +337,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         $scope.polygons.countyPolygons.setStyle(style);
       }
       // add legend
-      if ($('.legend'))
-        $('.legend').remove();
+      var legend = $('.legend');
+      if (legend)
+        legend.remove();
 
       $scope.legend = L.control({
         position: 'topleft'
