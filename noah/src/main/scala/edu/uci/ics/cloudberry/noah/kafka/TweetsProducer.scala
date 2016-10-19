@@ -1,18 +1,18 @@
-package edu.uci.ics.cloudberry.noah.feed
+package edu.uci.ics.cloudberry.noah.kafka
+
+import java.io.{BufferedWriter, IOException}
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import com.twitter.hbc.ClientBuilder
-import com.twitter.hbc.core.Client
-import com.twitter.hbc.core.Constants
 import com.twitter.hbc.core.endpoint.StatusesFilterEndpoint
 import com.twitter.hbc.core.processor.StringDelimitedProcessor
-import com.twitter.hbc.httpclient.auth.Authentication
-import com.twitter.hbc.httpclient.auth.OAuth1
+import com.twitter.hbc.core.{Client, Constants}
+import com.twitter.hbc.httpclient.auth.{Authentication, OAuth1}
 import edu.uci.ics.cloudberry.noah.GeneralProducerKafka
+import edu.uci.ics.cloudberry.noah.feed.{CmdLineAux, Config}
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.kohsuke.args4j.CmdLineException
-import java.io.{BufferedWriter, IOException}
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.LinkedBlockingQueue
+
 import scala.collection.JavaConverters._
 
 
@@ -46,9 +46,9 @@ object TweetsProducer {
 }
 
 class TweetsProducer {
-  private[feed] var twitterClient: Client = null
+  private var twitterClient: Client = null
   @volatile
-  private[feed] var isConnected: Boolean = false
+  private var isConnected: Boolean = false
 
   def run(config: Config) {
     val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](10000)

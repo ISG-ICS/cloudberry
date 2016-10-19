@@ -1,8 +1,9 @@
-package edu.uci.ics.cloudberry.noah.feed
+package edu.uci.ics.cloudberry.noah.kafka
 
 import java.io.{EOFException, File}
 
 import edu.uci.ics.cloudberry.noah.GeneralProducerKafka
+import edu.uci.ics.cloudberry.noah.feed.{CmdLineAux, Config}
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.kohsuke.args4j.CmdLineException
 
