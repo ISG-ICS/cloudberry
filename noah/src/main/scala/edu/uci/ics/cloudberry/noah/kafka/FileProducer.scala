@@ -6,6 +6,7 @@ import edu.uci.ics.cloudberry.noah.GeneralProducerKafka
 import edu.uci.ics.cloudberry.noah.feed.{CmdLineAux, Config}
 import org.apache.kafka.clients.producer.KafkaProducer
 import play.api.Logger
+import scala.util.{Failure, Success, Try}
 
 object FileProducer {
   def main(args: Array[String]) {
@@ -22,8 +23,10 @@ object FileProducer {
         e.printStackTrace
       }
     } finally {
-      if (kafkaProducer != None)
-        kafkaProducer.get.close
+      Try (kafkaProducer.get) match {
+        case Success(k) => k.close
+        case Failure(k) => Logger.warn("No KafkaProducer found when closing")
+      }
     }
   }
 }
@@ -53,6 +56,10 @@ class FileProducer {
   }
   def run(config: Config, generalProducerKafka: GeneralProducerKafka, kafkaProducer: KafkaProducer[String, String]) {
     val path = getClass.getResource(config.getFilePath).getPath
+
+    if (config.getKfkTopic == None)
+      throw new Error("No kafka topic specified")
+
     load(path, config.getKfkTopic, generalProducerKafka, kafkaProducer)
   }
 }
