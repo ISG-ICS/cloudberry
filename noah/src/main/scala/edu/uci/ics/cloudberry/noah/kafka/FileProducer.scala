@@ -1,7 +1,6 @@
 package edu.uci.ics.cloudberry.noah.kafka
 
 import java.io.{EOFException, File}
-import javax.swing.UIDefaults.LazyValue
 
 import edu.uci.ics.cloudberry.noah.GeneralProducerKafka
 import edu.uci.ics.cloudberry.noah.feed.{CmdLineAux, Config}

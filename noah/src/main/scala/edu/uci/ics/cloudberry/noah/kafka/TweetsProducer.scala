@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.noah.kafka
 
-import java.io.{BufferedWriter, IOException}
+import java.io.BufferedWriter
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import com.twitter.hbc.ClientBuilder
@@ -16,17 +16,20 @@ import org.kohsuke.args4j.CmdLineException
 import scala.collection.JavaConverters._
 import play.api.Logger
 
+import scala.util.{Failure, Success, Try}
+
 object TweetsProducer {
   def main(args: Array[String]) {
     val tweetsProducer: TweetsProducer = new TweetsProducer
     try {
       val config: Config = CmdLineAux.parseCmdLine(args)
       val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](10000)
-      val twitterClient: Option[Client] = Some(tweetsProducer.connectTwitter(config, queue))
+      val twitterClient = Try(tweetsProducer.connectTwitter(config, queue))
       Runtime.getRuntime.addShutdownHook(new Thread() {
         override def run {
-          if (twitterClient != None && !twitterClient.get.isDone) {
-            twitterClient.get.stop
+          twitterClient match {
+            case Success(tc) => if (!tc.isDone) tc.stop else Logger.info("Twitter client has been stopped")
+            case Failure(tc) => Logger.warn("No twitter client when shut down")
           }
         }
       })
@@ -79,11 +82,16 @@ class TweetsProducer {
 
   def run(config: Config, twitterClient: Client, generalProducerKafka: GeneralProducerKafka, kafkaProducer: KafkaProducer[String, String], queue: BlockingQueue[String]) {
 
-    val bw: Option[BufferedWriter] = if (config.getKfkOnly) None else Some(CmdLineAux.createWriter("Tweet_"))
+    //val bw: Option[BufferedWriter] = if (config.getKfkOnly) None else Some(CmdLineAux.createWriter("Tweet_"))
+    val bw: Option[BufferedWriter] = None
     while (!twitterClient.isDone) {
       val msg: String = queue.take
-      if (! config.getKfkOnly )
-        bw.get.write(msg)
+      if (! config.getKfkOnly ) {
+        try bw.get.write(msg)
+        catch {
+          case e: NoSuchElementException => Logger.error("Cannot write to file")
+        }
+      }
       generalProducerKafka.store(config.getKfkTopic, msg, kafkaProducer)
     }
   }

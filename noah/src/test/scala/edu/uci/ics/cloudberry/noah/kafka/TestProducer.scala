@@ -48,12 +48,12 @@ class TestProducer extends Specification with Mockito {
     when (mockConfig.getToken).thenReturn("tk")
     when (mockConfig.getTokenSecret).thenReturn("ts")
 
-    "--  create a Twitter Client and set up connection" in {
+    /**"--  create a Twitter Client and set up connection" in {
       val queue:BlockingQueue[String] = new LinkedBlockingDeque[String]()
       val client = tweetsProducer.connectTwitter(mockConfig, queue)
       client.isDone must_== false
       queue.take.isEmpty must_== false
-    }
+    }*/
     "--  send records to kafka" in {
       val generalProducerKafka = mock[GeneralProducerKafka]
       val kafkaProducer = mock[KafkaProducer[String, String]]
