@@ -101,7 +101,7 @@ search-bar {
 }
 
 #logo_img{
-  z-index = 0;
+  z-index: 0;
   position: absolute;
   top:2%;
   left:10%;
