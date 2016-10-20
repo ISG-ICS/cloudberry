@@ -19,11 +19,8 @@ object FileProducer {
       kafkaProducer = generalProducerKafka.createKafkaProducer
       fileProducer.run(config, generalProducerKafka, kafkaProducer)
     } catch {
-      case e: CmdLineException => {
-        e.printStackTrace(System.err)
-      }
       case e: Exception => {
-        e.printStackTrace(System.err)
+        e.printStackTrace
       }
     } finally {
       if (kafkaProducer != null)
@@ -42,9 +39,8 @@ class FileProducer {
     } else if (filePath.endsWith(".gz")){
       Logger.info("Loading file " + filePath + " ...... ")
       val br = CmdLineAux.createGZipReader(filePath)
-      var str: String = null
       try {
-        str = br.readLine()
+        var str = br.readLine()
         while ( str != null) {
           generalProducerKafka.store(topic, str, kafkaProducer)
           str = br.readLine()
