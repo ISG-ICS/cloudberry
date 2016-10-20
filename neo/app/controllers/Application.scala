@@ -1,11 +1,13 @@
 package controllers
 
+import java.io.{BufferedReader, File, FileInputStream, FileReader}
 import javax.inject.{Inject, Singleton}
 
 import actor.{NeoActor, NeoActor$}
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.pattern.ask
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
@@ -15,7 +17,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPl
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import models.UserRequest
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{JsError, JsValue}
+import play.api.libs.json.{JsError, JsValue, Json}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -70,6 +72,17 @@ class Application @Inject()(val wsClient: WSClient,
     wsClient.url(url).get().map { response =>
       Ok(response.json)
     }
+  }
+
+  def city(NELat: String, SWLat: String, NELng: String, SWLng: String) = Action {
+//TODO:
+    val file = environment.getFile("/public/data/city.json");
+    val stream = new FileInputStream(file);
+    val json :JsValue = Json.parse(stream);
+//    val value = (json \ "features").validate[String];
+    println("a?");
+    println(value);
+    Ok("ha");
   }
 
   def berryQuery = Action.async(parse.json) { request =>

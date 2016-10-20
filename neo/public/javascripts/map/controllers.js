@@ -165,7 +165,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else if ($scope.status.logicLevel === 'city') {
             geoData = $scope.geojsonData.city;
           } else {
-            console.log("Error: Illegal value of logicLevel, set to default: state")
+            console.error("Error: Illegal value of logicLevel, set to default: state")
             $scope.status.logicLevel = 'state'
             geoData = $scope.geojsonData.state;
           }
@@ -173,6 +173,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           Asterix.parameters.geoLevel = $scope.status.logicLevel;
           Asterix.queryType = 'drag';
           Asterix.query(Asterix.parameters, Asterix.queryType);
+        }
+        console.log($scope.status.logicLevel);
+        if ($scope.status.logicLevel === 'city') {
+          // console.log($scope.map.getBounds()._northEast.lat);
+          loadCityJsonByBound($scope.map.getBounds());
         }
       });
 
@@ -298,18 +303,44 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         .error(function(data) {
           console.error("Load county data failure");
         });
-        $http.get("assets/data/city.json")
-          .success(function(data) {
-            $scope.geojsonData.city = data;
-            $scope.polygons.cityPolygons = L.geoJson(data, {
-              style: $scope.styles.cityStyle,
-              onEachFeature: onEachFeature
-            });
-            setCenterAndBoundry($scope.geojsonData.city.features);
-          })
-          .error(function(data) {
-            console.error("Load city data failure");
-        });
+        // $http.get("city/aha")
+        //   .success(function(data) {
+        //     $scope.geojsonData.city = data;
+        //     $scope.polygons.cityPolygons = L.geoJson(data, {
+        //       style: $scope.styles.cityStyle,
+        //       onEachFeature: onEachFeature
+        //     });
+        //     setCenterAndBoundry($scope.geojsonData.city.features);
+        //   })
+        //   .error(function(data) {
+        //     console.error("Load city data failure");
+        // });
+    }
+
+    function loadCityJsonByBound(bounds) {
+      console.log("enter loadcity");
+      var rteBounds = "city/";
+      rteBounds += bounds._northEast.lat;
+      rteBounds += "/";
+      rteBounds += bounds._southWest.lat;
+      rteBounds += "/";
+      rteBounds += bounds._northEast.lng;
+      rteBounds += "/";
+      rteBounds += bounds._southWest.lng;
+      // rteBounds += "/";
+      console.log(rteBounds);
+      $http.get(rteBounds);
+      //   .success(function(data) {
+      //     $scope.geojsonData.city = data;
+      //     $scope.polygons.cityPolygons = L.geoJson(data, {
+      //       style: $scope.styles.cityStyle,
+      //       onEachFeature: onEachFeature
+      //     });
+      //     setCenterAndBoundry($scope.geojsonData.city.features);
+      //   })
+      //   .error(function(data) {
+      //     console.error("Load city data failure");
+      // });
     }
 
     /**
