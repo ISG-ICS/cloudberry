@@ -11,23 +11,14 @@ import scala.util.{Failure, Success, Try}
 object FileProducer {
   def main(args: Array[String]) {
     val fileProducer: FileProducer = new FileProducer
-
-    var kafkaProducer = None: Option[KafkaProducer[String, String]]
-    try {
-      val config: Config = CmdLineAux.parseCmdLine(args)
-      val generalProducerKafka = new GeneralProducerKafka(config)
-      kafkaProducer = Some(generalProducerKafka.createKafkaProducer)
-      fileProducer.run(config, generalProducerKafka, kafkaProducer.get)
-    } catch {
-      case e: Exception => {
-        e.printStackTrace
-      }
-    } finally {
-      Try (kafkaProducer.get) match {
-        case Success(k) => k.close
-        case Failure(k) => Logger.warn("No KafkaProducer found when closing")
-      }
+    val config: Config = CmdLineAux.parseCmdLine(args)
+    val generalProduceKafka: GeneralProducerKafka = new GeneralProducerKafka(config)
+    val kafkaProducer: KafkaProducer[String, String] = generalProduceKafka.createKafkaProducer()
+    Try (fileProducer.run(config, generalProduceKafka, kafkaProducer)) match {
+      case Success(r) =>
+      case Failure(r) => r.printStackTrace
     }
+    kafkaProducer.close
   }
 }
 
