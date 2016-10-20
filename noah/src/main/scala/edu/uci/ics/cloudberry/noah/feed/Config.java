@@ -90,7 +90,9 @@ public class Config {
     @Option(name = "-fp", aliases = "--file-path", usage = "GZIP file path")
     private String filePath;
 
-    public String getFilePath() { return filePath; }
+    public String getFilePath() {
+        return filePath;
+    }
     public String getKfkTopic() {
         return kfkTopic;
     }

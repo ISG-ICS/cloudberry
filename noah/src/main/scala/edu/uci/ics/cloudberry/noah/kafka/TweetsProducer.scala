@@ -75,13 +75,13 @@ class TweetsProducer {
     twitterClient = new ClientBuilder().hosts(Constants.STREAM_HOST).endpoint(endpoint).authentication(auth).processor(new StringDelimitedProcessor(queue)).build
     val generalProducerKafka: GeneralProducerKafka = new GeneralProducerKafka(config)
     val kafkaProducer: KafkaProducer[String, String] = generalProducerKafka.createKafkaProducer
-    val br: BufferedWriter = CmdLineAux.createWriter("Tweet_");
+    val bw: BufferedWriter = CmdLineAux.createWriter("Tweet_");
     try {
       twitterClient.connect
       isConnected = true
       while (!twitterClient.isDone) {
         val msg: String = queue.take
-        br.write(msg)
+        bw.write(msg)
         generalProducerKafka.store(config.getKfkTopic, msg, kafkaProducer)
       }
     }
@@ -91,7 +91,7 @@ class TweetsProducer {
       }
     } finally {
       twitterClient.stop
-      br.close()
+      bw.close()
       kafkaProducer.close
     }
   }
