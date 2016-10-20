@@ -1,30 +1,30 @@
 package edu.uci.ics.cloudberry.noah.kafka
 
 import java.io.{EOFException, File}
+import javax.swing.UIDefaults.LazyValue
 
 import edu.uci.ics.cloudberry.noah.GeneralProducerKafka
 import edu.uci.ics.cloudberry.noah.feed.{CmdLineAux, Config}
 import org.apache.kafka.clients.producer.KafkaProducer
-import org.kohsuke.args4j.CmdLineException
 import play.api.Logger
 
 object FileProducer {
   def main(args: Array[String]) {
     val fileProducer: FileProducer = new FileProducer
 
-    var kafkaProducer: KafkaProducer[String, String] = null
+    var kafkaProducer = None: Option[KafkaProducer[String, String]]
     try {
       val config: Config = CmdLineAux.parseCmdLine(args)
       val generalProducerKafka = new GeneralProducerKafka(config)
-      kafkaProducer = generalProducerKafka.createKafkaProducer
-      fileProducer.run(config, generalProducerKafka, kafkaProducer)
+      kafkaProducer = Some(generalProducerKafka.createKafkaProducer)
+      fileProducer.run(config, generalProducerKafka, kafkaProducer.get)
     } catch {
       case e: Exception => {
         e.printStackTrace
       }
     } finally {
-      if (kafkaProducer != null)
-        kafkaProducer.close
+      if (kafkaProducer != None)
+        kafkaProducer.get.close
     }
   }
 }
@@ -40,11 +40,9 @@ class FileProducer {
       Logger.info("Loading file " + filePath + " ...... ")
       val br = CmdLineAux.createGZipReader(filePath)
       try {
-        var str = br.readLine()
-        while ( str != null) {
-          generalProducerKafka.store(topic, str, kafkaProducer)
-          str = br.readLine()
-        }
+        val stream = Stream.continually(br.readLine()).takeWhile(Option(_) != None)
+        stream.foreach (generalProducerKafka.store(topic, _, kafkaProducer))
+        Logger.info("Loaded " + stream.size + " records into kafka")
       } catch {
         case e: EOFException => {}
       } finally {

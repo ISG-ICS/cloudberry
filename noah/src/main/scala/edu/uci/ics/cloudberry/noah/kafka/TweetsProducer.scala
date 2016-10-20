@@ -17,16 +17,16 @@ import scala.collection.JavaConverters._
 import play.api.Logger
 
 object TweetsProducer {
-  @throws(classOf[IOException])
   def main(args: Array[String]) {
     val tweetsProducer: TweetsProducer = new TweetsProducer
     try {
       val config: Config = CmdLineAux.parseCmdLine(args)
-      val twitterClient: Client = tweetsProducer.connectTwitter(config)
+      val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](10000)
+      val twitterClient: Option[Client] = Some(tweetsProducer.connectTwitter(config, queue))
       Runtime.getRuntime.addShutdownHook(new Thread() {
         override def run {
-          if (twitterClient != null && !twitterClient.isDone) {
-            twitterClient.stop
+          if (twitterClient != None && !twitterClient.get.isDone) {
+            twitterClient.get.stop
           }
         }
       })
@@ -37,7 +37,7 @@ object TweetsProducer {
       val generalProducerKafka: GeneralProducerKafka = new GeneralProducerKafka(config)
       val kafkaProducer: KafkaProducer[String, String] = generalProducerKafka.createKafkaProducer
 
-      tweetsProducer.run(config, twitterClient, generalProducerKafka, kafkaProducer)
+      tweetsProducer.run(config, twitterClient.get, generalProducerKafka, kafkaProducer, queue)
 
     } catch {
       case e: Exception => {
@@ -48,10 +48,9 @@ object TweetsProducer {
 }
 
 class TweetsProducer {
-  val queue: BlockingQueue[String] = new LinkedBlockingQueue[String](10000)
-  val endpoint: StatusesFilterEndpoint = new StatusesFilterEndpoint
 
-  def connectTwitter(config: Config): Client = {
+  def connectTwitter(config: Config, queue: BlockingQueue[String]): Client = {
+    val endpoint: StatusesFilterEndpoint = new StatusesFilterEndpoint
     if (config.getTrackTerms.length != 0) {
       Logger.info("set track terms are: ")
       for (term <- config.getTrackTerms) {
@@ -75,15 +74,16 @@ class TweetsProducer {
       .build
 
     twitterClient.connect
-    return twitterClient
+    twitterClient
   }
 
-  def run(config: Config, twitterClient: Client, generalProducerKafka: GeneralProducerKafka, kafkaProducer: KafkaProducer[String, String]) {
+  def run(config: Config, twitterClient: Client, generalProducerKafka: GeneralProducerKafka, kafkaProducer: KafkaProducer[String, String], queue: BlockingQueue[String]) {
 
-    val bw: BufferedWriter = CmdLineAux.createWriter("Tweet_");
+    val bw: Option[BufferedWriter] = if (config.getKfkOnly) None else Some(CmdLineAux.createWriter("Tweet_"))
     while (!twitterClient.isDone) {
       val msg: String = queue.take
-      bw.write(msg)
+      if (! config.getKfkOnly )
+        bw.get.write(msg)
       generalProducerKafka.store(config.getKfkTopic, msg, kafkaProducer)
     }
   }
