@@ -82,14 +82,13 @@ class TweetsProducer {
 
   def run(config: Config, twitterClient: Client, generalProducerKafka: GeneralProducerKafka, kafkaProducer: KafkaProducer[String, String], queue: BlockingQueue[String]) {
 
-    //val bw: Option[BufferedWriter] = if (config.getKfkOnly) None else Some(CmdLineAux.createWriter("Tweet_"))
-    val bw: Option[BufferedWriter] = None
+    val bw: Option[BufferedWriter] = if (config.getKfkOnly) None else Some(CmdLineAux.createWriter("Tweet_"))
     while (!twitterClient.isDone) {
       val msg: String = queue.take
       if (! config.getKfkOnly ) {
-        try bw.get.write(msg)
-        catch {
-          case e: NoSuchElementException => Logger.error("Cannot write to file")
+        Try (bw.get) match {
+          case Success(b) => b.write(msg)
+          case Failure(b) => Logger.error("Cannot write to file")
         }
       }
       generalProducerKafka.store(config.getKfkTopic, msg, kafkaProducer)

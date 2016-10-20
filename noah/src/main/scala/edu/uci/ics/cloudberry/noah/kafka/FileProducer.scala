@@ -52,6 +52,7 @@ class FileProducer {
     }
   }
   def run(config: Config, generalProducerKafka: GeneralProducerKafka, kafkaProducer: KafkaProducer[String, String]) {
-      load(config.getFilePath, config.getKfkTopic, generalProducerKafka, kafkaProducer)
+    val path = getClass.getResource(config.getFilePath).getPath
+    load(path, config.getKfkTopic, generalProducerKafka, kafkaProducer)
   }
 }

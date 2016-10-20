@@ -21,7 +21,7 @@ class TestProducer extends Specification with Mockito {
 
       val mockConfig = mock[Config]
       val fileProducer = new FileProducer
-      when (mockConfig.getFilePath).thenReturn("./noah/src/test/resources")
+      when (mockConfig.getFilePath).thenReturn("/Tweet")
       when (mockConfig.getKfkTopic).thenReturn("")
       fileProducer.run(mockConfig, generalProducerKafka, kafkaProducer)
 
