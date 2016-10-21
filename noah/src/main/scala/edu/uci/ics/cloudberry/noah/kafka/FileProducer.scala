@@ -31,15 +31,14 @@ class FileProducer {
       }
     } else if (filePath.endsWith(".gz")){
       Logger.info("Loading file " + filePath + " ...... ")
-      val br = CmdLineAux.createGZipReader(filePath)
-      try {
-        val stream = Stream.continually(br.readLine()).takeWhile(Option(_) != None)
-        stream.foreach (generalProducerKafka.store(topic, _, kafkaProducer))
-        Logger.info("Loaded " + stream.size + " records into kafka")
-      } catch {
-        case e: EOFException => {}
-      } finally {
-        br.close()
+      Try (CmdLineAux.createGZipReader(filePath)) match {
+        case Success(br) => {
+          val stream = Stream.continually(br.readLine()).takeWhile(Option(_) != None)
+          stream.foreach (generalProducerKafka.store(topic, _, kafkaProducer))
+          Logger.info("Loaded " + stream.size + " records into kafka")
+          br.close
+        }
+        case Failure(br) => br.printStackTrace
       }
     } else {
       Logger.info("Ingored file " + filePath)

@@ -86,10 +86,7 @@ class TweetsProducer {
     while (!twitterClient.isDone) {
       val msg: String = queue.take
       if (! config.getKfkOnly ) {
-        Try (bw.get) match {
-          case Success(b) => b.write(msg)
-          case Failure(b) => Logger.error("Cannot write to file")
-        }
+        bw.map(_.write(msg))
       }
       generalProducerKafka.store(config.getKfkTopic, msg, kafkaProducer)
     }

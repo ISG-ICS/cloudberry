@@ -43,17 +43,23 @@ class TestProducer extends Specification with Mockito {
 
     val loc: Array[Location] = new Array(0)
     when (mockConfig.getTrackLocation).thenReturn(loc)
+
+ /**
+  * Need to add your consumer key, consumer secret, token, token secret in the following code to run this test.
+  *
     when (mockConfig.getConsumerKey).thenReturn("ck")
     when (mockConfig.getConsumerSecret).thenReturn("cs")
     when (mockConfig.getToken).thenReturn("tk")
     when (mockConfig.getTokenSecret).thenReturn("ts")
 
-    /**"create a Twitter Client and set up connection" in {
+    "create a Twitter Client and set up connection" in {
       val queue:BlockingQueue[String] = new LinkedBlockingDeque[String]()
       val client = tweetsProducer.connectTwitter(mockConfig, queue)
       client.isDone must_== false
       queue.take.isEmpty must_== false
-    }*/
+    }
+  */
+
     "send records to kafka" in {
       val generalProducerKafka = mock[GeneralProducerKafka]
       val kafkaProducer = mock[KafkaProducer[String, String]]
