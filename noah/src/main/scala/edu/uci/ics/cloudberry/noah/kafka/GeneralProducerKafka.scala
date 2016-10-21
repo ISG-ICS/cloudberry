@@ -42,6 +42,5 @@ class GeneralProducerKafka(config: Config) {
   def store(topic: String, msg: String, producer: KafkaProducer[String, String]) {
     val data = new ProducerRecord[String, String](topic, msg)
     producer.send(data)
-    producer.close()
   }
 }

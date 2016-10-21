@@ -23,6 +23,8 @@ public class Tweet {
 
     public static String toADM(Status status, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException{
         String geoTags = geoTag(status, gnosis, requireGeoField);
+        if (geoTags == null && requireGeoField)
+            return "";
         StringBuilder sb = new StringBuilder();
         sb.append("{");
         ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkDateTimeConstructor(status.getCreatedAt()));
