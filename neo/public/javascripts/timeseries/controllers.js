@@ -1,10 +1,15 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
   .controller('TimeSeriesCtrl', function ($scope, $window, Asterix) {
+    $scope.ndx = null;
     $scope.result = {};
     $scope.resultArray = [];
     $scope.d3 = $window.d3;
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
+    $scope.empty = [];
+    for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
+      $scope.empty.push({'time': new Date(date), 'count': 0});
+    }
     $scope.preProcess = function (result) {
       // TODO make the pattern can be changed by the returned result parameters
       var result_array = [];
@@ -15,6 +20,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
           value = +value.count;
           result_array.push({'time': key, 'count': value});
         });
+
       }
       return result_array;
     };
@@ -24,10 +30,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       },
 
       function(newResult) {
-        if(newResult && Asterix.queryType != 'time') {
+        if (Asterix.queryType === 'time') {
+          return;
+        }
+        if(newResult) {
           $scope.result = newResult;
           $scope.resultArray = $scope.preProcess(newResult);
-        } else if(Asterix.queryType != 'time'){
+        } else {
           $scope.result = {};
           $scope.resultArray = [];
         }
@@ -48,29 +57,31 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         controller: 'TimeSeriesCtrl',
         link: function ($scope, $element, $attrs) {
           var chart = d3.select($element[0]);
-          var isNew = false;
           $scope.$watch('resultArray', function (newVal, oldVal) {
 
             if(oldVal.length == 0)
             {
-                isNew = true;
                 if(newVal.length == 0)
                   return;
             }
 
-            var ndx = crossfilter(newVal);
-            var timeDimension = ndx.dimension(function (d) {
-              if (d.time != null)
-                return d.time;
+            var ndx = $scope.ndx;
+            if (ndx) {
+              ndx.remove();
+              ndx.add($scope.empty);
+              dc.redrawAll();
+              ndx.add(newVal);
+              dc.redrawAll();
+              return;
+            }
+
+            $scope.ndx = crossfilter(newVal);
+            var timeDimension = $scope.ndx.dimension(function (d) {
+              return d3.time.day(d.time);
             });
             var timeGroup = timeDimension.group().reduceSum(function (d) {
               return d.count;
             });
-
-            if (!isNew) {
-              dc.redrawAll();
-              return;
-            }
 
             var timeSeries = dc.barChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
@@ -112,7 +123,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .x(d3.time.scale().domain([minDate, maxDate]))
               .xUnits(d3.time.days)
               .gap(1)
-              .xAxisLabel(startDate + "   to   " + endDate);
+              .xAxisLabel(startDate + "   to   " + endDate)
+              .elasticY(true);
 
 
 
