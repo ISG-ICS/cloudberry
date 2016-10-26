@@ -68,7 +68,6 @@ public class FileFeedDriver {
             br = new BufferedReader(reader);
             String nextRecord;
             while ((nextRecord = br.readLine()) != null) {
-                System.out.println(nextRecord);
                 client.ingest(nextRecord);
             }
         } catch (CmdLineException e) {

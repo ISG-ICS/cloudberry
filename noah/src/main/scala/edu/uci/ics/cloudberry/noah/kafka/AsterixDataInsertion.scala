@@ -35,7 +35,8 @@ class AsterixDataInsertion(wsClient: AhcWSClient){
     try {
       for (record <- records) {
         val adm: String = TagTweet.tagOneTweet(record.value, false)
-        socketAdapterClient.ingest(adm)
+        if (adm.length() > 0)
+          socketAdapterClient.ingest(adm)
       }
     }
     catch {

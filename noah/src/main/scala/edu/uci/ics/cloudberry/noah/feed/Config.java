@@ -84,6 +84,24 @@ public class Config {
     @Option(name = "-zds", aliases = "--zika-dataset", usage = "Dataset name for streaming zika related tweets")
     private String zikaStreamDataset = "ds_zika_streaming";
 
+    @Option(name = "-kfktpc", aliases = "--kafka-topic", usage = "Name a topic")
+    private String kfkTopic = "general";
+
+    @Option(name = "-fp", aliases = "--file-path", usage = "GZIP file path")
+    private String filePath;
+
+    @Option(name = "-ko", aliases = "--kafka-only", usage = "Store data in kafka only if true; Store a copy in .gz file otherwise")
+    private boolean kafka_only = false;
+
+    public String getFilePath() {
+        return filePath;
+    }
+    public String getKfkTopic() {
+        return kfkTopic;
+    }
+    public boolean getKfkOnly() {
+        return kafka_only;
+    }
     public String getConsumerKey() {
         return consumerKey;
     }
