@@ -51,8 +51,6 @@ class Application @Inject()(val wsClient: WSClient,
 
   val cities = loadCity()
 
-  println(cities.apply(0))
-
   def index = Action {
     Ok(views.html.index("Cloudberry"))
   }
@@ -117,8 +115,9 @@ class Application @Inject()(val wsClient: WSClient,
       val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
       newValues ::= Json.toJson(newV)
     }
-    //TODO: sort newValues based on centroidX
-    return newValues
+
+    val newValuesSorted = newValues.sortWith((x,y) => (x\"centroidX").as[Double] < (y\"centroidX").as[Double])
+    return newValuesSorted
   }
 
   def getCity(NELat: String, SWLat: String, NELng: String, SWLng: String) = Action {
@@ -134,9 +133,9 @@ class Application @Inject()(val wsClient: WSClient,
         citiesWithinBoundary ::= v
       }
     }
-    val response = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
-    val responseN = response + ("features" -> Json.toJson(citiesWithinBoundary))
-    Ok(Json.toJson(responseN))
+    val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
+    val response = header + ("features" -> Json.toJson(citiesWithinBoundary))
+    Ok(Json.toJson(response))
   }
 
   def berryQuery = Action.async(parse.json) { request =>
