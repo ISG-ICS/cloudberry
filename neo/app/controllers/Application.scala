@@ -51,6 +51,8 @@ class Application @Inject()(val wsClient: WSClient,
 
   val cities = loadCity()
 
+  println(cities.apply(0))
+
   def index = Action {
     Ok(views.html.index("Cloudberry"))
   }
@@ -76,13 +78,14 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  def loadCity() : List[JsObject] = {
-    val file = environment.getFile("/public/data/city.sample.json")
+  def loadCity() : List[JsValue] = {
+    val file = environment.getFile("/public/data/city.sample.shorten.json")
     val stream = new FileInputStream(file)
     val json = Json.parse(stream)
     val values = (json \ "features").as[List[JsObject]]
+    var newValues = List[JsValue]()
     for(n <- values.indices) {
-      var thisValue = values.apply(n)
+      val thisValue = values.apply(n)
       val geoType = (thisValue \ "geometry" \ "type").as[String]
       var sumX = 0.0
       var sumY = 0.0
@@ -109,22 +112,31 @@ class Application @Inject()(val wsClient: WSClient,
       } else {
         throw new IllegalArgumentException("Unidentified geometry type in city.json");
       }
-      //FIXME: the following part is not tested
       val thisX = sumX / length
       val thisY = sumY / length
-      thisValue += ("centroidX" -> Json.toJson(thisX))
-      thisValue += ("centroidY" -> Json.toJson(thisY))
+      val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
+      newValues ::= Json.toJson(newV)
     }
-    //TODO: sort values
-    return values
+    //TODO: sort newValues based on centroidX
+    return newValues
   }
 
   def getCity(NELat: String, SWLat: String, NELng: String, SWLng: String) = Action {
 //TODO: Do binary search
-//    for (v <- cities){
-//
-//    }
-    Ok("test");
+    var citiesWithinBoundary = List[JsValue]()
+    println(NELat.toDouble,SWLat.toDouble,NELng.toDouble,SWLng.toDouble)
+    for (v <- cities){
+      val centroidX = (v \ "centroidX").as[Double]
+      val centroidY = (v \ "centroidY").as[Double]
+      println(centroidX,centroidY)
+      if(centroidY <= NELat.toDouble && centroidY >= SWLat.toDouble && centroidX <= NELng.toDouble && centroidX >= SWLng.toDouble) {
+        println("added")
+        citiesWithinBoundary ::= v
+      }
+    }
+    val response = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
+    val responseN = response + ("features" -> Json.toJson(citiesWithinBoundary))
+    Ok(Json.toJson(responseN))
   }
 
   def berryQuery = Action.async(parse.json) { request =>
