@@ -49,39 +49,7 @@ class Application @Inject()(val wsClient: WSClient,
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
 
-  //start loading city data
-  val file = environment.getFile("/public/data/city.sample.json")
-  val stream = new FileInputStream(file)
-  val json = Json.parse(stream)
-  val values = (json \ "features").as[List[JsValue]]
-  for(v <- values) {
-    val tp = (v \ "geometry" \ "type").as[String]
-    var sumX = 0.0
-    var sumY = 0.0
-    var length = 0.0
-    if(tp == "Polygon") {
-      val rawCorr = (v \ "geometry" \ "coordinates").as[JsArray]
-      val realCorr = rawCorr.apply(0).as[JsArray]
-      for(i <- 0 to (realCorr.value.size - 1)){
-        sumX += realCorr.apply(i).apply(0).as[Double]
-        sumY += realCorr.apply(i).apply(1).as[Double]
-      }
-      length = realCorr.value.size
-    } else if(tp == "MultiPolygon") {
-      val allCorr = (v \ "geometry" \ "coordinates").as[JsArray]
-      for(i <- 0 to (allCorr.value.size - 1)){
-        val rawCorr = allCorr.apply(i).as[JsArray]
-        val realCorr = rawCorr.apply(0).as[JsArray]
-        for(j <- 0 to (realCorr.value.size - 1)){
-          sumX += realCorr.apply(j).apply(0).as[Double]
-          sumY += realCorr.apply(j).apply(1).as[Double]
-        }
-        length += realCorr.value.size
-      }
-    }
-    println(length,sumX,sumY)
-    //TODO: store the midpoints in order
-  }
+  val cities = loadCity()
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
@@ -108,8 +76,54 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  def city(NELat: String, SWLat: String, NELng: String, SWLng: String) = Action {
-//TODO: Do binary search through the midpoints and return the satisfied ones
+  def loadCity() : List[JsObject] = {
+    val file = environment.getFile("/public/data/city.sample.json")
+    val stream = new FileInputStream(file)
+    val json = Json.parse(stream)
+    val values = (json \ "features").as[List[JsObject]]
+    for(n <- values.indices) {
+      var thisValue = values.apply(n)
+      val geoType = (thisValue \ "geometry" \ "type").as[String]
+      var sumX = 0.0
+      var sumY = 0.0
+      var length = 0.0
+      if(geoType == "Polygon") {
+        val rawCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
+        val realCorr = rawCorr.apply(0).as[JsArray]
+        for(i <- realCorr.value.indices){
+          sumX += realCorr.apply(i).apply(0).as[Double]
+          sumY += realCorr.apply(i).apply(1).as[Double]
+        }
+        length = realCorr.value.size
+      } else if(geoType == "MultiPolygon") {
+        val allCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
+        for(i <- allCorr.value.indices){
+          val rawCorr = allCorr.apply(i).as[JsArray]
+          val realCorr = rawCorr.apply(0).as[JsArray]
+          for(j <- realCorr.value.indices){
+            sumX += realCorr.apply(j).apply(0).as[Double]
+            sumY += realCorr.apply(j).apply(1).as[Double]
+          }
+          length += realCorr.value.size
+        }
+      } else {
+        throw new IllegalArgumentException("Unidentified geometry type in city.json");
+      }
+      //FIXME: the following part is not tested
+      val thisX = sumX / length
+      val thisY = sumY / length
+      thisValue += ("centroidX" -> Json.toJson(thisX))
+      thisValue += ("centroidY" -> Json.toJson(thisY))
+    }
+    //TODO: sort values
+    return values
+  }
+
+  def getCity(NELat: String, SWLat: String, NELng: String, SWLng: String) = Action {
+//TODO: Do binary search
+//    for (v <- cities){
+//
+//    }
     Ok("test");
   }
 
