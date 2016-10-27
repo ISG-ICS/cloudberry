@@ -30,9 +30,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       },
 
       function(newResult) {
-        if (Asterix.queryType === 'time') {
-          return;
-        }
         if(newResult) {
           $scope.result = newResult;
           $scope.resultArray = $scope.preProcess(newResult);
