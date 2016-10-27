@@ -29,8 +29,8 @@ angular.module('cloudberry.common', [])
           dataset: parameters.dataset,
           keywords: parameters.keywords,
           timeInterval: {
-            start: queryType==='time' ? Date.parse(parameters.timeInterval.start) : Date.parse(startDate),
-            end: queryType==='time' ? Date.parse(parameters.timeInterval.end) : Date.parse(new Date())
+            start:  Date.parse(parameters.timeInterval.start), //: Date.parse(startDate),
+            end:  Date.parse(parameters.timeInterval.end) //: Date.parse(new Date())
           },
           timeBin : parameters.timeBin,
           geoLevel: parameters.geoLevel,

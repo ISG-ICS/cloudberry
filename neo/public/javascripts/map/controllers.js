@@ -49,7 +49,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           dashArray: '',
           fillOpacity: 0.7
         },
-        colors: [ '#f7f7f7', '#053061', '#2166ac', '#4393c3', '#92c5de', '#f4a582', '#d6604d', '#b2182b', '#67001f']
+        colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
       }
 
     });
@@ -283,6 +283,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         } else {
           d = Math.ceil(Math.log10(d));
         }
+        d = Math.min(d, colors.length-1);
         return colors[d];
       }
 
@@ -347,8 +348,20 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
-        var grades = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000];
-        var gName  = ["1", "10", "100", "1K", "10K", "100K", "1M", "10M"];
+        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000];
+        for (var i = 0 ; i < grades.length; i++) {
+          grades[i] = Math.pow(10, i);
+        }
+        var gName  = grades.map( function(d) {
+          if (d < 1000){
+            return d.toString();
+          }
+          if (d < 1000 * 1000) {
+            return (d / 1000).toString() + "K";
+          }
+          //if (d < 1000 * 1000 * 1000)
+          return (d / 1000 / 1000).toString() + "M";
+        });//["1", "10", "100", "1K", "10K", "100K"];
 
         // loop through our density intervals and generate a label with a colored square for each interval
         var i = 1;
