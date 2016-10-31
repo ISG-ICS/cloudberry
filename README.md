@@ -19,7 +19,7 @@ Option 1: Follow the official [documentation](https://ci.apache.org/projects/ast
 Option 2: Use the prebuilt AsterixDB docker image to run a small test cluster locally. 
 This approach serves the debug purpose. 
 
-Assume you've already had docker(>1.11) installed on your local machine, 
+Assume you've already had docker(>1.10) installed on your local machine, 
 you can simply run the following command to create a two nc AsterixDB cluster locally. 
 
 ```
