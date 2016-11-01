@@ -31,11 +31,11 @@ docker run -d --name=cc \
    -p 19000:19000 -p 19001:19001 -p 19002:19002 -p 19006:19006 \
     jianfeng/asterixdb cc $ncs
 
-ccip=`docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' cc `
+ccip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' cc)
 
 sleep 2s
 
-for ((n=1; $n <= $ncs; n=$n+1 ))
+for ((n=1; n <= ncs; n=n+1 ))
 do
     echo "build nc${n}"
     port=$((10000+n)) # these ports are used for feed 
