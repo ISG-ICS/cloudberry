@@ -1,3 +1,24 @@
+#!/bin/bash -
+#===============================================================================
+#
+#          FILE: ingestTwitterToLocalCluster.sh
+#
+#         USAGE: ./ingestTwitterToLocalCluster.sh
+#
+#   DESCRIPTION: Ingest the twitter data to AsterixDB
+#
+#       OPTIONS:
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Jianfeng Jia (), jianfeng.jia@gmail.com
+#  ORGANIZATION: ics.uci.edu
+#       CREATED: 10/27/2015 11:06:01 AM PDT
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
 # ddl to register the twitter dataset
 cat <<'EOF' | curl -XPOST --data-binary @- http://localhost:19002/aql
 drop dataverse twitter if exists;
