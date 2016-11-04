@@ -81,16 +81,6 @@ class Application @Inject()(val wsClient: WSClient,
 
   def getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double) = Action {
 //TODO: Do binary search
-//   var citiesWithinBoundary = List[JsValue]()
-//    println(NELat.toDouble,SWLat.toDouble,NELng.toDouble,SWLng.toDouble)
-//    for (v <- cities){
-//      val centroidX = (v \ "centroidX").as[Double]
-//      val centroidY = (v \ "centroidY").as[Double]
-//      println(centroidX,centroidY)
-//      if(centroidY <= NELat && centroidY >= SWLat && centroidX <= NELng && centroidX >= SWLng) {
-//        citiesWithinBoundary ::= v
-//      }
-//    }
     val citiesWithinBoundary = cities.filter{
       city =>
         (city \ "centroidY").as[Double] <= NELat && (city \ "centroidY").as[Double] >= SWLat.toDouble && (city \ "centroidX").as[Double] <= NELng.toDouble && (city \ "centroidX").as[Double] >= SWLng.toDouble
@@ -134,11 +124,7 @@ object Application{
     for(n <- values.indices) {
       val thisValue = values.apply(n)
       val geoType = (thisValue \ geometry \ type_str).as[String]
-//      var maxX = 0.0
-//      var maxY = 0.0
-//      var minX = 0.0
-//      var minY = 0.0
-//      var length = 0.0
+
       geoType match{
         case Polygon => {
           val corr  = (thisValue \ geometry \ coordinates).as[JsArray].apply(0).as[List[List[Double]]]
@@ -152,13 +138,6 @@ object Application{
           val thisY = (minY + maxY) / 2
           val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
           newValues += Json.toJson(newV)
-//          val realCorr = rawCorr.apply(0).as[JsArray]
-////          val
-//          for(i <- realCorr.value.indices){
-//            sumX = realCorr.apply(i).apply(0).as[Double]
-//            sumY += realCorr.apply(i).apply(1).as[Double]
-//          }
-//          length = realCorr.value.size
         }
         case MultiPolyton => {
           val allCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
@@ -169,11 +148,6 @@ object Application{
             val realCorr = rawCorr.apply(0).as[List[List[Double]]]
             realCorr.map(x => builderX += x.apply(0))
             realCorr.map(x => builderY += x.apply(1))
-            //            for(j <- realCorr.value.indices){
-//              sumX += realCorr.apply(j).apply(0).as[Double]
-//              sumY += realCorr.apply(j).apply(1).as[Double]
-//            }
-//            length += realCorr.value.size
           }
           val Xcorr = builderX.result()
           val Ycorr = builderY.result()
@@ -192,13 +166,6 @@ object Application{
           throw new IllegalArgumentException("Unidentified geometry type in city.json");
         }
       }
-//      if(geoType == "Polygon") {
-//
-//      } else if(geoType == "MultiPolygon") {
-//
-//      } else {
-//        throw new IllegalArgumentException("Unidentified geometry type in city.json");
-//      }
     }
 
     newValues.result().sortWith((x,y) => (x\"centroidX").as[Double] < (y\"centroidX").as[Double])
