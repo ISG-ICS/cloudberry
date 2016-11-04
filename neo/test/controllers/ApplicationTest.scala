@@ -12,8 +12,7 @@ class ApplicationTest extends Specification {
   "application" should {
     "load the city data from a file" in {
       val cities = Application.loadCity(new File("C:\\Users\\zongh\\OneDrive\\Documents\\UCI\\cloudberry\\cloudberry\\neo\\public\\data\\city.json"))
-      cities.size must_== 233
-
+      cities.size must_== 29834
     }
   }
 }
