@@ -50,8 +50,6 @@ class Application @Inject()(val wsClient: WSClient,
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
 
-
-
   def index = Action {
     Ok(views.html.index("Cloudberry"))
   }
@@ -77,19 +75,6 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-
-
-  def getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double) = Action {
-//TODO: Do binary search
-    val citiesWithinBoundary = cities.filter{
-      city =>
-        (city \ "centroidY").as[Double] <= NELat && (city \ "centroidY").as[Double] >= SWLat.toDouble && (city \ "centroidX").as[Double] <= NELng.toDouble && (city \ "centroidX").as[Double] >= SWLng.toDouble
-    }
-    val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
-    val response = header + ("features" -> Json.toJson(citiesWithinBoundary))
-    Ok(Json.toJson(response))
-  }
-
   def berryQuery = Action.async(parse.json) { request =>
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
 
@@ -99,6 +84,10 @@ class Application @Inject()(val wsClient: WSClient,
     }.recoverTotal {
       e => Future(BadRequest("Detected error:" + JsError.toJson(e)))
     }
+  }
+
+  def getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double) = Action{
+    Ok(Application._getCity(NELat, SWLat, NELng, SWLng, cities))
   }
 
   class Listener extends Actor {
@@ -161,7 +150,6 @@ object Application{
           newValues += Json.toJson(newV)
         }
         case _ =>{
-          val minX, minY, maxX, maxY = 0
           //FIXME: change throw to log
           throw new IllegalArgumentException("Unidentified geometry type in city.json");
         }
@@ -169,5 +157,16 @@ object Application{
     }
 
     newValues.result().sortWith((x,y) => (x\"centroidX").as[Double] < (y\"centroidX").as[Double])
+  }
+
+  def _getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double, cities: List[JsValue]) =  {
+    //TODO: Do binary search
+    val citiesWithinBoundary = cities.filter{
+      city =>
+        (city \ "centroidY").as[Double] <= NELat && (city \ "centroidY").as[Double] >= SWLat.toDouble && (city \ "centroidX").as[Double] <= NELng.toDouble && (city \ "centroidX").as[Double] >= SWLng.toDouble
+    }
+    val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
+    val response = header + ("features" -> Json.toJson(citiesWithinBoundary))
+    Json.toJson(response)
   }
 }
