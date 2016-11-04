@@ -8,7 +8,7 @@ GET        /dashboard                           controllers.Application.dashboar
 GET        /ws                                  controllers.Application.ws
 GET        /tweet/:id                           controllers.Application.tweet(id: String)
 
-GET        /city/:NELat/:SWLat/:NELng/:SWLng    controllers.Application.city(NELat: String, SWLat: String, NELng: String, SWLng: String)
+GET        /city/:NELat/:SWLat/:NELng/:SWLng    controllers.Application.getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double)
 
 POST       /berryquery                          controllers.Application.berryQuery
 
