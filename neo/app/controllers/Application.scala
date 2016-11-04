@@ -3,7 +3,7 @@ package controllers
 import java.io.{BufferedReader, File, FileInputStream, FileReader}
 import javax.inject.{Inject, Singleton}
 
-import actor.{NeoActor, NeoActor$}
+import actor.NeoActor
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.pattern.ask
 import akka.stream.Materializer
@@ -34,6 +34,7 @@ class Application @Inject()(val wsClient: WSClient,
                             implicit val materializer: Materializer
                            ) extends Controller {
 
+  val cities = Application.loadCity(environment.getFile("/public/data/city.json"))
   val config = new Config(configuration)
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
@@ -49,7 +50,7 @@ class Application @Inject()(val wsClient: WSClient,
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
 
-  val cities = loadCity()
+
 
   def index = Action {
     Ok(views.html.index("Cloudberry"))
@@ -76,62 +77,23 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  def loadCity() : List[JsValue] = {
-    val file = environment.getFile("/public/data/city.sample.shorten.json")
-    val stream = new FileInputStream(file)
-    val json = Json.parse(stream)
-    val values = (json \ "features").as[List[JsObject]]
-    var newValues = List[JsValue]()
-    for(n <- values.indices) {
-      val thisValue = values.apply(n)
-      val geoType = (thisValue \ "geometry" \ "type").as[String]
-      var sumX = 0.0
-      var sumY = 0.0
-      var length = 0.0
-      if(geoType == "Polygon") {
-        val rawCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
-        val realCorr = rawCorr.apply(0).as[JsArray]
-        for(i <- realCorr.value.indices){
-          sumX += realCorr.apply(i).apply(0).as[Double]
-          sumY += realCorr.apply(i).apply(1).as[Double]
-        }
-        length = realCorr.value.size
-      } else if(geoType == "MultiPolygon") {
-        val allCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
-        for(i <- allCorr.value.indices){
-          val rawCorr = allCorr.apply(i).as[JsArray]
-          val realCorr = rawCorr.apply(0).as[JsArray]
-          for(j <- realCorr.value.indices){
-            sumX += realCorr.apply(j).apply(0).as[Double]
-            sumY += realCorr.apply(j).apply(1).as[Double]
-          }
-          length += realCorr.value.size
-        }
-      } else {
-        throw new IllegalArgumentException("Unidentified geometry type in city.json");
-      }
-      val thisX = sumX / length
-      val thisY = sumY / length
-      val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
-      newValues ::= Json.toJson(newV)
-    }
 
-    val newValuesSorted = newValues.sortWith((x,y) => (x\"centroidX").as[Double] < (y\"centroidX").as[Double])
-    return newValuesSorted
-  }
 
-  def getCity(NELat: String, SWLat: String, NELng: String, SWLng: String) = Action {
+  def getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double) = Action {
 //TODO: Do binary search
-    var citiesWithinBoundary = List[JsValue]()
-    println(NELat.toDouble,SWLat.toDouble,NELng.toDouble,SWLng.toDouble)
-    for (v <- cities){
-      val centroidX = (v \ "centroidX").as[Double]
-      val centroidY = (v \ "centroidY").as[Double]
-      println(centroidX,centroidY)
-      if(centroidY <= NELat.toDouble && centroidY >= SWLat.toDouble && centroidX <= NELng.toDouble && centroidX >= SWLng.toDouble) {
-        println("added")
-        citiesWithinBoundary ::= v
-      }
+//   var citiesWithinBoundary = List[JsValue]()
+//    println(NELat.toDouble,SWLat.toDouble,NELng.toDouble,SWLng.toDouble)
+//    for (v <- cities){
+//      val centroidX = (v \ "centroidX").as[Double]
+//      val centroidY = (v \ "centroidY").as[Double]
+//      println(centroidX,centroidY)
+//      if(centroidY <= NELat && centroidY >= SWLat && centroidX <= NELng && centroidX >= SWLng) {
+//        citiesWithinBoundary ::= v
+//      }
+//    }
+    val citiesWithinBoundary = cities.filter{
+      city =>
+        (city \ "centroidY").as[Double] <= NELat && (city \ "centroidY").as[Double] >= SWLat.toDouble && (city \ "centroidX").as[Double] <= NELng.toDouble && (city \ "centroidX").as[Double] >= SWLng.toDouble
     }
     val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
     val response = header + ("features" -> Json.toJson(citiesWithinBoundary))
@@ -155,4 +117,90 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
+}
+
+object Application{
+  def loadCity(file: File): List[JsValue] = {
+    val stream = new FileInputStream(file)
+    val json = Json.parse(stream)
+    val features = "features"
+    val geometry = "geometry"
+    val type_str = "type"
+    val coordinates = "coordinates"
+    val Polygon = "Polygon"
+    val MultiPolyton = "MultiPolygon"
+    val values = (json \ features).as[List[JsObject]]
+    val newValues = List.newBuilder[JsValue]
+    for(n <- values.indices) {
+      val thisValue = values.apply(n)
+      val geoType = (thisValue \ geometry \ type_str).as[String]
+//      var maxX = 0.0
+//      var maxY = 0.0
+//      var minX = 0.0
+//      var minY = 0.0
+//      var length = 0.0
+      geoType match{
+        case Polygon => {
+          val corr  = (thisValue \ geometry \ coordinates).as[JsArray].apply(0).as[List[List[Double]]]
+          val Xcorr = corr.map( x => x.apply(0))
+          val Ycorr = corr.map( x => x.apply(1))
+          val minX = Xcorr.reduceLeft((x, y) => if (x < y) x else y)
+          val maxX = Xcorr.reduceLeft((x, y) => if (x > y) x else y)
+          val minY = Ycorr.reduceLeft((x, y) => if (x < y) x else y)
+          val maxY = Ycorr.reduceLeft((x, y) => if (x > y) x else y)
+          val thisX = (minX + maxX) / 2
+          val thisY = (minY + maxY) / 2
+          val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
+          newValues += Json.toJson(newV)
+//          val realCorr = rawCorr.apply(0).as[JsArray]
+////          val
+//          for(i <- realCorr.value.indices){
+//            sumX = realCorr.apply(i).apply(0).as[Double]
+//            sumY += realCorr.apply(i).apply(1).as[Double]
+//          }
+//          length = realCorr.value.size
+        }
+        case MultiPolyton => {
+          val allCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
+          val builderX = List.newBuilder[Double]
+          val builderY = List.newBuilder[Double]
+          for(i <- allCorr.value.indices){
+            val rawCorr = allCorr.apply(i).as[JsArray]
+            val realCorr = rawCorr.apply(0).as[List[List[Double]]]
+            realCorr.map(x => builderX += x.apply(0))
+            realCorr.map(x => builderY += x.apply(1))
+            //            for(j <- realCorr.value.indices){
+//              sumX += realCorr.apply(j).apply(0).as[Double]
+//              sumY += realCorr.apply(j).apply(1).as[Double]
+//            }
+//            length += realCorr.value.size
+          }
+          val Xcorr = builderX.result()
+          val Ycorr = builderY.result()
+          val minX = Xcorr.reduceLeft((x, y) => if (x < y) x else y)
+          val maxX = Xcorr.reduceLeft((x, y) => if (x > y) x else y)
+          val minY = Ycorr.reduceLeft((x, y) => if (x < y) x else y)
+          val maxY = Ycorr.reduceLeft((x, y) => if (x > y) x else y)
+          val thisX = (minX + maxX) / 2
+          val thisY = (minY + maxY) / 2
+          val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
+          newValues += Json.toJson(newV)
+        }
+        case _ =>{
+          val minX, minY, maxX, maxY = 0
+          //FIXME: change throw to log
+          throw new IllegalArgumentException("Unidentified geometry type in city.json");
+        }
+      }
+//      if(geoType == "Polygon") {
+//
+//      } else if(geoType == "MultiPolygon") {
+//
+//      } else {
+//        throw new IllegalArgumentException("Unidentified geometry type in city.json");
+//      }
+    }
+
+    newValues.result().sortWith((x,y) => (x\"centroidX").as[Double] < (y\"centroidX").as[Double])
+  }
 }
