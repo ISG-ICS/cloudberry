@@ -174,6 +174,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           $scope.status.zoomLevel = $scope.map.getZoom();
           $scope.bounds = $scope.map.getBounds();
           if($scope.status.zoomLevel > 7) {
+            console.log("city called")
             $scope.status.logicLevel = 'city';
             if (!$scope.status.init) {
               resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
@@ -200,6 +201,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               $scope.map.removeLayer($scope.polygons.statePolygons);
             }
             if($scope.polygons.cityPolygons) {
+              console.log("city remove called")
               $scope.map.removeLayer($scope.polygons.cityPolygons);
             }
             $scope.map.addLayer($scope.polygons.countyPolygons);
@@ -215,6 +217,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               $scope.map.removeLayer($scope.polygons.countyPolygons);
             }
             if($scope.polygons.cityPolygons) {
+              console.log("city remove called")
               $scope.map.removeLayer($scope.polygons.cityPolygons);
             }
             $scope.map.addLayer($scope.polygons.statePolygons);
@@ -318,19 +321,19 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         .success(function(data) {
           console.log(data)
           $scope.geojsonData.city = data;
+          if($scope.polygons.cityPolygons) {
+            $scope.map.removeLayer($scope.polygons.cityPolygons);
+          }
           $scope.polygons.cityPolygons = L.geoJson(data, {
             style: $scope.styles.cityStyle,
             onEachFeature: onEachFeature
           });
           setCenterAndBoundry($scope.geojsonData.city.features);
+          $scope.map.addLayer($scope.polygons.cityPolygons);
         })
         .error(function(data) {
           console.error("Load city data failure");
         });
-      if($scope.polygons.cityPolygons) {
-        $scope.map.removeLayer($scope.polygons.cityPolygons);
-      }
-      $scope.map.addLayer($scope.polygons.cityPolygons);
     }
 
 
