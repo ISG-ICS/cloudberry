@@ -176,12 +176,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if($scope.status.zoomLevel > 7) {
             console.log("city called")
             $scope.status.logicLevel = 'city';
-            if (!$scope.status.init) {
-              resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
-              Asterix.parameters.geoLevel = 'city';
-              Asterix.queryType = 'zoom';
-              Asterix.query(Asterix.parameters, Asterix.queryType);
-            }
             if ($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
             }
@@ -329,6 +323,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             onEachFeature: onEachFeature
           });
           setCenterAndBoundry($scope.geojsonData.city.features);
+          if (!$scope.status.init) {
+            resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
+            Asterix.parameters.geoLevel = 'city';
+            Asterix.queryType = 'zoom';
+            Asterix.query(Asterix.parameters, Asterix.queryType);
+          }
           $scope.map.addLayer($scope.polygons.cityPolygons);
         })
         .error(function(data) {
