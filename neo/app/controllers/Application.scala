@@ -108,6 +108,8 @@ object Application{
   val CentroidLatitude = "centroidLatitude"
   val CentroidLongitude = "centroidLongitude"
 
+  val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
+
   def loadCity(file: File): List[JsValue] = {
     val stream = new FileInputStream(file)
     val json = Json.parse(stream)
@@ -155,7 +157,6 @@ object Application{
       city =>
         (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble
     }
-    val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
     val response = header + (Features -> Json.toJson(citiesWithinBoundary))
     Json.toJson(response)
   }
