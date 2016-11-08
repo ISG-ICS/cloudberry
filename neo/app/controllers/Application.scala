@@ -86,8 +86,8 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  def getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double) = Action{
-    Ok(Application._getCity(NELat, SWLat, NELng, SWLng, cities))
+  def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action{
+    Ok(Application.findCity(neLat, swLat, neLng, swLng, cities))
   }
 
   class Listener extends Actor {
@@ -99,74 +99,64 @@ class Application @Inject()(val wsClient: WSClient,
 }
 
 object Application{
+  val Features = "features"
+  val Geometry = "geometry"
+  val Type = "type"
+  val Coordinates = "coordinates"
+  val Polygon = "Polygon"
+  val MultiPolygon = "MultiPolygon"
+  val CentroidLatitude = "centroidLatitude"
+  val CentroidLongitude = "centroidLongitude"
+
   def loadCity(file: File): List[JsValue] = {
     val stream = new FileInputStream(file)
     val json = Json.parse(stream)
-    val features = "features"
-    val geometry = "geometry"
-    val type_str = "type"
-    val coordinates = "coordinates"
-    val Polygon = "Polygon"
-    val MultiPolyton = "MultiPolygon"
-    val values = (json \ features).as[List[JsObject]]
-    val newValues = List.newBuilder[JsValue]
-    for(n <- values.indices) {
-      val thisValue = values.apply(n)
-      val geoType = (thisValue \ geometry \ type_str).as[String]
-
-      geoType match{
+    stream.close()
+    val features = (json \ Features).as[List[JsObject]]
+    val newValues = features.map { thisValue =>
+      (thisValue \ Geometry \ Type).as[String] match {
         case Polygon => {
-          val corr  = (thisValue \ geometry \ coordinates).as[JsArray].apply(0).as[List[List[Double]]]
-          val Xcorr = corr.map( x => x.apply(0))
-          val Ycorr = corr.map( x => x.apply(1))
-          val minX = Xcorr.reduceLeft((x, y) => if (x < y) x else y)
-          val maxX = Xcorr.reduceLeft((x, y) => if (x > y) x else y)
-          val minY = Ycorr.reduceLeft((x, y) => if (x < y) x else y)
-          val maxY = Ycorr.reduceLeft((x, y) => if (x > y) x else y)
-          val thisX = (minX + maxX) / 2
-          val thisY = (minY + maxY) / 2
-          val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
-          newValues += Json.toJson(newV)
-        }
-        case MultiPolyton => {
-          val allCorr = (thisValue \ "geometry" \ "coordinates").as[JsArray]
-          val builderX = List.newBuilder[Double]
-          val builderY = List.newBuilder[Double]
-          for(i <- allCorr.value.indices){
-            val rawCorr = allCorr.apply(i).as[JsArray]
-            val realCorr = rawCorr.apply(0).as[List[List[Double]]]
-            realCorr.map(x => builderX += x.apply(0))
-            realCorr.map(x => builderY += x.apply(1))
+          val coordinates = (thisValue \ Geometry \ Coordinates).as[JsArray].apply(0).as[List[List[Double]]]
+          val (minLong, maxLong, minLat, maxLat) = coordinates.foldLeft(180.0,-180.0,180.0,-180.0) { case (((minLong, maxLong, minLat, maxLat)), e) =>
+            (math.min(minLong, e(0)), math.max(maxLong, e(0)),  math.min(minLat, e(1)),  math.max(minLat, e(1)))
           }
-          val Xcorr = builderX.result()
-          val Ycorr = builderY.result()
-          val minX = Xcorr.reduceLeft((x, y) => if (x < y) x else y)
-          val maxX = Xcorr.reduceLeft((x, y) => if (x > y) x else y)
-          val minY = Ycorr.reduceLeft((x, y) => if (x < y) x else y)
-          val maxY = Ycorr.reduceLeft((x, y) => if (x > y) x else y)
-          val thisX = (minX + maxX) / 2
-          val thisY = (minY + maxY) / 2
-          val newV = thisValue + ("centroidX" -> Json.toJson(thisX)) + ("centroidY" -> Json.toJson(thisY))
-          newValues += Json.toJson(newV)
+          val thisLong = (minLong + maxLong) / 2
+          val thisLat = (minLat + maxLat) / 2
+          thisValue + (CentroidLongitude -> Json.toJson(thisLong)) + (CentroidLatitude -> Json.toJson(thisLat))
         }
-        case _ =>{
-          //FIXME: change throw to log
+        case MultiPolygon => {
+          val allCoordinates = (thisValue \ Geometry \ Coordinates).as[JsArray]
+          val coordinatesBuilder = List.newBuilder[List[Double]]
+          for (coordinate <- allCoordinates.value) {
+            val rawCoordinate = coordinate.as[JsArray]
+            val realCoordinate = rawCoordinate.apply(0).as[List[List[Double]]]
+            realCoordinate.map(x => coordinatesBuilder += x)
+          }
+          val coordinates = coordinatesBuilder.result()
+          val (minLong, maxLong, minLat, maxLat) = coordinates.foldLeft(180.0,-180.0,180.0,-180.0) { case (((minLong, maxLong, minLat, maxLat)), e) =>
+            (math.min(minLong, e(0)), math.max(maxLong, e(0)),  math.min(minLat, e(1)),  math.max(minLat, e(1)))
+          }
+          val thisLong = (minLong + maxLong) / 2
+          val thisLat = (minLat + maxLat) / 2
+          thisValue + (CentroidLongitude -> Json.toJson(thisLong)) + (CentroidLatitude -> Json.toJson(thisLat))
+        }
+        case _ => {
           throw new IllegalArgumentException("Unidentified geometry type in city.json");
         }
       }
     }
 
-    newValues.result().sortWith((x,y) => (x\"centroidX").as[Double] < (y\"centroidX").as[Double])
+    newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
   }
 
-  def _getCity(NELat: Double, SWLat: Double, NELng: Double, SWLng: Double, cities: List[JsValue]) =  {
+  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
     //TODO: Do binary search
     val citiesWithinBoundary = cities.filter{
       city =>
-        (city \ "centroidY").as[Double] <= NELat && (city \ "centroidY").as[Double] >= SWLat.toDouble && (city \ "centroidX").as[Double] <= NELng.toDouble && (city \ "centroidX").as[Double] >= SWLng.toDouble
+        (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble
     }
     val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
-    val response = header + ("features" -> Json.toJson(citiesWithinBoundary))
+    val response = header + (Features -> Json.toJson(citiesWithinBoundary))
     Json.toJson(response)
   }
 }

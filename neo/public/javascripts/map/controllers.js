@@ -174,7 +174,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           $scope.status.zoomLevel = $scope.map.getZoom();
           $scope.bounds = $scope.map.getBounds();
           if($scope.status.zoomLevel > 7) {
-            console.log("city called")
             $scope.status.logicLevel = 'city';
             if ($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -195,7 +194,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               $scope.map.removeLayer($scope.polygons.statePolygons);
             }
             if($scope.polygons.cityPolygons) {
-              console.log("city remove called")
               $scope.map.removeLayer($scope.polygons.cityPolygons);
             }
             $scope.map.addLayer($scope.polygons.countyPolygons);
@@ -211,7 +209,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               $scope.map.removeLayer($scope.polygons.countyPolygons);
             }
             if($scope.polygons.cityPolygons) {
-              console.log("city remove called")
               $scope.map.removeLayer($scope.polygons.cityPolygons);
             }
             $scope.map.addLayer($scope.polygons.statePolygons);
@@ -235,7 +232,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             geoData = $scope.geojsonData.state;
           }
         }
-        console.log($scope.status.logicLevel);
         if ($scope.status.logicLevel === 'city') {
           loadCityJsonByBound(onEachFeature);
         }
@@ -313,7 +309,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       rteBounds += bounds._southWest.lng;
       $http.get(rteBounds)
         .success(function(data) {
-          console.log(data)
           $scope.geojsonData.city = data;
           if($scope.polygons.cityPolygons) {
             $scope.map.removeLayer($scope.polygons.cityPolygons);
