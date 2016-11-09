@@ -19,8 +19,8 @@ class ApplicationTest extends Specification {
     }
 
     "calculate centroid" in {
-      math.abs((cities.apply(0) \ "centroidLongitude").as[Double] - (-176.6287565)) must be <= 0.01
-      math.abs((cities.apply(0) \ "centroidLatitude").as[Double] - 51.8209920) must be <= 0.01
+      math.abs((cities.apply(0) \ "centroidLongitude").as[Double] - (-176.6287565)) must be <= 0.00001
+      math.abs((cities.apply(0) \ "centroidLatitude").as[Double] - 51.8209920) must be <= 0.00001
     }
 
     "find cities whose centroids are in the current region" in {
