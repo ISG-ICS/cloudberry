@@ -3,6 +3,7 @@ package controllers
 import java.io.File
 
 import org.specs2.mutable.Specification
+import play.api.libs.json.JsArray
 
 /**
   * Created by zongh on 10/26/2016.
@@ -10,16 +11,26 @@ import org.specs2.mutable.Specification
 class ApplicationTest extends Specification {
 
   "application" should {
+
+    val cities = Application.loadCity(new File("public/data/city.sample.json"))
+
     "load the city data from a file" in {
-      val cities = Application.loadCity(new File("public/data/city.json"))
-      cities.size must_== 29834
+      cities.size must_== 1006
     }
 
     "calculate centroid" in {
-      val cities = Application.loadCity(new File("public/data/city.sample.json"))
-      cities.size must_== 1006
-      (cities.apply(0) \ "centroidX").as[Double] must_== -176.6287565
-      (cities.apply(0) \ "centroidY").as[Double] must_== 51.879214000000005
+      math.abs((cities.apply(0) \ "centroidLongitude").as[Double] - (-176.6287565)) must be <= 0.01
+      math.abs((cities.apply(0) \ "centroidLatitude").as[Double] - 51.8209920) must be <= 0.01
+    }
+
+    "find cities whose centroids are in the current region" in {
+      val result = Application.findCity(35, 33, -85, -87, cities)
+      val features = (result \ "features").as[JsArray]
+      val cityIDs = List.newBuilder[Double]
+      for (city <- features.value){
+        cityIDs += (city \ "properties" \ "cityID").as[Double]
+      }
+      cityIDs.result().contains(100820) must_== true
     }
   }
 }
