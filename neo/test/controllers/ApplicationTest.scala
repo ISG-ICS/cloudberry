@@ -12,7 +12,7 @@ class ApplicationTest extends Specification {
 
   "application" should {
 
-    val cities = Application.loadCity(new File("public/data/city.sample.json"))
+    val cities = Application.loadCity(new File("test/resources/data/city.sample.json"))
 
     "load the city data from a file" in {
       cities.size must_== 1006
