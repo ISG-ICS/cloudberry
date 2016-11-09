@@ -299,14 +299,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     function loadCityJsonByBound(onEachFeature){
       var bounds = $scope.map.getBounds();
-      var rteBounds = "city/";
-      rteBounds += bounds._northEast.lat;
-      rteBounds += "/";
-      rteBounds += bounds._southWest.lat;
-      rteBounds += "/";
-      rteBounds += bounds._northEast.lng;
-      rteBounds += "/";
-      rteBounds += bounds._southWest.lng;
+      var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
       $http.get(rteBounds)
         .success(function(data) {
           $scope.geojsonData.city = data;

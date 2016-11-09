@@ -147,7 +147,6 @@ object Application{
         }
       }
     }
-
     newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
   }
 
