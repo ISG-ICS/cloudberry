@@ -1,11 +1,13 @@
 package controllers
 
+import java.io.{BufferedReader, File, FileInputStream, FileReader}
 import javax.inject.{Inject, Singleton}
 
-import actor.{NeoActor, NeoActor$}
+import actor.NeoActor
 import akka.actor.{Actor, ActorSystem, DeadLetter, Props}
 import akka.pattern.ask
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
@@ -15,7 +17,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPl
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import models.UserRequest
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{JsError, JsValue}
+import play.api.libs.json._
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -32,6 +34,7 @@ class Application @Inject()(val wsClient: WSClient,
                             implicit val materializer: Materializer
                            ) extends Controller {
 
+  val cities = Application.loadCity(environment.getFile("/public/data/city.json"))
   val config = new Config(configuration)
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
@@ -83,10 +86,77 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
+  def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action{
+    Ok(Application.findCity(neLat, swLat, neLng, swLng, cities))
+  }
+
   class Listener extends Actor {
     def receive = {
       case d: DeadLetter => println(d)
     }
   }
 
+}
+
+object Application{
+  val Features = "features"
+  val Geometry = "geometry"
+  val Type = "type"
+  val Coordinates = "coordinates"
+  val Polygon = "Polygon"
+  val MultiPolygon = "MultiPolygon"
+  val CentroidLatitude = "centroidLatitude"
+  val CentroidLongitude = "centroidLongitude"
+
+  val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
+
+  def loadCity(file: File): List[JsValue] = {
+    val stream = new FileInputStream(file)
+    val json = Json.parse(stream)
+    stream.close()
+    val features = (json \ Features).as[List[JsObject]]
+    val newValues = features.map { thisValue =>
+      (thisValue \ Geometry \ Type).as[String] match {
+        case Polygon => {
+          val coordinates = (thisValue \ Geometry \ Coordinates).as[JsArray].apply(0).as[List[List[Double]]]
+          val (minLong, maxLong, minLat, maxLat) = coordinates.foldLeft(180.0,-180.0,180.0,-180.0) { case (((minLong, maxLong, minLat, maxLat)), e) =>
+            (math.min(minLong, e(0)), math.max(maxLong, e(0)),  math.min(minLat, e(1)),  math.max(minLat, e(1)))
+          }
+          val thisLong = (minLong + maxLong) / 2
+          val thisLat = (minLat + maxLat) / 2
+          thisValue + (CentroidLongitude -> Json.toJson(thisLong)) + (CentroidLatitude -> Json.toJson(thisLat))
+        }
+        case MultiPolygon => {
+          val allCoordinates = (thisValue \ Geometry \ Coordinates).as[JsArray]
+          val coordinatesBuilder = List.newBuilder[List[Double]]
+          for (coordinate <- allCoordinates.value) {
+            val rawCoordinate = coordinate.as[JsArray]
+            val realCoordinate = rawCoordinate.apply(0).as[List[List[Double]]]
+            realCoordinate.map(x => coordinatesBuilder += x)
+          }
+          val coordinates = coordinatesBuilder.result()
+          val (minLong, maxLong, minLat, maxLat) = coordinates.foldLeft(180.0,-180.0,180.0,-180.0) { case (((minLong, maxLong, minLat, maxLat)), e) =>
+            (math.min(minLong, e(0)), math.max(maxLong, e(0)),  math.min(minLat, e(1)),  math.max(minLat, e(1)))
+          }
+          val thisLong = (minLong + maxLong) / 2
+          val thisLat = (minLat + maxLat) / 2
+          thisValue + (CentroidLongitude -> Json.toJson(thisLong)) + (CentroidLatitude -> Json.toJson(thisLat))
+        }
+        case _ => {
+          throw new IllegalArgumentException("Unidentified geometry type in city.json");
+        }
+      }
+    }
+    newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
+  }
+
+  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
+    //TODO: Do binary search
+    val citiesWithinBoundary = cities.filter{
+      city =>
+        (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble
+    }
+    val response = header + (Features -> Json.toJson(citiesWithinBoundary))
+    Json.toJson(response)
+  }
 }
