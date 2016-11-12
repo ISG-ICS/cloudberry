@@ -274,26 +274,29 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     function setCenterAndBoundry(features) {
 
        for(var id in features){
-         var sumX = 0.0;
-         var sumY = 0.0;
-         var length = 0;
+         var minX = Number.POSITIVE_INFINITY;
+         var maxX = Number.NEGATIVE_INFINITY;
+         var minY = Number.POSITIVE_INFINITY;
+         var maxY = Number.NEGATIVE_INFINITY;;
          if(features[id].geometry.type === "Polygon") {
             features[id].geometry.coordinates[0].forEach(function(pair) {
-                sumX += pair[0];
-                sumY += pair[1];
+              minX = Math.min(minX, pair[0])
+              maxX = Math.max(maxX, pair[0])
+              minY = Math.min(minY, pair[1])
+              maxY = Math.max(maxY, pair[1])
             });
-            length = features[id].geometry.coordinates[0].length
          } else if( features[id].geometry.type === "MultiPolygon") {
             features[id].geometry.coordinates.forEach(function(array){
                 array[0].forEach(function(pair){
-                    sumX += pair[0];
-                    sumY += pair[1];
+                  minX = Math.min(minX, pair[0])
+                  maxX = Math.max(maxX, pair[0])
+                  minY = Math.min(minY, pair[1])
+                  maxY = Math.max(maxY, pair[1])
                 });
-                length += array[0].length
             });
          }
-         features[id].properties["centerLog"] = sumX / length
-         features[id].properties["centerLat"] = sumY / length
+         features[id].properties["centerLog"] = (maxX + minX) / 2
+         features[id].properties["centerLat"] = (maxY + minY) / 2
        }
     }
     // load geoJson
