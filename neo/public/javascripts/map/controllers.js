@@ -274,29 +274,29 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     function setCenterAndBoundry(features) {
 
        for(var id in features){
-         var minX = Number.POSITIVE_INFINITY;
-         var maxX = Number.NEGATIVE_INFINITY;
-         var minY = Number.POSITIVE_INFINITY;
-         var maxY = Number.NEGATIVE_INFINITY;;
+         var minLog = Number.POSITIVE_INFINITY;
+         var maxLog = Number.NEGATIVE_INFINITY;
+         var minLat = Number.POSITIVE_INFINITY;
+         var maxLat = Number.NEGATIVE_INFINITY;;
          if(features[id].geometry.type === "Polygon") {
             features[id].geometry.coordinates[0].forEach(function(pair) {
-              minX = Math.min(minX, pair[0])
-              maxX = Math.max(maxX, pair[0])
-              minY = Math.min(minY, pair[1])
-              maxY = Math.max(maxY, pair[1])
+              minLog = Math.min(minLog, pair[0])
+              maxLog = Math.max(maxLog, pair[0])
+              minLat = Math.min(minLat, pair[1])
+              maxLat = Math.max(maxLat, pair[1])
             });
          } else if( features[id].geometry.type === "MultiPolygon") {
             features[id].geometry.coordinates.forEach(function(array){
                 array[0].forEach(function(pair){
-                  minX = Math.min(minX, pair[0])
-                  maxX = Math.max(maxX, pair[0])
-                  minY = Math.min(minY, pair[1])
-                  maxY = Math.max(maxY, pair[1])
+                  minLog = Math.min(minLog, pair[0])
+                  maxLog = Math.max(maxLog, pair[0])
+                  minLat = Math.min(minLat, pair[1])
+                  maxLat = Math.max(maxLat, pair[1])
                 });
             });
          }
-         features[id].properties["centerLog"] = (maxX + minX) / 2
-         features[id].properties["centerLat"] = (maxY + minY) / 2
+         features[id].properties["centerLog"] = (maxLog + minLog) / 2
+         features[id].properties["centerLat"] = (maxLat + minLat) / 2
        }
     }
     // load geoJson
