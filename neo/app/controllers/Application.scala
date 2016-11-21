@@ -151,12 +151,61 @@ object Application{
   }
 
   def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
-    //TODO: Do binary search
-    val citiesWithinBoundary = cities.filter{
+    val head = binarySearch(cities, 0, cities.size, neLng, swLng, true);
+    val end = binarySearch(cities, 0, cities.size, neLng, swLng, false);
+    val citiesWithinBoundary = cities.slice(head, end + 1).filter{
       city =>
-        (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble
-    }
+        (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble
+  }
     val response = header + (Features -> Json.toJson(citiesWithinBoundary))
     Json.toJson(response)
+  }
+
+  def binarySearch(cities: List[JsValue], start: Int, end: Int, neLng: Double, swLng: Double, head: Boolean) : Int = {
+    val thisIndex = (start + end) / 2;
+    val thisCity = cities.apply(thisIndex);
+    val centroidLongitude = (thisCity \ CentroidLongitude).as[Double];
+    if (head) {
+      if(thisIndex <= start){
+        if (centroidLongitude <= neLng && centroidLongitude >= swLng)
+          thisIndex;
+        else
+          0;
+      } else {
+        val prevCity = cities.apply(thisIndex - 1);
+        val prevLongitude = (prevCity \ CentroidLongitude).as[Double];
+        centroidLongitude match {
+          case _ if (centroidLongitude <= neLng && centroidLongitude >= swLng) && (prevLongitude < swLng) =>
+            thisIndex;
+          case _ if centroidLongitude < swLng =>
+            binarySearch(cities, thisIndex + 1, end, neLng, swLng, head);
+          case _ if centroidLongitude <= neLng && centroidLongitude >= swLng && prevLongitude <= neLng && prevLongitude >= swLng =>
+            binarySearch(cities, start, thisIndex, neLng, swLng, head);
+          case _ if centroidLongitude > neLng =>
+            binarySearch(cities, start, thisIndex, neLng, swLng, head);
+        }
+      }
+    } else {
+      if(thisIndex >= (end - 1)) {
+        if (centroidLongitude <= neLng && centroidLongitude >= swLng)
+          thisIndex;
+        else
+          0;
+      } else {
+        val nextCity = cities.apply(thisIndex + 1);
+        val nextLongitude = (nextCity \ CentroidLongitude).as[Double];
+        centroidLongitude match {
+          case _ if (centroidLongitude <= neLng && centroidLongitude >= swLng) && (nextLongitude > neLng) =>
+            thisIndex;
+          case _ if centroidLongitude > neLng =>
+            binarySearch(cities, start, thisIndex, neLng, swLng, head);
+          case _ if centroidLongitude <= neLng && centroidLongitude >= swLng && nextLongitude <= neLng && nextLongitude >= swLng =>
+          case _ if centroidLongitude <= neLng && centroidLongitude >= swLng && nextLongitude <= neLng && nextLongitude >= swLng =>
+            binarySearch(cities, thisIndex + 1, end, neLng, swLng, head);
+          case _ if centroidLongitude < swLng =>
+            binarySearch(cities, thisIndex + 1, end, neLng, swLng, head);
+        }
+      }
+    }
   }
 }
