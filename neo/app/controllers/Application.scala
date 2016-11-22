@@ -175,7 +175,7 @@ object Application{
     }
   }
 
-  def binarySearch(cities: List[JsValue], start: Int, end: Int, neLng: Double, swLng: Double, head: Boolean) : Int = {
+  def binarySearch(cities: List[JsValue], start: Int, end: Int, neLng: Double, swLng: Double, head: Boolean /*True means find the head, find the tail otherwise*/) : Int = {
     val thisIndex = (start + end) / 2
     val thisCity = cities.apply(thisIndex)
     val centroidLongitude = (thisCity \ CentroidLongitude).as[Double]
