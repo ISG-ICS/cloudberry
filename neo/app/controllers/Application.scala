@@ -158,7 +158,7 @@ object Application{
     val head = binarySearch(cities, 0, cities.size, neLng, swLng, true)
     val tail = binarySearch(cities, 0, cities.size, neLng, swLng, false)
     head match {
-      case _ if head == -1 && tail == -1 =>{
+      case _ if head == -1 && tail == -1 =>{  //no cities found
         Json.toJson(header)
       }
       case _ if (head == -1 && tail != -1) || (head != -1 && tail == -1) =>{
