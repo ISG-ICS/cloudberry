@@ -155,8 +155,10 @@ object Application{
       Use binary search twice to find two breakpoints (head and tail) to take out all cities whose longitude are in the range,
       then scan those cities one by one for latitude.
     */
-    val head = binarySearch(cities, 0, cities.size, neLng)
-    val tail = binarySearch(cities, 0, cities.size, swLng)
+    println(swLng, neLng)
+    val head = binarySearch(cities, 0, cities.size, swLng)
+    val tail = binarySearch(cities, 0, cities.size, neLng)
+    println(head, tail)
     if (head == -1){  //no cities found
       Json.toJson(header)
     } else {
@@ -173,13 +175,15 @@ object Application{
       start
     } else {
       val thisIndex = (start + end) / 2
+      println(thisIndex)
       val thisCity = cities.apply(thisIndex)
       val centroidLongitude = (thisCity \ CentroidLongitude).as[Double]
+      println(centroidLongitude)
       if (centroidLongitude > target){
-        binarySearch(cities, thisIndex + 1, end, target)
+        binarySearch(cities, start, thisIndex, target)
       }
       else if(centroidLongitude < target) {
-        binarySearch(cities, start, thisIndex, target)
+        binarySearch(cities, thisIndex + 1, end, target)
       } else {
         thisIndex
       }
