@@ -29,10 +29,11 @@ navbar-links:
   Home : ""
   News : "news"
   Resources:
-    - Quick Setup: "https://github.com/ISG-ICS/cloudberry"
+    - Quick Setup: "https://github.com/ISG-ICS/cloudberry/blob/master/README.md/"
+    - Documentation: "documentation"
     - GitHub Pages: "https://github.com/ISG-ICS/cloudberry"
   Demo :
-    - SocialViz: "http://cloudberry.ics.uci.edu/"
+    - TwitterMap: "http://cloudberry.ics.uci.edu/"
   About: "aboutme"
 
 # Image to show in the navigation bar - image must be a square (width = height)
