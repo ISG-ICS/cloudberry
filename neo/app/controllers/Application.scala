@@ -26,6 +26,8 @@ import play.api.{Configuration, Environment, Logger}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
+import scala.util.control.Breaks._
+
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
                             val configuration: Configuration,
@@ -155,19 +157,23 @@ object Application{
       Use binary search twice to find two breakpoints (head and tail) to take out all cities whose longitude are in the range,
       then scan those cities one by one for latitude.
     */
-    println(swLng, neLng)
-    val head = binarySearch(cities, 0, cities.size, swLng)
-    val tail = binarySearch(cities, 0, cities.size, neLng)
-    println(head, tail)
-    if (head == -1){  //no cities found
-      Json.toJson(header)
-    } else {
-      val citiesWithinBoundary = cities.slice(head, tail).filter {
-        city =>
-          (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble        }
-      val response = header + (Features -> Json.toJson(citiesWithinBoundary))
-      Json.toJson(response)
+    val startIndex = binarySearch(cities, 0, cities.size, swLng)
+    val resultBuilder = List.newBuilder[JsValue]
+
+    breakable {
+      for (i <- startIndex to cities.size) {
+        val thisCity = cities.apply(i)
+        if ((thisCity \ CentroidLatitude).as[Double] <= neLat && (thisCity \ CentroidLatitude).as[Double] >= swLat.toDouble && (thisCity \ CentroidLongitude).as[Double] <= neLng.toDouble && (thisCity \ CentroidLongitude).as[Double] >= swLng.toDouble) {
+          resultBuilder += thisCity
+        }
+        if ((thisCity \ CentroidLongitude).as[Double] > neLng) {
+          break
+        }
+      }
     }
+    val citiesWithinBoundary = resultBuilder.result()
+    val response = header + (Features -> Json.toJson(citiesWithinBoundary))
+    Json.toJson(response)
   }
 
   def binarySearch(cities: List[JsValue], start: Int, end: Int, target: Double) : Int = {
@@ -175,10 +181,8 @@ object Application{
       start
     } else {
       val thisIndex = (start + end) / 2
-      println(thisIndex)
       val thisCity = cities.apply(thisIndex)
       val centroidLongitude = (thisCity \ CentroidLongitude).as[Double]
-      println(centroidLongitude)
       if (centroidLongitude > target){
         binarySearch(cities, start, thisIndex, target)
       }
