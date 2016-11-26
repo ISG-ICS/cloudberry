@@ -1,9 +1,10 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
-    var startDate = new Date(2016, 5, 30, 0, 0, 0, 0);
+    var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
     var asterixService = {
 
+      startDate: startDate,
       parameters: {
         dataset: "twitter.ds_tweet",
         keywords: [],
@@ -28,8 +29,8 @@ angular.module('cloudberry.common', [])
           dataset: parameters.dataset,
           keywords: parameters.keywords,
           timeInterval: {
-            start: queryType==='time' ? Date.parse(parameters.timeInterval.start) : Date.parse(startDate),
-            end: queryType==='time' ? Date.parse(parameters.timeInterval.end) : Date.parse(new Date())
+            start:  Date.parse(parameters.timeInterval.start), //: Date.parse(startDate),
+            end:  Date.parse(parameters.timeInterval.end) //: Date.parse(new Date())
           },
           timeBin : parameters.timeBin,
           geoLevel: parameters.geoLevel,
