@@ -1,3 +1,4 @@
+#!/bin/bash
 sbt "project noah" "run-main edu.uci.ics.cloudberry.noah.kafka.TweetsProducer \
 -ck  your consumer key \
 -cs  your consumer secret \
