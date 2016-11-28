@@ -5,9 +5,9 @@ toc: true
 ---
 
 ## Concepts
-The Cloudberry system provides a optimization framework to speed up the visualization-oriented OLAP queries agains [AsterixDB](http://asterixdb.apache.org) datasets. The Data is stored inside AsterixDB. Users needs to take care of the data loading (or ingestion) process.
+The Cloudberry system provides an optimization framework to speed up the visualization-oriented OLAP queries against [AsterixDB](http://asterixdb.apache.org) datasets. The Data is stored inside AsterixDB. Users need to take care of the data loading (or ingestion) process.
 
-The following document uses an already registered AsterixDB Twitter dataset to illustrate how to set up the Cloudberry system on the dataset.
+The following document uses an already ingested AsterixDB Twitter dataset to illustrate how to set up the Cloudberry system on the dataset.
 
 ```
 create type typeUser if not exists as open {
@@ -43,7 +43,7 @@ Front-end developers need to tell Cloudberry which dataset to query on and how t
 
 **TODO**
 
-  >  Currently it is hard coded by sending a message. Will make a RESTFul API for register a dataset. To be fixed soon..
+  >  Currently it is hardcoded by sending a message. Will make a RESTFul API for register a dataset. To be fixed soon.
 
 The data set schema declaration is composed of five distinct components.
 
@@ -93,12 +93,12 @@ Fields that are not relevant to the visualization queries are not required to ap
 The system has the following data types
 
 * **Boolean** : the same type as AsterixDB
-* **Number** : a super set to include all `int8`, `int32`, `int64`, `float`, `double` in AsterixDB.
+* **Number** : a superset to include all `int8`, `int32`, `int64`, `float`, `double` in AsterixDB.
 * **Point** : same as `point` type in AsterixDB. However, currently, we only support geo-location points.
 * **Time** : the `datetime` field in AsterixDB.
 * **String** : same as the `string` type in AsterixDB. It usually is an identity name which is used to filter and group on.
-* **Text** : it should be the `string` type in AsterixDB. Different from the `String` type, it is used to check its internal contents. Thus, the attribute can only be the `measurement` and can only be used to filter by the full-text search. Usually it implies there is an inverted-index built on the field.
-* **Bag** : A bag of types that contains same amount of data. Need to declare the `innerType`.
+* **Text** : it should be the `string` type in AsterixDB. Different from the `String` type, it is used to check its internal contents. Thus, the attribute can only be the `measurement` and can only be used to filter by the full-text search. Usually, it implies there is an inverted-index built on the field.
+* **Bag** : A bag of types that contains the same amount of data. Need to declare the `innerType`.
 * **Hierarchy** : A synthetic field that tells the hierarchy relationships between the existing fields.
 
 #### Pre-define functions
@@ -116,7 +116,7 @@ The system has the following data types
 
 
 ## Request
-After define the dataset, the front-end can send the JSON request to query it.
+After defining the dataset, the front-end can send the JSON request to query it.
 A request is composed of the following parts.
 
 * **Dataset** : specify which dataset to query on.
@@ -126,7 +126,7 @@ A request is composed of the following parts.
 * **Group** : it contains `by` and `aggregate` two parts.
   * **by** : specify which fields to group on.
   * **aggregate**: specify the aggregation functions to apply.
-* **Select**: provide *order* or *project* options. It should be mainly used for the sampling purpose. The `limit` field should be given. The `offset` field enables a pagination if user wants more.
+* **Select**: provide *order* or *project* options. It should be mainly used for the sampling purpose. The `limit` field should be given. The `offset` field enables a pagination if the user wants more.
 
 ### Examples
 
@@ -236,7 +236,7 @@ A request is composed of the following parts.
 #### Execution options
 The Cloudberry supports the automatic query-slicing on the `timeField`. The front-end can specify the slicing response time requirement to get the progressive data.
 
-E.g., the following option specify that the client accept the sliced response and the expected return time is 2000 ms.
+E.g., the following option specify that the client accepts the sliced response and the expected return time is 2000 ms.
 
 ```
 {
