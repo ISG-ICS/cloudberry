@@ -8,11 +8,11 @@
 #baseurl: ""
 
 # If you are building a GitHub project page then use these settings:
-#url: "http://cloudberry.ics.uci.uci/web"
-#baseurl: "/web"
+url: "http://cloudberry.ics.uci.edu/web"
+baseurl: "/web"
 
-url: ""
-baseurl: ""
+#url: ""
+#baseurl: ""
 
 # Of course don't forget to change the username and projectname to YOUR username and project
 
@@ -27,13 +27,12 @@ description: Cloudberry is a general-purpose system composed of distributed midd
 # List of links in the navigation bar
 navbar-links:
   Home : ""
-  News : "news"
-  Resources:
-    - Quick Setup: "https://github.com/ISG-ICS/cloudberry/blob/master/README.md/"
-    - Documentation: "documentation"
-    - GitHub Pages: "https://github.com/ISG-ICS/cloudberry"
   Demo :
     - TwitterMap: "http://cloudberry.ics.uci.edu/"
+  Resources:
+    - Documentation: "documentation"
+    - GitHub: "https://github.com/ISG-ICS/cloudberry"
+  News : "news"
   About: "aboutme"
 
 # Image to show in the navigation bar - image must be a square (width = height)
@@ -147,6 +146,8 @@ prose:
     - /css
     - /img
     - /js
+    - serve
+    - run.sh
   metadata:
     _posts:
       - name: "layout"
