@@ -7,7 +7,7 @@ subtitle:
 ## Project Lead
 
 |![Chen Li][avatar-chen] | <img src="https://www.ics.uci.edu/~mjcarey/images/carey4.jpg" width="200" height="200" />|
-|[Chen Li][link-chen] | [Michael Carey][link-mike] |
+|[Chen Li (Faculty)][link-chen] | [Michael Carey (Co-investigator)][link-mike] |
 
 ## Contributors
 * [Jianfeng Jia](https://github.com/JavierJia)
@@ -18,7 +18,7 @@ subtitle:
 
 ## Earlier Contributors
 * [Aishwarya Kapse](https://github.com/aishwaryakapse)
-* [Chen Li](https://github.com/JeremyLi28)
+* [Chen Li (The student version :-))](https://github.com/JeremyLi28)
 * [Kaiyi Ma](https://github.com/kaiyim)
 * [Monique Moledo](https://github.com/MoniMoledo)
 * [Victor Phung](https://github.com/starmon00)
