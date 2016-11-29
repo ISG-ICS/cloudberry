@@ -5,9 +5,9 @@ subtitle:
 ---
 
 ## Project Lead
-![Chen Li][avatar-chen]
 
-[Chen Li][link-chen]
+|![Chen Li][avatar-chen] | <img src="https://www.ics.uci.edu/~mjcarey/images/carey4.jpg" width="200" height="200" />|
+|[Chen Li][link-chen] | [Michael Carey][link-mike] |
 
 ## Contributors
 * [Jianfeng Jia](https://github.com/JavierJia)
@@ -30,3 +30,4 @@ in this document are those of the authors and should not be interpreted as repre
 
 [avatar-chen]: https://docs.google.com/drawings/d/1PIQwRDWhX66nWYO1hAGn7DA3T5KnARz5S-FKeiJzHvs/pub?w=200&h=200
 [link-chen]: https://github.com/chenlica
+[link-mike]: https://www.ics.uci.edu/~mjcarey/
