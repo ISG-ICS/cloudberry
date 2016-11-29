@@ -8,8 +8,8 @@
 #baseurl: ""
 
 # If you are building a GitHub project page then use these settings:
-url: "http://cloudberry.ics.uci.edu/web"
-baseurl: "/web"
+url: "http://cloudberry.ics.uci.edu"
+baseurl: ""
 
 #url: ""
 #baseurl: ""
@@ -28,7 +28,7 @@ description: Cloudberry is a general-purpose system composed of distributed midd
 navbar-links:
   Home : ""
   Demo :
-    - TwitterMap: "http://cloudberry.ics.uci.edu/"
+    - TwitterMap: "http://cloudberry.ics.uci.edu/demos/twittermap/"
   Resources:
     - Documentation: "documentation"
     - GitHub: "https://github.com/ISG-ICS/cloudberry"
@@ -75,7 +75,7 @@ share-links-active:
 
 # How to display the link to the website in the footer
 # Remove this if you don't want a link in the footer
-url-pretty: "cloudberry.ics.uci.edu/web"  # eg. "deanattali.com/beautiful-jekyll"
+url-pretty: "cloudberry.ics.uci.edu"  # eg. "deanattali.com/beautiful-jekyll"
 
 # --- Misc --- #
 # Fill in your Disqus shortname (NOT the userid) if you want to support Disqus comments
