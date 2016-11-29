@@ -152,30 +152,6 @@ object Application{
     newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
   }
 
-  def findCityNew(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
-    /*
-      Use binary search twice to find two breakpoints (head and tail) to take out all cities whose longitude are in the range,
-      then scan those cities one by one for latitude.
-    */
-    val startIndex = binarySearch(cities, 0, cities.size, swLng)
-    val resultBuilder = List.newBuilder[JsValue]
-
-    breakable {
-      for (i <- startIndex to cities.size) {
-        val thisCity = cities.apply(i)
-        if ((thisCity \ CentroidLongitude).as[Double] > neLng) {
-          break
-        }
-        if ((thisCity \ CentroidLatitude).as[Double] <= neLat && (thisCity \ CentroidLatitude).as[Double] >= swLat.toDouble) {
-          resultBuilder += thisCity
-        }
-      }
-    }
-    val citiesWithinBoundary = resultBuilder.result()
-    val response = header + (Features -> Json.toJson(citiesWithinBoundary))
-    Json.toJson(response)
-  }
-
   def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
     /*
       Use binary search twice to find two breakpoints (head and tail) to take out all cities whose longitude are in the range,
