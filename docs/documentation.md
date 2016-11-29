@@ -4,6 +4,44 @@ title: Documentation
 toc: true
 ---
 
+## Quick Start
+
+### Prepare the AsterixDB cluster
+Cloudberry relies on the AsterixDB service, so you will need to set up it first.
+
+* Option 1: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
+* Option 2: Use the prebuilt AsterixDB docker image to run a small cluster locally. This approach serves the debug purpose.
+You can use [our script](https://github.com/ISG-ICS/cloudberry/blob/master/script/dockerRunAsterixDB.sh) to set up a two node cluster.
+
+### Run the TwitterMap demo
+Now let's checkout the code and run a TwitterMap demo on your local machine! You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
+
+* Clone the code  
+
+```
+git clone https://github.com/ISG-ICS/cloudberry.git
+```
+
+* Compile the project
+
+```
+cd cloudberry; sbt compile
+```
+
+* Ingest the sample data
+
+```
+./script/ingestTwitterToLocalCluster.sh
+```
+
+* Set the AsterixDB hostname in configuration file `neo/conf/application.conf` locally by changing the `asterixdb.url` value to the previous set AsterixDB address.
+
+```
+asterixdb.url = "http://localhost:19002/aql"
+```
+
+* Finally run `sbt "project neo" "run"`, you should see the TwitterMap webpage on your `http://localhost:9000`
+
 ## Concepts
 The Cloudberry system provides an optimization framework to speed up the visualization-oriented OLAP queries against [AsterixDB](http://asterixdb.apache.org) datasets. The Data is stored inside AsterixDB. Users need to take care of the data loading (or ingestion) process.
 
