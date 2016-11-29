@@ -165,7 +165,8 @@ object Application{
     } else {
       val citiesWithinBoundary = cities.slice(startIndex, endIndex).filter {
           city =>
-            (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble        }
+            (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble
+      }
       val response = header + (Features -> Json.toJson(citiesWithinBoundary))
       Json.toJson(response)
     }
