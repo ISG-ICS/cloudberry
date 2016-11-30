@@ -26,8 +26,6 @@ import play.api.{Configuration, Environment, Logger}
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-import scala.util.control.Breaks._
-
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
                             val configuration: Configuration,
@@ -152,7 +150,15 @@ object Application{
     newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
   }
 
-  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
+  /**
+    * @param neLat Latitude of the NorthEast point of the boundary
+    * @param swLat Latitude of the SouthWest point of the boundary
+    * @param neLng Latitude of the NorthEast point of the boundary
+    * @param swLng Latitude of the SouthWest point of the boundary
+    * @param cities List of all cities
+    * @return List of cities which centroids is in current boundary
+    */
+  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) : JsValue =  {
     /*
       Use binary search twice to find two breakpoints (head and tail) to take out all cities whose longitude are in the range,
       then scan those cities one by one for latitude.
@@ -172,18 +178,22 @@ object Application{
     }
   }
 
-  def binarySearch(cities: List[JsValue], start: Int, end: Int, target: Double) : Int = {
-    if (start == end) {
-      start
+  /**
+    * Use binary search to find the index in cities to insert the target Longitude
+    * @param targetLng the target Longitude
+    * @return the index
+    */
+  def binarySearch(cities: List[JsValue], startIndex: Int, endIndex: Int, targetLng: Double) : Int = {
+    if (startIndex == endIndex) {
+      startIndex
     } else {
-      val thisIndex = (start + end) / 2
-      val thisCity = cities.apply(thisIndex)
+      val thisIndex = (startIndex + endIndex) / 2
+      val thisCity = cities(thisIndex)
       val centroidLongitude = (thisCity \ CentroidLongitude).as[Double]
-      if (centroidLongitude > target){
-        binarySearch(cities, start, thisIndex, target)
-      }
-      else if(centroidLongitude < target) {
-        binarySearch(cities, thisIndex + 1, end, target)
+      if (centroidLongitude > targetLng){
+        binarySearch(cities, startIndex, thisIndex, targetLng)
+      } else if(centroidLongitude < targetLng) {
+        binarySearch(cities, thisIndex + 1, endIndex, targetLng)
       } else {
         thisIndex
       }
