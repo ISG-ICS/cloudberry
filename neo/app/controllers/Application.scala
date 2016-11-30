@@ -150,7 +150,8 @@ object Application{
     newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
   }
 
-  /**
+  /** Use binary search twice to find two breakpoints (startIndex and endIndex) to take out all cities whose longitude are in the range,
+      then scan those cities one by one for latitude.
     * @param neLat Latitude of the NorthEast point of the boundary
     * @param swLat Latitude of the SouthWest point of the boundary
     * @param neLng Latitude of the NorthEast point of the boundary
@@ -159,10 +160,6 @@ object Application{
     * @return List of cities which centroids is in current boundary
     */
   def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) : JsValue =  {
-    /*
-      Use binary search twice to find two breakpoints (head and tail) to take out all cities whose longitude are in the range,
-      then scan those cities one by one for latitude.
-    */
     val startIndex = binarySearch(cities, 0, cities.size, swLng)
     val endIndex = binarySearch(cities, 0, cities.size, neLng)
 
