@@ -7,11 +7,11 @@ toc: true
 ## Quick Start
 
 ### Prepare the AsterixDB cluster
-Cloudberry relies on the AsterixDB service, so you will need to set up it first.
+Cloudberry runs on an Apache AsterixDB cluster. Here are two options to set up the cluster.
 
-* Option 1: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
-* Option 2: Use the prebuilt AsterixDB docker image to run a small cluster locally. This approach serves the debug purpose.
-You can use [our script](https://github.com/ISG-ICS/cloudberry/blob/master/script/dockerRunAsterixDB.sh) to set up a two node cluster.
+* Option 1: Use a prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/) to run a small cluster on a single machine. 
+You can use [this script](https://github.com/ISG-ICS/cloudberry/blob/master/script/dockerRunAsterixDB.sh) to set up a cluster with two NCs.
+* Option 2: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
 
 ### Run the TwitterMap demo
 Now let's checkout the code and run a TwitterMap demo on your local machine! You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
@@ -34,16 +34,22 @@ cd cloudberry; sbt compile
 ./script/ingestTwitterToLocalCluster.sh
 ```
 
-* Set the AsterixDB hostname in configuration file `neo/conf/application.conf` locally by changing the `asterixdb.url` value to the previous set AsterixDB address.
+* Set the AsterixDB hostname in configuration file `neo/conf/application.conf` locally by changing the `asterixdb.url` value to the previously set AsterixDB address.
 
 ```
 asterixdb.url = "http://localhost:19002/aql"
 ```
 
-* Finally run `sbt "project neo" "run"`, you should see the TwitterMap webpage on your `http://localhost:9000`
+* Finally run 
+
+```
+sbt "project neo" "run"
+```
+
+You should see the TwitterMap webpage on your `http://localhost:9000`
 
 ## Concepts
-The Cloudberry system provides an optimization framework to speed up the visualization-oriented OLAP queries against [AsterixDB](http://asterixdb.apache.org) datasets. The Data is stored inside AsterixDB. Users need to take care of the data loading (or ingestion) process.
+The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org). 
 
 The following document uses an already ingested AsterixDB Twitter dataset to illustrate how to set up the Cloudberry system on the dataset.
 
@@ -77,22 +83,17 @@ create type typeTweet if not exists as open{
 ```
 
 ## Data Schema
-Front-end developers need to tell Cloudberry which dataset to query on and how the dataset looks like so that it can utilize the Cloudberry optimization logics.
-
-**TODO**
-
-  >  Currently it is hardcoded by sending a message. Will make a RESTFul API for register a dataset. To be fixed soon.
+Front-end developers need to tell Cloudberry which dataset to query and how the dataset looks like so that it can utilize the Cloudberry optimization techniques.
 
 The data set schema declaration is composed of five distinct components.
 
 * **Dataset name and its type** : the data set name to access AsterixDB.
-* **Dimensions** : dimensions are the columns to group on. It usually is the axis of the figure inside the visualization systems.
-* **Measurements** : measurements are the columns to apply the aggregation functions on, such as `count()`, `min()`, `max()`. It can also be used to filter the data but it should not be used as the group keys.
+* **Dimensions** : the columns to do "group by" on. They are usually the x-axis in a visualization figure.
+* **Measurements** : the columns to apply the aggregation functions on, such as `count()`, `min()`, `max()`. They can also be used to filter the data but they should not be used as "group by" keys.
 * **Primary key** : the primary column name.
 * **Time field** : the time column name.
-* [Optional] *Query* : developers can also pre-define a materialized view explicitly in order to speed up the future query. Cloudberry will take care of the maintenance of the view.
 
-The following JSON request can be used to register the Twitter dataset in AsterixDB to Cloudberry system.
+The following JSON request can be used to register the Twitter dataset inside AsterixDB to the middleware.
 
 ```
 {
@@ -127,19 +128,19 @@ The following JSON request can be used to register the Twitter dataset in Asteri
 *Note*:
 Fields that are not relevant to the visualization queries are not required to appear in the schema declaration.
 
-### Data Type
-The system has the following data types
+### Data Types
+Cloudberry supports the following data types:
 
-* **Boolean** : the same type as AsterixDB
-* **Number** : a superset to include all `int8`, `int32`, `int64`, `float`, `double` in AsterixDB.
-* **Point** : same as `point` type in AsterixDB. However, currently, we only support geo-location points.
-* **Time** : the `datetime` field in AsterixDB.
-* **String** : same as the `string` type in AsterixDB. It usually is an identity name which is used to filter and group on.
-* **Text** : it should be the `string` type in AsterixDB. Different from the `String` type, it is used to check its internal contents. Thus, the attribute can only be the `measurement` and can only be used to filter by the full-text search. Usually, it implies there is an inverted-index built on the field.
-* **Bag** : A bag of types that contains the same amount of data. Need to declare the `innerType`.
-* **Hierarchy** : A synthetic field that tells the hierarchy relationships between the existing fields.
+* **Boolean** : the same `Boolean` type as in AsterixDB.
+* **Number** : a superset to include all `int8`, `int32`, `int64`, `float`, `double` datatypes in AsterixDB.
+* **Point** : the same `point` type as in AsterixDB. Currently, we only support geo-location points.
+* **Time** : the same `datetime` type as in AsterixDB.
+* **String** : same as the `string` type in AsterixDB. It usually is an identity name which is used to do filtering and "group by".
+* **Text** : it is the `string` type as in AsterixDB. The attribute has to be a `measurement` and can only be used to do filtering by a full-text search. Usually, it implies there is an inverted-index built on the field.
+* **Bag** : the same `set` type as in AsterixDB. 
+* **Hierarchy** : A synthetic field that defines hierarchical relationships between the existing fields.
 
-#### Pre-define functions
+#### Pre-defined functions
 
 | Datatype | Filter | Groupby | Aggregation |
 |:--------|:-------:|:--------:|--------:|
@@ -153,22 +154,21 @@ The system has the following data types
 |Hierarchy |         | rollup | |
 
 
-## Request
-After defining the dataset, the front-end can send the JSON request to query it.
-A request is composed of the following parts.
+## Format of requests to the middleware
+After defining the dataset, the front-end can send a JSON request to query it.
+A request is composed of the following parameters:
 
-* **Dataset** : specify which dataset to query on.
-* **Lookup** : **TODO**
-* **Unnest** : flatten a record based on the nested `Bag` attribute to generate the multiple records.
-* **Filter** : filter the dataset
-* **Group** : it contains `by` and `aggregate` two parts.
-  * **by** : specify which fields to group on.
-  * **aggregate**: specify the aggregation functions to apply.
-* **Select**: provide *order* or *project* options. It should be mainly used for the sampling purpose. The `limit` field should be given. The `offset` field enables a pagination if the user wants more.
+* **Dataset** : the dataset to query on.
+* **Unnest** : to flatten a record based on the nested `Bag` attribute to generate multiple records.
+* **Filter** : a set of selection predicates.
+* **Group** : 
+  * **by** : to specify the "group by" fields.
+  * **aggregate**: to specify the aggregation functions to apply, such as `min` and `max`.
+* **Select**: to provide *order* or *project* options. It should be mainly used for sampling purposes. A `limit` field should be given. A `offset` field enables pagination.
 
 ### Examples
 
-1. Get the per-state and per-hour count of tweets that contains "zika" and "virus" in 2016.
+1. Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.
 
 ```
 {
@@ -177,7 +177,7 @@ A request is composed of the following parts.
     {
       "field": "create_at",
       "relation": "inRange",
-      "values": [ "2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"]
+      "values": [ "2016-01-01T00:00:00.000Z", "2016-12-31T00:00:00.000Z"]
     },
     {
       "field": "text",
@@ -271,10 +271,8 @@ A request is composed of the following parts.
 
 ### Request options
 
-#### Execution options
-The Cloudberry supports the automatic query-slicing on the `timeField`. The front-end can specify the slicing response time requirement to get the progressive data.
-
-E.g., the following option specify that the client accepts the sliced response and the expected return time is 2000 ms.
+Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each "small query" to get the results progressively.
+For example, the following option specifies that the front-end wants to slice a query and the expected response time for each sliced "small query" is 2000 ms.
 
 ```
 {
@@ -285,8 +283,8 @@ E.g., the following option specify that the client accepts the sliced response a
 }
 ```
 
-#### Multiple requests
-Sometimes the front-end wants to slice multiple queries simultaneously so that it can show the consistent multiple results. In that case, it can wrap the queries inside the `batch` fields and specifies only one `option` fields.
+#### Format of multiple requests
+Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results. In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
 
 ```
 {
