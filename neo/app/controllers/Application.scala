@@ -150,13 +150,50 @@ object Application{
     newValues.sortWith((x,y) => (x\CentroidLongitude).as[Double] < (y\CentroidLongitude).as[Double])
   }
 
-  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) =  {
-    //TODO: Do binary search
-    val citiesWithinBoundary = cities.filter{
-      city =>
-        (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble && (city \ CentroidLongitude).as[Double] <= neLng.toDouble && (city \ CentroidLongitude).as[Double] >= swLng.toDouble
+  /** Use binary search twice to find two breakpoints (startIndex and endIndex) to take out all cities whose longitude are in the range,
+      then scan those cities one by one for latitude.
+    * @param neLat Latitude of the NorthEast point of the boundary
+    * @param swLat Latitude of the SouthWest point of the boundary
+    * @param neLng Latitude of the NorthEast point of the boundary
+    * @param swLng Latitude of the SouthWest point of the boundary
+    * @param cities List of all cities
+    * @return List of cities which centroids is in current boundary
+    */
+  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]) : JsValue =  {
+    val startIndex = binarySearch(cities, 0, cities.size, swLng)
+    val endIndex = binarySearch(cities, 0, cities.size, neLng)
+
+    if (startIndex == -1){  //no cities found
+      Json.toJson(header)
+    } else {
+      val citiesWithinBoundary = cities.slice(startIndex, endIndex).filter {
+          city =>
+            (city \ CentroidLatitude).as[Double] <= neLat && (city \ CentroidLatitude).as[Double] >= swLat.toDouble
+      }
+      val response = header + (Features -> Json.toJson(citiesWithinBoundary))
+      Json.toJson(response)
     }
-    val response = header + (Features -> Json.toJson(citiesWithinBoundary))
-    Json.toJson(response)
+  }
+
+  /**
+    * Use binary search to find the index in cities to insert the target Longitude
+    * @param targetLng the target Longitude
+    * @return the index
+    */
+  def binarySearch(cities: List[JsValue], startIndex: Int, endIndex: Int, targetLng: Double) : Int = {
+    if (startIndex == endIndex) {
+      startIndex
+    } else {
+      val thisIndex = (startIndex + endIndex) / 2
+      val thisCity = cities(thisIndex)
+      val centroidLongitude = (thisCity \ CentroidLongitude).as[Double]
+      if (centroidLongitude > targetLng){
+        binarySearch(cities, startIndex, thisIndex, targetLng)
+      } else if(centroidLongitude < targetLng) {
+        binarySearch(cities, thisIndex + 1, endIndex, targetLng)
+      } else {
+        thisIndex
+      }
+    }
   }
 }
