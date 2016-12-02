@@ -83,12 +83,12 @@ public class TwitterFeedStreamDriver {
                 .build();
 
 
+        GeneralProducerKafka producer = new GeneralProducerKafka(config);
+        KafkaProducer<String, String> kafkaProducer = null;
         // Establish a connection
         try {
-            GeneralProducerKafka producer = new GeneralProducerKafka(config);
             twitterClient.connect();
             isConnected = true;
-            KafkaProducer<String, String> kafkaProducer = null;
             if (config.isStoreKafka()) {
                 kafkaProducer = producer.createKafkaProducer();
             }
@@ -114,8 +114,12 @@ public class TwitterFeedStreamDriver {
         } catch (Exception e) {
             e.printStackTrace(System.err);
         } finally {
-            bw.close();
-            twitterClient.stop();
+            if (bw != null)
+                bw.close();
+            if (twitterClient != null)
+                twitterClient.stop();
+            if (kafkaProducer != null)
+                kafkaProducer.close();
         }
     }
 

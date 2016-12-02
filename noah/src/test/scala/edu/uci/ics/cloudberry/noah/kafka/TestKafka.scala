@@ -10,10 +10,8 @@ import org.mockito._
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
 import play.api.libs.ws.ahc.AhcWSClient
+import org.mockito.Mockito._
 
-/**
-  * Created by Monique on 7/22/2016.
-  */
 class TestKafka extends Specification with Mockito {
 
   "General Producer Kafka" should {
@@ -28,12 +26,6 @@ class TestKafka extends Specification with Mockito {
       argument.getValue.isInstanceOf[ProducerRecord[String, String]] must(beTrue)
     }
 
-    "close should be called" in {
-      val mockProducer = mock[KafkaProducer[String, String]]
-      val producerKafka = new GeneralProducerKafka(config = new Config)
-      producerKafka.store("TestKafka", "testing...", mockProducer)
-      Mockito.verify(mockProducer, Mockito.times(1)).close() must_== (())
-    }
   }
 
   "Asterix Consumer Kafka" should {
@@ -56,4 +48,5 @@ class TestKafka extends Specification with Mockito {
       Mockito.verify(mockAsterix, Mockito.times(0)).ingest(any, any) must_== (())
     }
   }
+
 }
