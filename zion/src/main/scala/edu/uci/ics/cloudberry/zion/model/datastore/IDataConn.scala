@@ -44,7 +44,7 @@ class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext
   }
 
   def post(aql: String): Future[WSResponse] = {
-    log.info("AQL:" + aql)
+    log.debug("AQL:" + aql)
     val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
     f.onFailure(wsFailureHandler(aql))
     f

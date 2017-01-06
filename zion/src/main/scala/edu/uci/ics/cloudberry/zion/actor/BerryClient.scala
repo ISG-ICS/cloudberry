@@ -1,7 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.Actor.Receive
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash, Status}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
@@ -21,14 +20,15 @@ import scala.util.{Failure, Success}
   * One user should only attach to one ReactiveClient
   *
   * TODO: a better design should be a reception actor that directs the slicing query and the entire query to different
-  *   workers(actors).
+  * workers(actors).
   * TODO: merge the multiple times AskViewsInfos
   */
 class BerryClient(val jsonParser: JSONParser,
                   val dataManager: ActorRef,
                   val planner: QueryPlanner,
-                  val config: Config)
-                 (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
+                  val config: Config,
+                  val out: Option[ActorRef]
+                 )(implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
   import BerryClient._
 
@@ -48,9 +48,9 @@ class BerryClient(val jsonParser: JSONParser,
 
   override def receive: Receive = {
     case json: JsValue =>
-      handleNewRequest(Request(json, NoTransform), sender())
+      handleNewRequest(Request(json, NoTransform), out.getOrElse(sender()))
     case request: Request =>
-      handleNewRequest(request, sender())
+      handleNewRequest(request, out.getOrElse(sender()))
     case initial: Initial if initial.ts == curKey =>
       val queryInfos = initial.queries.zip(initial.infos).map {
         case (query, info) =>
@@ -109,6 +109,7 @@ class BerryClient(val jsonParser: JSONParser,
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) {
+        queryGroup.curSender ! BerryClient.Done // notifying the client the processing is done
         suggestViews(queryGroup)
         context.become(receive, discardOld = true)
       } else {
@@ -190,9 +191,19 @@ class BerryClient(val jsonParser: JSONParser,
 }
 
 object BerryClient {
+
+  object Done
+
+  object Interrupt
+
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
-    Props(new BerryClient(jsonParser, dataManager, planner, config))
+    Props(new BerryClient(jsonParser, dataManager, planner, config, None))
+  }
+
+  def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
+           (implicit ec: ExecutionContext) = {
+    Props(new BerryClient(jsonParser, dataManager, planner, config, Some(out)))
   }
 
   trait IPostTransform {

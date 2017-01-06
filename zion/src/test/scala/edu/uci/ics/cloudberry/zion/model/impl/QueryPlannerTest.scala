@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.SortOrder
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import play.api.libs.json._
 
@@ -48,10 +49,18 @@ class QueryPlannerTest extends Specification {
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
     }
     "makePlan should omit the redundant filter from query if it covers view.createQuery" in {
-      val queryZika = Query(dataset = TwitterDataSet, filter = Seq(FilterStatement("text", None, Relation.contains, Seq("zika"))), groups = Some(group))
+
+      val queryTimeFilter = FilterStatement("create_at", None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
+      val queryZika = Query(
+        dataset = TwitterDataSet,
+        filter = Seq(
+          FilterStatement("text", None, Relation.contains, Seq("zika")),
+          queryTimeFilter
+        ),
+        groups = Some(group))
       val (queries, _) = planner.makePlan(queryZika, sourceInfo, Seq(zikaFullYearViewInfo))
+      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, filter = Seq(queryTimeFilter), groups = Some(group))
       queries.size must_== 1
-      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, groups = Some(group))
     }
     "makePlan should ask the view and the source if view can not cover the query" in {
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
