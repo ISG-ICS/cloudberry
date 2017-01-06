@@ -77,7 +77,7 @@ class Application @Inject()(val wsClient: WSClient,
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
     val source = Source.single(request.body)
 
-    val flow = Application.actorRef[JsValue, JsValue]({ out =>
+    val flow = Application.actorFlow[JsValue, JsValue]({ out =>
       BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out)
     }, BerryClient.Done)
     // ??? do we need to convert it to string ??? will be more clear after we have the use case.
@@ -218,8 +218,8 @@ object Application {
     * to let the `deleteActor` know that the processing has finished.
     * Then it will finish the stream by sending the [[Status.Success]] to the downstream actor.
     */
-  def actorRef[In, Out](props: ActorRef => Props, onCompleteMessage: Any, bufferSize: Int = 16, overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew)
-                       (implicit factory: ActorRefFactory, mat: Materializer): Flow[In, Out, _] = {
+  def actorFlow[In, Out](props: ActorRef => Props, onCompleteMessage: Any, bufferSize: Int = 16, overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew)
+                        (implicit factory: ActorRefFactory, mat: Materializer): Flow[In, Out, _] = {
 
     // The stream can be completed successfully by sending [[akka.actor.PoisonPill]]
     // or [[akka.actor.Status.Success]] to the outActor.
