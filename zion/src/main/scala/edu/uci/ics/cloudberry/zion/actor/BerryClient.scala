@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash, Status}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
@@ -109,6 +109,7 @@ class BerryClient(val jsonParser: JSONParser,
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) {
+        queryGroup.curSender ! BerryClient.Done // notifying the client the processing is done
         suggestViews(queryGroup)
         context.become(receive, discardOld = true)
       } else {
@@ -190,6 +191,11 @@ class BerryClient(val jsonParser: JSONParser,
 }
 
 object BerryClient {
+
+  object Done
+
+  object Interrupt
+
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config)
            (implicit ec: ExecutionContext) = {
     Props(new BerryClient(jsonParser, dataManager, planner, config, None))
