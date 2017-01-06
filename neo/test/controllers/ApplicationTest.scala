@@ -2,11 +2,9 @@ package controllers
 
 import java.io.File
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
-import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json.JsArray
 
@@ -16,7 +14,7 @@ import scala.concurrent.duration._
 /**
   * Created by zongh on 10/26/2016.
   */
-class ApplicationTest extends TestkitExample with SpecificationLike {
+class ApplicationTest extends SpecificationLike {
 
   "application" should {
 
@@ -42,6 +40,9 @@ class ApplicationTest extends TestkitExample with SpecificationLike {
     }
 
     "generate a actor flow" in {
+
+      implicit val system : ActorSystem = ActorSystem("test")
+      implicit val mat: Materializer = ActorMaterializer()
       def props(outActor: ActorRef) = Props(new Actor {
         override def receive = {
           case _ =>
@@ -49,8 +50,6 @@ class ApplicationTest extends TestkitExample with SpecificationLike {
             outActor ! done
         }
       })
-
-      implicit val mat: Materializer = ActorMaterializer()
 
       val flow = Application.actorFlow(props, done)
       val future = Source.single(42).via(flow).runWith(Sink.fold[Int, Int](0)(_ + _))
