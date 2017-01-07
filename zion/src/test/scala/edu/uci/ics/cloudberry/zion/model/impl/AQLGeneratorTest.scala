@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 
 class AQLGeneratorTest extends Specification {
@@ -480,7 +481,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag),Some(globalAggr))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
