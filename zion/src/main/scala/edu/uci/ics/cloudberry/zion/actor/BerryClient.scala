@@ -10,7 +10,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, JsObject, JsString, JsValue}
+import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -192,7 +192,7 @@ class BerryClient(val jsonParser: JSONParser,
 
 object BerryClient {
 
-  object Done
+  val Done = Json.obj("key" -> JsString("done"))
 
   object Interrupt
 
