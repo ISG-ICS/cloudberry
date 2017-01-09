@@ -38,7 +38,7 @@ cd cloudberry; sbt compile
 ```
 ("sockets"="my_asterix_nc1:10001")
 ```
-where *my_asterix* is the name of your cluster instance, and *nc1* is the name of NC node.
+where *my_asterix* is the name of your cluster instance, and *nc1* is the name of the NC node.
 
 * Ingest the sample data
 
