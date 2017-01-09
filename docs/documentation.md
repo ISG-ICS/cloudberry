@@ -33,6 +33,13 @@ git clone https://github.com/ISG-ICS/cloudberry.git
 cd cloudberry; sbt compile
 ```
 
+* If you set a fully functional cluster through Managix, make the following changes in the script *./script/ingestTwitterToLocalCluster.sh*, line 86:
+
+```
+("sockets"="my_asterix_nc1:10001")
+```
+where *my_asterix* is the name of your cluster instance, and *nc1* is the name of the NC node.
+
 * Ingest the sample data
 
 ```
