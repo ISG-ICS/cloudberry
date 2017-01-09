@@ -13,7 +13,7 @@ Cloudberry runs on an Apache AsterixDB cluster. Here are two options to set up t
    - Install [Docker](https://www.docker.com/products/docker)(>1.10) on your local machine
    - Simply run the following command to create a two nc AsterixDB cluster locally. 
    ```
-   ./script/dockerRunAsterixDB.sh && sleep 2s && ./script/ingestTwitterToLocalCluster.sh
+   ./script/dockerRunAsterixDB.sh
    ```
 
 * Option 2: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
