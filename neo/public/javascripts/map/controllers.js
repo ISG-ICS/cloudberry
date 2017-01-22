@@ -181,6 +181,26 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       $scope.controls.custom.push(info);
 
+      //add the count of all the tweets control
+        var totalTweets = L.control();
+
+        totalTweets.onAdd = function() {
+            this._div = L.DomUtil.create('div', 'info');  //create a div with a class "info"
+            this._div.style.margin = '5% 0 0 0';
+            this._div.innerHTML = [
+                '<h4>Total Tweets</h4>',
+                '<h2><b>1,000,000</b></h2>'
+            ].join('');
+            $compile(this._div)($scope);
+            return this._div;
+        };
+
+        totalTweets.options = {
+            position: 'topleft'
+        };
+        $scope.controls.custom.push(totalTweets);
+
+
       loadGeoJsonFiles(onEachFeature);
 
       $scope.$on("leafletDirectiveMap.zoomend", function() {
