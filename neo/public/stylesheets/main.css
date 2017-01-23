@@ -115,3 +115,18 @@ search-bar {
     left: 110%;
 
 }
+
+.number{
+  padding: 6px 8px;
+  font: 14px/16px Arial, Helvetica, sans-serif;
+  text-align: right;
+  color: #2795ee;
+}
+.number h2{
+  margin: 0;
+  font-weight: 900;
+}
+.number span{
+  font-weight: normal;
+  font-size: 14px;
+}

@@ -170,7 +170,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           '<h4>Count by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          'Count: {{ selectedPlace.properties.count || "0" }}'
+          'Count: {{ selectedPlace.properties.count || "0" }}',
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -182,23 +182,23 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       $scope.controls.custom.push(info);
 
       //add the count of all the tweets control
-        var totalTweets = L.control();
+      var totalTweets = L.control();
 
-        totalTweets.onAdd = function() {
-            this._div = L.DomUtil.create('div', 'info');  //create a div with a class "info"
-            this._div.style.margin = '5% 0 0 0';
-            this._div.innerHTML = [
-                '<h4>Total Tweets</h4>',
-                '<h2><b>1,000,000</b></h2>'
-            ].join('');
-            $compile(this._div)($scope);
-            return this._div;
-        };
+      totalTweets.onAdd = function() {
+          this._div = L.DomUtil.create('div', 'number');  //create a div with a class "info"
+          this._div.style.margin = '0 0 20% 0';
+          this._div.innerHTML = [
+              '<h2>394,935,027</h2>',
+              '<span>tweets</span>'
+          ].join('');
+          $compile(this._div)($scope);
+          return this._div;
+      };
 
-        totalTweets.options = {
-            position: 'topleft'
-        };
-        $scope.controls.custom.push(totalTweets);
+      totalTweets.options = {
+          position: 'bottomleft'
+      };
+      $scope.controls.custom.push(totalTweets);
 
 
       loadGeoJsonFiles(onEachFeature);
