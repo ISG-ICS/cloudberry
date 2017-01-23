@@ -12,16 +12,19 @@ subtitle:
 ## Contributors
 * [Jianfeng Jia](https://github.com/JavierJia) (Ph.D. student)
 * [Taewoo Kim](https://github.com/waans11) (Ph.D. student)
-* [Zongheng Ma](https://github.com/zonghengma)
+* [Hao Chen](https://github.com/haochen07)
+* [Nishad Gurav](https://github.com/nishadg)
+* [Vidhyasagar Thirumaraiselvan](https://github.com/vidhya567)
 * [Shengjie Xu](https://github.com/HotLemonJuice)
-* [Xi Zhang](https://github.com/xizzzz)
 
 ## Earlier Contributors
 * [Aishwarya Kapse](https://github.com/aishwaryakapse)
 * [Chen Li (The student version :-))](https://github.com/JeremyLi28)
 * [Kaiyi Ma](https://github.com/kaiyim)
+* [Zongheng Ma](https://github.com/zonghengma)
 * [Monique Moledo](https://github.com/MoniMoledo)
 * [Victor Phung](https://github.com/starmon00)
+* [Xi Zhang](https://github.com/xizzzz)
 
 
 ## Acknowledgement
