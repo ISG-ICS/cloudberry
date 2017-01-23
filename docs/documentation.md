@@ -7,16 +7,14 @@ toc: true
 ## Quick Start
 
 ### Prepare the AsterixDB cluster
-Cloudberry runs on an Apache AsterixDB cluster. Here are two options to set up the cluster.
+Cloudberry runs on an Apache AsterixDB cluster. 
+You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
 
-* Option 1: Use the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/) to run a small cluster on a single machine. 
    - Install [Docker](https://www.docker.com/products/docker)(>1.10) on your local machine
    - Simply run the following command to create a two nc AsterixDB cluster locally. 
    ```
    ./script/dockerRunAsterixDB.sh
    ```
-
-* Option 2: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
 
 ### Run the TwitterMap demo
 Now let's checkout the code and run a TwitterMap demo on your local machine! You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
@@ -309,3 +307,10 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
   }
 }
 ```
+
+### Advanced users
+
+Real-world workloads may require a multi-nodes AsterixDB cluster. 
+You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup up it.
+
+
