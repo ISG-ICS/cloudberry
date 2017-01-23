@@ -310,7 +310,7 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
 
 ### Advanced users
 
-Real-world workloads may require a multi-nodes AsterixDB cluster. 
-You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup up it.
+Some applications may require a multi-node AsterixDB cluster. 
+You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
 
 
