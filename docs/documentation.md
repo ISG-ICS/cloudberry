@@ -6,10 +6,9 @@ toc: true
 
 ## Quick Start
 
-### Run the TwitterMap demo
 Now let's checkout the code and run a TwitterMap demo on your local machine!
 You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
-*This demo requires 4G memory at minimum*
+*This demo requires at least 4G memory*.
 
 * Clone the code  
 
@@ -23,27 +22,20 @@ git clone https://github.com/ISG-ICS/cloudberry.git
 cd cloudberry; sbt compile
 ```
 
-* Prepare the AsterixDB cluster
-
+* Prepare the AsterixDB cluster:
   Cloudberry runs on an Apache AsterixDB cluster.
   You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
 
-   - Install [Docker](https://www.docker.com/products/docker)(>1.10) on your local machine
+   - Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
    - Simply run the following command in the `cloudberry` folder to create an AsterixDB cluster locally.
    ```
    ./script/dockerRunAsterixDB.sh
    ```
 
-* Ingest the sample data
+* Ingest 324,000 sample tweets to AsterixDB.
 
 ```
 ./script/ingestTwitterToLocalCluster.sh
-```
-
-* Set the AsterixDB hostname in configuration file `neo/conf/application.conf` locally by changing the `asterixdb.url` value to the previously set AsterixDB address.
-
-```
-asterixdb.url = "http://localhost:19002/aql"
 ```
 
 * Finally run
@@ -52,7 +44,7 @@ asterixdb.url = "http://localhost:19002/aql"
 sbt "project neo" "run"
 ```
 
-You should see the TwitterMap webpage on your localhost:[http://localhost:9000](http://localhost:9000).
+You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000).
 
 ## Concepts
 The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
@@ -309,10 +301,24 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
 Some applications may require a multi-node AsterixDB cluster.
 You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
 
-After the cluster is set up, you should make the following changes in the script `./script/ingestTwitterToLocalCluster.sh`, line 86:
+After the cluster is set up, you should make the following changes
+
+* Change the AsterixDB NC name for feed connection
+
+In the script `./script/ingestTwitterToLocalCluster.sh`, line 86:
 
 ```
 ("sockets"="my_asterix_nc1:10001")
 ```
 
-where *my_asterix* is the name of your cluster instance, and *nc1* is the name of the NC node.
+where *my_asterix* is the name of your cluster instance, and *nc1* is the name of one NC node.
+
+
+* Modify the AsterixDB hostname
+
+In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` value to the previously set AsterixDB CC RESTFul API address.
+
+```
+asterixdb.url = "http://localhost:19002/aql"
+```
+
