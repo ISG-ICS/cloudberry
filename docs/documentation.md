@@ -316,7 +316,7 @@ where *my_asterix* is the name of your cluster instance, and *nc1* is the name o
 
 * Modify the AsterixDB hostname
 
-In configuration file `neo/conf/application.conf` locally by changing the `asterixdb.url` value to the previously set AsterixDB address.
+In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` value to the previously set AsterixDB CC RESTFul API address.
 
 ```
 asterixdb.url = "http://localhost:19002/aql"
