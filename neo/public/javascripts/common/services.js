@@ -4,6 +4,7 @@ angular.module('cloudberry.common', [])
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
     var asterixService = {
 
+      totalCount: 0,
       startDate: startDate,
       parameters: {
         dataset: "twitter.ds_tweet",
@@ -37,6 +38,11 @@ angular.module('cloudberry.common', [])
           geoIds : parameters.geoIds
         }));
         ws.send(json);
+      },
+
+      queryTotalCount: function () {
+         var json = JSON.stringify({ cmd : "totalCount"});
+         ws.send(json)
       }
     };
 
@@ -66,6 +72,10 @@ angular.module('cloudberry.common', [])
             asterixService.errorMessage = result.value;
             break;
           case "done":
+            break;
+          case "totalCount":
+            totalCount = result.value;
+            console.log("count is:", totalCount);
             break;
           default:
             console.error("ws get unknown data:" );

@@ -183,12 +183,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       //add the count of all the tweets control
       var totalTweets = L.control();
-
+      console.log("my count: ", Asterix.totalCount);
       totalTweets.onAdd = function() {
           this._div = L.DomUtil.create('div', 'number');  //create a div with a class "info"
           this._div.style.margin = '0 0 20% 0';
           this._div.innerHTML = [
-              '<h2>394,935,027</h2>',
+              '<h2>{{ Asterix.totalCount }}</h2>',
               '<span>tweets</span>'
           ].join('');
           $compile(this._div)($scope);
