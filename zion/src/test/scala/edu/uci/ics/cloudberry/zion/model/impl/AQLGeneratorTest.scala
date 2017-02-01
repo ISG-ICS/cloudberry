@@ -480,7 +480,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag),Some(globalAggr))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """
@@ -529,6 +529,37 @@ class AQLGeneratorTest extends Specification {
           |)
           |}""".stripMargin.trim)
     }
+
+    "translate lookup one table with one join key" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+
+      val selectValues = Seq("*","population")
+      val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
+      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"),  selectValues,
+        selectValues)
+      val filter = Seq(textFilter)
+      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
+      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |for $l0 in dataset twitter.US_population
+          |where $l0.stateID = $t.'geo_tag'.'stateID'
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |limit 0
+          |offset 0
+          |return
+          |{ '*': $t, 'population': $l0.population}
+        """.stripMargin.trim
+      )
+    }
+
+    "translate lookup multiple table with one join key on each" in {
+      ok
+    }
+
 
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok

@@ -12,10 +12,23 @@ class AQLGenerator extends IQLGenerator {
     query match {
       case q: Query =>
         validateQuery(q)
-        parseQuery(q, schema)
+        parseQuery(q, Map(q.dataset -> schema))
       case q: CreateView => parseCreate(q, schema)
       case q: AppendView => parseAppend(q, schema)
       case q: UpsertRecord => parseUpsert(q, schema)
+      case q: DropView => ???
+      case _ => ???
+    }
+  }
+
+  def generate(query: IQuery, schemaMap: Map[String,Schema]): String = {
+    query match {
+      case q: Query =>
+        validateQuery(q)
+        parseQuery(q, schemaMap)
+      case q: CreateView => parseCreate(q, schemaMap(query.dataset))
+      case q: AppendView => parseAppend(q, schemaMap(query.dataset))
+      case q: UpsertRecord => parseUpsert(q, schemaMap(query.dataset))
       case q: DropView => ???
       case _ => ???
     }
@@ -41,7 +54,7 @@ class AQLGenerator extends IQLGenerator {
     val insert =
       s"""
          |insert into dataset ${create.dataset} (
-         |${parseQuery(create.query, sourceSchema)}
+         |${parseQuery(create.query, Map(create.query.dataset -> sourceSchema))}
          |)
        """.stripMargin
     ddl + createDataSet + insert
@@ -50,7 +63,7 @@ class AQLGenerator extends IQLGenerator {
   def parseAppend(append: AppendView, sourceSchema: Schema): String = {
     s"""
        |upsert into dataset ${append.dataset} (
-       |${parseQuery(append.query, sourceSchema)}
+       |${parseQuery(append.query, Map(append.query.dataset -> sourceSchema))}
        |)
      """.stripMargin
   }
@@ -63,12 +76,12 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
-  def parseQuery(query: Query, schema: Schema): String = {
+  def parseQuery(query: Query, schemaMap: Map[String,Schema]): String = {
 
     val sourceVar = "$t"
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
 
-    val schemaVars: Map[String, AQLVar] = schema.fieldMap.mapValues { f =>
+    val schemaVars: Map[String, AQLVar] = schemaMap(query.dataset).fieldMap.mapValues { f =>
       f.dataType match {
         case DataType.Record => AQLVar(f, sourceVar)
         case DataType.Hierarchy => AQLVar(f, sourceVar) // TODO rethink this type: a type or just a relation between types?
@@ -80,7 +93,7 @@ class AQLGenerator extends IQLGenerator {
       }
     }
 
-    val (lookup, varMapAfterLookup) = parseLookup(query.lookup, schemaVars)
+    val (lookup, varMapAfterLookup) = parseLookup(query.lookup, schemaVars, schemaMap)
     val filter = parseFilter(query.filter, varMapAfterLookup)
     val (unnest, varMapAfterUnnest) = parseUnnest(query.unnest, varMapAfterLookup)
 
@@ -102,7 +115,8 @@ class AQLGenerator extends IQLGenerator {
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],
-                          varMap: Map[String, AQLVar]
+                          varMap: Map[String, AQLVar],
+                          schemaMap: Map[String,Schema]
                          ): (String, Map[String, AQLVar]) = {
     val sb = StringBuilder.newBuilder
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
@@ -121,9 +135,9 @@ class AQLGenerator extends IQLGenerator {
         """.stripMargin
       )
       //TODO check if the vars are duplicated
-      val field: Field = ??? // get field from lookup table
+      val fieldMap: Map[String, Field] = schemaMap.flatMap(_._2.fieldMap) // get fields from lookup and query table
       producedVar ++= lookup.as.zip(lookup.selectValues).map { p =>
-        p._1 -> AQLVar(new Field(p._1, field.dataType), s"$lookupVar.${p._2}")
+        p._1 -> AQLVar(new Field(p._1, fieldMap(p._2).dataType), s"$lookupVar.${p._2}")
       }
     }
     (sb.toString(), (producedVar ++= varMap).result().toMap)
