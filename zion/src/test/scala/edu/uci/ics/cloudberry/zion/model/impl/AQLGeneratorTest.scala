@@ -534,9 +534,9 @@ class AQLGeneratorTest extends Specification {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
 
-      val selectValues = Seq("*","population")
+      val selectValues = Seq("*", "population")
       val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
-      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"),  selectValues,
+      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"), selectValues,
         selectValues)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
@@ -557,7 +557,40 @@ class AQLGeneratorTest extends Specification {
     }
 
     "translate lookup multiple table with one join key on each" in {
-      ok
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+
+      val literacyDataSet = LiteracyDataStore.DatasetName
+      val literacySchema = LiteracyDataStore.LiteracySchema
+
+      val selectValuesPopulation = Seq("*", "population")
+      val lookupPopulation = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"), selectValuesPopulation,
+        selectValuesPopulation)
+      val selectValuesLiteracy = Seq("*", "literacy")
+      val lookupLiteracy = LookupStatement(Seq("geo_tag.stateID"), literacyDataSet, Seq("stateID"), selectValuesLiteracy,
+        selectValuesLiteracy)
+
+      val selectValues = Seq("*", "population", "literacy")
+      val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
+      val filter = Seq(textFilter)
+      val query = new Query(TwitterDataSet, Seq(lookupPopulation, lookupLiteracy), filter, Seq.empty, select = Some(selectStatement))
+      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema,
+        literacyDataSet -> literacySchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |for $l0 in dataset twitter.US_population
+          |where $l0.stateID = $t.'geo_tag'.'stateID'
+          |for $l1 in dataset twitter.US_literacy
+          |where $l1.stateID = $t.'geo_tag'.'stateID'
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |limit 0
+          |offset 0
+          |return
+          |{ '*': $t, 'population': $l0.population, 'literacy': $l1.literacy}
+        """.stripMargin.trim
+      )
     }
 
 
