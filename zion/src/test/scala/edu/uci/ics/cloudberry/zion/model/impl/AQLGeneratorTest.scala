@@ -534,10 +534,9 @@ class AQLGeneratorTest extends Specification {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
 
-      val selectValues = Seq("*", "population")
-      val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
-      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"), selectValues,
-        selectValues)
+      val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population"))
+      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"), Seq("population"),
+        Seq("population"))
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
       val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
@@ -556,6 +555,33 @@ class AQLGeneratorTest extends Specification {
       )
     }
 
+    "translate group by query having lookup with one join key" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+
+      val selectValues = Seq("population")
+      val group = GroupStatement(Seq(byState), Seq(AggregateStatement("population", Sum, "sum")))
+      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"), selectValues,
+        selectValues)
+      val filter = Seq(textFilter)
+      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, groups = Some(group))
+      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |for $l0 in dataset twitter.US_population
+          |where $l0.stateID = $t.'geo_tag'.'stateID'
+          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |and contains($t.'text', "virus")
+          |let $l0aggr := $l0.population
+          |group by $g0 := $t.geo_tag.stateID with $l0aggr
+          |return {
+          |   'state' : $g0,'sum' : sum($l0aggr)
+          |}
+        """.stripMargin.trim
+      )
+    }
+
     "translate lookup multiple table with one join key on each" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
@@ -563,10 +589,10 @@ class AQLGeneratorTest extends Specification {
       val literacyDataSet = LiteracyDataStore.DatasetName
       val literacySchema = LiteracyDataStore.LiteracySchema
 
-      val selectValuesPopulation = Seq("*", "population")
+      val selectValuesPopulation = Seq("population")
       val lookupPopulation = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateID"), selectValuesPopulation,
         selectValuesPopulation)
-      val selectValuesLiteracy = Seq("*", "literacy")
+      val selectValuesLiteracy = Seq("literacy")
       val lookupLiteracy = LookupStatement(Seq("geo_tag.stateID"), literacyDataSet, Seq("stateID"), selectValuesLiteracy,
         selectValuesLiteracy)
 

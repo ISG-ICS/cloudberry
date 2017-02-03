@@ -21,7 +21,7 @@ class AQLGenerator extends IQLGenerator {
     }
   }
 
-  def generate(query: IQuery, schemaMap: Map[String,Schema]): String = {
+  def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
     query match {
       case q: Query =>
         validateQuery(q)
@@ -76,7 +76,7 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
-  def parseQuery(query: Query, schemaMap: Map[String,Schema]): String = {
+  def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
 
     val sourceVar = "$t"
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
@@ -116,7 +116,7 @@ class AQLGenerator extends IQLGenerator {
 
   private def parseLookup(lookups: Seq[LookupStatement],
                           varMap: Map[String, AQLVar],
-                          schemaMap: Map[String,Schema]
+                          schemaMap: Map[String, Schema]
                          ): (String, Map[String, AQLVar]) = {
     val sb = StringBuilder.newBuilder
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
@@ -135,9 +135,9 @@ class AQLGenerator extends IQLGenerator {
         """.stripMargin
       )
       //TODO check if the vars are duplicated
-      val fieldMap: Map[String, Field] = schemaMap.flatMap(_._2.fieldMap) // get fields from lookup and query table
-      producedVar ++= lookup.as.zip(lookup.selectValues).map { p =>
-        p._1 -> AQLVar(new Field(p._1, fieldMap(p._2).dataType), s"$lookupVar.${p._2}")
+      val fieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap // get fields from lookup dataset
+      producedVar ++= lookup.as.zip(lookup.selectValues).map { case (reName: String, oriName: String) =>
+        reName -> AQLVar(new Field(reName, fieldMap(oriName).dataType), s"$lookupVar.$oriName")
       }
     }
     (sb.toString(), (producedVar ++= varMap).result().toMap)
