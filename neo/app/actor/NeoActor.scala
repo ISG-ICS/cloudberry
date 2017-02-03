@@ -23,7 +23,6 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
 
   override def receive: Receive = {
     case json: JsValue =>
-      log.error("receive:" + json)
       json.validate[UserRequest].map { userRequest =>
         val allRequest = generateCBerryRequest(userRequest)
         import RequestType._
@@ -44,7 +43,7 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
 
         json.validate[Command].map { cmd =>
           if (cmd.cmd == "totalCount") {
-            out ! Json.obj("key" -> "totalCount", "value" -> 123456790)
+            out ! Json.obj("key" -> "totalCount", "value" -> 2323230)
           }
         }.recoverTotal(
           e => out ! JsError.toJson(e)

@@ -492,9 +492,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       //add the count of all the tweets control
       var totalTweets = $('.totalTweets');
+      var itemName = "Tweets";
 
       if (totalTweets){
-        console.log("drawMap: totalTweets: remove");
         totalTweets.remove();
       }
 
@@ -504,10 +504,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       $scope.totalTweets.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'number legend');
-        div.style.margin = '0 0 30% 0';
+        div.style.margin = '0 0 50% 0';
         div.innerHTML +=
             '<h2>' + Asterix.totalCount + '</h2>' +
-            '<span>tweets</span>';
+            '<span>' + itemName + '</span>';
 
         return div;
       };

@@ -40,9 +40,10 @@ angular.module('cloudberry.common', [])
         ws.send(json);
       },
 
+        // query the middleware for the total count of the Tweets in real time
       queryTotalCount: function () {
-         var json = JSON.stringify({ cmd : "totalCount"});
-         ws.send(json);
+         var json = JSON.stringify({ cmd : "totalCount"});  // prepare the query using json
+         ws.send(json);   // send query by the web socket
       },
     };
 
