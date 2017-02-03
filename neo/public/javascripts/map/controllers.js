@@ -181,26 +181,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       $scope.controls.custom.push(info);
 
-      //add the count of all the tweets control
-      var totalTweets = L.control();
-      console.log("my count: ", Asterix.totalCount);
-      totalTweets.onAdd = function() {
-          this._div = L.DomUtil.create('div', 'number');  //create a div with a class "info"
-          this._div.style.margin = '0 0 20% 0';
-          this._div.innerHTML = [
-              '<h2>{{ Asterix.totalCount }}</h2>',
-              '<span>tweets</span>'
-          ].join('');
-          $compile(this._div)($scope);
-          return this._div;
-      };
-
-      totalTweets.options = {
-          position: 'bottomleft'
-      };
-      $scope.controls.custom.push(totalTweets);
-
-
       loadGeoJsonFiles(onEachFeature);
 
       $scope.$on("leafletDirectiveMap.zoomend", function() {
@@ -509,6 +489,30 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       if ($scope.map)
         $scope.legend.addTo($scope.map);
+
+      //add the count of all the tweets control
+      var totalTweets = $('.totalTweets');
+
+      if (totalTweets){
+        console.log("drawMap: totalTweets: remove");
+        totalTweets.remove();
+      }
+
+      $scope.totalTweets = L.control({
+        position: 'bottomleft'
+      })
+
+      $scope.totalTweets.onAdd = function(map) {
+        var div = L.DomUtil.create('div', 'number legend');
+        div.style.margin = '0 0 30% 0';
+        div.innerHTML +=
+            '<h2>' + Asterix.totalCount + '</h2>' +
+            '<span>tweets</span>';
+
+        return div;
+      };
+      if($scope.map)
+        $scope.totalTweets.addTo($scope.map);
 
     }
 

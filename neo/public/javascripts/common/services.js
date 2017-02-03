@@ -42,8 +42,8 @@ angular.module('cloudberry.common', [])
 
       queryTotalCount: function () {
          var json = JSON.stringify({ cmd : "totalCount"});
-         ws.send(json)
-      }
+         ws.send(json);
+      },
     };
 
     ws.onmessage = function(event) {
@@ -74,8 +74,7 @@ angular.module('cloudberry.common', [])
           case "done":
             break;
           case "totalCount":
-            totalCount = result.value;
-            console.log("count is:", totalCount);
+            asterixService.totalCount = result.value;
             break;
           default:
             console.error("ws get unknown data:" );
