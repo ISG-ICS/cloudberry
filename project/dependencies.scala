@@ -47,7 +47,7 @@ object Dependencies {
     "com.crawljax" % "crawljax-core" % "3.6",
     "com.crawljax.plugins" % "crawloverview-plugin" % "3.6",
     "com.crawljax" % "crawljax-cli" % "3.6",
-    "org.apache.kafka" % "kafka_2.10" % "0.10.0.0"
+    "org.apache.kafka" % "kafka_2.11" % "0.10.0.0"
       exclude("javax.jms", "jms")
       exclude("com.sun.jdmk", "jmxtools")
       exclude("org.slf4j", "slf4j-log4j12")
