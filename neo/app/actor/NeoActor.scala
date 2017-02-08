@@ -33,6 +33,7 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
         // Sending requests on tweets samples
         val sampleResponse : Future[StreamedResponse] =
           ws.url(url).withMethod("POST").withBody(berryRequest(Sample)).stream()
+        
         // Dealing with response on tweets samples: non-slicing
         sampleResponse.map{ response =>
           if(response.headers.status == 200){
