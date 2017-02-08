@@ -1,43 +1,97 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.{ask, pipe}
-import akka.util.Timeout
-import edu.uci.ics.cloudberry.zion.actor.BerryClient
+import akka.stream.Materializer
+import akka.util._
+import akka.stream.scaladsl._
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.libs.json._
+import play.api.libs.ws._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
-
-  val berryClient = context.watch(context.actorOf(berryClientProps))
+class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
+              (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import NeoActor._
-
   implicit val timeout: Timeout = Timeout(20.minutes)
 
   override def receive: Receive = {
     case json: JsValue =>
       json.validate[UserRequest].map { userRequest =>
-        val allRequest = generateCBerryRequest(userRequest)
+
+        // Generate json in berry format
         import RequestType._
+        val berryRequest = generateCBerryRequest(userRequest)
+        val url = "http://" + host + "/berry"
 
-        // Example of sending the non-slicing query using ask pattern
-        val sampleJson = allRequest(Sample)
-        val fAnswer = (berryClient ? sampleJson).mapTo[JsValue].map(json => Json.obj("key" -> "sample", "value" -> json))
-        fAnswer pipeTo out
+        // Sending requests on tweets samples
+        val sampleResponse : Future[StreamedResponse] =
+          ws.url(url).withMethod("POST").withBody(berryRequest(Sample)).stream()
+        // Dealing with response on tweets samples: non-slicing
+        sampleResponse.map{ response =>
+          if(response.headers.status == 200){
+            try {
+              // Define sink of data stream
+              val sink = Sink.foreach[ByteString] { bytes =>
+                val json = Json.parse(bytes.utf8String)
+                out ! Json.obj("key" -> "sample", "value" -> json)
+              }
+              // streaming data pipeline
+              response.body
+                .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.maxFrameLength, allowTruncation = true))
+                .runWith(sink)
+                .onFailure { case e => Logger.logger.error(e.toString) }
+            }
+            catch {
+              case e: Throwable => Logger.logger.error("stream receiving error: " + e.getMessage)
+            }
+          }
+          // Gateway error
+          else {
+            Logger.logger.error("Bad Gate Way")
+          }
+        }
 
-        // Example of sending the group of slicing ones using actor stream pattern
-        val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(allRequest(_))
-        val json = JsObject(Seq(
+        // Sending group of slicing ones
+        val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(berryRequest(_))
+        val batchJson = JsObject(Seq(
           "batch" -> JsArray(groupTimePlaceTags),
           "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
-          )))
-        berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
+        )))
+
+        // Dealing with response on timing, geo and hashtags: slicing
+        val batchResponse: Future[StreamedResponse] =
+          ws.url(url).withMethod("POST").withBody(batchJson).stream()
+        batchResponse.map{ response =>
+          if(response.headers.status == 200){
+            try {
+              // Define sink of data stream
+              val sink = Sink.foreach[ByteString] { bytes =>
+                val json = Json.parse(bytes.utf8String)
+                out ! Json.obj("key" -> "batch", "value" -> json)
+              }
+              // streaming data pipeline
+              response.body
+                .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.maxFrameLength, allowTruncation = true))
+                .runWith(sink)
+                .onFailure { case e => Logger.logger.error(e.toString) }
+            }
+            catch {
+              case e: Throwable => Logger.logger.error("stream receiving error: " + e.getMessage)
+            }
+          }
+          // Gateway error
+          else {
+            Logger.logger.error("Bad Gate Way")
+          }
+        }
+
       }.recoverTotal {
         e => out ! JsError.toJson(e)
       }
@@ -45,13 +99,8 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
 }
 
 object NeoActor {
-  def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
-
-  case class NeoTransformer(key: String) extends BerryClient.IPostTransform {
-    override def transform(jsValue: JsValue): JsValue = {
-      Json.obj("key" -> key, "value" -> jsValue)
-    }
-  }
+  def props(out: ActorRef, ws: WSClient, host: String, config: Config)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new NeoActor(out, ws, host, config))
 
   object RequestType extends Enumeration {
     val ByPlace = Value("byPlace")
