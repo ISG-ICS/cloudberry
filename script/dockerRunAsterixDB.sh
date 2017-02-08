@@ -20,8 +20,8 @@
 
 set -o nounset                              # Treat unset variables as an error
 
-ncs=${1:-2}          # the number of NCs in local cluster, default is 2 ncs
-NC_JVM_MEM=2048      # the JVM -Xmx2048m memory budget for each NC. the Unit is in meta bytes
+ncs=${1:-1}          # the number of NCs in local cluster, default is 2 ncs
+NC_JVM_MEM=1024      # the JVM -Xmx2048m memory budget for each NC. the Unit is in meta bytes
 
 docName=dbstore
 docker volume create --driver local --name $docName
