@@ -93,6 +93,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
+        map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
       });
 
