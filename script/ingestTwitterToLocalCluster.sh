@@ -70,7 +70,6 @@ create type typeTweet if not exists as open{
     place : typePlace?,
     geo_tag: typeGeoTag
 }
-
 create dataset ds_tweet(typeTweet) if not exists primary key id 
 using compaction policy prefix (("max-mergable-component-size"="134217728"),("max-tolerance-component-count"="10")) with filter on create_at ;
 // with filter on create_at;
@@ -81,6 +80,7 @@ create index text_idx if not exists on ds_tweet("text") type keyword;
 //create index state_idx if not exists on ds_tweet(geo_tag.stateID) type btree;
 //create index county_idx if not exists on ds_tweet(geo_tag.countyID) type btree;
 //create index city_idx if not exists on ds_tweet(geo_tag.cityID) type btree;
+
 create feed TweetFeed using socket_adapter
 (
     ("sockets"="nc1:10001"),
@@ -96,3 +96,4 @@ EOF
 
 #Serve socket feed using local file
 gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh
+
