@@ -6,20 +6,9 @@ toc: true
 
 ## Quick Start
 
-### Prepare the AsterixDB cluster
-Cloudberry runs on an Apache AsterixDB cluster. Here are two options to set up the cluster.
-
-* Option 1: Use the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/) to run a small cluster on a single machine. 
-   - Install [Docker](https://www.docker.com/products/docker)(>1.10) on your local machine
-   - Simply run the following command to create a two nc AsterixDB cluster locally. 
-   ```
-   ./script/dockerRunAsterixDB.sh
-   ```
-
-* Option 2: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
-
-### Run the TwitterMap demo
-Now let's checkout the code and run a TwitterMap demo on your local machine! You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
+Now let's checkout the code and run a TwitterMap demo on your local machine!
+You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
+*This demo requires at least 4G memory*.
 
 * Clone the code  
 
@@ -33,35 +22,41 @@ git clone https://github.com/ISG-ICS/cloudberry.git
 cd cloudberry; sbt compile
 ```
 
-* If you set a fully functional cluster through Managix, make the following changes in the script *./script/ingestTwitterToLocalCluster.sh*, line 86:
+* Prepare the AsterixDB cluster:
+  Cloudberry runs on an Apache AsterixDB cluster.
+  You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
 
-```
-("sockets"="my_asterix_nc1:10001")
-```
-where *my_asterix* is the name of your cluster instance, and *nc1* is the name of the NC node.
+   - Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
+   - Simply run the following command in the `cloudberry` folder to create an AsterixDB cluster locally.
+   ```
+   ./script/dockerRunAsterixDB.sh
+   ```
 
-* Ingest the sample data
+* Ingest 324,000 sample tweets to AsterixDB.
 
 ```
 ./script/ingestTwitterToLocalCluster.sh
 ```
 
-* Set the AsterixDB hostname in configuration file `neo/conf/application.conf` locally by changing the `asterixdb.url` value to the previously set AsterixDB address.
-
-```
-asterixdb.url = "http://localhost:19002/aql"
-```
-
-* Finally run 
+* Finally run
 
 ```
 sbt "project neo" "run"
 ```
 
-You should see the TwitterMap webpage on your `http://localhost:9000`
+You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000).
+
+*Please notice that the first time you open the page, it could take several minutes (depending on your machine) to load the front-end data.
+If you see the following messages from the console, it means the loading process is done and you can play with the front-end now!*
+
+```
+...
+[info] application - I'm initializing
+[info] play.api.Play - Application started (Dev)
+```
 
 ## Concepts
-The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org). 
+The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
 
 The following document uses an already ingested AsterixDB Twitter dataset to illustrate how to set up the Cloudberry system on the dataset.
 
@@ -149,7 +144,7 @@ Cloudberry supports the following data types:
 * **Time** : the same `datetime` type as in AsterixDB.
 * **String** : same as the `string` type in AsterixDB. It usually is an identity name which is used to do filtering and "group by".
 * **Text** : it is the `string` type as in AsterixDB. The attribute has to be a `measurement` and can only be used to do filtering by a full-text search. Usually, it implies there is an inverted-index built on the field.
-* **Bag** : the same `set` type as in AsterixDB. 
+* **Bag** : the same `set` type as in AsterixDB.
 * **Hierarchy** : A synthetic field that defines hierarchical relationships between the existing fields.
 
 #### Pre-defined functions
@@ -173,7 +168,7 @@ A request is composed of the following parameters:
 * **Dataset** : the dataset to query on.
 * **Unnest** : to flatten a record based on the nested `Bag` attribute to generate multiple records.
 * **Filter** : a set of selection predicates.
-* **Group** : 
+* **Group** :
   * **by** : to specify the "group by" fields.
   * **aggregate**: to specify the aggregation functions to apply, such as `min` and `max`.
 * **Select**: to provide *order* or *project* options. It should be mainly used for sampling purposes. A `limit` field should be given. A `offset` field enables pagination.
@@ -309,3 +304,30 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
   }
 }
 ```
+
+### Advanced users
+
+Some applications may require a multi-node AsterixDB cluster.
+You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
+
+After the cluster is set up, you should make the following changes
+
+* Change the AsterixDB NC name for feed connection
+
+In the script `./script/ingestTwitterToLocalCluster.sh`, line 86:
+
+```
+("sockets"="my_asterix_nc1:10001")
+```
+
+where *my_asterix* is the name of your cluster instance, and *nc1* is the name of one NC node.
+
+
+* Modify the AsterixDB hostname
+
+In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` value to the previously set AsterixDB CC RESTFul API address.
+
+```
+asterixdb.url = "http://localhost:19002/aql"
+```
+
