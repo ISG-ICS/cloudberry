@@ -12,7 +12,7 @@ class Config(config: Configuration) {
 
   val AwaitInitial = config.getString("neo.timeout.initial").map(parseTimePair).getOrElse(10 minutes)
 
-  val maxFrameLength = config.getString("neo.stream.max.frame.length").map(parseMemoryPair).getOrElse(8388608)
+  val MaxFrameLengthForNeoWS = config.getString("neo.stream.max.frame.length").map(parseFrameLengthLimit).getOrElse(8388608)
 
   val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)
 
@@ -33,7 +33,7 @@ object Config {
     FiniteDuration(split(0).toLong, split(1))
   }
 
-  def parseMemoryPair(memoryString: String): Int = {
+  def parseFrameLengthLimit(memoryString: String): Int = {
     val split = memoryString.split("\\s+")
     split(0).toInt
   }

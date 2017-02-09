@@ -28,74 +28,55 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
         // Generate json in berry format
         import RequestType._
         val berryRequest = generateCBerryRequest(userRequest)
+
+        // Get Berry url address
         val url = "http://" + host + "/berry"
 
-        // Sending requests on tweets samples
-        val sampleResponse : Future[StreamedResponse] =
-          ws.url(url).withMethod("POST").withBody(berryRequest(Sample)).stream()
-        
-        // Dealing with response on tweets samples: non-slicing
-        sampleResponse.map{ response =>
-          if(response.headers.status == 200){
-            try {
-              // Define sink of data stream
-              val sink = Sink.foreach[ByteString] { bytes =>
-                val json = Json.parse(bytes.utf8String)
-                out ! Json.obj("key" -> "sample", "value" -> json)
-              }
-              // streaming data pipeline
-              response.body
-                .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.maxFrameLength, allowTruncation = true))
-                .runWith(sink)
-                .onFailure { case e => Logger.logger.error(e.toString) }
-            }
-            catch {
-              case e: Throwable => Logger.logger.error("stream receiving error: " + e.getMessage)
-            }
-          }
-          // Gateway error
-          else {
-            Logger.logger.error("Bad Gate Way")
-          }
-        }
+        // Dealing with response on samples: slicing
+        handleHttpTransport(url, "sample", berryRequest(Sample))
 
-        // Sending group of slicing ones
+        //  Dealing with response on timing, geo and hashtags: slicing
         val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(berryRequest(_))
         val batchJson = JsObject(Seq(
           "batch" -> JsArray(groupTimePlaceTags),
           "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
         )))
-
-        // Dealing with response on timing, geo and hashtags: slicing
-        val batchResponse: Future[StreamedResponse] =
-          ws.url(url).withMethod("POST").withBody(batchJson).stream()
-        batchResponse.map{ response =>
-          if(response.headers.status == 200){
-            try {
-              // Define sink of data stream
-              val sink = Sink.foreach[ByteString] { bytes =>
-                val json = Json.parse(bytes.utf8String)
-                out ! Json.obj("key" -> "batch", "value" -> json)
-              }
-              // streaming data pipeline
-              response.body
-                .via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.maxFrameLength, allowTruncation = true))
-                .runWith(sink)
-                .onFailure { case e => Logger.logger.error(e.toString) }
-            }
-            catch {
-              case e: Throwable => Logger.logger.error("stream receiving error: " + e.getMessage)
-            }
-          }
-          // Gateway error
-          else {
-            Logger.logger.error("Bad Gate Way")
-          }
-        }
+        handleHttpTransport(url, "batch", batchJson)
 
       }.recoverTotal {
         e => out ! JsError.toJson(e)
       }
+  }
+
+  private def handleHttpTransport(url: String, requestType: String, requestBody: JsValue): Unit = {
+    // Post request and get future response
+    val response : Future[StreamedResponse] =
+      ws.url(url).withMethod("POST").withBody(requestBody).stream()
+
+    // Wrap streaming response and send to webpage
+    response.map{ res =>
+      if(res.headers.status == 200){
+        try {
+          // Define sink of data stream
+          val sink = Sink.foreach[ByteString] { bytes =>
+            val json = Json.parse(bytes.utf8String)
+            out ! Json.obj("key" -> requestType, "value" -> json)
+          }
+          // streaming data pipeline
+          res.body.via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.MaxFrameLengthForNeoWS, allowTruncation = true))
+                  .runWith(sink)
+                  .onFailure { case e => Logger.logger.error(e.toString) }
+        }
+        catch {
+          case e: Throwable => Logger.logger.error("stream receiving error: " + e.getMessage)
+        }
+      }
+      // Gateway error
+      else {
+        Logger.logger.error("Bad Gate Way")
+      }
+    }
+
   }
 }
 
