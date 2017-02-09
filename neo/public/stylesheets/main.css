@@ -122,31 +122,8 @@ search-bar {
            left: 71%;
            width: 10%;
            z-index: 0;
-         }
-.footer {
-
-   position: absolute;
-              bottom: 22%;
-              left: -11%;
-              width: 10%;
-              z-index: 0;
-    text-align : center;
 }
 
-.avatar-img{
-    position: absolute;
-    top : 9px;
-     height : 40px;
-      width : 40px;
-      left : 24%;
-    border-radius:50%;
-}
-
-.titleofweb {
-    position : absolute;
-    top : 16px;
-	left: 3%;
-}
 
 .white {
     color : white;
