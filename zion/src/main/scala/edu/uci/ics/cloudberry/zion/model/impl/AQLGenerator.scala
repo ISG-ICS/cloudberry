@@ -118,29 +118,33 @@ class AQLGenerator extends IQLGenerator {
                           varMap: Map[String, AQLVar],
                           schemaMap: Map[String, Schema]
                          ): (String, Map[String, AQLVar]) = {
-    val sb = StringBuilder.newBuilder
+//    val sb = StringBuilder.newBuilder
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     lookups.zipWithIndex.foreach { case (lookup, id) =>
       val lookupVar = s"$$l$id"
       val keyZip = lookup.lookupKeys.zip(lookup.sourceKeys).map { case (lookupKey, sourceKey) =>
         varMap.get(sourceKey) match {
-          case Some(aqlVar) => s"$lookupVar.$lookupKey = ${aqlVar.aqlExpr}"
+          case Some(aqlVar) => s"${aqlVar.aqlExpr} /* +indexnl */ = $lookupVar.$lookupKey"
           case None => throw FieldNotFound(sourceKey)
         }
       }
-      sb.append(
+      val returnZip = lookup.as.zip(lookup.selectValues).map { case (asName, selectName) =>
+        s"'$selectName' : $lookupVar.$asName"
+      }
+
+      val subQuery =
         s"""
            |for $lookupVar in dataset ${lookup.dataset}
            |where ${keyZip.mkString(" and ")}
-        """.stripMargin
-      )
-      //TODO check if the vars are duplicated
-      val fieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap // get fields from lookup dataset
-      producedVar ++= lookup.as.zip(lookup.selectValues).map { case (reName: String, oriName: String) =>
-        reName -> AQLVar(new Field(reName, fieldMap(oriName).dataType), s"$lookupVar.$oriName")
-      }
+           |return {${returnZip.mkString(", ")}}
+        """.stripMargin.trim
+
+
+      //      val fieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap // get fields from lookup dataset
+
+      producedVar += (lookup.dataset -> AQLVar(new Field(lookup.dataset, DataType.Record), subQuery))
     }
-    (sb.toString(), (producedVar ++= varMap).result().toMap)
+    ("", (producedVar ++= varMap).result().toMap)
   }
 
   private def parseFilter(filters: Seq[FilterStatement], varMap: Map[String, AQLVar]): String = {

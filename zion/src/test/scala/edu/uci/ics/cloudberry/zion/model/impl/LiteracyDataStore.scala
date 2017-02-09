@@ -15,7 +15,7 @@ object LiteracyDataStore {
     Seq(
       TimeField(TimeFieldName),
       NumberField("id"),
-      NumberField("stateID")),
+      NumberField("stateId")),
     Seq(
       NumberField("literacy")
     ),
