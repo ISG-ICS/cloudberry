@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.common
 
 import play.api.Configuration
+import play.api.Logger
 
 import scala.concurrent.duration._
 
@@ -12,7 +13,7 @@ class Config(config: Configuration) {
 
   val AwaitInitial = config.getString("neo.timeout.initial").map(parseTimePair).getOrElse(10 minutes)
 
-  val MaxFrameLengthForNeoWS = config.getString("neo.stream.max.frame.length").map(parseFrameLengthLimit).getOrElse(8*1024*1024)
+  val MaxFrameLengthForNeoWS = config.getString("neo.stream.max.frame.length").map(parseFrameLengthLimit).getOrElse(8 * MemorySize.MB)
 
   val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)
 
@@ -33,9 +34,35 @@ object Config {
     FiniteDuration(split(0).toLong, split(1))
   }
 
+  object MemorySize extends Enumeration {
+    val KB: Int = 1024
+    val MB: Int = 1024*1024
+    val GB: Int = 1024*1024*1024
+  }
+
   def parseFrameLengthLimit(memoryString: String): Int = {
-    val split = memoryString.split("\\s+")
-    split(0).toInt * 1024 * 1024
+    val size = memoryString.substring(memoryString.length-2)
+    val num = memoryString.substring(0, memoryString.length-2).trim.toDouble
+    try{
+      val res = size match {
+        case "KB" => (num * MemorySize.KB).toLong
+        case "MB" => (num * MemorySize.MB).toLong
+        case "GB" => (num * MemorySize.GB).toLong
+        case _ => throw new IllegalArgumentException("The neo.stream.max.frame.length in application.conf accepts configuration only in KB, MB or GB.")
+      }
+      // Minimum 1KB, maximum 2GB
+      if(res >= 1024 && res <= Int.MaxValue){
+        res.toInt
+      } else if(res == Int.MaxValue.toLong + 1){
+        Int.MaxValue
+      } else{
+        throw new IllegalArgumentException("The neo.stream.max.frame.length in application.conf is 1KB minimum, 2GB maximum.")
+      }
+    } catch {
+      case e: Throwable =>
+        Logger.logger.error(e.getMessage + " Use default value 8MB instead.")
+        8 * MemorySize.MB
+    }
   }
 
   val Default = new Config(Configuration.empty)

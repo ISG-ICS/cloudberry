@@ -19,64 +19,55 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
               (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import NeoActor._
+  import RequestType._
   implicit val timeout: Timeout = Timeout(20.minutes)
 
   override def receive: Receive = {
     case json: JsValue =>
       json.validate[UserRequest].map { userRequest =>
-
-        // Generate json in berry format
-        import RequestType._
         val berryRequest = generateCBerryRequest(userRequest)
-
-        // Get Berry url address
         val url = "http://" + host + "/berry"
-
-        // Dealing with response on samples: slicing
-        handleHttpTransport(url, "sample", berryRequest(Sample))
-
-        //  Dealing with response on timing, geo and hashtags: slicing
-        val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(berryRequest(_))
-        val batchJson = JsObject(Seq(
-          "batch" -> JsArray(groupTimePlaceTags),
-          "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
-        )))
-        handleHttpTransport(url, "batch", batchJson)
-
+        handleSamplingResponse(url, berryRequest)
+        handleSlicingResponse(url, berryRequest)
       }.recoverTotal {
         e => out ! JsError.toJson(e)
       }
   }
 
-  private def handleHttpTransport(url: String, requestType: String, requestBody: JsValue): Unit = {
-    // Post request and get future response
+  private def handleSamplingResponse(url: String, berryRequest: Map[RequestType.Value, JsValue]): Unit = {
+    handleResponse(url, Sample, berryRequest(Sample))
+  }
+
+  private def handleSlicingResponse(url: String, berryRequest: Map[RequestType.Value, JsValue]): Unit = {
+    val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(berryRequest(_))
+    val batchJson = JsObject(Seq(
+      "batch" -> JsArray(groupTimePlaceTags),
+      "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
+      )))
+    handleResponse(url, Batch, batchJson)
+  }
+
+  private def handleResponse(url: String, requestType: RequestType.Value, requestBody: JsValue): Unit = {
     val response : Future[StreamedResponse] =
       ws.url(url).withMethod("POST").withBody(requestBody).stream()
 
-    // Wrap streaming response and send to webpage
     response.map{ res =>
       if(res.headers.status == 200){
         try {
-          // Define sink of data stream
           val sink = Sink.foreach[ByteString] { bytes =>
             val json = Json.parse(bytes.utf8String)
             out ! Json.obj("key" -> requestType, "value" -> json)
           }
-          // streaming data pipeline
           res.body.via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.MaxFrameLengthForNeoWS, allowTruncation = true))
                   .runWith(sink)
-                  .onFailure { case e => Logger.logger.error(e.toString) }
+                  .onFailure { case e => Logger.logger.error(e.getMessage) }
+        } catch {
+          case e: Throwable => Logger.logger.error("NeoActor websocket post receiving ... " + e.getMessage)
         }
-        catch {
-          case e: Throwable => Logger.logger.error("stream receiving error: " + e.getMessage)
-        }
-      }
-      // Gateway error
-      else {
+      } else {
         Logger.logger.error("Bad Gate Way")
       }
     }
-
   }
 }
 
@@ -89,6 +80,7 @@ object NeoActor {
     val ByTime = Value("byTime")
     val ByHashTag = Value("byHashTag")
     val Sample = Value("sample")
+    val Batch = Value("batch")
   }
 
   def generateCBerryRequest(userRequest: UserRequest): Map[RequestType.Value, JsValue] = {
