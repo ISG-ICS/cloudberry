@@ -28,16 +28,16 @@ class Config(config: Configuration) {
   val MinTimeGap = config.getString("berry.query.gap").map(parseTimePair).getOrElse(1 day)
 }
 
+object MemorySize extends Enumeration {
+  val KB: Int = 1024
+  val MB: Int = 1024*1024
+  val GB: Int = 1024*1024*1024
+}
+
 object Config {
   def parseTimePair(timeString: String): FiniteDuration = {
     val split = timeString.split("\\s+")
     FiniteDuration(split(0).toLong, split(1))
-  }
-
-  object MemorySize extends Enumeration {
-    val KB: Int = 1024
-    val MB: Int = 1024*1024
-    val GB: Int = 1024*1024*1024
   }
 
   def parseFrameLengthLimit(memoryString: String): Int = {
