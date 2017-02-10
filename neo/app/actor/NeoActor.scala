@@ -43,7 +43,8 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
 
         json.validate[Command].map { cmd =>
           if (cmd.cmd == "totalCount") {
-            out ! Json.obj("key" -> "totalCount", "value" -> 2323230)
+            out ! Json.obj("key" -> "totalCount", "value" -> 387837203)
+            out ! Json.obj("key" -> "tweetsPerSecond", "value" -> 10000)
           }
         }.recoverTotal(
           e => out ! JsError.toJson(e)

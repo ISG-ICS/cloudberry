@@ -132,9 +132,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     // create the total count div in the lower left corner and append it to the search-bar DOM
     var countDiv = document.createElement("div");
-    var realTimeCount = Asterix.totalCount;
     let itemName = "tweets";
-    countDiv.innerHTML = "<h2>" + formatNumber(realTimeCount) + "</h2><span> " + itemName + "</span>";
+    countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
     countDiv.title = "Total Count of Tweets";
     countDiv.id = "tweetsTotalCount";
     countDiv.style.position = 'inherit';
@@ -152,13 +151,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     // constantly update the total count DOM per updateInterval
     var updateCount = function () {
       // update the real time count
-      realTimeCount += Asterix.tweetsPerSecond * updateFactor;
+      Asterix.totalCount += Asterix.tweetsPerSecond * updateFactor;
       var countDiv = document.getElementById("tweetsTotalCount");
-      countDiv.innerHTML = "<h2>" + formatNumber(realTimeCount) + "</h2><span> " + itemName + "</span>";
+      countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
       $timeout(updateCount, updateInterval);
     };
 
-    $timeout(updateCount, $scope.updateInterval);
+    $timeout(updateCount, updateInterval);
 
 
     function setInfoControl() {

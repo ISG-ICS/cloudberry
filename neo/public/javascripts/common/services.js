@@ -5,7 +5,7 @@ angular.module('cloudberry.common', [])
     var asterixService = {
 
       totalCount: 0,
-      tweetsPerSecond: 1000,
+      tweetsPerSecond: 0,
       startDate: startDate,
       parameters: {
         dataset: "twitter.ds_tweet",
@@ -80,6 +80,9 @@ angular.module('cloudberry.common', [])
             break;
           case "totalCount":
             asterixService.totalCount = result.value;
+            break;
+          case "tweetsPerSecond":
+            asterixService.tweetsPerSecond = result.value;
             break;
           default:
             console.error("ws get unknown data:" );
