@@ -126,11 +126,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     // Query the middleware to totalCount of tweets and tweetsPerSecond; and store them in the Asterix Service
     Asterix.queryTotalCount();
 
+    // format number with comma, e.g. 1000 ==> 1,000
+    var formatNumber = function (number) {
+      return number.toLocaleString('en-US');
+    };
+
     // create the total count div in the lower left corner and append it to the search-bar DOM
     var countDiv = document.createElement("div");
     var realTimeCount = Asterix.totalCount;
-    var itemName = "tweets";
-    countDiv.innerHTML = "<h2>" + realTimeCount + "</h2><span> " + itemName + "</span>";
+    let itemName = "tweets";
+    countDiv.innerHTML = "<h2>" + formatNumber(realTimeCount) + "</h2><span> " + itemName + "</span>";
     countDiv.title = "Total Count of Tweets";
     countDiv.id = "tweetsTotalCount";
     countDiv.style.position = 'inherit';
@@ -146,9 +151,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       // update the real time count
       realTimeCount += Asterix.tweetsPerSecond;
       var countDiv = document.getElementById("tweetsTotalCount");
-      countDiv.innerHTML = "<h2>" + realTimeCount + "</h2><span> " + itemName + "</span>";
+      countDiv.innerHTML = "<h2>" + formatNumber(realTimeCount) + "</h2><span> " + itemName + "</span>";
       $timeout(updateCount, $scope.updateInterval);
-    }
+    };
 
     $timeout(updateCount, $scope.updateInterval);
 
