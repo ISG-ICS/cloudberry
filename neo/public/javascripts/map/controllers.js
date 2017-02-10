@@ -1,5 +1,5 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, $timeout) {
     $scope.result = {};
     // map setting
     angular.extend($scope, {
@@ -71,7 +71,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           fillOpacity: 0.7
         },
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
-      }
+      },
 
     });
 
@@ -116,6 +116,48 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       //Adjust Map to be County or State
       setInfoControl();
     };
+
+    /* Show the total count of tweets in real-time by first querying the middleware to get the base count of the day and
+    *   the increase rate of the count, and then constantly update the count number. It is separated from the draw map.
+    *   So it loads when the front-end loads.
+    * */
+
+    // Query the middleware to totalCount of tweets and tweetsPerSecond; and store them in the Asterix Service
+    Asterix.queryTotalCount();
+
+    // format number with comma, e.g. 1000 ==> 1,000
+    var formatNumber = function (number) {
+      return number.toLocaleString('en-US');
+    };
+
+    // create the total count div in the lower left corner and append it to the search-bar DOM
+    var countDiv = document.createElement("div");
+    let itemName = "tweets";
+    countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
+    countDiv.title = "Total Count of Tweets";
+    countDiv.id = "tweetsTotalCount";
+    countDiv.style.position = 'inherit';
+    countDiv.style.top = '1900%';
+    countDiv.style.left = '-53%';
+    countDiv.style.font = '14px/16px Arial, Helvetica, sans-serif';
+    countDiv.style.color = '#2795ee';
+    var body = document.getElementsByTagName("search-bar")[0];
+    body.appendChild(countDiv);
+
+    // setting up the update parameters
+    let updateInterval = 100; // milliseconds
+    let updateFactor = 0.1;
+
+    // constantly update the total count DOM per updateInterval
+    var updateCount = function () {
+      // update the real time count
+      Asterix.totalCount += Asterix.tweetsPerSecond * updateFactor;
+      var countDiv = document.getElementById("tweetsTotalCount");
+      countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
+      $timeout(updateCount, updateInterval);
+    };
+
+    $timeout(updateCount, updateInterval);
 
 
     function setInfoControl() {
@@ -170,7 +212,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           '<h4>Count by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          'Count: {{ selectedPlace.properties.count || "0" }}'
+          'Count: {{ selectedPlace.properties.count || "0" }}',
         ].join('');
         $compile(this._div)($scope);
         return this._div;

@@ -19,6 +19,7 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
   import NeoActor._
 
   implicit val timeout: Timeout = Timeout(20.minutes)
+  implicit val cmdReads = Json.reads[Command]
 
   override def receive: Receive = {
     case json: JsValue =>
@@ -38,14 +39,26 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
           "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
           )))
         berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
-      }.recoverTotal {
-        e => out ! JsError.toJson(e)
+      }.recoverTotal { e =>
+
+        json.validate[Command].map { cmd =>
+          if (cmd.cmd == "totalCount") {
+            out ! Json.obj("key" -> "totalCount", "value" -> 387837203)
+            out ! Json.obj("key" -> "tweetsPerSecond", "value" -> 10000)
+          }
+        }.recoverTotal(
+          e => out ! JsError.toJson(e)
+        )
       }
+    case x => log.error("unknown:" + x)
   }
 }
 
 object NeoActor {
+
   def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
+
+  case class Command(cmd: String)
 
   case class NeoTransformer(key: String) extends BerryClient.IPostTransform {
     override def transform(jsValue: JsValue): JsValue = {
