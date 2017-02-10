@@ -5,6 +5,7 @@ angular.module('cloudberry.common', [])
     var asterixService = {
 
       totalCount: 0,
+      tweetsPerSecond: 1000,
       startDate: startDate,
       parameters: {
         dataset: "twitter.ds_tweet",
@@ -40,10 +41,14 @@ angular.module('cloudberry.common', [])
         ws.send(json);
       },
 
-        // query the middleware for the total count of the Tweets in real time
+      // query the middleware for the total count of the Tweets in real time
       queryTotalCount: function () {
-         var json = JSON.stringify({ cmd : "totalCount"});  // prepare the query using json
-         ws.send(json);   // send query by the web socket
+        var json = JSON.stringify({ cmd : "totalCount"});  // prepare the query using json
+        // wait until the connection is established since this query will be sent the moment the front-end loads, which
+        // is very early
+        ws.onopen = function() {
+          ws.send(json);
+        }
       },
     };
 

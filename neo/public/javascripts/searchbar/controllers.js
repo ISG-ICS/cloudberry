@@ -6,8 +6,6 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         // skip the empty query for now.
         Asterix.queryType = 'search';
         Asterix.query(Asterix.parameters, Asterix.queryType);
-        //get the total count of the tweets
-        Asterix.queryTotalCount();
       } else {
         Asterix.parameters.keywords = [];
       }
