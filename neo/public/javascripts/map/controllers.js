@@ -72,7 +72,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         },
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
       },
-      updateInterval: 1000
 
     });
 
@@ -146,13 +145,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     var body = document.getElementsByTagName("search-bar")[0];
     body.appendChild(countDiv);
 
+    // setting up the update parameters
+    let updateInterval = 100; // milliseconds
+    let updateFactor = 0.1;
+
     // constantly update the total count DOM per updateInterval
     var updateCount = function () {
       // update the real time count
-      realTimeCount += Asterix.tweetsPerSecond;
+      realTimeCount += Asterix.tweetsPerSecond * updateFactor;
       var countDiv = document.getElementById("tweetsTotalCount");
       countDiv.innerHTML = "<h2>" + formatNumber(realTimeCount) + "</h2><span> " + itemName + "</span>";
-      $timeout(updateCount, $scope.updateInterval);
+      $timeout(updateCount, updateInterval);
     };
 
     $timeout(updateCount, $scope.updateInterval);
