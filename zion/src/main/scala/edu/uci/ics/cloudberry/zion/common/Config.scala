@@ -43,25 +43,32 @@ object Config {
   def parseFrameLengthLimit(memoryString: String): Int = {
     val size = memoryString.substring(memoryString.length-2)
     val num = memoryString.substring(0, memoryString.length-2).trim.toDouble
-    try{
-      val res = size match {
-        case "KB" => (num * MemorySize.KB).toLong
-        case "MB" => (num * MemorySize.MB).toLong
-        case "GB" => (num * MemorySize.GB).toLong
-        case _ => throw new IllegalArgumentException("The neo.stream.max.frame.length in application.conf accepts configuration only in KB, MB or GB.")
-      }
-      // Minimum 1KB, maximum 2GB
-      if(res >= 1024 && res <= Int.MaxValue){
-        res.toInt
-      } else if(res == Int.MaxValue.toLong + 1){
-        Int.MaxValue
-      } else{
-        throw new IllegalArgumentException("The neo.stream.max.frame.length in application.conf is 1KB minimum, 2GB maximum.")
-      }
-    } catch {
-      case e: Throwable =>
-        Logger.logger.error(e.getMessage + " Use default value 8MB instead.")
+    val res = size match {
+      case "KB" => (num * MemorySize.KB).toLong
+      case "MB" => (num * MemorySize.MB).toLong
+      case "GB" => (num * MemorySize.GB).toLong
+      case _ =>
+        Logger.logger.error("The neo.stream.max.frame.length in application.conf " +
+          "accepts configuration only in KB, MB or GB. Use default value 8 MB instead")
         8 * MemorySize.MB
+    }
+    // Minimum 1KB, maximum 2GB
+    if(res < 0){
+      Logger.logger.error("The neo.stream.max.frame.length in application.conf accepts only positive numbers. " +
+        "Use default value 8 MB instead")
+      8 * MemorySize.MB
+    } else if(res >= 0 && res < 1024){
+      Logger.logger.error("The neo.stream.max.frame.length in application.conf is 1KB minimum, 2GB maximum. " +
+        "Change the setting to 1KB.")
+      1 * MemorySize.KB
+    } else if(res >= 1024 && res <= Int.MaxValue){
+      res.toInt
+    } else if(res == Int.MaxValue.toLong + 1){
+      Int.MaxValue
+    } else{
+      Logger.logger.error("The neo.stream.max.frame.length in application.conf is 1KB minimum, 2GB maximum. " +
+        "Change the setting to 2GB.")
+      Int.MaxValue
     }
   }
 
