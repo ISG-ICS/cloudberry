@@ -14,8 +14,6 @@ import play.api.libs.ws._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import scala.util.{Try, Success, Failure}
-import scala.util.control.NonFatal
 
 class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
               (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
@@ -55,21 +53,17 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
 
     response.map{ res =>
       if(res.headers.status == 200){
-        Try {
-          val sink = Sink.foreach[ByteString] { bytes =>
-            val json = Json.parse(bytes.utf8String)
-            out ! Json.obj("key" -> requestType, "value" -> json)
-          }
-          res.body.via(Framing.delimiter(ByteString("\n"),
-                       maximumFrameLength = config.MaxFrameLengthForNeoWS,
-                       allowTruncation = true))
-                  .runWith(sink)
-                  .onFailure { case e => Logger.logger.error(e.getMessage) }
-        } match {
-          case Failure(e) => Logger.logger.error("NeoActor websocket receiving ... " + e.getMessage)
+        val sink = Sink.foreach[ByteString] { bytes =>
+          val json = Json.parse(bytes.utf8String)
+          out ! Json.obj("key" -> requestType, "value" -> json)
         }
+        res.body.via(Framing.delimiter(ByteString("\n"),
+                     maximumFrameLength = config.MaxFrameLengthForNeoWS,
+                     allowTruncation = true))
+                .runWith(sink)
+                .onFailure { case e => Logger.logger.error("NeoActor websocket receiving ... " + e.getMessage) }
       } else {
-        Logger.logger.error("Bad Gate Way")
+        Logger.logger.error("Bad Gate Way. Connection code: " + res.headers.status)
       }
     }
   }
