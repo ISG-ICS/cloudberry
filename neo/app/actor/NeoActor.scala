@@ -48,24 +48,22 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
   }
 
   private def handleResponse(url: String, requestType: RequestType.Value, requestBody: JsValue): Unit = {
-    val response : Future[StreamedResponse] =
+    val response: Future[StreamedResponse] =
       ws.url(url).withMethod("POST").withBody(requestBody).stream()
 
     response.map{ res =>
       if(res.headers.status == 200){
-        try {
-          val sink = Sink.foreach[ByteString] { bytes =>
-            val json = Json.parse(bytes.utf8String)
-            out ! Json.obj("key" -> requestType, "value" -> json)
-          }
-          res.body.via(Framing.delimiter(ByteString("\n"), maximumFrameLength = config.MaxFrameLengthForNeoWS, allowTruncation = true))
-                  .runWith(sink)
-                  .onFailure { case e => Logger.logger.error(e.getMessage) }
-        } catch {
-          case e: Throwable => Logger.logger.error("NeoActor websocket post receiving ... " + e.getMessage)
+        val sink = Sink.foreach[ByteString] { bytes =>
+          val json = Json.parse(bytes.utf8String)
+          out ! Json.obj("key" -> requestType, "value" -> json)
         }
+        res.body.via(Framing.delimiter(ByteString("\n"),
+                     maximumFrameLength = config.MaxFrameLengthForNeoWS,
+                     allowTruncation = true))
+                .runWith(sink)
+                .onFailure { case e => Logger.logger.error("NeoActor websocket receiving ... " + e.getMessage) }
       } else {
-        Logger.logger.error("Bad Gate Way")
+        Logger.logger.error("Bad Gate Way. Connection code: " + res.headers.status)
       }
     }
   }
