@@ -134,15 +134,15 @@ class AQLGenerator extends IQLGenerator {
 
       val subQuery =
         s"""
-           |for $lookupVar in dataset ${lookup.dataset}
+           |(for $lookupVar in dataset ${lookup.dataset}
            |where ${keyZip.mkString(" and ")}
-           |return {${returnZip.mkString(", ")}}
+           |return $lookupVar.${lookup.selectValues.head})[0]
         """.stripMargin.trim
 
 
-      //      val fieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap // get fields from lookup dataset
+      val fieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap // get fields from lookup dataset
 
-      producedVar += (lookup.dataset -> AQLVar(new Field(lookup.dataset, DataType.Record), subQuery))
+      producedVar += (lookup.as.head -> AQLVar(fieldMap(lookup.selectValues.head), subQuery))
     }
     ("", (producedVar ++= varMap).result().toMap)
   }
