@@ -141,10 +141,10 @@ class AQLGeneratorTest extends Specification {
         """
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
-          |let $taggr := $t.'id'
-          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
+          |let $id_aggr := $t.'id'
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'max' : max($taggr)
+          |   'hour' : $g0,'max' : max($id_aggr)
           |}
           | """.stripMargin.trim)
     }
@@ -158,10 +158,10 @@ class AQLGeneratorTest extends Specification {
         """
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
-          |let $taggr := $t.'id'
-          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
+          |let $id_aggr := $t.'id'
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'min' : min($taggr)
+          |   'hour' : $g0,'min' : min($id_aggr)
           |}
           | """.stripMargin.trim)
     }
@@ -175,10 +175,10 @@ class AQLGeneratorTest extends Specification {
         """
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
-          |let $taggr := $t.'id'
-          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
+          |let $id_aggr := $t.'id'
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'sum' : sum($taggr)
+          |   'hour' : $g0,'sum' : sum($id_aggr)
           |}
           | """.stripMargin.trim)
     }
@@ -192,10 +192,10 @@ class AQLGeneratorTest extends Specification {
         """
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
-          |let $taggr := $t.'id'
-          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
+          |let $id_aggr := $t.'id'
+          |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'avg' : avg($taggr)
+          |   'hour' : $g0,'avg' : avg($id_aggr)
           |}
           | """.stripMargin.trim)
     }
@@ -632,14 +632,14 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |for $l0 in dataset twitter.US_population
-          |where $l0.stateID = $t.'geo_tag'.'stateID'
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
           |and contains($t.'text', "virus")
-          |let $l0aggr := $l0.population
-          |group by $g0 := $t.geo_tag.stateID with $l0aggr
+          |let $population_aggr := (for $l0 in dataset twitter.US_population
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |return $l0.population)[0]
+          |group by $g0 := $t.geo_tag.stateID with $population_aggr
           |return {
-          |   'state' : $g0,'sum' : sum($l0aggr)
+          |   'state' : $g0,'sum' : sum($population_aggr)
           |}
         """.stripMargin.trim
       )
