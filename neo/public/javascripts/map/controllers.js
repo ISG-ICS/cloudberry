@@ -132,16 +132,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     // create the total count div in the lower left corner and append it to the search-bar DOM
     var countDiv = document.createElement("div");
+    countDiv.className = "number";
+    countDiv.id = "tweetsTotalCount";
+    countDiv.title = "Total Count of Tweets";
+    // set the contents
     let itemName = "tweets";
     countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
-    countDiv.title = "Total Count of Tweets";
-    countDiv.id = "tweetsTotalCount";
-    countDiv.style.position = 'inherit';
-    countDiv.style.top = '1900%';
-    countDiv.style.left = '-53%';
-    countDiv.style.font = '14px/16px Arial, Helvetica, sans-serif';
-    countDiv.style.color = '#2795ee';
-    var body = document.getElementsByTagName("search-bar")[0];
+    // append to body > div.map-group
+    var body = document.getElementsByClassName("map-group")[0];
     body.appendChild(countDiv);
 
     // setting up the update parameters
