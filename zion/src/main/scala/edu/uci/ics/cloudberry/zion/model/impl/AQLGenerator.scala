@@ -103,7 +103,8 @@ class AQLGenerator extends IQLGenerator {
 
     val outerSelectVar = "$s"
     val varName = if (group.length > 0) groupVar else sourceVar
-    val (selectPrefix, select, varMapAfterSelect) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0, varName, outerSelectVar))
+    val (selectPrefix, select, varMapAfterSelect) = query.select.map(
+      parseSelect(_, varMapAfterGroup, group.length > 0, varName, outerSelectVar))
       .getOrElse("", "", varMapAfterGroup)
 
     val returnStat = if (query.groups.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
@@ -118,7 +119,6 @@ class AQLGenerator extends IQLGenerator {
                           varMap: Map[String, AQLVar],
                           schemaMap: Map[String, Schema]
                          ): (String, Map[String, AQLVar]) = {
-//    val sb = StringBuilder.newBuilder
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     lookups.zipWithIndex.foreach { case (lookup, id) =>
       val lookupVar = s"$$l$id"
@@ -140,9 +140,9 @@ class AQLGenerator extends IQLGenerator {
         """.stripMargin.trim
 
 
-      val fieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap // get fields from lookup dataset
+      val lookupTableFieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap
 
-      producedVar += (lookup.as.head -> AQLVar(fieldMap(lookup.selectValues.head), subQuery))
+      producedVar += (lookup.as.head -> AQLVar(lookupTableFieldMap(lookup.selectValues.head), subQuery))
     }
     ("", (producedVar ++= varMap).result().toMap)
   }
@@ -251,15 +251,25 @@ class AQLGenerator extends IQLGenerator {
     if (select.fields.isEmpty) {
       producedVar ++= varMap
     }
-    val rets = select.fields.map { fieldName =>
-      varMap.get(fieldName) match {
-        case Some(aqlVar) =>
-          producedVar += fieldName -> AQLVar(new Field(aqlVar.field.name, aqlVar.field.dataType), s"$outerSelectVar.$fieldName")
-          s" '${aqlVar.field.name}': ${aqlVar.aqlExpr}"
-        case None => throw FieldNotFound(fieldName)
-      }
+    select.fields.foreach {
+      case "*" =>
+        producedVar ++= varMap
+      case fieldName =>
+        varMap.get(fieldName) match {
+          case Some(aqlVar) =>
+            producedVar += fieldName -> AQLVar(new Field(aqlVar.field.name, aqlVar.field.dataType), aqlVar.aqlExpr)
+          case None => throw FieldNotFound(fieldName)
+        }
     }
-    val retAQL = if (rets.nonEmpty) rets.mkString("{", ",", "}") else innerSourceVar
+
+
+    val retAQL = if (select.fields.nonEmpty) {
+      producedVar.result().
+        filter { case (fieldName, aqlVar) => fieldName != "*" }.
+        map { case (_, aqlVar) => s" '${aqlVar.field.name}': ${aqlVar.aqlExpr}" }.
+        mkString("{", ",", "}")
+    } else innerSourceVar
+
 
     val aql =
       s"""

@@ -99,7 +99,7 @@ class AQLGeneratorTest extends Specification {
           |limit 100
           |offset 0
           |return
-          |{ 'create_at': $t.'create_at', 'id': $t.'id', 'user.id': $t.'user'.'id'}
+          |{ 'user.id': $t.'user'.'id', 'create_at': $t.'create_at', 'id': $t.'id'}
           | """.stripMargin.trim)
     }
 
@@ -535,11 +535,15 @@ class AQLGeneratorTest extends Specification {
       val populationSchema = PopulationDataStore.PopulationSchema
 
       val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population"))
-      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population"),
-        Seq("population"))
+      val lookup = LookupStatement(
+        sourceKeys = Seq("geo_tag.stateID"),
+        dataset = populationDataSet,
+        lookupKeys = Seq("stateId"),
+        selectValues = Seq("population"),
+        as = Seq("population"))
       val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      val query = new Query(TwitterDataSet, lookup = Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
+      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -548,37 +552,37 @@ class AQLGeneratorTest extends Specification {
           |limit 0
           |offset 0
           |return
-          |{ '*': $t, 'population': (for $l0 in dataset twitter.US_population
+          |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
           |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-          |return $l0.population)[0]}
+          |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'id': $t.'id', 'geo': $t, 'hashtags': $t.'hashtags'}
         """.stripMargin.trim
       )
     }
 
-/*    "translate lookup one table with one join key multiple select" in {
-      val populationDataSet = PopulationDataStore.DatasetName
-      val populationSchema = PopulationDataStore.PopulationSchema
-
-      val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", populationDataSet))
-      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population","stateId"),
-        Seq("population", "stateID"))
-      val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
-          |limit 0
-          |offset 0
-          |return
-          |{ '*': $t, 'twitter.US_population': for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-          |return {'population' : $l0.population, 'stateID' : $l0.stateId}}
-        """.stripMargin.trim
-      )
-    }*/
+    //        "translate lookup one table with one join key multiple select" in {
+    //          val populationDataSet = PopulationDataStore.DatasetName
+    //          val populationSchema = PopulationDataStore.PopulationSchema
+    //
+    //          val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", populationDataSet))
+    //          val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population","stateId"),
+    //            Seq("population", "stateID"))
+    //          val filter = Seq(textFilter)
+    //          val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
+    //          val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+    //          removeEmptyLine(result) must_== unifyNewLine(
+    //            """
+    //              |for $t in dataset twitter.ds_tweet
+    //              |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+    //              |and contains($t.'text', "virus")
+    //              |limit 0
+    //              |offset 0
+    //              |return
+    //              |{ '*': $t, 'twitter.US_population': for $l0 in dataset twitter.US_population
+    //              |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+    //              |return {'population' : $l0.population, 'stateID' : $l0.stateId}}
+    //            """.stripMargin.trim
+    //          )
+    //        }
 
     "translate lookup multiple table with one join key on each" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -588,16 +592,27 @@ class AQLGeneratorTest extends Specification {
       val literacySchema = LiteracyDataStore.LiteracySchema
 
       val selectValuesPopulation = Seq("population")
-      val lookupPopulation = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), selectValuesPopulation,
-        selectValuesPopulation)
+      val lookupPopulation = LookupStatement(
+        sourceKeys = Seq("geo_tag.stateID"),
+        dataset = populationDataSet,
+        lookupKeys = Seq("stateId"),
+        selectValues = selectValuesPopulation,
+        as = selectValuesPopulation)
       val selectValuesLiteracy = Seq("literacy")
-      val lookupLiteracy = LookupStatement(Seq("geo_tag.stateID"), literacyDataSet, Seq("stateId"), selectValuesLiteracy,
-        selectValuesLiteracy)
-
+      val lookupLiteracy = LookupStatement(
+        sourceKeys = Seq("geo_tag.stateID"),
+        dataset = literacyDataSet,
+        lookupKeys = Seq("stateId"),
+        selectValues = selectValuesLiteracy,
+        as = selectValuesLiteracy)
       val selectValues = Seq("*", "population", "literacy")
       val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
       val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, Seq(lookupPopulation, lookupLiteracy), filter, Seq.empty, select = Some(selectStatement))
+      val query = new Query(TwitterDataSet,
+        lookup = Seq(lookupPopulation, lookupLiteracy),
+        filter, Seq.empty,
+        select = Some(selectStatement))
+
       val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema,
         literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
@@ -608,11 +623,11 @@ class AQLGeneratorTest extends Specification {
           |limit 0
           |offset 0
           |return
-          |{ '*': $t, 'population': (for $l0 in dataset twitter.US_population
+          |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
           |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-          |return $l0.population)[0], 'literacy': (for $l1 in dataset twitter.US_literacy
+          |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'literacy': (for $l1 in dataset twitter.US_literacy
           |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateId
-          |return $l1.literacy)[0]}
+          |return $l1.literacy)[0], 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'geo': $t, 'id': $t.'id', 'hashtags': $t.'hashtags'}
         """.stripMargin.trim
       )
     }
@@ -623,9 +638,15 @@ class AQLGeneratorTest extends Specification {
       val populationSchema = PopulationDataStore.PopulationSchema
 
       val selectValues = Seq("population")
-      val group = GroupStatement(Seq(byState), Seq(AggregateStatement("population", Sum, "sum")))
-      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), selectValues,
-        selectValues)
+      val group = GroupStatement(
+        bys = Seq(byState),
+        aggregates = Seq(AggregateStatement("population", Sum, "sum")))
+      val lookup = LookupStatement(
+        sourceKeys = Seq("geo_tag.stateID"),
+        dataset = populationDataSet,
+        lookupKeys = Seq("stateId"),
+        selectValues,
+        as = selectValues)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, groups = Some(group))
       val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
@@ -644,7 +665,6 @@ class AQLGeneratorTest extends Specification {
         """.stripMargin.trim
       )
     }
-
 
 
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
