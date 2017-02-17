@@ -11,7 +11,7 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsArray, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 
 class DataStoreManager(metaDataset: String,
                        val conn: IDataConn,
@@ -35,6 +35,9 @@ class DataStoreManager(metaDataset: String,
 
   val metaActor = childMaker(context, "meta", Seq(DataSetInfo.MetaSchema, queryGenFactory(), conn, ec))
 
+  val countMap = Map.newBuilder[String,Int]
+  val updateRate : Int = config.UpdateRate;
+
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, 100000000, 0, Seq.empty))) map {
       case jsArray: JsArray =>
@@ -43,6 +46,7 @@ class DataStoreManager(metaDataset: String,
         self ! Prepared
       case any => log.error(s"received unknown object from meta actor: $any ")
     }
+    initialCounts()
   }
 
   override def postStop(): Unit = {
@@ -59,6 +63,8 @@ class DataStoreManager(metaDataset: String,
   }
 
   def normal: Receive = {
+    case ask: GiveMeTheCount => sender() ! countMap.result().getOrElse(ask.dataset, (0, 1))
+    case InitialCount => initialCounts()
     case AreYouReady => sender() ! true
     case register: Register => ???
     case deregister: Deregister => ???
@@ -179,6 +185,14 @@ class DataStoreManager(metaDataset: String,
   private def flushMetaData(): Unit = {
     metaActor ! UpsertRecord(metaDataset, Json.toJson(metaData.values.toSeq).asInstanceOf[JsArray])
   }
+
+
+
+  context.system.scheduler.schedule(config.CountUpdateInterval, config.CountUpdateInterval, self, InitialCount)
+  private def initialCounts(): Unit = {
+    // ask AsterixDB for the real count, should be called once a day.
+    //TODO
+  }
 }
 
 object DataStoreManager {
@@ -210,6 +224,12 @@ object DataStoreManager {
   case object AreYouReady
 
   case object Prepared
+
+  case class GiveMeTheCount(dataset: String)
+
+  case object UpdateCount
+
+  case object InitialCount
 
   case class AppendViewAutomatic(dataset: String)
 

@@ -144,12 +144,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     // setting up the update parameters
     let updateInterval = 100; // milliseconds
-    let updateFactor = 0.1;
 
     // constantly update the total count DOM per updateInterval
     var updateCount = function () {
       // update the real time count
-      Asterix.totalCount += Asterix.tweetsPerSecond * updateFactor;
       var countDiv = document.getElementById("tweetsTotalCount");
       countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
       $timeout(updateCount, updateInterval);

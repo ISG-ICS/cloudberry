@@ -8,11 +8,14 @@ import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
 import org.joda.time.DateTime
 import play.api.libs.json._
+import play.api.libs.ws.{WSClient, WSResponse}
+import play.mvc.Http.Response
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.util.Random
 
-class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
+class NeoActor(out: ActorRef, val ws: WSClient,  berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
   val berryClient = context.watch(context.actorOf(berryClientProps))
 
@@ -20,6 +23,8 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
 
   implicit val timeout: Timeout = Timeout(20.minutes)
   implicit val cmdReads = Json.reads[Command]
+
+  var count = 0
 
   override def receive: Receive = {
     case json: JsValue =>
@@ -41,20 +46,34 @@ class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: Executio
         berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
       }.recoverTotal { e =>
 
+        val fResponse = ws.url("http://hostname/count/twitter.ds_tweet").get()
+        fResponse.map{ response: WSResponse =>
+          val json = response.json
+          count = (json \ "count").as[Int]
+          val rate = (json \ "rate").as[Int]
+          context.system.scheduler.schedule(0 seconds, 1 seconds, self, Update(rate))
+        }
+
         json.validate[Command].map { cmd =>
           if (cmd.cmd == "totalCount") {
             out ! Json.obj("key" -> "totalCount", "value" -> 387837203)
-            out ! Json.obj("key" -> "tweetsPerSecond", "value" -> 10000)
           }
         }.recoverTotal(
           e => out ! JsError.toJson(e)
         )
       }
+    case updateCount : Update =>
+      count += updateCount.ratePerSecond + Random.nextInt(updateCount.ratePerSecond)
+      out ! Json.obj("key" -> "totalCount", "value" -> JsNumber(count))
+
     case x => log.error("unknown:" + x)
   }
 }
 
 object NeoActor {
+
+  case object AskCount
+  case class Update(ratePerSecond : Int)
 
   def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
 

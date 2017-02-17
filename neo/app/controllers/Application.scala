@@ -19,6 +19,7 @@ import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
+import akka.pattern.ask
 import play.api.{Configuration, Environment, Logger}
 
 import scala.concurrent.Await
@@ -58,6 +59,12 @@ class Application @Inject()(val wsClient: WSClient,
 
   def dashboard = Action {
     Ok(views.html.dashboard("Dashboard"))
+  }
+
+  def count(dataset: String) = Action.async {
+    (manager ? DataStoreManager.GiveMeTheCount(dataset)).map { case (count : Int, ratePerS: Int) =>
+      Ok(???) // a json object wrap count -> rate ->
+    }
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
