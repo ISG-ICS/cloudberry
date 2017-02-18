@@ -1,11 +1,30 @@
 package actor
 
-import models.{GeoLevel, TimeBin, UserRequest}
-import org.joda.time.{DateTimeZone, Interval}
-import org.specs2.mutable.Specification
-import play.api.libs.json.Json
+import play.api.Logger
 
-class NeoActorTest extends Specification {
+// TODO import from different module for testkitExample
+
+import akka.stream.{ActorMaterializer, Materializer}
+import akka.testkit.TestProbe
+import akka.stream.scaladsl.Source
+import akka.util.ByteString
+import edu.uci.ics.cloudberry.zion.common.Config
+import models.{GeoLevel, TimeBin, UserRequest}
+import NeoActor.RequestType._
+import org.joda.time.{DateTimeZone, Interval}
+import org.specs2.mutable.SpecificationLike
+import org.specs2.mock.Mockito
+import org.mockito.Mockito._
+import play.api.libs.json._
+import play.api.libs.ws._
+
+import java.util.concurrent.Executors
+import scala.concurrent.{ExecutionContext, Future}
+
+class NeoActorTest extends TestkitExampleForNeo with SpecificationLike with Mockito{
+
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+  implicit val materializer: Materializer = ActorMaterializer()
 
   "NeoActor" should {
     "generateCBerryRequest" in {
@@ -97,6 +116,40 @@ class NeoActorTest extends Specification {
           |  }
           |}
         """.stripMargin)
+      ok
+    }
+
+    "handle HTTP request/response to Berry" in {
+      val url = "localhost:9000"
+      val userRequest = UserRequest(
+        "twitter.ds_tweet",
+        Seq("zika"),
+        Interval.parse("2015-11-22T00:00:00.000-08:00/2017-02-17T20:05:41.000-08:00"),
+        TimeBin.Day,
+        GeoLevel.State,
+        Seq(37, 51)
+      )
+      val berryRequest = NeoActor.generateCBerryRequest(userRequest)
+
+      val json1 = Json.obj("city" -> "NY", "count" -> 100)
+      //val json2 = Json.obj("city" -> "LA", "count" -> 150)
+
+      val ws = mock[WSClient]
+      val wsRequest = mock[WSRequest]
+      val header = DefaultWSResponseHeaders(200, Map.empty)
+      val source: Source[ByteString, _] =
+        Source(List(ByteString(json1.toString())))
+
+      when(ws.url(any)).thenReturn(wsRequest)
+      when(wsRequest.withMethod(any)).thenReturn(wsRequest)
+      when(wsRequest.withBody(berryRequest(Sample))).thenReturn(wsRequest)
+      when(wsRequest.stream()).thenReturn(Future(StreamedResponse(header, source)))
+
+      val frontEnd = new TestProbe(system)
+      val neo = system.actorOf(NeoActor.props(frontEnd.ref, ws, url, Config.Default))
+
+      frontEnd.send(neo, userRequest)
+      frontEnd.expectMsg()
       ok
     }
   }
