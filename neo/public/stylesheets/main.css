@@ -116,6 +116,18 @@ search-bar {
 
 }
 
+#powerby{
+           position: absolute;
+           bottom: 0%;
+           left: 71%;
+           width: 10%;
+           z-index: 0;
+}
+
+.white {
+    color : white;
+}
+
 .number{
   color: #2795ee;
   position: absolute;

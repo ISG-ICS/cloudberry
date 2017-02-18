@@ -10,12 +10,12 @@
     </div>
 
     <div id='how-to'>
-      <a href="https://www.youtube.com/watch?v=XwlRm0jcsU4" target="_blank" class="btn btn-info">How to use this demo</a>
+      <a href="https://www.youtube.com/watch?v=XwlRm0jcsU4" target="_blank" class="btn btn-info btn-sm">How to use this demo</a>  
     </div>
-
-  </div>
-
-  <search-bar></search-bar>
+   </div>
+   
+   <search-bar></search-bar>
+  
 
 
   <div class="time-series">
@@ -48,8 +48,9 @@
             <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
           </ul>
           <p>The backend is running the big data management system <b><a href="http://asterixdb.apache.org/">Apache AsterixDB</a></b>
-            to support large compute clusters.
-            For questions and comments, please contact <b>
+          to support large compute clusters. Here is the small NUC cluster where our service runs on! </p>
+          <img src='@routes.Assets.versioned("images/nuc.cluster.jpg")' width="256" height="192"><br>
+          <p>For questions and comments, please contact <b>
               <a href="mailto:&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;">
                 &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;</a></b></p>
         </div>
@@ -61,5 +62,17 @@
     <exception-bar></exception-bar>
   </div>
 
+  <div id ='powerby'>
+    <div class="btn btn-info btn-sm">
+      <a href="http://cloudberry.ics.uci.edu/" title="A Distributed middleware by ICS,UCI" class="white"> Powered by Cloudberry</a>
+      |
+      <a href="http://leafletjs.com" title="A JS library for interactive maps" class="white">Leaflet</a>
+      |
+      <a href="http://mapbox.com" class="white">Mapbox</a>
+    </div>
+  </div>
+
 </div>
+
+
 }

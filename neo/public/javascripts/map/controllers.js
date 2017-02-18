@@ -93,6 +93,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
+        //making attribution control to false to remove the default leaflet sign in the bottom of map
+        map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
       });
 
