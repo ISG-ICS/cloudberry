@@ -62,7 +62,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def count(dataset: String) = Action.async {
-    (manager ? DataStoreManager.GiveMeTheCount(dataset)).map { case (count : Int, ratePerS: Int) =>
+    (manager ? DataStoreManager.AskCount(dataset)).map { case (count : Int, ratePerS: Int) =>
       Ok(???) // a json object wrap count -> rate ->
     }
   }
