@@ -8,20 +8,14 @@ import scala.collection.mutable
 
 class AQLGenerator extends IQLGenerator {
 
-  override def generate(query: IQuery, schema: Schema): String = {
-    query match {
-      case q: Query =>
-        validateQuery(q)
-        parseQuery(q, Map(q.dataset -> schema))
-      case q: CreateView => parseCreate(q, schema)
-      case q: AppendView => parseAppend(q, schema)
-      case q: UpsertRecord => parseUpsert(q, schema)
-      case q: DropView => ???
-      case _ => ???
-    }
-  }
-
-  def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
+  /**
+    * Returns a string having AQL query after parsing the query object.
+    *
+    * @param query [[IQuery]] object containing query details
+    * @param schemaMap a map of Dataset name to it's [[Schema]]
+    * @return AQL Query
+    **/
+  override def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
     query match {
       case q: Query =>
         validateQuery(q)

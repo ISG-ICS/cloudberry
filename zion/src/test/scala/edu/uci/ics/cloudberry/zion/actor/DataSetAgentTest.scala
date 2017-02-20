@@ -34,7 +34,7 @@ class DataSetAgentTest extends TestkitExample with SpecificationLike with MockCo
       val aqlString = ""
       val jsResponse = JsObject(Seq("a" -> JsNumber(1)))
       val query = Query("twitter")
-      when(mockQueryParser.generate(query, schema)).thenReturn(aqlString)
+      when(mockQueryParser.generate(query, Map(TwitterDataStore.DatasetName -> schema))).thenReturn(aqlString)
       when(mockConn.postQuery(aqlString)).thenReturn(Future(jsResponse))
 
       val agent = system.actorOf(DataSetAgent.props(schema, mockQueryParser, mockConn))
@@ -51,7 +51,7 @@ class DataSetAgentTest extends TestkitExample with SpecificationLike with MockCo
 
       val aqlString = "1"
       val append = AppendView("twitter", Query("twitter"))
-      when(mockQueryParser.generate(append, schema)).thenReturn(aqlString)
+      when(mockQueryParser.generate(append, Map(TwitterDataStore.DatasetName -> schema))).thenReturn(aqlString)
 
       when(mockConn.postControl(aqlString)).thenAnswer(new Answer[Future[Boolean]] {
         override def answer(invocation: InvocationOnMock): Future[Boolean] = {
