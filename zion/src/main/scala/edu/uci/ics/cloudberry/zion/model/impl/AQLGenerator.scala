@@ -11,7 +11,7 @@ class AQLGenerator extends IQLGenerator {
   /**
     * Returns a string having AQL query after parsing the query object.
     *
-    * @param query [[IQuery]] object containing query details
+    * @param query     [[IQuery]] object containing query details
     * @param schemaMap a map of Dataset name to it's [[Schema]]
     * @return AQL Query
     **/
@@ -87,7 +87,7 @@ class AQLGenerator extends IQLGenerator {
       }
     }
 
-    val (lookup, varMapAfterLookup) = parseLookup(query.lookup, schemaVars, schemaMap)
+    val varMapAfterLookup = parseLookup(query.lookup, schemaVars, schemaMap)
     val filter = parseFilter(query.filter, varMapAfterLookup)
     val (unnest, varMapAfterUnnest) = parseUnnest(query.unnest, varMapAfterLookup)
 
@@ -106,13 +106,25 @@ class AQLGenerator extends IQLGenerator {
     val aggrVar = if (selectPrefix.length > 0) outerSelectVar else "$c"
     val (globalAggrPrefix, aggrReturnStat, _) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterSelect, aggrVar)).getOrElse("", "", varMapAfterSelect)
 
-    Seq(globalAggrPrefix, selectPrefix, dataset, lookup, filter, unnest, group, select, returnStat, aggrReturnStat).mkString("\n")
+    Seq(globalAggrPrefix, selectPrefix, dataset, filter, unnest, group, select, returnStat, aggrReturnStat).mkString("\n")
   }
 
+  /** Returns a map of schema variables after appending lookup variables
+    *
+    * Maps lookup variable name to [[AQLVar]] for every variable in every lookup statement and then appends it to
+    * the variable map of the schema.
+    * The lookup variable will be a sub-query to the lookup dataset.
+    * Note: Since sub-query will return a list of the same value, we pick only the first value from the list using [0].
+    *
+    * @param lookups Sequence of [[LookupStatement]] which contains lookup variables
+    * @param varMap Map of variables in the dataset schema
+    * @param schemaMap Map of dataset names to their schemas including lookup dataset schemas
+    * @return varMap after adding lookup variables
+    */
   private def parseLookup(lookups: Seq[LookupStatement],
                           varMap: Map[String, AQLVar],
                           schemaMap: Map[String, Schema]
-                         ): (String, Map[String, AQLVar]) = {
+                         ): Map[String, AQLVar] = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     lookups.zipWithIndex.foreach { case (lookup, id) =>
       val lookupVar = s"$$l$id"
@@ -138,7 +150,7 @@ class AQLGenerator extends IQLGenerator {
 
       producedVar += (lookup.as.head -> AQLVar(lookupTableFieldMap(lookup.selectValues.head), subQuery))
     }
-    ("", (producedVar ++= varMap).result().toMap)
+    (producedVar ++= varMap).result().toMap
   }
 
   private def parseFilter(filters: Seq[FilterStatement], varMap: Map[String, AQLVar]): String = {
