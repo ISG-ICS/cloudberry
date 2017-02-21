@@ -535,14 +535,9 @@ class AQLGeneratorTest extends Specification {
       val populationSchema = PopulationDataStore.PopulationSchema
 
       val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population"))
-      val lookup = LookupStatement(
-        sourceKeys = Seq("geo_tag.stateID"),
-        dataset = populationDataSet,
-        lookupKeys = Seq("stateId"),
-        selectValues = Seq("population"),
-        as = Seq("population"))
+      val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, lookup = Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
+      val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = Some(selectStatement))
       val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
@@ -592,20 +587,6 @@ class AQLGeneratorTest extends Specification {
       val literacyDataSet = LiteracyDataStore.DatasetName
       val literacySchema = LiteracyDataStore.LiteracySchema
 
-      val selectValuesPopulation = Seq("population")
-      val lookupPopulation = LookupStatement(
-        sourceKeys = Seq("geo_tag.stateID"),
-        dataset = populationDataSet,
-        lookupKeys = Seq("stateId"),
-        selectValues = selectValuesPopulation,
-        as = selectValuesPopulation)
-      val selectValuesLiteracy = Seq("literacy")
-      val lookupLiteracy = LookupStatement(
-        sourceKeys = Seq("geo_tag.stateID"),
-        dataset = literacyDataSet,
-        lookupKeys = Seq("stateId"),
-        selectValues = selectValuesLiteracy,
-        as = selectValuesLiteracy)
       val selectValues = Seq("*", "population", "literacy")
       val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
       val filter = Seq(textFilter)
@@ -639,9 +620,7 @@ class AQLGeneratorTest extends Specification {
       val populationSchema = PopulationDataStore.PopulationSchema
 
       val selectValues = Seq("population")
-      val group = GroupStatement(
-        bys = Seq(byState),
-        aggregates = Seq(AggregateStatement("population", Sum, "sum")))
+      val group = Some(groupPopulationSum)
       val lookup = LookupStatement(
         sourceKeys = Seq("geo_tag.stateID"),
         dataset = populationDataSet,
@@ -649,7 +628,7 @@ class AQLGeneratorTest extends Specification {
         selectValues,
         as = selectValues)
       val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, groups = Some(group))
+      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, group)
       val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
