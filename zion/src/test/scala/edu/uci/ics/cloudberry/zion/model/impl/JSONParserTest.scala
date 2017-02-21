@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
-import edu.uci.ics.cloudberry.zion.model.schema.{GlobalAggregateStatement, GroupStatement, Query, QueryExeOption}
+import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification
 import play.api.libs.json._
@@ -106,6 +106,22 @@ class JSONParserTest extends Specification {
       parser.parse(relationErrorJSON) must throwA[JsonRequestException]
     }
 
+    "parse lookup query with with select statement" in {
+      val lookup = Seq(lookupPopulation)
+      val filter = Seq(textFilter)
+      val selectStatement = Some(SelectStatement(Seq.empty, 0, 0, Seq("population")))
+      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
+      checkQueryOnly(simpleLookupFilterJSON, expectedQuery)
+    }
+
+    "parse multiple lookup query with select statement" in {
+      val lookup = Seq(lookupPopulation, lookupLiteracy)
+      val filter = Seq(textFilter)
+      val selectValues = Seq("population", "literacy")
+      val selectStatement = Some(SelectStatement(Seq.empty, 0, 0, selectValues))
+      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
+      checkQueryOnly(multiLookupFilterJSON, expectedQuery)
+    }
   }
 
   "JSONParser" should {
