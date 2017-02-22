@@ -141,7 +141,7 @@ class DataStoreManager(metaDataset: String,
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
-    val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(sourceInfo.name -> sourceInfo.schema))
+    val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
       case true =>
         collectStats(create.dataset, schema) onComplete {
