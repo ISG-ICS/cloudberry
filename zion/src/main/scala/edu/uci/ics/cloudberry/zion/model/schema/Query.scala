@@ -80,6 +80,7 @@ object Query {
   }
 }
 
+case class EstimateQuery(query: Query)
 
 case class CreateView(dataset: String, query: Query) extends IQuery
 

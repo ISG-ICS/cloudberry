@@ -61,12 +61,6 @@ class Application @Inject()(val wsClient: WSClient,
     Ok(views.html.dashboard("Dashboard"))
   }
 
-  def count(dataset: String) = Action.async {
-    (manager ? DataStoreManager.AskCount(dataset)).map { case (count : Int, ratePerS: Int) =>
-      Ok(???) // a json object wrap count -> rate ->
-    }
-  }
-
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     //    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
     val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
@@ -91,6 +85,12 @@ class Application @Inject()(val wsClient: WSClient,
     val toStringFlow = Flow[JsValue].map(js => js.toString() + System.lineSeparator())
     Ok.chunked((source via flow) via toStringFlow)
   }
+
+  def estimate = Action(parse.json) { request =>
+
+    ???
+  }
+
 
   //fake twitter API
   def timeline(keyword: String) = Action {

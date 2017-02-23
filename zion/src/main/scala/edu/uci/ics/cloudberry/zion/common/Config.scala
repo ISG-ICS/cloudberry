@@ -24,9 +24,7 @@ class Config(config: Configuration) {
 
   val MinTimeGap = config.getString("berry.query.gap").map(parseTimePair).getOrElse(1 day)
 
-  val UpdateRate = ???
-
-  val CountUpdateInterval: FiniteDuration  = ???
+  val AgentCollectStatsInterval: FiniteDuration = config.getString("agent.collect.stats.interval").map(parseTimePair).getOrElse(4 hours)
 }
 
 object Config {
