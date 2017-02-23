@@ -71,7 +71,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           fillOpacity: 0.7
         },
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
-      }
+      },
+      currentTweetsCount: 0
 
     });
 
@@ -182,6 +183,26 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         position: 'topleft'
       };
       $scope.controls.custom.push(info);
+
+
+      // display the count of the all the tweets in the current view
+      var currentTweetsCountDiv = L.control({
+        position: 'bottomleft'
+      });
+
+      currentTweetsCountDiv.onAdd = function (map) {
+        var div = L.DomUtil.create('div', 'number');
+        div.id = "currentTweetsTotalCount";
+        let itemName = "tweets";
+        div.innerHTML = [
+          '<h2> {{ currentTweetsCount }} </h2>',
+          '<span>' + itemName + '</span>'
+        ].join('');
+        $compile(div)($scope);
+        return div;
+      };
+      $scope.controls.custom.push(currentTweetsCountDiv);
+
 
       loadGeoJsonFiles(onEachFeature);
 
@@ -413,46 +434,59 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
       // update count
+      $scope.currentTweetsCount = 0;
       if ($scope.status.logicLevel == "state" && $scope.geojsonData.state) {
           angular.forEach($scope.geojsonData.state.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
-            if (result[k].state == d.properties.stateID)
+            if (result[k].state == d.properties.stateID) {
               d.properties.count = result[k].count;
+              $scope.currentTweetsCount += result[k].count;
+            }
           }
         });
 
         // draw
         $scope.polygons.statePolygons.setStyle(style);
+
       } else if ($scope.status.logicLevel == "county" && $scope.geojsonData.county) {
           angular.forEach($scope.geojsonData.county.features, function(d) {
             if (d.properties.count)
               d.properties.count = 0;
             for (var k in result) {
               //TODO make a hash map from ID to make it faster
-              if (result[k].county == d.properties.countyID)
+              if (result[k].county == d.properties.countyID) {
                 d.properties.count = result[k].count;
+                $scope.currentTweetsCount += result[k].count;
+              }
             }
           });
 
         // draw
         $scope.polygons.countyPolygons.setStyle(style);
+
       }else if ($scope.status.logicLevel == "city" && $scope.geojsonData.city) {
         angular.forEach($scope.geojsonData.city.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
           for (var k in result) {
             //TODO make a hash map from ID to make it faster
-            if (result[k].city == d.properties.cityID)
+            if (result[k].city == d.properties.cityID) {
               d.properties.count = result[k].count;
+              $scope.currentTweetsCount += result[k].count;
+            }
           }
         });
 
         // draw
         $scope.polygons.cityPolygons.setStyle(style);
       }
+
+      $scope.currentTweetsCount = formatNumber($scope.currentTweetsCount);
+
+
       // add legend
       var legend = $('.legend');
       if (legend)
@@ -493,6 +527,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         $scope.legend.addTo($scope.map);
 
     }
+
+    /*
+    *  helper functions
+    * */
+    // format number with comma, e.g. 1000 ==> 1,000
+    var formatNumber = function (number) {
+      return number.toLocaleString('en-US');
+    };
+
 
     $scope.$watch(
       function() {

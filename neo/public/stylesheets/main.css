@@ -124,8 +124,14 @@ search-bar {
            z-index: 0;
 }
 
-
 .white {
     color : white;
 }
 
+.number{
+  color: #2795ee;
+}
+
+#currentTweetsTotalCount{
+  margin-bottom: 30px;
+}
