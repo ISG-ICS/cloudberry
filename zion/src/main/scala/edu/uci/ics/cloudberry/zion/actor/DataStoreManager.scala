@@ -11,13 +11,13 @@ import org.joda.time.DateTime
 import play.api.libs.json.{JsArray, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Random, Success}
+import scala.util.{Failure, Success}
 
 class DataStoreManager(metaDataset: String,
                        val conn: IDataConn,
                        val queryGenFactory: IQLGeneratorFactory,
                        val config: Config,
-                       val childMaker: (ActorRefFactory, String, Seq[Any]) => ActorRef)
+                       val childMaker: DataStoreManager.ChildMakerFuncType)
                       (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
   import DataStoreManager._
@@ -33,7 +33,7 @@ class DataStoreManager(metaDataset: String,
   val managerParser = queryGenFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
-  val metaActor = childMaker(context, "meta", Seq(DataSetInfo.MetaSchema, queryGenFactory(), conn, ec))
+  val metaActor = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, 100000000, 0, Seq.empty))) map {
@@ -59,13 +59,13 @@ class DataStoreManager(metaDataset: String,
   }
 
   def normal: Receive = {
-    case ask: CounterAgent.AskCount => ???
     case AreYouReady => sender() ! true
     case register: Register => ???
     case deregister: Deregister => ???
     case query: Query => answerQuery(query)
     case append: AppendView => answerQuery(append, Some(DateTime.now()))
     case append: AppendViewAutomatic =>
+      //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
           info.createQueryOpt match {
@@ -75,7 +75,7 @@ class DataStoreManager(metaDataset: String,
               } else {
                 val now = DateTime.now()
                 val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
-                                                 Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
+                  Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
                 val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
                 answerQuery(AppendView(info.name, appendQ), Some(now))
               }
@@ -111,14 +111,14 @@ class DataStoreManager(metaDataset: String,
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
       val schema: Schema = info.schema
-      val ret = childMaker(context, "data-" + query.dataset, Seq(schema, queryGenFactory(), conn, ec))
-      // make views append self periodically
       info.createQueryOpt match {
         case Some(_) =>
+          val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
           context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
+          ret
         case None =>
+          childMaker(AgentType.Base, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
       }
-      ret
     }
     query match {
       case q: Query => actor.forward(q)
@@ -185,6 +185,14 @@ class DataStoreManager(metaDataset: String,
 
 object DataStoreManager {
 
+  object AgentType extends Enumeration {
+    val Meta = Value("meta")
+    val Base = Value("base")
+    val View = Value("view")
+  }
+
+  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, IQLGenerator, IDataConn, Config) => ActorRef
+
   def props(metaDataSet: String,
             conn: IDataConn,
             queryParserFactory: IQLGeneratorFactory,
@@ -193,9 +201,24 @@ object DataStoreManager {
     Props(new DataStoreManager(metaDataSet, conn, queryParserFactory, config, defaultMaker))
   }
 
-  def defaultMaker(context: ActorRefFactory, name: String, args: Seq[Any])(implicit ec: ExecutionContext): ActorRef = {
-    context.actorOf(DataSetAgent.props(
-      args(0).asInstanceOf[Schema], args(1).asInstanceOf[IQLGenerator], args(2).asInstanceOf[IDataConn]), name)
+  def defaultMaker(agentType: AgentType.Value,
+                   context: ActorRefFactory,
+                   actorName: String,
+                   dbName: String,
+                   dbSchema: Schema,
+                   qLGenerator: IQLGenerator,
+                   conn: IDataConn,
+                   appConfig: Config
+                  )(implicit ec: ExecutionContext): ActorRef = {
+    import AgentType._
+    agentType match {
+      case Meta =>
+        context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+      case Base =>
+        context.actorOf(BaseDataSetAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+      case View =>
+        context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+    }
   }
 
 

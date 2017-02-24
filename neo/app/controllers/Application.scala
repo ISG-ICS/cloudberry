@@ -86,12 +86,6 @@ class Application @Inject()(val wsClient: WSClient,
     Ok.chunked((source via flow) via toStringFlow)
   }
 
-  def estimate = Action(parse.json) { request =>
-
-    ???
-  }
-
-
   //fake twitter API
   def timeline(keyword: String) = Action {
     //    val source = Source.tick(initialDelay = 0.second, interval = 1.second, tick = "tick")

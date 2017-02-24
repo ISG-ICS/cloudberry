@@ -4,80 +4,72 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.pattern.{ask, pipe}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.BerryClient
+import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
 import org.joda.time.DateTime
+import play.Logger
 import play.api.libs.json._
-import play.api.libs.ws.{WSClient, WSResponse}
-import play.mvc.Http.Response
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import scala.util.Random
 
-class NeoActor(out: ActorRef, val ws: WSClient,  berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
+class NeoActor(out: ActorRef, berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
   val berryClient = context.watch(context.actorOf(berryClientProps))
+  val countClient = context.watch(context.actorOf(berryClientProps))
 
   import NeoActor._
 
   implicit val timeout: Timeout = Timeout(20.minutes)
-  implicit val cmdReads = Json.reads[Command]
-
-  var count = 0
 
   override def receive: Receive = {
     case json: JsValue =>
-      json.validate[UserRequest].map { userRequest =>
-        val allRequest = generateCBerryRequest(userRequest)
-        import RequestType._
+      if ((json \ "cmd").asOpt[String].contains(RequestType.TotalCount.toString)) {
+        val dataset = (json \ "dataset").asOpt[String].getOrElse(TwitterDataStore.DatasetName)
+        val berryJson = generateCountRequest(dataset)
+        answerCount(berryJson)
+        context.system.scheduler.schedule(1 seconds, 1 seconds, self, TotalCountRequest(berryJson))
+      } else {
+        json.validate[UserRequest].map { userRequest =>
+          val allRequest = generateCBerryRequest(userRequest)
+          import RequestType._
 
-        // Example of sending the non-slicing query using ask pattern
-        val sampleJson = allRequest(Sample)
-        val fAnswer = (berryClient ? sampleJson).mapTo[JsValue].map(json => Json.obj("key" -> "sample", "value" -> json))
-        fAnswer pipeTo out
-
-        // Example of sending the group of slicing ones using actor stream pattern
-        val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(allRequest(_))
-        val json = JsObject(Seq(
-          "batch" -> JsArray(groupTimePlaceTags),
-          "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
-          )))
-        berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
-      }.recoverTotal { e =>
-
-        val fResponse = ws.url("http://hostname/count/twitter.ds_tweet").get()
-        fResponse.map{ response: WSResponse =>
-          val json = response.json
-          count = (json \ "count").as[Int]
-          val rate = (json \ "rate").as[Int]
-          context.system.scheduler.schedule(0 seconds, 1 seconds, self, Update(rate))
+          // Example of sending the non-slicing query using ask pattern
+          val sampleJson = allRequest(Sample)
+          val fAnswer = (berryClient ? sampleJson).mapTo[JsValue].map(json => Json.obj("key" -> "sample", "value" -> json))
+          fAnswer pipeTo out
+          // Example of sending the group of slicing ones using actor stream pattern
+          val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(allRequest(_))
+          val json = JsObject(Seq(
+            "batch" -> JsArray(groupTimePlaceTags),
+            "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
+            )))
+          berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
+        }.recoverTotal { e =>
+          out ! JsError.toJson(e)
         }
-
-        json.validate[Command].map { cmd =>
-          if (cmd.cmd == "totalCount") {
-            out ! Json.obj("key" -> "totalCount", "value" -> 387837203)
-          }
-        }.recoverTotal(
-          e => out ! JsError.toJson(e)
-        )
       }
-    case updateCount : Update =>
-      count += updateCount.ratePerSecond + Random.nextInt(updateCount.ratePerSecond)
-      out ! Json.obj("key" -> "totalCount", "value" -> JsNumber(count))
-
+    case r: TotalCountRequest =>
+      answerCount(r.berryJson)
     case x => log.error("unknown:" + x)
+
+  }
+
+  private def answerCount(request: JsValue): Unit = {
+    val fCount = (countClient ? request).map {
+      case result: JsValue =>
+        Json.obj("key" -> RequestType.TotalCount.toString, "value" -> (result(0)(0) \ "count").as[Long])
+    }
+    fCount pipeTo out
   }
 }
 
 object NeoActor {
 
-  case object AskCount
-  case class Update(ratePerSecond : Int)
+  case class TotalCountRequest(berryJson: JsValue)
 
   def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
-
-  case class Command(cmd: String)
 
   case class NeoTransformer(key: String) extends BerryClient.IPostTransform {
     override def transform(jsValue: JsValue): JsValue = {
@@ -90,6 +82,27 @@ object NeoActor {
     val ByTime = Value("byTime")
     val ByHashTag = Value("byHashTag")
     val Sample = Value("sample")
+    val TotalCount = Value("totalCount")
+  }
+
+  def generateCountRequest(dataset: String): JsValue = {
+    Json.parse(
+      s"""
+         |{
+         |  "dataset": "$dataset",
+         |  "global": {
+         |   "globalAggregate":
+         |     {
+         |       "field": "*",
+         |       "apply": {
+         |         "name": "count"
+         |       },
+         |       "as": "count"
+         |     }
+         |  }
+         |}
+        """.stripMargin
+    )
   }
 
   def generateCBerryRequest(userRequest: UserRequest): Map[RequestType.Value, JsValue] = {

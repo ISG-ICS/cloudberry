@@ -17,7 +17,7 @@ import play.api.libs.json.{JsNumber, JsObject}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class DataSetAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
+class BaseDataSetAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
@@ -37,7 +37,7 @@ class DataSetAgentTest extends TestkitExample with SpecificationLike with MockCo
       when(mockQueryParser.generate(query, schema)).thenReturn(aqlString)
       when(mockConn.postQuery(aqlString)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(DataSetAgent.props(schema, mockQueryParser, mockConn))
+      val agent = system.actorOf(BaseDataSetAgent.props(schema, mockQueryParser, mockConn))
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
       ok
@@ -60,7 +60,7 @@ class DataSetAgentTest extends TestkitExample with SpecificationLike with MockCo
         }
       })
 
-      val agent = system.actorOf(DataSetAgent.props(schema, mockQueryParser, mockConn))
+      val agent = system.actorOf(BaseDataSetAgent.props(schema, mockQueryParser, mockConn))
 
       sender1.send(agent, append)
       sender2.send(agent, append)
