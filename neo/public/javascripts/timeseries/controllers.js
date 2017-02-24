@@ -7,6 +7,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
     $scope.empty = [];
+    $scope.responsiveWidth = $(window).width();
     for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
@@ -39,6 +40,16 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         }
       }
     );
+
+    console.log("initial width: " + $scope.responsiveWidth);
+    angular.element($window).bind('resize', function() {
+      $scope.responsiveWidth = $window.innerWidth;
+      // manuall $digest required as resize event
+      // is outside of angular
+      $scope.$digest();
+      console.log("width changed: " + $scope.responsiveWidth);
+    });
+
   })
   .directive('timeSeries', function (Asterix) {
     var margin = {
