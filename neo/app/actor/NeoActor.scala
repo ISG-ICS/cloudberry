@@ -2,7 +2,7 @@ package actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.stream.Materializer
-import akka.util._
+import akka.util.{ByteString, _}
 import akka.stream.scaladsl._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
