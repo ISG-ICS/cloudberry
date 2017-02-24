@@ -132,6 +132,10 @@ search-bar {
   color: #2795ee;
 }
 
+.small-number{
+  font-size: 20px;
+}
+
 #currentTweetsTotalCount{
   margin-bottom: 30px;
 }

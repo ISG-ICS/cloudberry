@@ -1,5 +1,5 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, $timeout) {
     $scope.result = {};
     // map setting
     angular.extend($scope, {
@@ -72,8 +72,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         },
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
       },
-      currentTweetsCount: 0
-
+      currentTweetsCount: 0,
+      totalCount: 398808475
     });
 
       function resetGeoIds(bounds, polygons, idTag) {
@@ -184,6 +184,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       $scope.controls.custom.push(info);
 
+      // TODO: change it to the real count sent from the middleware
+      // constantly update the total count of all the tweets
+      // this is currently a fake number as it is for demo purposes
+      let updateInterval = 1000; // milliseconds
+      var updateCount = function () {
+        // update the real time count
+        $scope.totalCount += 57;
+        $scope.totalCountString = formatNumber($scope.totalCount);
+        $timeout(updateCount, updateInterval);
+      };
+      $timeout(updateCount, updateInterval);
 
       // display the count of the all the tweets in the current view
       var currentTweetsCountDiv = L.control({
@@ -196,7 +207,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         let itemName = "tweets";
         div.innerHTML = [
           '<h2> {{ currentTweetsCount }} </h2>',
-          '<span>' + itemName + '</span>'
+          '<span class="small-number">of ',
+            '<span>{{totalCountString}} ' + itemName + '</span>',
+          '</span>'
         ].join('');
         $compile(div)($scope);
         return div;
