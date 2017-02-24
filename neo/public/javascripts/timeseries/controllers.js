@@ -47,7 +47,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       bottom: 30,
       left: 40
     };
-    var width = 962 - margin.left - margin.right;
     var height = 150 - margin.top - margin.bottom;
       return {
         restrict: "E",
@@ -109,6 +108,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
             var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
+
+            var width = $(window).width() * 0.8 - margin.left - margin.right;
 
             timeSeries
               .width(width)
