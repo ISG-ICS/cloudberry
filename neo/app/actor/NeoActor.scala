@@ -59,7 +59,7 @@ class NeoActor(out: ActorRef, berryClientProps: Props)(implicit ec: ExecutionCon
   private def answerCount(request: JsValue): Unit = {
     val fCount = (countClient ? request).map {
       case result: JsValue =>
-        Json.obj("key" -> RequestType.TotalCount.toString, "value" -> (result(0)(0) \ "count").as[Long])
+        Json.obj("key" -> RequestType.TotalCount.toString, "value" -> (result \\ "count").head.as[Long])
     }
     fCount pipeTo out
   }
@@ -99,7 +99,8 @@ object NeoActor {
          |       },
          |       "as": "count"
          |     }
-         |  }
+         |  },
+         |  "estimable" : true
          |}
         """.stripMargin
     )

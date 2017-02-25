@@ -33,8 +33,8 @@ class Application @Inject()(val wsClient: WSClient,
                             implicit val materializer: Materializer
                            ) extends Controller {
 
-  val cities = Application.loadCity(environment.getFile("/public/data/city.json"))
   val config = new Config(configuration)
+  val cities = Application.loadCity(environment.getFile(config.USCityDataPath))
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
   val loadMeta = Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)

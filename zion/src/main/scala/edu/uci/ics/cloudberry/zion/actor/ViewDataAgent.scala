@@ -19,7 +19,7 @@ class ViewDataAgent(override val dbName: String,
   //TODO to speed up the count performance when updating views
   override protected def estimate(query: Query): Option[JsValue] = None
 
-  override protected def nonQueryingWorkLoad: Receive = {
+  override protected def maintenanceWork: Receive = {
     case append: AppendView =>
       processUpdate(queryParser.generate(append, schema))
   }

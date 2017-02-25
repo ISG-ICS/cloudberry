@@ -17,12 +17,23 @@ abstract class AbstractDataSetAgent(val dbName: String,
                                    (implicit ec: ExecutionContext)
   extends Actor with Stash with ActorLogging {
 
+  /**
+    * Estimate the query by dataset's stats without visiting the underlying database.
+    * If the query is not estimable return [[None]]
+    * @param query
+    * @return [[JsValue]] if estimable, otherwise [[None]]
+    */
   protected def estimate(query: Query): Option[JsValue]
 
-  protected def nonQueryingWorkLoad: Receive
+  /**
+    * Conduct maintenance related work.
+    * The querying related logic has been covered by the [[AbstractDataSetAgent]].
+    * @return a message handle partial function.
+    */
+  protected def maintenanceWork: Receive
 
   override def receive: Receive = querying orElse {
-    nonQueryingWorkLoad
+    maintenanceWork
   }
 
   protected def querying: Receive = {

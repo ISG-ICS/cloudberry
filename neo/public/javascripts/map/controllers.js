@@ -138,14 +138,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     countDiv.id = "tweetsTotalCount";
     countDiv.title = "Total Count of Tweets";
     // set the contents
-    let itemName = "tweets";
+    var itemName = "tweets";
     countDiv.innerHTML = "<h2>" + formatNumber(Asterix.totalCount) + "</h2><span> " + itemName + "</span>";
     // append to body > div.map-group
     var body = document.getElementsByClassName("map-group")[0];
     body.appendChild(countDiv);
 
     // setting up the update parameters
-    let updateInterval = 100; // milliseconds
+    var updateInterval = 100; // milliseconds
 
     // constantly update the total count DOM per updateInterval
     var updateCount = function () {

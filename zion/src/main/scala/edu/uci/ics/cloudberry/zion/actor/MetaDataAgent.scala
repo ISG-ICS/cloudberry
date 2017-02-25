@@ -18,7 +18,7 @@ class MetaDataAgent(override val dbName: String,
 
   override protected def estimate(query: Query): Option[JsValue] = None
 
-  override protected def nonQueryingWorkLoad: Receive = {
+  override protected def maintenanceWork: Receive = {
     case upsert: UpsertRecord =>
       processUpdate(queryParser.generate(upsert, schema))
   }
