@@ -128,7 +128,7 @@ class NeoActorTest extends TestkitExample with SpecificationLike with Mockito{
            |  "timeBin"     : "day",
            |  "geoLevel"    : "state",
            |  "geoIds"      : [37, 51],
-           |  "mergeResult" : ${JsBoolean(false)}
+           |  "mergeResult" : ${false}
            |}
        """.stripMargin
       )
@@ -150,17 +150,17 @@ class NeoActorTest extends TestkitExample with SpecificationLike with Mockito{
       val neo = system.actorOf(NeoActor.props(frontEnd.ref, ws, url, Config.Default))
       frontEnd.send(neo, jsonRequest)
 
-      val jsonExpected1a = Json.obj("key" -> Sample, "value" -> json1)
-      val jsonExpected1b = Json.obj("key" -> Batch, "value" -> json1)
-      val jsonExpected2a = Json.obj("key" -> Sample, "value" -> json2)
-      val jsonExpected2b = Json.obj("key" -> Batch, "value" -> json2)
+      val ExpectedSampleJson1 = Json.obj("key" -> Sample, "value" -> json1)
+      val ExpectedBatchJson1 = Json.obj("key" -> Batch, "value" -> json1)
+      val ExpectedSampleJson2 = Json.obj("key" -> Sample, "value" -> json2)
+      val ExpectedBatchJson2 = Json.obj("key" -> Batch, "value" -> json2)
 
-      val result1 = frontEnd.receiveN(2)
-      result1.contains(jsonExpected1a) must_== true
-      result1.contains(jsonExpected1b) must_== true
-      val result2 = frontEnd.receiveN(2)
-      result2.contains(jsonExpected2a) must_== true
-      result2.contains(jsonExpected2b) must_== true
+      val ExpectedStreamingResult1 = frontEnd.receiveN(2)
+      ExpectedStreamingResult1.contains(ExpectedSampleJson1) must_== true
+      ExpectedStreamingResult1.contains(ExpectedBatchJson1) must_== true
+      val ExpectedStreamingResult2 = frontEnd.receiveN(2)
+      ExpectedStreamingResult2.contains(ExpectedSampleJson2) must_== true
+      ExpectedStreamingResult2.contains(ExpectedBatchJson2) must_== true
       ok
     }
   }
