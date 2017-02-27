@@ -20,7 +20,7 @@ class MetaDataAgent(override val dbName: String,
 
   override protected def maintenanceWork: Receive = {
     case upsert: UpsertRecord =>
-      processUpdate(queryParser.generate(upsert, schema))
+      processUpdate(queryParser.generate(upsert, Map(dbName -> schema)))
   }
 }
 

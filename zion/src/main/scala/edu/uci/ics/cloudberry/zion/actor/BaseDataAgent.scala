@@ -29,10 +29,11 @@ class BaseDataAgent(override val dbName: String,
     val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, "min"))))
     val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, "max"))))
     val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement("*", Count, "count"))))
+    val schemaMap = Map(dbName -> schema)
     val future = for {
-      minTime <- conn.postQuery(queryParser.generate(minTimeQuery, schema)).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(queryParser.generate(maxTimeQuery, schema)).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(queryParser.generate(cardinalityQuery, schema)).map(r => (r \\ "count").head.as[Long])
+      minTime <- conn.postQuery(queryParser.generate(minTimeQuery, schemaMap)).map(r => (r \\ "min").head.as[String])
+      maxTime <- conn.postQuery(queryParser.generate(maxTimeQuery, schemaMap)).map(r => (r \\ "max").head.as[String])
+      cardinality <- conn.postQuery(queryParser.generate(cardinalityQuery, schemaMap)).map(r => (r \\ "count").head.as[Long])
     } yield new Cardinality(TimeField.TimeFormat.parseDateTime(minTime), TimeField.TimeFormat.parseDateTime(maxTime), cardinality)
     future pipeTo self
   }
@@ -73,7 +74,7 @@ class BaseDataAgent(override val dbName: String,
     val aggr = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
 
-    conn.postQuery(queryParser.generate(queryCardinality, schema))
+    conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))
       .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
       .pipeTo(self)
   }

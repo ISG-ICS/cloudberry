@@ -33,8 +33,9 @@ class MetaDataAgentTest extends TestkitExample with SpecificationLike with MockC
       val schema = DataSetInfo.MetaSchema
 
       val aqlString = "mock aql"
-      val upsert = UpsertRecord("twitter", JsArray(Seq(Json.obj("example" -> JsNumber(1)))))
-      when(mockQueryParser.generate(upsert, schema)).thenReturn(aqlString)
+      val testDB = "meta"
+      val upsert = UpsertRecord(testDB, JsArray(Seq(Json.obj("example" -> JsNumber(1)))))
+      when(mockQueryParser.generate(upsert, Map(testDB -> schema))).thenReturn(aqlString)
 
       when(mockConn.postControl(aqlString)).thenAnswer(new Answer[Future[Boolean]] {
         override def answer(invocation: InvocationOnMock): Future[Boolean] = {
@@ -43,7 +44,7 @@ class MetaDataAgentTest extends TestkitExample with SpecificationLike with MockC
         }
       })
 
-      val agent = system.actorOf(MetaDataAgent.props("meta", schema, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(MetaDataAgent.props(testDB, schema, mockQueryParser, mockConn, Config.Default))
 
       sender1.send(agent, upsert)
       sender2.send(agent, upsert)

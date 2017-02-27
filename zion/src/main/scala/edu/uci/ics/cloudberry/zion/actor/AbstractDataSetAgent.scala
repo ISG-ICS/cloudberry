@@ -9,6 +9,17 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
+/**
+  * Abstract class of DataSetAgent.
+  * It separate the query related read-only work with the maintenance workload which usually modify the dataset.
+  * All maintenance workloads are queued so that it conducted one by one.
+  *
+  * @param dbName
+  * @param queryParser
+  * @param conn
+  * @param config
+  * @param ec
+  */
 abstract class AbstractDataSetAgent(val dbName: String,
                                     val schema: Schema,
                                     val queryParser: IQLGenerator,
@@ -20,6 +31,7 @@ abstract class AbstractDataSetAgent(val dbName: String,
   /**
     * Estimate the query by dataset's stats without visiting the underlying database.
     * If the query is not estimable return [[None]]
+    *
     * @param query
     * @return [[JsValue]] if estimable, otherwise [[None]]
     */
@@ -28,6 +40,7 @@ abstract class AbstractDataSetAgent(val dbName: String,
   /**
     * Conduct maintenance related work.
     * The querying related logic has been covered by the [[AbstractDataSetAgent]].
+    *
     * @return a message handle partial function.
     */
   protected def maintenanceWork: Receive
@@ -41,7 +54,8 @@ abstract class AbstractDataSetAgent(val dbName: String,
       estimate(query) match {
         case Some(result) => sender() ! result
         case None =>
-          conn.postQuery(queryParser.generate(query, schema)) pipeTo sender()
+          //TODO should ask the MetaActor about other required schemas.
+          conn.postQuery(queryParser.generate(query, Map(dbName -> schema))) pipeTo sender()
       }
   }
 

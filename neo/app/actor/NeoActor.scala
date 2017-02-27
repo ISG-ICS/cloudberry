@@ -5,7 +5,6 @@ import akka.stream.Materializer
 import akka.stream.scaladsl._
 import akka.util.{ByteString, Timeout}
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
 import org.joda.time.DateTime

@@ -177,7 +177,7 @@ object JSONParser {
     ) (SelectStatement.apply, unlift(SelectStatement.unapply))
 
   implicit val lookupFormat: Format[LookupStatement] = (
-    (JsPath \ "sourceKey").format[Seq[String]] and
+    (JsPath \ "joinKey").format[Seq[String]] and
       (JsPath \ "dataset").format[String] and
       (JsPath \ "lookupKey").format[Seq[String]] and
       (JsPath \ "select").format[Seq[String]] and

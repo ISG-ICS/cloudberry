@@ -31,13 +31,14 @@ class ViewDataAgentTest extends TestkitExample with SpecificationLike with MockC
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
+      val dbName = "test"
       val aqlString = ""
       val jsResponse = JsObject(Seq("a" -> JsNumber(1)))
-      val query = Query("twitter")
-      when(mockQueryParser.generate(query, schema)).thenReturn(aqlString)
+      val query = Query(dbName)
+      when(mockQueryParser.generate(query, Map(dbName -> schema))).thenReturn(aqlString)
       when(mockConn.postQuery(aqlString)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(ViewDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(ViewDataAgent.props(dbName, schema, mockQueryParser, mockConn, Config.Default))
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
       ok
@@ -49,9 +50,10 @@ class ViewDataAgentTest extends TestkitExample with SpecificationLike with MockC
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
+      val dbName = "test"
       val aqlString = "1"
-      val append = AppendView("twitter", Query("twitter"))
-      when(mockQueryParser.generate(append, schema)).thenReturn(aqlString)
+      val append = AppendView("twitter", Query(dbName))
+      when(mockQueryParser.generate(append, Map(dbName -> schema))).thenReturn(aqlString)
 
       when(mockConn.postControl(aqlString)).thenAnswer(new Answer[Future[Boolean]] {
         override def answer(invocation: InvocationOnMock): Future[Boolean] = {
