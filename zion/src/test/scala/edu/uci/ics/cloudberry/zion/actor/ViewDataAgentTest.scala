@@ -37,7 +37,7 @@ class ViewDataAgentTest extends TestkitExample with SpecificationLike with MockC
       when(mockQueryParser.generate(query, schema)).thenReturn(aqlString)
       when(mockConn.postQuery(aqlString)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(ViewDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
       ok

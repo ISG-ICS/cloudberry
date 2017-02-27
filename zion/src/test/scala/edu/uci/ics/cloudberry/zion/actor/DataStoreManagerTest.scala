@@ -91,7 +91,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       val query = Query(dataset = sourceInfo.name)
       sender.send(dataManager, query)
-      view.expectMsg(query)
+      base.expectMsg(query)
       ok
     }
     "update meta info if create view succeeds" in {

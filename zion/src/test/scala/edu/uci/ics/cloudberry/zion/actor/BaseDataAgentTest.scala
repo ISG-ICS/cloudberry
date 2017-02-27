@@ -7,18 +7,17 @@ import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
 import edu.uci.ics.cloudberry.zion.model.schema._
-import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.joda.time.DateTime
-import org.mockito.Mockito
 import org.mockito.Mockito._
-import org.specs2.mutable.SpecificationLike
+import org.specs2.mock.Mockito
+import org.specs2.mutable.Specification
 import play.api.Configuration
 import play.api.libs.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class BaseDataAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
+class BaseDataAgentTest extends Specification with Mockito {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
@@ -31,7 +30,47 @@ class BaseDataAgentTest extends TestkitExample with SpecificationLike with MockC
   val countResponse = Json.obj("count" -> JsNumber(initialCount))
 
   "BaseDataSetAgent" should {
-    "collect stats information when start" in {
+    "collect stats information periodically" in new TestkitExample {
+      val sender = new TestProbe(system)
+      val mockQueryParserSpecial = mock[IQLGenerator]
+      val mockConnSpecial = mock[IDataConn]
+
+      val initialAQL = "initial"
+      val updateCountAQL = "update"
+      when(mockQueryParserSpecial.generate(any, any))
+        .thenReturn(initialAQL)
+        .thenReturn(initialAQL)
+        .thenReturn(initialAQL)
+        .thenReturn(updateCountAQL) // update count
+
+      when(mockConnSpecial.postQuery(initialAQL))
+        .thenReturn(Future(minTimeResponse))
+        .thenReturn(Future(maxTimeResponse))
+        .thenReturn(Future(countResponse))
+
+      when(mockConnSpecial.postQuery(updateCountAQL))
+        .thenReturn(Future(countResponse))
+
+      val updatePerSecondConfig = new Config(Configuration("agent.collect.stats.interval" -> "1 second"))
+      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
+      sender.expectNoMsg(200 milli)
+
+      val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
+      val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
+      sender.send(agent, query)
+      val countResult = (sender.receiveOne(500 millis).asInstanceOf[JsValue] \\ "count").head.as[Int]
+      println(s"count: $countResult")
+      countResult must be_>=(initialCount)
+
+      sender.expectNoMsg(1200 milli)
+      sender.send(agent, query)
+      val countResult2 = (sender.receiveOne(500 millis).asInstanceOf[JsValue] \\ "count").head.as[Int]
+      println(s"count2: $countResult2")
+      countResult2 must be_>=(initialCount * 2)
+
+      ok
+    }
+    "collect stats information when start" in new TestkitExample {
       val sender = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
@@ -51,11 +90,13 @@ class BaseDataAgentTest extends TestkitExample with SpecificationLike with MockC
       sender.expectNoMsg(1 seconds)
 
       //initial 3 times AQL call
+      import org.mockito.Mockito
+
       verify(mockQueryParser, Mockito.times(3)).generate(any, any)
       verify(mockConn, Mockito.times(3)).postQuery(any)
       ok
     }
-    "answer query" in {
+    "answer query" in new TestkitExample {
       val sender = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
@@ -83,7 +124,7 @@ class BaseDataAgentTest extends TestkitExample with SpecificationLike with MockC
       sender.expectMsg(jsResponse)
       ok
     }
-    "answer estimable query using stats only" in {
+    "answer estimable query using stats only" in new TestkitExample {
       val sender = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
@@ -110,48 +151,12 @@ class BaseDataAgentTest extends TestkitExample with SpecificationLike with MockC
       (countResult \\ "count").head.as[Int] must be_>=(initialCount)
 
       //initial 3 times AQL call
+      import org.mockito.Mockito
+
       verify(mockQueryParser, Mockito.times(3)).generate(any, any)
       verify(mockConn, Mockito.times(3)).postQuery(any)
       ok
     }
-    "collect stats information periodically" in {
-      val sender = new TestProbe(system)
-      val mockQueryParser = mock[IQLGenerator]
-      val mockConn = mock[IDataConn]
 
-      val initialAQL = "initial"
-      val updateCountAQL = "update"
-      when(mockQueryParser.generate(any, any))
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(updateCountAQL) // update count
-
-      when(mockConn.postQuery(initialAQL))
-        .thenReturn(Future(minTimeResponse))
-        .thenReturn(Future(maxTimeResponse))
-        .thenReturn(Future(countResponse))
-
-      when(mockConn.postQuery(updateCountAQL))
-        .thenReturn(Future(countResponse))
-
-      val updatePerSecondConfig = new Config(Configuration("agent.collect.stats.interval" -> "1 second"))
-      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParser, mockConn, updatePerSecondConfig))
-      sender.expectNoMsg(1 seconds)
-
-      val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
-      val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
-      sender.send(agent, query)
-      val countResult = (sender.receiveOne(500 millis).asInstanceOf[JsValue] \\ "count").head.as[Int]
-      countResult must be_>=(initialCount)
-
-      sender.expectNoMsg(2 seconds)
-
-      sender.send(agent, query)
-      val countResult2 = sender.receiveOne(1 seconds).asInstanceOf[JsValue]
-      (countResult2 \\ "count").head.as[Int] must be_>=(countResult + initialCount)
-
-      ok
-    }
   }
 }
