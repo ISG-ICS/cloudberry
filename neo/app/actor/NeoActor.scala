@@ -24,44 +24,48 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
   import RequestType._
 
   implicit val timeout: Timeout = Timeout(20.minutes)
+  val url : String = "http://" + host + "/berry"
 
   override def receive: Receive = {
     case json: JsValue =>
       if ((json \ "cmd").asOpt[String].contains(RequestType.TotalCount.toString)) {
-        val dataset = (json \ "dataset").asOpt[String].getOrElse(TwitterDataStore.DatasetName)
+        val dataset = (json \ "dataset").asOpt[String].getOrElse("twitter.ds_tweet")
         val berryJson = generateCountRequest(dataset)
-        answerCount(berryJson)
+        handleCountResponse(berryJson)
         context.system.scheduler.schedule(1 seconds, 1 seconds, self, TotalCountRequest(berryJson))
       } else {
         json.validate[UserRequest].map { userRequest =>
           val berryRequest = generateCBerryRequest(userRequest)
-          val url = "http://" + host + "/berry"
-          handleSamplingResponse(url, berryRequest)
-          handleSlicingResponse(url, berryRequest)
+          handleSamplingResponse(berryRequest)
+          handleSlicingResponse(berryRequest)
         }.recoverTotal {
           e =>
             out ! JsError.toJson(e)
         }
       }
     case r: TotalCountRequest =>
-      answerCount(r.berryJson)
+      handleCountResponse(r.berryJson)
     case x => log.error("unknown:" + x)
   }
 
-  private def handleSamplingResponse(url: String, berryRequest: Map[RequestType.Value, JsValue]): Unit = {
-    handleResponse(url, Sample, berryRequest(Sample))
+  private def handleSamplingResponse(berryRequest: Map[RequestType.Value, JsValue]): Unit = {
+    handleResponse(Sample, berryRequest(Sample))
   }
 
-  private def handleSlicingResponse(url: String, berryRequest: Map[RequestType.Value, JsValue]): Unit = {
+  private def handleSlicingResponse(berryRequest: Map[RequestType.Value, JsValue]): Unit = {
     val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(berryRequest(_))
     val batchJson = JsObject(Seq(
       "batch" -> JsArray(groupTimePlaceTags),
       "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
       )))
-    handleResponse(url, Batch, batchJson)
+    handleResponse(Batch, batchJson)
   }
 
-  private def handleResponse(url: String, requestType: RequestType.Value, requestBody: JsValue): Unit = {
+  private def handleCountResponse(request: JsValue): Unit = {
+    handleResponse(TotalCount, request)
+  }
+
+  private def handleResponse(requestType: RequestType.Value, requestBody: JsValue): Unit = {
     val response: Future[StreamedResponse] =
       ws.url(url).withMethod("POST").withBody(requestBody).stream()
 
@@ -80,15 +84,6 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
         Logger.error("Bad Gate Way. Connection code: " + res.headers.status)
       }
     }
-  }
-
-  private def answerCount(request: JsValue): Unit = {
-    //    val fCount = (countClient ? request).map {
-    //      case result: JsValue =>
-    //        Json.obj("key" -> RequestType.TotalCount.toString, "value" -> (result \\ "count").head.as[Long])
-    //    }
-    //    fCount pipeTo out
-    ???
   }
 
 }

@@ -2,6 +2,12 @@ angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
+
+    ws.onopen = function() {
+      var json = JSON.stringify({ cmd : "totalCount"});
+      ws.send(json);
+    };
+
     var asterixService = {
 
       totalCount: 0,
@@ -38,16 +44,7 @@ angular.module('cloudberry.common', [])
           geoIds : parameters.geoIds
         }));
         ws.send(json);
-      },
-
-      // query the middleware for the total count of the Tweets in real time
-      queryTotalCount() {
-        var json = JSON.stringify({ cmd : "totalCount"});  // prepare the query using json
-        // wait until the connection is established since this query will be sent the moment the front-end loads, which is very early
-        ws.onopen = function() {
-          ws.send(json);
-        };
-      },
+      }
     };
 
     ws.onmessage = function(event) {
@@ -78,7 +75,7 @@ angular.module('cloudberry.common', [])
           case "done":
             break;
           case "totalCount":
-            asterixService.totalCount = result.value;
+            asterixService.totalCount = result.value[0][0].count;
             break;
           default:
             console.error("ws get unknown data:" );

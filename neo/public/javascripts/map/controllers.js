@@ -119,14 +119,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       setInfoControl();
     };
 
-    /* Show the total count of tweets in real-time by first querying the middleware to get the base count of the day and
-    *   the increase rate of the count, and then constantly update the count number. It is separated from the draw map.
-    *   So it loads when the front-end loads.
-    * */
-
-    // Query the middleware to totalCount of tweets and tweetsPerSecond; and store them in the Asterix Service
-    Asterix.queryTotalCount();
-
     // format number with comma, e.g. 1000 ==> 1,000
     var formatNumber = function (number) {
       return number.toLocaleString('en-US');
