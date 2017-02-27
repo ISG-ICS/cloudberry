@@ -141,7 +141,7 @@ class DataStoreManager(metaDataset: String,
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
-    val queryString = managerParser.generate(create.copy(query = newCreateQuery), sourceInfo.schema)
+    val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
       case true =>
         collectStats(create.dataset, schema) onComplete {
@@ -170,9 +170,9 @@ class DataStoreManager(metaDataset: String,
     val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
-      minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, schema)).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, schema)).map(r => (r \\ "count").head.as[Long])
+      minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
+      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
+      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
     } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 
