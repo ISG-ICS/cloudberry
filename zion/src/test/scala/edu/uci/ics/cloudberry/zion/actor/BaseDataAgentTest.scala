@@ -53,19 +53,17 @@ class BaseDataAgentTest extends Specification with Mockito {
 
       val updatePerSecondConfig = new Config(Configuration("agent.collect.stats.interval" -> "1 second"))
       val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
-      sender.expectNoMsg(200 milli)
+      sender.expectNoMsg(500 milli)
 
       val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
       val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
       sender.send(agent, query)
       val countResult = (sender.receiveOne(500 millis).asInstanceOf[JsValue] \\ "count").head.as[Int]
-      println(s"count: $countResult")
       countResult must be_>=(initialCount)
 
       sender.expectNoMsg(1200 milli)
       sender.send(agent, query)
       val countResult2 = (sender.receiveOne(500 millis).asInstanceOf[JsValue] \\ "count").head.as[Int]
-      println(s"count2: $countResult2")
       countResult2 must be_>=(initialCount * 2)
 
       ok
