@@ -38,4 +38,4 @@ lazy val neo = (project in file("neo")).
         (x => x -> ("public/data/" + x.getName))
   ).
   enablePlugins(PlayScala).
-  dependsOn(gnosis, util, zion)
+  dependsOn(gnosis, util, zion % "test->test;compile->compile")
