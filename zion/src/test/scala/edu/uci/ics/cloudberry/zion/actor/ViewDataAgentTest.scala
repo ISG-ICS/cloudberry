@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import java.util.concurrent.Executors
 
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.TestkitExample
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
 import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query}
@@ -14,18 +14,18 @@ import org.mockito.stubbing.Answer
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json.{JsNumber, JsObject}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
-class BaseDataSetAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
+class ViewDataAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
-  sequential
-
   val schema = TwitterDataStore.TwitterSchema
 
-  "DataSetAgent" should {
+  sequential
+
+  "ViewDataAgent" should {
     "answer query" in {
       val sender = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
@@ -37,12 +37,12 @@ class BaseDataSetAgentTest extends TestkitExample with SpecificationLike with Mo
       when(mockQueryParser.generate(query, schema)).thenReturn(aqlString)
       when(mockConn.postQuery(aqlString)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(BaseDataSetAgent.props(schema, mockQueryParser, mockConn))
+      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
       ok
     }
-    "queue the a serials append query" in {
+    "queue the a serials of append queries" in {
 
       val sender1 = new TestProbe(system)
       val sender2 = new TestProbe(system)
@@ -60,7 +60,7 @@ class BaseDataSetAgentTest extends TestkitExample with SpecificationLike with Mo
         }
       })
 
-      val agent = system.actorOf(BaseDataSetAgent.props(schema, mockQueryParser, mockConn))
+      val agent = system.actorOf(ViewDataAgent.props("view", schema, mockQueryParser, mockConn, Config.Default))
 
       sender1.send(agent, append)
       sender2.send(agent, append)

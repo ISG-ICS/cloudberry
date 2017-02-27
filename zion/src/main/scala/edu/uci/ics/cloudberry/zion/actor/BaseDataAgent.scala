@@ -11,14 +11,14 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
-class BaseDataSetAgent(override val dbName: String,
-                       override val schema: Schema,
-                       override val queryParser: IQLGenerator,
-                       override val conn: IDataConn,
-                       override val config: Config)(implicit ec: ExecutionContext)
+class BaseDataAgent(override val dbName: String,
+                    override val schema: Schema,
+                    override val queryParser: IQLGenerator,
+                    override val conn: IDataConn,
+                    override val config: Config)(implicit ec: ExecutionContext)
   extends AbstractDataSetAgent(dbName, schema, queryParser, conn, config)(ec) {
 
-  import BaseDataSetAgent._
+  import BaseDataAgent._
 
   val lastCount: Cardinality = UnInitialCount
 
@@ -95,7 +95,7 @@ class BaseDataSetAgent(override val dbName: String,
   }
 }
 
-object BaseDataSetAgent {
+object BaseDataAgent {
 
   object UpdateStats
 
@@ -113,5 +113,5 @@ object BaseDataSetAgent {
 
   def props(dbName: String, schema: Schema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
            (implicit ec: ExecutionContext) =
-    Props(new BaseDataSetAgent(dbName, schema, queryParser, conn, config))
+    Props(new BaseDataAgent(dbName, schema, queryParser, conn, config))
 }

@@ -37,12 +37,9 @@ class Application @Inject()(val wsClient: WSClient,
   val cities = Application.loadCity(environment.getFile(config.USCityDataPath))
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
-  val loadMeta = Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
+  Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
-
-  val berryProp = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
-  val berryClient = system.actorOf(berryProp)
 
   Logger.logger.info("I'm initializing")
 

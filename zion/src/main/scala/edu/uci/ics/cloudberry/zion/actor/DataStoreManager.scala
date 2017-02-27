@@ -33,7 +33,7 @@ class DataStoreManager(metaDataset: String,
   val managerParser = queryGenFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
-  val metaActor = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
+  val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, 100000000, 0, Seq.empty))) map {
@@ -215,7 +215,7 @@ object DataStoreManager {
       case Meta =>
         context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
       case Base =>
-        context.actorOf(BaseDataSetAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+        context.actorOf(BaseDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
       case View =>
         context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
     }

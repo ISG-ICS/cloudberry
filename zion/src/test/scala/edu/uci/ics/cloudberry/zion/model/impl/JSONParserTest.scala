@@ -136,6 +136,17 @@ class JSONParserTest extends Specification {
       option.continueSeconds must_== 4321
       option.sliceMills must_== 1234
     }
+    "parse estimable query if estimable field appears" in {
+      val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(true)))
+      queries.forall(q => q.isEstimable) must beTrue
+
+      val (queriesFalse, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(false)))
+      queriesFalse.forall(q => !q.isEstimable) must beTrue
+    }
+    "parse estimable to false by default" in {
+      val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject])
+      queries.forall(q => !q.isEstimable) must beTrue
+    }
   }
 
   "JSONParser" should {
@@ -145,6 +156,16 @@ class JSONParserTest extends Specification {
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
+      option must_== QueryExeOption.NoSliceNoContinue
+    }
+    "parse a batch of queries contains different estimable settings" in {
+      val batchQueryJson = Json.obj("batch" -> JsArray(Seq(
+        hourCountJSON.as[JsObject] + ("estimable" -> JsBoolean(true)),
+        groupByBinJSON.as[JsObject] + ("estimable" -> JsBoolean(false)))))
+      val (query, option) = parser.parse(batchQueryJson)
+      query.size must_== 2
+      query.head must_== Query(TwitterDataSet, groups = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
+      query.last must_== Query(TwitterDataSet, groups = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
       option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse a batch of queries with option" in {
