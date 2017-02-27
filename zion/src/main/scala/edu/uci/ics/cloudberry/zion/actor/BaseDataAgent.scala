@@ -6,7 +6,6 @@ import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, Duration}
-import play.api.Logger
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
@@ -20,7 +19,7 @@ class BaseDataAgent(override val dbName: String,
 
   import BaseDataAgent._
 
-  val lastCount: Cardinality = UnInitialCount
+  val lastCount: Cardinality = UnInitialCardinality
 
   /**
     * Ask for the initial stats when the Agent starts.
@@ -49,7 +48,6 @@ class BaseDataAgent(override val dbName: String,
     if (estimable(query)) {
       val second = new Duration(lastCount.till, DateTime.now).getStandardSeconds
       val count = lastCount.count + second * lastCount.ratePerSecond
-      Logger.error("rate: "  + lastCount.ratePerSecond + " count: " + lastCount.count)
       val tag = query.globalAggr.get.aggregate.as
       Some(JsArray(Seq(Json.obj(tag -> JsNumber(count.toLong)))))
     } else {
@@ -59,7 +57,7 @@ class BaseDataAgent(override val dbName: String,
 
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
-      if (lastCount == UnInitialCount) {
+      if (lastCount.count == UnInitialCount) {
         lastCount.reset(newCount.from, newCount.till, newCount.count)
         context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
       } else {
@@ -83,7 +81,6 @@ class BaseDataAgent(override val dbName: String,
   //TODO extend the logic of using stats to solve more queries
   private def estimable(query: Query): Boolean = {
     if (query.isEstimable &&
-      query.filter.isEmpty &&
       query.groups.isEmpty &&
       query.lookup.isEmpty &&
       query.select.isEmpty &&
@@ -99,7 +96,8 @@ object BaseDataAgent {
 
   object UpdateStats
 
-  val UnInitialCount = new Cardinality(DateTime.now(), DateTime.now(), -1)
+  val UnInitialCount = -1
+  val UnInitialCardinality = new Cardinality(DateTime.now(), DateTime.now(), UnInitialCount)
 
   class Cardinality(var from: DateTime, var till: DateTime, var count: Long) {
     def reset(from: DateTime, till: DateTime, count: Long): Unit = {
@@ -108,7 +106,7 @@ object BaseDataAgent {
       this.count = count
     }
 
-    def ratePerSecond : Double = count.toDouble / new Duration(from, till).getStandardSeconds
+    def ratePerSecond: Double = count.toDouble / new Duration(from, till).getStandardSeconds
   }
 
   def props(dbName: String, schema: Schema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
