@@ -213,11 +213,11 @@ object DataStoreManager {
     import AgentType._
     agentType match {
       case Meta =>
-        context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+        context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
       case Base =>
-        context.actorOf(BaseDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+        context.actorOf(BaseDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
       case View =>
-        context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig))
+        context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
     }
   }
 
