@@ -1,7 +1,7 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
     $scope.result = {};
-    $scope.totalCount = "";
+    $scope.totalCount = 0;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -121,7 +121,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         countDiv.className = "number";
         countDiv.id = "tweetsTotalCount";
         countDiv.title = "Total Count of Tweets";
-    countDiv.innerHTML = '<h2> {{ totalCount }} </h2><span> tweets </span>';
+    countDiv.innerHTML = '<h2> {{ totalCount |number }} </h2><span> tweets </span>';
     var bodyMap = document.getElementsByClassName("map-group")[0];
     $compile(countDiv)($scope);
     bodyMap.appendChild(countDiv);
@@ -516,7 +516,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             }
         }
         if (newResult[1] != oldValue[1]) {
-            $scope.totalCount = (newResult[1]).toLocaleString('en-US');
+            $scope.totalCount = newResult[1]
         }
       }
     );
