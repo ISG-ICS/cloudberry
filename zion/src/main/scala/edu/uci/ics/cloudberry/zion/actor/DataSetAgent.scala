@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorLogging, Props, Stash}
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
+import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
 import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query, Schema, UpsertRecord}
 
 import scala.concurrent.ExecutionContext
@@ -13,14 +14,14 @@ class DataSetAgent(val schema: Schema, val queryParser: IQLGenerator, val conn: 
   def querying: Receive = {
     case query: Query =>
       val curSender = sender()
-      conn.postQuery(queryParser.generate(query, schema)).map(curSender ! _)
+      conn.postQuery(queryParser.generate(query, Map(TwitterDataStore.DatasetName -> schema))).map(curSender ! _)
   }
 
   override def receive: Receive = querying orElse {
     case append: AppendView =>
-      process(queryParser.generate(append, schema))
+      process(queryParser.generate(append, Map(TwitterDataStore.DatasetName -> schema)))
     case upsert: UpsertRecord =>
-      process(queryParser.generate(upsert, schema))
+      process(queryParser.generate(upsert, Map(TwitterDataStore.DatasetName -> schema)))
   }
 
   private def process(statement: String): Unit = {

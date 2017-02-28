@@ -115,7 +115,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       viewInfo.dataInterval.getStart must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "min").head.as[String])
       viewInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
       viewInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
-      viewInfo.stats.lastModifyTime.getMillis must be_>= (now.getMillis)
+      viewInfo.stats.lastModifyTime.getMillis must be_>=(now.getMillis)
       ok
     }
     "update meta stats if append view succeeds" in {
@@ -148,7 +148,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       newInfo.name must_== zikaHalfYearViewInfo.name
       newInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
       newInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
-      newInfo.stats.lastModifyTime.getMillis must be_>= (now.getMillis)
+      newInfo.stats.lastModifyTime.getMillis must be_>=(now.getMillis)
     }
     "update meta info if receive drop request" in {
       ok

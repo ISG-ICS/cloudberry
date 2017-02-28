@@ -10,9 +10,9 @@ object ADMType extends Enumeration {
   val DateTime = Value("datetime")
 
   val mapToSchema: Map[Type, DataType.DataType] = Map(Boolean -> DataType.Boolean,
-                                                      Int64 -> DataType.Number,
-                                                      Double -> DataType.Number,
-                                                      String -> DataType.String,
-                                                      Point -> DataType.Point,
-                                                      DateTime -> DataType.Time)
+    Int64 -> DataType.Number,
+    Double -> DataType.Number,
+    String -> DataType.String,
+    Point -> DataType.Point,
+    DateTime -> DataType.Time)
 }

@@ -1,14 +1,14 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{ FieldNotFound, IQLGenerator, IQLGeneratorFactory, QueryParsingException }
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.Json
 
 import scala.collection.mutable
 
 /**
- * Created by luochen on 2017/2/19.
- */
+  * Created by luochen on 2017/2/19.
+  */
 class SQLPPGenerator extends IQLGenerator {
 
   val sourceVar = "t"
@@ -16,12 +16,12 @@ class SQLPPGenerator extends IQLGenerator {
   val groupVar = "g"
 
   /**
-   * Parser the Query to string statements.
-   *
-   * @param query
-   * @param schema
-   * @return
-   */
+    * Parser the Query to string statements.
+    *
+    * @param query
+    * @param schema
+    * @return
+    */
   def generate(query: IQuery, schema: Schema): String = {
     query match {
       case q: Query =>
@@ -120,7 +120,7 @@ class SQLPPGenerator extends IQLGenerator {
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],
-    varMap: Map[String, SQLPPVar]): (String, Map[String, SQLPPVar]) = {
+                          varMap: Map[String, SQLPPVar]): (String, Map[String, SQLPPVar]) = {
     val sb = StringBuilder.newBuilder
     val producedVar = mutable.Map.newBuilder[String, SQLPPVar]
     lookups.zipWithIndex.foreach {
@@ -160,7 +160,7 @@ class SQLPPGenerator extends IQLGenerator {
   }
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
-    varMap: Map[String, SQLPPVar]): (String, Map[String, SQLPPVar], List[String]) = {
+                          varMap: Map[String, SQLPPVar]): (String, Map[String, SQLPPVar], List[String]) = {
     val producedVar = mutable.Map.newBuilder[String, SQLPPVar]
     val optionalList = List.newBuilder[String]
     val sql = unnest.zipWithIndex.map {
@@ -184,8 +184,8 @@ class SQLPPGenerator extends IQLGenerator {
   }
 
   private def parseGroupby(group: GroupStatement,
-    varMap: Map[String, SQLPPVar],
-    varGroupSource: String = "g"): (String, Map[String, SQLPPVar], Map[String, String]) = {
+                           varMap: Map[String, SQLPPVar],
+                           varGroupSource: String = "g"): (String, Map[String, SQLPPVar], Map[String, String]) = {
     val producedVar = mutable.Map.newBuilder[String, SQLPPVar]
     val projects = Map.newBuilder[String, String]
     val groups: Seq[String] = group.bys.zipWithIndex.map {
@@ -218,8 +218,8 @@ class SQLPPGenerator extends IQLGenerator {
   }
 
   private def parseSelect(select: SelectStatement,
-    varMap: Map[String, SQLPPVar],
-    projectVars: Map[String, String], unnested: Boolean): (String, String, String, String, Map[String, SQLPPVar]) = {
+                          varMap: Map[String, SQLPPVar],
+                          projectVars: Map[String, String], unnested: Boolean): (String, String, String, String, Map[String, SQLPPVar]) = {
 
     val producedVar = mutable.Map.newBuilder[String, SQLPPVar]
     //sampling only
@@ -275,18 +275,18 @@ class SQLPPGenerator extends IQLGenerator {
   }
 
   /**
-   *
-   * @param globalAggr
-   * @param varMap
-   * @param globalAggrVar
-   * @return String: Prefix containing AQL statement for the aggr function. e.g.: count( for $c in (
-   *         String: wrap and return the prefix statement . e.g.: ) return $c )
-   *         Map[String, AQLVar]: result variables map after aggregation.
-   */
+    *
+    * @param globalAggr
+    * @param varMap
+    * @param globalAggrVar
+    * @return String: Prefix containing AQL statement for the aggr function. e.g.: count( for $c in (
+    *         String: wrap and return the prefix statement . e.g.: ) return $c )
+    *         Map[String, AQLVar]: result variables map after aggregation.
+    */
   private def parseGlobalAggr(globalAggr: GlobalAggregateStatement,
-    varMap: Map[String, SQLPPVar],
-    sql: String,
-    globalAggrVar: String): (String, Map[String, SQLPPVar]) = {
+                              varMap: Map[String, SQLPPVar],
+                              sql: String,
+                              globalAggrVar: String): (String, Map[String, SQLPPVar]) = {
 
     val producedVar = mutable.Map.newBuilder[String, SQLPPVar]
     val aggr = globalAggr.aggregate

@@ -2,7 +2,6 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.SortOrder
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import play.api.libs.json._
 

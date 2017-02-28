@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash, Status}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval

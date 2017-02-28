@@ -8,6 +8,8 @@ object TestQuery {
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
+  val PopulationDataSet = PopulationDataStore.DatasetName
+  val literacyDataSet = LiteracyDataStore.DatasetName
   val schema = TwitterDataStore.TwitterSchema
   val startTime = "2016-01-01T00:00:00.000Z"
   val endTime = "2016-12-01T00:00:00.000Z"
@@ -64,11 +66,30 @@ object TestQuery {
   val aggrMin = AggregateStatement("id", Min, "min")
   val aggrSum = AggregateStatement("id", Sum, "sum")
   val aggrAvg = AggregateStatement("id", Avg, "avg")
+  val aggrPopulationMin = AggregateStatement("population", Min, "min")
 
+  val groupPopulationSum = GroupStatement(
+    bys = Seq(byState),
+    aggregates = Seq(AggregateStatement("population", Sum, "sum")))
 
   val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
   val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
   val selectTop10 = SelectStatement(Seq.empty, 10, 0, Seq.empty)
+
+
+  val lookupPopulation = LookupStatement(
+    sourceKeys = Seq("geo_tag.stateID"),
+    dataset = PopulationDataSet,
+    lookupKeys = Seq("stateId"),
+    selectValues = Seq("population"),
+    as = Seq("population"))
+
+  val lookupLiteracy = LookupStatement(
+    sourceKeys = Seq("geo_tag.stateID"),
+    dataset = literacyDataSet,
+    lookupKeys = Seq("stateId"),
+    selectValues = Seq("literacy"),
+    as = Seq("literacy"))
 
   val filterJSON =
     s"""
@@ -574,6 +595,72 @@ object TestQuery {
        | $filterZikaJSON
        |}
     """.stripMargin)
+
+  val simpleLookupFilterJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "lookup": [
+       |    {
+       |      "joinKey":["geo_tag.stateID"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateId"],
+       |      "select":["population"],
+       |      "as" : ["population"]
+       |    }
+       |   ],
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["population"]
+       |  }
+       |}
+    """.stripMargin)
+
+  val multiLookupFilterJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "lookup": [
+       |    {
+       |      "joinKey":["geo_tag.stateID"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateId"],
+       |      "select":["population"],
+       |      "as" : ["population"]
+       |    },
+       |    {
+       |      "joinKey":["geo_tag.stateID"],
+       |      "dataset":"twitter.US_literacy",
+       |      "lookupKey":["stateId"],
+       |      "select":["literacy"],
+       |      "as" : ["literacy"]
+       |    }
+       |   ],
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["population", "literacy"]
+       |  }
+       |}
+     """.stripMargin
+  )
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 

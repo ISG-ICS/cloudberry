@@ -1,7 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
-import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
 //TODO support nested type

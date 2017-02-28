@@ -3,10 +3,8 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryParsingException
 import edu.uci.ics.cloudberry.zion.model.schema.DataType._
 import edu.uci.ics.cloudberry.zion.model.schema.Relation._
-import edu.uci.ics.cloudberry.zion.model.schema.Relation
-import edu.uci.ics.cloudberry.zion.model.schema.{Relation => _, _}
+import edu.uci.ics.cloudberry.zion.model.schema.{Relation, Relation => _, _}
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 abstract class AsterixFunction {
@@ -90,7 +88,7 @@ abstract class AsterixFuncVisitor {
         case bin: Bin =>
           (DataType.Number,
             s"round($aqlExpr/${bin.scale})*${bin.scale}"
-            )
+          )
         case interval: Interval =>
           import TimeUnit._
           //PnYnMnDTnHnMn.mmmS
@@ -403,6 +401,7 @@ object SQLPPFuncVisitor extends AsterixFuncVisitor {
         s"$aggFunc( (select value $groupSource.$sqlExpr from $groupSource) ) as `$newvar`"
       }
     }
+
     func match {
       case Count =>
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")

@@ -21,10 +21,10 @@ case class DataSetInfo(name: String,
 object DataSetInfo {
 
   val MetaSchema: Schema = Schema("berry.MetaType",
-                                  Seq(StringField("name")),
-                                  Seq.empty,
-                                  Seq("name"),
-                                  "stats.createTime")
+    Seq(StringField("name")),
+    Seq.empty,
+    Seq("name"),
+    "stats.createTime")
 
   def parse(json: JsValue): DataSetInfo = {
     json.validate[DataSetInfo] match {

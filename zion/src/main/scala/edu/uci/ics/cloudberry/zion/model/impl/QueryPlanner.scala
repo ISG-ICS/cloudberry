@@ -271,6 +271,7 @@ object QueryPlanner {
       }
       false // equal
     }
+
     JsArray(mergedArray.value.sortWith(ltObj))
   }
 

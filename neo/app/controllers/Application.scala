@@ -61,9 +61,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    //    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
-    val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
-    ActorFlow.actorRef(out => NeoActor.props(out, prop))
+    ActorFlow.actorRef(out => NeoActor.props(out, wsClient, request.host, config))
   }
 
   def tweet(id: String) = Action.async {

@@ -1,10 +1,9 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.specs2.mutable.Specification
-import org.specs2.mutable._
-import org.specs2.runner._
 import org.junit.runner._
+import org.specs2.mutable.Specification
+import org.specs2.runner._
 
 @RunWith(classOf[JUnitRunner])
 class SQLPPGeneratorTest extends Specification {
@@ -218,7 +217,7 @@ class SQLPPGeneratorTest extends Specification {
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.001, 0.001))[0] as `cell` group as g;
-         """.
+        """.
           stripMargin.trim)
     }
 
@@ -246,7 +245,7 @@ class SQLPPGeneratorTest extends Specification {
           |select `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.001, 0.001))[0] as `cell` group as g;
-         """.
+        """.
           stripMargin.trim)
     }
 
@@ -341,9 +340,9 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
-        |(select value c from (select value t
-        |from twitter.ds_tweet t) as c)
-        |) as `count`;""".stripMargin)
+          |(select value c from (select value t
+          |from twitter.ds_tweet t) as c)
+          |) as `count`;""".stripMargin)
     }
 
     "translate get min field value query without group by" in {
@@ -352,9 +351,9 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_min(
-        |(select value c.`id` from (select value t
-        |from twitter.ds_tweet t) as c)
-        |) as `min`;""".stripMargin)
+          |(select value c.`id` from (select value t
+          |from twitter.ds_tweet t) as c)
+          |) as `min`;""".stripMargin)
     }
 
     "translate get max field value query without group by" in {
@@ -363,9 +362,9 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_max(
-        |(select value c.`id` from (select value t
-        |from twitter.ds_tweet t) as c)
-        |) as `max`;""".stripMargin)
+          |(select value c.`id` from (select value t
+          |from twitter.ds_tweet t) as c)
+          |) as `max`;""".stripMargin)
     }
 
     "translate a count cardinality query with filter without group by" in {
@@ -375,10 +374,10 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
-        |(select value c from (select value t
-        |from twitter.ds_tweet t
-        |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')) as c)
-        |) as `count`;""".stripMargin)
+          |(select value c from (select value t
+          |from twitter.ds_tweet t
+          |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')) as c)
+          |) as `count`;""".stripMargin)
     }
 
     "translate a min cardinality query with filter without group by" in {
@@ -388,10 +387,10 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_min(
-        |(select value c.`id` from (select value t
-        |from twitter.ds_tweet t
-        |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')) as c)
-        |) as `min`;""".stripMargin)
+          |(select value c.`id` from (select value t
+          |from twitter.ds_tweet t
+          |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')) as c)
+          |) as `min`;""".stripMargin)
     }
 
     "translate a max cardinality query with unnest with group by with select" in {
@@ -403,16 +402,16 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_max(
-        |(select value c.`count` from (select `tag`,coll_count(g) as `count`
-        |from twitter.ds_tweet t
-        |unnest t.`hashtags` `unnest0`
-        |where not(is_null(t.`hashtags`)) and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-        |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
-        |group by `unnest0` as `tag` group as g
-        |order by `count` desc
-        |limit 10
-        |offset 0) as c)
-        |) as `max`;""".stripMargin.trim)
+          |(select value c.`count` from (select `tag`,coll_count(g) as `count`
+          |from twitter.ds_tweet t
+          |unnest t.`hashtags` `unnest0`
+          |where not(is_null(t.`hashtags`)) and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
+          |group by `unnest0` as `tag` group as g
+          |order by `count` desc
+          |limit 10
+          |offset 0) as c)
+          |) as `max`;""".stripMargin.trim)
     }
 
     "translate a count cardinality query with select" in {
@@ -421,11 +420,11 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, schema)
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
-        |(select value c from (select value t
-        |from twitter.ds_tweet t
-        |limit 10
-        |offset 0) as c)
-        |) as `count`;""".stripMargin.trim)
+          |(select value c from (select value t
+          |from twitter.ds_tweet t
+          |limit 10
+          |offset 0) as c)
+          |) as `count`;""".stripMargin.trim)
     }
 
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {

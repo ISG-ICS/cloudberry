@@ -8,8 +8,8 @@
       },
       {
         "field": "H",
-        "type" : "hierarchy",
-        "level" : [
+        "type": "hierarchy",
+        "level": [
           {
             "state": "H.state",
             "county": "H.county",
@@ -21,8 +21,8 @@
     ],
     "measurement": [
       {
-        "field":  "X",
-        "type" : "int"
+        "field": "X",
+        "type": "int"
       }
     ]
   }
