@@ -17,7 +17,7 @@ import play.api.libs.json._
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class BaseDataAgentTest extends Specification with Mockito {
+class OriginalDataAgentTest extends Specification with Mockito {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
@@ -52,7 +52,7 @@ class BaseDataAgentTest extends Specification with Mockito {
         .thenReturn(Future(countResponse))
 
       val updatePerSecondConfig = new Config(Configuration("agent.collect.stats.interval" -> "1 second"))
-      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
+      val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
       sender.expectNoMsg(500 milli)
 
       val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
@@ -84,7 +84,7 @@ class BaseDataAgentTest extends Specification with Mockito {
         .thenReturn(Future(maxTimeResponse))
         .thenReturn(Future(countResponse))
 
-      system.actorOf(BaseDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
       sender.expectNoMsg(1 seconds)
 
       //initial 3 times AQL call
@@ -116,7 +116,7 @@ class BaseDataAgentTest extends Specification with Mockito {
       val query = Query("twitter")
       when(mockConn.postQuery(actualAQL)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
       sender.expectNoMsg(1 seconds)
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
@@ -141,7 +141,7 @@ class BaseDataAgentTest extends Specification with Mockito {
       val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
       val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
 
-      val agent = system.actorOf(BaseDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
 
       sender.expectNoMsg(1 seconds)
       sender.send(agent, query)

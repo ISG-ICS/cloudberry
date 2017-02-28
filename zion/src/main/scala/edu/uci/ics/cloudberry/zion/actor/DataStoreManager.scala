@@ -36,7 +36,7 @@ class DataStoreManager(metaDataset: String,
   val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
-    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, 100000000, 0, Seq.empty))) map {
+    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
         val records = jsArray.as[Seq[DataSetInfo]]
         metaData ++= records.map(info => info.name -> info)
@@ -117,7 +117,7 @@ class DataStoreManager(metaDataset: String,
           context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
           ret
         case None =>
-          childMaker(AgentType.Base, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
+          childMaker(AgentType.Origin, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
       }
     }
     query match {
@@ -187,7 +187,7 @@ object DataStoreManager {
 
   object AgentType extends Enumeration {
     val Meta = Value("meta")
-    val Base = Value("base")
+    val Origin = Value("origin")
     val View = Value("view")
   }
 
@@ -214,8 +214,8 @@ object DataStoreManager {
     agentType match {
       case Meta =>
         context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
-      case Base =>
-        context.actorOf(BaseDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
+      case Origin =>
+        context.actorOf(OriginalDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
       case View =>
         context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
     }

@@ -45,7 +45,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     import AgentType._
     agentType match {
       case Meta => meta.ref
-      case Base => base.ref
+      case Origin => base.ref
       case View => view.ref
     }
   }
