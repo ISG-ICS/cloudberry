@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IQLGenerator, IQLGeneratorFactory, QueryParsingException}
+import edu.uci.ics.cloudberry.zion.model.datastore.{ FieldNotFound, IQLGenerator, IQLGeneratorFactory, QueryParsingException }
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.Json
 
@@ -11,7 +11,6 @@ class AQLGenerator extends IQLGenerator {
   override def generate(query: IQuery, schema: Schema): String = {
     query match {
       case q: Query =>
-        validateQuery(q)
         parseQuery(q, schema)
       case q: CreateView => parseCreate(q, schema)
       case q: AppendView => parseAppend(q, schema)
@@ -23,7 +22,7 @@ class AQLGenerator extends IQLGenerator {
 
   //TODO combine with parseQuery
   override def calcResultSchema(query: Query, schema: Schema): Schema = {
-    if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
+    if (query.lookups.isEmpty && query.group.isEmpty && query.select.isEmpty) {
       schema.copy()
     } else {
       ???
@@ -35,12 +34,12 @@ class AQLGenerator extends IQLGenerator {
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""
-         |drop dataset ${create.dataset} if exists;
-         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.mkString(",")} //with filter on '${resultSchema.timeField}'
+         |drop dataset ${create.datasetName} if exists;
+         |create dataset ${create.datasetName}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.mkString(",")} //with filter on '${resultSchema.timeField}'
          |""".stripMargin
     val insert =
       s"""
-         |insert into dataset ${create.dataset} (
+         |insert into dataset ${create.datasetName} (
          |${parseQuery(create.query, sourceSchema)}
          |)
        """.stripMargin
@@ -49,7 +48,7 @@ class AQLGenerator extends IQLGenerator {
 
   def parseAppend(append: AppendView, sourceSchema: Schema): String = {
     s"""
-       |upsert into dataset ${append.dataset} (
+       |upsert into dataset ${append.datasetName} (
        |${parseQuery(append.query, sourceSchema)}
        |)
      """.stripMargin
@@ -57,7 +56,7 @@ class AQLGenerator extends IQLGenerator {
 
   def parseUpsert(q: UpsertRecord, schema: Schema): String = {
     s"""
-       |upsert into dataset ${q.dataset} (
+       |upsert into dataset ${q.datasetName} (
        |${Json.toJson(q.records)}
        |)
      """.stripMargin
@@ -66,7 +65,7 @@ class AQLGenerator extends IQLGenerator {
   def parseQuery(query: Query, schema: Schema): String = {
 
     val sourceVar = "$t"
-    val dataset = s"for $sourceVar in dataset ${query.dataset}"
+    val dataset = s"for $sourceVar in dataset ${query.datasetName}"
 
     val schemaVars: Map[String, AQLVar] = schema.fieldMap.mapValues { f =>
       f.dataType match {
@@ -80,12 +79,12 @@ class AQLGenerator extends IQLGenerator {
       }
     }
 
-    val (lookup, varMapAfterLookup) = parseLookup(query.lookup, schemaVars)
-    val filter = parseFilter(query.filter, varMapAfterLookup)
-    val (unnest, varMapAfterUnnest) = parseUnnest(query.unnest, varMapAfterLookup)
+    val (lookup, varMapAfterLookup) = parseLookup(query.lookups, schemaVars)
+    val filter = parseFilter(query.filters, varMapAfterLookup)
+    val (unnest, varMapAfterUnnest) = parseUnnest(query.unnests, varMapAfterLookup)
 
     val groupVar = "$g"
-    val (group, varMapAfterGroup) = query.groups.map(parseGroupby(_, varMapAfterUnnest, groupVar))
+    val (group, varMapAfterGroup) = query.group.map(parseGroupby(_, varMapAfterUnnest, groupVar))
       .getOrElse(("", varMapAfterUnnest))
 
     val outerSelectVar = "$s"
@@ -93,7 +92,7 @@ class AQLGenerator extends IQLGenerator {
     val (selectPrefix, select, varMapAfterSelect) = query.select.map(parseSelect(_, varMapAfterGroup, group.length > 0, varName, outerSelectVar))
       .getOrElse("", "", varMapAfterGroup)
 
-    val returnStat = if (query.groups.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
+    val returnStat = if (query.group.isEmpty && query.select.isEmpty) s"return $sourceVar" else ""
 
     val aggrVar = if (selectPrefix.length > 0) outerSelectVar else "$c"
     val (globalAggrPrefix, aggrReturnStat, _) = query.globalAggr.map(parseGlobalAggr(_, varMapAfterSelect, aggrVar)).getOrElse("", "", varMapAfterSelect)
@@ -102,29 +101,29 @@ class AQLGenerator extends IQLGenerator {
   }
 
   private def parseLookup(lookups: Seq[LookupStatement],
-                          varMap: Map[String, AQLVar]
-                         ): (String, Map[String, AQLVar]) = {
+    varMap: Map[String, AQLVar]): (String, Map[String, AQLVar]) = {
     val sb = StringBuilder.newBuilder
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
-    lookups.zipWithIndex.foreach { case (lookup, id) =>
-      val lookupVar = s"$$l$id"
-      val keyZip = lookup.lookupKeys.zip(lookup.sourceKeys).map { case (lookupKey, sourceKey) =>
-        varMap.get(sourceKey) match {
-          case Some(aqlVar) => s"$lookupVar.$lookupKey = ${aqlVar.aqlExpr}"
-          case None => throw FieldNotFound(sourceKey)
+    lookups.zipWithIndex.foreach {
+      case (lookup, id) =>
+        val lookupVar = s"$$l$id"
+        val keyZip = lookup.lookupKeys.zip(lookup.sourceKeys).map {
+          case (lookupKey, sourceKey) =>
+            varMap.get(sourceKey) match {
+              case Some(aqlVar) => s"$lookupVar.$lookupKey = ${aqlVar.aqlExpr}"
+              case None => throw FieldNotFound(sourceKey)
+            }
         }
-      }
-      sb.append(
-        s"""
-           |for $lookupVar in dataset ${lookup.dataset}
+        sb.append(
+          s"""
+           |for $lookupVar in dataset ${lookup.datasetName}
            |where ${keyZip.mkString(" and ")}
-        """.stripMargin
-      )
-      //TODO check if the vars are duplicated
-      val field: Field = ??? // get field from lookup table
-      producedVar ++= lookup.as.zip(lookup.selectValues).map { p =>
-        p._1 -> AQLVar(new Field(p._1, field.dataType), s"$lookupVar.${p._2}")
-      }
+        """.stripMargin)
+        //TODO check if the vars are duplicated
+        val field: Field = ??? // get field from lookup table
+        producedVar ++= lookup.as.zip(lookup.selectValues).map { p =>
+          p._1 -> AQLVar(new Field(p._1, field.dataType), s"$lookupVar.${p._2}")
+        }
     }
     (sb.toString(), (producedVar ++= varMap).result().toMap)
   }
@@ -141,43 +140,43 @@ class AQLGenerator extends IQLGenerator {
   }
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
-                          varMap: Map[String, AQLVar]
-                         ): (String, Map[String, AQLVar]) = {
+    varMap: Map[String, AQLVar]): (String, Map[String, AQLVar]) = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
-    val aql = unnest.zipWithIndex.map { case (stat, id) =>
-      varMap.get(stat.fieldName) match {
-        case Some(aqlVar) =>
-          aqlVar.field match {
-            case field: BagField =>
-              val newVar = s"$$unnest$id"
-              producedVar += stat.as -> AQLVar(new Field(stat.as, field.innerType), newVar)
-              s"""
+    val aql = unnest.zipWithIndex.map {
+      case (stat, id) =>
+        varMap.get(stat.fieldName) match {
+          case Some(aqlVar) =>
+            aqlVar.field match {
+              case field: BagField =>
+                val newVar = s"$$unnest$id"
+                producedVar += stat.as -> AQLVar(new Field(stat.as, field.innerType), newVar)
+                s"""
                  |${if (field.isOptional) s"where not(is-null(${aqlVar.aqlExpr}))"}
                  |for $newVar in ${aqlVar.aqlExpr}
                  |""".stripMargin
-            case _ => throw new QueryParsingException("unnest can only apply on Bag type")
-          }
-        case None => throw FieldNotFound(stat.fieldName)
-      }
+              case _ => throw new QueryParsingException("unnest can only apply on Bag type")
+            }
+          case None => throw FieldNotFound(stat.fieldName)
+        }
     }.mkString("\n")
     (aql, (producedVar ++= varMap).result().toMap)
   }
 
   private def parseGroupby(group: GroupStatement,
-                           varMap: Map[String, AQLVar],
-                           varGroupSource: String = "$g"
-                          ): (String, Map[String, AQLVar]) = {
+    varMap: Map[String, AQLVar],
+    varGroupSource: String = "$g"): (String, Map[String, AQLVar]) = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
-    val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map { case (by, id) =>
-      varMap.get(by.fieldName) match {
-        case Some(aqlVar) =>
-          val key = by.as.getOrElse(aqlVar.field.name)
-          val varKey = s"$$g$id"
-          val (dataType, aqlGrpFunc) = AQLFuncVisitor.translateGroupFunc(aqlVar.field, by.funcOpt, aqlVar.aqlExpr)
-          producedVar += key -> AQLVar(new Field(key, dataType), s"$varGroupSource.$key")
-          (s"$varKey := $aqlGrpFunc", s" '$key' : $varKey")
-        case None => throw FieldNotFound(by.fieldName)
-      }
+    val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map {
+      case (by, id) =>
+        varMap.get(by.fieldName) match {
+          case Some(aqlVar) =>
+            val key = by.as.getOrElse(aqlVar.field.name)
+            val varKey = s"$$g$id"
+            val (dataType, aqlGrpFunc) = AQLFuncVisitor.translateGroupFunc(aqlVar.field, by.funcOpt, aqlVar.aqlExpr)
+            producedVar += key -> AQLVar(new Field(key, dataType), s"$varGroupSource.$key")
+            (s"$varKey := $aqlGrpFunc", s" '$key' : $varKey")
+          case None => throw FieldNotFound(by.fieldName)
+        }
     }
 
     //used to append to the AQL `group by`'s `with` clause to expose the required fields
@@ -210,12 +209,10 @@ class AQLGenerator extends IQLGenerator {
   }
 
   private def parseSelect(select: SelectStatement,
-                          varMap: Map[String, AQLVar],
-                          isInGroup: Boolean,
-                          innerSourceVar: String = "$g",
-                          outerSelectVar: String
-                         ): (String, String, Map[String, AQLVar]) = {
-
+    varMap: Map[String, AQLVar],
+    isInGroup: Boolean,
+    innerSourceVar: String = "$g",
+    outerSelectVar: String): (String, String, Map[String, AQLVar]) = {
 
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val (prefix, wrap) = if (isInGroup) (s"for $innerSourceVar in (", ")") else ("", "")
@@ -230,10 +227,10 @@ class AQLGenerator extends IQLGenerator {
     }
     val ordersAQL = if (orders.nonEmpty) orders.mkString("order by ", ",", "") else ""
 
-    if (select.fields.isEmpty) {
+    if (select.fieldNames.isEmpty) {
       producedVar ++= varMap
     }
-    val rets = select.fields.map { fieldName =>
+    val rets = select.fieldNames.map { fieldName =>
       varMap.get(fieldName) match {
         case Some(aqlVar) =>
           producedVar += fieldName -> AQLVar(new Field(aqlVar.field.name, aqlVar.field.dataType), s"$outerSelectVar.$fieldName")
@@ -256,18 +253,17 @@ class AQLGenerator extends IQLGenerator {
   }
 
   /**
-    *
-    * @param globalAggr
-    * @param varMap
-    * @param aggrVar
-    * @return String: Prefix containing AQL statement for the aggr function. e.g.: count( for $c in (
-    *         String: wrap and return the prefix statement . e.g.: ) return $c )
-    *         Map[String, AQLVar]: result variables map after aggregation.
-    */
+   *
+   * @param globalAggr
+   * @param varMap
+   * @param aggrVar
+   * @return String: Prefix containing AQL statement for the aggr function. e.g.: count( for $c in (
+   *         String: wrap and return the prefix statement . e.g.: ) return $c )
+   *         Map[String, AQLVar]: result variables map after aggregation.
+   */
   private def parseGlobalAggr(globalAggr: GlobalAggregateStatement,
-                              varMap: Map[String, AQLVar],
-                              aggrVar: String = "$c"
-                             ): (String, String, Map[String, AQLVar]) = {
+    varMap: Map[String, AQLVar],
+    aggrVar: String = "$c"): (String, String, Map[String, AQLVar]) = {
 
     val (forPrefix, forWrap) = (s"for $aggrVar in (", ")")
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
@@ -297,10 +293,6 @@ class AQLGenerator extends IQLGenerator {
          |""".stripMargin
 
     (aqlPrefix, returnStat, producedVar.result().toMap)
-  }
-
-  private def validateQuery(query: Query): Unit = {
-    requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined, "either group or select or global aggregate statement is required")
   }
 
   private def genDDL(schema: Schema): String = {
