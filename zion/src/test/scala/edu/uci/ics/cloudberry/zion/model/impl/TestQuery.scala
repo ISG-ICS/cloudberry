@@ -34,7 +34,7 @@ object TestQuery {
   val zikaHalfInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2016, 6, 1, 0, 0))
   val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
 
-  val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
+  val zikaCreateQuery = Query(TwitterDataSet, filters = Seq(zikaFilter))
   val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, zikaHalfInterval, zikaStats)
 
   val intFilter = FilterStatement("id", None, Relation.==, intValues)

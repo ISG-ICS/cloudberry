@@ -29,44 +29,44 @@ class QueryPlannerTest extends Specification {
     "should suggest a keyword view if hasn't found it " in {
       val queries = planner.suggestNewView(queryCount, sourceInfo, Seq.empty)
       queries.size must_== 2
-      queries.exists(_.dataset == QueryPlanner.getViewKey(TwitterDataSet, "zika")) must_== true
-      queries.exists(_.dataset == QueryPlanner.getViewKey(TwitterDataSet, "virus")) must_== true
+      queries.exists(_.datasetName == QueryPlanner.getViewKey(TwitterDataSet, "zika")) must_== true
+      queries.exists(_.datasetName == QueryPlanner.getViewKey(TwitterDataSet, "virus")) must_== true
       queries.exists(_.query == zikaCreateQuery) must_== true
-      queries.exists(_.query == Query(TwitterDataSet, filter = Seq(virusFilter))) must_== true
+      queries.exists(_.query == Query(TwitterDataSet, filters = Seq(virusFilter))) must_== true
     }
     "makePlan should choose a smaller view" in {
 
-      val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
+      val virusCreateQuery = Query(TwitterDataSet, filters = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
       val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, sourceInterval, virusStats)
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
       queries.size must_== 1
-      queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
+      queries.head must_== queryCount.copy(datasetName = zikaFullYearViewInfo.name)
     }
     "makePlan should only ask the view without touching source if it is sufficient to solve the query" in {
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo))
       queries.size must_== 1
-      queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
+      queries.head must_== queryCount.copy(datasetName = zikaFullYearViewInfo.name)
     }
     "makePlan should omit the redundant filter from query if it covers view.createQuery" in {
 
       val queryTimeFilter = FilterStatement("create_at", None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
       val queryZika = Query(
-        dataset = TwitterDataSet,
-        filter = Seq(
+        datasetName = TwitterDataSet,
+        filters = Seq(
           FilterStatement("text", None, Relation.contains, Seq("zika")),
           queryTimeFilter
         ),
-        groups = Some(group))
+        group = Some(group))
       val (queries, _) = planner.makePlan(queryZika, sourceInfo, Seq(zikaFullYearViewInfo))
-      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, filter = Seq(queryTimeFilter), groups = Some(group))
+      queries.head must_== Query(datasetName = zikaFullYearViewInfo.name, filters = Seq(queryTimeFilter), group = Some(group))
       queries.size must_== 1
     }
     "makePlan should ask the view and the source if view can not cover the query" in {
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaHalfYearViewInfo))
       queries.size must_== 2
-      queries.exists(_.dataset == zikaHalfYearViewInfo.name) must_== true
-      queries.exists(_.dataset == TwitterDataSet) must_== true
+      queries.exists(_.datasetName == zikaHalfYearViewInfo.name) must_== true
+      queries.exists(_.datasetName == TwitterDataSet) must_== true
     }
     "makePlan generate a merger to merge the count query result" in {
       import QueryPlanner._

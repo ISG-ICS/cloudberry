@@ -83,17 +83,17 @@ class JSONParserTest extends Specification {
     }
     "parse a count cardinality without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
-      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      val expectQuery = new Query(datasetName = TwitterDataSet, globalAggr = Some(globalAggr))
       checkQueryOnly(globalCountJSON, expectQuery)
     }
     "parse a max cardinality without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMax)
-      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      val expectQuery = new Query(datasetName = TwitterDataSet, globalAggr = Some(globalAggr))
       checkQueryOnly(globalMaxJSON, expectQuery)
     }
     "parse a min cardinality without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMin)
-      val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      val expectQuery = new Query(datasetName = TwitterDataSet, globalAggr = Some(globalAggr))
       checkQueryOnly(globalMinJSON, expectQuery)
     }
     "throw an exception when there is no dataset name" in {

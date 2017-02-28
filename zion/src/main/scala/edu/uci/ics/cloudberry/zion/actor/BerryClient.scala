@@ -56,7 +56,7 @@ class BerryClient(val jsonParser: JSONParser,
         case (query, info) =>
           val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
           val merger = planner.calculateMergeFunc(query, info.schema)
-          val queryWOTime = query.copy(filter = query.filter.filterNot(_.fieldName == info.schema.timeField))
+          val queryWOTime = query.copy(filters = query.filters.filterNot(_.fieldName == info.schema.timeField))
           QueryInfo(queryWOTime, info, bound, merger)
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
@@ -76,12 +76,12 @@ class BerryClient(val jsonParser: JSONParser,
     val key = DateTime.now()
     curKey = key
     val fDataInfos = Future.traverse(queries) { query =>
-      dataManager ? AskInfo(query.dataset)
+      dataManager ? AskInfo(query.datasetName)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
 
     fDataInfos.foreach { seqInfos =>
       if (seqInfos.exists(_.isEmpty)) {
-        curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).dataset)
+        curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).datasetName)
       } else {
         if (runOption.sliceMills <= 0) {
           val result = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
@@ -128,7 +128,7 @@ class BerryClient(val jsonParser: JSONParser,
 
   private def suggestViews(queryGroup: QueryGroup): Unit = {
     for (queryInfo <- queryGroup.queries) {
-      dataManager ? AskInfoAndViews(queryInfo.query.dataset) map {
+      dataManager ? AskInfoAndViews(queryInfo.query.datasetName) map {
         case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
           val infos = seq.map(_.asInstanceOf[DataSetInfo])
           val newViews = planner.suggestNewView(queryInfo.query, infos.head, infos.tail)
@@ -144,7 +144,7 @@ class BerryClient(val jsonParser: JSONParser,
         val overlaps = queryInfo.queryBound.overlap(interval)
         val timeFilter = FilterStatement(queryInfo.dataSetInfo.schema.timeField, None, Relation.inRange,
           Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
-        solveAQuery(queryInfo.query.copy(filter = timeFilter +: queryInfo.query.filter))
+        solveAQuery(queryInfo.query.copy(filters = timeFilter +: queryInfo.query.filters))
       } else {
         Future(JsArray())
       }
@@ -169,7 +169,7 @@ class BerryClient(val jsonParser: JSONParser,
   }
 
   protected def solveAQuery(query: Query): Future[JsValue] = {
-    val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
+    val fInfos = dataManager ? AskInfoAndViews(query.datasetName) map {
       case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
         seq.map(_.asInstanceOf[DataSetInfo])
       case _ => Seq.empty
@@ -177,7 +177,7 @@ class BerryClient(val jsonParser: JSONParser,
 
     fInfos.flatMap {
       case seq if seq.isEmpty =>
-        Future(noSuchDatasetJson(query.dataset))
+        Future(noSuchDatasetJson(query.datasetName))
       case infos: Seq[DataSetInfo] =>
         val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
         val fResponse = Future.traverse(queries) { subQuery =>

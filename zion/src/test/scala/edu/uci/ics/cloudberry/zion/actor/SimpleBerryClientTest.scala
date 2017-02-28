@@ -35,14 +35,14 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
 
-      dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
+      dataManager.expectMsg(DataStoreManager.AskInfo(query.datasetName))
       dataManager.reply(Some(sourceInfo))
 
-      dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
+      dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.datasetName))
       dataManager.reply(Seq(sourceInfo))
 
-      val query1 = Query(sourceInfo.name, filter = Seq(textFilter))
-      val query2 = Query(sourceInfo.name, filter = Seq(timeFilter))
+      val query1 = Query(sourceInfo.name, filters = Seq(textFilter))
+      val query2 = Query(sourceInfo.name, filters = Seq(timeFilter))
       when(mockPlanner.makePlan(query, sourceInfo, Seq.empty)).thenReturn((Seq(query1, query2), QueryPlanner.Unioner))
 
       val create = CreateView("zika", zikaCreateQuery)
@@ -72,7 +72,7 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
-      dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
+      dataManager.expectMsg(DataStoreManager.AskInfo(query.datasetName))
       dataManager.reply(None)
 
       sender.expectMsg(BerryClient.noSuchDatasetJson(sourceInfo.name))

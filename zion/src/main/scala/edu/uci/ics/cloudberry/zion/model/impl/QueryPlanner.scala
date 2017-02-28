@@ -23,13 +23,13 @@ class QueryPlanner {
     if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {
       Seq.empty[CreateView]
     } else {
-      val keywordFilters = query.filter.filter(f => source.schema.fieldMap(f.fieldName).dataType == DataType.Text)
+      val keywordFilters = query.filters.filter(f => source.schema.fieldMap(f.fieldName).dataType == DataType.Text)
       keywordFilters.flatMap { kwFilter =>
         kwFilter.values.map { wordAny =>
           val word = wordAny.asInstanceOf[String]
           val wordFilter = FilterStatement(kwFilter.fieldName, None, Relation.contains, Seq(word))
-          val wordQuery = Query(query.dataset, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
-          CreateView(getViewKey(query.dataset, word), wordQuery)
+          val wordQuery = Query(query.datasetName, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
+          CreateView(getViewKey(query.datasetName, word), wordQuery)
         }
       }
     }
@@ -37,7 +37,7 @@ class QueryPlanner {
 
   def calculateMergeFunc(query: Query, schema: Schema): IMerger = {
     //TODO the current logic is very simple, all queries has to be the isomorphism.
-    if (query.lookup.nonEmpty) {
+    if (query.lookups.nonEmpty) {
       ???
     }
 
@@ -50,7 +50,7 @@ class QueryPlanner {
 
     val keys = Seq.newBuilder[String]
     val aggrValues = Map.newBuilder[String, AggregateFunc]
-    query.groups match {
+    query.group match {
       case Some(groupStats) =>
         keys ++= groupStats.bys.map(key => key.as.getOrElse(key.fieldName))
         aggrValues ++= groupStats.aggregates.map(v => v.as -> v.func)
@@ -67,7 +67,7 @@ class QueryPlanner {
           val order = if (f.startsWith("-")) SortOrder.DSC else SortOrder.ASC
           f.stripPrefix("-") -> order
         }
-        project ++= select.fields
+        project ++= select.fieldNames
         limitOpt = Some(select.limit)
       case None =>
     }
@@ -96,9 +96,9 @@ class QueryPlanner {
         //TODO if select project fields from groupby results, postpone the project to the merge stage.
 
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
-        val viewFilters = view.createQueryOpt.get.filter
-        val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf, source.schema.fieldMap(qf.fieldName).dataType)))
-        seqBuilder += query.copy(dataset = view.name, filter = newFilter)
+        val viewFilters = view.createQueryOpt.get.filters
+        val newFilter = query.filters.filterNot(qf => viewFilters.exists(vf => qf.covers(vf, source.schema.fieldMap(qf.fieldName).dataType)))
+        seqBuilder += query.copy(datasetName = view.name, filters = newFilter)
         for (interval <- unCovered) {
           seqBuilder += query.setInterval(source.schema.timeField, interval)
         }
