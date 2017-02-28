@@ -37,5 +37,5 @@ private[db] class Migration_20160814() {
 
 object Migration_20160814 {
   val migration = new Migration_20160814()
-  val berryMeta = "berry.meta"
+  val berryMeta = DataSetInfo.MetaDataDBName
 }

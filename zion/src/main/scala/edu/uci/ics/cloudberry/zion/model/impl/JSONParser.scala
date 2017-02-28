@@ -227,7 +227,11 @@ object JSONParser {
       ) and
       (JsPath \ "group").formatNullable[GroupStatement] and
       (JsPath \ "select").formatNullable[SelectStatement] and
-      (JsPath \ "global").formatNullable[GlobalAggregateStatement]
+      (JsPath \ "global").formatNullable[GlobalAggregateStatement] and
+      (JsPath \ "estimable").formatNullable[Boolean].inmap[Boolean](
+        o => o.getOrElse(false),
+        s => if (s) Some(s) else None
+      )
     ) (Query.apply, unlift(Query.unapply))
 
 }
