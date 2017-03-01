@@ -11,7 +11,7 @@ class Config(config: Configuration) {
 
   val AsterixURL = config.getString("asterixdb.url").getOrElse("testing")
 
-  val USCityDataPath = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
+  val USCityDataPath = config.getString("us.city.path").getOrElse("/public/data/city.json")
 
   val AwaitInitial = config.getString("neo.timeout.initial").map(parseTimePair).getOrElse(10 minutes)
 

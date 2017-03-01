@@ -47,6 +47,11 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
     case x => log.error("unknown:" + x)
   }
 
+  override def postStop(): Unit = {
+    ws.close()
+    super.postStop()
+  }
+
   private def handleSamplingResponse(berryRequest: Map[RequestType.Value, JsValue]): Unit = {
     handleResponse(Sample, berryRequest(Sample))
   }
