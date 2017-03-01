@@ -17,7 +17,7 @@ class DataStoreManager(metaDataset: String,
                        val conn: IDataConn,
                        val queryGenFactory: IQLGeneratorFactory,
                        val config: Config,
-                       val childMaker: (ActorRefFactory, String, Seq[Any]) => ActorRef)
+                       val childMaker: DataStoreManager.ChildMakerFuncType)
                       (implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
   import DataStoreManager._
@@ -33,10 +33,10 @@ class DataStoreManager(metaDataset: String,
   val managerParser = queryGenFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
-  val metaActor = childMaker(context, "meta", Seq(DataSetInfo.MetaSchema, queryGenFactory(), conn, ec))
+  val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
-    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, 100000000, 0, Seq.empty))) map {
+    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
         val records = jsArray.as[Seq[DataSetInfo]]
         metaData ++= records.map(info => info.name -> info)
@@ -65,6 +65,7 @@ class DataStoreManager(metaDataset: String,
     case query: Query => answerQuery(query)
     case append: AppendView => answerQuery(append, Some(DateTime.now()))
     case append: AppendViewAutomatic =>
+      //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
           info.createQueryOpt match {
@@ -74,7 +75,7 @@ class DataStoreManager(metaDataset: String,
               } else {
                 val now = DateTime.now()
                 val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
-                                                 Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
+                  Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
                 val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
                 answerQuery(AppendView(info.name, appendQ), Some(now))
               }
@@ -110,14 +111,14 @@ class DataStoreManager(metaDataset: String,
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
       val schema: Schema = info.schema
-      val ret = childMaker(context, "data-" + query.dataset, Seq(schema, queryGenFactory(), conn, ec))
-      // make views append self periodically
       info.createQueryOpt match {
         case Some(_) =>
+          val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
           context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
+          ret
         case None =>
+          childMaker(AgentType.Origin, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
       }
-      ret
     }
     query match {
       case q: Query => actor.forward(q)
@@ -141,7 +142,7 @@ class DataStoreManager(metaDataset: String,
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
-    val queryString = managerParser.generate(create.copy(query = newCreateQuery), sourceInfo.schema)
+    val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(newCreateQuery.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
       case true =>
         collectStats(create.dataset, schema) onComplete {
@@ -170,18 +171,27 @@ class DataStoreManager(metaDataset: String,
     val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
-      minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, schema)).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, schema)).map(r => (r \\ "count").head.as[Long])
+      minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
+      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
+      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
     } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 
   private def flushMetaData(): Unit = {
     metaActor ! UpsertRecord(metaDataset, Json.toJson(metaData.values.toSeq).asInstanceOf[JsArray])
   }
+
 }
 
 object DataStoreManager {
+
+  object AgentType extends Enumeration {
+    val Meta = Value("meta")
+    val Origin = Value("origin")
+    val View = Value("view")
+  }
+
+  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, IQLGenerator, IDataConn, Config) => ActorRef
 
   def props(metaDataSet: String,
             conn: IDataConn,
@@ -191,9 +201,24 @@ object DataStoreManager {
     Props(new DataStoreManager(metaDataSet, conn, queryParserFactory, config, defaultMaker))
   }
 
-  def defaultMaker(context: ActorRefFactory, name: String, args: Seq[Any])(implicit ec: ExecutionContext): ActorRef = {
-    context.actorOf(DataSetAgent.props(
-      args(0).asInstanceOf[Schema], args(1).asInstanceOf[IQLGenerator], args(2).asInstanceOf[IDataConn]), name)
+  def defaultMaker(agentType: AgentType.Value,
+                   context: ActorRefFactory,
+                   actorName: String,
+                   dbName: String,
+                   dbSchema: Schema,
+                   qLGenerator: IQLGenerator,
+                   conn: IDataConn,
+                   appConfig: Config
+                  )(implicit ec: ExecutionContext): ActorRef = {
+    import AgentType._
+    agentType match {
+      case Meta =>
+        context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
+      case Origin =>
+        context.actorOf(OriginalDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
+      case View =>
+        context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
+    }
   }
 
 

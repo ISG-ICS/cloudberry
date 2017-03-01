@@ -177,7 +177,7 @@ object JSONParser {
     ) (SelectStatement.apply, unlift(SelectStatement.unapply))
 
   implicit val lookupFormat: Format[LookupStatement] = (
-    (JsPath \ "sourceKey").format[Seq[String]] and
+    (JsPath \ "joinKey").format[Seq[String]] and
       (JsPath \ "dataset").format[String] and
       (JsPath \ "lookupKey").format[Seq[String]] and
       (JsPath \ "select").format[Seq[String]] and
@@ -227,7 +227,11 @@ object JSONParser {
       ) and
       (JsPath \ "group").formatNullable[GroupStatement] and
       (JsPath \ "select").formatNullable[SelectStatement] and
-      (JsPath \ "global").formatNullable[GlobalAggregateStatement]
+      (JsPath \ "global").formatNullable[GlobalAggregateStatement] and
+      (JsPath \ "estimable").formatNullable[Boolean].inmap[Boolean](
+        o => o.getOrElse(false),
+        s => if (s) Some(s) else None
+      )
     ) (Query.apply, unlift(Query.unapply))
 
 }
