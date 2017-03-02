@@ -2,6 +2,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, $timeout) {
     $scope.result = {};
     $scope.totalCount = 0;
+    $scope.currentTweetsCount = 0;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -72,9 +73,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           fillOpacity: 0.7
         },
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
-      },
-      currentTweetsCount: 0,
-      totalCount: 0
+      }
     });
 
     function resetGeoIds(bounds, polygons, idTag) {
