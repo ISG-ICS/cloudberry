@@ -20,7 +20,7 @@
 set -o nounset                              # Treat unset variables as an error
 
 # ddl to register the twitter dataset
-cat <<'EOF' | curl -XPOST --data-binary @- http://128.195.52.57:19002/aql
+cat <<'EOF' | curl -XPOST --data-binary @- http://localhost:19002/aql
 drop dataverse twitter if exists;
 create dataverse twitter if not exists;
 use dataverse twitter
@@ -83,7 +83,7 @@ create index text_idx if not exists on ds_tweet("text") type keyword;
 
 create feed TweetFeed using socket_adapter
 (
-    ("sockets"="blue:10001"),
+    ("sockets"="nc1:10001"),
     ("address-type"="nc"),
     ("type-name"="typeTweet"),
     ("format"="adm")
