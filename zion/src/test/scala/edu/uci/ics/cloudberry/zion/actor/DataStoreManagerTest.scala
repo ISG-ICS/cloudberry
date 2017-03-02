@@ -4,8 +4,9 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory, Props}
 import akka.testkit.TestProbe
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AgentType
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGeneratorFactory}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
@@ -27,12 +28,26 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
   import scala.concurrent.duration._
 
   val sender = new TestProbe(system)
-  val child = new TestProbe(system)
+  val view = new TestProbe(system)
+  val base = new TestProbe(system)
   val meta = new TestProbe(system)
   val metaDataSet = "metaDataSet"
 
-  def testActorMaker(context: ActorRefFactory, name: String, args: Seq[Any]): ActorRef = {
-    if (name == "meta") meta.ref else child.ref
+  def testActorMaker(agentType: AgentType.Value,
+                   context: ActorRefFactory,
+                   actorName: String,
+                   dbName: String,
+                   dbSchema: Schema,
+                   qLGenerator: IQLGenerator,
+                   conn: IDataConn,
+                   appConfig: Config
+                  )(implicit ec: ExecutionContext): ActorRef = {
+    import AgentType._
+    agentType match {
+      case Meta => meta.ref
+      case Origin => base.ref
+      case View => view.ref
+    }
   }
 
   "DataManager" should {
@@ -76,7 +91,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       val query = Query(dataset = sourceInfo.name)
       sender.send(dataManager, query)
-      child.expectMsg(query)
+      base.expectMsg(query)
       ok
     }
     "update meta info if create view succeeds" in {
@@ -140,8 +155,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       val appendView = AppendView(zikaHalfYearViewInfo.name, Query(sourceInfo.name))
       sender.send(dataManager, appendView)
-      child.expectMsg(appendView)
-      child.reply(true)
+      view.expectMsg(appendView)
+      view.reply(true)
       sender.expectNoMsg(1 seconds)
       sender.send(dataManager, DataStoreManager.AskInfoAndViews(zikaHalfYearViewInfo.name))
       val newInfo = sender.receiveOne(1 second).asInstanceOf[Seq[DataSetInfo]].head

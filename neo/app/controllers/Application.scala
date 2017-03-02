@@ -19,6 +19,7 @@ import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
+import akka.pattern.ask
 import play.api.{Configuration, Environment, Logger}
 
 import scala.concurrent.Await
@@ -32,16 +33,13 @@ class Application @Inject()(val wsClient: WSClient,
                             implicit val materializer: Materializer
                            ) extends Controller {
 
-  val cities = Application.loadCity(environment.getFile("/public/data/city.json"))
   val config = new Config(configuration)
+  val cities = Application.loadCity(environment.getFile(config.USCityDataPath))
   val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
 
-  val loadMeta = Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
+  Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
-
-  val berryProp = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
-  val berryClient = system.actorOf(berryProp)
 
   Logger.logger.info("I'm initializing")
 
@@ -61,9 +59,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    //    ActorFlow.actorRef(out => NeoActor.props(out, berryProp))
-    val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
-    ActorFlow.actorRef(out => NeoActor.props(out, prop))
+    ActorFlow.actorRef(out => NeoActor.props(out, wsClient, request.host, config))
   }
 
   def tweet(id: String) = Action.async {
