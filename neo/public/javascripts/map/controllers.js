@@ -1,6 +1,7 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
     $scope.result = {};
+    $scope.totalCount = 0;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -75,17 +76,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     });
 
-      function resetGeoIds(bounds, polygons, idTag) {
-        Asterix.parameters.geoIds = [];
-        polygons.features.forEach(function(polygon){
-          if (bounds._southWest.lat <= polygon.properties.centerLat &&
-                polygon.properties.centerLat <= bounds._northEast.lat &&
-                bounds._southWest.lng <= polygon.properties.centerLog &&
-                polygon.properties.centerLog <= bounds._northEast.lng) {
-              Asterix.parameters.geoIds.push(polygon.properties[idTag]);
-          }
-        });
-      }
+    function resetGeoIds(bounds, polygons, idTag) {
+      Asterix.parameters.geoIds = [];
+      polygons.features.forEach(function(polygon){
+        if (bounds._southWest.lat <= polygon.properties.centerLat &&
+              polygon.properties.centerLat <= bounds._northEast.lat &&
+              bounds._southWest.lng <= polygon.properties.centerLog &&
+              polygon.properties.centerLog <= bounds._northEast.lng) {
+            Asterix.parameters.geoIds.push(polygon.properties[idTag]);
+        }
+      });
+    }
 
 
     // initialize
@@ -113,11 +114,20 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           $scope.map.setView([$scope.lat, $scope.lng], 4);
         });
 
-
-
       //Adjust Map to be County or State
       setInfoControl();
+
+    var countDiv = document.createElement("div");
+        countDiv.className = "number";
+        countDiv.id = "tweetsTotalCount";
+        countDiv.title = "Total Count of Tweets";
+    countDiv.innerHTML = '<h2> {{ totalCount |number }} </h2><span> tweets </span>';
+    var bodyMap = document.getElementsByClassName("map-group")[0];
+    $compile(countDiv)($scope);
+    bodyMap.appendChild(countDiv);
+
     };
+
 
 
     function setInfoControl() {
@@ -279,26 +289,26 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
          var minLog = Number.POSITIVE_INFINITY;
          var maxLog = Number.NEGATIVE_INFINITY;
          var minLat = Number.POSITIVE_INFINITY;
-         var maxLat = Number.NEGATIVE_INFINITY;;
+         var maxLat = Number.NEGATIVE_INFINITY;
          if(features[id].geometry.type === "Polygon") {
             features[id].geometry.coordinates[0].forEach(function(pair) {
-              minLog = Math.min(minLog, pair[0])
-              maxLog = Math.max(maxLog, pair[0])
-              minLat = Math.min(minLat, pair[1])
-              maxLat = Math.max(maxLat, pair[1])
+              minLog = Math.min(minLog, pair[0]);
+              maxLog = Math.max(maxLog, pair[0]);
+              minLat = Math.min(minLat, pair[1]);
+              maxLat = Math.max(maxLat, pair[1]);
             });
          } else if( features[id].geometry.type === "MultiPolygon") {
             features[id].geometry.coordinates.forEach(function(array){
                 array[0].forEach(function(pair){
-                  minLog = Math.min(minLog, pair[0])
-                  maxLog = Math.max(maxLog, pair[0])
-                  minLat = Math.min(minLat, pair[1])
-                  maxLat = Math.max(maxLat, pair[1])
+                  minLog = Math.min(minLog, pair[0]);
+                  maxLog = Math.max(maxLog, pair[0]);
+                  minLat = Math.min(minLat, pair[1]);
+                  maxLat = Math.max(maxLat, pair[1]);
                 });
             });
          }
-         features[id].properties["centerLog"] = (maxLog + minLog) / 2
-         features[id].properties["centerLat"] = (maxLat + minLat) / 2
+         features[id].properties["centerLog"] = (maxLog + minLog) / 2;
+         features[id].properties["centerLat"] = (maxLat + minLat) / 2;
        }
     }
     // load geoJson
@@ -311,7 +321,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             onEachFeature: onEachFeature
           });
           $scope.polygons.stateUpperPolygons = L.geoJson(data, {
-            style: $scope.styles.stateUpperStyle,
+            style: $scope.styles.stateUpperStyle
           });
           setCenterAndBoundry($scope.geojsonData.state.features);
           $scope.polygons.statePolygons.addTo($scope.map);
@@ -327,7 +337,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             onEachFeature: onEachFeature
           });
           $scope.polygons.countyUpperPolygons = L.geoJson(data, {
-            style: $scope.styles.countyUpperStyle,
+            style: $scope.styles.countyUpperStyle
           });
           setCenterAndBoundry($scope.geojsonData.county.features);
         })
@@ -369,11 +379,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
      * @param    [Array]     mapPlotData, an array of coordinate and weight objects
      */
     function drawMap(result) {
-
-      // find max/min weight
-      // angular.forEach(result, function(value, key) {
-      //  maxWeight = Math.max(maxWeight, value.count);
-      //});
 
       var colors = $scope.styles.colors;
 
@@ -494,19 +499,24 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     }
 
-    $scope.$watch(
+    $scope.$watchCollection(
       function() {
-        return Asterix.mapResult;
+        return [Asterix.mapResult, Asterix.totalCount];
       },
 
-      function(newResult) {
-        $scope.result = newResult;
-        if (Object.keys($scope.result).length != 0) {
-          $scope.status.init = false;
-          drawMap($scope.result);
+      function(newResult, oldValue) {
+        if (newResult[0] != oldValue[0]) {
+            $scope.result = newResult[0];
+            if (Object.keys($scope.result).length != 0) {
+                $scope.status.init = false;
+                drawMap($scope.result);
+            }
+            else {
+                drawMap($scope.result);
+            }
         }
-        else {
-          drawMap($scope.result);
+        if (newResult[1] != oldValue[1]) {
+            $scope.totalCount = newResult[1]
         }
       }
     );

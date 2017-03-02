@@ -14,15 +14,6 @@ trait IQLGenerator {
 
   def calcResultSchema(query: Query, schemaMap: Map[String, Schema]): Schema
 
-  def generate(query: IQuery, schema: Schema): String = {
-    generate(query, Map(query.dataset -> schema))
-  }
-
-  def calcResultSchema(query: Query, schema: Schema): Schema = {
-    calcResultSchema(query, Map(query.dataset -> schema))
-  }
-
-
 }
 
 trait IQLGeneratorFactory {

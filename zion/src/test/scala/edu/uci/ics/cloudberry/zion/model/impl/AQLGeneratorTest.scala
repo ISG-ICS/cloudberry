@@ -13,7 +13,7 @@ class AQLGeneratorTest extends Specification {
 
     "translate a simple unnest query" in {
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(unnestHashTag), None, Some(selectTop10))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -569,35 +569,35 @@ class AQLGeneratorTest extends Specification {
     }
 
     "parseLookup should be able to handle multiple fields in the lookup statement" in {
-          val populationDataSet = PopulationDataStore.DatasetName
-          val populationSchema = PopulationDataStore.PopulationSchema
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
 
-          val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population", "stateId"))
-          val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population","stateId"),
-            Seq("population", "stateId"))
-          val filter = Seq(textFilter)
-          val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
-          val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
-          removeEmptyLine(result) must_== unifyNewLine(
-            """
-              |for $t in dataset twitter.ds_tweet
-              |let $l := {
-              |  'stateId' : (for $l0 in dataset twitter.US_population
-              |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-              |return $l0.'stateId')[0],'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','population' : (for $l0 in dataset twitter.US_population
-              |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-              |return $l0.'population')[0],'geo' : $t,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
-              |}
-              |where similarity-jaccard(word-tokens($l.'text'), word-tokens('zika')) > 0.0
-              |and contains($l.'text', "virus")
-              |limit 0
-              |offset 0
-              |return {
-              |  'stateId' : $l.'stateId','favorite_count' : $l.'favorite_count','geo_tag.countyID' : $l.'geo_tag.countyID','user_mentions' : $l.'user_mentions','population' : $l.'population','geo' : $l.'geo','user.id' : $l.'user.id','geo_tag.cityID' : $l.'geo_tag.cityID','is_retweet' : $l.'is_retweet','text' : $l.'text','retweet_count' : $l.'retweet_count','in_reply_to_user' : $l.'in_reply_to_user','id' : $l.'id','coordinate' : $l.'coordinate','in_reply_to_status' : $l.'in_reply_to_status','user.status_count' : $l.'user.status_count','geo_tag.stateID' : $l.'geo_tag.stateID','create_at' : $l.'create_at','lang' : $l.'lang','hashtags' : $l.'hashtags'
-              |}
-            """.stripMargin.trim
-          )
-        }
+      val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population", "stateId"))
+      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population", "stateId"),
+        Seq("population", "stateId"))
+      val filter = Seq(textFilter)
+      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
+      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $l := {
+          |  'stateId' : (for $l0 in dataset twitter.US_population
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |return $l0.'stateId')[0],'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','population' : (for $l0 in dataset twitter.US_population
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |return $l0.'population')[0],'geo' : $t,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
+          |}
+          |where similarity-jaccard(word-tokens($l.'text'), word-tokens('zika')) > 0.0
+          |and contains($l.'text', "virus")
+          |limit 0
+          |offset 0
+          |return {
+          |  'stateId' : $l.'stateId','favorite_count' : $l.'favorite_count','geo_tag.countyID' : $l.'geo_tag.countyID','user_mentions' : $l.'user_mentions','population' : $l.'population','geo' : $l.'geo','user.id' : $l.'user.id','geo_tag.cityID' : $l.'geo_tag.cityID','is_retweet' : $l.'is_retweet','text' : $l.'text','retweet_count' : $l.'retweet_count','in_reply_to_user' : $l.'in_reply_to_user','id' : $l.'id','coordinate' : $l.'coordinate','in_reply_to_status' : $l.'in_reply_to_status','user.status_count' : $l.'user.status_count','geo_tag.stateID' : $l.'geo_tag.stateID','create_at' : $l.'create_at','lang' : $l.'lang','hashtags' : $l.'hashtags'
+          |}
+        """.stripMargin.trim
+      )
+    }
 
     "translate lookup multiple tables with one join key on each" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -679,7 +679,7 @@ class AQLGeneratorTest extends Specification {
 
   "AQLQueryParser calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
-      val schema = parser.calcResultSchema(zikaCreateQuery, TwitterDataStore.TwitterSchema)
+      val schema = parser.calcResultSchema(zikaCreateQuery, Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
       schema must_== TwitterDataStore.TwitterSchema
     }
     "return the aggregated schema for aggregation queries" in {
@@ -729,11 +729,11 @@ class AQLGeneratorTest extends Specification {
       val aql = parser.generate(AppendView("zika", zikaCreateQuery.copy(filters = Seq(timeFilter) ++ zikaCreateQuery.filters)), Map("twitter.ds_tweet" -> TwitterDataStore.TwitterSchema))
       removeEmptyLine(aql) must_== unifyNewLine(
         """
-           |upsert into dataset zika (
-           |for $t in dataset twitter.ds_tweet
-           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-           |return $t
-           |)
+          |upsert into dataset zika (
+          |for $t in dataset twitter.ds_tweet
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |return $t
+          |)
         """.stripMargin.trim)
     }
   }

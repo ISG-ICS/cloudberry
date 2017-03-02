@@ -11,6 +11,8 @@ class Config(config: Configuration) {
 
   val AsterixURL = config.getString("asterixdb.url").getOrElse("testing")
 
+  val USCityDataPath = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
+
   val AwaitInitial = config.getString("neo.timeout.initial").map(parseTimePair).getOrElse(10 minutes)
 
   val MaxFrameLengthForNeoWS = config.getString("neo.stream.max.frame.length").map(parseFrameLengthLimit).getOrElse(8 * MemorySize.MB)
@@ -26,6 +28,8 @@ class Config(config: Configuration) {
   val FirstQueryTimeGap = config.getString("berry.firstquery.gap").map(parseTimePair).getOrElse(2 days)
 
   val MinTimeGap = config.getString("berry.query.gap").map(parseTimePair).getOrElse(1 day)
+
+  val AgentCollectStatsInterval: FiniteDuration = config.getString("agent.collect.stats.interval").map(parseTimePair).getOrElse(4 hours)
 }
 
 object MemorySize extends Enumeration {

@@ -84,8 +84,11 @@ class BerryClient(val jsonParser: JSONParser,
         curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).dataset)
       } else {
         if (runOption.sliceMills <= 0) {
-          val result = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
-          result.foreach(curSender ! request.postTransform.transform(_))
+          val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
+          futureResult.foreach { r =>
+            curSender ! request.postTransform.transform(r)
+            curSender ! BerryClient.Done
+          }
         } else {
           val targetMillis = runOption.sliceMills
           self ! Initial(key, curSender, targetMillis, queries, seqInfos.map(_.get), request.postTransform)

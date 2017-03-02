@@ -14,7 +14,7 @@ class SQLPPGeneratorTest extends Specification {
 
     "translate a simple unnest query" in {
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(unnestHashTag), None, Some(selectTop10))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,`unnest0` as `tag`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
           |from twitter.ds_tweet t
@@ -28,7 +28,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`hour` as `hour`
@@ -42,7 +42,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`hour` as `hour`
@@ -57,7 +57,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(stateFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`hour` as `hour`
@@ -71,7 +71,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byHour, byState), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`state` as `state`,`hour` as `hour`
@@ -85,7 +85,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select t.`user`.`id` as `user.id`,t.`create_at` as `create_at`,t.`id` as `id`
@@ -102,7 +102,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`tag` as `tag`
@@ -121,7 +121,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMax))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_max( (select value g.t.`id` from g) ) as `max`,`hour` as `hour`
@@ -135,7 +135,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMin))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select `hour` as `hour`,coll_min( (select value g.t.`id` from g) ) as `min`
@@ -149,7 +149,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrSum))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select `hour` as `hour`,coll_sum( (select value g.t.`id` from g) ) as `sum`
@@ -163,7 +163,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrAvg))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_avg( (select value g.t.`id` from g) ) as `avg`,`hour` as `hour`
@@ -177,7 +177,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`cell` as `cell`
@@ -192,7 +192,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`cell` as `cell`
@@ -208,7 +208,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`cell` as `cell`
@@ -224,7 +224,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byBin), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`state` as `state`
@@ -238,7 +238,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a group by geocell without filter" in {
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`cell` as `cell`
@@ -251,7 +251,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a text contain filter and select 10" in {
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectTop10))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select value t
@@ -265,7 +265,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate group by second" in {
       val group = GroupStatement(Seq(bySecond), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`sec` as `sec`
@@ -276,7 +276,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate group by minute" in {
       val group = GroupStatement(Seq(byMinute), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`min` as `min`
@@ -288,7 +288,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate group by day" in {
       val group = GroupStatement(Seq(byDay), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`day` as `day`
@@ -300,7 +300,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate group by week" in {
       val group = GroupStatement(Seq(byWeek), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`week` as `week`
@@ -312,7 +312,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate group by month" in {
       val group = GroupStatement(Seq(byMonth), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`month` as `month`
@@ -324,7 +324,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate group by year" in {
       val group = GroupStatement(Seq(byYear), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select coll_count(g) as `count`,`year` as `year`
@@ -336,7 +336,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a count cardinality query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
           |(select value c from (select value t
@@ -347,7 +347,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate get min field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMin)
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_min(
           |(select value c.`id` from (select value t
@@ -358,7 +358,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate get max field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMax)
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_max(
           |(select value c.`id` from (select value t
@@ -370,7 +370,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val query = new Query(dataset = TwitterDataSet, filters = filter, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
           |(select value c from (select value t
@@ -383,7 +383,7 @@ class SQLPPGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrMin)
       val query = new Query(dataset = TwitterDataSet, filters = filter, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_min(
           |(select value c.`id` from (select value t
@@ -398,7 +398,7 @@ class SQLPPGeneratorTest extends Specification {
       val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_max(
           |(select value c.`count` from (select coll_count(g) as `count`,`tag` as `tag`
@@ -416,7 +416,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a count cardinality query with select" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val query = new Query(dataset = TwitterDataSet, select = Some(selectTop10), globalAggr = Some(globalAggr))
-      val result = parser.generate(query, schema)
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
           |(select value c from (select value t
@@ -529,7 +529,7 @@ class SQLPPGeneratorTest extends Specification {
 
   "SQLPPGenerator calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
-      val schema = parser.calcResultSchema(zikaCreateQuery, TwitterDataStore.TwitterSchema)
+      val schema = parser.calcResultSchema(zikaCreateQuery, Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
       schema must_== TwitterDataStore.TwitterSchema
     }
     "return the aggregated schema for aggregation queries" in {

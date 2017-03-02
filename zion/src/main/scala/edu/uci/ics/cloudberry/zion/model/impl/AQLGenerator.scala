@@ -54,7 +54,7 @@ class AQLGenerator extends AsterixQueryGenerator {
 
   def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, sourceSchema)
+    val resultSchema = calcResultSchema(create.query, schemaMap)
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""

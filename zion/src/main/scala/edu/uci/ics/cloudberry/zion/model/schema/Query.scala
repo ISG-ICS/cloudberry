@@ -10,7 +10,16 @@ trait IQuery {
 
 }
 
-case class QueryExeOption(sliceMills: Int, continueSeconds: Int)
+trait IReadQuery extends IQuery {
+
+}
+
+trait IWriteQuery extends IQuery {
+
+}
+
+case class QueryExeOption(sliceMills: Int,
+                          continueSeconds: Int)
 
 object QueryExeOption {
   val NoSliceNoContinue = QueryExeOption(-1, -1)
@@ -24,8 +33,9 @@ case class Query(dataset: String,
                  unnests: Seq[UnnestStatement] = Seq.empty,
                  group: Option[GroupStatement] = None,
                  select: Option[SelectStatement] = None,
-                 globalAggr: Option[GlobalAggregateStatement] = None) extends IQuery {
-
+                 globalAggr: Option[GlobalAggregateStatement] = None,
+                 isEstimable: Boolean = false
+                ) extends IReadQuery {
   var fieldMap: Map[String, Field] = null
   var fieldMapAfterLookup: Map[String, Field] = null
   var fieldMapAfterUnnest: Map[String, Field] = null
@@ -37,7 +47,6 @@ case class Query(dataset: String,
   val selected = select.isDefined
   val unnested = !unnests.isEmpty
   val lookuped = !lookups.isEmpty
-
 
   import TimeField.TimeFormat
 
@@ -94,20 +103,15 @@ object Query {
   }
 }
 
-case class CreateView(dataset: String, query: Query) extends IQuery {
-}
+case class CreateView(dataset: String, query: Query) extends IWriteQuery
 
-case class AppendView(dataset: String, query: Query) extends IQuery {
-}
+case class AppendView(dataset: String, query: Query) extends IWriteQuery
 
-case class DropView(dataset: String) extends IQuery {
-}
+case class DropView(dataset: String) extends IWriteQuery
 
-case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IQuery {
-}
+case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IWriteQuery
 
-case class UpsertRecord(dataset: String, records: JsArray) extends IQuery {
-}
+case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
