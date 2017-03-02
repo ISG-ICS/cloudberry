@@ -16,3 +16,4 @@ class StubOut() extends WebSocket.Out[JsonNode]() {
 
   def close() {}
 }
+
