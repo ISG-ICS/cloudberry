@@ -11,7 +11,7 @@ class AQLGenerator extends IQLGenerator {
   /**
     * Returns a string having AQL query after parsing the query object.
     *
-    * @param query     [[IQuery]] object containing query details
+    * @param query [[IQuery]] object containing query details
     * @param schemaMap a map of Dataset name to it's [[Schema]]
     * @return AQL Query
     **/
