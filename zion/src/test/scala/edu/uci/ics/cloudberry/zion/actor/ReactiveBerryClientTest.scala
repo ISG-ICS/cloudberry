@@ -201,7 +201,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val (query, _) = mockParser.parse(hourCountJSON)
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
-      askInfo.who must_== query.head.datasetName
+      askInfo.who must_== query.head.dataset
 
       dataManager.reply(Some(TestQuery.sourceInfo))
 
@@ -247,7 +247,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
-      askInfo.who must_== query.head.datasetName
+      askInfo.who must_== query.head.dataset
       dataManager.reply(Some(TestQuery.sourceInfo))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
@@ -309,7 +309,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
-      askInfo.who must_== query.head.datasetName
+      askInfo.who must_== query.head.dataset
 
       //new query comes before the worker even started
       sender.send(client, makeOptionJsonObj(hourCountJSON2))

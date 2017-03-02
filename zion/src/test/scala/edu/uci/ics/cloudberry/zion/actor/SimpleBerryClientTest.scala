@@ -35,10 +35,10 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
 
-      dataManager.expectMsg(DataStoreManager.AskInfo(query.datasetName))
+      dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
       dataManager.reply(Some(sourceInfo))
 
-      dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.datasetName))
+      dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq(sourceInfo))
 
       val query1 = Query(sourceInfo.name, filters = Seq(textFilter))
@@ -72,7 +72,7 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
       sender.send(client, jsonRequest)
-      dataManager.expectMsg(DataStoreManager.AskInfo(query.datasetName))
+      dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
       dataManager.reply(None)
 
       sender.expectMsg(BerryClient.noSuchDatasetJson(sourceInfo.name))

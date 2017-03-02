@@ -39,7 +39,6 @@ object Relation extends Enumeration {
 }
 
 class Field(val name: String, val dataType: DataType, val isOptional: Boolean = false) {
-
   def asField(name: String): Field = {
     new Field(name, this.dataType, this.isOptional)
   }

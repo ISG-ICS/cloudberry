@@ -44,7 +44,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       sender.send(dataManager, DataStoreManager.AreYouReady)
       val metaQuery = meta.receiveOne(5 seconds)
-      metaQuery.asInstanceOf[Query].datasetName must_== metaDataSet
+      metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
       sender.expectMsg(true)
     }
@@ -55,7 +55,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val initialInfo = JsArray(Seq(Json.toJson(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       val metaQuery = meta.receiveOne(5 seconds)
-      metaQuery.asInstanceOf[Query].datasetName must_== metaDataSet
+      metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
 
       sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
@@ -74,7 +74,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       meta.receiveOne(5 seconds)
       meta.reply(initialInfo)
 
-      val query = Query(datasetName = sourceInfo.name)
+      val query = Query(dataset = sourceInfo.name)
       sender.send(dataManager, query)
       child.expectMsg(query)
       ok
@@ -103,13 +103,13 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.send(dataManager, createView)
       sender.expectNoMsg(500 milli)
       val upsertRecord = meta.receiveOne(5 seconds)
-      upsertRecord.asInstanceOf[UpsertRecord].datasetName must_== metaDataSet
+      upsertRecord.asInstanceOf[UpsertRecord].dataset must_== metaDataSet
       sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
       val response = sender.receiveOne(2000 milli).asInstanceOf[Seq[DataSetInfo]]
       response.size must_== 2
       response.head must_== sourceInfo
       val viewInfo = response.last
-      viewInfo.name must_== createView.datasetName
+      viewInfo.name must_== createView.dataset
       viewInfo.createQueryOpt must_== Some(createView.query)
       viewInfo.schema must_== sourceInfo.schema
       viewInfo.dataInterval.getStart must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "min").head.as[String])

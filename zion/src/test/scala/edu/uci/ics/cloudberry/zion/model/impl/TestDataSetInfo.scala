@@ -21,7 +21,7 @@ object TestDataSetInfo {
   val groupByTag = GroupStatement(Seq(byTag), Seq(aggrCount))
   val groupByBin = GroupStatement(Seq(byBin), Seq(aggrCount))
 
-  val createQuery = new Query(datasetName = TwitterDataSet, globalAggr = Some(globalAggr))
+  val createQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
   val berryAggrByTagQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
   val unnestQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(groupByTag), Some(selectTop10Tag))
   val groupByBinQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(groupByBin), None)

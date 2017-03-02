@@ -6,9 +6,8 @@ import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import play.api.libs.json.JsArray
 
 trait IQuery {
-  def datasetName: String
+  def dataset: String
 
-  def dataset: Schema
 }
 
 case class QueryExeOption(sliceMills: Int, continueSeconds: Int)
@@ -19,7 +18,7 @@ object QueryExeOption {
   val TagContinueSeconds = "continueSeconds"
 }
 
-case class Query(datasetName: String,
+case class Query(dataset: String,
                  lookups: Seq[LookupStatement] = Seq.empty,
                  filters: Seq[FilterStatement] = Seq.empty,
                  unnests: Seq[UnnestStatement] = Seq.empty,
@@ -27,9 +26,21 @@ case class Query(datasetName: String,
                  select: Option[SelectStatement] = None,
                  globalAggr: Option[GlobalAggregateStatement] = None) extends IQuery {
 
+  var fieldMap: Map[String, Field] = null
+  var fieldMapAfterLookup: Map[String, Field] = null
+  var fieldMapAfterUnnest: Map[String, Field] = null
+  var fieldMapAfterGroup: Map[String, Field] = null
+  var fieldMapAfterSelect: Map[String, Field] = null
+  var fieldMapAfterGlobalAggr: Map[String, Field] = null
+
+  val grouped = group.isDefined
+  val selected = select.isDefined
+  val unnested = !unnests.isEmpty
+  val lookuped = !lookups.isEmpty
+
+
   import TimeField.TimeFormat
 
-  var dataset: Schema = null
 
   def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
     //TODO support filter query that contains multiple relation on that same field
@@ -83,24 +94,19 @@ object Query {
   }
 }
 
-case class CreateView(datasetName: String, query: Query) extends IQuery {
-  var dataset: Schema = null
+case class CreateView(dataset: String, query: Query) extends IQuery {
 }
 
-case class AppendView(datasetName: String, query: Query) extends IQuery {
-  var dataset: Schema = null
+case class AppendView(dataset: String, query: Query) extends IQuery {
 }
 
-case class DropView(datasetName: String) extends IQuery {
-  var dataset: Schema = null
+case class DropView(dataset: String) extends IQuery {
 }
 
-case class CreateDataSet(datasetName: String, schema: Schema, createIffNotExist: Boolean) extends IQuery {
-  var dataset: Schema = null
+case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IQuery {
 }
 
-case class UpsertRecord(datasetName: String, records: JsArray) extends IQuery {
-  var dataset: Schema = null
+case class UpsertRecord(dataset: String, records: JsArray) extends IQuery {
 }
 
 trait Statement {
@@ -113,13 +119,13 @@ trait Statement {
   * Augments the source data to contain more fields.
   *
   * @param sourceKeys
-  * @param datasetName
+  * @param dataset
   * @param lookupKeys
   * @param selectValues
   * @param as
   */
 case class LookupStatement(sourceKeys: Seq[String],
-                           datasetName: String,
+                           dataset: String,
                            lookupKeys: Seq[String],
                            selectValues: Seq[String],
                            as: Seq[String]) extends Statement {
@@ -129,9 +135,6 @@ case class LookupStatement(sourceKeys: Seq[String],
   var selectValueFields: Seq[Field] = null
   var asFields: Seq[Field] = null
 
-  //TODO to be replaced by a unified syntax exceptions
-  requireOrThrow(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
-  requireOrThrow(selectValues.length == as.length, "LookupStatement: select value names doesn't match with renamed names")
 }
 
 //TODO only support at most one transform for now
@@ -208,6 +211,17 @@ case class SelectStatement(orderOn: Seq[String],
                            fieldNames: Seq[String]) extends Statement {
   var orderOnFields: Seq[Field] = null
   var fields: Seq[Field] = null
+
+  def desc(orderOn: String): Boolean = orderOn.startsWith("-")
+
+  def truncate(orderOn: String): String = {
+    if (orderOn.startsWith("-")) {
+      orderOn.substring(1)
+    } else {
+      orderOn
+    }
+  }
+
 
 }
 

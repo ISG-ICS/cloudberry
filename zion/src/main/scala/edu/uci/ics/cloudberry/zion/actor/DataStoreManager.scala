@@ -87,7 +87,7 @@ class DataStoreManager(metaDataset: String,
     case askInfo: AskInfoAndViews =>
       sender ! {
         metaData.get(askInfo.who) match {
-          case Some(info) => info +: metaData.filter(_._2.createQueryOpt.exists(q => q.datasetName == askInfo.who)).values.toList
+          case Some(info) => info +: metaData.filter(_._2.createQueryOpt.exists(q => q.dataset == askInfo.who)).values.toList
           case None => Seq.empty
         }
       }
@@ -105,16 +105,16 @@ class DataStoreManager(metaDataset: String,
   context.system.scheduler.schedule(config.ViewMetaFlushInterval, config.ViewMetaFlushInterval, self, FlushMeta)
 
   private def answerQuery(query: IQuery, now: Option[DateTime] = None): Unit = {
-    if (!metaData.contains(query.datasetName)) return
+    if (!metaData.contains(query.dataset)) return
 
-    val actor = context.child("data-" + query.datasetName).getOrElse {
-      val info = metaData(query.datasetName)
+    val actor = context.child("data-" + query.dataset).getOrElse {
+      val info = metaData(query.dataset)
       val schema: Schema = info.schema
-      val ret = childMaker(context, "data-" + query.datasetName, Seq(schema, queryGenFactory(), conn, ec))
+      val ret = childMaker(context, "data-" + query.dataset, Seq(schema, queryGenFactory(), conn, ec))
       // make views append self periodically
       info.createQueryOpt match {
         case Some(_) =>
-          context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.datasetName))
+          context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
         case None =>
       }
       ret
@@ -123,7 +123,7 @@ class DataStoreManager(metaDataset: String,
       case q: Query => actor.forward(q)
       case q: AppendView =>
         (actor ? q) map {
-          case true => updateStats(q.datasetName, now.get)
+          case true => updateStats(q.dataset, now.get)
           case false =>
         }
       case _ => ???
@@ -131,12 +131,12 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def createView(create: CreateView): Unit = {
-    if (metaData.contains(create.datasetName) || !metaData.contains(create.query.datasetName) || creatingSet.contains(create.datasetName)) {
+    if (metaData.contains(create.dataset) || !metaData.contains(create.query.dataset) || creatingSet.contains(create.dataset)) {
       log.warning(s"invalid dataset in the CreateView msg: $create")
       return
     }
-    creatingSet.add(create.datasetName)
-    val sourceInfo = metaData(create.query.datasetName)
+    creatingSet.add(create.dataset)
+    val sourceInfo = metaData(create.query.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
@@ -144,9 +144,9 @@ class DataStoreManager(metaDataset: String,
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), sourceInfo.schema)
     conn.postControl(queryString) onSuccess {
       case true =>
-        collectStats(create.datasetName, schema) onComplete {
+        collectStats(create.dataset, schema) onComplete {
           case Success((interval, size)) =>
-            self ! DataSetInfo(create.datasetName, Some(create.query), schema, interval, Stats(now, now, now, size))
+            self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
           case Failure(ex) =>
             log.error(s"collectStats error: $ex")
         }

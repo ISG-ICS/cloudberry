@@ -28,8 +28,8 @@ class QueryPlanner {
         kwFilter.values.map { wordAny =>
           val word = wordAny.asInstanceOf[String]
           val wordFilter = FilterStatement(kwFilter.fieldName, None, Relation.contains, Seq(word))
-          val wordQuery = Query(query.datasetName, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
-          CreateView(getViewKey(query.datasetName, word), wordQuery)
+          val wordQuery = Query(query.dataset, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
+          CreateView(getViewKey(query.dataset, word), wordQuery)
         }
       }
     }
@@ -98,7 +98,7 @@ class QueryPlanner {
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
         val viewFilters = view.createQueryOpt.get.filters
         val newFilter = query.filters.filterNot(qf => viewFilters.exists(vf => qf.covers(vf, source.schema.fieldMap(qf.fieldName).dataType)))
-        seqBuilder += query.copy(datasetName = view.name, filters = newFilter)
+        seqBuilder += query.copy(dataset = view.name, filters = newFilter)
         for (interval <- unCovered) {
           seqBuilder += query.setInterval(source.schema.timeField, interval)
         }

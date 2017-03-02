@@ -76,12 +76,12 @@ class BerryClient(val jsonParser: JSONParser,
     val key = DateTime.now()
     curKey = key
     val fDataInfos = Future.traverse(queries) { query =>
-      dataManager ? AskInfo(query.datasetName)
+      dataManager ? AskInfo(query.dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
 
     fDataInfos.foreach { seqInfos =>
       if (seqInfos.exists(_.isEmpty)) {
-        curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).datasetName)
+        curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).dataset)
       } else {
         if (runOption.sliceMills <= 0) {
           val result = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
@@ -128,7 +128,7 @@ class BerryClient(val jsonParser: JSONParser,
 
   private def suggestViews(queryGroup: QueryGroup): Unit = {
     for (queryInfo <- queryGroup.queries) {
-      dataManager ? AskInfoAndViews(queryInfo.query.datasetName) map {
+      dataManager ? AskInfoAndViews(queryInfo.query.dataset) map {
         case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
           val infos = seq.map(_.asInstanceOf[DataSetInfo])
           val newViews = planner.suggestNewView(queryInfo.query, infos.head, infos.tail)
@@ -169,7 +169,7 @@ class BerryClient(val jsonParser: JSONParser,
   }
 
   protected def solveAQuery(query: Query): Future[JsValue] = {
-    val fInfos = dataManager ? AskInfoAndViews(query.datasetName) map {
+    val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
       case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
         seq.map(_.asInstanceOf[DataSetInfo])
       case _ => Seq.empty
@@ -177,7 +177,7 @@ class BerryClient(val jsonParser: JSONParser,
 
     fInfos.flatMap {
       case seq if seq.isEmpty =>
-        Future(noSuchDatasetJson(query.datasetName))
+        Future(noSuchDatasetJson(query.dataset))
       case infos: Seq[DataSetInfo] =>
         val (queries, merger) = planner.makePlan(query, infos.head, infos.tail)
         val fResponse = Future.traverse(queries) { subQuery =>
