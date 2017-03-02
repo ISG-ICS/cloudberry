@@ -197,14 +197,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       // TODO: change it to the real count sent from the middleware
       // constantly update the total count of all the tweets
       // this is currently a fake number as it is for demo purposes
-      let updateInterval = 1000; // milliseconds
-      var updateCount = function () {
-        // update the real time count
-        $scope.totalCount += 57;
-        $scope.totalCountString = formatNumber($scope.totalCount);
-        $timeout(updateCount, updateInterval);
-      };
-      $timeout(updateCount, updateInterval);
+      // let updateInterval = 1000; // milliseconds
+      // var updateCount = function () {
+      //   // update the real time count
+      //   $scope.totalCount += 57;
+      //   $scope.totalCountString = formatNumber($scope.totalCount);
+      //   $timeout(updateCount, updateInterval);
+      // };
+      // $timeout(updateCount, updateInterval);
 
       // display the count of the all the tweets in the current view
       var currentTweetsCountDiv = L.control({
@@ -213,13 +213,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       currentTweetsCountDiv.onAdd = function (map) {
         var div = L.DomUtil.create('div', 'number');
-        div.id = "currentTweetsTotalCount";
+        div.id = "countDiv";
         let itemName = "tweets";
         div.innerHTML = [
           '<h2> {{ currentTweetsCount }} </h2>',
-          '<span class="small-number">of ',
-            '<span>{{totalCountString}} ' + itemName + '</span>',
-          '</span>'
+          '<span class="small-text">' + itemName + '</span>'
         ].join('');
         $compile(div)($scope);
         return div;

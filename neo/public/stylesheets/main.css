@@ -129,13 +129,13 @@ search-bar {
 }
 
 .number{
-  color: #2795ee;
+  color: #000000;
 }
 
-.small-number{
+.small-text{
   font-size: 20px;
 }
 
-#currentTweetsTotalCount{
+#countDiv{
   margin-bottom: 30px;
 }
