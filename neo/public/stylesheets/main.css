@@ -128,14 +128,16 @@ search-bar {
     color : white;
 }
 
-.number{
-  color: #000000;
+.small-text{
+  font-size: 15px;
 }
 
-.small-text{
-  font-size: 20px;
+.big-text{
+  font-size: 30px;
 }
 
 #countDiv{
+  color: #000000;
   margin-bottom: 30px;
+  font-weight:500;
 }

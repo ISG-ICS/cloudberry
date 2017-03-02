@@ -74,7 +74,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
       },
       currentTweetsCount: 0,
-      totalCount: 398808475
+      totalCount: 0
     });
 
     function resetGeoIds(bounds, polygons, idTag) {
@@ -194,17 +194,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       $scope.controls.custom.push(info);
 
-      // TODO: change it to the real count sent from the middleware
-      // constantly update the total count of all the tweets
-      // this is currently a fake number as it is for demo purposes
-      // let updateInterval = 1000; // milliseconds
-      // var updateCount = function () {
-      //   // update the real time count
-      //   $scope.totalCount += 57;
-      //   $scope.totalCountString = formatNumber($scope.totalCount);
-      //   $timeout(updateCount, updateInterval);
-      // };
-      // $timeout(updateCount, updateInterval);
+      // add information about the count of tweets
+      let updateInterval = 1000; // milliseconds
+      var updateCount = function () {
+        // update the real time count
+        $scope.totalCount += Asterix.totalCount;
+        $scope.totalCountString = formatNumber($scope.totalCount);
+        $timeout(updateCount, updateInterval);
+      };
+      $timeout(updateCount, updateInterval);
 
       // display the count of the all the tweets in the current view
       var currentTweetsCountDiv = L.control({
@@ -212,12 +210,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       });
 
       currentTweetsCountDiv.onAdd = function (map) {
-        var div = L.DomUtil.create('div', 'number');
+        var div = L.DomUtil.create('div');
         div.id = "countDiv";
         let itemName = "tweets";
         div.innerHTML = [
-          '<h2> {{ currentTweetsCount }} </h2>',
-          '<span class="small-text">' + itemName + '</span>'
+          '<p class="big-text"> {{ currentTweetsCount }} </p>',
+          '<span>',
+            '<span class="small-text">of</span>',
+            '<span class="big-text">&nbsp;{{ totalCountString }}</span>',
+          '<span class="small-text">&nbsp;' + itemName + '</span>',
+          '</span>'
         ].join('');
         $compile(div)($scope);
         return div;
