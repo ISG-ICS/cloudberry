@@ -13,8 +13,7 @@ import play.api.libs.json._
 import play.api.libs.ws._
 
 import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-
+import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
               (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
@@ -44,7 +43,7 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
       }
     case r: TotalCountRequest =>
       handleCountResponse(r.berryJson)
-    case x => log.error("unknown:" + x)
+    case x => Logger.error("unknown:" + x)
   }
 
   private def handleSamplingResponse(berryRequest: Map[RequestType.Value, JsValue]): Unit = {
@@ -67,6 +66,16 @@ class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
   private def handleResponse(requestType: RequestType.Value, requestBody: JsValue): Unit = {
     val response: Future[StreamedResponse] =
       ws.url(url).withMethod("POST").withBody(requestBody).stream()
+
+    /*
+    val (cancel, cancellableResponse) = cancellable(response) { () =>
+      if(response.isCompleted) throw new Exception
+    }
+
+    if(requestType == Batch && ???){
+      cancel()
+    }
+    */
 
     response.map { res =>
       if (res.headers.status == 200) {
@@ -93,6 +102,19 @@ object NeoActor {
 
   def props(out: ActorRef, ws: WSClient, host: String, config: Config)
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new NeoActor(out, ws, host, config))
+
+  /*
+  def cancellable[T](originFuture: Future[T])(cancelFun: () => Unit): (() => Unit, Future[T]) = {
+    val p = Promise[T]
+    val first = Future firstCompletedOf Seq(p.future, originFuture)
+    val cancellation: () => Unit = {
+      () =>
+        first onFailure { case e => cancelFun}
+        p failure new Exception
+    }
+    (cancellation, first)
+  }
+  */
 
   object RequestType extends Enumeration {
     val ByPlace = Value("byPlace")
