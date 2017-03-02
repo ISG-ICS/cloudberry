@@ -171,9 +171,9 @@ class DataStoreManager(metaDataset: String,
     val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
-      minTime <- conn.postQuery(parser.generate(minTimeQuery, schema)).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, schema)).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, schema)).map(r => (r \\ "count").head.as[Long])
+      minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
+      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
+      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
     } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 
