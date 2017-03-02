@@ -1,63 +1,127 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.{ask, pipe}
-import akka.util.Timeout
-import edu.uci.ics.cloudberry.zion.actor.BerryClient
+import akka.stream.Materializer
+import akka.stream.scaladsl._
+import akka.util.{ByteString, Timeout}
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import models.{GeoLevel, UserRequest}
 import org.joda.time.DateTime
+import play.Logger
 import play.api.libs.json._
+import play.api.libs.ws._
 
-import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
-class NeoActor(out: ActorRef, val berryClientProps: Props)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
 
-  val berryClient = context.watch(context.actorOf(berryClientProps))
+class NeoActor(out: ActorRef, ws: WSClient, host: String, config: Config)
+              (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import NeoActor._
+  import RequestType._
 
   implicit val timeout: Timeout = Timeout(20.minutes)
+  val url : String = "http://" + host + "/berry"
 
   override def receive: Receive = {
     case json: JsValue =>
-      json.validate[UserRequest].map { userRequest =>
-        val allRequest = generateCBerryRequest(userRequest)
-        import RequestType._
-
-        // Example of sending the non-slicing query using ask pattern
-        val sampleJson = allRequest(Sample)
-        val fAnswer = (berryClient ? sampleJson).mapTo[JsValue].map(json => Json.obj("key" -> "sample", "value" -> json))
-        fAnswer pipeTo out
-
-        // Example of sending the group of slicing ones using actor stream pattern
-        val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(allRequest(_))
-        val json = JsObject(Seq(
-          "batch" -> JsArray(groupTimePlaceTags),
-          "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
-          )))
-        berryClient.tell(BerryClient.Request(json, NeoTransformer("batch")), out)
-      }.recoverTotal {
-        e => out ! JsError.toJson(e)
+      if ((json \ "cmd").asOpt[String].contains(RequestType.TotalCount.toString)) {
+        val dataset = (json \ "dataset").asOpt[String].getOrElse("twitter.ds_tweet")
+        val berryJson = generateCountRequest(dataset)
+        handleCountResponse(berryJson)
+        context.system.scheduler.schedule(1 seconds, 1 seconds, self, TotalCountRequest(berryJson))
+      } else {
+        json.validate[UserRequest].map { userRequest =>
+          val berryRequest = generateCBerryRequest(userRequest)
+          handleSamplingResponse(berryRequest)
+          handleSlicingResponse(berryRequest)
+        }.recoverTotal {
+          e =>
+            out ! JsError.toJson(e)
+        }
       }
+    case r: TotalCountRequest =>
+      handleCountResponse(r.berryJson)
+    case x => log.error("unknown:" + x)
   }
+
+  private def handleSamplingResponse(berryRequest: Map[RequestType.Value, JsValue]): Unit = {
+    handleResponse(Sample, berryRequest(Sample))
+  }
+
+  private def handleSlicingResponse(berryRequest: Map[RequestType.Value, JsValue]): Unit = {
+    val groupTimePlaceTags = Seq(ByTime, ByPlace, ByHashTag).map(berryRequest(_))
+    val batchJson = JsObject(Seq(
+      "batch" -> JsArray(groupTimePlaceTags),
+      "option" -> JsObject(Seq("sliceMillis" -> JsNumber(2000))
+      )))
+    handleResponse(Batch, batchJson)
+  }
+
+  private def handleCountResponse(request: JsValue): Unit = {
+    handleResponse(TotalCount, request)
+  }
+
+  private def handleResponse(requestType: RequestType.Value, requestBody: JsValue): Unit = {
+    val response: Future[StreamedResponse] =
+      ws.url(url).withMethod("POST").withBody(requestBody).stream()
+
+    response.map { res =>
+      if (res.headers.status == 200) {
+        val sink = Sink.foreach[ByteString] { bytes =>
+          val json = Json.parse(bytes.utf8String)
+          out ! Json.obj("key" -> requestType, "value" -> json)
+        }
+        res.body.via(Framing.delimiter(ByteString("\n"),
+          maximumFrameLength = config.MaxFrameLengthForNeoWS,
+          allowTruncation = true))
+          .runWith(sink)
+          .onFailure { case e => Logger.error("NeoActor websocket receiving ... " + e.getMessage) }
+      } else {
+        Logger.error("Bad Gate Way. Connection code: " + res.headers.status)
+      }
+    }
+  }
+
 }
 
 object NeoActor {
-  def props(out: ActorRef, berryClientProp: Props)(implicit ec: ExecutionContext) = Props(new NeoActor(out, berryClientProp))
 
-  case class NeoTransformer(key: String) extends BerryClient.IPostTransform {
-    override def transform(jsValue: JsValue): JsValue = {
-      Json.obj("key" -> key, "value" -> jsValue)
-    }
-  }
+  case class TotalCountRequest(berryJson: JsValue)
+
+  def props(out: ActorRef, ws: WSClient, host: String, config: Config)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new NeoActor(out, ws, host, config))
 
   object RequestType extends Enumeration {
     val ByPlace = Value("byPlace")
     val ByTime = Value("byTime")
     val ByHashTag = Value("byHashTag")
     val Sample = Value("sample")
+    val Batch = Value("batch")
+    val TotalCount = Value("totalCount")
+  }
+
+  def generateCountRequest(dataset: String): JsValue = {
+    Json.parse(
+      s"""
+         |{
+         |  "dataset": "$dataset",
+         |  "global": {
+         |   "globalAggregate":
+         |     {
+         |       "field": "*",
+         |       "apply": {
+         |         "name": "count"
+         |       },
+         |       "as": "count"
+         |     }
+         |  },
+         |  "estimable" : true
+         |}
+        """.stripMargin
+    )
   }
 
   def generateCBerryRequest(userRequest: UserRequest): Map[RequestType.Value, JsValue] = {

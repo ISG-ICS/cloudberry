@@ -9,7 +9,16 @@ trait IQuery {
   def dataset: String
 }
 
-case class QueryExeOption(sliceMills: Int, continueSeconds: Int)
+trait IReadQuery extends IQuery {
+
+}
+
+trait IWriteQuery extends IQuery {
+
+}
+
+case class QueryExeOption(sliceMills: Int,
+                          continueSeconds: Int)
 
 object QueryExeOption {
   val NoSliceNoContinue = QueryExeOption(-1, -1)
@@ -23,16 +32,17 @@ case class Query(dataset: String,
                  unnest: Seq[UnnestStatement] = Seq.empty,
                  groups: Option[GroupStatement] = None,
                  select: Option[SelectStatement] = None,
-                 globalAggr: Option[GlobalAggregateStatement] = None
-                ) extends IQuery {
+                 globalAggr: Option[GlobalAggregateStatement] = None,
+                 isEstimable: Boolean = false
+                ) extends IReadQuery {
 
   import TimeField.TimeFormat
 
   def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
     //TODO support filter query that contains multiple relation on that same field
     val timeFilter = FilterStatement(fieldName, None, Relation.inRange,
-                                     Seq(TimeFormat.print(interval.getStartMillis),
-                                         TimeFormat.print(interval.getEndMillis)))
+      Seq(TimeFormat.print(interval.getStartMillis),
+        TimeFormat.print(interval.getEndMillis)))
     this.copy(filter = timeFilter +: this.filter.filterNot(_.fieldName == fieldName))
   }
 
@@ -80,16 +90,15 @@ object Query {
   }
 }
 
+case class CreateView(dataset: String, query: Query) extends IWriteQuery
 
-case class CreateView(dataset: String, query: Query) extends IQuery
+case class AppendView(dataset: String, query: Query) extends IWriteQuery
 
-case class AppendView(dataset: String, query: Query) extends IQuery
+case class DropView(dataset: String) extends IWriteQuery
 
-case class DropView(dataset: String) extends IQuery
+case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IWriteQuery
 
-case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IQuery
-
-case class UpsertRecord(dataset: String, records: JsArray) extends IQuery
+case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
 trait Statement {
   protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {

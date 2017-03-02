@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import java.util.concurrent.Executors
 
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.TestkitExample
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
 import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query}
@@ -14,44 +14,46 @@ import org.mockito.stubbing.Answer
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json.{JsNumber, JsObject}
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration._
 
-class DataSetAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
+class ViewDataAgentTest extends TestkitExample with SpecificationLike with MockConnClient {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
-  sequential
-
   val schema = TwitterDataStore.TwitterSchema
 
-  "DataSetAgent" should {
+  sequential
+
+  "ViewDataAgent" should {
     "answer query" in {
       val sender = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
+      val dbName = "test"
       val aqlString = ""
       val jsResponse = JsObject(Seq("a" -> JsNumber(1)))
-      val query = Query("twitter")
-      when(mockQueryParser.generate(query, schema)).thenReturn(aqlString)
+      val query = Query(dbName)
+      when(mockQueryParser.generate(query, Map(dbName -> schema))).thenReturn(aqlString)
       when(mockConn.postQuery(aqlString)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(DataSetAgent.props(schema, mockQueryParser, mockConn))
+      val agent = system.actorOf(ViewDataAgent.props(dbName, schema, mockQueryParser, mockConn, Config.Default))
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
       ok
     }
-    "queue the a serials append query" in {
+    "queue the a serials of append queries" in {
 
       val sender1 = new TestProbe(system)
       val sender2 = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
+      val dbName = "test"
       val aqlString = "1"
-      val append = AppendView("twitter", Query("twitter"))
-      when(mockQueryParser.generate(append, schema)).thenReturn(aqlString)
+      val append = AppendView("twitter", Query(dbName))
+      when(mockQueryParser.generate(append, Map(dbName -> schema))).thenReturn(aqlString)
 
       when(mockConn.postControl(aqlString)).thenAnswer(new Answer[Future[Boolean]] {
         override def answer(invocation: InvocationOnMock): Future[Boolean] = {
@@ -60,7 +62,7 @@ class DataSetAgentTest extends TestkitExample with SpecificationLike with MockCo
         }
       })
 
-      val agent = system.actorOf(DataSetAgent.props(schema, mockQueryParser, mockConn))
+      val agent = system.actorOf(ViewDataAgent.props("view", schema, mockQueryParser, mockConn, Config.Default))
 
       sender1.send(agent, append)
       sender2.send(agent, append)
