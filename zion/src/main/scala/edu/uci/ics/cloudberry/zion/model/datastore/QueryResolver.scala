@@ -143,16 +143,16 @@ class QueryResolver {
 
   private def resolveQuery(query: Query, schemaMap: Map[String, Schema]): Unit = {
     val schema = schemaMap(query.dataset)
-    query.fieldMap = schema.fieldMap
-    query.fieldMapAfterLookup = resolveLookups(query.lookups, query.fieldMap, schemaMap)
-    query.fieldMapAfterUnnest = resolveUnnests(query.unnests, query.fieldMapAfterLookup)
+    val fieldMap = schema.fieldMap
+    val fieldMapAfterLookup = resolveLookups(query.lookups, fieldMap, schemaMap)
+    val fieldMapAfterUnnest = resolveUnnests(query.unnests, fieldMapAfterLookup)
 
-    resolveFilters(query.filters, query.fieldMapAfterUnnest)
+    resolveFilters(query.filters, fieldMapAfterUnnest)
 
-    query.fieldMapAfterGroup = resolveGroup(query.group, query.fieldMapAfterUnnest)
-    query.fieldMapAfterSelect = resolveSelect(query.select, query.fieldMapAfterGroup)
+    val fieldMapAfterGroup = resolveGroup(query.group, fieldMapAfterUnnest)
+    val fieldMapAfterSelect = resolveSelect(query.select, fieldMapAfterGroup)
 
-    query.fieldMapAfterGlobalAggr = resolveGlobalAggregate(query.globalAggr, query.fieldMapAfterSelect)
+    val fieldMapAfterGlobalAggr = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
   }
 
   private def resolveLookups(lookups: Seq[LookupStatement],

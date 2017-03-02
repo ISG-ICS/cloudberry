@@ -86,7 +86,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
 
-    val exprMap: Map[String, FieldExpr] = initExprMap(query)
+    val exprMap: Map[String, FieldExpr] = initExprMap(query, schemaMap)
 
     val resultAfterLookup = parseLookup(query.lookups, exprMap)
     val lookupStr = resultAfterLookup.parts.head

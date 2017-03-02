@@ -58,8 +58,9 @@ abstract class AsterixQueryGenerator extends AbstractQueryGenerator {
   }
 
 
-  protected def initExprMap(query: Query): Map[String, FieldExpr] = {
-    query.fieldMap.mapValues { f =>
+  protected def initExprMap(query: Query, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
+    val schema = schemaMap(query.dataset)
+    schema.fieldMap.mapValues { f =>
       f.dataType match {
         case DataType.Record => FieldExpr(sourceVar, sourceVar)
         case DataType.Hierarchy => FieldExpr(sourceVar, sourceVar) // TODO rethink this type: a type or just a relation between types?

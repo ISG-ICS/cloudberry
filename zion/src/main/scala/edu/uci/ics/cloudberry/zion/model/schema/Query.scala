@@ -36,12 +36,6 @@ case class Query(dataset: String,
                  globalAggr: Option[GlobalAggregateStatement] = None,
                  isEstimable: Boolean = false
                 ) extends IReadQuery {
-  var fieldMap: Map[String, Field] = null
-  var fieldMapAfterLookup: Map[String, Field] = null
-  var fieldMapAfterUnnest: Map[String, Field] = null
-  var fieldMapAfterGroup: Map[String, Field] = null
-  var fieldMapAfterSelect: Map[String, Field] = null
-  var fieldMapAfterGlobalAggr: Map[String, Field] = null
 
   val grouped = group.isDefined
   val selected = select.isDefined
