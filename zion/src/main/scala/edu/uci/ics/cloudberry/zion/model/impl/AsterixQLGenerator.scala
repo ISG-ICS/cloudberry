@@ -50,7 +50,7 @@ abstract class AsterixQueryGenerator extends AbstractQueryGenerator {
 
 
   def calcResultSchema(query: Query, schemaMap: Map[String, Schema]): Schema = {
-    if (query.lookups.isEmpty && query.group.isEmpty && query.select.isEmpty) {
+    if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schemaMap(query.dataset).copy()
     } else {
       ???

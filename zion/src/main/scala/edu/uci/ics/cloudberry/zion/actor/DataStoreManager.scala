@@ -70,13 +70,13 @@ class DataStoreManager(metaDataset: String,
         case Some(info) =>
           info.createQueryOpt match {
             case Some(createQuery) =>
-              if (createQuery.filters.exists(_.fieldName == info.schema.timeField)) {
+              if (createQuery.filter.exists(_.fieldName == info.schema.timeField)) {
                 log.error("the create view should not contains the time dimension")
               } else {
                 val now = DateTime.now()
                 val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
                   Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
-                val appendQ = createQuery.copy(filters = compensate +: createQuery.filters)
+                val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
                 answerQuery(AppendView(info.name, appendQ), Some(now))
               }
             case None => log.warning(s"can not append to a base dataset: $append.dataset.")
@@ -138,10 +138,10 @@ class DataStoreManager(metaDataset: String,
     }
     creatingSet.add(create.dataset)
     val sourceInfo = metaData(create.query.dataset)
-    val schema = managerParser.calcResultSchema(create.query, Map(create.query.dataset -> sourceInfo.schema))
+    val schema = managerParser.calcResultSchema(create.query, Map(sourceInfo.name-> sourceInfo.schema))
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
-    val newCreateQuery = create.query.copy(filters = fixEndFilter +: create.query.filters)
+    val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(newCreateQuery.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
       case true =>

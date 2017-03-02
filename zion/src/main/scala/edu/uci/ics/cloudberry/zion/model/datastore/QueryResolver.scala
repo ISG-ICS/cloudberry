@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.zion.model.datastore.QueryValidator._
 import edu.uci.ics.cloudberry.zion.model.schema.Relation._
 import edu.uci.ics.cloudberry.zion.model.schema._
 
@@ -8,7 +7,7 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 
-object QueryValidator {
+class QueryValidator {
   private def requireOrThrow(condition: Boolean, msg: => String): Unit = {
     if (!condition) throw new QueryParsingException(msg)
   }
@@ -19,7 +18,7 @@ object QueryValidator {
   }
 
   def validateQuery(query: Query): Unit = {
-    requireOrThrow(query.select.isDefined || query.group.isDefined || query.globalAggr.isDefined,
+    requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined,
       "either group or select or global aggregate statement is required")
   }
 
@@ -128,10 +127,13 @@ object QueryValidator {
   * perform semantic analysis of cloudberry queries
   */
 class QueryResolver {
+
+  val validator = new QueryValidator
+
   def analyze(query: IQuery, schemaMap: Map[String, Schema]): Unit = {
     query match {
       case q: Query =>
-        validateQuery(q)
+        validator.validateQuery(q)
         resolveQuery(q, schemaMap)
       case q: CreateView => resolveCreate(q, schemaMap)
       case q: AppendView => resolveAppend(q, schemaMap)
@@ -144,12 +146,12 @@ class QueryResolver {
   private def resolveQuery(query: Query, schemaMap: Map[String, Schema]): Unit = {
     val schema = schemaMap(query.dataset)
     val fieldMap = schema.fieldMap
-    val fieldMapAfterLookup = resolveLookups(query.lookups, fieldMap, schemaMap)
-    val fieldMapAfterUnnest = resolveUnnests(query.unnests, fieldMapAfterLookup)
+    val fieldMapAfterLookup = resolveLookups(query.lookup, fieldMap, schemaMap)
+    val fieldMapAfterUnnest = resolveUnnests(query.unnest, fieldMapAfterLookup)
 
-    resolveFilters(query.filters, fieldMapAfterUnnest)
+    resolveFilters(query.filter, fieldMapAfterUnnest)
 
-    val fieldMapAfterGroup = resolveGroup(query.group, fieldMapAfterUnnest)
+    val fieldMapAfterGroup = resolveGroup(query.groups, fieldMapAfterUnnest)
     val fieldMapAfterSelect = resolveSelect(query.select, fieldMapAfterGroup)
 
     val fieldMapAfterGlobalAggr = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
@@ -160,7 +162,7 @@ class QueryResolver {
                              schemaMap: Map[String, Schema]): Map[String, Field] = {
     val producedFields = mutable.Map.newBuilder[String, Field]
     lookups.foreach { lookup =>
-      validateLookup(lookup)
+      validator.validateLookup(lookup)
       lookup.sourceKeyFields = resolveFields(lookup.sourceKeys, fieldMap)
       lookup.lookupKeyFields = resolveFields(lookup.lookupKeys, schemaMap(lookup.dataset).fieldMap)
       lookup.selectValueFields = resolveFields(lookup.selectValues, schemaMap(lookup.dataset).fieldMap)
@@ -180,7 +182,7 @@ class QueryResolver {
       unnest.field = resolveField(unnest.fieldName, fieldMap)
       unnest.asField = unnest.field.asField(unnest.as)
       producedFields += unnest.as -> unnest.asField
-      validateUnnest(unnest)
+      validator.validateUnnest(unnest)
     }
 
 
@@ -190,7 +192,7 @@ class QueryResolver {
   private def resolveFilters(filters: Seq[FilterStatement], fieldMap: Map[String, Field]): Unit = {
     filters.foreach { filter =>
       filter.field = resolveField(filter.fieldName, fieldMap)
-      validateFilter(filter)
+      validator.validateFilter(filter)
     }
   }
 
@@ -217,7 +219,7 @@ class QueryResolver {
           producedFields += groupedField.name -> groupedField
           None
       }
-      validateGroupby(by)
+      validator.validateGroupby(by)
     }
 
     groupStatement.aggregates.foreach { aggregate =>
@@ -238,7 +240,6 @@ class QueryResolver {
     selectStatement.orderOnFields = resolveFields(selectStatement.orderOn.map(selectStatement.truncate(_)), fieldMap)
     selectStatement.fields = resolveFields(selectStatement.fieldNames, fieldMap)
 
-    //TODO: handle select *
     if (selectStatement.fields.isEmpty) {
       return fieldMap
     } else {
@@ -286,8 +287,4 @@ class QueryResolver {
       case _ => throw FieldNotFound(name)
     }
   }
-}
-
-object QueryResolver {
-  def apply() = new QueryResolver
 }

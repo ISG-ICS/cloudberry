@@ -91,17 +91,17 @@ class AQLGenerator extends AsterixQueryGenerator {
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
     val exprMap = initExprMap(query, schemaMap)
 
-    val resultAfterLookup = parseLookup(query.lookups, exprMap, schemaMap, sourceVar)
+    val resultAfterLookup = parseLookup(query.lookup, exprMap, schemaMap, sourceVar)
 
     val lookupStr = resultAfterLookup.parts(1)
 
-    val resultAfterFilter = parseFilter(query.filters, resultAfterLookup.exprMap, resultAfterLookup.parts.head)
+    val resultAfterFilter = parseFilter(query.filter, resultAfterLookup.exprMap, resultAfterLookup.parts.head)
     val filterStr = resultAfterFilter.parts(1)
 
-    val resultAfterUnnest = parseUnnest(query.unnests, resultAfterFilter.exprMap, resultAfterFilter.parts.head)
+    val resultAfterUnnest = parseUnnest(query.unnest, resultAfterFilter.exprMap, resultAfterFilter.parts.head)
     val unnestStr = resultAfterUnnest.parts(1)
 
-    val resultAfterGroup = parseGroupby(query.group, resultAfterUnnest.exprMap, resultAfterUnnest.parts.head)
+    val resultAfterGroup = parseGroupby(query.groups, resultAfterUnnest.exprMap, resultAfterUnnest.parts.head)
     val groupStr = resultAfterGroup.parts(1)
 
     var resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, resultAfterGroup.parts.head)

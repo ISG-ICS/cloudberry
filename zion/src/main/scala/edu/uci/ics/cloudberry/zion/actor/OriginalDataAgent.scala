@@ -72,7 +72,7 @@ class OriginalDataAgent(override val dbName: String,
     val now = DateTime.now().minusMillis(1)
     val filter = FilterStatement(schema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
     val aggr = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
-    val queryCardinality = Query(dbName, filters = Seq(filter), globalAggr = Some(aggr))
+    val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
 
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))
       .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
@@ -82,10 +82,10 @@ class OriginalDataAgent(override val dbName: String,
   //TODO extend the logic of using stats to solve more queries
   private def estimable(query: Query): Boolean = {
     if (query.isEstimable &&
-      query.group.isEmpty &&
-      query.lookups.isEmpty &&
+      query.groups.isEmpty &&
+      query.lookup.isEmpty &&
       query.select.isEmpty &&
-      query.unnests.isEmpty) {
+      query.unnest.isEmpty) {
       query.globalAggr.exists(g => g.aggregate.func.name == AggregateFunc.Count)
     } else {
       false

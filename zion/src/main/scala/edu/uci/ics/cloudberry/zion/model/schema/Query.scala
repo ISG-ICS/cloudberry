@@ -28,19 +28,19 @@ object QueryExeOption {
 }
 
 case class Query(dataset: String,
-                 lookups: Seq[LookupStatement] = Seq.empty,
-                 filters: Seq[FilterStatement] = Seq.empty,
-                 unnests: Seq[UnnestStatement] = Seq.empty,
-                 group: Option[GroupStatement] = None,
+                 lookup: Seq[LookupStatement] = Seq.empty,
+                 filter: Seq[FilterStatement] = Seq.empty,
+                 unnest: Seq[UnnestStatement] = Seq.empty,
+                 groups: Option[GroupStatement] = None,
                  select: Option[SelectStatement] = None,
                  globalAggr: Option[GlobalAggregateStatement] = None,
                  isEstimable: Boolean = false
                 ) extends IReadQuery {
 
-  val grouped = group.isDefined
+  val grouped = groups.isDefined
   val selected = select.isDefined
-  val unnested = !unnests.isEmpty
-  val lookuped = !lookups.isEmpty
+  val unnested = !unnest.isEmpty
+  val lookuped = !lookup.isEmpty
 
   import TimeField.TimeFormat
 
@@ -50,13 +50,13 @@ case class Query(dataset: String,
     val timeFilter = FilterStatement(fieldName, None, Relation.inRange,
       Seq(TimeFormat.print(interval.getStartMillis),
         TimeFormat.print(interval.getEndMillis)))
-    this.copy(filters = timeFilter +: this.filters.filterNot(_.fieldName == fieldName))
+    this.copy(filter = timeFilter +: this.filter.filterNot(_.fieldName == fieldName))
   }
 
   def getTimeInterval(fieldName: String): Option[org.joda.time.Interval] = {
     //TODO support > < etc.
     //TODO support multiple time condition
-    filters.find(f => f.fieldName == fieldName && f.relation == Relation.inRange).map { stat =>
+    filter.find(f => f.fieldName == fieldName && f.relation == Relation.inRange).map { stat =>
       require(stat.values.size == 2)
       val toTime = stat.values.map(v => TimeFormat.parseDateTime(v.asInstanceOf[String]))
       new org.joda.time.Interval(toTime(0), toTime(1))
@@ -70,22 +70,22 @@ case class Query(dataset: String,
     //TODO read paper http://www.vldb.org/conf/1996/P318.PDF
     import Query._
 
-    if (!covers(this.filters, another.filters)) {
+    if (!covers(this.filter, another.filter)) {
       return false
     }
 
-    val isFilterMatch = this.filters.forall(f => another.filters.filter(_.fieldName == f.fieldName)
+    val isFilterMatch = this.filter.forall(f => another.filter.filter(_.fieldName == f.fieldName)
       .exists(anotherF => f.covers(anotherF, schema.fieldMap(f.fieldName).dataType)))
     if (!isFilterMatch) {
       return false
     }
 
-    val isGroupMatch = another.group match {
-      case None => this.group.isEmpty
-      case Some(group) => this.group.forall(_.finerThan(group))
+    val isGroupMatch = another.groups match {
+      case None => this.groups.isEmpty
+      case Some(group) => this.groups.forall(_.finerThan(group))
     }
 
-    isGroupMatch && this.unnests.isEmpty && this.select.isEmpty
+    isGroupMatch && this.unnest.isEmpty && this.select.isEmpty
   }
 
 }

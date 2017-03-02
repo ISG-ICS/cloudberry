@@ -41,8 +41,8 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq(sourceInfo))
 
-      val query1 = Query(sourceInfo.name, filters = Seq(textFilter))
-      val query2 = Query(sourceInfo.name, filters = Seq(timeFilter))
+      val query1 = Query(sourceInfo.name, filter = Seq(textFilter))
+      val query2 = Query(sourceInfo.name, filter = Seq(timeFilter))
       when(mockPlanner.makePlan(query, sourceInfo, Seq.empty)).thenReturn((Seq(query1, query2), QueryPlanner.Unioner))
 
       val create = CreateView("zika", zikaCreateQuery)

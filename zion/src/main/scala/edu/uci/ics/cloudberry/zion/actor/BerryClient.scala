@@ -56,7 +56,7 @@ class BerryClient(val jsonParser: JSONParser,
         case (query, info) =>
           val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
           val merger = planner.calculateMergeFunc(query, info.schema)
-          val queryWOTime = query.copy(filters = query.filters.filterNot(_.fieldName == info.schema.timeField))
+          val queryWOTime = query.copy(filter = query.filter.filterNot(_.fieldName == info.schema.timeField))
           QueryInfo(queryWOTime, info, bound, merger)
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
@@ -147,7 +147,7 @@ class BerryClient(val jsonParser: JSONParser,
         val overlaps = queryInfo.queryBound.overlap(interval)
         val timeFilter = FilterStatement(queryInfo.dataSetInfo.schema.timeField, None, Relation.inRange,
           Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
-        solveAQuery(queryInfo.query.copy(filters = timeFilter +: queryInfo.query.filters))
+        solveAQuery(queryInfo.query.copy(filter = timeFilter +: queryInfo.query.filter))
       } else {
         Future(JsArray())
       }

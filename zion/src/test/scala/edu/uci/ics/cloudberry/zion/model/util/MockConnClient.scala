@@ -11,7 +11,6 @@ import scala.concurrent.{ExecutionContext, Future}
 trait MockConnClient extends Mockito {
 
   import org.mockito.Mockito._
-
   /**
     * Mock the aql and the response based
     *

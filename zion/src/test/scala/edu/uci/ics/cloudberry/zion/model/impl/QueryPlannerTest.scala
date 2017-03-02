@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.SortOrder
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.DateTime
 import org.specs2.mutable.Specification
 import play.api.libs.json._
 
@@ -31,11 +32,11 @@ class QueryPlannerTest extends Specification {
       queries.exists(_.dataset == QueryPlanner.getViewKey(TwitterDataSet, "zika")) must_== true
       queries.exists(_.dataset == QueryPlanner.getViewKey(TwitterDataSet, "virus")) must_== true
       queries.exists(_.query == zikaCreateQuery) must_== true
-      queries.exists(_.query == Query(TwitterDataSet, filters = Seq(virusFilter))) must_== true
+      queries.exists(_.query == Query(TwitterDataSet, filter = Seq(virusFilter))) must_== true
     }
     "makePlan should choose a smaller view" in {
 
-      val virusCreateQuery = Query(TwitterDataSet, filters = Seq(virusFilter))
+      val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
       val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, sourceInterval, virusStats)
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
@@ -52,13 +53,13 @@ class QueryPlannerTest extends Specification {
       val queryTimeFilter = FilterStatement("create_at", None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
       val queryZika = Query(
         dataset = TwitterDataSet,
-        filters = Seq(
+        filter = Seq(
           FilterStatement("text", None, Relation.contains, Seq("zika")),
           queryTimeFilter
         ),
-        group = Some(group))
+        groups = Some(group))
       val (queries, _) = planner.makePlan(queryZika, sourceInfo, Seq(zikaFullYearViewInfo))
-      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, filters = Seq(queryTimeFilter), group = Some(group))
+      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, filter = Seq(queryTimeFilter), groups = Some(group))
       queries.size must_== 1
     }
     "makePlan should ask the view and the source if view can not cover the query" in {

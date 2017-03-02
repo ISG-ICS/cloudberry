@@ -88,18 +88,18 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
     val exprMap: Map[String, FieldExpr] = initExprMap(query, schemaMap)
 
-    val resultAfterLookup = parseLookup(query.lookups, exprMap)
+    val resultAfterLookup = parseLookup(query.lookup, exprMap)
     val lookupStr = resultAfterLookup.parts.head
     val fromStr = s"from ${query.dataset} $sourceVar $lookupStr".trim
 
-    val resultAfterUnnest = parseUnnest(query.unnests, resultAfterLookup.exprMap)
+    val resultAfterUnnest = parseUnnest(query.unnest, resultAfterLookup.exprMap)
     val unnestStr = resultAfterUnnest.parts.head
     val unnestTests = resultAfterUnnest.parts.tail
 
-    val resultAfterFilter = parseFilter(query.filters, resultAfterUnnest.exprMap, unnestTests)
+    val resultAfterFilter = parseFilter(query.filter, resultAfterUnnest.exprMap, unnestTests)
     val filterStr = resultAfterFilter.parts.head
 
-    val resultAfterGroup = parseGroupby(query.group, resultAfterFilter.exprMap)
+    val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap)
     val groupSQL = resultAfterGroup.parts.head
 
     val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query)

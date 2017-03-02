@@ -369,7 +369,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a count cardinality query with filter without group by" in {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrCount)
-      val query = new Query(dataset = TwitterDataSet, filters = filter, globalAggr = Some(globalAggr))
+      val query = new Query(dataset = TwitterDataSet, filter = filter, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_count(
@@ -382,7 +382,7 @@ class SQLPPGeneratorTest extends Specification {
     "translate a min cardinality query with filter without group by" in {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrMin)
-      val query = new Query(dataset = TwitterDataSet, filters = filter, globalAggr = Some(globalAggr))
+      val query = new Query(dataset = TwitterDataSet, filter = filter, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_min(
@@ -478,7 +478,7 @@ class SQLPPGeneratorTest extends Specification {
       val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet,
-        lookups = Seq(lookupPopulation, lookupLiteracy),
+        lookup = Seq(lookupPopulation, lookupLiteracy),
         filter, Seq.empty,
         select = Some(selectStatement))
 
@@ -574,7 +574,7 @@ class SQLPPGeneratorTest extends Specification {
   "SQLPPGenerator appendView" should {
     "generate the upsert query" in {
       val timeFilter = FilterStatement(TwitterDataStore.TimeFieldName, None, Relation.inRange, Seq(startTime, endTime))
-      val sql = parser.generate(AppendView("zika", zikaCreateQuery.copy(filters = Seq(timeFilter) ++ zikaCreateQuery.filters)), Map("twitter.ds_tweet" -> TwitterDataStore.TwitterSchema))
+      val sql = parser.generate(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), Map("twitter.ds_tweet" -> TwitterDataStore.TwitterSchema))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
           |upsert into zika (
