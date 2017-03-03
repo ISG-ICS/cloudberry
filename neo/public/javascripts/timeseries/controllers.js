@@ -7,7 +7,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
     $scope.empty = [];
-    $scope.responsiveWidth = $(window).width();
     for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
@@ -49,6 +48,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       bottom: 30,
       left: 40
     };
+    // set the initial width of the timeline equal to the initial width of the browser window
+    var width = $(window).width() * 0.8 - margin.left - margin.right;
     var height = 150 - margin.top - margin.bottom;
       return {
         restrict: "E",
@@ -111,7 +112,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
             var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
 
-            var width = $(window).width() * 0.8 - margin.left - margin.right;
 
             timeSeries
               .width(width)
