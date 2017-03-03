@@ -1,5 +1,5 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
-  .controller('TimeSeriesCtrl', function ($scope, $window, Asterix) {
+  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, Asterix) {
     $scope.ndx = null;
     $scope.result = {};
     $scope.resultArray = [];
@@ -7,23 +7,51 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
     $scope.empty = [];
+    $scope.currentTweetCount = 0;
+    $scope.formatNumber = function (number) {
+      return number.toLocaleString('en-US');
+    };
+    $scope.totalCountString = "0";
+    $scope.currentTweetCountString = "0";
     for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
     $scope.preProcess = function (result) {
       // TODO make the pattern can be changed by the returned result parameters
       var result_array = [];
+      $scope.currentTweetCount = 0;
       if (result && result[0]) {
         var granu = Object.keys(result[0])[0];
         angular.forEach(result, function (value, key) {
           key = new Date(value[granu]);
           value = +value.count;
+          $scope.currentTweetCount += value;
           result_array.push({'time': key, 'count': value});
         });
+        $scope.currentTweetCountString = $scope.formatNumber($scope.currentTweetCount);
 
       }
       return result_array;
     };
+
+    // add information about the count of tweets
+    var countDiv = document.createElement("div");
+    countDiv.id = "countDiv";
+    countDiv.title = "Display the count information of Tweets";
+    let itemName = "tweets";
+    countDiv.innerHTML = [
+      '<p class="big-text"> {{ currentTweetCountString }} </p>',
+      '<span>',
+        '<span class="small-text">of</span>',
+        '<span class="big-text">&nbsp;{{ totalCountString }}</span>',
+        '<span class="small-text">&nbsp;' + itemName + '</span>',
+      '</span>'
+    ].join('');
+    var stats = document.getElementsByClassName("stats")[0];
+    $compile(countDiv)($scope);
+    stats.appendChild(countDiv);
+
+
     $scope.$watch(
       function() {
         return Asterix.timeResult;
@@ -39,6 +67,19 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         }
       }
     );
+
+    $scope.$watch(
+      function () {
+        return Asterix.totalCount;
+      },
+
+      function (newCount) {
+        if(newCount) {
+          $scope.totalCountString = $scope.formatNumber(newCount);
+        }
+      }
+    );
+
   })
   .directive('timeSeries', function (Asterix) {
     var margin = {
@@ -102,9 +143,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .text('Reset')
                 .attr('href',"#")
                 .on("click", function() { timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
-                .style("position", "inherit")
+                .style("position", "absolute")
                 .style("bottom", "90%")
-                .style("left", "3%");
+                .style("left", "5%");
 
 
             var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));

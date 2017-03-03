@@ -2,6 +2,9 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  height:100%;
+  width:100%;
+  position: absolute;
 }
 .map-group {
   position: absolute;
@@ -31,11 +34,10 @@ body {
 }
 
 time-series {
-  position: absolute;
-  top: 82%;
-  left: 15%;
-  width: 80%;
-  height: 15%;
+  z-index: 1000;
+  pointer-events: none;
+  display: inline-block;
+  position: relative;
 }
 
 search-bar {
@@ -140,4 +142,12 @@ search-bar {
   color: #000000;
   margin-bottom: 30px;
   font-weight:500;
+  display: inline-block;
+  float: left;
+}
+
+.stats{
+  position: absolute;
+  left:1%;
+  bottom:0;
 }
