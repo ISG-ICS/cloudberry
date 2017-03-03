@@ -36,7 +36,6 @@ body {
 time-series {
   z-index: 1000;
   pointer-events: none;
-  display: inline-block;
   position: relative;
 }
 
@@ -142,7 +141,6 @@ search-bar {
   color: #000000;
   margin-bottom: 30px;
   font-weight:500;
-  display: inline-block;
   float: left;
 }
 
