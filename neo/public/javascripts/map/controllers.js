@@ -2,7 +2,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, $timeout) {
     $scope.result = {};
     $scope.totalCount = 0;
-    $scope.currentTweetsCount = 0;
+    $scope.currentTweetCount = 0;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -193,7 +193,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       $scope.controls.custom.push(info);
 
-      // add information about the count of tweets
+      // update the total count
       let updateInterval = 1000; // milliseconds
       var updateCount = function () {
         // update the real time count
@@ -203,17 +203,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       $timeout(updateCount, updateInterval);
 
-      // display the count of the all the tweets in the current view
-      var currentTweetsCountDiv = L.control({
+      // add information about the count of tweets
+      var currentTweetCountDiv = L.control({
         position: 'bottomleft'
       });
 
-      currentTweetsCountDiv.onAdd = function (map) {
+      currentTweetCountDiv.onAdd = function (map) {
         var div = L.DomUtil.create('div');
         div.id = "countDiv";
         let itemName = "tweets";
         div.innerHTML = [
-          '<p class="big-text"> {{ currentTweetsCount }} </p>',
+          '<p class="big-text"> {{ currentTweetCount }} </p>',
           '<span>',
             '<span class="small-text">of</span>',
             '<span class="big-text">&nbsp;{{ totalCountString }}</span>',
@@ -223,7 +223,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         $compile(div)($scope);
         return div;
       };
-      $scope.controls.custom.push(currentTweetsCountDiv);
+      $scope.controls.custom.push(currentTweetCountDiv);
 
 
       loadGeoJsonFiles(onEachFeature);
@@ -451,7 +451,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
       // update count
-      $scope.currentTweetsCount = 0;
+      $scope.currentTweetCount = 0;
       if ($scope.status.logicLevel == "state" && $scope.geojsonData.state) {
           angular.forEach($scope.geojsonData.state.features, function(d) {
           if (d.properties.count)
@@ -460,7 +460,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           //TODO make a hash map from ID to make it faster
             if (result[k].state == d.properties.stateID) {
               d.properties.count = result[k].count;
-              $scope.currentTweetsCount += result[k].count;
+              $scope.currentTweetCount += result[k].count;
             }
           }
         });
@@ -476,7 +476,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               //TODO make a hash map from ID to make it faster
               if (result[k].county == d.properties.countyID) {
                 d.properties.count = result[k].count;
-                $scope.currentTweetsCount += result[k].count;
+                $scope.currentTweetCount += result[k].count;
               }
             }
           });
@@ -492,7 +492,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             //TODO make a hash map from ID to make it faster
             if (result[k].city == d.properties.cityID) {
               d.properties.count = result[k].count;
-              $scope.currentTweetsCount += result[k].count;
+              $scope.currentTweetCount += result[k].count;
             }
           }
         });
@@ -501,7 +501,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         $scope.polygons.cityPolygons.setStyle(style);
       }
 
-      $scope.currentTweetsCount = formatNumber($scope.currentTweetsCount);
+      $scope.currentTweetCount = formatNumber($scope.currentTweetCount);
 
 
       // add legend
