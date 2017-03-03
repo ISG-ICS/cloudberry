@@ -7,12 +7,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
     $scope.empty = [];
+    $scope.totalCount = 0;
     $scope.currentTweetCount = 0;
-    $scope.formatNumber = function (number) {
-      return number.toLocaleString("en-US");
-    };
-    $scope.totalCountString = "0";
-    $scope.currentTweetCountString = "0";
     for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
@@ -28,7 +24,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
           $scope.currentTweetCount += value;
           result_array.push({'time': key, 'count': value});
         });
-        $scope.currentTweetCountString = $scope.formatNumber($scope.currentTweetCount);
 
       }
       return result_array;
@@ -38,13 +33,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     var countDiv = document.createElement("div");
     countDiv.id = "countDiv";
     countDiv.title = "Display the count information of Tweets";
-    let itemName = "tweets";
     countDiv.innerHTML = [
-      "<p class='big-text'> {{ currentTweetCountString }} </p>",
+      "<p class='big-text'> {{ currentTweetCount | number:0 }} </p>",
       "<span>",
         "<span class='small-text'>of</span>",
-        "<span class='big-text'>&nbsp;{{ totalCountString }}</span>",
-        "<span class='small-text'>&nbsp;" + itemName + "</span>",
+        "<span class='big-text'>&nbsp;{{ totalCount | number:0 }}</span>",
+        "<span class='small-text'>&nbsp;tweets</span>",
       "</span>"
     ].join("");
     var stats = document.getElementsByClassName("stats")[0];
@@ -75,7 +69,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
       function (newCount) {
         if(newCount) {
-          $scope.totalCountString = $scope.formatNumber(newCount);
+          $scope.totalCount = newCount;
         }
       }
     );
