@@ -41,15 +41,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       }
     );
 
-    console.log("initial width: " + $scope.responsiveWidth);
-    angular.element($window).bind('resize', function() {
-      $scope.responsiveWidth = $window.innerWidth;
-      // manuall $digest required as resize event
-      // is outside of angular
-      $scope.$digest();
-      console.log("width changed: " + $scope.responsiveWidth);
-    });
-
   })
   .directive('timeSeries', function (Asterix) {
     var margin = {
