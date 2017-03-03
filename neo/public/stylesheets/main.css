@@ -35,7 +35,7 @@ body {
 
 time-series {
   z-index: 1000;
-  pointer-events: none;
+  pointer-events: auto;
   position: relative;
   display: inline-block;
 }
@@ -131,22 +131,35 @@ search-bar {
 }
 
 .small-text{
-  font-size: 15px;
+  font-size: 13px;
 }
 
-.big-text{
-  font-size: 30px;
-}
-
-#countDiv{
+#count-div{
   color: #000000;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
   font-weight:500;
   float: left;
+  margin-top: 20px;
+  padding-right:20px;
+}
+
+#count-div > p{
+  margin-bottom: 0;
 }
 
 .stats{
   position: absolute;
   left:1%;
   bottom:0;
+  pointer-events: none;
+  line-height: 1;
+}
+
+
+#current-count{
+  font-size: 32px;
+}
+
+#total-count{
+  font-size: 20px;
 }
