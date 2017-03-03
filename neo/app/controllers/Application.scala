@@ -97,7 +97,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   class Listener extends Actor with ActorLogging {
     def receive = {
-      case d: DeadLetter => println(d)
+      case d: DeadLetter => Logger.info(d.toString)
     }
   }
 
