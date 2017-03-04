@@ -3,10 +3,31 @@ angular.module('cloudberry.common', [])
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
 
-    ws.onopen = function() {
-      var json = JSON.stringify({ cmd : "totalCount"});
-      ws.send(json);
-    };
+    var countRequest = JSON.stringify({
+      "transform": {
+        "wrap": {
+          "key": "totalCount",
+          "value": {
+            dataset: "twitter.ds_tweet",
+            global: {
+              globalAggregate: {
+                field: "*",
+                apply: {
+                  name: "count"
+                },
+                as: "count"
+              }
+            },
+            estimable : true
+          }
+        }
+      }
+    });
+
+    setInterval(requestLiveCounts, 1000);
+    function requestLiveCounts() {
+      ws.send(countRequest);
+    }
 
     var asterixService = {
 
@@ -50,7 +71,10 @@ angular.module('cloudberry.common', [])
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        switch (result.key) {
+
+        //console.log(result)
+
+        switch (result.transform.wrap.key) {
           case "byPlace":
             asterixService.mapResult = result.value;
             break;
@@ -68,14 +92,14 @@ angular.module('cloudberry.common', [])
             asterixService.mapResult = result.value[1];
             asterixService.hashTagResult = result.value[2];
             break;
+          case "totalCount":
+            asterixService.totalCount = result.transform.wrap.value[0][0].count;
+            break;
           case "error":
             console.error(result);
             asterixService.errorMessage = result.value;
             break;
           case "done":
-            break;
-          case "totalCount":
-            asterixService.totalCount = result.value[0][0].count;
             break;
           default:
             console.error("ws get unknown data:" );
