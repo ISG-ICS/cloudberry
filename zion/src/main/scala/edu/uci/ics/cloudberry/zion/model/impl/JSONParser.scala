@@ -193,7 +193,7 @@ object JSONParser {
     }
 
     override def writes(unnestStatement: UnnestStatement): JsValue = {
-      JsObject(Seq(unnestStatement.fieldName -> JsString(unnestStatement.as)))
+      JsObject(Seq(unnestStatement.field -> JsString(unnestStatement.as)))
     }
   }
 

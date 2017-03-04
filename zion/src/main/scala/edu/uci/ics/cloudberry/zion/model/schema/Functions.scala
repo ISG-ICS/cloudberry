@@ -1,20 +1,27 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
+import edu.uci.ics.cloudberry.zion.model.datastore.QueryParsingException
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
-import edu.uci.ics.cloudberry.zion.model.schema.TimeUnit.TimeUnit
 
 sealed trait IFunction {
   def name: String
 
   def acceptType: Set[DataType]
 
-  def apply(field: Field): Field = ???
+  def resultType(field: Field): DataType
+
+  def apply(field: Field): Field = {
+    IFunction.validateField(this, field)
+    new Field(s"$name(${field.name})", resultType(field))
+  }
+
 }
 
 object IFunction {
-  def verifyField(function: IFunction, field: Field): Option[String] = {
-    if (function.acceptType.contains(field.dataType)) None
-    else Some(s"Type ${field.dataType} of ${field.name} mismatch with the input type of the function ${function.name}.")
+  def validateField(function: IFunction, field: Field): Unit = {
+    if (!function.acceptType.contains(field.dataType)) {
+      throw new QueryParsingException(s"${function.name} requires type ${function.acceptType.mkString(" or ")}, but ${field.dataType} is provided.")
+    }
   }
 }
 
@@ -24,7 +31,8 @@ object TransformFunc {
   val ToString = "toString"
 }
 
-sealed trait GroupFunc extends IFunction
+sealed trait GroupFunc extends IFunction {
+}
 
 object GroupFunc {
   val Bin = "bin"
@@ -56,7 +64,12 @@ object AggregateFunc {
 case class Level(levelTag: String) extends GroupFunc {
   override val name = GroupFunc.Level
 
-  override def acceptType: Set[DataType] = Set(DataType.Hierarchy)
+  override val acceptType: Set[DataType] = Set(DataType.Hierarchy)
+
+  override def resultType(field: Field): DataType = {
+    val hierarchyField = field.asInstanceOf[HierarchyField]
+    return hierarchyField.innerType
+  }
 }
 
 trait Scale {
@@ -72,12 +85,16 @@ case class Bin(override val scale: Int) extends GroupFunc with Scale {
   override val name = GroupFunc.Bin
 
   override def acceptType: Set[DataType] = Set(DataType.Number)
+
+  override def resultType(field: Field): DataType = DataType.Number
 }
 
-case class Interval(unit: TimeUnit, x: Int = 1) extends GroupFunc with Scale {
+case class Interval(unit: TimeUnit.Value, x: Int = 1) extends GroupFunc with Scale {
   override def name: String = GroupFunc.Interval
 
   override def acceptType: Set[DataType] = Set(DataType.Time)
+
+  override def resultType(field: Field): DataType = DataType.Time
 
   override val scale: Int = {
     import TimeUnit._
@@ -111,64 +128,89 @@ case object GeoCellThousandth extends GeoCellScale(10000) with GroupFunc {
   override def name: String = GroupFunc.GeoCellThousandth
 
   override def acceptType: Set[DataType] = Set(DataType.Point)
+
+  override def resultType(field: Field): DataType = DataType.Point
+
 }
 
 case object GeoCellHundredth extends GeoCellScale(100000) with GroupFunc {
   override def name: String = GroupFunc.GeoCellHundredth
 
   override def acceptType: Set[DataType] = Set(DataType.Point)
+
+  override def resultType(field: Field): DataType = DataType.Point
+
 }
 
 case object GeoCellTenth extends GeoCellScale(1000000) with GroupFunc {
   override def name: String = GroupFunc.GeoCellTenth
 
   override def acceptType: Set[DataType] = Set(DataType.Point)
+
+  override def resultType(field: Field): DataType = DataType.Point
 }
 
 case object Count extends AggregateFunc {
   override val name = AggregateFunc.Count
 
   override def acceptType: Set[DataType] = DataType.values
+
+  override def resultType(field: Field): DataType = DataType.Number
 }
 
 case object Max extends AggregateFunc {
   override val name = AggregateFunc.Max
 
   override def acceptType: Set[DataType] = Set(DataType.Number, DataType.Time)
+
+  override def resultType(field: Field): DataType = field.dataType
+
 }
 
 case object Min extends AggregateFunc {
   override val name = AggregateFunc.Min
 
   override def acceptType: Set[DataType] = Set(DataType.Number, DataType.Time)
+
+  override def resultType(field: Field): DataType = field.dataType
 }
 
 case object Sum extends AggregateFunc {
   override val name = AggregateFunc.Sum
 
   override def acceptType: Set[DataType] = Set(DataType.Number)
+
+  override def resultType(field: Field): DataType = DataType.Number
 }
 
 case object Avg extends AggregateFunc {
   override val name = AggregateFunc.Avg
 
   override def acceptType: Set[DataType] = Set(DataType.Number)
+
+  override def resultType(field: Field): DataType = DataType.Number
 }
 
 case object DistinctCount extends AggregateFunc {
   override val name = AggregateFunc.DistinctCount
 
   override def acceptType: Set[DataType] = DataType.values
+
+  override def resultType(field: Field): DataType = DataType.Number
 }
 
 case class TopK(val k: Int) extends AggregateFunc {
   override val name = AggregateFunc.TopK
 
   override def acceptType: Set[DataType] = DataType.values
+
+  override def resultType(field: Field): DataType = field.dataType
 }
 
 case object ToString extends TransformFunc {
   override def name: String = TransformFunc.ToString
 
   override def acceptType: Set[DataType] = Set(DataType.Number)
+
+  override def resultType(field: Field): DataType = DataType.String
 }

@@ -152,7 +152,7 @@ object AQLFuncVisitor {
                          aqlExpr: String
                         ): (DataType.DataType, String) = {
     funcOpt.map { func =>
-      IFunction.verifyField(func, field).map { msg => throw new QueryParsingException(msg) }
+      IFunction.validateField(func, field)
       func match {
         case bin: Bin =>
           (DataType.Number,

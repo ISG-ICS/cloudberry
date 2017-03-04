@@ -23,11 +23,11 @@ class QueryPlanner {
     if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {
       Seq.empty[CreateView]
     } else {
-      val keywordFilters = query.filter.filter(f => source.schema.fieldMap(f.fieldName).dataType == DataType.Text)
+      val keywordFilters = query.filter.filter(f => f.field.dataType == DataType.Text)
       keywordFilters.flatMap { kwFilter =>
         kwFilter.values.map { wordAny =>
           val word = wordAny.asInstanceOf[String]
-          val wordFilter = FilterStatement(kwFilter.fieldName, None, Relation.contains, Seq(word))
+          val wordFilter = FilterStatement(kwFilter.field, None, Relation.contains, Seq(word))
           val wordQuery = Query(query.dataset, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
           CreateView(getViewKey(query.dataset, word), wordQuery)
         }
@@ -43,7 +43,7 @@ class QueryPlanner {
 
     query.globalAggr match {
       case Some(statement) =>
-        val aggrMap = Map(statement.aggregate.as -> statement.aggregate.func)
+        val aggrMap = Map(statement.aggregate.as.name -> statement.aggregate.func)
         return Merger(Seq.empty, aggrMap, Map.empty, Set.empty, None)
       case None =>
     }
@@ -52,8 +52,8 @@ class QueryPlanner {
     val aggrValues = Map.newBuilder[String, AggregateFunc]
     query.groups match {
       case Some(groupStats) =>
-        keys ++= groupStats.bys.map(key => key.as.getOrElse(key.fieldName))
-        aggrValues ++= groupStats.aggregates.map(v => v.as -> v.func)
+        keys ++= groupStats.bys.map(key => key.as.getOrElse(key.field).name)
+        aggrValues ++= groupStats.aggregates.map(v => v.as.name -> v.func)
       case None =>
     }
 
@@ -64,10 +64,10 @@ class QueryPlanner {
     query.select match {
       case Some(select) =>
         orderOn ++= select.orderOn.map { f =>
-          val order = if (f.startsWith("-")) SortOrder.DSC else SortOrder.ASC
-          f.stripPrefix("-") -> order
+          val order = if (f.name.startsWith("-")) SortOrder.DSC else SortOrder.ASC
+          f.name.stripPrefix("-") -> order
         }
-        project ++= select.fields
+        project ++= select.fields.map(_.name)
         limitOpt = Some(select.limit)
       case None =>
     }
@@ -97,7 +97,7 @@ class QueryPlanner {
 
         //TODO here is a very simple assumption that the schema is the same, what if the schema are different?
         val viewFilters = view.createQueryOpt.get.filter
-        val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf, source.schema.fieldMap(qf.fieldName).dataType)))
+        val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf)))
         seqBuilder += query.copy(dataset = view.name, filter = newFilter)
         for (interval <- unCovered) {
           seqBuilder += query.setInterval(source.schema.timeField, interval)

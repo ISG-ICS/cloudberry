@@ -70,7 +70,7 @@ class DataStoreManager(metaDataset: String,
         case Some(info) =>
           info.createQueryOpt match {
             case Some(createQuery) =>
-              if (createQuery.filter.exists(_.fieldName == info.schema.timeField)) {
+              if (createQuery.filter.exists(_.field == info.schema.timeField)) {
                 log.error("the create view should not contains the time dimension")
               } else {
                 val now = DateTime.now()
@@ -165,9 +165,9 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
-    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, "min"))))
-    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, "max"))))
-    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement("*", Count, "count"))))
+    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Min(schema.timeField).asField("min")))))
+    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Max(schema.timeField).asField("max")))))
+    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Min(schema.timeField).asField("count")))))
     val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
