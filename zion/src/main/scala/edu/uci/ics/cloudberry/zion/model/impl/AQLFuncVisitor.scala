@@ -29,7 +29,7 @@ object AQLFuncVisitor {
       case DataType.Point =>
         validatePointValue(relation, values)
         translatePointRelation(field, funcOpt, aqlExpr, relation,
-                               values.map(_.asInstanceOf[Seq[Number]].map(_.doubleValue())))
+          values.map(_.asInstanceOf[Seq[Number]].map(_.doubleValue())))
       case DataType.Boolean => ???
       case DataType.String => ???
       case DataType.Text =>
@@ -157,7 +157,7 @@ object AQLFuncVisitor {
         case bin: Bin =>
           (DataType.Number,
             s"round($aqlExpr/${bin.scale})*${bin.scale}"
-            )
+          )
         case interval: Interval =>
           import TimeUnit._
           //PnYnMnDTnHnMn.mmmS
@@ -172,7 +172,7 @@ object AQLFuncVisitor {
           }
           (DataType.Time,
             s"get-interval-start-datetime(interval-bin($aqlExpr, datetime('1990-01-01T00:00:00.000Z'), $duration))"
-            )
+          )
         case level: Level =>
           //The `aqlExpr` for Hierarchy type only has the $t part
           //TODO remove this data type
@@ -207,7 +207,7 @@ object AQLFuncVisitor {
                         func: AggregateFunc,
                         aqlExpr: String
                        ): (DataType.DataType, String, String, String) = {
-    val newvar = s"${aqlExpr.split('.')(0)}aggr";
+    val newvar = if (field.name == "*") s"${aqlExpr.split('.')(0)}aggr" else s"$$${field.name}_aggr"
     func match {
       case Count =>
         if (field.dataType != DataType.Record) throw new QueryParsingException("count requires to aggregate on the record bag")
