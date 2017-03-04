@@ -39,6 +39,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         }
       }
     );
+
   })
   .directive('timeSeries', function (Asterix) {
     var margin = {
@@ -47,7 +48,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       bottom: 30,
       left: 40
     };
-    var width = 962 - margin.left - margin.right;
+    // set the initial width of the timeline equal to the initial width of the browser window
+    var width = $(window).width() * 0.8 - margin.left - margin.right;
     var height = 150 - margin.top - margin.bottom;
       return {
         restrict: "E",
@@ -109,6 +111,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
             var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
+
 
             timeSeries
               .width(width)
