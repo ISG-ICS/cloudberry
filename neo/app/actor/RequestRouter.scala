@@ -10,7 +10,7 @@ import play.Logger
 
 import scala.concurrent.ExecutionContext
 
-class RequestForwarder (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, config: Config)
+class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, config: Config)
                        (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   override def receive: Receive = {
@@ -22,8 +22,6 @@ class RequestForwarder (out: ActorRef, ws: WSClient, requestHeader: RequestHeade
         }
         child ! requestBody
 
-        Logger.error("this request is responsible by " + childName)
-
       }.getOrElse {
         Logger.error("no userID found.")
       }
@@ -33,7 +31,7 @@ class RequestForwarder (out: ActorRef, ws: WSClient, requestHeader: RequestHeade
 
 }
 
-object RequestForwarder {
+object RequestRouter {
   def props(out: ActorRef, ws: WSClient, requestHeader: RequestHeader, config: Config)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestForwarder(out, ws, requestHeader, config))
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, ws, requestHeader, config))
 }

@@ -3,8 +3,7 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
-import actor.NeoActor
-import actor.RequestForwarder
+import actor.RequestRouter
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, ActorSystem, DeadLetter, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
@@ -62,7 +61,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => RequestForwarder.props(out, wsClient, request, config))
+    ActorFlow.actorRef(out => RequestRouter.props(out, wsClient, request, config))
   }
 
   def tweet(id: String) = Action.async {
