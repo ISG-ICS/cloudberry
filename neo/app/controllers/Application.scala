@@ -48,8 +48,7 @@ class Application @Inject()(val wsClient: WSClient,
   system.eventStream.subscribe(listener, classOf[DeadLetter])
 
   def index = Action {
-    val uuid = java.util.UUID.randomUUID.toString
-    Ok(views.html.index("Cloudberry")).withSession("userID" -> uuid)
+    Ok(views.html.index("Cloudberry"))
   }
 
   def debug = Action {
@@ -61,7 +60,8 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => RequestRouter.props(out, wsClient, request, config))
+    val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
+    ActorFlow.actorRef(out => RequestRouter.props(out, wsClient, request, prop, config))
   }
 
   def tweet(id: String) = Action.async {
@@ -71,6 +71,7 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
+  // TODO delete this??
   def berryQuery = Action(parse.json) { request =>
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
     val source = Source.single(request.body)

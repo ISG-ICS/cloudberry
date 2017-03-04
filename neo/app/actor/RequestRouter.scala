@@ -10,21 +10,15 @@ import play.Logger
 
 import scala.concurrent.ExecutionContext
 
-class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, config: Config)
-                       (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
+class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, berryClientProp: Props, config: Config)
+                    (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
+  val StreamingBerryClient = context.actorOf(berryClientProp)
+  val nonStreamingBerryClient = context.actorOf(berryClientProp)
+
+  // TODO Distribute different requests
   override def receive: Receive = {
-    case requestBody: JsValue =>
-      requestHeader.session.get("userID").map { userID =>
-        val childName = s"userID-$userID"
-        val child = context.child(childName).getOrElse {
-          context.actorOf(NeoActor.props(out, ws, requestHeader.host, config), childName)
-        }
-        child ! requestBody
-
-      }.getOrElse {
-        Logger.error("no userID found.")
-      }
+    case requestBody: JsValue => ???
 
     case e => Logger.error("unknown type of request " + e)
   }
@@ -32,6 +26,6 @@ class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, 
 }
 
 object RequestRouter {
-  def props(out: ActorRef, ws: WSClient, requestHeader: RequestHeader, config: Config)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, ws, requestHeader, config))
+  def props(out: ActorRef, ws: WSClient, requestHeader: RequestHeader, berryClientProp: Props, config: Config)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, ws, requestHeader, berryClientProp, config))
 }
