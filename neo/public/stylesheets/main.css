@@ -125,10 +125,10 @@ search-bar {
 
 .stats{
   position: absolute;
-  left:1%;
   bottom:0;
   pointer-events: none;
   line-height: 1;
+  width: 100%;
 }
 
 time-series {
@@ -136,35 +136,24 @@ time-series {
   pointer-events: auto;
   position: relative;
   display: inline-block;
+  left: 4%;
 }
 
 #count-div{
   color: #000000;
-  margin-bottom: 40px;
   font-weight:500;
-  float: left;
   margin-top: 20px;
-  padding-right:20px;
-  display: flex;
+  margin-bottom: 40px;
+  padding-left: 10px;
+  float: left;
 }
 
-.count-wrapper{
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-#current-count{
+#count{
   font-size: 32px;
   margin-bottom: 0;
-}
-
-#total-count{
-  font-size: 20px;
-  margin-bottom: 0;
+  text-align: right;
 }
 
 #count-text{
   font-size: 13px;
-  align-self:flex-end;
 }
