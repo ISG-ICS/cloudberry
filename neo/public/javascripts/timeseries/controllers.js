@@ -34,12 +34,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     countDiv.id = "count-div";
     countDiv.title = "Display the count information of Tweets";
     countDiv.innerHTML = [
+      "<div class='count-wrapper'>",
       "<p id='current-count'> {{ currentTweetCount | number:0 }} </p>",
-      "<p class='small-text'>",
-        "<span>of</span>",
-        "<span id='total-count'>&nbsp;{{ totalCount | number:0 }}</span>",
-        "<span>&nbsp;tweets</span>",
-      "</p>"
+      "<p id='total-count'><span id='count-text'>of&nbsp;&nbsp;</span>{{ totalCount | number:0 }}</p>",
+      "</div>",
+      "<span id='count-text'>&nbsp;&nbsp;tweets</span>",
     ].join("");
     var stats = document.getElementsByClassName("stats")[0];
     $compile(countDiv)($scope);

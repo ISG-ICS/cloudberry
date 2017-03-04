@@ -33,13 +33,6 @@ body {
   margin-left: -20%;
 }
 
-time-series {
-  z-index: 1000;
-  pointer-events: auto;
-  position: relative;
-  display: inline-block;
-}
-
 search-bar {
   position: absolute;
   left: 27%;
@@ -130,8 +123,19 @@ search-bar {
     color : white;
 }
 
-.small-text{
-  font-size: 13px;
+.stats{
+  position: absolute;
+  left:1%;
+  bottom:0;
+  pointer-events: none;
+  line-height: 1;
+}
+
+time-series {
+  z-index: 1000;
+  pointer-events: auto;
+  position: relative;
+  display: inline-block;
 }
 
 #count-div{
@@ -141,25 +145,26 @@ search-bar {
   float: left;
   margin-top: 20px;
   padding-right:20px;
+  display: flex;
 }
 
-#count-div > p{
-  margin-bottom: 0;
+.count-wrapper{
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
-
-.stats{
-  position: absolute;
-  left:1%;
-  bottom:0;
-  pointer-events: none;
-  line-height: 1;
-}
-
 
 #current-count{
   font-size: 32px;
+  margin-bottom: 0;
 }
 
 #total-count{
   font-size: 20px;
+  margin-bottom: 0;
+}
+
+#count-text{
+  font-size: 13px;
+  align-self:flex-end;
 }
