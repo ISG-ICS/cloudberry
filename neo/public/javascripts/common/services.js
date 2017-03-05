@@ -1,8 +1,9 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
-    var MilliSecondsPerDay = 24 * 3600 * 1000;
-    var defaultMaxDay = 1500;
+    var defaultNonSamplingDayRange = 1500;
+    var defaultSamplingDayRange = 1;
+    var defaultSamplingSize = 10;
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
 
     var countRequest = JSON.stringify({
@@ -20,7 +21,10 @@ angular.module('cloudberry.common', [])
                 as: "count"
             }},
             estimable : true
-    }}}});
+          }
+        }
+      }
+    });
 
     setInterval(requestLiveCounts, 1000);
     function requestLiveCounts() {
@@ -58,28 +62,113 @@ angular.module('cloudberry.common', [])
               key: "sample",
               value: {
                 dataset: parameters.dataset,
-                filter: this.getFilter(parameters, 1500),
+                filter: this.getFilter(parameters, defaultSamplingDayRange),
                 select: {
-                  order: [ "-create_at"],
-                  limit: 10,
+                  order: ["-create_at"],
+                  limit: defaultSamplingSize,
                   offset: 0,
                   field: ["create_at", "id", "user.id"]
-        }}}}}));
-
-        /*
-        var json = (JSON.stringify({
-          dataset: parameters.dataset,
-          keywords: parameters.keywords,
-          timeInterval: {
-            start:  Date.parse(parameters.timeInterval.start), //: Date.parse(startDate),
-            end:  Date.parse(parameters.timeInterval.end) //: Date.parse(new Date())
-          },
-          timeBin : parameters.timeBin,
-          geoLevel: parameters.geoLevel,
-          geoIds : parameters.geoIds
+                }
+              }
+            }
+          }
         }));
-        */
+
+        var batchJson = (JSON.stringify({
+          transform: {
+            wrap: {
+              key: "batch",
+              value: {
+                batch: [this.byTimeRequest(parameters), this.byGeoRequest(parameters), this.byHashTagRequest(parameters)],
+                option: {
+                  sliceMillis: 2000
+                }
+              }
+            }
+          }
+        }));
+
         ws.send(sampleJson);
+        ws.send(batchJson);
+      },
+
+      byGeoRequest: function(parameters){
+        return {
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
+          group: {
+            by: [{
+              field: "geo",
+              apply: {
+                name: "level",
+                args: {
+                  level: parameters.geoLevel
+                }
+              },
+              as: parameters.geoLevel
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        }
+      },
+
+      byTimeRequest: function(parameters) {
+        return {
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
+          group: {
+            by: [{
+              field: "create_at",
+              apply: {
+                name: "interval",
+                args: {
+                  unit: parameters.timeBin
+                }
+              },
+              as: parameters.timeBin
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        }
+      },
+
+      byHashTagRequest: function(parameters) {
+        return {
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
+          unnest: [{
+            hashtags: "tag"
+          }],
+          group: {
+            by: [{
+              field: "tag"
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          },
+          select: {
+            order: ["-count"],
+            limit: 50,
+            offset: 0
+          }
+        }
       },
 
       getFilter: function(parameters, maxDay) {
@@ -129,26 +218,14 @@ angular.module('cloudberry.common', [])
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-
-        //console.log(result)
-
         switch (result.transform.wrap.key) {
-          case "byPlace":
-            asterixService.mapResult = result.value;
-            break;
-          case "byTime":
-            asterixService.timeResult = result.value;
-            break;
-          case "byHashTag":
-            asterixService.hashTagResult = result.value;
-            break;
           case "sample":
             asterixService.tweetResult = result.transform.wrap.value[0];
             break;
           case "batch":
-            asterixService.timeResult = result.value[0];
-            asterixService.mapResult = result.value[1];
-            asterixService.hashTagResult = result.value[2];
+            asterixService.timeResult = result.transform.wrap.value[0];
+            asterixService.mapResult = result.transform.wrap.value[1];
+            asterixService.hashTagResult = result.transform.wrap.value[2];
             break;
           case "totalCount":
             asterixService.totalCount = result.transform.wrap.value[0][0].count;

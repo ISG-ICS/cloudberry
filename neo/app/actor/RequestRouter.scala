@@ -23,8 +23,8 @@ class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, 
   val StreamingBerryClient = context.actorOf(berryClientProp)
   val nonStreamingBerryClient = context.actorOf(berryClientProp)
 
-  // TODO Distribute different requests
   // TODO UserRequest in package model is of no use
+  // TODO change error treatment
   override def receive: Receive = {
     case requestBody: JsValue =>
       (requestBody \ "transform" \\ "key")(0).asOpt[KeyType.Value] match {
@@ -33,14 +33,19 @@ class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, 
             json => out ! respondWrapper(json, TotalCount)
           }
         case Some(Sample) =>
+          (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
+            json => out ! respondWrapper(json, Sample)
+          }
+        case Some(Batch) =>
+
           Logger.error("Request: " + (requestBody \ "transform" \\ "value")(0).toString())
 
-          (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
+          (StreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
             json =>
-              Logger.error("Response: " + json.toString())
-              out ! respondWrapper(json, Sample)
+              Logger.error("Respond: " + json.toString())
+              out ! respondWrapper(json, Batch)
           }
-        case Some(Batch) => Logger.error("batch")
+
         case None => Logger.error("Unknown request Type.")
       }
     case e => Logger.error("unknown type of request " + e)
@@ -53,7 +58,8 @@ class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, 
           "key" -> key,
           "value" -> response
         )
-      ))
+      )
+    )
   }
 
 }
@@ -64,13 +70,9 @@ object RequestRouter {
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, ws, requestHeader, berryClientProp, config))
 
   object KeyType extends Enumeration {
-    //val ByPlace = Value("byPlace")
-    //val ByTime = Value("byTime")
-    //val ByHashTag = Value("byHashTag")
     val Sample = Value("sample")
     val Batch = Value("batch")
     val TotalCount = Value("totalCount")
-
   }
 
   def enumerationReader[E <: Enumeration](enum: E) = new Reads[enum.Value] {
