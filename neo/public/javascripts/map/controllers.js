@@ -1,7 +1,6 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
     $scope.result = {};
-    $scope.totalCount = 0;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -73,7 +72,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         },
         colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
       }
-
     });
 
     function resetGeoIds(bounds, polygons, idTag) {
@@ -116,15 +114,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       //Adjust Map to be County or State
       setInfoControl();
-
-    var countDiv = document.createElement("div");
-        countDiv.className = "number";
-        countDiv.id = "tweetsTotalCount";
-        countDiv.title = "Total Count of Tweets";
-    countDiv.innerHTML = '<h2> {{ totalCount |number }} </h2><span> tweets </span>';
-    var bodyMap = document.getElementsByClassName("map-group")[0];
-    $compile(countDiv)($scope);
-    bodyMap.appendChild(countDiv);
 
     };
 
@@ -417,47 +406,52 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       }
 
       //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
-      // update count
       if ($scope.status.logicLevel == "state" && $scope.geojsonData.state) {
           angular.forEach($scope.geojsonData.state.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
-            if (result[k].state == d.properties.stateID)
+            if (result[k].state == d.properties.stateID) {
               d.properties.count = result[k].count;
+            }
           }
         });
 
         // draw
         $scope.polygons.statePolygons.setStyle(style);
+
       } else if ($scope.status.logicLevel == "county" && $scope.geojsonData.county) {
           angular.forEach($scope.geojsonData.county.features, function(d) {
             if (d.properties.count)
               d.properties.count = 0;
             for (var k in result) {
               //TODO make a hash map from ID to make it faster
-              if (result[k].county == d.properties.countyID)
+              if (result[k].county == d.properties.countyID) {
                 d.properties.count = result[k].count;
+              }
             }
           });
 
         // draw
         $scope.polygons.countyPolygons.setStyle(style);
+
       }else if ($scope.status.logicLevel == "city" && $scope.geojsonData.city) {
         angular.forEach($scope.geojsonData.city.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
           for (var k in result) {
             //TODO make a hash map from ID to make it faster
-            if (result[k].city == d.properties.cityID)
+            if (result[k].city == d.properties.cityID) {
               d.properties.count = result[k].count;
+            }
           }
         });
 
         // draw
         $scope.polygons.cityPolygons.setStyle(style);
       }
+
       // add legend
       var legend = $('.legend');
       if (legend)
