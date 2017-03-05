@@ -26,11 +26,12 @@ angular.module('cloudberry.common', [])
       }
     });
 
-    setInterval(requestLiveCounts, 1000);
     function requestLiveCounts() {
-      if(ws.readyState == ws.OPEN)
+      if(ws.readyState === ws.OPEN){
         ws.send(countRequest);
+      }
     }
+    setInterval(requestLiveCounts, 1000);
 
     var asterixService = {
 
@@ -115,7 +116,7 @@ angular.module('cloudberry.common', [])
               as: "count"
             }]
           }
-        }
+        };
       },
 
       byTimeRequest: function(parameters) {
@@ -141,7 +142,7 @@ angular.module('cloudberry.common', [])
               as: "count"
             }]
           }
-        }
+        };
       },
 
       byHashTagRequest: function(parameters) {
@@ -168,7 +169,7 @@ angular.module('cloudberry.common', [])
             limit: 50,
             offset: 0
           }
-        }
+        };
       },
 
       getFilter: function(parameters, maxDay) {
