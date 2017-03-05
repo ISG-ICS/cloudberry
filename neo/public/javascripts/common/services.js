@@ -232,9 +232,7 @@ angular.module('cloudberry.common', [])
             break;
           case "error":
             console.error(result);
-            asterixService.errorMessage = result.value;
-            break;
-          case "done":
+            asterixService.errorMessage = result.transform.wrap.value;
             break;
           default:
             console.error("ws get unknown data:" );

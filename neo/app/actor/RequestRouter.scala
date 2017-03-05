@@ -1,7 +1,7 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.ask
+import akka.pattern.{ask, pipe}
 import akka.stream.Materializer
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -24,31 +24,48 @@ class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, 
   val nonStreamingBerryClient = context.actorOf(berryClientProp)
 
   // TODO UserRequest in package model is of no use
-  // TODO change error treatment
   override def receive: Receive = {
     case requestBody: JsValue =>
       (requestBody \ "transform" \\ "key")(0).asOpt[KeyType.Value] match {
         case Some(TotalCount) =>
           (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
-            json => out ! respondWrapper(json, TotalCount)
-          }
+            json => respondWrapper(json, TotalCount)
+          }.recover{
+            case e =>
+              val errorMsg = "Failed to receive response from non-streaming berryClient in totalCount query: " + e.getMessage
+              Logger.error(errorMsg)
+              respondWrapper(JsString(errorMsg), Error)
+          }.pipeTo(out)
+
         case Some(Sample) =>
           (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
-            json => out ! respondWrapper(json, Sample)
-          }
+            json => respondWrapper(json, Sample)
+          }.recover{
+            case e =>
+              val errorMsg = "Failed to receive response from non-streaming berryClient in Sample query: " + e.getMessage
+              Logger.error(errorMsg)
+              respondWrapper(JsString(errorMsg), Error)
+          }.pipeTo(out)
+
         case Some(Batch) =>
 
+          // TODO need to implement
           Logger.error("Request: " + (requestBody \ "transform" \\ "value")(0).toString())
 
-          (StreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
-            json =>
-              Logger.error("Respond: " + json.toString())
-              out ! respondWrapper(json, Batch)
-          }
+        case Some(x) =>
+          val errorMsg = "Not a valid request key type: " + x
+          Logger.error(errorMsg)
+          out ! respondWrapper(JsString(errorMsg), Error)
 
-        case None => Logger.error("Unknown request Type.")
+        case None =>
+          val errorMsg = "A valid request key type is not found."
+          Logger.error(errorMsg)
+          out ! respondWrapper(JsString(errorMsg), Error)
       }
-    case e => Logger.error("unknown type of request " + e)
+    case e =>
+      val errorMsg = "Unknown type of request: " + e
+      Logger.error(errorMsg)
+      out ! respondWrapper(JsString(errorMsg), Error)
   }
 
   private def respondWrapper(response: JsValue, key: KeyType.Value): JsValue = {
@@ -70,6 +87,7 @@ object RequestRouter {
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, ws, requestHeader, berryClientProp, config))
 
   object KeyType extends Enumeration {
+    val Error = Value("error")
     val Sample = Value("sample")
     val Batch = Value("batch")
     val TotalCount = Value("totalCount")
