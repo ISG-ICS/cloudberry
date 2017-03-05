@@ -1,12 +1,37 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
+    var defaultNonSamplingDayRange = 1500;
+    var defaultSamplingDayRange = 1;
+    var defaultSamplingSize = 10;
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
 
-    ws.onopen = function() {
-      var json = JSON.stringify({ cmd : "totalCount"});
-      ws.send(json);
-    };
+    var countRequest = JSON.stringify({
+      transform: {
+        wrap: {
+          key: "totalCount",
+          value: {
+            dataset: "twitter.ds_tweet",
+            global: {
+              globalAggregate: {
+                field: "*",
+                apply: {
+                  name: "count"
+                },
+                as: "count"
+            }},
+            estimable : true
+          }
+        }
+      }
+    });
+
+    function requestLiveCounts() {
+      if(ws.readyState === ws.OPEN){
+        ws.send(countRequest);
+      }
+    }
+    setInterval(requestLiveCounts, 1000);
 
     var asterixService = {
 
@@ -32,50 +57,183 @@ angular.module('cloudberry.common', [])
       errorMessage: null,
 
       query: function(parameters, queryType) {
-        var json = (JSON.stringify({
-          dataset: parameters.dataset,
-          keywords: parameters.keywords,
-          timeInterval: {
-            start:  Date.parse(parameters.timeInterval.start), //: Date.parse(startDate),
-            end:  Date.parse(parameters.timeInterval.end) //: Date.parse(new Date())
-          },
-          timeBin : parameters.timeBin,
-          geoLevel: parameters.geoLevel,
-          geoIds : parameters.geoIds
+        var sampleJson = (JSON.stringify({
+          transform: {
+            wrap: {
+              key: "sample",
+              value: {
+                dataset: parameters.dataset,
+                filter: this.getFilter(parameters, defaultSamplingDayRange),
+                select: {
+                  order: ["-create_at"],
+                  limit: defaultSamplingSize,
+                  offset: 0,
+                  field: ["create_at", "id", "user.id"]
+                }
+              }
+            }
+          }
         }));
-        ws.send(json);
+
+        var batchJson = (JSON.stringify({
+          transform: {
+            wrap: {
+              key: "batch",
+              value: {
+                batch: [this.byTimeRequest(parameters), this.byGeoRequest(parameters), this.byHashTagRequest(parameters)],
+                option: {
+                  sliceMillis: 2000
+                }
+              }
+            }
+          }
+        }));
+
+        ws.send(sampleJson);
+        ws.send(batchJson);
+      },
+
+      byGeoRequest: function(parameters){
+        return {
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
+          group: {
+            by: [{
+              field: "geo",
+              apply: {
+                name: "level",
+                args: {
+                  level: parameters.geoLevel
+                }
+              },
+              as: parameters.geoLevel
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        };
+      },
+
+      byTimeRequest: function(parameters) {
+        return {
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
+          group: {
+            by: [{
+              field: "create_at",
+              apply: {
+                name: "interval",
+                args: {
+                  unit: parameters.timeBin
+                }
+              },
+              as: parameters.timeBin
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        };
+      },
+
+      byHashTagRequest: function(parameters) {
+        return {
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
+          unnest: [{
+            hashtags: "tag"
+          }],
+          group: {
+            by: [{
+              field: "tag"
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          },
+          select: {
+            order: ["-count"],
+            limit: 50,
+            offset: 0
+          }
+        };
+      },
+
+      getFilter: function(parameters, maxDay) {
+        var spatialField = this.getLevel(parameters.geoLevel);
+        var keywords = [];
+        for(var i = 0; i < parameters.keywords.length; i++){
+          keywords.push(parameters.keywords[i].replace("\"", "").trim());
+        }
+        var queryStartDate = new Date(parameters.timeInterval.end);
+        queryStartDate.setDate(queryStartDate.getDate() - maxDay);
+        queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+
+        return [
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: parameters.geoIds
+            }, {
+              field: "create_at",
+              relation: "inRange",
+              values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+            }, {
+              field: "text",
+              relation: "contains",
+              values: [this.mkString(keywords, ",")]
+            }
+        ];
+      },
+
+      getLevel: function(level){
+        switch(level){
+          case "state" : return "stateID";
+          case "county" : return "countyID";
+          case "city" : return "cityID";
+        }
+      },
+
+      mkString: function(array, delimiter){
+        var s = "";
+        array.forEach(function (item) {
+            s += item.toString() + delimiter;
+        });
+        return s.substring(0, s.length-1);
       }
     };
 
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        switch (result.key) {
-          case "byPlace":
-            asterixService.mapResult = result.value;
-            break;
-          case "byTime":
-            asterixService.timeResult = result.value;
-            break;
-          case "byHashTag":
-            asterixService.hashTagResult = result.value;
-            break;
+        switch (result.transform.wrap.key) {
           case "sample":
-            asterixService.tweetResult = result.value[0];
+            asterixService.tweetResult = result.transform.wrap.value[0];
             break;
           case "batch":
-            asterixService.timeResult = result.value[0];
-            asterixService.mapResult = result.value[1];
-            asterixService.hashTagResult = result.value[2];
+            asterixService.timeResult = result.transform.wrap.value[0];
+            asterixService.mapResult = result.transform.wrap.value[1];
+            asterixService.hashTagResult = result.transform.wrap.value[2];
+            break;
+          case "totalCount":
+            asterixService.totalCount = result.transform.wrap.value[0][0].count;
             break;
           case "error":
             console.error(result);
-            asterixService.errorMessage = result.value;
-            break;
-          case "done":
-            break;
-          case "totalCount":
-            asterixService.totalCount = result.value[0][0].count;
+            asterixService.errorMessage = result.transform.wrap.value;
             break;
           default:
             console.error("ws get unknown data:" );
