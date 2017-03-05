@@ -1,13 +1,15 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
+    var MilliSecondsPerDay = 24 * 3600 * 1000;
+    var defaultMaxDay = 1500;
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
 
     var countRequest = JSON.stringify({
-      "transform": {
-        "wrap": {
-          "key": "totalCount",
-          "value": {
+      transform: {
+        wrap: {
+          key: "totalCount",
+          value: {
             dataset: "twitter.ds_tweet",
             global: {
               globalAggregate: {
@@ -16,17 +18,14 @@ angular.module('cloudberry.common', [])
                   name: "count"
                 },
                 as: "count"
-              }
-            },
+            }},
             estimable : true
-          }
-        }
-      }
-    });
+    }}}});
 
     setInterval(requestLiveCounts, 1000);
     function requestLiveCounts() {
-      ws.send(countRequest);
+      if(ws.readyState == ws.OPEN)
+        ws.send(countRequest);
     }
 
     var asterixService = {
@@ -53,6 +52,22 @@ angular.module('cloudberry.common', [])
       errorMessage: null,
 
       query: function(parameters, queryType) {
+        var sampleJson = (JSON.stringify({
+          transform: {
+            wrap: {
+              key: "sample",
+              value: {
+                dataset: parameters.dataset,
+                filter: this.getFilter(parameters, 1),
+                select: {
+                  order: [ "-create_at"]
+                },
+                limit: 10,
+                offset: 0,
+                field: ["create_at", "id", "user.id"]
+        }}}}));
+
+        /*
         var json = (JSON.stringify({
           dataset: parameters.dataset,
           keywords: parameters.keywords,
@@ -64,7 +79,55 @@ angular.module('cloudberry.common', [])
           geoLevel: parameters.geoLevel,
           geoIds : parameters.geoIds
         }));
-        ws.send(json);
+        */
+        ws.send(sampleJson);
+      },
+
+      getFilter: function(parameters, maxDay) {
+        var spatialField = this.getLevel(parameters.geoLevel);
+        var keywords = [];
+        for(var i = 0; i < parameters.keywords.length; i++){
+          keywords.push("\"" + parameters.keywords[i].replace("\"", "").trim() + "\"");
+        }
+        var queryStartDate = new Date(parameters.timeInterval.end);
+        queryStartDate.setDate(queryStartDate.getDate() - maxDay);
+        queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+
+        var filter = [
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: [this.mkString(parameters.geoIds, ",")]
+            },
+            {
+              field: "create_at",
+              relation: "inRange",
+                // TODO check time format
+              values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+            },
+            {
+              field: "text",
+              relation: "contains",
+              values: [this.mkString(keywords, ",")]
+            }
+        ];
+        return filter;
+      },
+
+      getLevel: function(level){
+        switch(level){
+          case "state" : return "stateID";
+          case "county" : return "countyID";
+          case "city" : return "cityID";
+        }
+      },
+
+      mkString: function(array, delimiter){
+        var s = "";
+        array.forEach(function (item) {
+            s += item.toString() + delimiter;
+        });
+        return s.substring(0, s.length-1);
       }
     };
 

@@ -7,7 +7,6 @@ import akka.util.ByteString
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import java.util.concurrent.Executors
-import models.{GeoLevel, TimeBin, UserRequest}
 import org.joda.time.{DateTimeZone, Interval}
 import org.specs2.mutable.SpecificationLike
 import org.specs2.mock.Mockito

@@ -24,17 +24,22 @@ class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, 
   val nonStreamingBerryClient = context.actorOf(berryClientProp)
 
   // TODO Distribute different requests
+  // TODO UserRequest in package model is of no use
   override def receive: Receive = {
     case requestBody: JsValue =>
       (requestBody \ "transform" \\ "key")(0).asOpt[KeyType.Value] match {
         case Some(TotalCount) =>
           (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
-            json =>
-              Logger.error("wrapped response " + respondWrapper(json, TotalCount).toString())
-              out ! respondWrapper(json, TotalCount)
+            json => out ! respondWrapper(json, TotalCount)
           }
+        case Some(Sample) =>
+          Logger.error("Request: " + (requestBody \ "transform" \\ "value")(0).toString())
 
-        case Some(Sample) => Logger.error("sample")
+          (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
+            json =>
+              Logger.error("Response: " + json.toString())
+              out ! respondWrapper(json, Sample)
+          }
         case Some(Batch) => Logger.error("batch")
         case None => Logger.error("Unknown request Type.")
       }
