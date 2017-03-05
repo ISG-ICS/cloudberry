@@ -58,14 +58,13 @@ angular.module('cloudberry.common', [])
               key: "sample",
               value: {
                 dataset: parameters.dataset,
-                filter: this.getFilter(parameters, 1),
+                filter: this.getFilter(parameters, 1500),
                 select: {
-                  order: [ "-create_at"]
-                },
-                limit: 10,
-                offset: 0,
-                field: ["create_at", "id", "user.id"]
-        }}}}));
+                  order: [ "-create_at"],
+                  limit: 10,
+                  offset: 0,
+                  field: ["create_at", "id", "user.id"]
+        }}}}}));
 
         /*
         var json = (JSON.stringify({
@@ -87,31 +86,27 @@ angular.module('cloudberry.common', [])
         var spatialField = this.getLevel(parameters.geoLevel);
         var keywords = [];
         for(var i = 0; i < parameters.keywords.length; i++){
-          keywords.push("\"" + parameters.keywords[i].replace("\"", "").trim() + "\"");
+          keywords.push(parameters.keywords[i].replace("\"", "").trim());
         }
         var queryStartDate = new Date(parameters.timeInterval.end);
         queryStartDate.setDate(queryStartDate.getDate() - maxDay);
         queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
 
-        var filter = [
+        return [
             {
               field: "geo_tag." + spatialField,
               relation: "in",
-              values: [this.mkString(parameters.geoIds, ",")]
-            },
-            {
+              values: parameters.geoIds
+            }, {
               field: "create_at",
               relation: "inRange",
-                // TODO check time format
               values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
-            },
-            {
+            }, {
               field: "text",
               relation: "contains",
               values: [this.mkString(keywords, ",")]
             }
         ];
-        return filter;
       },
 
       getLevel: function(level){
@@ -148,7 +143,7 @@ angular.module('cloudberry.common', [])
             asterixService.hashTagResult = result.value;
             break;
           case "sample":
-            asterixService.tweetResult = result.value[0];
+            asterixService.tweetResult = result.transform.wrap.value[0];
             break;
           case "batch":
             asterixService.timeResult = result.value[0];
