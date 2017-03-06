@@ -7,20 +7,20 @@ import actor.NeoActor
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, ActorSystem, DeadLetter, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
-import akka.util.{ByteString, Timeout}
+import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
 import org.joda.time.DateTime
+import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
-import akka.pattern.ask
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Environment}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -41,7 +41,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
-  Logger.logger.info("I'm initializing")
+  Logger.info("I'm initializing")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
@@ -232,7 +232,7 @@ object Application {
           override def receive: Receive = {
             case `onCompleteMessage` => outActor ! Status.Success(())
             case Terminated(_) =>
-              Logger.logger.info("Child terminated, stopping")
+              Logger.error("delegate Child terminated, stopping")
               context.stop(self)
             case other => outActor ! other
           }
@@ -243,18 +243,18 @@ object Application {
 
         def receive: Receive = {
           case Status.Failure(error) =>
-            Logger.logger.error("flowActor receive status.failure" + error)
+            Logger.error("flowActor receive status.failure" + error)
             flowActor ! PoisonPill
             delegateActor ! PoisonPill
           case Terminated(_) =>
-            Logger.logger.info("Child terminated, stopping")
+            Logger.error("flow Child terminated, stopping")
             context.stop(self)
           case other => flowActor ! other
         }
 
         override def supervisorStrategy = OneForOneStrategy() {
           case _ =>
-            Logger.logger.error("Stopping actor due to exception")
+            Logger.error("Stopping actor due to exception")
             SupervisorStrategy.Stop
         }
       })), akka.actor.Status.Success(())),
