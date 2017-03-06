@@ -60,8 +60,9 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
-    ActorFlow.actorRef(out => RequestRouter.props(out, prop, config))
+    ActorFlow.actorRef{ out =>
+      RequestRouter.props(out, BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config)
+    }
   }
 
   def tweet(id: String) = Action.async {

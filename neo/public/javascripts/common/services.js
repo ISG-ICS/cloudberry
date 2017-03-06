@@ -19,8 +19,7 @@ angular.module('cloudberry.common', [])
       estimable : true,
       transform: {
         wrap: {
-          key: "totalCount",
-          value: {}
+          key: "totalCount"
         }
       }
     });
@@ -31,6 +30,85 @@ angular.module('cloudberry.common', [])
       }
     }
     setInterval(requestLiveCounts, 1000);
+
+    function byGeoRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: asterixService.getFilter(parameters, defaultNonSamplingDayRange),
+        group: {
+          by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel
+              }
+            },
+            as: parameters.geoLevel
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        }
+      };
+    }
+
+    function byTimeRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: asterixService.getFilter(parameters, defaultNonSamplingDayRange),
+        group: {
+          by: [{
+            field: "create_at",
+            apply: {
+              name: "interval",
+              args: {
+                unit: parameters.timeBin
+              }
+            },
+            as: parameters.timeBin
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        }
+      };
+    }
+
+    function byHashTagRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: asterixService.getFilter(parameters, defaultNonSamplingDayRange),
+        unnest: [{
+          hashtags: "tag"
+        }],
+        group: {
+          by: [{
+            field: "tag"
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        },
+        select: {
+          order: ["-count"],
+          limit: 50,
+          offset: 0
+        }
+      };
+    }
 
     var asterixService = {
 
@@ -67,21 +145,19 @@ angular.module('cloudberry.common', [])
           },
           transform: {
             wrap: {
-              key: "sample",
-              value: {}
+              key: "sample"
             }
           }
         }));
 
         var batchJson = (JSON.stringify({
-          batch: [this.byTimeRequest(parameters), this.byGeoRequest(parameters), this.byHashTagRequest(parameters)],
+          batch: [byTimeRequest(parameters), byGeoRequest(parameters), byHashTagRequest(parameters)],
           option: {
             sliceMillis: 2000
           },
           transform: {
             wrap: {
-              key: "batch",
-              value: {}
+              key: "batch"
             }
           }
         }));
@@ -89,6 +165,8 @@ angular.module('cloudberry.common', [])
         ws.send(sampleJson);
         ws.send(batchJson);
       },
+
+        /*
 
       byGeoRequest: function(parameters){
         return {
@@ -168,6 +246,8 @@ angular.module('cloudberry.common', [])
           }
         };
       },
+
+*/
 
       getFilter: function(parameters, maxDay) {
         var spatialField = this.getLevel(parameters.geoLevel);
