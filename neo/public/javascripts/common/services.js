@@ -31,10 +31,53 @@ angular.module('cloudberry.common', [])
     }
     setInterval(requestLiveCounts, 1000);
 
+    function getLevel(level){
+      switch(level){
+        case "state" : return "stateID";
+        case "county" : return "countyID";
+        case "city" : return "cityID";
+      }
+    }
+
+    function mkString(array, delimiter){
+      var s = "";
+      array.forEach(function (item) {
+        s += item.toString() + delimiter;
+      });
+      return s.substring(0, s.length-1);
+    }
+
+    function getFilter(parameters, maxDay) {
+      var spatialField = getLevel(parameters.geoLevel);
+      var keywords = [];
+      for(var i = 0; i < parameters.keywords.length; i++){
+        keywords.push(parameters.keywords[i].replace("\"", "").trim());
+      }
+      var queryStartDate = new Date(parameters.timeInterval.end);
+      queryStartDate.setDate(queryStartDate.getDate() - maxDay);
+      queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+
+      return [
+        {
+          field: "geo_tag." + spatialField,
+          relation: "in",
+          values: parameters.geoIds
+        }, {
+          field: "create_at",
+          relation: "inRange",
+          values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+        }, {
+          field: "text",
+          relation: "contains",
+          values: [mkString(keywords, ",")]
+        }
+      ];
+    }
+
     function byGeoRequest(parameters) {
       return {
         dataset: parameters.dataset,
-        filter: asterixService.getFilter(parameters, defaultNonSamplingDayRange),
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
         group: {
           by: [{
             field: "geo",
@@ -60,7 +103,7 @@ angular.module('cloudberry.common', [])
     function byTimeRequest(parameters) {
       return {
         dataset: parameters.dataset,
-        filter: asterixService.getFilter(parameters, defaultNonSamplingDayRange),
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
         group: {
           by: [{
             field: "create_at",
@@ -86,7 +129,7 @@ angular.module('cloudberry.common', [])
     function byHashTagRequest(parameters) {
       return {
         dataset: parameters.dataset,
-        filter: asterixService.getFilter(parameters, defaultNonSamplingDayRange),
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
         unnest: [{
           hashtags: "tag"
         }],
@@ -111,7 +154,7 @@ angular.module('cloudberry.common', [])
     }
 
     var asterixService = {
-      
+
       totalCount: 0,
       startDate: startDate,
       parameters: {
@@ -136,7 +179,7 @@ angular.module('cloudberry.common', [])
       query: function(parameters, queryType) {
         var sampleJson = (JSON.stringify({
           dataset: parameters.dataset,
-          filter: this.getFilter(parameters, defaultSamplingDayRange),
+          filter: getFilter(parameters, defaultSamplingDayRange),
           select: {
             order: ["-create_at"],
             limit: defaultSamplingSize,
@@ -164,49 +207,6 @@ angular.module('cloudberry.common', [])
 
         ws.send(sampleJson);
         ws.send(batchJson);
-      },
-
-      getFilter: function(parameters, maxDay) {
-        var spatialField = this.getLevel(parameters.geoLevel);
-        var keywords = [];
-        for(var i = 0; i < parameters.keywords.length; i++){
-          keywords.push(parameters.keywords[i].replace("\"", "").trim());
-        }
-        var queryStartDate = new Date(parameters.timeInterval.end);
-        queryStartDate.setDate(queryStartDate.getDate() - maxDay);
-        queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
-
-        return [
-            {
-              field: "geo_tag." + spatialField,
-              relation: "in",
-              values: parameters.geoIds
-            }, {
-              field: "create_at",
-              relation: "inRange",
-              values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
-            }, {
-              field: "text",
-              relation: "contains",
-              values: [this.mkString(keywords, ",")]
-            }
-        ];
-      },
-
-      getLevel: function(level){
-        switch(level){
-          case "state" : return "stateID";
-          case "county" : return "countyID";
-          case "city" : return "cityID";
-        }
-      },
-
-      mkString: function(array, delimiter){
-        var s = "";
-        array.forEach(function (item) {
-            s += item.toString() + delimiter;
-        });
-        return s.substring(0, s.length-1);
       }
     };
 
