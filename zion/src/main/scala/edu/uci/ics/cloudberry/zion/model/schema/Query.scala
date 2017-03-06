@@ -7,6 +7,7 @@ import play.api.libs.json.JsArray
 
 trait IQuery {
   def dataset: String
+
 }
 
 trait IReadQuery extends IQuery {
@@ -36,7 +37,13 @@ case class Query(dataset: String,
                  isEstimable: Boolean = false
                 ) extends IReadQuery {
 
+  val grouped = groups.isDefined
+  val selected = select.isDefined
+  val unnested = !unnest.isEmpty
+  val lookuped = !lookup.isEmpty
+
   import TimeField.TimeFormat
+
 
   def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
     //TODO support filter query that contains multiple relation on that same field
@@ -119,19 +126,23 @@ case class LookupStatement(sourceKeys: Seq[String],
                            dataset: String,
                            lookupKeys: Seq[String],
                            selectValues: Seq[String],
-                           as: Seq[String]
-                          ) extends Statement {
-  //TODO to be replaced by a unified syntax exceptions
-  requireOrThrow(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
-  requireOrThrow(selectValues.length == as.length, "LookupStatement: select value names doesn't match with renamed names")
+                           as: Seq[String]) extends Statement {
+
+  var sourceKeyFields: Seq[Field] = null
+  var lookupKeyFields: Seq[Field] = null
+  var selectValueFields: Seq[Field] = null
+  var asFields: Seq[Field] = null
+
 }
 
 //TODO only support at most one transform for now
 case class FilterStatement(fieldName: String,
                            funcOpt: Option[TransformFunc],
                            relation: Relation,
-                           values: Seq[Any]
-                          ) extends Statement {
+                           values: Seq[Any]) extends Statement {
+
+  var field: Field = null
+
   def covers(another: FilterStatement, dataType: DataType): Boolean = {
     if (fieldName != another.fieldName) {
       false
@@ -151,7 +162,10 @@ case class FilterStatement(fieldName: String,
   }
 }
 
-case class UnnestStatement(fieldName: String, as: String)
+case class UnnestStatement(fieldName: String, as: String) {
+  var field: Field = null
+  var asField: Field = null
+}
 
 /**
   * Groupby fieldNames
@@ -162,35 +176,51 @@ case class UnnestStatement(fieldName: String, as: String)
   */
 case class ByStatement(fieldName: String,
                        funcOpt: Option[GroupFunc],
-                       as: Option[String]
-                      ) extends Statement
+                       as: Option[String]) extends Statement {
+  var field: Field = null
+  var asField: Option[Field] = null
+}
 
 /**
   * The aggregate results produced by group by
   */
 case class AggregateStatement(fieldName: String,
                               func: AggregateFunc,
-                              as: String
-                             ) extends Statement
+                              as: String) extends Statement {
+  var field: Field = null
+  var asField: Field = null
+
+}
 
 case class GroupStatement(bys: Seq[ByStatement],
-                          aggregates: Seq[AggregateStatement]
-                         ) extends Statement {
+                          aggregates: Seq[AggregateStatement]) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
 
   requireOrThrow(bys.nonEmpty, "By statement is required")
   requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
-case class GlobalAggregateStatement(aggregate: AggregateStatement
-                                   ) extends Statement {
+case class GlobalAggregateStatement(aggregate: AggregateStatement) extends Statement {
 }
 
 case class SelectStatement(orderOn: Seq[String],
                            limit: Int,
                            offset: Int,
-                           fields: Seq[String]
-                          ) extends Statement {
+                           fieldNames: Seq[String]) extends Statement {
+  var orderOnFields: Seq[Field] = null
+  var fields: Seq[Field] = null
+
+  def desc(orderOn: String): Boolean = orderOn.startsWith("-")
+
+  def truncate(orderOn: String): String = {
+    if (orderOn.startsWith("-")) {
+      orderOn.substring(1)
+    } else {
+      orderOn
+    }
+  }
+
+
 }
 
 

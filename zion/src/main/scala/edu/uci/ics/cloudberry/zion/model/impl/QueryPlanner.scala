@@ -67,7 +67,7 @@ class QueryPlanner {
           val order = if (f.startsWith("-")) SortOrder.DSC else SortOrder.ASC
           f.stripPrefix("-") -> order
         }
-        project ++= select.fields
+        project ++= select.fieldNames
         limitOpt = Some(select.limit)
       case None =>
     }

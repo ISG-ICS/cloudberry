@@ -12,11 +12,8 @@ trait IQLGenerator {
     */
   def generate(query: IQuery, schemaMap: Map[String, Schema]): String
 
-  def calcResultSchema(query: Query, schema: Schema): Schema
+  def calcResultSchema(query: Query, schemaMap: Map[String, Schema]): Schema
 
-  protected def requireOrThrow(condition: Boolean, msg: String): Unit = {
-    if (!condition) throw new QueryParsingException(msg)
-  }
 }
 
 trait IQLGeneratorFactory {

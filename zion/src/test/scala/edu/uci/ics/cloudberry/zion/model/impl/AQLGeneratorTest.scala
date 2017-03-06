@@ -10,6 +10,23 @@ class AQLGeneratorTest extends Specification {
   val parser = new AQLGenerator
 
   "AQLGenerate generate" should {
+
+    "translate a simple unnest query" in {
+      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(unnestHashTag), None, Some(selectTop10))
+      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |where not(is-null($t.'hashtags'))
+          |for $unnest0 in $t.'hashtags'
+          |limit 10
+          |offset 0
+          |return {
+          |  'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','tag' : $unnest0,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
+          |}
+        """.stripMargin.trim)
+    }
+
     "translate a simple filter by time and group by time query" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
@@ -22,7 +39,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
-          |   'hour' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'hour' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -40,7 +57,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
-          |   'hour' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'hour' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -59,7 +76,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
-          |   'hour' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'hour' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -79,7 +96,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )), $g1 := $t.geo_tag.stateID with $taggr
           |return {
-          |   'hour' : $g0, 'state' : $g1,'count' : count($taggr)
+          |  'count' : count($taggr),'state' : $g1,'hour' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -98,9 +115,9 @@ class AQLGeneratorTest extends Specification {
           |order by $t.'create_at' desc
           |limit 100
           |offset 0
-          |return
-          |{ 'user.id': $t.'user'.'id', 'create_at': $t.'create_at', 'id': $t.'id'}
-          | """.stripMargin.trim)
+          |return {
+          |  'user.id' : $t.'user'.'id','create_at' : $t.'create_at','id' : $t.'id'
+          |} """.stripMargin.trim)
     }
 
     "translate a text contain + time + geo id set filter and group by hashtags" in {
@@ -121,14 +138,13 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := $unnest0 with $taggr
           |return {
-          |   'tag' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'tag' : $g0
           |}
           |)
-          |order by $g.count desc
+          |order by $g.'count' desc
           |limit 10
           |offset 0
-          |return
-          |$g
+          |return $g
           | """.stripMargin.trim)
     }
 
@@ -144,7 +160,7 @@ class AQLGeneratorTest extends Specification {
           |let $id_aggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'max' : max($id_aggr)
+          |  'max' : max($id_aggr),'hour' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -161,7 +177,7 @@ class AQLGeneratorTest extends Specification {
           |let $id_aggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'min' : min($id_aggr)
+          |  'hour' : $g0,'min' : min($id_aggr)
           |}
           | """.stripMargin.trim)
     }
@@ -178,7 +194,7 @@ class AQLGeneratorTest extends Specification {
           |let $id_aggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'sum' : sum($id_aggr)
+          |  'hour' : $g0,'sum' : sum($id_aggr)
           |}
           | """.stripMargin.trim)
     }
@@ -195,7 +211,7 @@ class AQLGeneratorTest extends Specification {
           |let $id_aggr := $t.'id'
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $id_aggr
           |return {
-          |   'hour' : $g0,'avg' : avg($id_aggr)
+          |  'avg' : avg($id_aggr),'hour' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -213,7 +229,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.1, 0.1))[0] with $taggr
           |return {
-          |   'cell' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'cell' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -231,15 +247,14 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.01, 0.01))[0] with $taggr
           |return {
-          |   'cell' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'cell' : $g0
           |}
           | """.
           stripMargin.trim)
     }
 
     "translate a text contain filter and group by geocell 1000th" in {
-      val
-      filter = Seq(textFilter)
+      val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
@@ -251,7 +266,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.001, 0.001))[0] with $taggr
           |return {
-          |   'cell' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'cell' : $g0
           |}
           | """.
           stripMargin.trim)
@@ -270,7 +285,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := round($t.'geo_tag'.'stateID'/10)*10 with $taggr
           |return {
-          |   'state' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'state' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -285,7 +300,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.001, 0.001))[0] with $taggr
           |return {
-          |   'cell' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'cell' : $g0
           |}
           | """.
           stripMargin.trim)
@@ -302,8 +317,7 @@ class AQLGeneratorTest extends Specification {
           |and contains($t.'text', "virus")
           |limit 10
           |offset 0
-          |return
-          |$t
+          |return $t
           | """.stripMargin.trim)
     }
     "translate group by second" in {
@@ -316,7 +330,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1S") )) with $taggr
           |return {
-          |   'sec' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'sec' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -330,7 +344,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1M") )) with $taggr
           |return {
-          |   'min' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'min' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -345,7 +359,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("P1D") )) with $taggr
           |return {
-          |   'day' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'day' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -360,7 +374,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("P7D") )) with $taggr
           |return {
-          |   'week' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'week' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -375,7 +389,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  year-month-duration("P1M") )) with $taggr
           |return {
-          |   'month' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'month' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -390,7 +404,7 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  year-month-duration("P1Y") )) with $taggr
           |return {
-          |   'year' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'year' : $g0
           |}
           | """.stripMargin.trim)
     }
@@ -400,7 +414,7 @@ class AQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """{"count": count (
+        """{'count': count(
           |for $c in (
           |for $t in dataset twitter.ds_tweet
           |return $t
@@ -415,7 +429,7 @@ class AQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """{"min": min (
+        """{'min': min(
           |for $c in (
           |for $t in dataset twitter.ds_tweet
           |return $t
@@ -430,7 +444,7 @@ class AQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """{"max": max (
+        """{'max': max(
           |for $c in (
           |for $t in dataset twitter.ds_tweet
           |return $t
@@ -446,7 +460,7 @@ class AQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSet, filter = filter, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """{"count": count (
+        """{'count': count(
           |for $c in (
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
@@ -457,14 +471,13 @@ class AQLGeneratorTest extends Specification {
           |}""".stripMargin)
     }
 
-
     "translate a min cardinality query with filter without group by" in {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrMin)
       val query = new Query(dataset = TwitterDataSet, filter = filter, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """{"min": min (
+        """{'min': min(
           |for $c in (
           |for $t in dataset twitter.ds_tweet
           |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z')
@@ -484,7 +497,7 @@ class AQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |{"max": max (
+          |{'max': max(
           |for $s in (
           |for $g in (
           |for $t in dataset twitter.ds_tweet
@@ -497,14 +510,13 @@ class AQLGeneratorTest extends Specification {
           |let $taggr := $t
           |group by $g0 := $unnest0 with $taggr
           |return {
-          |   'tag' : $g0,'count' : count($taggr)
+          |  'count' : count($taggr),'tag' : $g0
           |}
           |)
-          |order by $g.count desc
+          |order by $g.'count' desc
           |limit 10
           |offset 0
-          |return
-          |$g
+          |return $g
           |)
           |return $s.'count'
           |)
@@ -517,13 +529,12 @@ class AQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> schema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |{"count": count (
+          |{'count': count(
           |for $c in (
           |for $t in dataset twitter.ds_tweet
           |limit 10
           |offset 0
-          |return
-          |$t
+          |return $t
           |)
           |return $c
           |)
@@ -542,45 +553,53 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |let $l := {
+          |  'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','population' : (for $l0 in dataset twitter.US_population
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |return $l0.'population')[0],'geo' : $t,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
+          |}
+          |where similarity-jaccard(word-tokens($l.'text'), word-tokens('zika')) > 0.0
+          |and contains($l.'text', "virus")
           |limit 0
           |offset 0
-          |return
-          |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
+          |return {
+          |  'favorite_count' : $l.'favorite_count','geo_tag.countyID' : $l.'geo_tag.countyID','user_mentions' : $l.'user_mentions','population' : $l.'population','geo' : $l.'geo','user.id' : $l.'user.id','geo_tag.cityID' : $l.'geo_tag.cityID','is_retweet' : $l.'is_retweet','text' : $l.'text','retweet_count' : $l.'retweet_count','in_reply_to_user' : $l.'in_reply_to_user','id' : $l.'id','coordinate' : $l.'coordinate','in_reply_to_status' : $l.'in_reply_to_status','user.status_count' : $l.'user.status_count','geo_tag.stateID' : $l.'geo_tag.stateID','create_at' : $l.'create_at','lang' : $l.'lang','hashtags' : $l.'hashtags'
+          |}""".stripMargin.trim
+      )
+    }
+
+    "parseLookup should be able to handle multiple fields in the lookup statement" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+
+      val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population", "stateId"))
+      val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population", "stateId"),
+        Seq("population", "stateId"))
+      val filter = Seq(textFilter)
+      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
+      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset twitter.ds_tweet
+          |let $l := {
+          |  'stateId' : (for $l0 in dataset twitter.US_population
           |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-          |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'id': $t.'id', 'geo': $t, 'hashtags': $t.'hashtags'}
+          |return $l0.'stateId')[0],'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','population' : (for $l0 in dataset twitter.US_population
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |return $l0.'population')[0],'geo' : $t,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
+          |}
+          |where similarity-jaccard(word-tokens($l.'text'), word-tokens('zika')) > 0.0
+          |and contains($l.'text', "virus")
+          |limit 0
+          |offset 0
+          |return {
+          |  'stateId' : $l.'stateId','favorite_count' : $l.'favorite_count','geo_tag.countyID' : $l.'geo_tag.countyID','user_mentions' : $l.'user_mentions','population' : $l.'population','geo' : $l.'geo','user.id' : $l.'user.id','geo_tag.cityID' : $l.'geo_tag.cityID','is_retweet' : $l.'is_retweet','text' : $l.'text','retweet_count' : $l.'retweet_count','in_reply_to_user' : $l.'in_reply_to_user','id' : $l.'id','coordinate' : $l.'coordinate','in_reply_to_status' : $l.'in_reply_to_status','user.status_count' : $l.'user.status_count','geo_tag.stateID' : $l.'geo_tag.stateID','create_at' : $l.'create_at','lang' : $l.'lang','hashtags' : $l.'hashtags'
+          |}
         """.stripMargin.trim
       )
     }
 
-    //TODO parseLookup should be able to handle multiple fields in the lookup statement
-    //        "translate lookup one table with one join key multiple select" in {
-    //          val populationDataSet = PopulationDataStore.DatasetName
-    //          val populationSchema = PopulationDataStore.PopulationSchema
-    //
-    //          val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", populationDataSet))
-    //          val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population","stateId"),
-    //            Seq("population", "stateID"))
-    //          val filter = Seq(textFilter)
-    //          val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
-    //          val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
-    //          removeEmptyLine(result) must_== unifyNewLine(
-    //            """
-    //              |for $t in dataset twitter.ds_tweet
-    //              |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-    //              |and contains($t.'text', "virus")
-    //              |limit 0
-    //              |offset 0
-    //              |return
-    //              |{ '*': $t, 'twitter.US_population': for $l0 in dataset twitter.US_population
-    //              |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-    //              |return {'population' : $l0.population, 'stateID' : $l0.stateId}}
-    //            """.stripMargin.trim
-    //          )
-    //        }
-
-    "translate lookup multiple table with one join key on each" in {
+    "translate lookup multiple tables with one join key on each" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
 
@@ -600,17 +619,20 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |let $l := {
+          |  'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','population' : (for $l0 in dataset twitter.US_population
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |return $l0.'population')[0],'geo' : $t,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','literacy' : (for $l1 in dataset twitter.US_literacy
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateId
+          |return $l1.'literacy')[0],'in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
+          |}
+          |where similarity-jaccard(word-tokens($l.'text'), word-tokens('zika')) > 0.0
+          |and contains($l.'text', "virus")
           |limit 0
           |offset 0
-          |return
-          |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-          |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'literacy': (for $l1 in dataset twitter.US_literacy
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateId
-          |return $l1.literacy)[0], 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'geo': $t, 'id': $t.'id', 'hashtags': $t.'hashtags'}
-        """.stripMargin.trim
+          |return {
+          |  'favorite_count' : $l.'favorite_count','geo_tag.countyID' : $l.'geo_tag.countyID','user_mentions' : $l.'user_mentions','population' : $l.'population','geo' : $l.'geo','user.id' : $l.'user.id','geo_tag.cityID' : $l.'geo_tag.cityID','is_retweet' : $l.'is_retweet','text' : $l.'text','retweet_count' : $l.'retweet_count','literacy' : $l.'literacy','in_reply_to_user' : $l.'in_reply_to_user','id' : $l.'id','coordinate' : $l.'coordinate','in_reply_to_status' : $l.'in_reply_to_status','user.status_count' : $l.'user.status_count','geo_tag.stateID' : $l.'geo_tag.stateID','create_at' : $l.'create_at','lang' : $l.'lang','hashtags' : $l.'hashtags'
+          |}""".stripMargin.trim
       )
     }
 
@@ -633,14 +655,17 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
-          |let $population_aggr := (for $l0 in dataset twitter.US_population
+          |let $l := {
+          |  'favorite_count' : $t.'favorite_count','geo_tag.countyID' : $t.'geo_tag'.'countyID','user_mentions' : $t.'user_mentions','population' : (for $l0 in dataset twitter.US_population
           |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-          |return $l0.population)[0]
-          |group by $g0 := $t.geo_tag.stateID with $population_aggr
+          |return $l0.'population')[0],'geo' : $t,'user.id' : $t.'user'.'id','geo_tag.cityID' : $t.'geo_tag'.'cityID','is_retweet' : $t.'is_retweet','text' : $t.'text','retweet_count' : $t.'retweet_count','in_reply_to_user' : $t.'in_reply_to_user','id' : $t.'id','coordinate' : $t.'coordinate','in_reply_to_status' : $t.'in_reply_to_status','user.status_count' : $t.'user'.'status_count','geo_tag.stateID' : $t.'geo_tag'.'stateID','create_at' : $t.'create_at','lang' : $t.'lang','hashtags' : $t.'hashtags'
+          |}
+          |where similarity-jaccard(word-tokens($l.'text'), word-tokens('zika')) > 0.0
+          |and contains($l.'text', "virus")
+          |let $population_aggr := $l.'population'
+          |group by $g0 := $l.'geo'.geo_tag.stateID with $population_aggr
           |return {
-          |   'state' : $g0,'sum' : sum($population_aggr)
+          |  'state' : $g0,'sum' : sum($population_aggr)
           |}
         """.stripMargin.trim
       )
@@ -650,16 +675,11 @@ class AQLGeneratorTest extends Specification {
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
-
-    "translate a lookup query" in {
-      ok
-    }
-
   }
 
   "AQLQueryParser calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
-      val schema = parser.calcResultSchema(zikaCreateQuery, TwitterDataStore.TwitterSchema)
+      val schema = parser.calcResultSchema(zikaCreateQuery, Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
       schema must_== TwitterDataStore.TwitterSchema
     }
     "return the aggregated schema for aggregation queries" in {
@@ -669,7 +689,7 @@ class AQLGeneratorTest extends Specification {
 
   "AQLQueryParser createView" should {
     "generate the ddl for the twitter dataset" in {
-      val ddl = parser.parseCreate(CreateView("zika", zikaCreateQuery), TwitterDataStore.TwitterSchema)
+      val ddl = parser.generate(CreateView("zika", zikaCreateQuery), Map("twitter.ds_tweet" -> TwitterDataStore.TwitterSchema))
       removeEmptyLine(ddl) must_== unifyNewLine(
         """
           |create type twitter.typeTweet if not exists as open {
@@ -706,7 +726,7 @@ class AQLGeneratorTest extends Specification {
   "AQLQueryParser appendView" should {
     "generate the upsert query" in {
       val timeFilter = FilterStatement(TwitterDataStore.TimeFieldName, None, Relation.inRange, Seq(startTime, endTime))
-      val aql = parser.parseAppend(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), TwitterDataStore.TwitterSchema)
+      val aql = parser.generate(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), Map("twitter.ds_tweet" -> TwitterDataStore.TwitterSchema))
       removeEmptyLine(aql) must_== unifyNewLine(
         """
           |upsert into dataset zika (
