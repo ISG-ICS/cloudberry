@@ -111,7 +111,7 @@ angular.module('cloudberry.common', [])
     }
 
     var asterixService = {
-
+      
       totalCount: 0,
       startDate: startDate,
       parameters: {
@@ -165,89 +165,6 @@ angular.module('cloudberry.common', [])
         ws.send(sampleJson);
         ws.send(batchJson);
       },
-
-        /*
-
-      byGeoRequest: function(parameters){
-        return {
-          dataset: parameters.dataset,
-          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
-          group: {
-            by: [{
-              field: "geo",
-              apply: {
-                name: "level",
-                args: {
-                  level: parameters.geoLevel
-                }
-              },
-              as: parameters.geoLevel
-            }],
-            aggregate: [{
-              field: "*",
-              apply: {
-                name: "count"
-              },
-              as: "count"
-            }]
-          }
-        };
-      },
-
-      byTimeRequest: function(parameters) {
-        return {
-          dataset: parameters.dataset,
-          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
-          group: {
-            by: [{
-              field: "create_at",
-              apply: {
-                name: "interval",
-                args: {
-                  unit: parameters.timeBin
-                }
-              },
-              as: parameters.timeBin
-            }],
-            aggregate: [{
-              field: "*",
-              apply: {
-                name: "count"
-              },
-              as: "count"
-            }]
-          }
-        };
-      },
-
-      byHashTagRequest: function(parameters) {
-        return {
-          dataset: parameters.dataset,
-          filter: this.getFilter(parameters, defaultNonSamplingDayRange),
-          unnest: [{
-            hashtags: "tag"
-          }],
-          group: {
-            by: [{
-              field: "tag"
-            }],
-            aggregate: [{
-              field: "*",
-              apply: {
-                name: "count"
-              },
-              as: "count"
-            }]
-          },
-          select: {
-            order: ["-count"],
-            limit: 50,
-            offset: 0
-          }
-        };
-      },
-
-*/
 
       getFilter: function(parameters, maxDay) {
         var spatialField = this.getLevel(parameters.geoLevel);
