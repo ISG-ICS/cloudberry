@@ -3,11 +3,11 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
-import actor.NeoActor
+import actor.RequestRouter
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, ActorSystem, DeadLetter, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
-import akka.util.{ByteString, Timeout}
+import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -19,8 +19,8 @@ import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
-import akka.pattern.ask
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Environment}
+import play.Logger
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -41,7 +41,8 @@ class Application @Inject()(val wsClient: WSClient,
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
 
-  Logger.logger.info("I'm initializing")
+  // TODO Logger.info cannot logout to console
+  Logger.info("I'm initializing")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
@@ -59,7 +60,8 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef(out => NeoActor.props(out, wsClient, request.host, config))
+    val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
+    ActorFlow.actorRef(out => RequestRouter.props(out, wsClient, request, prop, config))
   }
 
   def tweet(id: String) = Action.async {
@@ -69,6 +71,7 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
+  // TODO delete this??
   def berryQuery = Action(parse.json) { request =>
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
     val source = Source.single(request.body)
@@ -90,14 +93,13 @@ class Application @Inject()(val wsClient: WSClient,
     })
   }
 
-
   def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action {
     Ok(Application.findCity(neLat, swLat, neLng, swLng, cities))
   }
 
   class Listener extends Actor with ActorLogging {
     def receive = {
-      case d: DeadLetter => println(d)
+      case d: DeadLetter => Logger.info(d.toString)
     }
   }
 
@@ -232,7 +234,7 @@ object Application {
           override def receive: Receive = {
             case `onCompleteMessage` => outActor ! Status.Success(())
             case Terminated(_) =>
-              Logger.logger.info("Child terminated, stopping")
+              Logger.info("Child terminated, stopping")
               context.stop(self)
             case other => outActor ! other
           }
@@ -243,18 +245,18 @@ object Application {
 
         def receive: Receive = {
           case Status.Failure(error) =>
-            Logger.logger.error("flowActor receive status.failure" + error)
+            Logger.error("flowActor receive status.failure" + error)
             flowActor ! PoisonPill
             delegateActor ! PoisonPill
           case Terminated(_) =>
-            Logger.logger.info("Child terminated, stopping")
+            Logger.info("Child terminated, stopping")
             context.stop(self)
           case other => flowActor ! other
         }
 
         override def supervisorStrategy = OneForOneStrategy() {
           case _ =>
-            Logger.logger.error("Stopping actor due to exception")
+            Logger.error("Stopping actor due to exception")
             SupervisorStrategy.Stop
         }
       })), akka.actor.Status.Success(())),
