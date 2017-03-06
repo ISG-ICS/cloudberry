@@ -21,13 +21,12 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
   override def receive: Receive = {
     case requestBody: JsValue =>
       val transformer = parseTransform(requestBody)
-      val originRequestBody = getOriginRequestBody(requestBody)
+      val originRequestBody = getBerryRequest(requestBody)
       (originRequestBody \\ "sliceMillis").isEmpty match {
         case true => handleNonStreamingBody(originRequestBody, transformer)
         case false => handleStreamingBody(originRequestBody, transformer)
       }
     case e =>
-      // TODO: Do we need to return error to front-End ??
       Logger.error("Unknown type of request: " + e)
   }
 
@@ -42,7 +41,7 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
     }
   }
 
-  private def getOriginRequestBody(requestBody: JsValue): JsValue = {
+  private def getBerryRequest(requestBody: JsValue): JsValue = {
     (requestBody \ "transform").asOpt[JsValue] match {
       case Some(_) => requestBody.as[JsObject] - "transform"
       case None => requestBody
@@ -50,11 +49,11 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
   }
 
   private def handleNonStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    nonStreamingBerryClient.tell(BerryClient.Request(requestBody, transform), out)
+    nonStreamingBerryClient ! BerryClient.Request(requestBody, transform)
   }
 
   private def handleStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    streamingBerryClient.tell(BerryClient.Request(requestBody, transform), out)
+    streamingBerryClient ! BerryClient.Request(requestBody, transform)
   }
 
 }
