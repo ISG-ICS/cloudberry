@@ -7,21 +7,20 @@ angular.module('cloudberry.common', [])
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
 
     var countRequest = JSON.stringify({
+      dataset: "twitter.ds_tweet",
+      global: {
+        globalAggregate: {
+          field: "*",
+          apply: {
+            name: "count"
+          },
+          as: "count"
+        }},
+      estimable : true,
       transform: {
         wrap: {
           key: "totalCount",
-          value: {
-            dataset: "twitter.ds_tweet",
-            global: {
-              globalAggregate: {
-                field: "*",
-                apply: {
-                  name: "count"
-                },
-                as: "count"
-            }},
-            estimable : true
-          }
+          value: {}
         }
       }
     });
@@ -58,33 +57,31 @@ angular.module('cloudberry.common', [])
 
       query: function(parameters, queryType) {
         var sampleJson = (JSON.stringify({
+          dataset: parameters.dataset,
+          filter: this.getFilter(parameters, defaultSamplingDayRange),
+          select: {
+            order: ["-create_at"],
+            limit: defaultSamplingSize,
+            offset: 0,
+            field: ["create_at", "id", "user.id"]
+          },
           transform: {
             wrap: {
               key: "sample",
-              value: {
-                dataset: parameters.dataset,
-                filter: this.getFilter(parameters, defaultSamplingDayRange),
-                select: {
-                  order: ["-create_at"],
-                  limit: defaultSamplingSize,
-                  offset: 0,
-                  field: ["create_at", "id", "user.id"]
-                }
-              }
+              value: {}
             }
           }
         }));
 
         var batchJson = (JSON.stringify({
+          batch: [this.byTimeRequest(parameters), this.byGeoRequest(parameters), this.byHashTagRequest(parameters)],
+          option: {
+            sliceMillis: 2000
+          },
           transform: {
             wrap: {
               key: "batch",
-              value: {
-                batch: [this.byTimeRequest(parameters), this.byGeoRequest(parameters), this.byHashTagRequest(parameters)],
-                option: {
-                  sliceMillis: 2000
-                }
-              }
+              value: {}
             }
           }
         }));
@@ -219,25 +216,27 @@ angular.module('cloudberry.common', [])
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        switch (result.transform.wrap.key) {
+        switch (result.key) {
           case "sample":
-            asterixService.tweetResult = result.transform.wrap.value[0];
+            asterixService.tweetResult = result.value[0];
             break;
           case "batch":
-            asterixService.timeResult = result.transform.wrap.value[0];
-            asterixService.mapResult = result.transform.wrap.value[1];
-            asterixService.hashTagResult = result.transform.wrap.value[2];
+            asterixService.timeResult = result.value[0];
+            asterixService.mapResult = result.value[1];
+            asterixService.hashTagResult = result.value[2];
             break;
           case "totalCount":
-            asterixService.totalCount = result.transform.wrap.value[0][0].count;
+            asterixService.totalCount = result.value[0][0].count;
             break;
           case "error":
-            console.error(result);
-            asterixService.errorMessage = result.transform.wrap.value;
+            console.error(result.toString());
+            asterixService.errorMessage = result.value;
+            break;
+          case "done":
             break;
           default:
-            console.error("ws get unknown data:" );
-            console.error(result);
+            console.error("ws get unknown data: " + result.toString());
+            asterixService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });

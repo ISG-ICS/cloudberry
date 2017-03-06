@@ -1,107 +1,72 @@
 package actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.{ask, pipe}
 import akka.stream.Materializer
-import akka.util.Timeout
+import edu.uci.ics.cloudberry.zion.actor.BerryClient
+import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
 import play.api.libs.json._
-import play.api.libs.ws.WSClient
-import play.api.mvc.RequestHeader
 import play.Logger
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-class RequestRouter (out: ActorRef, ws: WSClient, requestHeader: RequestHeader, berryClientProp: Props, config: Config)
+class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
                     (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import RequestRouter._
-  import KeyType._
 
-  implicit val timeout: Timeout = Timeout(20.minutes)
-  val StreamingBerryClient = context.actorOf(berryClientProp)
+  val streamingBerryClient = context.actorOf(berryClientProp)
   val nonStreamingBerryClient = context.actorOf(berryClientProp)
 
-  // TODO UserRequest in package model is of no use
   override def receive: Receive = {
     case requestBody: JsValue =>
-      (requestBody \ "transform" \\ "key")(0).asOpt[KeyType.Value] match {
-        case Some(TotalCount) =>
-          (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
-            json => respondWrapper(json, TotalCount)
-          }.recover{
-            case e =>
-              val errorMsg = "Failed to receive response from non-streaming berryClient in totalCount query: " + e.getMessage
-              Logger.error(errorMsg)
-              respondWrapper(JsString(errorMsg), Error)
-          }.pipeTo(out)
-
-        case Some(Sample) =>
-          (nonStreamingBerryClient ? (requestBody \ "transform" \\ "value")(0)).mapTo[JsValue].map{
-            json => respondWrapper(json, Sample)
-          }.recover{
-            case e =>
-              val errorMsg = "Failed to receive response from non-streaming berryClient in Sample query: " + e.getMessage
-              Logger.error(errorMsg)
-              respondWrapper(JsString(errorMsg), Error)
-          }.pipeTo(out)
-
-        case Some(Batch) =>
-
-          // TODO need to implement
-          Logger.error("Request: " + (requestBody \ "transform" \\ "value")(0).toString())
-
-        case Some(x) =>
-          val errorMsg = "Not a valid request key type: " + x
-          Logger.error(errorMsg)
-          out ! respondWrapper(JsString(errorMsg), Error)
-
-        case None =>
-          val errorMsg = "A valid request key type is not found."
-          Logger.error(errorMsg)
-          out ! respondWrapper(JsString(errorMsg), Error)
+      val transformer = parseTransform(requestBody)
+      val originRequestBody = getOriginRequestBody(requestBody)
+      (originRequestBody \\ "sliceMillis").isEmpty match {
+        case true => handleNonStreamingBody(originRequestBody, transformer)
+        case false => handleStreamingBody(originRequestBody, transformer)
       }
     case e =>
-      val errorMsg = "Unknown type of request: " + e
-      Logger.error(errorMsg)
-      out ! respondWrapper(JsString(errorMsg), Error)
+      // TODO: Do we need to return error to front-End ??
+      Logger.error("Unknown type of request: " + e)
   }
 
-  private def respondWrapper(response: JsValue, key: KeyType.Value): JsValue = {
-    Json.obj(
-      "transform" -> Json.obj(
-        "wrap" -> Json.obj(
-          "key" -> key,
-          "value" -> response
-        )
-      )
-    )
+  private def parseTransform(requestBody: JsValue): IPostTransform = {
+    (requestBody \ "transform").asOpt[JsValue] match {
+      case Some(t) =>
+        (t \ "wrap").asOpt[JsValue] match {
+          case Some(w) => WrapTransform((w \"key").as[String])
+          case None => NoTransform
+        }
+      case None => NoTransform
+    }
+  }
+
+  private def getOriginRequestBody(requestBody: JsValue): JsValue = {
+    (requestBody \ "transform").asOpt[JsValue] match {
+      case Some(_) => requestBody.as[JsObject] - "transform"
+      case None => requestBody
+    }
+  }
+
+  private def handleNonStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
+    nonStreamingBerryClient.tell(BerryClient.Request(requestBody, transform), out)
+  }
+
+  private def handleStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
+    streamingBerryClient.tell(BerryClient.Request(requestBody, transform), out)
   }
 
 }
 
 object RequestRouter {
+  def props(out: ActorRef, berryClientProp: Props, config: Config)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, berryClientProp, config))
 
-  def props(out: ActorRef, ws: WSClient, requestHeader: RequestHeader, berryClientProp: Props, config: Config)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, ws, requestHeader, berryClientProp, config))
-
-  object KeyType extends Enumeration {
-    val Error = Value("error")
-    val Sample = Value("sample")
-    val Batch = Value("batch")
-    val TotalCount = Value("totalCount")
-  }
-
-  def enumerationReader[E <: Enumeration](enum: E) = new Reads[enum.Value] {
-    override def reads(json: JsValue): JsResult[enum.Value] = {
-      val key = json.as[String]
-      enum.values.find(_.toString == key) match {
-        case Some(value) => JsSuccess(value)
-        case None => JsError(s"$key not found in enum: $enum")
-      }
+  case class WrapTransform(key: String) extends IPostTransform {
+    override def transform(jsonBody: JsValue): JsValue = {
+      Json.obj("key" -> key, "value" -> jsonBody)
     }
   }
 
-  implicit val requestTypeReader: Reads[KeyType.Value] = enumerationReader(KeyType)
 }

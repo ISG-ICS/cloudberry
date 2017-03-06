@@ -61,7 +61,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     val prop = BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config)
-    ActorFlow.actorRef(out => RequestRouter.props(out, wsClient, request, prop, config))
+    ActorFlow.actorRef(out => RequestRouter.props(out, prop, config))
   }
 
   def tweet(id: String) = Action.async {
@@ -71,7 +71,6 @@ class Application @Inject()(val wsClient: WSClient,
     }
   }
 
-  // TODO delete this??
   def berryQuery = Action(parse.json) { request =>
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
     val source = Source.single(request.body)
