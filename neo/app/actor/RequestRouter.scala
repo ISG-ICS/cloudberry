@@ -2,7 +2,6 @@ package actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.stream.Materializer
-import edu.uci.ics.cloudberry.zion.actor.BerryClient
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
 import play.api.libs.json._
@@ -21,10 +20,10 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
   override def receive: Receive = {
     case requestBody: JsValue =>
       val transformer = parseTransform(requestBody)
-      val originRequestBody = getBerryRequest(requestBody)
-      (originRequestBody \\ "sliceMillis").isEmpty match {
-        case true => handleNonStreamingBody(originRequestBody, transformer)
-        case false => handleStreamingBody(originRequestBody, transformer)
+      val berryRequestBody = getBerryRequest(requestBody)
+      (berryRequestBody \\ "sliceMillis").isEmpty match {
+        case true => handleNonStreamingBody(berryRequestBody, transformer)
+        case false => handleStreamingBody(berryRequestBody, transformer)
       }
     case e =>
       Logger.error("Unknown type of request: " + e)
@@ -49,11 +48,11 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
   }
 
   private def handleNonStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    nonStreamingBerryClient ! BerryClient.Request(requestBody, transform)
+    nonStreamingBerryClient ! Request(requestBody, transform)
   }
 
   private def handleStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    streamingBerryClient ! BerryClient.Request(requestBody, transform)
+    streamingBerryClient ! Request(requestBody, transform)
   }
 
 }
