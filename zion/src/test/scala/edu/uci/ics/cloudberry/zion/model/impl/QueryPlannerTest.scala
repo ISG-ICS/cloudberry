@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.SortOrder
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -50,11 +49,11 @@ class QueryPlannerTest extends Specification {
     }
     "makePlan should omit the redundant filter from query if it covers view.createQuery" in {
 
-      val queryTimeFilter = FilterStatement("create_at", None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
+      val queryTimeFilter = FilterStatement(TimeField("create_at"), None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
       val queryZika = Query(
         dataset = TwitterDataSet,
         filter = Seq(
-          FilterStatement("text", None, Relation.contains, Seq("zika")),
+          FilterStatement(TextField("text"), None, Relation.contains, Seq("zika")),
           queryTimeFilter
         ),
         groups = Some(group))

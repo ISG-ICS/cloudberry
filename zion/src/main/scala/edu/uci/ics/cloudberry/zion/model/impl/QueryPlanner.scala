@@ -138,10 +138,6 @@ object QueryPlanner {
     JsArray(builder.result())
   }
 
-  object SortOrder extends Enumeration {
-    val ASC, DSC = Value
-  }
-
   trait IMerger {
     def apply(jsons: TraversableOnce[JsValue]): JsArray
   }

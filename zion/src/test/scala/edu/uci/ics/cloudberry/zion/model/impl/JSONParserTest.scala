@@ -109,7 +109,7 @@ class JSONParserTest extends Specification {
     "parse lookup query with with select statement" in {
       val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
-      val selectStatement = Some(SelectStatement(Seq.empty, 0, 0, Seq("population")))
+      val selectStatement = Some(selectPopulation)
       val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(simpleLookupFilterJSON, expectedQuery)
     }
@@ -118,7 +118,7 @@ class JSONParserTest extends Specification {
       val lookup = Seq(lookupPopulation, lookupLiteracy)
       val filter = Seq(textFilter)
       val selectValues = Seq("population", "literacy")
-      val selectStatement = Some(SelectStatement(Seq.empty, 0, 0, selectValues))
+      val selectStatement = Some(selectPopulationLiteracy)
       val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(multiLookupFilterJSON, expectedQuery)
     }

@@ -36,9 +36,9 @@ class DataStoreManager(metaDataset: String,
   val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
-    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, Int.MaxValue, 0, Seq.empty))) map {
+    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq.empty, Seq.empty, Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
-        val records = jsArray.as[Seq[DataSetInfo]]
+        val records = jsArray.value.map(DataSetInfo.parse(_))
         metaData ++= records.map(info => info.name -> info)
         self ! Prepared
       case any => log.error(s"received unknown object from meta actor: $any ")
@@ -165,9 +165,9 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
-    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Min(schema.timeField).asField("min")))))
-    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Max(schema.timeField).asField("max")))))
-    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Min(schema.timeField).asField("count")))))
+    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Min(schema.timeField).as("min")))))
+    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Max(schema.timeField).as("max")))))
+    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Min(schema.timeField).as("count")))))
     val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
@@ -178,7 +178,7 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def flushMetaData(): Unit = {
-    metaActor ! UpsertRecord(metaDataset, Json.toJson(metaData.values.toSeq).asInstanceOf[JsArray])
+    metaActor ! UpsertRecord(metaDataset, Json.toJson(metaData.values.map(DataSetInfo.write(_))).asInstanceOf[JsArray])
   }
 
 }

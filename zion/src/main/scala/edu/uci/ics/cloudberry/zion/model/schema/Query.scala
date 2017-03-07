@@ -100,9 +100,7 @@ case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boo
 case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
 trait Statement {
-  protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
-    if (!condition) throw QueryInitException(msgIfFalse)
-  }
+
 }
 
 /**
@@ -120,9 +118,6 @@ case class LookupStatement(sourceKeys: Seq[Field],
                            selectValues: Seq[Field],
                            as: Seq[Field]
                           ) extends Statement {
-  //TODO to be replaced by a unified syntax exceptions
-  requireOrThrow(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
-  requireOrThrow(selectValues.length == as.length, "LookupStatement: select value names doesn't match with renamed names")
 }
 
 //TODO only support at most one transform for now
@@ -176,20 +171,20 @@ case class GroupStatement(bys: Seq[ByStatement],
                           aggregates: Seq[AggregateStatement]
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
-
-  requireOrThrow(bys.nonEmpty, "By statement is required")
-  requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
 case class GlobalAggregateStatement(aggregate: AggregateStatement
-                                   ) extends Statement {
+                                   ) extends Statement
+
+object SortOrder extends Enumeration {
+    val ASC, DSC = Value
 }
 
 case class SelectStatement(orderOn: Seq[Field],
+                           order:Seq[SortOrder.Value],
                            limit: Int,
                            offset: Int,
                            fields: Seq[Field]
-                          ) extends Statement {
-}
+                          ) extends Statement
 
 

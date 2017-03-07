@@ -533,8 +533,7 @@ class AQLGeneratorTest extends Specification {
     "translate lookup one table with one join key" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
-
-      val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population"))
+      val selectStatement = selectPopulation
       val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = Some(selectStatement))
@@ -588,12 +587,11 @@ class AQLGeneratorTest extends Specification {
       val literacySchema = LiteracyDataStore.LiteracySchema
 
       val selectValues = Seq("*", "population", "literacy")
-      val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet,
         lookup = Seq(lookupPopulation, lookupLiteracy),
         filter, Seq.empty,
-        select = Some(selectStatement))
+        select = Some(selectPopulationLiteracy))
 
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema,
         literacyDataSet -> literacySchema))
@@ -619,16 +617,12 @@ class AQLGeneratorTest extends Specification {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
 
-      val selectValues = Seq("population")
+      val selectValues =
+        Seq("population")
       val group = Some(groupPopulationSum)
-      val lookup = LookupStatement(
-        sourceKeys = Seq("geo_tag.stateID"),
-        dataset = populationDataSet,
-        lookupKeys = Seq("stateId"),
-        selectValues,
-        as = selectValues)
+      val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, group)
+      val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, group)
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
@@ -705,7 +699,7 @@ class AQLGeneratorTest extends Specification {
 
   "AQLQueryParser appendView" should {
     "generate the upsert query" in {
-      val timeFilter = FilterStatement(TwitterDataStore.TimeFieldName, None, Relation.inRange, Seq(startTime, endTime))
+      val timeFilter = FilterStatement(TwitterDataStore.TwitterSchema.timeField, None, Relation.inRange, Seq(startTime, endTime))
       val aql = parser.parseAppend(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), TwitterDataStore.TwitterSchema)
       removeEmptyLine(aql) must_== unifyNewLine(
         """

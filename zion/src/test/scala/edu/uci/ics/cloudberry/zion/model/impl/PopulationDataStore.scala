@@ -18,6 +18,6 @@ object PopulationDataStore {
                                             Seq(
                                               NumberField("population")
                                             ),
-                                            Seq("id"),
-                                            TimeFieldName)
+                                            Seq(NumberField("id")),
+                                            TimeField(TimeFieldName))
 }

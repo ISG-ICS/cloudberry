@@ -39,7 +39,7 @@ object Relation extends Enumeration {
 }
 
 class Field(val name: String, val dataType: DataType, val isOptional: Boolean = false) {
-  def asField(name: String): Field = {
+  def as(name: String): Field = {
     new Field(name, this.dataType, this.isOptional)
   }
 }
@@ -121,6 +121,8 @@ case class Schema(typeName: String,
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
+
+  def apply(field:String):Field = fieldMap(field)
 
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
 }

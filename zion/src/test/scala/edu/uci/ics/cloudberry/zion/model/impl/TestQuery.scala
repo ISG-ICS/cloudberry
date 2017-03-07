@@ -111,6 +111,8 @@ object TestQuery {
   val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
 
+  val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
+  val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all,  population, literacy))
 
   val lookupPopulation = LookupStatement(
     sourceKeys = Seq(geoStateID),
@@ -655,7 +657,7 @@ object TestQuery {
        |    "order" : [],
        |    "limit" : 0,
        |    "offset" : 0,
-       |    "field" : ["population"]
+       |    "field" : ["*","population"]
        |  }
        |}
     """.stripMargin)
@@ -691,7 +693,7 @@ object TestQuery {
        |    "order" : [],
        |    "limit" : 0,
        |    "offset" : 0,
-       |    "field" : ["population", "literacy"]
+       |    "field" : ["*","population", "literacy"]
        |  }
        |}
      """.stripMargin
