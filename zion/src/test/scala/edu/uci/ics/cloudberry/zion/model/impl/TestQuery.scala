@@ -84,6 +84,13 @@ object TestQuery {
     selectValues = Seq("population"),
     as = Seq("population"))
 
+  val lookupPopulationMultiple = LookupStatement(
+    sourceKeys = Seq("geo_tag.stateID"),
+    dataset = PopulationDataSet,
+    lookupKeys = Seq("stateId"),
+    selectValues = Seq("stateId","population"),
+    as = Seq("stateId","population"))
+
   val lookupLiteracy = LookupStatement(
     sourceKeys = Seq("geo_tag.stateID"),
     dataset = literacyDataSet,
@@ -607,6 +614,35 @@ object TestQuery {
        |      "lookupKey":["stateId"],
        |      "select":["population"],
        |      "as" : ["population"]
+       |    }
+       |   ],
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["population"]
+       |  }
+       |}
+    """.stripMargin)
+
+  val multiFieldLookupFilterJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "lookup": [
+       |    {
+       |      "joinKey":["geo_tag.stateID"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateId"],
+       |      "select":["stateId", "population"],
+       |      "as" : ["stateId", "population"]
        |    }
        |   ],
        | "filter":[

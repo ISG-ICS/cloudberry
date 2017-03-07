@@ -9,6 +9,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.empty = [];
     $scope.totalCount = 0;
     $scope.currentTweetCount = 0;
+    $scope.queried = false;
     for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
@@ -34,7 +35,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     countDiv.id = "count-div";
     countDiv.title = "Display the count information of Tweets";
     countDiv.innerHTML = [
-      "<p id='count'>{{ currentTweetCount | number:0 }}<span id='count-text'>&nbsp;&nbsp;of&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p>",
+      "<div ng-if='queried'><p id='count'>{{ currentTweetCount | number:0 }}<span id='count-text'>&nbsp;&nbsp;of&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></p></div>",
       "<p id='count'>{{ totalCount | number:0 }}<span id='count-text'>&nbsp;&nbsp;tweets</span></p>",
     ].join("");
     var stats = document.getElementsByClassName("stats")[0];
@@ -93,7 +94,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 if(newVal.length == 0)
                   return;
             }
-
+            
+            $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
               ndx.remove();
