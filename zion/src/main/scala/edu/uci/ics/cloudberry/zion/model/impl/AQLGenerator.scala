@@ -20,8 +20,8 @@ class AQLGenerator extends IQLGenerator {
       case q: Query =>
         validateQuery(q)
         parseQuery(q, schemaMap)
-      case q: CreateView => parseCreate(q, schemaMap(query.dataset))
-      case q: AppendView => parseAppend(q, schemaMap(query.dataset))
+      case q: CreateView => parseCreate(q, schemaMap(q.query.dataset))
+      case q: AppendView => parseAppend(q, schemaMap(q.query.dataset))
       case q: UpsertRecord => parseUpsert(q, schemaMap(query.dataset))
       case q: DropView => ???
       case _ => ???
