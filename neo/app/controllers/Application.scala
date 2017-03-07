@@ -83,16 +83,6 @@ class Application @Inject()(val wsClient: WSClient,
     Ok.chunked((source via flow) via toStringFlow)
   }
 
-  // TODO Is this useful?
-  //fake twitter API
-  def timeline(keyword: String) = Action {
-    //    val source = Source.tick(initialDelay = 0.second, interval = 1.second, tick = "tick")
-    val source = Source.single(1)
-    Ok.chunked(source.map { tick =>
-      Json.obj("message" -> s"${DateTime.now()}", "author" -> s"$keyword").toString + "\n"
-    })
-  }
-
   def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action {
     Ok(Application.findCity(neLat, swLat, neLng, swLng, cities))
   }

@@ -13,8 +13,6 @@ class RequestRouter (berryClientProp: Props, config: Config)
 
   import RequestRouter._
 
-  val streamingClientName = "streamingClient"
-  val nonStreamingClientName = "nonStreamingClient"
   val streamingBerryClient = context.actorOf(berryClientProp, streamingClientName)
   val nonStreamingBerryClient = context.actorOf(berryClientProp, nonStreamingClientName)
 
@@ -59,6 +57,9 @@ class RequestRouter (berryClientProp: Props, config: Config)
 }
 
 object RequestRouter {
+  val streamingClientName = "streamingClient"
+  val nonStreamingClientName = "nonStreamingClient"
+
   def props(berryClientProp: Props, config: Config)
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config))
 
