@@ -14,8 +14,8 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
 
   import RequestRouter._
 
-  val streamingBerryClient = context.actorOf(berryClientProp)
-  val nonStreamingBerryClient = context.actorOf(berryClientProp)
+  val streamingBerryClient = context.actorOf(berryClientProp, "streamingClient")
+  val nonStreamingBerryClient = context.actorOf(berryClientProp, "nonStreamingClient")
 
   override def receive: Receive = {
     case requestBody: JsValue =>
