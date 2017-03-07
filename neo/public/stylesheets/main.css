@@ -119,7 +119,6 @@ search-bar {
 
 .stats{
   position: absolute;
-
   bottom:0;
   pointer-events: none;
   line-height: 1;
