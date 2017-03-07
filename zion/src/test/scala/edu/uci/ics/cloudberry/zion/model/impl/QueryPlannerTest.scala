@@ -20,7 +20,7 @@ class QueryPlannerTest extends Specification {
   val planner = new QueryPlanner
 
   val zikaFullStats = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 50)
-  val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, sourceInterval, zikaFullStats)
+  val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), twitterSchema, sourceInterval, zikaFullStats)
 
   "QueryPlanner" should {
     "makePlan ask source if the view is empty" in {
@@ -38,7 +38,7 @@ class QueryPlannerTest extends Specification {
 
       val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
-      val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, sourceInterval, virusStats)
+      val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), twitterSchema, sourceInterval, virusStats)
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
       queries.size must_== 1
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
