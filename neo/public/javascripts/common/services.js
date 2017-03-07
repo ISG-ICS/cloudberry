@@ -1,5 +1,5 @@
 angular.module('cloudberry.common', [])
-  .service('CloudBerry', function($http, $timeout, $location) {
+  .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;

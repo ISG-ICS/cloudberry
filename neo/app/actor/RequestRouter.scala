@@ -1,11 +1,10 @@
 package actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, Props}
 import akka.stream.Materializer
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
 import play.api.libs.json._
-import play.Logger
 
 import scala.concurrent.ExecutionContext
 
@@ -13,7 +12,7 @@ class RequestRouter (berryClientProp: Props, config: Config)
                     (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import RequestRouter._
-  
+
   val streamingClientName = "streamingClient"
   val nonStreamingClientName = "nonStreamingClient"
   val streamingBerryClient = context.actorOf(berryClientProp, streamingClientName)
@@ -28,7 +27,7 @@ class RequestRouter (berryClientProp: Props, config: Config)
         case false => handleStreamingBody(berryRequestBody, transformer)
       }
     case e =>
-      Logger.error("Unknown type of request: " + e)
+      log.error("Unknown type of request: " + e)
   }
 
   private def parseTransform(requestBody: JsValue): IPostTransform = {
