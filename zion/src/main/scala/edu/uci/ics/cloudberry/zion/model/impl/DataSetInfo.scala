@@ -18,23 +18,48 @@ case class DataSetInfo(name: String,
                        dataInterval: Interval,
                        stats: Stats)
 
+case class UnresolvedDataSetInfo(name: String,
+                                 createQueryOpt: Option[UnresolvedQuery],
+                                 schema: Schema,
+                                 dataInterval: Interval,
+                                 stats: Stats)
+
+
 object DataSetInfo {
 
   val MetaDataDBName: String = "berry.meta"
   val MetaSchema: Schema = Schema("berry.MetaType",
                                   Seq(StringField("name")),
                                   Seq.empty,
-                                  Seq("name"),
-                                  "stats.createTime")
+                                  Seq(StringField("name")),
+                                  TimeField("stats.createTime"))
+
+  val resolver = new QueryResolver
+
+  val validator = new QueryValidator
 
   def parse(json: JsValue): DataSetInfo = {
-    json.validate[DataSetInfo] match {
-      case js: JsSuccess[DataSetInfo] => js.get
+    json.validate[UnresolvedDataSetInfo] match {
+      case js: JsSuccess[UnresolvedDataSetInfo] =>
+        val datasetInfo = js.get
+        val resolvedQuery = datasetInfo.createQueryOpt.map(resolver.resolve(_, null).asInstanceOf[Query])
+        resolvedQuery.foreach(validator.validate(_))
+        DataSetInfo(datasetInfo.name, resolvedQuery, datasetInfo.schema, datasetInfo.dataInterval, datasetInfo.stats)
+
       case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
     }
   }
 
-  def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(dataSetInfo)
+  def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(toUnresolved(dataSetInfo))
+
+  implicit def toUnresolved(dataSetInfo: DataSetInfo): UnresolvedDataSetInfo =
+    UnresolvedDataSetInfo(
+      dataSetInfo.name,
+      dataSetInfo.createQueryOpt.map(JSONParser.toUnresolved(_)),
+      dataSetInfo.schema,
+      dataSetInfo.dataInterval,
+      dataSetInfo.stats
+    )
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
     override def reads(json: JsValue) = {
@@ -53,8 +78,8 @@ object DataSetInfo {
 
   def parseLevels(levelSeq: Seq[Map[String, String]]): Seq[(String, String)] = {
     levelSeq.map {
-      levelMap => (levelMap("level"), levelMap("field"))
-    }
+                   levelMap => (levelMap("level"), levelMap("field"))
+                 }
   }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
@@ -123,6 +148,8 @@ object DataSetInfo {
 
   }
 
+  implicit val queryFormat: Format[UnresolvedQuery] = JSONParser.queryFormat
+
   implicit val statsFormat: Format[Stats] = (
     (JsPath \ "createTime").format[DateTime] and
       (JsPath \ "lastModifyTime").format[DateTime] and
@@ -130,21 +157,19 @@ object DataSetInfo {
       (JsPath \ "cardinality").format[Long]
     ) (Stats.apply, unlift(Stats.unapply))
 
-  implicit val queryFormat: Format[Query] = JSONParser.queryFormat
-
   implicit val schemaFormat: Format[Schema] = (
     (JsPath \ "typeName").format[String] and
       (JsPath \ "dimension").format[Seq[Field]] and
       (JsPath \ "measurement").format[Seq[Field]] and
-      (JsPath \ "primaryKey").format[Seq[String]] and
-      (JsPath \ "timeField").format[String]
+      (JsPath \ "primaryKey").format[Seq[Field]] and
+      (JsPath \ "timeField").format[Field]
     ) (Schema.apply, unlift(Schema.unapply))
 
-  implicit val dataSetInfoFormat: Format[DataSetInfo] = (
+  implicit val dataSetInfoFormat: Format[UnresolvedDataSetInfo] = (
     (JsPath \ "name").format[String] and
-      (JsPath \ "createQuery").formatNullable[Query] and
+      (JsPath \ "createQuery").formatNullable[UnresolvedQuery] and
       (JsPath \ "schema").format[Schema] and
       (JsPath \ "dataInterval").format[Interval] and
       (JsPath \ "stats").format[Stats]
-    ) (DataSetInfo.apply, unlift(DataSetInfo.unapply))
+    ) (UnresolvedDataSetInfo.apply, unlift(UnresolvedDataSetInfo.unapply))
 }
