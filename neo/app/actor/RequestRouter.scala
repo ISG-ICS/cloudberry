@@ -9,13 +9,15 @@ import play.Logger
 
 import scala.concurrent.ExecutionContext
 
-class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
+class RequestRouter (berryClientProp: Props, config: Config)
                     (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import RequestRouter._
-
-  val streamingBerryClient = context.actorOf(berryClientProp, "streamingClient")
-  val nonStreamingBerryClient = context.actorOf(berryClientProp, "nonStreamingClient")
+  
+  val streamingClientName = "streamingClient"
+  val nonStreamingClientName = "nonStreamingClient"
+  val streamingBerryClient = context.actorOf(berryClientProp, streamingClientName)
+  val nonStreamingBerryClient = context.actorOf(berryClientProp, nonStreamingClientName)
 
   override def receive: Receive = {
     case requestBody: JsValue =>
@@ -58,8 +60,8 @@ class RequestRouter (out: ActorRef, berryClientProp: Props, config: Config)
 }
 
 object RequestRouter {
-  def props(out: ActorRef, berryClientProp: Props, config: Config)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(out, berryClientProp, config))
+  def props(berryClientProp: Props, config: Config)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config))
 
   case class WrapTransform(key: String) extends IPostTransform {
     override def transform(jsonBody: JsValue): JsValue = {

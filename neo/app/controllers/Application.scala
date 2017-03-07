@@ -61,7 +61,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef{ out =>
-      RequestRouter.props(out, BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config)
+      RequestRouter.props(BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config)
     }
   }
 

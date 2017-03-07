@@ -84,7 +84,7 @@ class RequestRouterTest extends TestkitExample with SpecificationLike{
             throw new IllegalArgumentException("Message type sent to berry is not correct.")
         }
       })
-      val router = system.actorOf(RequestRouter.props(frontEnd.ref, clientProps, Config.Default))
+      val router = system.actorOf(RequestRouter.props(clientProps, Config.Default))
 
       frontEnd.send(router, nonStreamingRequest)
       frontEnd.expectMsg(Json.obj(

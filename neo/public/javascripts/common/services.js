@@ -1,5 +1,5 @@
 angular.module('cloudberry.common', [])
-  .service('Asterix', function($http, $timeout, $location) {
+  .service('CloudBerry', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
@@ -226,13 +226,14 @@ angular.module('cloudberry.common', [])
             asterixService.totalCount = result.value[0][0].count;
             break;
           case "error":
-            console.error(result.toString());
+            console.error(result);
             asterixService.errorMessage = result.value;
             break;
           case "done":
             break;
           default:
-            console.error("ws get unknown data: " + result.toString());
+            console.error("ws get unknown data: ");
+            console.error(result);
             asterixService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
