@@ -80,7 +80,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       left: 40
     };
     // set the initial width of the timeline equal to the initial width of the browser window
-    var width = $(window).width() * 0.8 - margin.left - margin.right;
+    var width = $(window).width() * 0.6 - margin.left - margin.right;
     var height = 150 - margin.top - margin.bottom;
       return {
         restrict: "E",
