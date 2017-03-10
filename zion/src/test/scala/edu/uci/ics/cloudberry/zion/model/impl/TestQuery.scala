@@ -32,7 +32,7 @@ object TestQuery {
   val all = twitterField("*")
 
   val population = populationField("population")
-  val stateId = populationField("stateID")
+  val stateID = populationField("stateID")
 
   val literacy = literacyField("literacy")
 
@@ -119,21 +119,21 @@ object TestQuery {
   val lookupPopulation = LookupStatement(
     sourceKeys = Seq(geoStateID),
     dataset = PopulationDataSet,
-    lookupKeys = Seq(stateId),
+    lookupKeys = Seq(stateID),
     selectValues = Seq(population),
     as = Seq(population.as("population")))
 
   val lookupPopulationMultiple = LookupStatement(
-    sourceKeys = Seq("geo_tag.stateID"),
+    sourceKeys = Seq(geoStateID),
     dataset = PopulationDataSet,
-    lookupKeys = Seq("stateId"),
-    selectValues = Seq("stateId","population"),
-    as = Seq("stateId","population"))
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(stateID, population),
+    as = Seq(stateID, population))
 
   val lookupLiteracy = LookupStatement(
     sourceKeys = Seq(geoStateID),
     dataset = literacyDataSet,
-    lookupKeys = Seq(stateId),
+    lookupKeys = Seq(stateID),
     selectValues = Seq(literacy),
     as = Seq(literacy.as("literacy")))
 
@@ -281,7 +281,7 @@ object TestQuery {
        |        "as": "state"
        |      },
        |      {
-       |        "field": create_at,
+       |        "field": "create_at",
        |        "apply": {
        |          "name": "interval",
        |          "args": {
@@ -679,9 +679,9 @@ object TestQuery {
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_population",
-       |      "lookupKey":["stateId"],
-       |      "select":["stateId", "population"],
-       |      "as" : ["stateId", "population"]
+       |      "lookupKey":["stateID"],
+       |      "select":["stateID", "population"],
+       |      "as" : ["stateID", "population"]
        |    }
        |   ],
        | "filter":[
@@ -695,7 +695,7 @@ object TestQuery {
        |    "order" : [],
        |    "limit" : 0,
        |    "offset" : 0,
-       |    "field" : ["population"]
+       |    "field" : ["*","population"]
        |  }
        |}
     """.stripMargin)

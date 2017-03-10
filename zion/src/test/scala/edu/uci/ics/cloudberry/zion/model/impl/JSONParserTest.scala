@@ -117,15 +117,14 @@ class JSONParserTest extends Specification {
     "parse lookup query having multiple fields with select statement" in {
       val lookup = Seq(lookupPopulationMultiple)
       val filter = Seq(textFilter)
-      val selectStatement = Some(SelectStatement(Seq.empty, 0, 0, Seq("population")))
+      val selectStatement = Some(selectPopulation)
       val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
-      checkQueryOnly(multiFieldLookupFilterJSON, expectedQuery)
+      checkQueryOnly(multiFieldLookupFilterJSON, allSchemaMap, expectedQuery)
     }
 
     "parse multiple lookup query with select statement" in {
       val lookup = Seq(lookupPopulation, lookupLiteracy)
       val filter = Seq(textFilter)
-      val selectValues = Seq("population", "literacy")
       val selectStatement = Some(selectPopulationLiteracy)
       val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(multiLookupFilterJSON, allSchemaMap, expectedQuery)
