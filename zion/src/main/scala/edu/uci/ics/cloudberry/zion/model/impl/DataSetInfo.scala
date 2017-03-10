@@ -19,6 +19,11 @@ case class DataSetInfo(name: String,
                        dataInterval: Interval,
                        stats: Stats)
 
+/**
+  * This class is an unresolved version of [[Schema]].
+  * The difference is that [[primaryKey]] and [[timeField]] here are strings,
+  * which are resolved later into [[Field]]
+  */
 case class UnresolvedSchema(typeName: String,
                             dimension: Seq[Field],
                             measurement: Seq[Field],
@@ -36,6 +41,11 @@ case class UnresolvedSchema(typeName: String,
 
 }
 
+/**
+  * This class is an unresolved version of [[DataSetInfo]].
+  * The difference is that [[createQueryOpt]] and [[schema]] are [[UnresolvedQuery]] and [[UnresolvedSchema]],
+  * which are resolved later into [[Query]] and [[Schema]]
+  */
 case class UnresolvedDataSetInfo(name: String,
                                  createQueryOpt: Option[UnresolvedQuery],
                                  schema: UnresolvedSchema,

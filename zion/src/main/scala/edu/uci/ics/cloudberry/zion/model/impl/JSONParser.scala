@@ -9,6 +9,12 @@ import play.api.libs.json.{JsObject, _}
 import scala.collection.mutable
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
+/**
+  * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
+  * First parse the [[JsValue]] into a [[UnresolvedQuery]] using json parsing APIs provided by Play framework.
+  * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
+  * Finally, calls [[QueryValidator]] to validate the correctness of this query.
+  */
 class JSONParser extends IJSONParser {
 
   import JSONParser._
