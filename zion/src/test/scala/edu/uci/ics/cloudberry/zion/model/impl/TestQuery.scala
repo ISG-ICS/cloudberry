@@ -15,9 +15,11 @@ object TestQuery {
   val literacySchema = LiteracyDataStore.LiteracySchema
   val startTime = "2016-01-01T00:00:00.000Z"
   val endTime = "2016-12-01T00:00:00.000Z"
+  val twitterSchemaMap = Map(TwitterDataSet -> twitterSchema)
+  val allSchemaMap = Map(TwitterDataSet -> twitterSchema, PopulationDataSet -> populationSchema, literacyDataSet -> literacySchema)
 
 
-  val createAt = twitterField("createAt")
+  val createAt = twitterField("create_at")
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
   val tag = hashtags.as("tag")
@@ -30,7 +32,7 @@ object TestQuery {
   val all = twitterField("*")
 
   val population = populationField("population")
-  val stateId = populationField("stateId")
+  val stateId = populationField("stateID")
 
   val literacy = literacyField("literacy")
 
@@ -44,7 +46,7 @@ object TestQuery {
   val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
   val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
 
-  val intValues = Seq(1, 2, 3)
+  val intValues = Seq(1)
   val stringValue = Seq("English")
   val longValues: Seq[Long] = Seq(1644l, 45464l)
   val doubleValues: Seq[Double] = Seq(0.45541, 9.456)
@@ -112,7 +114,7 @@ object TestQuery {
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
 
   val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
-  val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all,  population, literacy))
+  val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))
 
   val lookupPopulation = LookupStatement(
     sourceKeys = Seq(geoStateID),
@@ -137,7 +139,7 @@ object TestQuery {
        |    "values": [${stateValue.mkString(",")}]
        |  },
        |  {
-       |    "field": createAt,
+       |    "field": "create_at",
        |    "relation": "inRange",
        |    "values": [
        |      "$startTime",
@@ -272,7 +274,7 @@ object TestQuery {
        |        "as": "state"
        |      },
        |      {
-       |        "field": createAt,
+       |        "field": create_at,
        |        "apply": {
        |          "name": "interval",
        |          "args": {
@@ -361,10 +363,10 @@ object TestQuery {
        |  "dataset": "twitter.ds_tweet",
        |  $filterJSON,
        |   "select" : {
-       |    "order" : [ "-createAt"],
+       |    "order" : [ "-create_at"],
        |    "limit": 100,
        |    "offset" : 0,
-       |    "field": [createAt, "id", "user.id"]
+       |    "field": ["create_at", "id", "user.id"]
        |  }
        |}
        | """.stripMargin)
@@ -377,7 +379,7 @@ object TestQuery {
       |  "group": {
       |    "by": [
       |      {
-      |        "field": createAt,
+      |        "field": "create_at",
       |        "apply": {
       |          "name": "interval",
       |          "args" : {
@@ -405,10 +407,10 @@ object TestQuery {
        |{
        |  $filterJSON,
        |   "select" : {
-       |    "order" : [ "-createAt"],
+       |    "order" : [ "-create_at"],
        |    "limit": 100,
        |    "offset" : 0,
-       |    "field": [createAt, "id", "user.id"]
+       |    "field": ["create_at", "id", "user.id"]
        |  }
        |}
        | """.stripMargin)
@@ -641,7 +643,7 @@ object TestQuery {
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_population",
-       |      "lookupKey":["stateId"],
+       |      "lookupKey":["stateID"],
        |      "select":["population"],
        |      "as" : ["population"]
        |    }
@@ -670,14 +672,14 @@ object TestQuery {
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_population",
-       |      "lookupKey":["stateId"],
+       |      "lookupKey":["stateID"],
        |      "select":["population"],
        |      "as" : ["population"]
        |    },
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_literacy",
-       |      "lookupKey":["stateId"],
+       |      "lookupKey":["stateID"],
        |      "select":["literacy"],
        |      "as" : ["literacy"]
        |    }

@@ -547,7 +547,7 @@ class AQLGeneratorTest extends Specification {
           |offset 0
           |return
           |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'id': $t.'id', 'geo': $t, 'hashtags': $t.'hashtags'}
         """.stripMargin.trim
       )
@@ -604,9 +604,9 @@ class AQLGeneratorTest extends Specification {
           |offset 0
           |return
           |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'literacy': (for $l1 in dataset twitter.US_literacy
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateID
           |return $l1.literacy)[0], 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'geo': $t, 'id': $t.'id', 'hashtags': $t.'hashtags'}
         """.stripMargin.trim
       )
@@ -630,7 +630,7 @@ class AQLGeneratorTest extends Specification {
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
           |and contains($t.'text', "virus")
           |let $population_aggr := (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0]
           |group by $g0 := $t.geo_tag.stateID with $population_aggr
           |return {

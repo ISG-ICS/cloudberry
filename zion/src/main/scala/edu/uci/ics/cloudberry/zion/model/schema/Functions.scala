@@ -12,7 +12,7 @@ sealed trait IFunction {
 
   def apply(field: Field): Field = {
     IFunction.validateField(this, field)
-    new Field(s"$name(${field.name})", resultType(field))
+    Field(s"$name(${field.name})", resultType(field))
   }
 
 }

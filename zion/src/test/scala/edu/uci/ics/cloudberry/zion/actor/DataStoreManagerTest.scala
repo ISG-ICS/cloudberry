@@ -151,7 +151,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.send(dataManager, DataStoreManager.AreYouReady)
       sender.expectMsg(true)
       sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
-      sender.expectMsg(Seq(DataSetInfo.write(sourceInfo), DataSetInfo.write(zikaHalfYearViewInfo)))
+      sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
 
       val appendView = AppendView(zikaHalfYearViewInfo.name, Query(sourceInfo.name))
       sender.send(dataManager, appendView)
