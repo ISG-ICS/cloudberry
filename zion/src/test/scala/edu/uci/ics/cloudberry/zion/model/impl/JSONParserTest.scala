@@ -106,12 +106,20 @@ class JSONParserTest extends Specification {
       parser.parse(relationErrorJSON, twitterSchemaMap) must throwA[JsonRequestException]
     }
 
-    "parse lookup query with with select statement" in {
+    "parse lookup query with select statement" in {
       val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
       val selectStatement = Some(selectPopulation)
       val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(simpleLookupFilterJSON, allSchemaMap, expectedQuery)
+    }
+
+    "parse lookup query having multiple fields with select statement" in {
+      val lookup = Seq(lookupPopulationMultiple)
+      val filter = Seq(textFilter)
+      val selectStatement = Some(SelectStatement(Seq.empty, 0, 0, Seq("population")))
+      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
+      checkQueryOnly(multiFieldLookupFilterJSON, expectedQuery)
     }
 
     "parse multiple lookup query with select statement" in {

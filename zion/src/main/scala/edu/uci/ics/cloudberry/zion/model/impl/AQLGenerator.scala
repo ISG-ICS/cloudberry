@@ -11,7 +11,7 @@ class AQLGenerator extends IQLGenerator {
   /**
     * Returns a string having AQL query after parsing the query object.
     *
-    * @param query     [[IQuery]] object containing query details
+    * @param query [[IQuery]] object containing query details
     * @param schemaMap a map of Dataset name to it's [[Schema]]
     * @return AQL Query
     **/
@@ -22,7 +22,7 @@ class AQLGenerator extends IQLGenerator {
         parseQuery(q, schemaMap)
       case q: CreateView => parseCreate(q, schemaMap(q.query.dataset))
       case q: AppendView => parseAppend(q, schemaMap(q.query.dataset))
-      case q: UpsertRecord => parseUpsert(q, schemaMap(q.dataset))
+      case q: UpsertRecord => parseUpsert(q, schemaMap(query.dataset))
       case q: DropView => ???
       case _ => ???
     }

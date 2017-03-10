@@ -1,3 +1,4 @@
+
 @(title: String) @main(title){
 <div xmlns="http://www.w3.org/1999/html" ng-controller="AppCtrl">
 
@@ -8,17 +9,23 @@
 
     <div id="logo">
     </div>
+    
+    <div id ='powerby'>
+      <div class="btn btn-info btn-xs">
+        <a href="http://cloudberry.ics.uci.edu/" title="A Distributed middleware by ICS,UCI" class="white"> Cloudberry</a>
+          |
+        <a href="https://www.youtube.com/watch?v=XwlRm0jcsU4" class="white">Video</a> 
+      </div>
+   </div>
 
-    <div id='how-to'>
-      <a href="https://www.youtube.com/watch?v=XwlRm0jcsU4" target="_blank" class="btn btn-info btn-sm">How to use this demo</a>  
-    </div>
+    
    </div>
    
    <search-bar></search-bar>
   
 
 
-  <div class="time-series">
+  <div class="stats">
     <time-series id="chart"></time-series>
   </div>
 
@@ -62,15 +69,7 @@
     <exception-bar></exception-bar>
   </div>
 
-  <div id ='powerby'>
-    <div class="btn btn-info btn-sm">
-      <a href="http://cloudberry.ics.uci.edu/" title="A Distributed middleware by ICS,UCI" class="white"> Powered by Cloudberry</a>
-      |
-      <a href="http://leafletjs.com" title="A JS library for interactive maps" class="white">Leaflet</a>
-      |
-      <a href="http://mapbox.com" class="white">Mapbox</a>
-    </div>
-  </div>
+
 
 </div>
 
