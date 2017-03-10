@@ -12,12 +12,12 @@ class DataSetInfoTest extends Specification {
 
   "DataSetInfo" should {
     "read a sample dataSetInfo" in {
-      val actualDataSetInfoy = parser.parse(simpleDataSetInfoJSON, null)
+      val actualDataSetInfoy = parser.parse(simpleDataSetInfoJSON, Map.empty)
       val expectDataSetInfo = simpleDataSetInfo
       actualDataSetInfoy must_== expectDataSetInfo
     }
     "read dataSetInfo containing Schema fields" in {
-      val actualDataSetInfoy = parser.parse(fieldsDataSetInfoJSON, null)
+      val actualDataSetInfoy = parser.parse(fieldsDataSetInfoJSON, Map.empty)
       val expectDataSetInfo = fieldsDataSetInfo
       actualDataSetInfoy must_== expectDataSetInfo
     }

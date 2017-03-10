@@ -31,8 +31,7 @@ object TransformFunc {
   val ToString = "toString"
 }
 
-sealed trait GroupFunc extends IFunction {
-}
+sealed trait GroupFunc extends IFunction
 
 object GroupFunc {
   val Bin = "bin"
@@ -68,7 +67,7 @@ case class Level(levelTag: String) extends GroupFunc {
 
   override def resultType(field: Field): DataType = {
     val hierarchyField = field.asInstanceOf[HierarchyField]
-    return hierarchyField.innerType
+    hierarchyField.innerType
   }
 }
 

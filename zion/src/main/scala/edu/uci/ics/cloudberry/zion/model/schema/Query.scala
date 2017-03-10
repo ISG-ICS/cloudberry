@@ -99,9 +99,7 @@ case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boo
 
 case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
-trait Statement {
-
-}
+trait Statement
 
 /**
   * Augments the source data to contain more fields.
@@ -117,8 +115,7 @@ case class LookupStatement(sourceKeys: Seq[Field],
                            lookupKeys: Seq[Field],
                            selectValues: Seq[Field],
                            as: Seq[Field]
-                          ) extends Statement {
-}
+                          ) extends Statement
 
 //TODO only support at most one transform for now
 case class FilterStatement(field: Field,

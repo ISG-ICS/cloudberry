@@ -55,11 +55,11 @@ class BerryClient(val jsonParser: JSONParser,
       val queryInfos = initial.queries.zip(initial.infos).map {
         case (query, info) =>
           val bound = info.schema.timeField match {
-            case Some(f)=>query.getTimeInterval(f).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
-            case None=>new TInterval(info.dataInterval.getStart, DateTime.now)
+            case Some(f) => query.getTimeInterval(f).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
+            case None => new TInterval(info.dataInterval.getStart, DateTime.now)
           }
           val merger = planner.calculateMergeFunc(query, info.schema)
-          val queryWOTime = query.copy(filter = query.filter.filterNot(filter=>Some(filter.field) == info.schema.timeField))
+          val queryWOTime = query.copy(filter = query.filter.filterNot(filter => Some(filter.field) == info.schema.timeField))
           QueryInfo(queryWOTime, info, bound, merger)
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
@@ -82,27 +82,23 @@ class BerryClient(val jsonParser: JSONParser,
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
     fDataInfos.foreach { seqInfos =>
-      var validDataset = true
       val schemaMap = seqInfos.zip(datasets).map {
         case (Some(info), _) =>
           info.name -> info.schema
         case (None, dataset) =>
           curSender ! noSuchDatasetJson(dataset)
-          validDataset = false
-          dataset -> null
+          return
       }.toMap
-      if (validDataset) {
-        val (queries, runOption) = jsonParser.parse(request.json, schemaMap)
-        if (runOption.sliceMills <= 0) {
-          val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
-          futureResult.foreach { r =>
-            curSender ! request.postTransform.transform(r)
-            curSender ! BerryClient.Done
-          }
-        } else {
-          val targetMillis = runOption.sliceMills
-          self ! Initial(key, curSender, targetMillis, queries, seqInfos.map(_.get), request.postTransform)
+      val (queries, runOption) = jsonParser.parse(request.json, schemaMap)
+      if (runOption.sliceMills <= 0) {
+        val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
+        futureResult.foreach { r =>
+          curSender ! request.postTransform.transform(r)
+          curSender ! BerryClient.Done
         }
+      } else {
+        val targetMillis = runOption.sliceMills
+        self ! Initial(key, curSender, targetMillis, queries, seqInfos.map(_.get), request.postTransform)
       }
     }
   }

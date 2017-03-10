@@ -22,10 +22,10 @@ class JSONParser extends IJSONParser {
   override def getDatasets(json: JsValue): Set[String] = {
     val datasets = (json \\ "dataset").filter(_.isInstanceOf[JsString]).map(_.asInstanceOf[JsString].value)
     if (datasets.isEmpty) {
-      return datasets.toSet
+      datasets.toSet
     } else {
       //TODO currently do not handle lookup queries
-      return Set(datasets.head)
+      Set(datasets.head)
     }
   }
 
@@ -470,87 +470,83 @@ class QueryResolver {
   }
 
   private def resolveGroup(group: Option[UnresolvedGroupStatement], fieldMap: Map[String, Field]): (Option[GroupStatement], Map[String, Field]) = {
-    if (!group.isDefined) {
-      return (None, fieldMap)
-    }
-    val producedFields = mutable.Map.newBuilder[String, Field]
-    val groupStatement = group.get
+    group match {
+      case Some(groupStatement) =>
+        val producedFields = mutable.Map.newBuilder[String, Field]
+        val resolvedBys = groupStatement.bys.map { by =>
+          val field = resolveField(by.field, fieldMap)
+          val groupedField = by.funcOpt match {
+            case Some(func) => func(field)
+            case None => field
+          }
+          val as = by.as match {
+            case Some(as) =>
+              val asField = groupedField.as(as)
+              producedFields += as -> asField
+              Some(asField)
+            case None =>
+              producedFields += groupedField.name -> groupedField
+              None
+          }
+          ByStatement(field, by.funcOpt, as)
+        }
+        val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
+          val field = resolveField(aggregate.field, fieldMap)
+          val as = aggregate.func(field).as(aggregate.as)
+          producedFields += aggregate.as -> as
+          AggregateStatement(field, aggregate.func, as)
+        }
 
-    val resolvedBys = groupStatement.bys.map { by =>
-      val field = resolveField(by.field, fieldMap)
-      val groupedField = by.funcOpt match {
-        case Some(func) => func(field)
-        case None => field
-      }
-      val as = by.as match {
-        case Some(as) =>
-          val asField = groupedField.as(as)
-          producedFields += as -> asField
-          Some(asField)
-        case None =>
-          producedFields += groupedField.name -> groupedField
-          None
-      }
-      ByStatement(field, by.funcOpt, as)
+        val resolved = GroupStatement(resolvedBys, resolvedAggrs)
+        (Some(resolved), producedFields.result().toMap)
+      case None =>
+        (None, fieldMap)
     }
-
-    val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
-      val field = resolveField(aggregate.field, fieldMap)
-      val as = aggregate.func(field).as(aggregate.as)
-      producedFields += aggregate.as -> as
-      AggregateStatement(field, aggregate.func, as)
-    }
-
-    val resolved = GroupStatement(resolvedBys, resolvedAggrs)
-    (Some(resolved), producedFields.result().toMap)
   }
 
   private def resolveSelect(select: Option[UnresolvedSelectStatement], fieldMap: Map[String, Field]): (Option[SelectStatement], Map[String, Field]) = {
-    if (!select.isDefined) {
-      return (None, fieldMap)
+    select match {
+      case Some(selectStatement) =>
+        val orderOn = resolveFields(selectStatement.orderOn.map { field =>
+          if (field.startsWith("-")) {
+            field.substring(1)
+          } else {
+            field
+          }
+        }, fieldMap)
+        val order = selectStatement.orderOn.map { field =>
+          if (field.startsWith("-")) {
+            SortOrder.DSC
+          } else {
+            SortOrder.ASC
+          }
+        }
+        val fields = resolveFields(selectStatement.fields, fieldMap)
+        val resolved = SelectStatement(orderOn, order, selectStatement.limit, selectStatement.offset, fields)
+        val newFieldMap =
+          if (selectStatement.fields.isEmpty) {
+            fieldMap
+          } else {
+            fields.map {
+              field => field.name -> field
+            }.toMap
+          }
+        (Some(resolved), newFieldMap)
+      case None => (None, fieldMap)
     }
-    val selectStatement = select.get
 
-    val orderOn = resolveFields(selectStatement.orderOn.map { field =>
-      if (field.startsWith("-")) {
-        field.substring(1)
-      } else {
-        field
-      }
-    }, fieldMap)
-    val order = selectStatement.orderOn.map { field =>
-      if (field.startsWith("-")) {
-        SortOrder.DSC
-      } else {
-        SortOrder.ASC
-      }
-    }
-    val fields = resolveFields(selectStatement.fields, fieldMap)
-
-    val resolved = SelectStatement(orderOn, order, selectStatement.limit, selectStatement.offset, fields)
-
-    val newFieldMap =
-      if (selectStatement.fields.isEmpty) {
-        fieldMap
-      } else {
-        fields.map {
-          field => field.name -> field
-        }.toMap
-      }
-
-    (Some(resolved), newFieldMap)
   }
 
   private def resolveGlobalAggregate(globalAggregate: Option[UnresolvedGlobalAggregateStatement], fieldMap: Map[String, Field]): (Option[GlobalAggregateStatement], Map[String, Field]) = {
-    if (!globalAggregate.isDefined) {
-      return (None, fieldMap)
+    globalAggregate match {
+      case Some(globalAggregateStatement) =>
+        val aggregate = globalAggregateStatement.aggregate
+        val field = resolveField(aggregate.field, fieldMap)
+        val as = aggregate.func(field).as(aggregate.as)
+        val resolved = GlobalAggregateStatement(AggregateStatement(field, aggregate.func, as))
+        (Some(resolved), Map(aggregate.as -> as))
+      case None => (None, fieldMap)
     }
-    val aggregate = globalAggregate.get.aggregate
-    val field = resolveField(aggregate.field, fieldMap)
-    val as = aggregate.func(field).as(aggregate.as)
-    val resolved = GlobalAggregateStatement(AggregateStatement(field, aggregate.func, as))
-
-    (Some(resolved), Map(aggregate.as -> as))
   }
 
   private def resolveFields(names: Seq[String], fieldMap: Map[String, Field]): Seq[Field] = {

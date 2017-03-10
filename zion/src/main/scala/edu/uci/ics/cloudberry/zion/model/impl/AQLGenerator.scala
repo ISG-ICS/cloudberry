@@ -11,7 +11,7 @@ class AQLGenerator extends IQLGenerator {
   /**
     * Returns a string having AQL query after parsing the query object.
     *
-    * @param query [[IQuery]] object containing query details
+    * @param query     [[IQuery]] object containing query details
     * @param schemaMap a map of Dataset name to it's [[Schema]]
     * @return AQL Query
     **/
@@ -41,8 +41,8 @@ class AQLGenerator extends IQLGenerator {
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
     val timeFilter =
-      sourceSchema.timeField match {
-        case Some(f) => s"//with filter on '${resultSchema.timeField.get.name}'"
+      resultSchema.timeField match {
+        case Some(f) => s"//with filter on '${f.name}'"
         case None => ""
       }
     val createDataSet =

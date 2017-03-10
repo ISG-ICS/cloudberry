@@ -171,9 +171,10 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
-    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Min, Min(schema.timeField.get).as("min")))))
-    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Max, Max(schema.timeField.get).as("max")))))
-    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Min(schema.timeField.get).as("count")))))
+    val timeField = schema.timeField.get
+    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Min(timeField).as("min")))))
+    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Max(timeField).as("max")))))
+    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Min(timeField).as("count")))))
     val parser = queryGenFactory()
     import TimeField.TimeFormat
     for {
