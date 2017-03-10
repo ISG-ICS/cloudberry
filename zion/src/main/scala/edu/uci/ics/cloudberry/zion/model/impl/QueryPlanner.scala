@@ -63,10 +63,7 @@ class QueryPlanner {
 
     query.select match {
       case Some(select) =>
-        orderOn ++= select.orderOn.map { f =>
-          val order = if (f.name.startsWith("-")) SortOrder.DSC else SortOrder.ASC
-          f.name.stripPrefix("-") -> order
-        }
+        orderOn ++= (select.orderOn.map(_.name).zip(select.order).toMap)
         project ++= select.fields.map(_.name)
         limitOpt = Some(select.limit)
       case None =>
@@ -87,7 +84,11 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
+        val queryInterval =
+          source.schema.timeField match {
+            case Some(f) => query.getTimeInterval(f).getOrElse(new Interval(new DateTime(0), DateTime.now()))
+            case None => new Interval(new DateTime(0), DateTime.now())
+          }
         val viewInterval = new Interval(new DateTime(0), view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
@@ -100,7 +101,7 @@ class QueryPlanner {
         val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf)))
         seqBuilder += query.copy(dataset = view.name, filter = newFilter)
         for (interval <- unCovered) {
-          seqBuilder += query.setInterval(source.schema.timeField, interval)
+          seqBuilder += query.setInterval(source.schema.timeField.get, interval)
         }
         (seqBuilder.result(), calculateMergeFunc(query, source.schema))
     }

@@ -14,10 +14,10 @@ object LiteracyDataStore {
                                           Seq(
                                             TimeField(TimeFieldName),
                                             NumberField("id"),
-                                            NumberField("stateId")),
+                                            NumberField("stateID")),
                                           Seq(
                                             NumberField("literacy")
                                           ),
                                           Seq(NumberField("id")),
-                                          TimeField(TimeFieldName))
+                                          Some(TimeField(TimeFieldName)))
 }

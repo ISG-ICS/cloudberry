@@ -54,9 +54,12 @@ class BerryClient(val jsonParser: JSONParser,
     case initial: Initial if initial.ts == curKey =>
       val queryInfos = initial.queries.zip(initial.infos).map {
         case (query, info) =>
-          val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
+          val bound = info.schema.timeField match {
+            case Some(f)=>query.getTimeInterval(f).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
+            case None=>new TInterval(info.dataInterval.getStart, DateTime.now)
+          }
           val merger = planner.calculateMergeFunc(query, info.schema)
-          val queryWOTime = query.copy(filter = query.filter.filterNot(_.field == info.schema.timeField))
+          val queryWOTime = query.copy(filter = query.filter.filterNot(filter=>Some(filter.field) == info.schema.timeField))
           QueryInfo(queryWOTime, info, bound, merger)
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
@@ -72,17 +75,24 @@ class BerryClient(val jsonParser: JSONParser,
   }
 
   private def handleNewRequest(request: Request, curSender: ActorRef): Unit = {
-    val (queries, runOption) = jsonParser.parse(request.json)
     val key = DateTime.now()
     curKey = key
-    val fDataInfos = Future.traverse(queries) { query =>
-      dataManager ? AskInfo(query.dataset)
+    val datasets = jsonParser.getDatasets(request.json).toSeq
+    val fDataInfos = Future.traverse(datasets) { dataset =>
+      dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
-
     fDataInfos.foreach { seqInfos =>
-      if (seqInfos.exists(_.isEmpty)) {
-        curSender ! noSuchDatasetJson(queries(seqInfos.indexOf(None)).dataset)
-      } else {
+      var validDataset = true
+      val schemaMap = seqInfos.zip(datasets).map {
+        case (Some(info), _) =>
+          info.name -> info.schema
+        case (None, dataset) =>
+          curSender ! noSuchDatasetJson(dataset)
+          validDataset = false
+          dataset -> null
+      }.toMap
+      if (validDataset) {
+        val (queries, runOption) = jsonParser.parse(request.json, schemaMap)
         if (runOption.sliceMills <= 0) {
           val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
           futureResult.foreach { r =>
@@ -145,7 +155,7 @@ class BerryClient(val jsonParser: JSONParser,
     val futures = Future.traverse(queryGroup.queries) { queryInfo =>
       if (queryInfo.queryBound.overlaps(interval)) {
         val overlaps = queryInfo.queryBound.overlap(interval)
-        val timeFilter = FilterStatement(queryInfo.dataSetInfo.schema.timeField, None, Relation.inRange,
+        val timeFilter = FilterStatement(queryInfo.dataSetInfo.schema.timeField.get, None, Relation.inRange,
           Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
         solveAQuery(queryInfo.query.copy(filter = timeFilter +: queryInfo.query.filter))
       } else {
