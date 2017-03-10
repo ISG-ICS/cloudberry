@@ -13,11 +13,17 @@ class JSONParser extends IJSONParser {
 
   import JSONParser._
 
-  val resolver = new QueryResolver
+  override def getDatasets(json: JsValue): Set[String] = {
+    val datasets = (json \\ "dataset").filter(_.isInstanceOf[JsString]).map(_.asInstanceOf[JsString].value)
+    if (datasets.isEmpty) {
+      return datasets.toSet
+    } else {
+      //TODO currently do not handle lookup queries
+      return Set(datasets.head)
+    }
+  }
 
-  val validator = new QueryValidator
-
-  override def parse(json: JsValue): (Seq[Query], QueryExeOption) = {
+  override def parse(json: JsValue, schemaMap: Map[String, Schema]): (Seq[Query], QueryExeOption) = {
     val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
     val query = (json \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
@@ -29,17 +35,24 @@ class JSONParser extends IJSONParser {
         case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
       }
     }
-
-    val resolvedQuery = query.map{q=>
-      resolver.resolve(q, null).asInstanceOf[Query]
-    }
-    resolvedQuery.foreach(validator.validate(_))
+    val resolvedQuery = query.map(resolve(_, schemaMap))
     (resolvedQuery, option)
   }
 }
 
 object JSONParser {
   //Warn: the order of implicit values matters. The dependence should be initialized earlier
+
+  val resolver = new QueryResolver
+
+  val validator = new QueryValidator
+
+  def resolve(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
+    val resolved = resolver.resolve(query, schemaMap).asInstanceOf[Query]
+    validator.validate(resolved)
+    resolved
+  }
+
 
   implicit val seqAnyValue: Format[Seq[Any]] = new Format[Seq[Any]] {
     override def reads(json: JsValue): JsResult[Seq[Any]] = {
@@ -78,10 +91,10 @@ object JSONParser {
         case i: Int => JsNumber(i)
         case d: Double => JsNumber(d)
         case l: Long => JsNumber(l)
-        case fs: FilterStatement => filterFormat.writes(fs)
-        case by: ByStatement => byFormat.writes(by)
-        case ags: AggregateStatement => aggFormat.writes(ags)
-        case unS: UnnestStatement => unnestFormat.writes(unS)
+        case fs: UnresolvedFilterStatement => filterFormat.writes(fs)
+        case by: UnresolvedByStatement => byFormat.writes(by)
+        case ags: UnresolvedAggregateStatement => aggFormat.writes(ags)
+        case unS: UnresolvedUnnestStatement => unnestFormat.writes(unS)
         case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
       })
     }
@@ -248,7 +261,7 @@ object JSONParser {
     ) (UnresolvedQuery.apply, unlift(UnresolvedQuery.unapply))
 
 
-  implicit def toUnresolved(query:Query):UnresolvedQuery=
+  implicit def toUnresolved(query: Query): UnresolvedQuery =
     UnresolvedQuery(
       query.dataset,
       query.lookup.map(toUnresolved(_)),
@@ -584,8 +597,8 @@ class QueryValidator {
   }
 
   def validateQuery(query: Query): Unit = {
-    requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined,
-      "either group or select or global aggregate statement is required")
+    //   requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined,
+    //     "either group or select or global aggregate statement is required")
     query.filter.foreach(validateFilter(_))
     query.lookup.foreach(validateLookup(_))
     query.unnest.foreach(validateUnnest(_))
@@ -604,11 +617,11 @@ class QueryValidator {
         validateTimeRelation(filter.relation, filter.values)
       case DataType.Point =>
         validatePointRelation(filter.relation, filter.values)
-      case DataType.Boolean => ???
-      case DataType.String => ???
+      case DataType.Boolean =>
+      case DataType.String =>
       case DataType.Text =>
         validateTextRelation(filter.relation, filter.values)
-      case DataType.Bag => ???
+      case DataType.Bag =>
       case DataType.Hierarchy =>
         throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
       case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")

@@ -22,8 +22,8 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
   import org.mockito.Mockito._
-
   import scala.concurrent.duration._
+  import TestQuery.twitterSchemaMap
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime = new DateTime(2016, 1, 1, 0, 0)
@@ -198,7 +198,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
 
-      val (query, _) = mockParser.parse(hourCountJSON)
+      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== query.head.dataset
@@ -243,7 +243,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
 
-      val (query, _) = mockParser.parse(hourCountJSON)
+      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
@@ -305,7 +305,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
 
-      val (query, _) = mockParser.parse(hourCountJSON)
+      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
