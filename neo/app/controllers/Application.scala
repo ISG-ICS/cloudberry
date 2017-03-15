@@ -83,6 +83,11 @@ class Application @Inject()(val wsClient: WSClient,
     Ok.chunked((source via flow) via toStringFlow)
   }
 
+  def register = Action(parse.json) { request =>
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+    
+  }
+
   def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action {
     Ok(Application.findCity(neLat, swLat, neLng, swLng, cities))
   }
