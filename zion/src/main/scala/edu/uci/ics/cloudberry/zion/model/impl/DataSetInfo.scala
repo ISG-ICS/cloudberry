@@ -29,6 +29,13 @@ object DataSetInfo {
     Seq(StringField("name")),
     TimeField("stats.createTime"))
 
+  /**
+    * Parse a json object to create a [[DataSetInfo]].
+    * First parses the json object into a [[UnresolvedDataSetInfo]], and then resolves it into a [[DataSetInfo]]
+    * @param json
+    * @param schemaMap
+    * @return
+    */
   def parse(json: JsValue, schemaMap: Map[String, Schema]): DataSetInfo = {
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
@@ -51,7 +58,15 @@ object DataSetInfo {
     }
   }
 
-  def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(toUnresolved(dataSetInfo))
+  /**
+    * Write a dataSetInfo as a json object.
+    * Calls [[Unresolved.toUnresolved()]] to transform the dataSetInfo into [[UnresolvedDataSetInfo]],
+    * which is then written as a json object.
+    * @param dataSetInfo
+    * @return
+    */
+  def write(dataSetInfo: DataSetInfo): JsValue =
+    Json.toJson(toUnresolved(dataSetInfo))
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
     override def reads(json: JsValue) = {

@@ -7,12 +7,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsObject, _}
 
 
-/**
-  * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
-  * First parse the [[JsValue]] into a [[UnresolvedQuery]] using json parsing APIs provided by Play framework.
-  * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
-  * Finally, calls [[QueryValidator]] to validate the correctness of this query.
-  */
 class JSONParser extends IJSONParser {
 
   import JSONParser._
@@ -27,6 +21,12 @@ class JSONParser extends IJSONParser {
     }
   }
 
+  /**
+    * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
+    * First parse the [[JsValue]] into a [[UnresolvedQuery]] using json parsing APIs provided by Play framework.
+    * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
+    * Finally, calls [[QueryValidator]] to validate the correctness of this query.
+    */
   override def parse(json: JsValue, schemaMap: Map[String, Schema]): (Seq[Query], QueryExeOption) = {
     val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
     val query = (json \ "batch").toOption match {
@@ -47,6 +47,13 @@ class JSONParser extends IJSONParser {
 object JSONParser {
   //Warn: the order of implicit values matters. The dependence should be initialized earlier
 
+  /**
+    * Resolves a [[UnresolvedQuery]] into a [[Query]] by calling [[QueryResolver]], then validates its correctness by calling [[QueryValidator]].
+    *
+    * @param query
+    * @param schemaMap
+    * @return
+    */
   def resolve(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
     val resolved = QueryResolver.resolve(query, schemaMap).asInstanceOf[Query]
     QueryValidator.validate(resolved)
