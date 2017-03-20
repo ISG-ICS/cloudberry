@@ -44,7 +44,6 @@ trait Field {
   val dataType: DataType
   val isOptional: Boolean = false
 
-  def as(name: String): Field
 }
 
 object Field {
@@ -60,20 +59,37 @@ object Field {
     }
   }
 
+  def as(field: Field, name: String): Field = {
+    field.dataType match {
+      case DataType.Number => NumberField(name, field.isOptional)
+      case DataType.Time => TimeField(name, field.isOptional)
+      case DataType.String => StringField(name, field.isOptional)
+      case DataType.Text => TextField(name, field.isOptional)
+      case DataType.Point => PointField(name, field.isOptional)
+      case DataType.Boolean => PointField(name, field.isOptional)
+      case DataType.Hierarchy =>
+        val hierarchyField = field.asInstanceOf[HierarchyField]
+        HierarchyField(name, hierarchyField.innerType, hierarchyField.levels, hierarchyField.isOptional)
+      case DataType.Record =>
+        val recordField = field.asInstanceOf[RecordField]
+        RecordField(name, recordField.schema, recordField.isOptional)
+      case DataType.Bag =>
+        val bagField = field.asInstanceOf[BagField]
+        BagField(bagField.name, bagField.innerType, bagField.isOptional)
+    }
+
+  }
+
 }
 
 case class NumberField(override val name: String, override val isOptional: Boolean = false) extends Field {
   override val dataType = DataType.Number
-
-  def as(name: String) = NumberField(name, isOptional)
 
 }
 
 case class TimeField(override val name: String, override val isOptional: Boolean = false)
   extends Field {
   override val dataType = DataType.Time
-
-  def as(name: String) = TimeField(name, isOptional)
 
 }
 
@@ -85,14 +101,11 @@ case class StringField(override val name: String, override val isOptional: Boole
   extends Field {
   override val dataType = DataType.String
 
-  def as(name: String) = StringField(name, isOptional)
 }
 
 case class TextField(override val name: String, override val isOptional: Boolean = false)
   extends Field {
   override val dataType = DataType.Text
-
-  def as(name: String) = TextField(name, isOptional)
 
 }
 
@@ -100,16 +113,11 @@ case class PointField(override val name: String, override val isOptional: Boolea
   extends Field {
   override val dataType = DataType.Point
 
-  def as(name: String) = PointField(name, isOptional)
-
 }
 
 case class BooleanField(override val name: String, override val isOptional: Boolean = false)
   extends Field {
   override val dataType = DataType.Boolean
-
-  def as(name: String) = BooleanField(name, isOptional)
-
 
 }
 
@@ -122,8 +130,6 @@ case class BagField(override val name: String,
                     override val isOptional: Boolean = false
                    ) extends NestedField {
   override val dataType = DataType.Bag
-
-  def as(name: String) = BagField(name, innerType, isOptional)
 
 }
 
@@ -141,13 +147,10 @@ case class HierarchyField(override val name: String,
                          ) extends NestedField {
   override val dataType = DataType.Hierarchy
 
-  def as(name: String) = HierarchyField(name, innerType, levels, isOptional)
 }
 
 case class RecordField(override val name: String, val schema: Schema, override val isOptional: Boolean = false) extends Field {
   override val dataType = DataType.Record
-
-  def as(name: String) = RecordField(name, schema, isOptional)
 
 }
 
@@ -155,8 +158,6 @@ case object AllField extends Field {
   override val name: String = "*"
   override val dataType: DataType = DataType.Record
   override val isOptional: Boolean = false
-
-  def as(name: String) = ???
 
 }
 

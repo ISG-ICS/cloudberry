@@ -439,7 +439,7 @@ class QueryResolver {
       val selectValues = resolveFields(lookup.selectValues, schemaMap(lookup.dataset).fieldMap)
       val as = lookup.as.zip(selectValues).map {
         case (as, field) =>
-          val asField = field.as(as)
+          val asField = Field.as(field, as)
           producedFields += as -> asField
           asField
       }
@@ -453,9 +453,9 @@ class QueryResolver {
     val producedFields = mutable.Map.newBuilder[String, Field]
     val resolved = unnests.map { unnest =>
       val field = resolveField(unnest.field, fieldMap)
-      val as = field.as(unnest.as)
-      producedFields += unnest.as -> as
-      UnnestStatement(field, as)
+      val asField = Field.as(field, unnest.as)
+      producedFields += unnest.as -> asField
+      UnnestStatement(field, asField)
     }
 
     (resolved, (producedFields ++= fieldMap).result().toMap)
@@ -481,7 +481,7 @@ class QueryResolver {
           }
           val as = by.as match {
             case Some(as) =>
-              val asField = groupedField.as(as)
+              val asField = Field.as(groupedField, as)
               producedFields += as -> asField
               Some(asField)
             case None =>
@@ -492,7 +492,7 @@ class QueryResolver {
         }
         val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
           val field = resolveField(aggregate.field, fieldMap)
-          val as = aggregate.func(field).as(aggregate.as)
+          val as = Field.as(aggregate.func(field), aggregate.as)
           producedFields += aggregate.as -> as
           AggregateStatement(field, aggregate.func, as)
         }
@@ -542,9 +542,9 @@ class QueryResolver {
       case Some(globalAggregateStatement) =>
         val aggregate = globalAggregateStatement.aggregate
         val field = resolveField(aggregate.field, fieldMap)
-        val as = aggregate.func(field).as(aggregate.as)
-        val resolved = GlobalAggregateStatement(AggregateStatement(field, aggregate.func, as))
-        (Some(resolved), Map(aggregate.as -> as))
+        val asField = Field.as(aggregate.func(field), aggregate.as)
+        val resolved = GlobalAggregateStatement(AggregateStatement(field, aggregate.func, asField))
+        (Some(resolved), Map(aggregate.as -> asField))
       case None => (None, fieldMap)
     }
   }

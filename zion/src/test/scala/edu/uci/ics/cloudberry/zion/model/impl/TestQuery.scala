@@ -22,7 +22,7 @@ object TestQuery {
   val createAt = twitterField("create_at")
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
-  val tag = hashtags.as("tag")
+  val tag = Field.as(hashtags, "tag")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
@@ -71,42 +71,42 @@ object TestQuery {
   val byTag = ByStatement(tag, None, None)
 
   val secondInterval = Interval(TimeUnit.Second)
-  val bySecond = ByStatement(createAt, Some(secondInterval), Some(secondInterval(createAt).as("sec")))
+  val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
   val minuteInterval = Interval(TimeUnit.Minute)
-  val byMinute = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(minuteInterval(createAt).as("min")))
+  val byMinute = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "min")))
   val hourInterval = Interval(TimeUnit.Hour)
-  val byHour = ByStatement(createAt, Some(Interval(TimeUnit.Hour)), Some(hourInterval(createAt).as("hour")))
+  val byHour = ByStatement(createAt, Some(Interval(TimeUnit.Hour)), Some(Field.as(hourInterval(createAt), "hour")))
   val dayInterval = Interval(TimeUnit.Day)
-  val byDay = ByStatement(createAt, Some(Interval(TimeUnit.Day)), Some(dayInterval(createAt).as("day")))
+  val byDay = ByStatement(createAt, Some(Interval(TimeUnit.Day)), Some(Field.as(dayInterval(createAt), "day")))
   val weekInterval = Interval(TimeUnit.Week)
-  val byWeek = ByStatement(createAt, Some(Interval(TimeUnit.Week)), Some(weekInterval(createAt).as("week")))
+  val byWeek = ByStatement(createAt, Some(Interval(TimeUnit.Week)), Some(Field.as(weekInterval(createAt), "week")))
   val monthInterval = Interval(TimeUnit.Month)
-  val byMonth = ByStatement(createAt, Some(Interval(TimeUnit.Month)), Some(monthInterval(createAt).as("month")))
+  val byMonth = ByStatement(createAt, Some(Interval(TimeUnit.Month)), Some(Field.as(monthInterval(createAt), "month")))
   val yearInterval = Interval(TimeUnit.Year)
-  val byYear = ByStatement(createAt, Some(Interval(TimeUnit.Year)), Some(minuteInterval(createAt).as("year")))
+  val byYear = ByStatement(createAt, Some(Interval(TimeUnit.Year)), Some(Field.as(minuteInterval(createAt), "year")))
 
   val level = Level("state")
-  val byState = ByStatement(geo, Some(level), Some(level(geo).as("state")))
-  val byGeocell10 = ByStatement(coordinate, Some(GeoCellTenth), Some(GeoCellTenth(coordinate).as("cell")))
-  val byGeocell100 = ByStatement(coordinate, Some(GeoCellHundredth), Some(GeoCellHundredth(coordinate).as("cell")))
-  val byGeocell1000 = ByStatement(coordinate, Some(GeoCellThousandth), Some(GeoCellThousandth(coordinate).as("cell")))
+  val byState = ByStatement(geo, Some(level), Some(Field.as(level(geo), "state")))
+  val byGeocell10 = ByStatement(coordinate, Some(GeoCellTenth), Some(Field.as(GeoCellTenth(coordinate), "cell")))
+  val byGeocell100 = ByStatement(coordinate, Some(GeoCellHundredth), Some(Field.as(GeoCellHundredth(coordinate), "cell")))
+  val byGeocell1000 = ByStatement(coordinate, Some(GeoCellThousandth), Some(Field.as(GeoCellThousandth(coordinate), "cell")))
   val byUser = ByStatement(userId, None, None)
 
   val bin10 = Bin(10)
-  val byBin = ByStatement(geoStateID, Some(bin10), Some(bin10(geoStateID).as("state")))
+  val byBin = ByStatement(geoStateID, Some(bin10), Some(Field.as(bin10(geoStateID), "state")))
 
-  val count = Count(all).as("count")
+  val count = Field.as(Count(all), "count")
   val aggrCount = AggregateStatement(all, Count, count)
-  val aggrMaxGroupBy = AggregateStatement(count, Max, Max(count).as("max"))
-  val aggrMax = AggregateStatement(id, Max, Max(id).as("max"))
-  val aggrMin = AggregateStatement(id, Min, Min(id).as("min"))
-  val aggrSum = AggregateStatement(id, Sum, Sum(id).as("sum"))
-  val aggrAvg = AggregateStatement(id, Avg, Avg(id).as("avg"))
-  val aggrPopulationMin = AggregateStatement(population, Min, Min(population).as("min"))
+  val aggrMaxGroupBy = AggregateStatement(count, Max, Field.as(Max(count), "max"))
+  val aggrMax = AggregateStatement(id, Max, Field.as(Max(id), "max"))
+  val aggrMin = AggregateStatement(id, Min, Field.as(Min(id), "min"))
+  val aggrSum = AggregateStatement(id, Sum, Field.as(Sum(id), "sum"))
+  val aggrAvg = AggregateStatement(id, Avg, Field.as(Avg(id), "avg"))
+  val aggrPopulationMin = AggregateStatement(population, Min, Field.as(Min(population), "min"))
 
   val groupPopulationSum = GroupStatement(
     bys = Seq(byState),
-    aggregates = Seq(AggregateStatement(population, Sum, Sum(population).as("sum")))
+    aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
   )
 
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
@@ -121,7 +121,7 @@ object TestQuery {
     dataset = PopulationDataSet,
     lookupKeys = Seq(stateID),
     selectValues = Seq(population),
-    as = Seq(population.as("population")))
+    as = Seq(Field.as(population, "population")))
 
   val lookupPopulationMultiple = LookupStatement(
     sourceKeys = Seq(geoStateID),
@@ -135,7 +135,7 @@ object TestQuery {
     dataset = literacyDataSet,
     lookupKeys = Seq(stateID),
     selectValues = Seq(literacy),
-    as = Seq(literacy.as("literacy")))
+    as = Seq(Field.as(literacy, "literacy")))
 
   val filterJSON =
     s"""

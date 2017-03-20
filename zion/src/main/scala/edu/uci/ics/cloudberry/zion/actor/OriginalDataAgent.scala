@@ -26,9 +26,9 @@ class OriginalDataAgent(override val dbName: String,
     * Stats including: minTimeStamp, maxTimeStamp, cardinality
     */
   override def preStart(): Unit = {
-    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Min, Min(schema.timeField.get).as("min")))))
-    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Max, Max(schema.timeField.get).as("max")))))
-    val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Count(schema.fieldMap("*")).as("count")))))
+    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Min, Field.as(Min(schema.timeField.get), "min")))))
+    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Max, Field.as(Max(schema.timeField.get), "max")))))
+    val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))))
     val schemaMap = Map(dbName -> schema)
     val future = for {
       minTime <- conn.postQuery(queryParser.generate(minTimeQuery, schemaMap)).map(r => (r \\ "min").head.as[String])
@@ -71,7 +71,7 @@ class OriginalDataAgent(override val dbName: String,
   private def collectStats(start: DateTime): Unit = {
     val now = DateTime.now().minusMillis(1)
     val filter = FilterStatement(schema.timeField.get, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
-    val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Count(schema.fieldMap("*")).as("count")))
+    val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
 
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))
