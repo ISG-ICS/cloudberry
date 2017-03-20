@@ -26,8 +26,8 @@ class OriginalDataAgent(override val dbName: String,
     * Stats including: minTimeStamp, maxTimeStamp, cardinality
     */
   override def preStart(): Unit = {
-    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Min, Field.as(Min(schema.timeField.get), "min")))))
-    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField.get, Max, Field.as(Max(schema.timeField.get), "max")))))
+    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Field.as(Min(schema.timeField), "min")))))
+    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Field.as(Max(schema.timeField), "max")))))
     val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))))
     val schemaMap = Map(dbName -> schema)
     val future = for {
@@ -70,7 +70,7 @@ class OriginalDataAgent(override val dbName: String,
 
   private def collectStats(start: DateTime): Unit = {
     val now = DateTime.now().minusMillis(1)
-    val filter = FilterStatement(schema.timeField.get, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
+    val filter = FilterStatement(schema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
     val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
 

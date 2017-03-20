@@ -182,7 +182,7 @@ case class Schema(typeName: String,
                   dimension: Seq[Field],
                   measurement: Seq[Field],
                   primaryKey: Seq[Field],
-                  timeField: Option[TimeField]
+                  timeField: TimeField
                  ) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap

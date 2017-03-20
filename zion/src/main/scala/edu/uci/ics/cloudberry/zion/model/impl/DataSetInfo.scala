@@ -60,7 +60,7 @@ object DataSetInfo {
     Seq(StringField("name")),
     Seq.empty,
     Seq(StringField("name")),
-    Some(TimeField("stats.createTime")))
+    TimeField("stats.createTime"))
 
   def parse(json: JsValue, schemaMap: Map[String, Schema]): DataSetInfo = {
     json.validate[UnresolvedDataSetInfo] match {
@@ -70,11 +70,10 @@ object DataSetInfo {
 
         val schema = dataSetInfo.schema
         val primaryKey = schema.primaryKey.map(schema(_).get)
-        val timeField = schema(schema.timeField).map { f =>
-          if (!f.isInstanceOf[TimeField]) {
+        val timeField = schema(schema.timeField) match {
+          case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
+          case _ =>
             throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
-          }
-          f.asInstanceOf[TimeField]
         }
 
         val resolvedSchema = Schema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
@@ -102,10 +101,7 @@ object DataSetInfo {
       schema.dimension,
       schema.measurement,
       schema.primaryKey.map(_.name),
-      schema.timeField match {
-        case Some(f) => f.name
-        case None => ""
-      })
+      schema.timeField.name)
   }
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {

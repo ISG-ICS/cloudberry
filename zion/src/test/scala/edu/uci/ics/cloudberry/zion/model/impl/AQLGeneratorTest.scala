@@ -699,7 +699,7 @@ class AQLGeneratorTest extends Specification {
 
   "AQLQueryParser appendView" should {
     "generate the upsert query" in {
-      val timeFilter = FilterStatement(TwitterDataStore.TwitterSchema.timeField.get, None, Relation.inRange, Seq(startTime, endTime))
+      val timeFilter = FilterStatement(TwitterDataStore.TwitterSchema.timeField, None, Relation.inRange, Seq(startTime, endTime))
       val aql = parser.parseAppend(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), TwitterDataStore.TwitterSchema)
       removeEmptyLine(aql) must_== unifyNewLine(
         """

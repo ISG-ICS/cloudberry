@@ -19,5 +19,5 @@ object LiteracyDataStore {
                                             NumberField("literacy")
                                           ),
                                           Seq(NumberField("id")),
-                                          Some(TimeField(TimeFieldName)))
+                                          TimeField(TimeFieldName))
 }

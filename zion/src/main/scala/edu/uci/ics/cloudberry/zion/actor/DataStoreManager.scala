@@ -37,7 +37,7 @@ class DataStoreManager(metaDataset: String,
   val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
-    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField.get), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
+    metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
         val schemaMap: mutable.Map[String, Schema] = new mutable.HashMap[String, Schema]
         jsArray.value.foreach { json =>
@@ -76,11 +76,11 @@ class DataStoreManager(metaDataset: String,
         case Some(info) =>
           info.createQueryOpt match {
             case Some(createQuery) =>
-              if (createQuery.filter.exists(_.field == info.schema.timeField.get)) {
+              if (createQuery.filter.exists(_.field == info.schema.timeField)) {
                 log.error("the create view should not contains the time dimension")
               } else {
                 val now = DateTime.now()
-                val compensate = FilterStatement(info.schema.timeField.get, None, Relation.inRange,
+                val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
                   Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
                 val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
                 answerQuery(AppendView(info.name, appendQ), Some(now))
@@ -146,7 +146,7 @@ class DataStoreManager(metaDataset: String,
     val sourceInfo = metaData(create.query.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
     val now = DateTime.now()
-    val fixEndFilter = FilterStatement(sourceInfo.schema.timeField.get, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
+    val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
@@ -171,7 +171,7 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
-    val timeField = schema.timeField.get
+    val timeField = schema.timeField
     val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Field.as(Min(timeField), "min")))))
     val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Field.as(Max(timeField), "max")))))
     val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))

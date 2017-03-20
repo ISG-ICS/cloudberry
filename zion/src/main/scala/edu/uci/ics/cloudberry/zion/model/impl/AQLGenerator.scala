@@ -40,11 +40,7 @@ class AQLGenerator extends IQLGenerator {
   def parseCreate(create: CreateView, sourceSchema: Schema): String = {
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
-    val timeFilter =
-      resultSchema.timeField match {
-        case Some(f) => s"//with filter on '${f.name}'"
-        case None => ""
-      }
+    val timeFilter = s"//with filter on '${resultSchema.timeField.name}'"
     val createDataSet =
       s"""
          |drop dataset ${create.dataset} if exists;

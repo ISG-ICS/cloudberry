@@ -34,5 +34,5 @@ object TwitterDataStore {
                                            NumberField("user.status_count")
                                          ),
                                          Seq(NumberField("id")),
-                                         Some(TimeField(TimeFieldName)))
+                                         TimeField(TimeFieldName))
 }
