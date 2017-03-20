@@ -30,10 +30,12 @@ case class UnresolvedSchema(typeName: String,
                             primaryKey: Seq[String],
                             timeField: String
                            ) {
-  def apply(field: String): Option[Field] =
+  private lazy val fields = dimension ++ measurement
+
+  def getField(field: String): Option[Field] =
     field.trim match {
       case "" => None
-      case _ => (dimension ++ measurement).find(_.name == field) match {
+      case _ => fields.find(_.name == field) match {
         case some: Some[Field] => some
         case None => throw new FieldNotFound(field)
       }
@@ -69,11 +71,11 @@ object DataSetInfo {
         val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
 
         val schema = dataSetInfo.schema
-        val primaryKey = schema.primaryKey.map(schema(_).get)
-        val timeField = schema(schema.timeField) match {
+        val primaryKey = schema.primaryKey.map(schema.getField(_).get)
+        val timeField = schema.getField(schema.timeField) match {
           case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
-          case _ =>
-            throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
+          case None if schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${schema.typeName}.")
+          case _ => throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
         }
 
         val resolvedSchema = Schema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
@@ -101,7 +103,8 @@ object DataSetInfo {
       schema.dimension,
       schema.measurement,
       schema.primaryKey.map(_.name),
-      schema.timeField.name)
+      schema.timeField.name
+    )
   }
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {

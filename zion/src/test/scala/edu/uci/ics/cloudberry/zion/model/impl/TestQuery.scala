@@ -19,7 +19,7 @@ object TestQuery {
   val allSchemaMap = Map(TwitterDataSet -> twitterSchema, PopulationDataSet -> populationSchema, literacyDataSet -> literacySchema)
 
 
-  val createAt = twitterField("create_at")
+  val createAt = twitterField("create_at").asInstanceOf[TimeField]
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
   val tag = Field.as(hashtags, "tag")

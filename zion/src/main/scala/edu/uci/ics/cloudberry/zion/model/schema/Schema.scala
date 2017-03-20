@@ -75,7 +75,7 @@ object Field {
         RecordField(name, recordField.schema, recordField.isOptional)
       case DataType.Bag =>
         val bagField = field.asInstanceOf[BagField]
-        BagField(bagField.name, bagField.innerType, bagField.isOptional)
+        BagField(name, bagField.innerType, bagField.isOptional)
     }
 
   }
@@ -188,7 +188,7 @@ case class Schema(typeName: String,
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
 
-  def apply(field: String): Field =
+  def getField(field: String): Field =
     fieldMap.get(field) match {
       case Some(f) => f
       case None => throw new FieldNotFound(field)
