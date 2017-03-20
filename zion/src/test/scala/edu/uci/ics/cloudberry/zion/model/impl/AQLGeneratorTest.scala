@@ -14,7 +14,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -31,7 +31,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -49,7 +49,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(stateFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -68,7 +68,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byHour, byState), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -87,7 +87,7 @@ class AQLGeneratorTest extends Specification {
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -107,7 +107,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $g in (
@@ -136,7 +136,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMax))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -153,7 +153,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMin))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -170,7 +170,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrSum))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -187,7 +187,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrAvg))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -204,7 +204,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -222,7 +222,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -242,7 +242,7 @@ class AQLGeneratorTest extends Specification {
       filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -261,7 +261,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byBin), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -278,7 +278,7 @@ class AQLGeneratorTest extends Specification {
     "translate a group by geocell without filter" in {
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -294,7 +294,7 @@ class AQLGeneratorTest extends Specification {
     "translate a text contain filter and select 10" in {
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectTop10))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -309,7 +309,7 @@ class AQLGeneratorTest extends Specification {
     "translate group by second" in {
       val group = GroupStatement(Seq(bySecond), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -323,7 +323,7 @@ class AQLGeneratorTest extends Specification {
     "translate group by minute" in {
       val group = GroupStatement(Seq(byMinute), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -338,7 +338,7 @@ class AQLGeneratorTest extends Specification {
     "translate group by day" in {
       val group = GroupStatement(Seq(byDay), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -353,7 +353,7 @@ class AQLGeneratorTest extends Specification {
     "translate group by week" in {
       val group = GroupStatement(Seq(byWeek), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -368,7 +368,7 @@ class AQLGeneratorTest extends Specification {
     "translate group by month" in {
       val group = GroupStatement(Seq(byMonth), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -383,7 +383,7 @@ class AQLGeneratorTest extends Specification {
     "translate group by year" in {
       val group = GroupStatement(Seq(byYear), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -398,7 +398,7 @@ class AQLGeneratorTest extends Specification {
     "translate a count cardinality query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """{"count": count (
           |for $c in (
@@ -413,7 +413,7 @@ class AQLGeneratorTest extends Specification {
     "translate get min field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMin)
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """{"min": min (
           |for $c in (
@@ -428,7 +428,7 @@ class AQLGeneratorTest extends Specification {
     "translate get max field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMax)
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """{"max": max (
           |for $c in (
@@ -444,7 +444,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val query = new Query(dataset = TwitterDataSet, filter = filter, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """{"count": count (
           |for $c in (
@@ -462,7 +462,7 @@ class AQLGeneratorTest extends Specification {
       val filter = Seq(timeFilter)
       val globalAggr = GlobalAggregateStatement(aggrMin)
       val query = new Query(dataset = TwitterDataSet, filter = filter, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """{"min": min (
           |for $c in (
@@ -481,7 +481,7 @@ class AQLGeneratorTest extends Specification {
       val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |{"max": max (
@@ -514,7 +514,7 @@ class AQLGeneratorTest extends Specification {
     "translate a count cardinality query with select" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val query = new Query(dataset = TwitterDataSet, select = Some(selectTop10), globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> schema))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |{"count": count (
@@ -533,12 +533,11 @@ class AQLGeneratorTest extends Specification {
     "translate lookup one table with one join key" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
-
-      val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", "population"))
+      val selectStatement = selectPopulation
       val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = Some(selectStatement))
-      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
@@ -548,7 +547,7 @@ class AQLGeneratorTest extends Specification {
           |offset 0
           |return
           |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'id': $t.'id', 'geo': $t, 'hashtags': $t.'hashtags'}
         """.stripMargin.trim
       )
@@ -588,14 +587,13 @@ class AQLGeneratorTest extends Specification {
       val literacySchema = LiteracyDataStore.LiteracySchema
 
       val selectValues = Seq("*", "population", "literacy")
-      val selectStatement = SelectStatement(Seq.empty, 0, 0, selectValues)
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSet,
         lookup = Seq(lookupPopulation, lookupLiteracy),
         filter, Seq.empty,
-        select = Some(selectStatement))
+        select = Some(selectPopulationLiteracy))
 
-      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema,
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema,
         literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
@@ -606,9 +604,9 @@ class AQLGeneratorTest extends Specification {
           |offset 0
           |return
           |{ 'text': $t.'text', 'geo_tag.countyID': $t.'geo_tag'.'countyID', 'favorite_count': $t.'favorite_count', 'in_reply_to_user': $t.'in_reply_to_user', 'geo_tag.cityID': $t.'geo_tag'.'cityID', 'coordinate': $t.'coordinate', 'is_retweet': $t.'is_retweet', 'user.id': $t.'user'.'id', 'lang': $t.'lang', 'population': (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0], 'in_reply_to_status': $t.'in_reply_to_status', 'literacy': (for $l1 in dataset twitter.US_literacy
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l1.stateID
           |return $l1.literacy)[0], 'user_mentions': $t.'user_mentions', 'create_at': $t.'create_at', 'user.status_count': $t.'user'.'status_count', 'geo_tag.stateID': $t.'geo_tag'.'stateID', 'retweet_count': $t.'retweet_count', 'geo': $t, 'id': $t.'id', 'hashtags': $t.'hashtags'}
         """.stripMargin.trim
       )
@@ -619,24 +617,20 @@ class AQLGeneratorTest extends Specification {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
 
-      val selectValues = Seq("population")
+      val selectValues =
+        Seq("population")
       val group = Some(groupPopulationSum)
-      val lookup = LookupStatement(
-        sourceKeys = Seq("geo_tag.stateID"),
-        dataset = populationDataSet,
-        lookupKeys = Seq("stateId"),
-        selectValues,
-        as = selectValues)
+      val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
-      val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, group)
-      val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
+      val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, group)
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
           |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
           |and contains($t.'text', "virus")
           |let $population_aggr := (for $l0 in dataset twitter.US_population
-          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
+          |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0]
           |group by $g0 := $t.geo_tag.stateID with $population_aggr
           |return {
@@ -705,7 +699,7 @@ class AQLGeneratorTest extends Specification {
 
   "AQLQueryParser appendView" should {
     "generate the upsert query" in {
-      val timeFilter = FilterStatement(TwitterDataStore.TimeFieldName, None, Relation.inRange, Seq(startTime, endTime))
+      val timeFilter = FilterStatement(TwitterDataStore.TwitterSchema.timeField, None, Relation.inRange, Seq(startTime, endTime))
       val aql = parser.parseAppend(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), TwitterDataStore.TwitterSchema)
       removeEmptyLine(aql) must_== unifyNewLine(
         """

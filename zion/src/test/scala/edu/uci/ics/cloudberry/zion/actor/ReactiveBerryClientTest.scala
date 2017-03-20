@@ -22,8 +22,8 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
 
   import org.mockito.Mockito._
-
   import scala.concurrent.duration._
+  import TestQuery.twitterSchemaMap
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val startTime = new DateTime(2016, 1, 1, 0, 0)
@@ -148,7 +148,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.reply(Seq(TestQuery.sourceInfo))
 
       val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval1 = slicedQ1.getTimeInterval("create_at").get
+      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
       interval1.getEnd must_== endTime
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
@@ -158,7 +158,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval2 = slicedQ2.getTimeInterval("create_at").get
+      val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
       println(interval2)
       interval2.getEnd must_== interval1.getStart
       interval2.getStartMillis must be_>=(startTime.getMillis)
@@ -169,7 +169,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ3 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval3 = slicedQ3.getTimeInterval("create_at").get
+      val interval3 = slicedQ3.getTimeInterval(TimeField("create_at")).get
       println(interval3)
       interval3.getEnd must_== interval2.getStart
       interval3.getStartMillis must be_>=(startTime.getMillis)
@@ -198,7 +198,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
 
-      val (query, _) = mockParser.parse(hourCountJSON)
+      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== query.head.dataset
@@ -214,7 +214,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       while (intervalx.getStartMillis > startTime.getMillis) {
         qx = dataManager.receiveOne(5 second).asInstanceOf[Query]
-        intervalx = qx.getTimeInterval("create_at").get
+        intervalx = qx.getTimeInterval(TimeField("create_at")).get
         dataManager.reply(getRet(0))
         response ++= getRet(0)
         sender.expectMsg(JsArray(Seq(response)))
@@ -222,7 +222,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
         dataManager.reply(Seq(TestQuery.sourceInfo))
       }
-      qx.getTimeInterval("create_at").get.getStartMillis must_== startTime.getMillis
+      qx.getTimeInterval(TimeField("create_at")).get.getStartMillis must_== startTime.getMillis
 
       dataManager.expectMsg(createView)
       ok
@@ -243,7 +243,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
 
-      val (query, _) = mockParser.parse(hourCountJSON)
+      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
@@ -253,7 +253,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval1 = slicedQ1.getTimeInterval("create_at").get
+      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
       interval1.getEnd must_== endTime
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
@@ -263,7 +263,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval2 = slicedQ2.getTimeInterval("create_at").get
+      val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
       println(interval2)
       interval2.getEnd must_== interval1.getStart
       interval2.getStartMillis must be_>=(startTime.getMillis)
@@ -281,7 +281,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ11 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval11 = slicedQ11.getTimeInterval("create_at").get
+      val interval11 = slicedQ11.getTimeInterval(TimeField("create_at")).get
       interval11.getEnd must_== endTime2
       interval11.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
@@ -305,7 +305,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
 
-      val (query, _) = mockParser.parse(hourCountJSON)
+      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
@@ -325,7 +325,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval1 = slicedQ1.getTimeInterval("create_at").get
+      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
       interval1.getEnd must_== endTime2
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 

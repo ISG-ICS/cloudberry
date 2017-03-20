@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.SortOrder
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -20,7 +19,7 @@ class QueryPlannerTest extends Specification {
   val planner = new QueryPlanner
 
   val zikaFullStats = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 50)
-  val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, sourceInterval, zikaFullStats)
+  val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), twitterSchema, sourceInterval, zikaFullStats)
 
   "QueryPlanner" should {
     "makePlan ask source if the view is empty" in {
@@ -38,7 +37,7 @@ class QueryPlannerTest extends Specification {
 
       val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
-      val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), schema, sourceInterval, virusStats)
+      val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), twitterSchema, sourceInterval, virusStats)
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
       queries.size must_== 1
       queries.head must_== queryCount.copy(dataset = zikaFullYearViewInfo.name)
@@ -50,11 +49,11 @@ class QueryPlannerTest extends Specification {
     }
     "makePlan should omit the redundant filter from query if it covers view.createQuery" in {
 
-      val queryTimeFilter = FilterStatement("create_at", None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
+      val queryTimeFilter = FilterStatement(TimeField("create_at"), None, Relation.inRange, Seq("2016-01-01T00:00:00.000Z", "2016-12-01T00:00:00.000Z"))
       val queryZika = Query(
         dataset = TwitterDataSet,
         filter = Seq(
-          FilterStatement("text", None, Relation.contains, Seq("zika")),
+          FilterStatement(TextField("text"), None, Relation.contains, Seq("zika")),
           queryTimeFilter
         ),
         groups = Some(group))

@@ -1,33 +1,65 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{IJSONParser, JsonRequestException}
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IJSONParser, JsonRequestException, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsObject, _}
 
+
 class JSONParser extends IJSONParser {
 
   import JSONParser._
 
-  override def parse(json: JsValue): (Seq[Query], QueryExeOption) = {
+  override def getDatasets(json: JsValue): Set[String] = {
+    val datasets = (json \\ "dataset").filter(_.isInstanceOf[JsString]).map(_.asInstanceOf[JsString].value)
+    if (datasets.isEmpty) {
+      datasets.toSet
+    } else {
+      //TODO currently do not handle lookup queries
+      Set(datasets.head)
+    }
+  }
+
+  /**
+    * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
+    * First parse the [[JsValue]] into a [[UnresolvedQuery]] using json parsing APIs provided by Play framework.
+    * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
+    * Finally, calls [[QueryValidator]] to validate the correctness of this query.
+    */
+  override def parse(json: JsValue, schemaMap: Map[String, Schema]): (Seq[Query], QueryExeOption) = {
     val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
     val query = (json \ "batch").toOption match {
-      case Some(groupRequest) => groupRequest.validate[Seq[Query]] match {
-        case js: JsSuccess[Seq[Query]] => js.get
+      case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
+        case js: JsSuccess[Seq[UnresolvedQuery]] => js.get
         case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
       }
-      case None => json.validate[Query] match {
-        case js: JsSuccess[Query] => Seq(js.get)
+      case None => json.validate[UnresolvedQuery] match {
+        case js: JsSuccess[UnresolvedQuery] => Seq(js.get)
         case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
       }
     }
-    (query, option)
+    val resolvedQuery = query.map(resolve(_, schemaMap))
+    (resolvedQuery, option)
   }
 }
 
 object JSONParser {
   //Warn: the order of implicit values matters. The dependence should be initialized earlier
+
+  /**
+    * Resolves a [[UnresolvedQuery]] into a [[Query]] by calling [[QueryResolver]], then validates its correctness by calling [[QueryValidator]].
+    *
+    * @param query
+    * @param schemaMap
+    * @return
+    */
+  def resolve(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
+    val resolved = QueryResolver.resolve(query, schemaMap).asInstanceOf[Query]
+    QueryValidator.validate(resolved)
+    resolved
+  }
+
 
   implicit val seqAnyValue: Format[Seq[Any]] = new Format[Seq[Any]] {
     override def reads(json: JsValue): JsResult[Seq[Any]] = {
@@ -66,10 +98,10 @@ object JSONParser {
         case i: Int => JsNumber(i)
         case d: Double => JsNumber(d)
         case l: Long => JsNumber(l)
-        case fs: FilterStatement => filterFormat.writes(fs)
-        case by: ByStatement => byFormat.writes(by)
-        case ags: AggregateStatement => aggFormat.writes(ags)
-        case unS: UnnestStatement => unnestFormat.writes(unS)
+        case fs: UnresolvedFilterStatement => filterFormat.writes(fs)
+        case by: UnresolvedByStatement => byFormat.writes(by)
+        case ags: UnresolvedAggregateStatement => aggFormat.writes(ags)
+        case unS: UnresolvedUnnestStatement => unnestFormat.writes(unS)
         case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
       })
     }
@@ -122,7 +154,7 @@ object JSONParser {
         case fBin: Bin => JsObject(Seq("name" -> JsString(fBin.name), "args" -> JsObject(Seq("scale" -> JsNumber(fBin.scale)))))
         case fLevel: Level => JsObject(Seq("name" -> JsString(fLevel.name), "args" -> JsObject(Seq("level" -> JsString(fLevel.levelTag)))))
         case fInterval: Interval => JsObject(Seq("name" -> JsString(fInterval.name), "args" -> JsObject(Seq("unit" -> JsString(fInterval.unit.toString)))))
-        case fGeoCellScale: GeoCellScale => JsObject(Seq("name" -> JsString(groupFunc.name)))
+        case _: GeoCellScale => JsObject(Seq("name" -> JsString(groupFunc.name)))
       }
     }
   }
@@ -146,27 +178,28 @@ object JSONParser {
     }
   }
 
-  implicit val aggFormat: Format[AggregateStatement] = (
+  implicit val aggFormat: Format[UnresolvedAggregateStatement] = (
     (JsPath \ "field").format[String] and
       (JsPath \ "apply").format[AggregateFunc] and
       (JsPath \ "as").format[String]
-    ) (AggregateStatement.apply, unlift(AggregateStatement.unapply))
+    ) (UnresolvedAggregateStatement.apply, unlift(UnresolvedAggregateStatement.unapply))
 
-  implicit val byFormat: Format[ByStatement] = (
+  implicit val byFormat: Format[UnresolvedByStatement] = (
     (JsPath \ "field").format[String] and
       (JsPath \ "apply").formatNullable[GroupFunc] and
       (JsPath \ "as").formatNullable[String]
-    ) (ByStatement.apply, unlift(ByStatement.unapply))
+    ) (UnresolvedByStatement.apply, unlift(UnresolvedByStatement.unapply))
 
-  implicit val groupFormat: Format[GroupStatement] = (
-    (JsPath \ "by").format[Seq[ByStatement]] and
-      (JsPath \ "aggregate").format[Seq[AggregateStatement]]
-    ) (GroupStatement.apply, unlift(GroupStatement.unapply))
 
-  implicit val globalFormat: Format[GlobalAggregateStatement] = {
-    (JsPath \ "globalAggregate").format[AggregateStatement].inmap(GlobalAggregateStatement.apply, unlift(GlobalAggregateStatement.unapply))
+  implicit val groupFormat: Format[UnresolvedGroupStatement] = (
+    (JsPath \ "by").format[Seq[UnresolvedByStatement]] and
+      (JsPath \ "aggregate").format[Seq[UnresolvedAggregateStatement]]
+    ) (UnresolvedGroupStatement.apply, unlift(UnresolvedGroupStatement.unapply))
+
+  implicit val globalFormat: Format[UnresolvedGlobalAggregateStatement] = {
+    (JsPath \ "globalAggregate").format[UnresolvedAggregateStatement].inmap(UnresolvedGlobalAggregateStatement.apply, unlift(UnresolvedGlobalAggregateStatement.unapply))
   }
-  implicit val selectFormat: Format[SelectStatement] = (
+  implicit val selectFormat: Format[UnresolvedSelectStatement] = (
     (JsPath \ "order").format[Seq[String]] and
       (JsPath \ "limit").format[Int] and
       (JsPath \ "offset").format[Int] and
@@ -174,35 +207,35 @@ object JSONParser {
         o => o.getOrElse(Seq.empty[String]),
         s => if (s.isEmpty) None else Some(s)
       )
-    ) (SelectStatement.apply, unlift(SelectStatement.unapply))
+    ) (UnresolvedSelectStatement.apply, unlift(UnresolvedSelectStatement.unapply))
 
-  implicit val lookupFormat: Format[LookupStatement] = (
+  implicit val lookupFormat: Format[UnresolvedLookupStatement] = (
     (JsPath \ "joinKey").format[Seq[String]] and
       (JsPath \ "dataset").format[String] and
       (JsPath \ "lookupKey").format[Seq[String]] and
       (JsPath \ "select").format[Seq[String]] and
       (JsPath \ "as").format[Seq[String]]
-    ) (LookupStatement.apply, unlift(LookupStatement.unapply))
+    ) (UnresolvedLookupStatement.apply, unlift(UnresolvedLookupStatement.unapply))
 
-  implicit val unnestFormat: Format[UnnestStatement] = new Format[UnnestStatement] {
-    override def reads(json: JsValue): JsResult[UnnestStatement] = {
+  implicit val unnestFormat: Format[UnresolvedUnnestStatement] = new Format[UnresolvedUnnestStatement] {
+    override def reads(json: JsValue): JsResult[UnresolvedUnnestStatement] = {
       JsSuccess(json.as[JsObject].value.map {
         case (key, jsValue: JsValue) =>
-          UnnestStatement(key, jsValue.as[String])
+          UnresolvedUnnestStatement(key, jsValue.as[String])
       }.head)
     }
 
-    override def writes(unnestStatement: UnnestStatement): JsValue = {
-      JsObject(Seq(unnestStatement.fieldName -> JsString(unnestStatement.as)))
+    override def writes(unnestStatement: UnresolvedUnnestStatement): JsValue = {
+      JsObject(Seq(unnestStatement.field -> JsString(unnestStatement.as)))
     }
   }
 
-  implicit val filterFormat: Format[FilterStatement] = (
+  implicit val filterFormat: Format[UnresolvedFilterStatement] = (
     (JsPath \ "field").format[String] and
       (JsPath \ "apply").formatNullable[TransformFunc] and
       (JsPath \ "relation").format[Relation] and
       (JsPath \ "values").format[Seq[Any]]
-    ) (FilterStatement.apply, unlift(FilterStatement.unapply))
+    ) (UnresolvedFilterStatement.apply, unlift(UnresolvedFilterStatement.unapply))
 
   implicit val exeOptionReads: Reads[QueryExeOption] = (
     (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
@@ -211,27 +244,27 @@ object JSONParser {
 
 
   // TODO find better name for 'global'
-  implicit val queryFormat: Format[Query] = (
+  implicit val queryFormat: Format[UnresolvedQuery] = (
     (JsPath \ "dataset").format[String] and
-      (JsPath \ "lookup").formatNullable[Seq[LookupStatement]].inmap[Seq[LookupStatement]](
-        o => o.getOrElse(Seq.empty[LookupStatement]),
+      (JsPath \ "lookup").formatNullable[Seq[UnresolvedLookupStatement]].inmap[Seq[UnresolvedLookupStatement]](
+        o => o.getOrElse(Seq.empty[UnresolvedLookupStatement]),
         s => if (s.isEmpty) None else Some(s)
       ) and
-      (JsPath \ "filter").formatNullable[Seq[FilterStatement]].inmap[Seq[FilterStatement]](
-        o => o.getOrElse(Seq.empty[FilterStatement]),
+      (JsPath \ "filter").formatNullable[Seq[UnresolvedFilterStatement]].inmap[Seq[UnresolvedFilterStatement]](
+        o => o.getOrElse(Seq.empty[UnresolvedFilterStatement]),
         s => if (s.isEmpty) None else Some(s)
       ) and
-      (JsPath \ "unnest").formatNullable[Seq[UnnestStatement]].inmap[Seq[UnnestStatement]](
-        o => o.getOrElse(Seq.empty[UnnestStatement]),
+      (JsPath \ "unnest").formatNullable[Seq[UnresolvedUnnestStatement]].inmap[Seq[UnresolvedUnnestStatement]](
+        o => o.getOrElse(Seq.empty[UnresolvedUnnestStatement]),
         s => if (s.isEmpty) None else Some(s)
       ) and
-      (JsPath \ "group").formatNullable[GroupStatement] and
-      (JsPath \ "select").formatNullable[SelectStatement] and
-      (JsPath \ "global").formatNullable[GlobalAggregateStatement] and
+      (JsPath \ "group").formatNullable[UnresolvedGroupStatement] and
+      (JsPath \ "select").formatNullable[UnresolvedSelectStatement] and
+      (JsPath \ "global").formatNullable[UnresolvedGlobalAggregateStatement] and
       (JsPath \ "estimable").formatNullable[Boolean].inmap[Boolean](
         o => o.getOrElse(false),
         s => if (s) Some(s) else None
       )
-    ) (Query.apply, unlift(Query.unapply))
+    ) (UnresolvedQuery.apply, unlift(UnresolvedQuery.unapply))
 
 }

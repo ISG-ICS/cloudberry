@@ -11,13 +11,13 @@ object LiteracyDataStore {
   val DatasetName = "twitter.US_literacy"
   val TimeFieldName = "create_at"
   val LiteracySchema: Schema = new Schema("literacy",
-    Seq(
-      TimeField(TimeFieldName),
-      NumberField("id"),
-      NumberField("stateId")),
-    Seq(
-      NumberField("literacy")
-    ),
-    Seq("id"),
-    TimeFieldName)
+                                          Seq(
+                                            TimeField(TimeFieldName),
+                                            NumberField("id"),
+                                            NumberField("stateID")),
+                                          Seq(
+                                            NumberField("literacy")
+                                          ),
+                                          Seq(NumberField("id")),
+                                          TimeField(TimeFieldName))
 }

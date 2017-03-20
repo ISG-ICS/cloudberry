@@ -55,7 +55,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val mockParserFactory = mock[IQLGeneratorFactory]
       val mockConn = mock[IDataConn]
 
-      val initialInfo = JsArray(Seq(Json.toJson(sourceInfo)))
+      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       sender.send(dataManager, DataStoreManager.AreYouReady)
       val metaQuery = meta.receiveOne(5 seconds)
@@ -67,7 +67,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val mockParserFactory = mock[IQLGeneratorFactory]
       val mockConn = mock[IDataConn]
 
-      val initialInfo = JsArray(Seq(Json.toJson(sourceInfo)))
+      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       val metaQuery = meta.receiveOne(5 seconds)
       metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
@@ -84,7 +84,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val mockParserFactory = mock[IQLGeneratorFactory]
       val mockConn = mock[IDataConn]
 
-      val initialInfo = JsArray(Seq(Json.toJson(sourceInfo)))
+      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       meta.receiveOne(5 seconds)
       meta.reply(initialInfo)
@@ -106,7 +106,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val viewStatJson = JsArray(Seq(Json.obj("min" -> "2015-01-01T00:00:00.000Z", "max" -> "2016-01-01T00:00:00.000Z", "count" -> 2000)))
       when(mockConn.postQuery(any[String])).thenReturn(Future(viewStatJson))
 
-      val initialInfo = JsArray(Seq(Json.toJson(sourceInfo)))
+      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       meta.receiveOne(5 seconds)
       meta.reply(initialInfo)
@@ -143,7 +143,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val viewStatJson = JsArray(Seq(Json.obj("min" -> "2015-01-01T00:00:00.000Z", "max" -> "2016-01-01T00:00:00.000Z", "count" -> 2000)))
       when(mockConn.postQuery(any[String])).thenReturn(Future(viewStatJson))
 
-      val initialInfo = Json.toJson(Seq(sourceInfo, zikaHalfYearViewInfo)).asInstanceOf[JsArray]
+      val initialInfo = Json.toJson(Seq(DataSetInfo.write(sourceInfo), DataSetInfo.write(zikaHalfYearViewInfo))).asInstanceOf[JsArray]
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
       meta.receiveOne(3 seconds)
       meta.reply(initialInfo)

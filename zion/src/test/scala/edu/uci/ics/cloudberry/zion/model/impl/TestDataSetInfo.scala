@@ -14,7 +14,6 @@ object TestDataSetInfo {
   val startTimeString = "2004-12-25T00:00:00.000Z"
 
   val interval = new Interval(starDateTime, endDateTime)
-  val fields = Seq(NumberField("id"), StringField("name"))
   val globalAggr = GlobalAggregateStatement(aggrCount)
   val filter = Seq(stateFilter, timeFilter, textFilter)
   val group = GroupStatement(Seq(byState, byHour), Seq(aggrCount))
@@ -27,12 +26,12 @@ object TestDataSetInfo {
   val groupByBinQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(groupByBin), None)
 
 
-  val simpleDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val fieldsDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", fields, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val queryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(createQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val berryAggrByTagViewDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(berryAggrByTagQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val unnestQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(unnestQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val byBinDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(groupByBinQuery), Schema("tweet", Seq.empty, Seq.empty, Seq.empty, ""), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val simpleDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val fieldsDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq(NumberField("id"), StringField("name"), createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val queryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(createQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val berryAggrByTagViewDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(berryAggrByTagQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val unnestQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(unnestQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val byBinDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(groupByBinQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
 
 
   val simpleDataSetInfoJSON = Json.parse(
@@ -41,10 +40,14 @@ object TestDataSetInfo {
        | "name": "twitter.ds_tweet",
        | "schema": {
        |		"typeName": "tweet",
-       |     "dimension": [],
+       |     "dimension": [{
+       |      "name": "create_at",
+       |      "isOptional": false,
+       |      "datatype": "Time"}
+       |      ],
        |     "measurement": [],
        |     "primaryKey": [],
-       |     "timeField": ""
+       |     "timeField": "create_at"
        | },
        | "dataInterval": {"start":"$startTimeString",
        |                  "end":"$endTimeString"},
@@ -69,11 +72,15 @@ object TestDataSetInfo {
        |      {
        |      "name": "name",
        |      "isOptional": false,
-       |      "datatype": "String"}
+       |      "datatype": "String"},
+       |      {
+       |      "name": "create_at",
+       |      "isOptional": false,
+       |      "datatype": "Time"}
        |     ],
        |     "measurement": [],
        |     "primaryKey": [],
-       |     "timeField": ""
+       |     "timeField": "create_at"
        | },
        | "dataInterval": {"start":"$startTimeString",
        |                  "end":"$endTimeString"},
@@ -93,10 +100,14 @@ object TestDataSetInfo {
        |$globalCountJSON,
        | "schema": {
        |		"typeName": "tweet",
-       |     "dimension": [],
+       |     "dimension": [{
+       |      "name": "create_at",
+       |      "isOptional": false,
+       |      "datatype": "Time"}
+       |      ],
        |     "measurement": [],
        |     "primaryKey": [],
-       |     "timeField": ""
+       |     "timeField": "create_at"
        | },
        | "dataInterval": {"start":"$startTimeString",
        |                  "end":"$endTimeString"},
@@ -116,10 +127,14 @@ object TestDataSetInfo {
        |$groupByBinJSON,
        | "schema": {
        |		"typeName": "tweet",
-       |     "dimension": [],
+       |     "dimension": [{
+       |      "name": "create_at",
+       |      "isOptional": false,
+       |      "datatype": "Time"}
+       |      ],
        |     "measurement": [],
        |     "primaryKey": [],
-       |     "timeField": ""
+       |     "timeField": "create_at"
        | },
        | "dataInterval": {"start":"$startTimeString",
        |                  "end":"$endTimeString"},
@@ -139,10 +154,14 @@ object TestDataSetInfo {
        |$filterSelectJSON,
        | "schema": {
        |		"typeName": "tweet",
-       |     "dimension": [],
+       |     "dimension": [{
+       |      "name": "create_at",
+       |      "isOptional": false,
+       |      "datatype": "Time"}
+       |      ],
        |     "measurement": [],
        |     "primaryKey": [],
-       |     "timeField": ""
+       |     "timeField": "create_at"
        | },
        | "dataInterval": {"start":"$startTimeString",
        |                  "end":"$endTimeString"},
@@ -161,10 +180,14 @@ object TestDataSetInfo {
        |$topKHashTagJSON,
        | "schema": {
        |		"typeName": "tweet",
-       |     "dimension": [],
+       |     "dimension": [{
+       |      "name": "create_at",
+       |      "isOptional": false,
+       |      "datatype": "Time"}
+       |      ],
        |     "measurement": [],
        |     "primaryKey": [],
-       |     "timeField": ""
+       |     "timeField": "create_at"
        | },
        | "dataInterval": {"start":"$startTimeString",
        |                  "end":"$endTimeString"},

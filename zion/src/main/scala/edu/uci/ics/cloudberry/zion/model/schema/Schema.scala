@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
+import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
-import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 
 //TODO support nested type
@@ -39,42 +39,106 @@ object Relation extends Enumeration {
   val ~= = Value("~=")
 }
 
-class Field(val name: String, val dataType: DataType, val isOptional: Boolean = false) {
+trait Field {
+  val name: String
+  val dataType: DataType
+  val isOptional: Boolean = false
+
 }
 
-case class NumberField(override val name: String, override val isOptional: Boolean = false)
-  extends Field(name, DataType.Number, isOptional)
+object Field {
+
+  def apply(name: String, dataType: DataType, isOptional: Boolean = false): Field = {
+    dataType match {
+      case DataType.Number => NumberField(name, isOptional)
+      case DataType.Time => TimeField(name, isOptional)
+      case DataType.String => StringField(name, isOptional)
+      case DataType.Text => TextField(name, isOptional)
+      case DataType.Point => PointField(name, isOptional)
+      case DataType.Boolean => PointField(name, isOptional)
+      case _ => ???
+    }
+  }
+
+  /**
+    * Copy a given field with a new name ('as' keyword in the query)
+    * @param field
+    * @param name
+    * @return
+    */
+  def as(field: Field, name: String): Field = {
+    field.dataType match {
+      case DataType.Number => NumberField(name, field.isOptional)
+      case DataType.Time => TimeField(name, field.isOptional)
+      case DataType.String => StringField(name, field.isOptional)
+      case DataType.Text => TextField(name, field.isOptional)
+      case DataType.Point => PointField(name, field.isOptional)
+      case DataType.Boolean => PointField(name, field.isOptional)
+      case DataType.Hierarchy =>
+        val hierarchyField = field.asInstanceOf[HierarchyField]
+        HierarchyField(name, hierarchyField.innerType, hierarchyField.levels, hierarchyField.isOptional)
+      case DataType.Record =>
+        val recordField = field.asInstanceOf[RecordField]
+        RecordField(name, recordField.schema, recordField.isOptional)
+      case DataType.Bag =>
+        val bagField = field.asInstanceOf[BagField]
+        BagField(name, bagField.innerType, bagField.isOptional)
+    }
+
+  }
+
+}
+
+case class NumberField(override val name: String, override val isOptional: Boolean = false) extends Field {
+  override val dataType = DataType.Number
+
+}
 
 case class TimeField(override val name: String, override val isOptional: Boolean = false)
-  extends Field(name, DataType.Time, isOptional)
+  extends Field {
+  override val dataType = DataType.Time
+
+}
 
 object TimeField {
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 
 case class StringField(override val name: String, override val isOptional: Boolean = false)
-  extends Field(name, DataType.String, isOptional)
+  extends Field {
+  override val dataType = DataType.String
+
+}
 
 case class TextField(override val name: String, override val isOptional: Boolean = false)
-  extends Field(name, DataType.Text, isOptional)
+  extends Field {
+  override val dataType = DataType.Text
+
+}
 
 case class PointField(override val name: String, override val isOptional: Boolean = false)
-  extends Field(name, DataType.Point, isOptional)
+  extends Field {
+  override val dataType = DataType.Point
+
+}
 
 case class BooleanField(override val name: String, override val isOptional: Boolean = false)
-  extends Field(name, DataType.Boolean, isOptional)
+  extends Field {
+  override val dataType = DataType.Boolean
 
-class NestedField(override val name: String,
-                  override val dataType: DataType,
-                  val innerType: DataType,
-                  override val isOptional: Boolean
-                 ) extends Field(name, dataType, isOptional) {
+}
+
+trait NestedField extends Field {
+  val innerType: DataType
 }
 
 case class BagField(override val name: String,
                     override val innerType: DataType,
-                    override val isOptional: Boolean
-                   ) extends NestedField(name, DataType.Bag, innerType, isOptional)
+                    override val isOptional: Boolean = false
+                   ) extends NestedField {
+  override val dataType = DataType.Bag
+
+}
 
 /**
   * Hierarchy field type
@@ -85,13 +149,24 @@ case class BagField(override val name: String,
   */
 case class HierarchyField(override val name: String,
                           override val innerType: DataType,
-                          levels: Seq[(String, String)]
-                         ) extends NestedField(name, DataType.Hierarchy, innerType, false)
+                          val levels: Seq[(String, String)],
+                          override val isOptional: Boolean = false
+                         ) extends NestedField {
+  override val dataType = DataType.Hierarchy
 
-case class RecordField(override val name: String, schema: Schema, override val isOptional: Boolean)
-  extends Field(name, DataType.Record, isOptional)
+}
 
-case object AllField extends Field("*", DataType.Record, false)
+case class RecordField(override val name: String, val schema: Schema, override val isOptional: Boolean = false) extends Field {
+  override val dataType = DataType.Record
+
+}
+
+case object AllField extends Field {
+  override val name: String = "*"
+  override val dataType: DataType = DataType.Record
+  override val isOptional: Boolean = false
+
+}
 
 /**
   * Including "interesting" fields which could be used as group keys.
@@ -113,8 +188,8 @@ trait Measurement {
 case class Schema(typeName: String,
                   dimension: Seq[Field],
                   measurement: Seq[Field],
-                  primaryKey: Seq[String],
-                  timeField: String
+                  primaryKey: Seq[Field],
+                  timeField: TimeField
                  ) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap

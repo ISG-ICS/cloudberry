@@ -55,7 +55,7 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
       sender.expectNoMsg(500 milli)
 
-      val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
+      val globalCount = GlobalAggregateStatement(AggregateStatement(AllField, Count, Field.as(Count(AllField), "count")))
       val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
       sender.send(agent, query)
       val countResult = (sender.receiveOne(500 millis).asInstanceOf[JsValue] \\ "count").head.as[Int]
@@ -138,7 +138,7 @@ class OriginalDataAgentTest extends Specification with Mockito {
         .thenReturn(Future(maxTimeResponse))
         .thenReturn(Future(countResponse))
 
-      val globalCount = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
+      val globalCount = GlobalAggregateStatement(AggregateStatement(AllField, Count, Field.as(Count(AllField), "count")))
       val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
 
       val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))

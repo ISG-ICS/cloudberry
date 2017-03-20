@@ -26,9 +26,9 @@ class OriginalDataAgent(override val dbName: String,
     * Stats including: minTimeStamp, maxTimeStamp, cardinality
     */
   override def preStart(): Unit = {
-    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, "min"))))
-    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, "max"))))
-    val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement("*", Count, "count"))))
+    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Field.as(Min(schema.timeField), "min")))))
+    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Field.as(Max(schema.timeField), "max")))))
+    val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))))
     val schemaMap = Map(dbName -> schema)
     val future = for {
       minTime <- conn.postQuery(queryParser.generate(minTimeQuery, schemaMap)).map(r => (r \\ "min").head.as[String])
@@ -50,7 +50,7 @@ class OriginalDataAgent(override val dbName: String,
       val second = new Duration(lastCount.till, DateTime.now).getStandardSeconds
       val count = lastCount.count + second * lastCount.ratePerSecond
       val tag = query.globalAggr.get.aggregate.as
-      Some(JsArray(Seq(Json.obj(tag -> JsNumber(count.toLong)))))
+      Some(JsArray(Seq(Json.obj(tag.name -> JsNumber(count.toLong)))))
     } else {
       None
     }
@@ -71,7 +71,7 @@ class OriginalDataAgent(override val dbName: String,
   private def collectStats(start: DateTime): Unit = {
     val now = DateTime.now().minusMillis(1)
     val filter = FilterStatement(schema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
-    val aggr = GlobalAggregateStatement(AggregateStatement("*", Count, "count"))
+    val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
 
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))

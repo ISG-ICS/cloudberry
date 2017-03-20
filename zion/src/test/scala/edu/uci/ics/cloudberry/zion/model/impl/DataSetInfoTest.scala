@@ -8,34 +8,36 @@ class DataSetInfoTest extends Specification {
 
   val parser = DataSetInfo
 
+  import TestQuery.twitterSchemaMap
+
   "DataSetInfo" should {
     "read a sample dataSetInfo" in {
-      val actualDataSetInfoy = parser.parse(simpleDataSetInfoJSON)
+      val actualDataSetInfoy = parser.parse(simpleDataSetInfoJSON, Map.empty)
       val expectDataSetInfo = simpleDataSetInfo
       actualDataSetInfoy must_== expectDataSetInfo
     }
     "read dataSetInfo containing Schema fields" in {
-      val actualDataSetInfoy = parser.parse(fieldsDataSetInfoJSON)
+      val actualDataSetInfoy = parser.parse(fieldsDataSetInfoJSON, Map.empty)
       val expectDataSetInfo = fieldsDataSetInfo
       actualDataSetInfoy must_== expectDataSetInfo
     }
     "read dataSetInfo containing a createQuery" in {
-      val actualDataSetInfoy = parser.parse(queryDataSetInfoJSON)
+      val actualDataSetInfoy = parser.parse(queryDataSetInfoJSON, twitterSchemaMap)
       val expectDataSetInfo = queryDataSetInfo
       actualDataSetInfoy must_== expectDataSetInfo
     }
     "read dataSetInfo with createQuery by (state, hour) count request" in {
-      val actualDataSetInfo = parser.parse(complexQueryDataSetInfoJSON)
+      val actualDataSetInfo = parser.parse(complexQueryDataSetInfoJSON, twitterSchemaMap)
       val expectDataSetInfo = berryAggrByTagViewDataSetInfo
       actualDataSetInfo must_== expectDataSetInfo
     }
     "read dataSetInfo containing dimension and measurement fields" in {
-      val actualDataSetInfo = parser.parse(sourceDataSetInfoJSON)
+      val actualDataSetInfo = parser.parse(sourceDataSetInfoJSON, twitterSchemaMap)
       val expectDataSetInfo = TestQuery.sourceInfo
       actualDataSetInfo must_== expectDataSetInfo
     }
     "read dataSetInfo containing twitter schema and zika filter query" in {
-      val actualDataSetInfo = parser.parse(zikaDataSetInfoJSON)
+      val actualDataSetInfo = parser.parse(zikaDataSetInfoJSON, twitterSchemaMap)
       val expectDataSetInfo = TestQuery.zikaHalfYearViewInfo
       actualDataSetInfo must_== expectDataSetInfo
     }
