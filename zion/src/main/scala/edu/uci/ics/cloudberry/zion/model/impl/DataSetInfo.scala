@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, JsonRequestException, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
+import edu.uci.ics.cloudberry.zion.model.impl.Unresolved._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
@@ -18,42 +19,6 @@ case class DataSetInfo(name: String,
                        schema: Schema,
                        dataInterval: Interval,
                        stats: Stats)
-
-/**
-  * This class is an unresolved version of [[Schema]].
-  * The difference is that [[primaryKey]] and [[timeField]] here are strings,
-  * which are resolved later into [[Field]]
-  */
-case class UnresolvedSchema(typeName: String,
-                            dimension: Seq[Field],
-                            measurement: Seq[Field],
-                            primaryKey: Seq[String],
-                            timeField: String
-                           ) {
-  private lazy val fields = dimension ++ measurement
-
-  def getField(field: String): Option[Field] =
-    field.trim match {
-      case "" => None
-      case _ => fields.find(_.name == field) match {
-        case some: Some[Field] => some
-        case None => throw new FieldNotFound(field)
-      }
-    }
-
-}
-
-/**
-  * This class is an unresolved version of [[DataSetInfo]].
-  * The difference is that [[createQueryOpt]] and [[schema]] are [[UnresolvedQuery]] and [[UnresolvedSchema]],
-  * which are resolved later into [[Query]] and [[Schema]]
-  */
-case class UnresolvedDataSetInfo(name: String,
-                                 createQueryOpt: Option[UnresolvedQuery],
-                                 schema: UnresolvedSchema,
-                                 dataInterval: Interval,
-                                 stats: Stats)
-
 
 object DataSetInfo {
 
@@ -87,25 +52,6 @@ object DataSetInfo {
   }
 
   def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(toUnresolved(dataSetInfo))
-
-  def toUnresolved(dataSetInfo: DataSetInfo): UnresolvedDataSetInfo =
-    UnresolvedDataSetInfo(
-      dataSetInfo.name,
-      dataSetInfo.createQueryOpt.map(JSONParser.toUnresolved(_)),
-      toUnresolved(dataSetInfo.schema),
-      dataSetInfo.dataInterval,
-      dataSetInfo.stats
-    )
-
-  def toUnresolved(schema: Schema): UnresolvedSchema = {
-    UnresolvedSchema(
-      schema.typeName,
-      schema.dimension,
-      schema.measurement,
-      schema.primaryKey.map(_.name),
-      schema.timeField.name
-    )
-  }
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
     override def reads(json: JsValue) = {

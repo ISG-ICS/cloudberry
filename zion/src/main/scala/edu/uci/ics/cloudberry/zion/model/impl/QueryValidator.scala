@@ -7,7 +7,11 @@ import scala.collection.mutable
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 
-class QueryValidator {
+object QueryValidator {
+  /**
+    * Check the semantic validity of a given query
+    * @param query
+    */
   def validate(query: IQuery): Unit = {
     query match {
       case q: Query =>

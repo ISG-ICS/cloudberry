@@ -6,10 +6,24 @@ import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 sealed trait IFunction {
   def name: String
 
+  /**
+    * A set of acceptable types for this function
+    * @return
+    */
   def acceptType: Set[DataType]
 
+  /**
+    * Return the result type when apply this function to the given field
+    * @param field
+    * @return
+    */
   def resultType(field: Field): DataType
 
+  /**
+    * Return the result field when apply this function to the given field
+    * @param field
+    * @return
+    */
   def apply(field: Field): Field = {
     IFunction.validateField(this, field)
     Field(s"$name(${field.name})", resultType(field))

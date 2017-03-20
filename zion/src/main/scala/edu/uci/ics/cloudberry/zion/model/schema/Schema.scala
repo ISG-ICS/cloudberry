@@ -47,6 +47,7 @@ trait Field {
 }
 
 object Field {
+
   def apply(name: String, dataType: DataType, isOptional: Boolean = false): Field = {
     dataType match {
       case DataType.Number => NumberField(name, isOptional)
@@ -59,6 +60,12 @@ object Field {
     }
   }
 
+  /**
+    * Copy a given field with a new name ('as' keyword in the query)
+    * @param field
+    * @param name
+    * @return
+    */
   def as(field: Field, name: String): Field = {
     field.dataType match {
       case DataType.Number => NumberField(name, field.isOptional)
@@ -187,12 +194,6 @@ case class Schema(typeName: String,
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
-
-  def getField(field: String): Field =
-    fieldMap.get(field) match {
-      case Some(f) => f
-      case None => throw new FieldNotFound(field)
-    }
 
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
 }

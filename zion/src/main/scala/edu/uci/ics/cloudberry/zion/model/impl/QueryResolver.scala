@@ -8,8 +8,7 @@ import scala.collection.mutable
 /**
   * Performs field resolution for [[UnresolvedQuery]]
   */
-class QueryResolver {
-
+object QueryResolver {
 
   /**
     * Resolves an [[UnresolvedQuery]], and returns a [[Query]] based on the given schemaMap
