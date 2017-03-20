@@ -87,16 +87,16 @@ object DataSetInfo {
 
   def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(toUnresolved(dataSetInfo))
 
-  implicit def toUnresolved(dataSetInfo: DataSetInfo): UnresolvedDataSetInfo =
+  def toUnresolved(dataSetInfo: DataSetInfo): UnresolvedDataSetInfo =
     UnresolvedDataSetInfo(
       dataSetInfo.name,
       dataSetInfo.createQueryOpt.map(JSONParser.toUnresolved(_)),
-      dataSetInfo.schema,
+      toUnresolved(dataSetInfo.schema),
       dataSetInfo.dataInterval,
       dataSetInfo.stats
     )
 
-  implicit def toUnresolved(schema: Schema): UnresolvedSchema = {
+  def toUnresolved(schema: Schema): UnresolvedSchema = {
     UnresolvedSchema(
       schema.typeName,
       schema.dimension,

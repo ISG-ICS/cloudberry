@@ -6,8 +6,6 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{JsObject, _}
 
-import scala.collection.mutable
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 /**
   * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
@@ -267,7 +265,7 @@ object JSONParser {
     ) (UnresolvedQuery.apply, unlift(UnresolvedQuery.unapply))
 
 
-  implicit def toUnresolved(query: Query): UnresolvedQuery =
+  def toUnresolved(query: Query): UnresolvedQuery =
     UnresolvedQuery(
       query.dataset,
       query.lookup.map(toUnresolved(_)),
@@ -279,7 +277,7 @@ object JSONParser {
       query.isEstimable
     )
 
-  implicit def toUnresolved(lookup: LookupStatement): UnresolvedLookupStatement =
+  def toUnresolved(lookup: LookupStatement): UnresolvedLookupStatement =
     UnresolvedLookupStatement(
       lookup.sourceKeys.map(_.name),
       lookup.dataset,
@@ -288,14 +286,14 @@ object JSONParser {
       lookup.as.map(_.name)
     )
 
-  implicit def toUnresolved(aggr: AggregateStatement): UnresolvedAggregateStatement =
+  def toUnresolved(aggr: AggregateStatement): UnresolvedAggregateStatement =
     UnresolvedAggregateStatement(
       aggr.field.name,
       aggr.func,
       aggr.as.name
     )
 
-  implicit def toUnresolved(filter: FilterStatement): UnresolvedFilterStatement =
+  def toUnresolved(filter: FilterStatement): UnresolvedFilterStatement =
     UnresolvedFilterStatement(
       filter.field.name,
       filter.funcOpt,
@@ -303,32 +301,32 @@ object JSONParser {
       filter.values
     )
 
-  implicit def toUnresolved(unnest: UnnestStatement): UnresolvedUnnestStatement =
+  def toUnresolved(unnest: UnnestStatement): UnresolvedUnnestStatement =
     UnresolvedUnnestStatement(
       unnest.field.name,
       unnest.as.name
     )
 
-  implicit def toUnresolved(by: ByStatement): UnresolvedByStatement =
+  def toUnresolved(by: ByStatement): UnresolvedByStatement =
     UnresolvedByStatement(
       by.field.name,
       by.funcOpt,
       by.as.map(_.name)
     )
 
-  implicit def toUnresolved(group: GroupStatement): UnresolvedGroupStatement =
+  def toUnresolved(group: GroupStatement): UnresolvedGroupStatement =
     UnresolvedGroupStatement(
       group.bys.map(toUnresolved(_)),
       group.aggregates.map(toUnresolved(_))
     )
 
 
-  implicit def toUnresolved(globalAggr: GlobalAggregateStatement): UnresolvedGlobalAggregateStatement =
+  def toUnresolved(globalAggr: GlobalAggregateStatement): UnresolvedGlobalAggregateStatement =
     UnresolvedGlobalAggregateStatement(
-      globalAggr.aggregate
+      toUnresolved(globalAggr.aggregate)
     )
 
-  implicit def toUnresolved(select: SelectStatement): UnresolvedSelectStatement =
+  def toUnresolved(select: SelectStatement): UnresolvedSelectStatement =
     UnresolvedSelectStatement(
       select.orderOn.zip(select.order).map {
         case (field, order) =>
@@ -393,321 +391,3 @@ case class UnresolvedSelectStatement(orderOn: Seq[String],
                                      offset: Int,
                                      fields: Seq[String]
                                     ) extends Statement
-
-/**
-  * perform semantic analysis of cloudberry queries
-  */
-class QueryResolver {
-
-
-  def resolve(query: IQuery, schemaMap: Map[String, Schema]): IQuery = {
-    query match {
-      case q: UnresolvedQuery =>
-        resolveQuery(q, schemaMap)
-      case q: CreateView => ???
-      case q: AppendView => ???
-      case q: UpsertRecord => ???
-      case q: DropView => ???
-      case _ => ???
-    }
-  }
-
-  private def resolveQuery(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
-    val schema = schemaMap(query.dataset)
-    val fieldMap = schema.fieldMap
-    val (lookup, fieldMapAfterLookup) = resolveLookups(query.lookup, fieldMap, schemaMap)
-    val (unnest, fieldMapAfterUnnest) = resolveUnnests(query.unnest, fieldMapAfterLookup)
-
-    val (filter, fieldMapAfterFilter) = resolveFilters(query.filter, fieldMapAfterUnnest)
-
-    val (groups, fieldMapAfterGroup) = resolveGroup(query.groups, fieldMapAfterFilter)
-    val (select, fieldMapAfterSelect) = resolveSelect(query.select, fieldMapAfterGroup)
-
-    val (globalAggr, fieldMapAfterGlobalAggr) = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
-
-    Query(query.dataset, lookup, filter, unnest, groups, select, globalAggr, query.estimable)
-  }
-
-  private def resolveLookups(lookups: Seq[UnresolvedLookupStatement],
-                             fieldMap: Map[String, Field],
-                             schemaMap: Map[String, Schema]): (Seq[LookupStatement], Map[String, Field]) = {
-    val producedFields = mutable.Map.newBuilder[String, Field]
-    val resolved = lookups.map { lookup =>
-
-      val sourceKeys = resolveFields(lookup.sourceKeys, fieldMap)
-      val lookupKeys = resolveFields(lookup.lookupKeys, schemaMap(lookup.dataset).fieldMap)
-      val selectValues = resolveFields(lookup.selectValues, schemaMap(lookup.dataset).fieldMap)
-      val as = lookup.as.zip(selectValues).map {
-        case (as, field) =>
-          val asField = Field.as(field, as)
-          producedFields += as -> asField
-          asField
-      }
-      LookupStatement(sourceKeys, lookup.dataset, lookupKeys, selectValues, as)
-    }
-
-    (resolved, (producedFields ++= fieldMap).result().toMap)
-  }
-
-  private def resolveUnnests(unnests: Seq[UnresolvedUnnestStatement], fieldMap: Map[String, Field]): (Seq[UnnestStatement], Map[String, Field]) = {
-    val producedFields = mutable.Map.newBuilder[String, Field]
-    val resolved = unnests.map { unnest =>
-      val field = resolveField(unnest.field, fieldMap)
-      val asField = Field.as(field, unnest.as)
-      producedFields += unnest.as -> asField
-      UnnestStatement(field, asField)
-    }
-
-    (resolved, (producedFields ++= fieldMap).result().toMap)
-  }
-
-  private def resolveFilters(filters: Seq[UnresolvedFilterStatement], fieldMap: Map[String, Field]): (Seq[FilterStatement], Map[String, Field]) = {
-    val resolved = filters.map { filter =>
-      val field = resolveField(filter.field, fieldMap)
-      FilterStatement(field, filter.funcOpt, filter.relation, filter.values)
-    }
-    (resolved, fieldMap)
-  }
-
-  private def resolveGroup(group: Option[UnresolvedGroupStatement], fieldMap: Map[String, Field]): (Option[GroupStatement], Map[String, Field]) = {
-    group match {
-      case Some(groupStatement) =>
-        val producedFields = mutable.Map.newBuilder[String, Field]
-        val resolvedBys = groupStatement.bys.map { by =>
-          val field = resolveField(by.field, fieldMap)
-          val groupedField = by.funcOpt match {
-            case Some(func) => func(field)
-            case None => field
-          }
-          val as = by.as match {
-            case Some(as) =>
-              val asField = Field.as(groupedField, as)
-              producedFields += as -> asField
-              Some(asField)
-            case None =>
-              producedFields += groupedField.name -> groupedField
-              None
-          }
-          ByStatement(field, by.funcOpt, as)
-        }
-        val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
-          val field = resolveField(aggregate.field, fieldMap)
-          val as = Field.as(aggregate.func(field), aggregate.as)
-          producedFields += aggregate.as -> as
-          AggregateStatement(field, aggregate.func, as)
-        }
-
-        val resolved = GroupStatement(resolvedBys, resolvedAggrs)
-        (Some(resolved), producedFields.result().toMap)
-      case None =>
-        (None, fieldMap)
-    }
-  }
-
-  private def resolveSelect(select: Option[UnresolvedSelectStatement], fieldMap: Map[String, Field]): (Option[SelectStatement], Map[String, Field]) = {
-    select match {
-      case Some(selectStatement) =>
-        val orderOn = resolveFields(selectStatement.orderOn.map { field =>
-          if (field.startsWith("-")) {
-            field.substring(1)
-          } else {
-            field
-          }
-        }, fieldMap)
-        val order = selectStatement.orderOn.map { field =>
-          if (field.startsWith("-")) {
-            SortOrder.DSC
-          } else {
-            SortOrder.ASC
-          }
-        }
-        val fields = resolveFields(selectStatement.fields, fieldMap)
-        val resolved = SelectStatement(orderOn, order, selectStatement.limit, selectStatement.offset, fields)
-        val newFieldMap =
-          if (selectStatement.fields.isEmpty) {
-            fieldMap
-          } else {
-            fields.map {
-              field => field.name -> field
-            }.toMap
-          }
-        (Some(resolved), newFieldMap)
-      case None => (None, fieldMap)
-    }
-
-  }
-
-  private def resolveGlobalAggregate(globalAggregate: Option[UnresolvedGlobalAggregateStatement], fieldMap: Map[String, Field]): (Option[GlobalAggregateStatement], Map[String, Field]) = {
-    globalAggregate match {
-      case Some(globalAggregateStatement) =>
-        val aggregate = globalAggregateStatement.aggregate
-        val field = resolveField(aggregate.field, fieldMap)
-        val asField = Field.as(aggregate.func(field), aggregate.as)
-        val resolved = GlobalAggregateStatement(AggregateStatement(field, aggregate.func, asField))
-        (Some(resolved), Map(aggregate.as -> asField))
-      case None => (None, fieldMap)
-    }
-  }
-
-  private def resolveFields(names: Seq[String], fieldMap: Map[String, Field]): Seq[Field] = {
-    names.map {
-      name => resolveField(name, fieldMap)
-    }
-  }
-
-  private def resolveField(name: String, fieldMap: Map[String, Field]): Field = {
-    val field = fieldMap.get(name)
-    field match {
-      case Some(f) => f
-      case _ => throw FieldNotFound(name)
-    }
-  }
-}
-
-class QueryValidator {
-  def validate(query: IQuery): Unit = {
-    query match {
-      case q: Query =>
-        validateQuery(q)
-      case q: CreateView => validateCreate(q)
-      case q: AppendView => validateAppend(q)
-      case q: UpsertRecord => validateUpsert(q)
-      case q: DropView => ???
-      case _ => ???
-    }
-  }
-
-  private def validateCreate(q: CreateView): Unit = {
-    validateQuery(q.query)
-  }
-
-  private def validateAppend(q: AppendView): Unit = {
-    validateQuery(q.query)
-  }
-
-  private def validateUpsert(q: UpsertRecord): Unit = {
-
-  }
-
-  private def requireOrThrow(condition: Boolean, msg: => String): Unit = {
-    if (!condition) throw new QueryParsingException(msg)
-  }
-
-
-  private def isAnyNumber[T: TypeTag](t: T): Boolean = {
-    t.isInstanceOf[Number] || implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
-  }
-
-  def validateQuery(query: Query): Unit = {
-    //   requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined,
-    //     "either group or select or global aggregate statement is required")
-    query.filter.foreach(validateFilter(_))
-    query.lookup.foreach(validateLookup(_))
-    query.unnest.foreach(validateUnnest(_))
-    query.groups.foreach(validateGroup(_))
-  }
-
-  def validateFilter(filter: FilterStatement): Unit = {
-    requireOrThrow(Schema.Type2Relations(filter.field.dataType).contains(filter.relation),
-      s"field ${filter.field.name} of type ${filter.field.dataType} can not apply to relation: ${filter.relation}."
-    )
-
-    filter.field.dataType match {
-      case DataType.Number =>
-        validateNumberRelation(filter.relation, filter.values)
-      case DataType.Time =>
-        validateTimeRelation(filter.relation, filter.values)
-      case DataType.Point =>
-        validatePointRelation(filter.relation, filter.values)
-      case DataType.Boolean =>
-      case DataType.String =>
-      case DataType.Text =>
-        validateTextRelation(filter.relation, filter.values)
-      case DataType.Bag =>
-      case DataType.Hierarchy =>
-        throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
-      case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
-    }
-  }
-
-  def validateUnnest(unnest: UnnestStatement): Unit = {
-    require(unnest.field.isInstanceOf[BagField], "unnest can only apply on Bag type")
-  }
-
-  def validateLookup(lookup: LookupStatement): Unit = {
-    requireOrThrow(lookup.sourceKeys.length == lookup.lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
-    requireOrThrow(lookup.selectValues.length == lookup.as.length, "LookupStatement: select value names doesn't match with renamed names")
-  }
-
-  def validateGroup(group: GroupStatement): Unit = {
-    requireOrThrow(group.bys.nonEmpty, "By statement is required")
-    requireOrThrow(group.aggregates.nonEmpty, "Aggregation statement is required")
-
-    group.bys.foreach(validateBy(_))
-  }
-
-  def validateBy(by: ByStatement): Unit = {
-    by.funcOpt match {
-      case Some(func) =>
-        func match {
-          case level: Level =>
-            val hierarchyField = by.field.asInstanceOf[HierarchyField]
-            requireOrThrow(hierarchyField.levels.find(_._1 == level.levelTag).isDefined, s"could not find the level tag ${level.levelTag} in hierarchy field ${hierarchyField.name}")
-          case _ =>
-        }
-      case None =>
-    }
-  }
-
-  def validateNumberRelation(relation: Relation, values: Seq[Any]): Unit = {
-    requireOrThrow(values.forall(isAnyNumber), s"values contain non compatible data type for relation: $relation.")
-
-    relation match {
-      case Relation.inRange =>
-        if (values.size != 2) throw new QueryParsingException(s"relation: $relation require two parameters")
-      case Relation.in =>
-      case _ =>
-        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
-    }
-  }
-
-  def validateTimeRelation(relation: Relation, values: Seq[Any]): Unit = {
-    //required string format : http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html
-    try {
-      if (!values.forall(_.isInstanceOf[String])) {
-        throw new IllegalArgumentException
-      }
-      // This parseDateTime will throw an exception if the format is invalid
-      values.foreach(t => TimeField.TimeFormat.parseDateTime(t.asInstanceOf[String]))
-    } catch {
-      case _: IllegalArgumentException => throw new QueryParsingException("invalid time format")
-    }
-
-    relation match {
-      case Relation.inRange => {
-        if (values.size != 2) {
-          throw new QueryParsingException(s"relation: $relation require two parameters.")
-        }
-      }
-      case _ => {
-        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter.")
-      }
-    }
-  }
-
-  def validatePointRelation(relation: Relation, values: Seq[Any]): Unit = {
-    if (!values.forall(_.isInstanceOf[Seq[_]]) || values.size != 2
-      || !values.map(_.asInstanceOf[Seq[_]]).forall(ary => ary.size == 2 && ary.forall(isAnyNumber))) {
-      throw new QueryParsingException(s"the ${relation} on point type requires a pair of value pairs.")
-    }
-    if (relation != Relation.inRange) {
-      throw new QueryParsingException(s"point type doesn't support relation $relation")
-    }
-  }
-
-  def validateTextRelation(relation: Relation, values: Seq[Any]): Unit = {
-    requireOrThrow(values.forall(_.isInstanceOf[String]), s"the ${relation} on text type requires string parameters.")
-  }
-
-
-}
