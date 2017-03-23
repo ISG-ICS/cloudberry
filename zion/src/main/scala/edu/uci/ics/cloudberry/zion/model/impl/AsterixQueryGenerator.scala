@@ -4,11 +4,14 @@ import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, QueryParsingEx
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 
+/**
+  * Defines constant strings for query languages supported by AsterixDB
+  */
 trait TypeImpl {
 
   val aggregateFuncMap: Map[AggregateFunc, String]
 
-  def apply(aggregate: AggregateFunc): String = {
+  def getAggregateStr(aggregate: AggregateFunc): String = {
     aggregateFuncMap.get(aggregate) match {
       case Some(impl) => impl
       case None => throw new QueryParsingException(s"No implementation is provided for aggregate function ${aggregate.name}")
@@ -38,14 +41,26 @@ trait TypeImpl {
 
 abstract class AsterixQueryGenerator extends IQLGenerator {
 
-
+  /**
+    * represent the expression for a [[Field]]
+    *
+    * @param refExpr the expression for referring this field by the subsequent statements
+    * @param defExpr the expression the defines the field
+    *
+    */
   case class FieldExpr(refExpr: String, defExpr: String)
 
-  case class PartialResult(parts: Seq[String], exprMap: Map[String, FieldExpr])
-
-  protected def quote: String
+  /**
+    * Partial parse results after parsing each [[Statement]]
+    *
+    * @param strs    a sequence of parsed query strings, which would be composed together later.
+    * @param exprMap a new field expression map
+    */
+  case class PartialResult(strs: Seq[String], exprMap: Map[String, FieldExpr])
 
   protected def typeImpl: TypeImpl
+
+  protected def quote: String
 
   protected def sourceVar: String
 
@@ -98,7 +113,6 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       ???
     }
   }
-
 
   protected def initExprMap(query: Query, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
     val schema = schemaMap(query.dataset)

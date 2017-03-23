@@ -1,33 +1,39 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, IQLGeneratorFactory}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.Json
 
 import scala.collection.mutable
 
 
+/**
+  * Provide query constants for AQL
+  */
 object AQLTypeImpl extends TypeImpl {
-  val wordTokens: String = "word-tokens"
-  val yearMonthDuration: String = "year-month-duration"
-  val createRectangle: String = "create-rectangle"
-  val spatialIntersect: String = "spatial-intersect"
-  val similarityJaccard: String = "similarity-jaccard"
-  val contains: String = "contains"
-  val getPoints: String = "get-points"
-  val getIntervalStartDatetime: String = "get-interval-start-datetime"
-  val createPoint: String = "create-point"
-  val spatialCell: String = "spatial-cell"
-  val dayTimeDuration: String = "day-time-duration"
-  val intervalBin: String = "interval-bin"
-
-  override val aggregateFuncMap: Map[AggregateFunc, String] = Map(
+  val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "count",
     Max -> "max",
     Min -> "min",
     Avg -> "avg",
     Sum -> "sum"
   )
+
+  val dayTimeDuration: String = "day-time-duration"
+  val yearMonthDuration: String = "year-month-duration"
+  val getIntervalStartDatetime: String = "get-interval-start-datetime"
+  val intervalBin: String = "interval-bin"
+
+  val spatialIntersect: String = "spatial-intersect"
+  val createRectangle: String = "create-rectangle"
+  val createPoint: String = "create-point"
+  val spatialCell: String = "spatial-cell"
+  val getPoints: String = "get-points"
+
+  val similarityJaccard: String = "similarity-jaccard"
+  val contains: String = "contains"
+  val wordTokens: String = "word-tokens"
+
 }
 
 
@@ -93,25 +99,25 @@ class AQLGenerator extends AsterixQueryGenerator {
 
     val resultAfterLookup = parseLookup(query.lookup, exprMap, schemaMap, sourceVar)
 
-    val lookupStr = resultAfterLookup.parts(1)
+    val lookupStr = resultAfterLookup.strs(1)
 
-    val resultAfterFilter = parseFilter(query.filter, resultAfterLookup.exprMap, resultAfterLookup.parts.head)
-    val filterStr = resultAfterFilter.parts(1)
+    val resultAfterFilter = parseFilter(query.filter, resultAfterLookup.exprMap, resultAfterLookup.strs.head)
+    val filterStr = resultAfterFilter.strs(1)
 
-    val resultAfterUnnest = parseUnnest(query.unnest, resultAfterFilter.exprMap, resultAfterFilter.parts.head)
-    val unnestStr = resultAfterUnnest.parts(1)
+    val resultAfterUnnest = parseUnnest(query.unnest, resultAfterFilter.exprMap, resultAfterFilter.strs.head)
+    val unnestStr = resultAfterUnnest.strs(1)
 
-    val resultAfterGroup = parseGroupby(query.group, resultAfterUnnest.exprMap, resultAfterUnnest.parts.head)
-    val groupStr = resultAfterGroup.parts(1)
+    val resultAfterGroup = parseGroupby(query.group, resultAfterUnnest.exprMap, resultAfterUnnest.strs.head)
+    val groupStr = resultAfterGroup.strs(1)
 
-    var resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, resultAfterGroup.parts.head)
-    val selectPrefix = resultAfterSelect.parts(1)
-    val selectStr = resultAfterSelect.parts(2)
+    var resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, resultAfterGroup.strs.head)
+    val selectPrefix = resultAfterSelect.strs(1)
+    val selectStr = resultAfterSelect.strs(2)
 
-    val resultAfterGlobalAggr = parseGlobalAggr(query.globalAggr, resultAfterSelect.exprMap, resultAfterSelect.parts.head)
+    val resultAfterGlobalAggr = parseGlobalAggr(query.globalAggr, resultAfterSelect.exprMap, resultAfterSelect.strs.head)
 
-    val globalAggrPrefix = resultAfterGlobalAggr.parts(1)
-    val globalAggrRetStr = resultAfterGlobalAggr.parts(2)
+    val globalAggrPrefix = resultAfterGlobalAggr.strs(1)
+    val globalAggrRetStr = resultAfterGlobalAggr.strs(2)
 
     Seq(globalAggrPrefix, selectPrefix, dataset, lookupStr, filterStr, unnestStr, groupStr, selectStr, globalAggrRetStr).mkString("\n")
   }
@@ -327,7 +333,7 @@ class AQLGenerator extends AsterixQueryGenerator {
     val aggr = globalAggrOpt.get.aggregate
 
     val expr = exprMap(aggr.field.name)
-    val funcName = typeImpl(aggr.func)
+    val funcName = typeImpl.getAggregateStr(aggr.func)
     val returnVar = if (aggr.func == Count) {
       currentVar
     } else {
@@ -393,7 +399,7 @@ class AQLGenerator extends AsterixQueryGenerator {
       case _: TopK => ???
       case DistinctCount => ???
       case _ =>
-        s"${typeImpl(aggr.func)}($newExpr)"
+        s"${typeImpl.getAggregateStr(aggr.func)}($newExpr)"
     }
   }
 

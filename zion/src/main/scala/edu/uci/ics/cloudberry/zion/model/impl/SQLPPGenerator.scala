@@ -7,23 +7,10 @@ import play.api.libs.json.Json
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+/**
+  * Provide constant query strings for SQL++
+  */
 object SQLPPTypeImpl extends TypeImpl {
-  val wordTokens: String = "word_tokens"
-  val yearMonthDuration: String = "year_month_duration"
-
-  val createRectangle: String = "create_rectangle"
-
-  val spatialIntersect: String = "spatial_intersect"
-  val similarityJaccard: String = "similarity_jaccard"
-
-  val contains: String = "contains"
-  val getPoints: String = "get_points"
-  val getIntervalStartDatetime: String = "get_interval_start_datetime"
-  val createPoint: String = "create_point"
-  val spatialCell: String = "spatial_cell"
-  val dayTimeDuration: String = "day_time_duration"
-  val intervalBin: String = "interval_bin"
-
   override val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "coll_count",
     Max -> "coll_max",
@@ -31,13 +18,28 @@ object SQLPPTypeImpl extends TypeImpl {
     Avg -> "coll_avg",
     Sum -> "coll_sum"
   )
+
+  val dayTimeDuration: String = "day_time_duration"
+  val yearMonthDuration: String = "year_month_duration"
+  val getIntervalStartDatetime: String = "get_interval_start_datetime"
+  val intervalBin: String = "interval_bin"
+
+  val spatialIntersect: String = "spatial_intersect"
+  val createRectangle: String = "create_rectangle"
+  val createPoint: String = "create_point"
+  val spatialCell: String = "spatial_cell"
+  val getPoints: String = "get_points"
+
+  val similarityJaccard: String = "similarity_jaccard"
+  val contains: String = "contains"
+  val wordTokens: String = "word_tokens"
+
+
 }
 
 class SQLPPGenerator extends AsterixQueryGenerator {
 
   protected val typeImpl: TypeImpl = SQLPPTypeImpl
-
-  protected val suffix: String = ";"
 
   protected val sourceVar: String = "t"
 
@@ -52,6 +54,8 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   protected val outerSelectVar: String = "s"
 
   protected val quote = "`"
+
+  protected val suffix: String = ";"
 
   def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
@@ -89,24 +93,24 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     val exprMap: Map[String, FieldExpr] = initExprMap(query, schemaMap)
 
     val resultAfterLookup = parseLookup(query.lookup, exprMap)
-    val lookupStr = resultAfterLookup.parts.head
+    val lookupStr = resultAfterLookup.strs.head
     val fromStr = s"from ${query.dataset} $sourceVar $lookupStr".trim
 
     val resultAfterUnnest = parseUnnest(query.unnest, resultAfterLookup.exprMap)
-    val unnestStr = resultAfterUnnest.parts.head
-    val unnestTests = resultAfterUnnest.parts.tail
+    val unnestStr = resultAfterUnnest.strs.head
+    val unnestTests = resultAfterUnnest.strs.tail
 
     val resultAfterFilter = parseFilter(query.filter, resultAfterUnnest.exprMap, unnestTests)
-    val filterStr = resultAfterFilter.parts.head
+    val filterStr = resultAfterFilter.strs.head
 
     val resultAfterGroup = parseGroupby(query.group, resultAfterFilter.exprMap)
-    val groupSQL = resultAfterGroup.parts.head
+    val groupSQL = resultAfterGroup.strs.head
 
     val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query)
-    val projectStr = resultAfterSelect.parts.head
-    val orderStr = resultAfterSelect.parts(1)
-    val limitStr = resultAfterSelect.parts(2)
-    val offsetStr = resultAfterSelect.parts(3)
+    val projectStr = resultAfterSelect.strs.head
+    val orderStr = resultAfterSelect.strs(1)
+    val limitStr = resultAfterSelect.strs(2)
+    val offsetStr = resultAfterSelect.strs(3)
 
 
     val queryStr = Seq(
@@ -120,7 +124,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
       offsetStr).filter(!_.isEmpty).mkString("\n")
 
     val resultAfterGlobalAggr = parseGlobalAggr(query.globalAggr, resultAfterSelect.exprMap, queryStr)
-    return resultAfterGlobalAggr.parts.head
+    return resultAfterGlobalAggr.strs.head
   }
 
 
@@ -276,7 +280,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     }
     val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
     val aggr = globalAggr.get.aggregate
-    val funcName = typeImpl(aggr.func)
+    val funcName = typeImpl.getAggregateStr(aggr.func)
 
     val newDefExpr = if (aggr.func == Count) {
       globalAggrVar
@@ -321,7 +325,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     aggr.func match {
       case topK: TopK => ???
       case DistinctCount => ???
-      case _ => aggFuncExpr(typeImpl(aggr.func))
+      case _ => aggFuncExpr(typeImpl.getAggregateStr(aggr.func))
     }
   }
 }
