@@ -49,7 +49,7 @@ object QueryValidator {
     query.filter.foreach(validateFilter(_))
     query.lookup.foreach(validateLookup(_))
     query.unnest.foreach(validateUnnest(_))
-    query.groups.foreach(validateGroup(_))
+    query.group.foreach(validateGroup(_))
   }
 
   def validateFilter(filter: FilterStatement): Unit = {

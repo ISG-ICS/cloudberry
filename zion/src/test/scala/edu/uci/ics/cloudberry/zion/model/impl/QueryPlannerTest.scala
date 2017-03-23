@@ -56,9 +56,9 @@ class QueryPlannerTest extends Specification {
           FilterStatement(TextField("text"), None, Relation.contains, Seq("zika")),
           queryTimeFilter
         ),
-        groups = Some(group))
+        group = Some(group))
       val (queries, _) = planner.makePlan(queryZika, sourceInfo, Seq(zikaFullYearViewInfo))
-      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, filter = Seq(queryTimeFilter), groups = Some(group))
+      queries.head must_== Query(dataset = zikaFullYearViewInfo.name, filter = Seq(queryTimeFilter), group = Some(group))
       queries.size must_== 1
     }
     "makePlan should ask the view and the source if view can not cover the query" in {

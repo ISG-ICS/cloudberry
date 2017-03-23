@@ -29,11 +29,17 @@ case class Query(dataset: String,
                  lookup: Seq[LookupStatement] = Seq.empty,
                  filter: Seq[FilterStatement] = Seq.empty,
                  unnest: Seq[UnnestStatement] = Seq.empty,
-                 groups: Option[GroupStatement] = None,
+                 group: Option[GroupStatement] = None,
                  select: Option[SelectStatement] = None,
                  globalAggr: Option[GlobalAggregateStatement] = None,
                  isEstimable: Boolean = false
                 ) extends IReadQuery {
+
+  def unnested: Boolean = !unnest.isEmpty
+
+  def grouped: Boolean = group.isDefined
+
+  def selected: Boolean = select.isDefined
 
   import TimeField.TimeFormat
 
@@ -72,9 +78,9 @@ case class Query(dataset: String,
       return false
     }
 
-    val isGroupMatch = another.groups match {
-      case None => this.groups.isEmpty
-      case Some(group) => this.groups.forall(_.finerThan(group))
+    val isGroupMatch = another.group match {
+      case None => this.group.isEmpty
+      case Some(group) => this.group.forall(_.finerThan(group))
     }
 
     isGroupMatch && this.unnest.isEmpty && this.select.isEmpty
@@ -174,11 +180,11 @@ case class GlobalAggregateStatement(aggregate: AggregateStatement
                                    ) extends Statement
 
 object SortOrder extends Enumeration {
-    val ASC, DSC = Value
+  val ASC, DSC = Value
 }
 
 case class SelectStatement(orderOn: Seq[Field],
-                           order:Seq[SortOrder.Value],
+                           order: Seq[SortOrder.Value],
                            limit: Int,
                            offset: Int,
                            fields: Seq[Field]

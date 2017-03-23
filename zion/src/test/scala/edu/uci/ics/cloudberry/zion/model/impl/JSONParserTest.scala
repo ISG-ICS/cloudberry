@@ -187,8 +187,8 @@ class JSONParserTest extends Specification {
         groupByBinJSON.as[JsObject] + ("estimable" -> JsBoolean(false)))))
       val (query, option) = parser.parse(batchQueryJson, twitterSchemaMap)
       query.size must_== 2
-      query.head must_== Query(TwitterDataSet, groups = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
-      query.last must_== Query(TwitterDataSet, groups = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
+      query.head must_== Query(TwitterDataSet, group = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
+      query.last must_== Query(TwitterDataSet, group = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
       option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse a batch of queries with option" in {
