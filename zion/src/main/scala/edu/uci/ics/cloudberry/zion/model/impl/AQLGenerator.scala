@@ -93,7 +93,6 @@ class AQLGenerator extends AsterixQueryGenerator {
   }
 
   def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
-
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
     val exprMap = initExprMap(query, schemaMap)
 
@@ -110,7 +109,7 @@ class AQLGenerator extends AsterixQueryGenerator {
     val resultAfterGroup = parseGroupby(query.group, resultAfterUnnest.exprMap, resultAfterUnnest.strs.head)
     val groupStr = resultAfterGroup.strs(1)
 
-    var resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, resultAfterGroup.strs.head)
+    val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, resultAfterGroup.strs.head)
     val selectPrefix = resultAfterSelect.strs(1)
     val selectStr = resultAfterSelect.strs(2)
 
@@ -140,52 +139,54 @@ class AQLGenerator extends AsterixQueryGenerator {
                           currentVar: String
                          ): PartialResult = {
     if (lookups.isEmpty) {
-      return PartialResult(Seq(currentVar, ""), exprMap)
-    }
-
-    val lookupExprs = mutable.Map.newBuilder[String, FieldExpr]
-    val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
-    exprMap.foreach {
-      case (name, expr) =>
-        val refExpr = s"$lookupVar.$quote$name$quote"
-        lookupExprs += name -> FieldExpr(refExpr, expr.defExpr)
-        producedExprs += name -> FieldExpr(refExpr, refExpr)
-    }
-
-    lookups.zipWithIndex.foreach { case (lookup, id) =>
-      val localLookupVar = s"$lookupVar$id"
-      val conditions = lookup.lookupKeys.zip(lookup.sourceKeys).map { case (lookupKey, sourceKey) =>
-        val expr = exprMap(sourceKey.name)
-        s"${expr.refExpr} /* +indexnl */ = $localLookupVar.${lookupKey.name}"
+      PartialResult(Seq(currentVar, ""), exprMap)
+    } else {
+      val lookupExprs = mutable.Map.newBuilder[String, FieldExpr]
+      val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
+      exprMap.foreach {
+        case (name, expr) =>
+          val refExpr = s"$lookupVar.$quote$name$quote"
+          lookupExprs += name -> FieldExpr(refExpr, expr.defExpr)
+          producedExprs += name -> FieldExpr(refExpr, refExpr)
       }
 
-      lookup.selectValues.zip(lookup.as).foreach {
-        case (select, as) =>
-          val defExpr =
-            s"""
-               |(for $localLookupVar in dataset ${lookup.dataset}
-               |where ${conditions.mkString(" and ")}
-               |return $localLookupVar.$quote${select.name}$quote)[0]
+      lookups.zipWithIndex.foreach { case (lookup, id) =>
+        val localLookupVar = s"$lookupVar$id"
+        val conditions = lookup.lookupKeys.zip(lookup.sourceKeys).map { case (lookupKey, sourceKey) =>
+          val expr = exprMap(sourceKey.name)
+          s"${expr.refExpr} /* +indexnl */ = $localLookupVar.${lookupKey.name}"
+        }
+
+        lookup.selectValues.zip(lookup.as).foreach {
+          case (select, as) =>
+            val defExpr =
+              s"""
+                 |(for $localLookupVar in dataset ${lookup.dataset}
+                 |where ${conditions.mkString(" and ")}
+                 |return $localLookupVar.$quote${select.name}$quote)[0]
             """.stripMargin.trim
-          val refExpr = s"$lookupVar.$quote${as.name}$quote"
-          lookupExprs += as.name -> FieldExpr(refExpr, defExpr)
-          producedExprs += as.name -> FieldExpr(refExpr, refExpr)
+            val refExpr = s"$lookupVar.$quote${as.name}$quote"
+            lookupExprs += as.name -> FieldExpr(refExpr, defExpr)
+            producedExprs += as.name -> FieldExpr(refExpr, refExpr)
+        }
       }
-    }
 
-    val lookupStr = s"let $lookupVar := ${parseReturn(lookupExprs.result().toMap)}"
-    PartialResult(Seq(lookupVar, lookupStr), producedExprs.result().toMap)
+      val lookupStr = s"let $lookupVar := ${parseReturn(lookupExprs.result().toMap)}"
+      PartialResult(Seq(lookupVar, lookupStr), producedExprs.result().toMap)
+    }
   }
 
   private def parseFilter(filters: Seq[FilterStatement], exprMap: Map[String, FieldExpr], currentVar: String): PartialResult = {
     if (filters.isEmpty) {
-      return PartialResult(Seq(currentVar, ""), exprMap)
+      PartialResult(Seq(currentVar, ""), exprMap)
+    } else {
+      val filterStr = filters.map { filter =>
+        val expr = exprMap(filter.field.name)
+        parseFilterRelation(filter, expr.refExpr)
+      }.mkString("where ", " and ", "")
+      PartialResult(Seq(currentVar, filterStr), exprMap)
     }
-    val filterStr = filters.map { filter =>
-      val expr = exprMap(filter.field.name)
-      parseFilterRelation(filter, expr.refExpr)
-    }.mkString("where ", " and ", "")
-    return PartialResult(Seq(currentVar, filterStr), exprMap)
+
   }
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
@@ -195,7 +196,7 @@ class AQLGenerator extends AsterixQueryGenerator {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
         val field = unnest.field
-        var localUnnestVar = s"$unnestVar$id"
+        val localUnnestVar = s"$unnestVar$id"
         producedVars += unnest.as.name -> FieldExpr(localUnnestVar, localUnnestVar)
         s"""
            |${if (field.isOptional) s"where not(is-null(${expr.refExpr}))"}
@@ -207,111 +208,105 @@ class AQLGenerator extends AsterixQueryGenerator {
 
   private def parseGroupby(groupOpt: Option[GroupStatement],
                            exprMap: Map[String, FieldExpr], currentVar: String): PartialResult = {
-    if (groupOpt.isEmpty) {
-      return PartialResult(Seq(currentVar, ""), exprMap)
+    groupOpt match {
+      case Some(group) =>
+        val producedVars = mutable.Map.newBuilder[String, FieldExpr]
+        val groupStr = group.bys.zipWithIndex.map {
+          case (by, id) =>
+            val expr = exprMap(by.field.name)
+            val newName = by.as.getOrElse(by.field).name
+            val localGroupVar = s"$groupVar$id"
+            val groupFuncExpr = parseGroupByFunc(by, expr.refExpr)
+            producedVars += newName -> FieldExpr(localGroupVar, localGroupVar)
+            s"$localGroupVar := $groupFuncExpr"
+        }.mkString(", ")
+
+        //used to append to the AQL `group by`'s `with` clause to expose the required fields
+        val letExprs = mutable.Seq.newBuilder[String]
+        val aggrRequiredVars = mutable.Seq.newBuilder[String]
+        group.aggregates.foreach { aggr =>
+          val expr = exprMap(aggr.field.name)
+          val aggrExpr = parseAggregateFunc(aggr, expr.refExpr)
+          val newVar = getAggrFieldVar(aggr.field, expr.refExpr)
+          val letExpr = s"let $newVar := ${expr.refExpr}"
+          letExprs += letExpr
+          aggrRequiredVars += newVar
+          producedVars += aggr.as.name -> FieldExpr(s"$groupVar.$quote${aggr.as.name}$quote", aggrExpr)
+        }
+
+        val newExprMap = producedVars.result().toMap
+        val queryStr =
+          s"""
+             |${letExprs.result().mkString(",")}
+             |group by $groupStr with ${aggrRequiredVars.result().mkString(",")}
+             |return ${parseReturn(newExprMap)}
+             |""".stripMargin
+
+        PartialResult(Seq(groupVar, queryStr), newExprMap)
+      case None => PartialResult(Seq(currentVar, ""), exprMap)
     }
-
-    val producedVars = mutable.Map.newBuilder[String, FieldExpr]
-
-    val group = groupOpt.get
-    val groupStr = group.bys.zipWithIndex.map {
-      case (by, id) =>
-        val expr = exprMap(by.field.name)
-        val newName = by.as.getOrElse(by.field).name
-        val localGroupVar = s"$groupVar$id"
-        val groupFuncExpr = parseGroupByFunc(by, expr.refExpr)
-        producedVars += newName -> FieldExpr(localGroupVar, localGroupVar)
-        s"$localGroupVar := $groupFuncExpr"
-    }.mkString(", ")
-
-    //used to append to the AQL `group by`'s `with` clause to expose the required fields
-    val letExprs = mutable.Seq.newBuilder[String]
-    val aggrRequiredVars = mutable.Seq.newBuilder[String]
-    group.aggregates.foreach { aggr =>
-      val expr = exprMap(aggr.field.name)
-      val aggrExpr = parseAggregateFunc(aggr, expr.refExpr)
-      val newVar = getAggrFieldVar(aggr.field, expr.refExpr)
-      val letExpr = s"let $newVar := ${expr.refExpr}"
-      letExprs += letExpr
-      aggrRequiredVars += newVar
-      producedVars += aggr.as.name -> FieldExpr(s"$groupVar.$quote${aggr.as.name}$quote", aggrExpr)
-    }
-
-    val newExprMap = producedVars.result().toMap
-    val queryStr =
-      s"""
-         |${letExprs.result().mkString(",")}
-         |group by $groupStr with ${aggrRequiredVars.result().mkString(",")}
-         |return ${parseReturn(newExprMap)}
-         |""".stripMargin
-
-    PartialResult(Seq(groupVar, queryStr), newExprMap)
   }
 
   private def parseSelect(selectOpt: Option[SelectStatement],
                           exprMap: Map[String, FieldExpr],
                           query: Query,
                           currentVar: String): PartialResult = {
-
-    if (selectOpt.isEmpty) {
-      if (query.grouped) {
-        return PartialResult(Seq(globalAggrVar, "", ""), exprMap)
-      } else {
-        if (query.unnested) {
-          return PartialResult(Seq(globalAggrVar, "", s"return ${parseReturn(exprMap)}"), exprMap)
-        } else {
-          return PartialResult(Seq(globalAggrVar, "", s"return $sourceVar"), exprMap)
+    selectOpt match {
+      case Some(select) =>
+        val producedVars = mutable.Map.newBuilder[String, FieldExpr]
+        val (nextVar, prefix, wrap) = if (query.grouped) {
+          (outerSelectVar, s"for $currentVar in (", ")")
         }
-      }
-    }
-    val select = selectOpt.get
-    val producedVars = mutable.Map.newBuilder[String, FieldExpr]
-
-    val (nextVar, prefix, wrap) = if (query.grouped) {
-      (outerSelectVar, s"for $currentVar in (", ")")
-    }
-    else {
-      (globalAggrVar, "", "")
-    }
-    //sampling only
-    val orderStrs = select.orderOn.zip(select.order).map { case (orderOn, order) =>
-      val expr = exprMap(orderOn.name)
-      val orderStr = if (order == SortOrder.DSC) "desc" else ""
-      s"${expr.refExpr} $orderStr"
-    }
-    val orderStr = if (orderStrs.nonEmpty) {
-      orderStrs.mkString("order by ", ",", "")
-    } else {
-      ""
-    }
-
-    if (select.fields.isEmpty) {
-      producedVars ++= exprMap
-    } else {
-      select.fields.foreach {
-        case AllField =>
+        else {
+          (globalAggrVar, "", "")
+        }
+        //sampling only
+        val orderStrs = select.orderOn.zip(select.order).map { case (orderOn, order) =>
+          val expr = exprMap(orderOn.name)
+          val orderStr = if (order == SortOrder.DSC) "desc" else ""
+          s"${expr.refExpr} $orderStr"
+        }
+        val orderStr = if (orderStrs.nonEmpty) {
+          orderStrs.mkString("order by ", ",", "")
+        } else {
+          ""
+        }
+        if (select.fields.isEmpty) {
           producedVars ++= exprMap
-        case field =>
-          producedVars += field.name -> exprMap(field.name)
-      }
-    }
-
-    val newExprMap = producedVars.result().toMap
-    val retStr = if (select.fields.nonEmpty || (query.unnested && !query.grouped)) {
-      s"return ${parseReturn(newExprMap)}"
-    } else {
-      s"return $currentVar"
-    }
-
-    val queryStr =
-      s"""
-         |$wrap
-         |$orderStr
-         |limit ${select.limit}
-         |offset ${select.offset}
-         |$retStr
+        } else {
+          select.fields.foreach {
+            case AllField =>
+              producedVars ++= exprMap
+            case field =>
+              producedVars += field.name -> exprMap(field.name)
+          }
+        }
+        val newExprMap = producedVars.result().toMap
+        val retStr = if (select.fields.nonEmpty || (query.unnested && !query.grouped)) {
+          s"return ${parseReturn(newExprMap)}"
+        } else {
+          s"return $currentVar"
+        }
+        val queryStr =
+          s"""
+             |$wrap
+             |$orderStr
+             |limit ${select.limit}
+             |offset ${select.offset}
+             |$retStr
          """.stripMargin
-    PartialResult(Seq(nextVar, prefix, queryStr), newExprMap)
+        PartialResult(Seq(nextVar, prefix, queryStr), newExprMap)
+      case None =>
+        if (query.grouped) {
+          PartialResult(Seq(globalAggrVar, "", ""), exprMap)
+        } else {
+          if (query.unnested) {
+            PartialResult(Seq(globalAggrVar, "", s"return ${parseReturn(exprMap)}"), exprMap)
+          } else {
+            PartialResult(Seq(globalAggrVar, "", s"return $sourceVar"), exprMap)
+          }
+        }
+    }
   }
 
   /**
@@ -324,38 +319,37 @@ class AQLGenerator extends AsterixQueryGenerator {
     */
   private def parseGlobalAggr(globalAggrOpt: Option[GlobalAggregateStatement],
                               exprMap: Map[String, FieldExpr], currentVar: String): PartialResult = {
-    if (globalAggrOpt.isEmpty) {
-      return PartialResult(Seq("", "", ""), exprMap)
-    }
+    globalAggrOpt match {
+      case Some(globalAggr) =>
+        val (forPrefix, forWrap) = (s"for $currentVar in (", ")")
+        val producedVars = mutable.Map.newBuilder[String, FieldExpr]
+        val aggr = globalAggr.aggregate
 
-    val (forPrefix, forWrap) = (s"for $currentVar in (", ")")
-    val producedVars = mutable.Map.newBuilder[String, FieldExpr]
-    val aggr = globalAggrOpt.get.aggregate
-
-    val expr = exprMap(aggr.field.name)
-    val funcName = typeImpl.getAggregateStr(aggr.func)
-    val returnVar = if (aggr.func == Count) {
-      currentVar
-    } else {
-      s"$currentVar.$quote${aggr.field.name}$quote"
-    }
-
-    val prefixStr =
-      s"""
-         |{'${aggr.as.name}': ${funcName}(
-         |$forPrefix
+        val expr = exprMap(aggr.field.name)
+        val funcName = typeImpl.getAggregateStr(aggr.func)
+        val returnVar = if (aggr.func == Count) {
+          currentVar
+        } else {
+          s"$currentVar.$quote${aggr.field.name}$quote"
+        }
+        val prefixStr =
+          s"""
+             |{'${aggr.as.name}': ${funcName}(
+             |$forPrefix
          """.stripMargin
 
-    val returnStr =
-      s"""
-         |$forWrap
-         |return $returnVar
-         |)
-         |}
-         |""".stripMargin
+        val returnStr =
+          s"""
+             |$forWrap
+             |return $returnVar
+             |)
+             |}
+             |""".stripMargin
+        PartialResult(Seq("", prefixStr, returnStr), producedVars.result().toMap)
+      case None =>
+        PartialResult(Seq("", "", ""), exprMap)
+    }
 
-
-    return PartialResult(Seq("", prefixStr, returnStr), producedVars.result().toMap)
   }
 
   protected def parseNumberRelation(filter: FilterStatement, aqlExpr: String) = {
@@ -382,9 +376,12 @@ class AQLGenerator extends AsterixQueryGenerator {
   }
 
   protected def parseReturn(exprMap: Map[String, FieldExpr]): String = {
-    val str = exprMap.filter(e => e._1 != "*" && e._2.refExpr != sourceVar).map {
-      case (name, expr) => s"""'$name' : ${expr.defExpr}"""
-    }.mkString(",")
+    val str =
+      exprMap.filter {
+        case (field, expr) => field != "*" && expr.refExpr != sourceVar
+      }.map {
+        case (name, expr) => s"""'$name' : ${expr.defExpr}"""
+      }.mkString(",")
     s"""{
        |  $str
        |}

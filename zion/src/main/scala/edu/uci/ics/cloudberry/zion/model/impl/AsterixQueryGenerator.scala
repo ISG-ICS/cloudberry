@@ -213,25 +213,24 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
   }
 
   protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String = {
-    if (groupBy.funcOpt.isEmpty) {
-      return fieldExpr
-    }
-    val func = groupBy.funcOpt.get
-
-    func match {
-      case bin: Bin => s"${typeImpl.round}($fieldExpr/${bin.scale})*${bin.scale}"
-      case interval: Interval =>
-        val duration = parseIntervalDuration(interval)
-        s"${typeImpl.getIntervalStartDatetime}(${typeImpl.intervalBin}($fieldExpr, ${typeImpl.datetime}('1990-01-01T00:00:00.000Z'), $duration))"
-      case level: Level =>
-        //TODO remove this data type
-        val hierarchyField = groupBy.field.asInstanceOf[HierarchyField]
-        val field = hierarchyField.levels.find(_._1 == level.levelTag).get
-        s"$fieldExpr.${field._2}"
-      case GeoCellTenth => parseGeoCell(10, fieldExpr, groupBy.field.dataType)
-      case GeoCellHundredth => parseGeoCell(100, fieldExpr, groupBy.field.dataType)
-      case GeoCellThousandth => parseGeoCell(1000, fieldExpr, groupBy.field.dataType)
-      case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
+    groupBy.funcOpt match {
+      case Some(func) =>
+        func match {
+          case bin: Bin => s"${typeImpl.round}($fieldExpr/${bin.scale})*${bin.scale}"
+          case interval: Interval =>
+            val duration = parseIntervalDuration(interval)
+            s"${typeImpl.getIntervalStartDatetime}(${typeImpl.intervalBin}($fieldExpr, ${typeImpl.datetime}('1990-01-01T00:00:00.000Z'), $duration))"
+          case level: Level =>
+            //TODO remove this data type
+            val hierarchyField = groupBy.field.asInstanceOf[HierarchyField]
+            val field = hierarchyField.levels.find(_._1 == level.levelTag).get
+            s"$fieldExpr.${field._2}"
+          case GeoCellTenth => parseGeoCell(10, fieldExpr, groupBy.field.dataType)
+          case GeoCellHundredth => parseGeoCell(100, fieldExpr, groupBy.field.dataType)
+          case GeoCellThousandth => parseGeoCell(1000, fieldExpr, groupBy.field.dataType)
+          case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
+        }
+      case None => fieldExpr
     }
   }
 
