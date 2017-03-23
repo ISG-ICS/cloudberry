@@ -50,7 +50,7 @@ class QueryPlanner {
 
     val keys = Seq.newBuilder[String]
     val aggrValues = Map.newBuilder[String, AggregateFunc]
-    query.groups match {
+    query.group match {
       case Some(groupStats) =>
         keys ++= groupStats.bys.map(key => key.as.getOrElse(key.field).name)
         aggrValues ++= groupStats.aggregates.map(v => v.as.name -> v.func)

@@ -82,7 +82,7 @@ class OriginalDataAgent(override val dbName: String,
   //TODO extend the logic of using stats to solve more queries
   private def estimable(query: Query): Boolean = {
     if (query.isEstimable &&
-      query.groups.isEmpty &&
+      query.group.isEmpty &&
       query.lookup.isEmpty &&
       query.select.isEmpty &&
       query.unnest.isEmpty) {

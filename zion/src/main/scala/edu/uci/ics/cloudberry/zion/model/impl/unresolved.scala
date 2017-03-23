@@ -36,7 +36,7 @@ object Unresolved {
       query.lookup.map(toUnresolved(_)),
       query.filter.map(toUnresolved(_)),
       query.unnest.map(toUnresolved(_)),
-      query.groups.map(toUnresolved(_)),
+      query.group.map(toUnresolved(_)),
       query.select.map(toUnresolved(_)),
       query.globalAggr.map(toUnresolved(_)),
       query.isEstimable
