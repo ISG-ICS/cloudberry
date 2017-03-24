@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.schema._
+import edu.uci.ics.cloudberry.zion.model.schema.{GeoCellThousandth, _}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
@@ -10,86 +10,132 @@ object TestQuery {
   val TwitterDataSet = TwitterDataStore.DatasetName
   val PopulationDataSet = PopulationDataStore.DatasetName
   val literacyDataSet = LiteracyDataStore.DatasetName
-  val schema = TwitterDataStore.TwitterSchema
+  val twitterSchema = TwitterDataStore.TwitterSchema
+  val populationSchema = PopulationDataStore.PopulationSchema
+  val literacySchema = LiteracyDataStore.LiteracySchema
   val startTime = "2016-01-01T00:00:00.000Z"
   val endTime = "2016-12-01T00:00:00.000Z"
+  val twitterSchemaMap = Map(TwitterDataSet -> twitterSchema)
+  val allSchemaMap = Map(TwitterDataSet -> twitterSchema, PopulationDataSet -> populationSchema, literacyDataSet -> literacySchema)
+
+
+  val createAt = twitterField("create_at").asInstanceOf[TimeField]
+  val hashtags = twitterField("hashtags")
+  val text = twitterField("text")
+  val tag = Field.as(hashtags, "tag")
+  val geoStateID = twitterField("geo_tag.stateID")
+  val isRetweet = twitterField("is_retweet")
+  val id = twitterField("id")
+  val geo = twitterField("geo")
+  val coordinate = twitterField("coordinate")
+  val userId = twitterField("user.id")
+  val all = twitterField("*")
+
+  val population = populationField("population")
+  val stateID = populationField("stateID")
+
+  val literacy = literacyField("literacy")
 
   val textValue = Seq("zika", "virus")
   val stateValue = Seq(37, 51, 24, 11, 10, 34, 42, 9, 44)
-  val timeFilter = FilterStatement("create_at", None, Relation.inRange, Seq(startTime, endTime))
-  val zikaFilter = FilterStatement("text", None, Relation.contains, Seq("zika"))
-  val virusFilter = FilterStatement("text", None, Relation.contains, Seq("virus"))
-  val textFilter = FilterStatement("text", None, Relation.contains, textValue)
-  val stateFilter = FilterStatement("geo_tag.stateID", None, Relation.in, stateValue)
-  val retweetFilter = FilterStatement("is_retweet", None, Relation.isTrue, Seq.empty)
-  val bagFilter = FilterStatement("hashtag", None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
+  val timeFilter = FilterStatement(createAt, None, Relation.inRange, Seq(startTime, endTime))
+  val zikaFilter = FilterStatement(text, None, Relation.contains, Seq("zika"))
+  val virusFilter = FilterStatement(text, None, Relation.contains, Seq("virus"))
+  val textFilter = FilterStatement(text, None, Relation.contains, textValue)
+  val stateFilter = FilterStatement(geoStateID, None, Relation.in, stateValue)
+  val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
+  val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
 
-  val intValues = Seq(1, 2, 3)
+  val intValues = Seq(1)
   val stringValue = Seq("English")
   val longValues: Seq[Long] = Seq(1644l, 45464l)
   val doubleValues: Seq[Double] = Seq(0.45541, 9.456)
 
   val sourceInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2017, 1, 1, 0, 0))
   val sourceStat = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 10000)
-  val sourceInfo = DataSetInfo(TwitterDataSet, None, schema, sourceInterval, sourceStat)
+  val sourceInfo = DataSetInfo(TwitterDataSet, None, twitterSchema, sourceInterval, sourceStat)
 
   val zikaHalfInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2016, 6, 1, 0, 0))
   val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
 
   val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
-  val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), schema, zikaHalfInterval, zikaStats)
+  val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), twitterSchema, zikaHalfInterval, zikaStats)
 
-  val intFilter = FilterStatement("id", None, Relation.==, intValues)
-  val stringFilter = FilterStatement("lang", None, Relation.matches, stringValue)
-  val longFilter = FilterStatement("id", None, Relation.inRange, longValues)
-  val doubleFilter = FilterStatement("id", None, Relation.inRange, doubleValues)
+  val intFilter = FilterStatement(id, None, Relation.==, intValues)
+  val stringFilter = FilterStatement(twitterField("lang"), None, Relation.matches, stringValue)
+  val longFilter = FilterStatement(id, None, Relation.inRange, longValues)
+  val doubleFilter = FilterStatement(id, None, Relation.inRange, doubleValues)
 
-  val unnestHashTag = UnnestStatement("hashtags", "tag")
-  val byTag = ByStatement("tag", None, None)
-  val bySecond = ByStatement("create_at", Some(Interval(TimeUnit.Second)), Some("sec"))
-  val byMinute = ByStatement("create_at", Some(Interval(TimeUnit.Minute)), Some("min"))
-  val byHour = ByStatement("create_at", Some(Interval(TimeUnit.Hour)), Some("hour"))
-  val byDay = ByStatement("create_at", Some(Interval(TimeUnit.Day)), Some("day"))
-  val byWeek = ByStatement("create_at", Some(Interval(TimeUnit.Week)), Some("week"))
-  val byMonth = ByStatement("create_at", Some(Interval(TimeUnit.Month)), Some("month"))
-  val byYear = ByStatement("create_at", Some(Interval(TimeUnit.Year)), Some("year"))
-  val byState = ByStatement("geo", Some(Level("state")), Some("state"))
-  val byGeocell10 = ByStatement("coordinate", Some(GeoCellTenth), Some("cell"))
-  val byGeocell100 = ByStatement("coordinate", Some(GeoCellHundredth), Some("cell"))
-  val byGeocell1000 = ByStatement("coordinate", Some(GeoCellThousandth), Some("cell"))
-  val byUser = ByStatement("user.id", None, None)
-  val byBin = ByStatement("geo_tag.stateID", Some(Bin(10)), Some("state"))
 
-  val aggrCount = AggregateStatement("*", Count, "count")
-  val aggrMaxGroupBy = AggregateStatement("count", Max, "max")
-  val aggrMax = AggregateStatement("id", Max, "max")
-  val aggrMin = AggregateStatement("id", Min, "min")
-  val aggrSum = AggregateStatement("id", Sum, "sum")
-  val aggrAvg = AggregateStatement("id", Avg, "avg")
-  val aggrPopulationMin = AggregateStatement("population", Min, "min")
+  val unnestHashTag = UnnestStatement(hashtags, tag)
+  val byTag = ByStatement(tag, None, None)
+
+  val secondInterval = Interval(TimeUnit.Second)
+  val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
+  val minuteInterval = Interval(TimeUnit.Minute)
+  val byMinute = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "min")))
+  val hourInterval = Interval(TimeUnit.Hour)
+  val byHour = ByStatement(createAt, Some(Interval(TimeUnit.Hour)), Some(Field.as(hourInterval(createAt), "hour")))
+  val dayInterval = Interval(TimeUnit.Day)
+  val byDay = ByStatement(createAt, Some(Interval(TimeUnit.Day)), Some(Field.as(dayInterval(createAt), "day")))
+  val weekInterval = Interval(TimeUnit.Week)
+  val byWeek = ByStatement(createAt, Some(Interval(TimeUnit.Week)), Some(Field.as(weekInterval(createAt), "week")))
+  val monthInterval = Interval(TimeUnit.Month)
+  val byMonth = ByStatement(createAt, Some(Interval(TimeUnit.Month)), Some(Field.as(monthInterval(createAt), "month")))
+  val yearInterval = Interval(TimeUnit.Year)
+  val byYear = ByStatement(createAt, Some(Interval(TimeUnit.Year)), Some(Field.as(minuteInterval(createAt), "year")))
+
+  val level = Level("state")
+  val byState = ByStatement(geo, Some(level), Some(Field.as(level(geo), "state")))
+  val byGeocell10 = ByStatement(coordinate, Some(GeoCellTenth), Some(Field.as(GeoCellTenth(coordinate), "cell")))
+  val byGeocell100 = ByStatement(coordinate, Some(GeoCellHundredth), Some(Field.as(GeoCellHundredth(coordinate), "cell")))
+  val byGeocell1000 = ByStatement(coordinate, Some(GeoCellThousandth), Some(Field.as(GeoCellThousandth(coordinate), "cell")))
+  val byUser = ByStatement(userId, None, None)
+
+  val bin10 = Bin(10)
+  val byBin = ByStatement(geoStateID, Some(bin10), Some(Field.as(bin10(geoStateID), "state")))
+
+  val count = Field.as(Count(all), "count")
+  val aggrCount = AggregateStatement(all, Count, count)
+  val aggrMaxGroupBy = AggregateStatement(count, Max, Field.as(Max(count), "max"))
+  val aggrMax = AggregateStatement(id, Max, Field.as(Max(id), "max"))
+  val aggrMin = AggregateStatement(id, Min, Field.as(Min(id), "min"))
+  val aggrSum = AggregateStatement(id, Sum, Field.as(Sum(id), "sum"))
+  val aggrAvg = AggregateStatement(id, Avg, Field.as(Avg(id), "avg"))
+  val aggrPopulationMin = AggregateStatement(population, Min, Field.as(Min(population), "min"))
 
   val groupPopulationSum = GroupStatement(
     bys = Seq(byState),
-    aggregates = Seq(AggregateStatement("population", Sum, "sum")))
+    aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
+  )
 
-  val selectRecent = SelectStatement(Seq("-create_at"), 100, 0, Seq("create_at", "id", "user.id"))
-  val selectTop10Tag = SelectStatement(Seq("-count"), 10, 0, Seq.empty)
-  val selectTop10 = SelectStatement(Seq.empty, 10, 0, Seq.empty)
+  val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
+  val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
 
+  val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
+  val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))
 
   val lookupPopulation = LookupStatement(
-    sourceKeys = Seq("geo_tag.stateID"),
+    sourceKeys = Seq(geoStateID),
     dataset = PopulationDataSet,
-    lookupKeys = Seq("stateId"),
-    selectValues = Seq("population"),
-    as = Seq("population"))
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(population),
+    as = Seq(Field.as(population, "population")))
+
+  val lookupPopulationMultiple = LookupStatement(
+    sourceKeys = Seq(geoStateID),
+    dataset = PopulationDataSet,
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(stateID, population),
+    as = Seq(stateID, population))
 
   val lookupLiteracy = LookupStatement(
-    sourceKeys = Seq("geo_tag.stateID"),
+    sourceKeys = Seq(geoStateID),
     dataset = literacyDataSet,
-    lookupKeys = Seq("stateId"),
-    selectValues = Seq("literacy"),
-    as = Seq("literacy"))
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(literacy),
+    as = Seq(Field.as(literacy, "literacy")))
 
   val filterJSON =
     s"""
@@ -604,7 +650,7 @@ object TestQuery {
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_population",
-       |      "lookupKey":["stateId"],
+       |      "lookupKey":["stateID"],
        |      "select":["population"],
        |      "as" : ["population"]
        |    }
@@ -620,7 +666,36 @@ object TestQuery {
        |    "order" : [],
        |    "limit" : 0,
        |    "offset" : 0,
-       |    "field" : ["population"]
+       |    "field" : ["*","population"]
+       |  }
+       |}
+    """.stripMargin)
+
+  val multiFieldLookupFilterJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "lookup": [
+       |    {
+       |      "joinKey":["geo_tag.stateID"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateID"],
+       |      "select":["stateID", "population"],
+       |      "as" : ["stateID", "population"]
+       |    }
+       |   ],
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["*","population"]
        |  }
        |}
     """.stripMargin)
@@ -633,14 +708,14 @@ object TestQuery {
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_population",
-       |      "lookupKey":["stateId"],
+       |      "lookupKey":["stateID"],
        |      "select":["population"],
        |      "as" : ["population"]
        |    },
        |    {
        |      "joinKey":["geo_tag.stateID"],
        |      "dataset":"twitter.US_literacy",
-       |      "lookupKey":["stateId"],
+       |      "lookupKey":["stateID"],
        |      "select":["literacy"],
        |      "as" : ["literacy"]
        |    }
@@ -656,7 +731,7 @@ object TestQuery {
        |    "order" : [],
        |    "limit" : 0,
        |    "offset" : 0,
-       |    "field" : ["population", "literacy"]
+       |    "field" : ["*","population", "literacy"]
        |  }
        |}
      """.stripMargin
@@ -665,4 +740,11 @@ object TestQuery {
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 
   def unifyNewLine(string: String): String = string.replaceAll("\\r?\\n", "\n")
+
+  def twitterField(field: String): Field = twitterSchema.fieldMap(field)
+
+  def populationField(field: String): Field = populationSchema.fieldMap(field)
+
+  def literacyField(field: String): Field = literacySchema.fieldMap(field)
+
 }

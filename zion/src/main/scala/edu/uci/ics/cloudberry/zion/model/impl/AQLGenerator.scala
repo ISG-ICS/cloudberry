@@ -22,7 +22,7 @@ class AQLGenerator extends IQLGenerator {
         parseQuery(q, schemaMap)
       case q: CreateView => parseCreate(q, schemaMap(q.query.dataset))
       case q: AppendView => parseAppend(q, schemaMap(q.query.dataset))
-      case q: UpsertRecord => parseUpsert(q, schemaMap(q.dataset))
+      case q: UpsertRecord => parseUpsert(q, schemaMap(query.dataset))
       case q: DropView => ???
       case _ => ???
     }
@@ -40,10 +40,11 @@ class AQLGenerator extends IQLGenerator {
   def parseCreate(create: CreateView, sourceSchema: Schema): String = {
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
+    val timeFilter = s"//with filter on '${resultSchema.timeField.name}'"
     val createDataSet =
       s"""
          |drop dataset ${create.dataset} if exists;
-         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.mkString(",")} //with filter on '${resultSchema.timeField}'
+         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} $timeFilter
          |""".stripMargin
     val insert =
       s"""
@@ -116,8 +117,8 @@ class AQLGenerator extends IQLGenerator {
     * The lookup variable will be a sub-query to the lookup dataset.
     * Note: Since sub-query will return a list of the same value, we pick only the first value from the list using [0].
     *
-    * @param lookups Sequence of [[LookupStatement]] which contains lookup variables
-    * @param varMap Map of variables in the dataset schema
+    * @param lookups   Sequence of [[LookupStatement]] which contains lookup variables
+    * @param varMap    Map of variables in the dataset schema
     * @param schemaMap Map of dataset names to their schemas including lookup dataset schemas
     * @return varMap after adding lookup variables
     */
@@ -129,9 +130,9 @@ class AQLGenerator extends IQLGenerator {
     lookups.zipWithIndex.foreach { case (lookup, id) =>
       val lookupVar = s"$$l$id"
       val keyZip = lookup.lookupKeys.zip(lookup.sourceKeys).map { case (lookupKey, sourceKey) =>
-        varMap.get(sourceKey) match {
-          case Some(aqlVar) => s"${aqlVar.aqlExpr} /* +indexnl */ = $lookupVar.$lookupKey"
-          case None => throw FieldNotFound(sourceKey)
+        varMap.get(sourceKey.name) match {
+          case Some(aqlVar) => s"${aqlVar.aqlExpr} /* +indexnl */ = $lookupVar.${lookupKey.name}"
+          case None => throw FieldNotFound(sourceKey.name)
         }
       }
       val returnZip = lookup.as.zip(lookup.selectValues).map { case (asName, selectName) =>
@@ -142,13 +143,13 @@ class AQLGenerator extends IQLGenerator {
         s"""
            |(for $lookupVar in dataset ${lookup.dataset}
            |where ${keyZip.mkString(" and ")}
-           |return $lookupVar.${lookup.selectValues.head})[0]
+           |return $lookupVar.${lookup.selectValues.head.name})[0]
         """.stripMargin.trim
 
 
       val lookupTableFieldMap: Map[String, Field] = schemaMap(lookup.dataset).fieldMap
 
-      producedVar += (lookup.as.head -> AQLVar(lookupTableFieldMap(lookup.selectValues.head), subQuery))
+      producedVar += (lookup.as.head.name -> AQLVar(lookup.selectValues.head, subQuery))
     }
     (producedVar ++= varMap).result().toMap
   }
@@ -156,10 +157,10 @@ class AQLGenerator extends IQLGenerator {
   private def parseFilter(filters: Seq[FilterStatement], varMap: Map[String, AQLVar]): String = {
     if (filters.isEmpty) return ""
     filters.map { filter =>
-      varMap.get(filter.fieldName) match {
+      varMap.get(filter.field.name) match {
         case Some(variable) =>
           AQLFuncVisitor.translateRelation(variable.field, filter.funcOpt, variable.aqlExpr, filter.relation, filter.values)
-        case None => throw FieldNotFound(filter.fieldName)
+        case None => throw FieldNotFound(filter.field.name)
       }
     }.mkString("where ", " and ", "")
   }
@@ -169,19 +170,19 @@ class AQLGenerator extends IQLGenerator {
                          ): (String, Map[String, AQLVar]) = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val aql = unnest.zipWithIndex.map { case (stat, id) =>
-      varMap.get(stat.fieldName) match {
+      varMap.get(stat.field.name) match {
         case Some(aqlVar) =>
           aqlVar.field match {
             case field: BagField =>
               val newVar = s"$$unnest$id"
-              producedVar += stat.as -> AQLVar(new Field(stat.as, field.innerType), newVar)
+              producedVar += stat.as.name -> AQLVar(Field(stat.as.name, field.innerType), newVar)
               s"""
                  |${if (field.isOptional) s"where not(is-null(${aqlVar.aqlExpr}))"}
                  |for $newVar in ${aqlVar.aqlExpr}
                  |""".stripMargin
             case _ => throw new QueryParsingException("unnest can only apply on Bag type")
           }
-        case None => throw FieldNotFound(stat.fieldName)
+        case None => throw FieldNotFound(stat.field.name)
       }
     }.mkString("\n")
     (aql, (producedVar ++= varMap).result().toMap)
@@ -193,14 +194,14 @@ class AQLGenerator extends IQLGenerator {
                           ): (String, Map[String, AQLVar]) = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val groupByAQLPair: Seq[(String, String)] = group.bys.zipWithIndex.map { case (by, id) =>
-      varMap.get(by.fieldName) match {
+      varMap.get(by.field.name) match {
         case Some(aqlVar) =>
-          val key = by.as.getOrElse(aqlVar.field.name)
+          val key = by.as.getOrElse(aqlVar.field)
           val varKey = s"$$g$id"
           val (dataType, aqlGrpFunc) = AQLFuncVisitor.translateGroupFunc(aqlVar.field, by.funcOpt, aqlVar.aqlExpr)
-          producedVar += key -> AQLVar(new Field(key, dataType), s"$varGroupSource.$key")
-          (s"$varKey := $aqlGrpFunc", s" '$key' : $varKey")
-        case None => throw FieldNotFound(by.fieldName)
+          producedVar += key.name -> AQLVar(key, s"$varGroupSource.$key")
+          (s"$varKey := $aqlGrpFunc", s" '${key.name}' : $varKey")
+        case None => throw FieldNotFound(by.field.name)
       }
     }
 
@@ -208,14 +209,14 @@ class AQLGenerator extends IQLGenerator {
     val letExpr = mutable.Seq.newBuilder[String]
     val aggrRequiredVar = mutable.Seq.newBuilder[String]
     val aggrNameMap = group.aggregates.map { aggr =>
-      varMap.get(aggr.fieldName) match {
+      varMap.get(aggr.field.name) match {
         case Some(aqlVar) =>
           val (dataType, aqlAggExpr, newvar, newvarexpr) = AQLFuncVisitor.translateAggrFunc(aqlVar.field, aggr.func, aqlVar.aqlExpr)
           aggrRequiredVar += newvar
           letExpr += newvarexpr
-          producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$varGroupSource.${aggr.as}")
-          s"'${aggr.as}' : $aqlAggExpr"
-        case None => throw FieldNotFound(aggr.fieldName)
+          producedVar += aggr.as.name -> AQLVar(aggr.as, s"$varGroupSource.${aggr.as.name}")
+          s"'${aggr.as.name}' : $aqlAggExpr"
+        case None => throw FieldNotFound(aggr.field.name)
       }
     }
 
@@ -244,13 +245,13 @@ class AQLGenerator extends IQLGenerator {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val (prefix, wrap) = if (isInGroup) (s"for $innerSourceVar in (", ")") else ("", "")
     //sampling only
-    val orders = select.orderOn.map { fieldNameWithOrder =>
-      val order = if (fieldNameWithOrder.startsWith("-")) "desc" else ""
-      val fieldName = if (fieldNameWithOrder.startsWith("-")) fieldNameWithOrder.substring(1) else fieldNameWithOrder
-      varMap.get(fieldName) match {
-        case Some(aqlVar) => s"${aqlVar.aqlExpr} $order"
-        case None => throw FieldNotFound(fieldName)
-      }
+    val orders = select.orderOn.zip(select.order).map {
+      case (field, order) =>
+        val orderAQL = if (order == SortOrder.DSC) "desc" else ""
+        varMap.get(field.name) match {
+          case Some(aqlVar) => s"${aqlVar.aqlExpr} $orderAQL"
+          case None => throw FieldNotFound(field.name)
+        }
     }
     val ordersAQL = if (orders.nonEmpty) orders.mkString("order by ", ",", "") else ""
 
@@ -258,13 +259,13 @@ class AQLGenerator extends IQLGenerator {
       producedVar ++= varMap
     }
     select.fields.foreach {
-      case "*" =>
+      case field if (field.name == "*") =>
         producedVar ++= varMap
-      case fieldName =>
-        varMap.get(fieldName) match {
+      case field =>
+        varMap.get(field.name) match {
           case Some(aqlVar) =>
-            producedVar += fieldName -> AQLVar(new Field(aqlVar.field.name, aqlVar.field.dataType), aqlVar.aqlExpr)
-          case None => throw FieldNotFound(fieldName)
+            producedVar += field.name -> AQLVar(field, aqlVar.aqlExpr)
+          case None => throw FieldNotFound(field.name)
         }
     }
 
@@ -307,18 +308,18 @@ class AQLGenerator extends IQLGenerator {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     val aggr = globalAggr.aggregate
     val (functionName, returnVar) =
-      varMap.get(aggr.fieldName) match {
+      varMap.get(aggr.field.name) match {
         case Some(aqlVar) =>
           val (dataType, aqlAggExpr, aqlAggrVar) = AQLFuncVisitor.translateGlobalAggr(aqlVar.field, aggr.func, aggrVar)
-          producedVar += aggr.as -> AQLVar(new Field(aggr.as, dataType), s"$aggrVar.${aggr.as}")
+          producedVar += aggr.as.name -> AQLVar(Field(aggr.as.name, dataType), s"$aggrVar.${aggr.as.name}")
           (s"$aqlAggExpr", aqlAggrVar)
-        case None => throw FieldNotFound(aggr.fieldName)
+        case None => throw FieldNotFound(aggr.field.name)
       }
     val (openAggrWrap, closeAggrWrap) = ("(", ")")
 
     val aqlPrefix =
       s"""
-         |{"${aggr.as}": ${functionName} $openAggrWrap
+         |{"${aggr.as.name}": ${functionName} $openAggrWrap
          |$forPrefix
          """.stripMargin
 
@@ -365,7 +366,7 @@ class AQLGenerator extends IQLGenerator {
       case DataType.Boolean => "boolean"
       case DataType.String => "string"
       case DataType.Text => "string"
-      case DataType.Bag => s"{{${fieldType2ADMType(new Field("", field.asInstanceOf[BagField].innerType))}}}"
+      case DataType.Bag => s"{{${fieldType2ADMType(Field("", field.asInstanceOf[BagField].innerType))}}}"
       case DataType.Hierarchy => ??? // should be skipped
       case DataType.Record => ???
     }

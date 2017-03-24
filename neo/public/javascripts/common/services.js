@@ -1,12 +1,157 @@
 angular.module('cloudberry.common', [])
   .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
+    var defaultNonSamplingDayRange = 1500;
+    var defaultSamplingDayRange = 1;
+    var defaultSamplingSize = 10;
     var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
 
-    ws.onopen = function() {
-      var json = JSON.stringify({ cmd : "totalCount"});
-      ws.send(json);
-    };
+    var countRequest = JSON.stringify({
+      dataset: "twitter.ds_tweet",
+      global: {
+        globalAggregate: {
+          field: "*",
+          apply: {
+            name: "count"
+          },
+          as: "count"
+        }},
+      estimable : true,
+      transform: {
+        wrap: {
+          key: "totalCount"
+        }
+      }
+    });
+
+    function requestLiveCounts() {
+      if(ws.readyState === ws.OPEN){
+        ws.send(countRequest);
+      }
+    }
+    setInterval(requestLiveCounts, 1000);
+
+    function getLevel(level){
+      switch(level){
+        case "state" : return "stateID";
+        case "county" : return "countyID";
+        case "city" : return "cityID";
+      }
+    }
+
+    function mkString(array, delimiter){
+      var s = "";
+      array.forEach(function (item) {
+        s += item.toString() + delimiter;
+      });
+      return s.substring(0, s.length-1);
+    }
+
+    function getFilter(parameters, maxDay) {
+      var spatialField = getLevel(parameters.geoLevel);
+      var keywords = [];
+      for(var i = 0; i < parameters.keywords.length; i++){
+        keywords.push(parameters.keywords[i].replace("\"", "").trim());
+      }
+      var queryStartDate = new Date(parameters.timeInterval.end);
+      queryStartDate.setDate(queryStartDate.getDate() - maxDay);
+      queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+
+      return [
+        {
+          field: "geo_tag." + spatialField,
+          relation: "in",
+          values: parameters.geoIds
+        }, {
+          field: "create_at",
+          relation: "inRange",
+          values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+        }, {
+          field: "text",
+          relation: "contains",
+          values: [mkString(keywords, ",")]
+        }
+      ];
+    }
+
+    function byGeoRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
+        group: {
+          by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel
+              }
+            },
+            as: parameters.geoLevel
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        }
+      };
+    }
+
+    function byTimeRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
+        group: {
+          by: [{
+            field: "create_at",
+            apply: {
+              name: "interval",
+              args: {
+                unit: parameters.timeBin
+              }
+            },
+            as: parameters.timeBin
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        }
+      };
+    }
+
+    function byHashTagRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
+        unnest: [{
+          hashtags: "tag"
+        }],
+        group: {
+          by: [{
+            field: "tag"
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        },
+        select: {
+          order: ["-count"],
+          limit: 50,
+          offset: 0
+        }
+      };
+    }
 
     var asterixService = {
 
@@ -32,18 +177,36 @@ angular.module('cloudberry.common', [])
       errorMessage: null,
 
       query: function(parameters, queryType) {
-        var json = (JSON.stringify({
+        var sampleJson = (JSON.stringify({
           dataset: parameters.dataset,
-          keywords: parameters.keywords,
-          timeInterval: {
-            start:  Date.parse(parameters.timeInterval.start), //: Date.parse(startDate),
-            end:  Date.parse(parameters.timeInterval.end) //: Date.parse(new Date())
+          filter: getFilter(parameters, defaultSamplingDayRange),
+          select: {
+            order: ["-create_at"],
+            limit: defaultSamplingSize,
+            offset: 0,
+            field: ["create_at", "id", "user.id"]
           },
-          timeBin : parameters.timeBin,
-          geoLevel: parameters.geoLevel,
-          geoIds : parameters.geoIds
+          transform: {
+            wrap: {
+              key: "sample"
+            }
+          }
         }));
-        ws.send(json);
+
+        var batchJson = (JSON.stringify({
+          batch: [byTimeRequest(parameters), byGeoRequest(parameters), byHashTagRequest(parameters)],
+          option: {
+            sliceMillis: 2000
+          },
+          transform: {
+            wrap: {
+              key: "batch"
+            }
+          }
+        }));
+
+        ws.send(sampleJson);
+        ws.send(batchJson);
       }
     };
 
@@ -51,15 +214,6 @@ angular.module('cloudberry.common', [])
       $timeout(function() {
         var result = JSONbig.parse(event.data);
         switch (result.key) {
-          case "byPlace":
-            asterixService.mapResult = result.value;
-            break;
-          case "byTime":
-            asterixService.timeResult = result.value;
-            break;
-          case "byHashTag":
-            asterixService.hashTagResult = result.value;
-            break;
           case "sample":
             asterixService.tweetResult = result.value[0];
             break;
@@ -68,18 +222,18 @@ angular.module('cloudberry.common', [])
             asterixService.mapResult = result.value[1];
             asterixService.hashTagResult = result.value[2];
             break;
+          case "totalCount":
+            asterixService.totalCount = result.value[0][0].count;
+            break;
           case "error":
             console.error(result);
             asterixService.errorMessage = result.value;
             break;
           case "done":
             break;
-          case "totalCount":
-            asterixService.totalCount = result.value[0][0].count;
-            break;
           default:
-            console.error("ws get unknown data:" );
-            console.error(result);
+            console.error("ws get unknown data: ", result);
+            asterixService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });

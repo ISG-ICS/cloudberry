@@ -1,7 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
-import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import play.api.libs.json.JsArray
 
@@ -38,18 +37,18 @@ case class Query(dataset: String,
 
   import TimeField.TimeFormat
 
-  def setInterval(fieldName: String, interval: org.joda.time.Interval): Query = {
+  def setInterval(field: Field, interval: org.joda.time.Interval): Query = {
     //TODO support filter query that contains multiple relation on that same field
-    val timeFilter = FilterStatement(fieldName, None, Relation.inRange,
+    val timeFilter = FilterStatement(field, None, Relation.inRange,
       Seq(TimeFormat.print(interval.getStartMillis),
         TimeFormat.print(interval.getEndMillis)))
-    this.copy(filter = timeFilter +: this.filter.filterNot(_.fieldName == fieldName))
+    this.copy(filter = timeFilter +: this.filter.filterNot(_.field == field))
   }
 
-  def getTimeInterval(fieldName: String): Option[org.joda.time.Interval] = {
+  def getTimeInterval(field: Field): Option[org.joda.time.Interval] = {
     //TODO support > < etc.
     //TODO support multiple time condition
-    filter.find(f => f.fieldName == fieldName && f.relation == Relation.inRange).map { stat =>
+    filter.find(f => f.field == field && f.relation == Relation.inRange).map { stat =>
       require(stat.values.size == 2)
       val toTime = stat.values.map(v => TimeFormat.parseDateTime(v.asInstanceOf[String]))
       new org.joda.time.Interval(toTime(0), toTime(1))
@@ -67,8 +66,8 @@ case class Query(dataset: String,
       return false
     }
 
-    val isFilterMatch = this.filter.forall(f => another.filter.filter(_.fieldName == f.fieldName)
-      .exists(anotherF => f.covers(anotherF, schema.fieldMap(f.fieldName).dataType)))
+    val isFilterMatch = this.filter.forall(f => another.filter.filter(_.field == f.field)
+      .exists(anotherF => f.covers(anotherF)))
     if (!isFilterMatch) {
       return false
     }
@@ -86,7 +85,7 @@ case class Query(dataset: String,
 object Query {
 
   def covers(thisFilter: Seq[FilterStatement], thatFilter: Seq[FilterStatement]): Boolean = {
-    thisFilter.forall(f => thatFilter.exists(_.fieldName == f.fieldName))
+    thisFilter.forall(f => thatFilter.exists(_.field == f.field))
   }
 }
 
@@ -100,11 +99,7 @@ case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boo
 
 case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
-trait Statement {
-  protected def requireOrThrow(condition: Boolean, msgIfFalse: String): Unit = {
-    if (!condition) throw QueryInitException(msgIfFalse)
-  }
-}
+trait Statement
 
 /**
   * Augments the source data to contain more fields.
@@ -115,28 +110,24 @@ trait Statement {
   * @param selectValues
   * @param as
   */
-case class LookupStatement(sourceKeys: Seq[String],
+case class LookupStatement(sourceKeys: Seq[Field],
                            dataset: String,
-                           lookupKeys: Seq[String],
-                           selectValues: Seq[String],
-                           as: Seq[String]
-                          ) extends Statement {
-  //TODO to be replaced by a unified syntax exceptions
-  requireOrThrow(sourceKeys.length == lookupKeys.length, "LookupStatement: lookup key number is different from size of the source key ")
-  requireOrThrow(selectValues.length == as.length, "LookupStatement: select value names doesn't match with renamed names")
-}
+                           lookupKeys: Seq[Field],
+                           selectValues: Seq[Field],
+                           as: Seq[Field]
+                          ) extends Statement
 
 //TODO only support at most one transform for now
-case class FilterStatement(fieldName: String,
+case class FilterStatement(field: Field,
                            funcOpt: Option[TransformFunc],
                            relation: Relation,
                            values: Seq[Any]
                           ) extends Statement {
-  def covers(another: FilterStatement, dataType: DataType): Boolean = {
-    if (fieldName != another.fieldName) {
+  def covers(another: FilterStatement): Boolean = {
+    if (field != another.field) {
       false
     } else {
-      dataType match {
+      field.dataType match {
         case DataType.Number => ???
         case DataType.Time => ???
         case DataType.Point => ???
@@ -151,46 +142,46 @@ case class FilterStatement(fieldName: String,
   }
 }
 
-case class UnnestStatement(fieldName: String, as: String)
+case class UnnestStatement(field: Field, as: Field)
 
 /**
   * Groupby fieldNames
   *
-  * @param fieldName
+  * @param field
   * @param funcOpt
   * *@param groups //TODO support the auto group by given size
   */
-case class ByStatement(fieldName: String,
+case class ByStatement(field: Field,
                        funcOpt: Option[GroupFunc],
-                       as: Option[String]
+                       as: Option[Field]
                       ) extends Statement
 
 /**
   * The aggregate results produced by group by
   */
-case class AggregateStatement(fieldName: String,
+case class AggregateStatement(field: Field,
                               func: AggregateFunc,
-                              as: String
+                              as: Field
                              ) extends Statement
 
 case class GroupStatement(bys: Seq[ByStatement],
                           aggregates: Seq[AggregateStatement]
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
-
-  requireOrThrow(bys.nonEmpty, "By statement is required")
-  requireOrThrow(aggregates.nonEmpty, "Aggregation statement is required")
 }
 
 case class GlobalAggregateStatement(aggregate: AggregateStatement
-                                   ) extends Statement {
+                                   ) extends Statement
+
+object SortOrder extends Enumeration {
+    val ASC, DSC = Value
 }
 
-case class SelectStatement(orderOn: Seq[String],
+case class SelectStatement(orderOn: Seq[Field],
+                           order:Seq[SortOrder.Value],
                            limit: Int,
                            offset: Int,
-                           fields: Seq[String]
-                          ) extends Statement {
-}
+                           fields: Seq[Field]
+                          ) extends Statement
 
 

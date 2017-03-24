@@ -28,7 +28,7 @@ private[db] class Migration_20160814() {
          |create dataset $berryMeta(berry.metaType) if not exists primary key name;
          |
          |upsert into dataset $berryMeta (
-         |  ${Json.toJson(twitterInfo)}
+         |  ${Json.toJson(DataSetInfo.write(twitterInfo))}
          |)
        """.stripMargin
     }

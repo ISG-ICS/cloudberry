@@ -2,6 +2,9 @@ body {
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  height:100%;
+  width:100%;
+  position: absolute;
 }
 .map-group {
   position: absolute;
@@ -23,19 +26,12 @@ body {
   -o-transition: all 0.5s ease;
   transition: all 0.5s ease;
   background-color: white;
-  opacity: 0.9;
+  opacity: 1.0;
+  z-index: 1;
 }
 
 #sidebar.toggled {
   margin-left: -20%;
-}
-
-time-series {
-  position: absolute;
-  top: 82%;
-  left: 15%;
-  width: 80%;
-  height: 15%;
 }
 
 search-bar {
@@ -45,13 +41,6 @@ search-bar {
   width: 50%;
 }
 
-#how-to{
-  position: absolute;
-  bottom: 0%;
-  left: -11%;
-  width: 10%;
-  z-index: 0;
-}
 
 .info {
   padding: 6px 8px;
@@ -119,7 +108,7 @@ search-bar {
 #powerby{
            position: absolute;
            bottom: 0%;
-           left: 71%;
+           left: 74%;
            width: 10%;
            z-index: 0;
 }
@@ -128,11 +117,37 @@ search-bar {
     color : white;
 }
 
-.number{
-  color: #2795ee;
+.stats{
   position: absolute;
-  bottom:6%;
-  left:1%;
-  width:10%;
-  z-index:0;
+  bottom:0;
+  pointer-events: none;
+  line-height: 1;
+  width: 100%;
+}
+
+time-series {
+  z-index: 1000;
+  pointer-events: auto;
+  position: relative;
+  display: inline-block;
+  left: 4%;
+}
+
+#count-div{
+  color: #000000;
+  font-weight:500;
+  margin-top: 20px;
+  margin-bottom: 40px;
+  padding-left: 10px;
+  float: left;
+}
+
+#count{
+  font-size: 32px;
+  margin-bottom: 0;
+  text-align: right;
+}
+
+#count-text{
+  font-size: 13px;
 }

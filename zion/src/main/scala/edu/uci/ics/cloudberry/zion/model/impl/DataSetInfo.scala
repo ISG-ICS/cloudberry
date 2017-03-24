@@ -1,11 +1,13 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, JsonRequestException, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
+import edu.uci.ics.cloudberry.zion.model.impl.Unresolved._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
+import scala.collection
 
 case class Stats(createTime: DateTime,
                  lastModifyTime: DateTime,
@@ -22,19 +24,49 @@ object DataSetInfo {
 
   val MetaDataDBName: String = "berry.meta"
   val MetaSchema: Schema = Schema("berry.MetaType",
-                                  Seq(StringField("name")),
-                                  Seq.empty,
-                                  Seq("name"),
-                                  "stats.createTime")
+    Seq(StringField("name")),
+    Seq.empty,
+    Seq(StringField("name")),
+    TimeField("stats.createTime"))
 
-  def parse(json: JsValue): DataSetInfo = {
-    json.validate[DataSetInfo] match {
-      case js: JsSuccess[DataSetInfo] => js.get
+  /**
+    * Parse a json object to create a [[DataSetInfo]].
+    * First parses the json object into a [[UnresolvedDataSetInfo]], and then resolves it into a [[DataSetInfo]]
+    * @param json
+    * @param schemaMap
+    * @return
+    */
+  def parse(json: JsValue, schemaMap: Map[String, Schema]): DataSetInfo = {
+    json.validate[UnresolvedDataSetInfo] match {
+      case js: JsSuccess[UnresolvedDataSetInfo] =>
+        val dataSetInfo = js.get
+        val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
+
+        val schema = dataSetInfo.schema
+        val primaryKey = schema.primaryKey.map(schema.getField(_).get)
+        val timeField = schema.getField(schema.timeField) match {
+          case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
+          case None if schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${schema.typeName}.")
+          case _ => throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
+        }
+
+        val resolvedSchema = Schema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
+
+        DataSetInfo(dataSetInfo.name, resolvedQuery, resolvedSchema, dataSetInfo.dataInterval, dataSetInfo.stats)
+
       case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
     }
   }
 
-  def write(dataSetInfo: DataSetInfo): JsValue = Json.toJson(dataSetInfo)
+  /**
+    * Write a dataSetInfo as a json object.
+    * Calls [[Unresolved.toUnresolved()]] to transform the dataSetInfo into [[UnresolvedDataSetInfo]],
+    * which is then written as a json object.
+    * @param dataSetInfo
+    * @return
+    */
+  def write(dataSetInfo: DataSetInfo): JsValue =
+    Json.toJson(toUnresolved(dataSetInfo))
 
   implicit val intervalFormat: Format[Interval] = new Format[Interval] {
     override def reads(json: JsValue) = {
@@ -123,6 +155,8 @@ object DataSetInfo {
 
   }
 
+  implicit val queryFormat: Format[UnresolvedQuery] = JSONParser.queryFormat
+
   implicit val statsFormat: Format[Stats] = (
     (JsPath \ "createTime").format[DateTime] and
       (JsPath \ "lastModifyTime").format[DateTime] and
@@ -130,21 +164,19 @@ object DataSetInfo {
       (JsPath \ "cardinality").format[Long]
     ) (Stats.apply, unlift(Stats.unapply))
 
-  implicit val queryFormat: Format[Query] = JSONParser.queryFormat
-
-  implicit val schemaFormat: Format[Schema] = (
+  implicit val schemaFormat: Format[UnresolvedSchema] = (
     (JsPath \ "typeName").format[String] and
       (JsPath \ "dimension").format[Seq[Field]] and
       (JsPath \ "measurement").format[Seq[Field]] and
       (JsPath \ "primaryKey").format[Seq[String]] and
       (JsPath \ "timeField").format[String]
-    ) (Schema.apply, unlift(Schema.unapply))
+    ) (UnresolvedSchema.apply, unlift(UnresolvedSchema.unapply))
 
-  implicit val dataSetInfoFormat: Format[DataSetInfo] = (
+  implicit val dataSetInfoFormat: Format[UnresolvedDataSetInfo] = (
     (JsPath \ "name").format[String] and
-      (JsPath \ "createQuery").formatNullable[Query] and
-      (JsPath \ "schema").format[Schema] and
+      (JsPath \ "createQuery").formatNullable[UnresolvedQuery] and
+      (JsPath \ "schema").format[UnresolvedSchema] and
       (JsPath \ "dataInterval").format[Interval] and
       (JsPath \ "stats").format[Stats]
-    ) (DataSetInfo.apply, unlift(DataSetInfo.unapply))
+    ) (UnresolvedDataSetInfo.apply, unlift(UnresolvedDataSetInfo.unapply))
 }
