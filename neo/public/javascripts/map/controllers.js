@@ -97,6 +97,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         $scope.cachecount = 0;
         $scope.cacheSize = 0;
         $scope.rm_duplicate = new Set();
+        $scope.cacheThreshold = 2500;
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
@@ -371,7 +372,6 @@ function loadCityJsonByBound(onEachFeature){
             var t0 = performance.now();
             var result = $scope.tree.search(item);
             data_response = turf.featureCollection(result);
-            console.log(data_response);
             console.log("match",rteBounds);
             if($scope.polygons.cityPolygons) {
                                                   $scope.map.removeLayer($scope.polygons.cityPolygons);
@@ -402,7 +402,7 @@ function loadCityJsonByBound(onEachFeature){
                 var rteExtends = "city/" + bboxBuffer[3] + "/" + bboxBuffer[1] + "/" + bboxBuffer[2] + "/" + bboxBuffer[0];
                 console.log("extend",rteExtends);
                 $http.get(rteExtends).success(function(data) {
-                                console.log(data);
+//                                console.log(data);
                                 var result_set = insertIntoTree(data.features,poly1);
                                 var extendPoly = turf.bboxPolygon(bboxBuffer);
                                 $scope.cachecount = $scope.cachecount + 1;
@@ -411,7 +411,7 @@ function loadCityJsonByBound(onEachFeature){
                                     {$scope.cache = extendPoly;}
                                 else
                                     {$scope.cache = turf.union(extendPoly,$scope.cache);}
-                                 console.log("cache",$scope.cache);
+//                                 console.log("cache",$scope.cache);
                                 var result = $scope.tree.search(item);
                                 data_response = turf.featureCollection(result);
                                 $scope.geojsonData.city = data_response;
@@ -475,7 +475,7 @@ function loadCityJsonByBound(onEachFeature){
 
     function insertIntoTree(features,currentRequest){
 
-        var cacheMaxSize = 600;
+        var cacheMaxSize = 800;
         var nodes = [];
         for(var id in features){
 
@@ -491,12 +491,12 @@ function loadCityJsonByBound(onEachFeature){
                     $scope.cacheSize = $scope.cacheSize + 1;
                 }
             }
-        if($scope.cacheSize >= cacheMaxSize)
+        if($scope.cacheSize >= $scope.cacheThreshold)
             {
                 var t0 = performance.now();
                 evict(currentRequest).done(function(){
-                    console.log("deletion done");
-                    console.log("before add",$scope.tree.all());
+//                    console.log("deletion done");
+//                    console.log("before add",$scope.tree.all());
                     $scope.tree.load(nodes);
                     console.log("after add",$scope.tree.all());
                 })
@@ -517,18 +517,18 @@ function loadCityJsonByBound(onEachFeature){
          var deferred = new $.Deferred();
         if($scope.cache["geometry"]["type"] == "Polygon")
             {
-                console.log("cache is a polygon");
+//                console.log("cache is a polygon");
                 findCorner(currentRequest).done(function(){console.log("corner done");});
             }
         else if($scope.cache["geometry"]["type"] == "MultiPolygon")
             {
-              console.log("cache is a MultiPolygon");
+//              console.log("cache is a MultiPolygon");
               console.log($scope.cache);
               findCorner(currentRequest).done(function(){console.log("corner done");});
               for(var id ;id<$scope.cache["geometry"]["coordinates"].length;++id)
               {
                 var polycentroid = turf.centroid(currentRequest);
-                console.log("multiPolygon",scope.cache["geometry"]["coordinates"][id]);
+//                console.log("multiPolygon",scope.cache["geometry"]["coordinates"][id]);
               }
             }
             deferred.resolve();
@@ -568,15 +568,15 @@ function loadCityJsonByBound(onEachFeature){
             return deferred.promise();
         }
        var findRegion =     function findCachedRegion(evictCorner,currentRequest,polycentroid){
-                var cacheTotalSize = 600;
-                var targetDelete = $scope.cacheSize-cacheTotalSize;
-                console.log(targetDelete);
+                var cacheTotalSize = 800;
+                var targetDelete = $scope.cacheSize- $scope.cacheThreshold;
+
                 var deleted = 0;
                 var deferred = new $.Deferred();
                 var midPoint = turf.midpoint(evictCorner,polycentroid);
                 var slicePoint = turf.midpoint(evictCorner,midPoint);
                 var line = turf.lineString([evictCorner["geometry"]["coordinates"],polycentroid["geometry"]["coordinates"]]);
-                console.log("line",line);
+
                 var units = 'miles';
                 var distance = turf.distance(evictCorner, polycentroid, units)/10;
                 var start = 0;
@@ -590,16 +590,9 @@ function loadCityJsonByBound(onEachFeature){
 
                             var cutPoint = sliced["geometry"]["coordinates"][1];
                             var cutBbox = [evictCorner["geometry"]["coordinates"][0],evictCorner["geometry"]["coordinates"][1],cutPoint[0],cutPoint[1]];
-//                            console.log("cut box",cutBbox);
-                            var bboxPolygon = turf.bboxPolygon(cutBbox);
-//                            console.log(bboxPolygon);
-//                            console.log("cachePoly :Dec",bboxPolygon);
-                            var cutPolygon = turf.intersect($scope.cache,bboxPolygon);
-                            if(turf.intersect(cutPolygon,currentRequest) != undefined)
-                            {
-                                console.log("shouldNotEvict");
-                            }
-                            var finalPoly = turf.difference($scope.cache,bboxPolygon);
+
+
+
 
                             var remove_search = {
                                                                                 minX: cutBbox[0],
@@ -618,10 +611,28 @@ function loadCityJsonByBound(onEachFeature){
                             sliced = turf.lineSliceAlong(line, start, stop, units);
 
                         }
+                         var bboxPolygon = turf.bboxPolygon(cutBbox);
+                         var cutPolygon = turf.intersect($scope.cache,bboxPolygon);
+                          if(turf.intersect(cutPolygon,currentRequest) != undefined)
+                                              {
+                                                  var criticalPart = turf.intersect(cutPolygon,currentRequest);
+                                                  var criticalBbox = turf.bbox(criticalPart);
+                                                  var critical_search = {
+                                                                            minX: criticalBbox[0],
+                                                                            minY: criticalBbox[1],
+                                                                            maxX: criticalBbox[2],
+                                                                            maxY: criticalBbox[3]
+                                                  }
+                                                  var addItems = $scope.tree.search(critical_search);
+                                                  removeItems = removeItems.filter( function( el ) {
+                                                    return addItems.indexOf( el ) < 0;
+                                                  } );
+                                                  $scope.cacheThreshold += addItems.length;
+                                              }
                         deletion(removeItems).done(function(){
-                            console.log("FIRST DELETION");
+//                            console.log("FIRST DELETION");
 
-                            console.log(deleted);
+                            console.log("deleted");
 
                             });
 
@@ -632,13 +643,13 @@ function loadCityJsonByBound(onEachFeature){
          var deletion = function deleteNodesfromTree(removeItems){
 
             var deferred = new $.Deferred();
-            console.log("deferred");
-            console.log("tree :",removeItems);
-            console.log("before delete:",$scope.tree.all());
+//            console.log("deferred");
+//            console.log("tree :",removeItems);
+//            console.log("before delete:",$scope.tree.all());
             for (var i = 0;i<removeItems.length;i++)
                   $scope.tree.remove(removeItems[i]);
-            console.log("AFter delete:",$scope.tree.all());
-            console.log("deletion finsihed");
+//            console.log("AFter delete:",$scope.tree.all());
+//            console.log("deletion finsihed");
              deferred.resolve();
             return deferred.promise();
           }
