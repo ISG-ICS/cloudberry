@@ -649,6 +649,24 @@ class AQLGeneratorTest extends Specification {
       ok
     }
 
+    "translate a meta query" in {
+      val select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))
+      val query = new Query(DataSetInfo.MetaDataDBName, select = select)
+      val result = parser.generate(query, Map(DataSetInfo.MetaDataDBName->DataSetInfo.MetaSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |for $t in dataset berry.meta
+          |order by $t.'stats'.'createTime' 
+          |limit 2147483647
+          |offset 0
+          |return
+          |$t
+        """.stripMargin.trim
+      )
+    }
+
+
+
   }
 
   "AQLQueryParser calcResultSchema" should {
