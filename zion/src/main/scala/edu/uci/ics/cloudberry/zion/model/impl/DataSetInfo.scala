@@ -24,8 +24,7 @@ object DataSetInfo {
 
   val MetaDataDBName: String = "berry.meta"
   val MetaSchema: Schema = Schema("berry.MetaType",
-    Seq(StringField("name"),
-        TimeField("stats.createTime")),
+    Seq(StringField("name")),
     Seq.empty,
     Seq(StringField("name")),
     TimeField("stats.createTime"))

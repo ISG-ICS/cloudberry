@@ -35,11 +35,11 @@ case class Query(dataset: String,
                  isEstimable: Boolean = false
                 ) extends IReadQuery {
 
-  def unnested: Boolean = !unnest.isEmpty
+  def hasUnnest: Boolean = !unnest.isEmpty
 
-  def grouped: Boolean = groups.isDefined
+  def hasGroup: Boolean = groups.isDefined
 
-  def selected: Boolean = select.isDefined
+  def hasSelect: Boolean = select.isDefined
 
   import TimeField.TimeFormat
 

@@ -525,6 +525,22 @@ class SQLPPGeneratorTest extends Specification {
       ok
     }
 
+
+    "translate a filter having point relation with select" in {
+      val filter = Seq(pointFilter)
+      val select = Option(selectRecent)
+      val query = new Query(dataset = TwitterDataSet, filter = filter, select = select)
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """select t.`user`.`id` as `user.id`,t.`create_at` as `create_at`,t.`id` as `id`
+          |from twitter.ds_tweet t
+          |where spatial_intersect(t.`coordinate`,
+          |  create_rectangle(create_point(0.0,0.0),
+          |  create_point(1.0,1.0)))
+          |order by t.`create_at` desc
+          |limit 100
+          |offset 0;""".stripMargin)
+    }
   }
 
   "SQLPPGenerator calcResultSchema" should {

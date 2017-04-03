@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 /**
   * Defines constant strings for query languages supported by AsterixDB
   */
-trait TypeImpl {
+trait AsterixImpl {
 
   val aggregateFuncMap: Map[AggregateFunc, String]
 
@@ -39,6 +39,12 @@ trait TypeImpl {
 
 }
 
+object AsterixImpl {
+
+
+}
+
+
 abstract class AsterixQueryGenerator extends IQLGenerator {
 
   /**
@@ -56,9 +62,9 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     * @param strs    a sequence of parsed query strings, which would be composed together later.
     * @param exprMap a new field expression map
     */
-  case class PartialResult(strs: Seq[String], exprMap: Map[String, FieldExpr])
+  case class ParsedResult(strs: Seq[String], exprMap: Map[String, FieldExpr])
 
-  protected def typeImpl: TypeImpl
+  protected def typeImpl: AsterixImpl
 
   protected def quote: String
 
@@ -74,6 +80,10 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def outerSelectVar: String
 
+  /**
+    * The suffix (such as ";") appended to the query string
+    * @return
+    */
   protected def suffix: String
 
 
@@ -172,8 +182,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     val values = filter.values.map(_.asInstanceOf[Seq[Double]])
     filter.relation match {
       case Relation.inRange => {
-        s"""
-           |${typeImpl.spatialIntersect}($fieldExpr,
+        s"""${typeImpl.spatialIntersect}($fieldExpr,
            |  ${typeImpl.createRectangle}(${typeImpl.createPoint}(${values(0)(0)},${values(0)(1)}),
            |  ${typeImpl.createPoint}(${values(1)(0)},${values(1)(1)})))
            |""".stripMargin
