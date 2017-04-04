@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.{IMerger, Unioner}
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption, TimeField}
+import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption, Field, TimeField}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -159,7 +159,8 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
   def getRet(i: Int) = JsArray(Seq(JsObject(Seq("hour" -> JsNumber(i), "count" -> JsNumber(i)))))
 
-  sequential
+  def getGroupAs(query: Query): Option[Field] =
+    query.groups.get.bys(0).as
 
   "Client" should {
     "slice the query into small pieces and return the merged result incrementally" in {
@@ -251,15 +252,24 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval1.getEnd must_== endTime
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
-      dataManager.reply(getRet(1))
+      dataManager.reply(
+        getGroupAs(slicedQ1) match {
+          case Some(TimeField("hour", _)) => getRet(1)
+          case Some(TimeField("day", _)) => getRet(2)
+        }
+      )
 
       val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
       val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
       interval2.getEnd must_== endTime
       interval2.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
-      dataManager.reply(getRet(2))
-
+      dataManager.reply(
+        getGroupAs(slicedQ2) match {
+          case Some(TimeField("hour", _)) => getRet(1)
+          case Some(TimeField("day", _)) => getRet(2)
+        }
+      )
       sender.expectMsg(JsArray(Seq(getRet(1), getRet(2))))
 
       ok
