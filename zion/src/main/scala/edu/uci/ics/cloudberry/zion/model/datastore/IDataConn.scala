@@ -27,7 +27,7 @@ class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext
 
   def postQuery(query: String): Future[JsValue] = {
     postWithCheckingStatus(query, (ws: WSResponse) => {
-      ws.json.asInstanceOf[JsObject].value.get("results").get
+      ws.json.asInstanceOf[JsObject].value("results")
     }, (ws: WSResponse) => defaultQueryResponse)
   }
 
