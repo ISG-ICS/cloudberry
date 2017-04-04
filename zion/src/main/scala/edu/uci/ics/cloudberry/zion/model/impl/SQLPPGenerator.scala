@@ -134,7 +134,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   private def parseLookup(lookups: Seq[LookupStatement],
                           exprMap: Map[String, FieldExpr]): ParsedResult = {
-    val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
+    val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
 
     val lookupStr = lookups.zipWithIndex.map {
       case (lookup, id) =>
@@ -170,7 +170,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
                           exprMap: Map[String, FieldExpr]): ParsedResult = {
-    val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
+    val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
     val unnestTestStrs = new ListBuffer[String]
     val unnestStr = unnest.zipWithIndex.map {
       case (unnest, id) =>
@@ -191,7 +191,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
                            exprMap: Map[String, FieldExpr]): ParsedResult = {
     groupOpt match {
       case Some(group) =>
-        val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
+        val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val groupStrs = group.bys.map { by =>
           val fieldExpr = exprMap(by.field.name)
           val as = by.as.getOrElse(by.field)
@@ -221,7 +221,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
                           exprMap: Map[String, FieldExpr], query: Query): ParsedResult = {
     selectOpt match {
       case Some(select) =>
-        val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
+        val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val orderStrs = select.orderOn.zip(select.order).map {
           case (orderOn, order) =>
             val expr = exprMap(orderOn.name).refExpr
@@ -281,7 +281,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
                               queryStr: String): ParsedResult = {
     globalAggrOpt match {
       case Some(globalAggr) =>
-        val producedExprs = mutable.Map.newBuilder[String, FieldExpr]
+        val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val aggr = globalAggr.aggregate
         val funcName = typeImpl.getAggregateStr(aggr.func)
 
