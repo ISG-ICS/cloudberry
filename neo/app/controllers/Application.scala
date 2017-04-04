@@ -5,15 +5,16 @@ import javax.inject.{Inject, Singleton}
 
 import actor.RequestRouter
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, ActorSystem, DeadLetter, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
+import akka.pattern.ask
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
-import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
@@ -22,8 +23,9 @@ import play.api.mvc._
 import play.api.{Configuration, Environment}
 import play.Logger
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.util.{Success, Failure}
 
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
@@ -81,6 +83,76 @@ class Application @Inject()(val wsClient: WSClient,
     // ??? do we need to convert it to string ??? will be more clear after we have the use case.
     val toStringFlow = Flow[JsValue].map(js => js.toString() + System.lineSeparator())
     Ok.chunked((source via flow) via toStringFlow)
+  }
+
+  def register = Action(parse.json) { request =>
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+
+    request.body.validate[Register] match {
+      case registerRequest: JsSuccess[Register] =>
+        val newTable = registerRequest.get
+        val receipt = (manager ? newTable).mapTo[JsValue]
+
+        /*
+          Receipt format:
+          {
+            "type": "Ok"/"Bad",
+            "message": "error messages only"
+          }
+        */
+
+        //TODO maybe better coding style to return Result from Future[Result]
+        var respond = Ok("Ok")
+
+        receipt.onComplete{
+          case Success(r) =>
+            (r \ "type").asOpt[String] match {
+              case Some("OK") =>
+                respond = Ok("Dataset " + newTable.dataset + " has been registered.")
+              case Some("Bad") =>
+                respond = BadRequest("Register operation denied: " + (r \ "message").as[String])
+              case _ =>
+                respond = InternalServerError("Strange receipt format from dataStore manager.")
+            }
+          case Failure(f) =>
+            respond = InternalServerError("No valid receipt from dataStore manager. " + f.getMessage)
+        }
+        respond
+
+      case e: JsError =>
+        BadRequest("Not a valid register Json POST: " + e.toString)
+    }
+  }
+
+  def deregister = Action(parse.json) { request =>
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+
+    request.body.validate[Deregister] match {
+      case deregisterRequest: JsSuccess[Deregister] =>
+        val dropTable = deregisterRequest.get
+        val receipt = (manager ? dropTable).mapTo[JsValue]
+
+        //TODO maybe better coding style to return Result from Future[Result]
+        var respond = Ok("Ok")
+
+        receipt.onComplete{
+          case Success(r) =>
+            (r \ "type").asOpt[String] match {
+              case Some("OK") =>
+                respond = Ok("Dataset " + dropTable.dataset + " has been registered.")
+              case Some("Bad") =>
+                respond = BadRequest("Register operation denied: " + (r \ "message").as[String])
+              case _ =>
+                respond = InternalServerError("Strange receipt format from dataStore manager.")
+            }
+          case Failure(f) =>
+            respond = InternalServerError("No valid receipt from dataStore manager. " + f.getMessage)
+        }
+        respond
+
+      case e: JsError =>
+        BadRequest("Not valid Json POST: " + e.toString)
+    }
   }
 
   def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action {

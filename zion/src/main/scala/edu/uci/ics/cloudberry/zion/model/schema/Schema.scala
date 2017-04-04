@@ -3,6 +3,9 @@ package edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
+import play.api.libs.json.Reads._
 
 //TODO support nested type
 object DataType extends Enumeration {
@@ -216,4 +219,49 @@ object Schema {
     Bag -> Set(Relation.contains),
     Hierarchy -> Set()
   )
+
+  // TODO check if need dataType reader?
+  def enumerationReader[E <: Enumeration](enum: E) = new Reads[enum.Value] {
+    override def reads(json: JsValue): JsResult[enum.Value] = {
+      val key = json.as[String]
+      enum.values.find(_.toString == key) match {
+        case Some(value) => JsSuccess(value)
+        case None => JsError(s"$key not found in enum: $enum")
+      }
+    }
+  }
+
+  implicit val dataTypeReader: Reads[DataType.DataType] = enumerationReader(DataType)
+
+  // TODO check if need writes
+  implicit val intervalFormat: Format[Field] = {
+    new Format[Field] {
+      override def writes(field: Field): JsValue = {
+        Json.obj(
+          "name" -> field.name,
+          "dataType" -> field.dataType,
+          "isOptional" -> JsBoolean(field.isOptional)
+        )
+      }
+
+      override def reads(json: JsValue): JsResult[Field] = {
+        JsSuccess(
+          new Field(
+          (json \ "name").as[String],
+          (json \ "dataType").as[DataType.DataType],
+          (json \ "isOptional").as[Boolean]
+          )
+        )
+      }
+    }
+  }
+
+  implicit val schemaReader: Reads[Schema] = {
+    (__ \ "typeName").read[String] and
+    (__ \ "dimension").read[Seq[Field]] and
+    (__ \ "measurement").read[Seq[Field]] and
+    (__ \ "primaryKey").read[Seq[String]] and
+    (__ \ "timeField").read[String]
+  }.apply(Schema.apply _)
+
 }
