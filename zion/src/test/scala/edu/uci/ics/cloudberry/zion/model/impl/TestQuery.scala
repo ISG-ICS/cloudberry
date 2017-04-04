@@ -45,6 +45,7 @@ object TestQuery {
   val stateFilter = FilterStatement(geoStateID, None, Relation.in, stateValue)
   val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
   val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
+  val pointFilter = FilterStatement(coordinate, None, Relation.inRange, Seq(Seq(0.0, 0.0), Seq(1.0, 1.0)))
 
   val intValues = Seq(1)
   val stringValue = Seq("English")
