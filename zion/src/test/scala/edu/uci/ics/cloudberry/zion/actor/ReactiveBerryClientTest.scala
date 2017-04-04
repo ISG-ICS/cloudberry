@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.{IMerger, Unioner}
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption, TimeField}
+import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption, Field, TimeField}
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -52,6 +52,45 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
        |          }
        |        },
        |        "as": "hour"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "*",
+       |        "apply": {
+       |          "name" : "count"
+       |        },
+       |        "as": "count"
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
+
+  val dayCountJSON = Json.parse(
+    s"""
+       |{
+       |  "dataset": "twitter.ds_tweet",
+       |  "filter": [
+       |  {
+       |    "field": "create_at",
+       |    "relation": "inRange",
+       |    "values": [
+       |      "${TimeField.TimeFormat.print(startTime)}",
+       |      "${TimeField.TimeFormat.print(endTime)}"
+       |    ]
+       |  }],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "create_at",
+       |        "apply": {
+       |          "name": "interval",
+       |          "args" : {
+       |            "unit": "day"
+       |          }
+       |        },
+       |        "as": "day"
        |      }
        |    ],
        |    "aggregate": [
@@ -113,13 +152,15 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
        |}
     """.stripMargin)
 
+
   def makeOptionJsonObj(json: JsValue): JsObject = {
     json.asInstanceOf[JsObject] + ("option" -> Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(50)))
   }
 
   def getRet(i: Int) = JsArray(Seq(JsObject(Seq("hour" -> JsNumber(i), "count" -> JsNumber(i)))))
 
-  sequential
+  def getGroupAs(query: Query): Option[Field] =
+    query.groups.get.bys(0).as
 
   "Client" should {
     "slice the query into small pieces and return the merged result incrementally" in {
@@ -178,6 +219,62 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       sender.expectMsg(JsArray(Seq(getRet(1) ++ getRet(2) ++ getRet(3))))
       ok
     }
+
+    "slice a query batch should generate a slice for each query" in {
+      val sender = new TestProbe(system)
+      val dataManager = new TestProbe(system)
+      val parser = new JSONParser
+      val mockPlanner = mock[QueryPlanner]
+      when(mockPlanner.calculateMergeFunc(any, any)).thenReturn(QueryPlanner.Unioner)
+      //Return the input query
+      when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
+        override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
+          val query = invocation.getArguments().head.asInstanceOf[Query]
+          (Seq(query), Unioner)
+        }
+      })
+
+      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
+      sender.send(client, makeOptionJsonObj(JsObject(Seq("batch" -> JsArray(Seq(hourCountJSON, dayCountJSON))))))
+
+      val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
+      askInfo.who must_== "twitter.ds_tweet"
+      dataManager.reply(Some(TestQuery.sourceInfo))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+
+      val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
+      interval1.getEnd must_== endTime
+      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
+
+      dataManager.reply(
+        getGroupAs(slicedQ1) match {
+          case Some(TimeField("hour", _)) => getRet(1)
+          case Some(TimeField("day", _)) => getRet(2)
+        }
+      )
+
+      val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
+      interval2.getEnd must_== endTime
+      interval2.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
+
+      dataManager.reply(
+        getGroupAs(slicedQ2) match {
+          case Some(TimeField("hour", _)) => getRet(1)
+          case Some(TimeField("day", _)) => getRet(2)
+        }
+      )
+      sender.expectMsg(JsArray(Seq(getRet(1), getRet(2))))
+
+      ok
+    }
+
     "suggest the view at the end of the last query finishes" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
