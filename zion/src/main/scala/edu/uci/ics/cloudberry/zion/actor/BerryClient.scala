@@ -39,7 +39,7 @@ class BerryClient(val jsonParser: JSONParser,
 
   private case class QueryGroup(ts: DateTime, curSender: ActorRef, queries: Seq[QueryInfo], postTransform: IPostTransform)
 
-  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, queries: Seq[Query], infos: Seq[DataSetInfo], postTransform: IPostTransform)
+  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
 
   private case class PartialResult(queryGroup: QueryGroup, jsons: Seq[JsArray])
 
@@ -52,12 +52,12 @@ class BerryClient(val jsonParser: JSONParser,
     case request: Request =>
       handleNewRequest(request, out.getOrElse(sender()))
     case initial: Initial if initial.ts == curKey =>
-      val queryInfos = initial.queries.zip(initial.infos).map {
-        case (query, info) =>
-          val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
-          val merger = planner.calculateMergeFunc(query, info.schema)
-          val queryWOTime = query.copy(filter = query.filter.filterNot(_.field == info.schema.timeField))
-          QueryInfo(queryWOTime, info, bound, merger)
+      val queryInfos = initial.queries.map { query =>
+        val info = initial.infos(query.dataset)
+        val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
+        val merger = planner.calculateMergeFunc(query, info.schema)
+        val queryWOTime = query.copy(filter = query.filter.filterNot(_.field == info.schema.timeField))
+        QueryInfo(queryWOTime, info, bound, merger)
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
       val max = queryInfos.map(_.queryBound.getEndMillis).max
@@ -95,7 +95,8 @@ class BerryClient(val jsonParser: JSONParser,
         }
       } else {
         val targetMillis = runOption.sliceMills
-        self ! Initial(key, curSender, targetMillis, queries, seqInfos.map(_.get), request.postTransform)
+        val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
+        self ! Initial(key, curSender, targetMillis, queries, mapInfos, request.postTransform)
       }
     }
   }
