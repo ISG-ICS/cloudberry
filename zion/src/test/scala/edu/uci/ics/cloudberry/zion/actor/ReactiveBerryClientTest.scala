@@ -178,6 +178,53 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       sender.expectMsg(JsArray(Seq(getRet(1) ++ getRet(2) ++ getRet(3))))
       ok
     }
+
+    "slice a query batch should generate a slice for each query" in {
+      val sender = new TestProbe(system)
+      val dataManager = new TestProbe(system)
+      val parser = new JSONParser
+      val mockPlanner = mock[QueryPlanner]
+      when(mockPlanner.calculateMergeFunc(any, any)).thenReturn(QueryPlanner.Unioner)
+      //Return the input query
+      when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
+        override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
+          val query = invocation.getArguments().head.asInstanceOf[Query]
+          (Seq(query), Unioner)
+        }
+      })
+
+      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
+      sender.send(client, makeOptionJsonObj(JsObject(Seq("batch" -> JsArray(Seq(hourCountJSON, hourCountJSON))))))
+
+      val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
+      askInfo.who must_== "twitter.ds_tweet"
+      dataManager.reply(Some(TestQuery.sourceInfo))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+      
+      val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
+      interval1.getEnd must_== endTime
+      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
+
+      dataManager.reply(getRet(1))
+      
+      val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
+      interval2.getEnd must_== endTime
+      interval2.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
+
+      dataManager.reply(getRet(1))
+      
+      sender.expectMsg(JsArray(Seq(getRet(1), getRet(1))))
+
+      ok
+    }
+
     "suggest the view at the end of the last query finishes" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
