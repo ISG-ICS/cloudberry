@@ -10,7 +10,7 @@ import scala.collection.mutable.ListBuffer
 /**
   * Provide constant query strings for SQL++
   */
-object SQLPPAsterixImpl$ extends AsterixImpl {
+object SQLPPAsterixImpl extends AsterixImpl {
   override val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "coll_count",
     Max -> "coll_max",
@@ -18,6 +18,10 @@ object SQLPPAsterixImpl$ extends AsterixImpl {
     Avg -> "coll_avg",
     Sum -> "coll_sum"
   )
+
+
+  val datetime: String = "datetime"
+  val round: String = "round"
 
   val dayTimeDuration: String = "day_time_duration"
   val yearMonthDuration: String = "year_month_duration"
@@ -39,7 +43,7 @@ object SQLPPAsterixImpl$ extends AsterixImpl {
 
 class SQLPPGenerator extends AsterixQueryGenerator {
 
-  protected val typeImpl: AsterixImpl = SQLPPAsterixImpl$
+  protected val typeImpl: AsterixImpl = SQLPPAsterixImpl
 
   protected val sourceVar: String = "t"
 

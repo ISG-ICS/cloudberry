@@ -18,8 +18,8 @@ trait AsterixImpl {
     }
   }
 
-  val datetime: String = "datetime"
-  val round: String = "round"
+  val datetime: String
+  val round: String
 
   val dayTimeDuration: String
   val yearMonthDuration: String
