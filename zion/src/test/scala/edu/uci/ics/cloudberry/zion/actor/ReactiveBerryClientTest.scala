@@ -67,6 +67,45 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
        |}
     """.stripMargin)
 
+  val dayCountJSON = Json.parse(
+    s"""
+       |{
+       |  "dataset": "twitter.ds_tweet",
+       |  "filter": [
+       |  {
+       |    "field": "create_at",
+       |    "relation": "inRange",
+       |    "values": [
+       |      "${TimeField.TimeFormat.print(startTime)}",
+       |      "${TimeField.TimeFormat.print(endTime)}"
+       |    ]
+       |  }],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "create_at",
+       |        "apply": {
+       |          "name": "interval",
+       |          "args" : {
+       |            "unit": "day"
+       |          }
+       |        },
+       |        "as": "day"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "*",
+       |        "apply": {
+       |          "name" : "count"
+       |        },
+       |        "as": "count"
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
+
   val endTime2 = new DateTime(2016, 11, 30, 0, 0)
   val hourCountJSON2 = Json.parse(
     s"""
@@ -112,6 +151,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
        |  }
        |}
     """.stripMargin)
+
 
   def makeOptionJsonObj(json: JsValue): JsObject = {
     json.asInstanceOf[JsObject] + ("option" -> Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(50)))
@@ -194,7 +234,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       })
 
       val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
-      sender.send(client, makeOptionJsonObj(JsObject(Seq("batch" -> JsArray(Seq(hourCountJSON, hourCountJSON))))))
+      sender.send(client, makeOptionJsonObj(JsObject(Seq("batch" -> JsArray(Seq(hourCountJSON, dayCountJSON))))))
 
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== "twitter.ds_tweet"
@@ -205,22 +245,22 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
-      
+
       val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
       val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
       interval1.getEnd must_== endTime
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       dataManager.reply(getRet(1))
-      
+
       val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
       val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
       interval2.getEnd must_== endTime
       interval2.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
-      dataManager.reply(getRet(1))
-      
-      sender.expectMsg(JsArray(Seq(getRet(1), getRet(1))))
+      dataManager.reply(getRet(2))
+
+      sender.expectMsg(JsArray(Seq(getRet(1), getRet(2))))
 
       ok
     }
