@@ -134,6 +134,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   private def parseLookup(lookups: Seq[LookupStatement],
                           exprMap: Map[String, FieldExpr]): ParsedResult = {
+    //use LinkedHashMap to preserve the order of fields
     val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
 
     val lookupStr = lookups.zipWithIndex.map {
