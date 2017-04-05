@@ -3,6 +3,8 @@ package edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 //TODO support nested type
 object DataType extends Enumeration {
@@ -39,6 +41,7 @@ object Relation extends Enumeration {
   val ~= = Value("~=")
 }
 
+// TODO If no case class is admitted to inherit the trait anywhere but in this file, the trait should be sealed.
 trait Field {
   val name: String
   val dataType: DataType
@@ -216,4 +219,12 @@ object Schema {
     Bag -> Set(Relation.contains),
     Hierarchy -> Set()
   )
+
+  implicit val schemaReader: Reads[Schema] = {
+    (__ \ "typeName").read[String] and
+    (__ \ "dimension").read[Seq[Field]] and
+    (__ \ "measurement").read[Seq[Field]] and
+    (__ \ "primaryKey").read[Seq[Field]] and
+    (__ \ "timeField").read[TimeField]
+  }.apply(Schema.apply _)
 }
