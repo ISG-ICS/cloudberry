@@ -31,7 +31,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`hour` as `hour`
+          |select `hour` as `hour`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
@@ -45,7 +45,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`hour` as `hour`
+          |select `hour` as `hour`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
@@ -60,7 +60,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`hour` as `hour`
+          |select `hour` as `hour`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
@@ -74,7 +74,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`state` as `state`,`hour` as `hour`
+          |select `hour` as `hour`,`state` as `state`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
@@ -88,7 +88,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`user`.`id` as `user.id`,t.`create_at` as `create_at`,t.`id` as `id`
+          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
@@ -105,7 +105,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`tag` as `tag`
+          |select `tag` as `tag`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |unnest t.`hashtags` `unnest0`
           |where not(is_null(t.`hashtags`)) and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
@@ -124,7 +124,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_max( (select value g.t.`id` from g) ) as `max`,`hour` as `hour`
+          |select `hour` as `hour`,coll_max( (select value g.t.`id` from g) ) as `max`
           |from twitter.ds_tweet t
           |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
@@ -166,7 +166,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_avg( (select value g.t.`id` from g) ) as `avg`,`hour` as `hour`
+          |select `hour` as `hour`,coll_avg( (select value g.t.`id` from g) ) as `avg`
           |from twitter.ds_tweet t
           |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z')
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
@@ -180,7 +180,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`cell` as `cell`
+          |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
@@ -195,7 +195,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`cell` as `cell`
+          |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
@@ -211,7 +211,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`cell` as `cell`
+          |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
@@ -227,7 +227,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`state` as `state`
+          |select `state` as `state`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
@@ -241,7 +241,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`cell` as `cell`
+          |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.001, 0.001))[0] as `cell` group as g;
         """.
@@ -268,7 +268,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`sec` as `sec`
+          |select `sec` as `sec`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1S") )) as `sec` group as g;
           | """.stripMargin.trim)
@@ -279,7 +279,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`min` as `min`
+          |select `min` as `min`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1M") )) as `min` group as g;
           | """.stripMargin.trim)
@@ -291,7 +291,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`day` as `day`
+          |select `day` as `day`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("P1D") )) as `day` group as g;
           | """.stripMargin.trim)
@@ -303,7 +303,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`week` as `week`
+          |select `week` as `week`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("P7D") )) as `week` group as g;
           | """.stripMargin.trim)
@@ -315,7 +315,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`month` as `month`
+          |select `month` as `month`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  year_month_duration("P1M") )) as `month` group as g;
           | """.stripMargin.trim)
@@ -327,7 +327,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select coll_count(g) as `count`,`year` as `year`
+          |select `year` as `year`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  year_month_duration("P1Y") )) as `year` group as g;
           | """.stripMargin.trim)
@@ -401,7 +401,7 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select coll_max(
-          |(select value c.`count` from (select coll_count(g) as `count`,`tag` as `tag`
+          |(select value c.`count` from (select `tag` as `tag`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |unnest t.`hashtags` `unnest0`
           |where not(is_null(t.`hashtags`)) and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
@@ -532,7 +532,7 @@ class SQLPPGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSet, filter = filter, select = select)
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select t.`user`.`id` as `user.id`,t.`create_at` as `create_at`,t.`id` as `id`
+        """select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
           |from twitter.ds_tweet t
           |where spatial_intersect(t.`coordinate`,
           |  create_rectangle(create_point(0.0,0.0),
