@@ -48,14 +48,19 @@ class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext
   }
 
   def post(query: String): Future[WSResponse] = {
-    val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(Map("statement" -> Seq(query), "mode" -> Seq("synchronous"), "include-results" -> Seq("true")))
+    log.debug("Query:" + query)
+    val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(params(query))
     f.onFailure(wsFailureHandler(query))
     f
   }
 
-  protected def wsFailureHandler(aql: String): PartialFunction[Throwable, Unit] = {
-    case e: Throwable => log.error("WS Error:" + aql, e);
+  protected def wsFailureHandler(query: String): PartialFunction[Throwable, Unit] = {
+    case e: Throwable => log.error("WS Error:" + query, e)
       throw e
+  }
+
+  protected def params(query: String): Map[String, Seq[String]] = {
+    Map("statement" -> Seq(query), "mode" -> Seq("synchronous"), "include-results" -> Seq("true"))
   }
 }
 
