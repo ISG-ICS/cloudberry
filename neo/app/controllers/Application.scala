@@ -12,8 +12,7 @@ import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
-import org.joda.time.DateTime
+import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, SQLPPGenerator}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
@@ -39,7 +38,7 @@ class Application @Inject()(val wsClient: WSClient,
 
   Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
 
-  val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
+  val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, SQLPPGenerator, config))
 
   Logger.info("I'm initializing")
 
@@ -59,7 +58,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef{ out =>
+    ActorFlow.actorRef { out =>
       RequestRouter.props(BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config)
     }
   }
