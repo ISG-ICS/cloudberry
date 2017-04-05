@@ -90,10 +90,11 @@ create feed TweetFeed using socket_adapter
 );
 set wait-for-completion-feed "false";
 connect feed TweetFeed to dataset ds_tweet;
-
+start feed TweetFeed;
 EOF
 
 
 #Serve socket feed using local file
+git lfs fetch 
 gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh
 
