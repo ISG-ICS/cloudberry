@@ -10,6 +10,7 @@ import scala.reflect.runtime.universe.{TypeTag, typeOf}
 object QueryValidator {
   /**
     * Check the semantic validity of a given query
+    *
     * @param query
     */
   def validate(query: IQuery): Unit = {
@@ -89,6 +90,7 @@ object QueryValidator {
     requireOrThrow(group.aggregates.nonEmpty, "Aggregation statement is required")
 
     group.bys.foreach(validateBy(_))
+    group.lookups.foreach(validateLookup(_))
   }
 
   def validateBy(by: ByStatement): Unit = {

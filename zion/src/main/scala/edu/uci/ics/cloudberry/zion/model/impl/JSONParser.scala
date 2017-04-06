@@ -190,10 +190,21 @@ object JSONParser {
       (JsPath \ "as").formatNullable[String]
     ) (UnresolvedByStatement.apply, unlift(UnresolvedByStatement.unapply))
 
+  implicit val lookupFormat: Format[UnresolvedLookupStatement] = (
+    (JsPath \ "joinKey").format[Seq[String]] and
+      (JsPath \ "dataset").format[String] and
+      (JsPath \ "lookupKey").format[Seq[String]] and
+      (JsPath \ "select").format[Seq[String]] and
+      (JsPath \ "as").format[Seq[String]]
+    ) (UnresolvedLookupStatement.apply, unlift(UnresolvedLookupStatement.unapply))
 
   implicit val groupFormat: Format[UnresolvedGroupStatement] = (
     (JsPath \ "by").format[Seq[UnresolvedByStatement]] and
-      (JsPath \ "aggregate").format[Seq[UnresolvedAggregateStatement]]
+      (JsPath \ "aggregate").format[Seq[UnresolvedAggregateStatement]] and
+      (JsPath \ "lookup").formatNullable[Seq[UnresolvedLookupStatement]].inmap[Seq[UnresolvedLookupStatement]](
+        o => o.getOrElse(Seq.empty[UnresolvedLookupStatement]),
+        s => if (s.isEmpty) None else Some(s)
+      )
     ) (UnresolvedGroupStatement.apply, unlift(UnresolvedGroupStatement.unapply))
 
   implicit val globalFormat: Format[UnresolvedGlobalAggregateStatement] = {
@@ -209,13 +220,6 @@ object JSONParser {
       )
     ) (UnresolvedSelectStatement.apply, unlift(UnresolvedSelectStatement.unapply))
 
-  implicit val lookupFormat: Format[UnresolvedLookupStatement] = (
-    (JsPath \ "joinKey").format[Seq[String]] and
-      (JsPath \ "dataset").format[String] and
-      (JsPath \ "lookupKey").format[Seq[String]] and
-      (JsPath \ "select").format[Seq[String]] and
-      (JsPath \ "as").format[Seq[String]]
-    ) (UnresolvedLookupStatement.apply, unlift(UnresolvedLookupStatement.unapply))
 
   implicit val unnestFormat: Format[UnresolvedUnnestStatement] = new Format[UnresolvedUnnestStatement] {
     override def reads(json: JsValue): JsResult[UnresolvedUnnestStatement] = {

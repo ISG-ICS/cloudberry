@@ -76,12 +76,17 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def groupVar: String
 
+  protected def groupedLookupVar: String
+
+  protected def groupedLookupSourceVar: String
+
   protected def globalAggrVar: String
 
   protected def outerSelectVar: String
 
   /**
     * The suffix (such as ";") appended to the query string
+    *
     * @return
     */
   protected def suffix: String

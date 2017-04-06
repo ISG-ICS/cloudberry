@@ -438,7 +438,8 @@ class SQLPPGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,l0.`population` as `population`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
-          |from twitter.ds_tweet t left outer join twitter.US_population l0 on l0.stateID = t.`geo_tag`.`stateID`
+          |from twitter.ds_tweet t
+          |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
           |limit 0
@@ -459,7 +460,8 @@ class SQLPPGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,l0.`population` as `population`,l0.`stateID` as `stateID`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
-          |from twitter.ds_tweet t left outer join twitter.US_population l0 on l0.stateID = t.`geo_tag`.`stateID`
+          |from twitter.ds_tweet t
+          |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
           |limit 0
@@ -487,8 +489,9 @@ class SQLPPGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,l0.`population` as `population`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,l1.`literacy` as `literacy`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
-          |from twitter.ds_tweet t left outer join twitter.US_population l0 on l0.stateID = t.`geo_tag`.`stateID`
-          |left outer join twitter.US_literacy l1 on l1.stateID = t.`geo_tag`.`stateID`
+          |from twitter.ds_tweet t
+          |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
+          |left outer join twitter.US_literacy l1 on l1.`stateID` = t.`geo_tag`.`stateID`
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
           |limit 0
@@ -514,7 +517,8 @@ class SQLPPGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select `state` as `state`,coll_sum( (select value g.l0.`population` from g) ) as `sum`
-          |from twitter.ds_tweet t left outer join twitter.US_population l0 on l0.stateID = t.`geo_tag`.`stateID`
+          |from twitter.ds_tweet t
+          |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
           |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
           |and contains(t.`text`, "virus")
           |group by t.geo_tag.stateID as `state` group as g;""".stripMargin.trim
@@ -541,7 +545,115 @@ class SQLPPGeneratorTest extends Specification {
           |limit 100
           |offset 0;""".stripMargin)
     }
+
+    "translate lookup inside group by state and count" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group))
+      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select tt.`state` as `state`,tt.`count` as `count`,ll0.`population` as `population`
+          |from (
+          |select `state` as `state`,coll_count(g) as `count`
+          |from twitter.ds_tweet t
+          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |and contains(t.`text`, "virus")
+          |group by t.geo_tag.stateID as `state` group as g
+          |) tt
+          |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`;""".stripMargin.trim
+      )
+    }
+
+    "translate multiple lookups inside group by state and count" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+      val literacyDataSet = LiteracyDataStore.DatasetName
+      val literacySchema = LiteracyDataStore.LiteracySchema
+
+      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, count, population, literacy))
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState, lookupLiteracyByState))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(selectStatement))
+      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema, literacyDataSet -> literacySchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select tt.`state` as `state`,tt.`count` as `count`,ll0.`population` as `population`,ll1.`literacy` as `literacy`
+          |from (
+          |select `state` as `state`,coll_count(g) as `count`
+          |from twitter.ds_tweet t
+          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |and contains(t.`text`, "virus")
+          |group by t.geo_tag.stateID as `state` group as g
+          |) tt
+          |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`
+          |left outer join twitter.US_literacy ll1 on ll1.`stateID` = tt.`state`
+          |limit 0
+          |offset 0;""".stripMargin.trim
+      )
+    }
+
+    "translate multiple lookups inside/outside group by state and aggregate population" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+      val literacyDataSet = LiteracyDataStore.DatasetName
+      val literacySchema = LiteracyDataStore.LiteracySchema
+
+      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, min, literacy))
+      val filter = Seq(textFilter)
+      val lookup = Seq(lookupPopulation)
+      val group = GroupStatement(Seq(byState), Seq(aggrPopulationMin), Seq(lookupLiteracyByState))
+      val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, Some(group), select = Some(selectStatement))
+      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema, literacyDataSet -> literacySchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select tt.`state` as `state`,tt.`min` as `min`,ll0.`literacy` as `literacy`
+          |from (
+          |select `state` as `state`,coll_min( (select value g.l0.`population` from g) ) as `min`
+          |from twitter.ds_tweet t
+          |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
+          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |and contains(t.`text`, "virus")
+          |group by t.geo_tag.stateID as `state` group as g
+          |) tt
+          |left outer join twitter.US_literacy ll0 on ll0.`stateID` = tt.`state`
+          |limit 0
+          |offset 0;""".stripMargin.trim
+      )
+    }
+
+    "translate lookup inside group by state with global aggregate" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+
+      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(AllField, population))
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byState), Seq.empty, Seq(lookupPopulationByState))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), Some(selectStatement), Some(GlobalAggregateStatement(aggrPopulationMin)))
+      val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select coll_min(
+          |(select value c.`population` from (select tt.`state` as `state`,ll0.`population` as `population`
+          |from (
+          |select `state` as `state`
+          |from twitter.ds_tweet t
+          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |and contains(t.`text`, "virus")
+          |group by t.geo_tag.stateID as `state` group as g
+          |) tt
+          |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`
+          |limit 0
+          |offset 0) as c)
+          |) as `min`;""".
+          stripMargin.trim
+      )
+    }
   }
+
 
   "SQLPPGenerator calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
@@ -555,7 +667,7 @@ class SQLPPGeneratorTest extends Specification {
 
   "SQLPPGenerator createView" should {
     "generate the ddl for the twitter dataset" in {
-      val ddl = parser.generate(CreateView("zika", zikaCreateQuery), Map(TwitterDataSet-> TwitterDataStore.TwitterSchema))
+      val ddl = parser.generate(CreateView("zika", zikaCreateQuery), Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
       removeEmptyLine(ddl) must_== unifyNewLine(
         """
           |create type twitter.typeTweet if not exists as open {
