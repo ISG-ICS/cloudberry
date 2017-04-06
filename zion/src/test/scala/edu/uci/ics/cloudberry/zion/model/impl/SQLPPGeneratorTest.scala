@@ -550,10 +550,9 @@ class SQLPPGeneratorTest extends Specification {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
 
-      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(AllField, population))
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState))
-      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(selectStatement))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group))
       val result = parser.generate(query, schemaMap = Map(TwitterDataSet -> twitterSchema, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
@@ -565,10 +564,7 @@ class SQLPPGeneratorTest extends Specification {
           |and contains(t.`text`, "virus")
           |group by t.geo_tag.stateID as `state` group as g
           |) tt
-          |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`
-          |limit 0
-          |offset 0;""".
-          stripMargin.trim
+          |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`;""".stripMargin.trim
       )
     }
 
@@ -578,7 +574,7 @@ class SQLPPGeneratorTest extends Specification {
       val literacyDataSet = LiteracyDataStore.DatasetName
       val literacySchema = LiteracyDataStore.LiteracySchema
 
-      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(AllField, population))
+      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, count, population, literacy))
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState, lookupLiteracyByState))
       val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(selectStatement))
@@ -606,7 +602,7 @@ class SQLPPGeneratorTest extends Specification {
       val literacyDataSet = LiteracyDataStore.DatasetName
       val literacySchema = LiteracyDataStore.LiteracySchema
 
-      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(AllField, Field("min", DataType.Number), literacy))
+      val selectStatement = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, min, literacy))
       val filter = Seq(textFilter)
       val lookup = Seq(lookupPopulation)
       val group = GroupStatement(Seq(byState), Seq(aggrPopulationMin), Seq(lookupLiteracyByState))

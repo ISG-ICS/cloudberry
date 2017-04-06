@@ -129,6 +129,36 @@ class JSONParserTest extends Specification {
       val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(multiLookupFilterJSON, allSchemaMap, expectedQuery)
     }
+
+
+    "parse lookup inside group by state and count" in {
+      val lookup = Seq(lookupPopulationByState)
+      val filter = Seq(textFilter)
+      val select = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, count, population))
+      val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState))
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(select))
+      checkQueryOnly(groupLookupJSON, allSchemaMap, expectedQuery)
+    }
+
+    "parse multiple lookups inside group by state and count" in {
+      val lookup = Seq(lookupPopulationByState)
+      val filter = Seq(textFilter)
+      val select = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, count, population, literacy))
+      val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState, lookupLiteracyByState))
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(select))
+      checkQueryOnly(groupMultipleLookupJSON, allSchemaMap, expectedQuery)
+    }
+
+    "parse multiple lookups inside/outside group by state and count" in {
+      val select = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, min, literacy))
+      val filter = Seq(textFilter)
+      val lookup = Seq(lookupPopulation)
+      val group = GroupStatement(Seq(byState), Seq(aggrPopulationMin), Seq(lookupLiteracyByState))
+      val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, Some(group), select = Some(select))
+      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, Some(group), select = Some(select))
+      checkQueryOnly(lookupsInOutGroupJSON, allSchemaMap, expectedQuery)
+    }
+
   }
 
   "JSONParser" should {
