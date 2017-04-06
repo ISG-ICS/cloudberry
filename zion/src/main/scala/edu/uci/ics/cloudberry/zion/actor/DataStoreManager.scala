@@ -5,10 +5,12 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo._
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
@@ -233,9 +235,21 @@ object DataStoreManager {
 
   case class AskInfo(who: String)
 
-  case class Register(dataset: String, schema: Schema)
+  case class Register(dataset: String, schema: UnresolvedSchema)
+
+  object Register{
+    implicit val registerReader: Reads[Register] = {
+      (__ \ "dataset").read[String] and
+      (__ \ "schema").read[UnresolvedSchema]
+    }.apply(Register.apply _)
+  }
 
   case class Deregister(dataset: String)
+
+  object Deregister{
+    implicit val deregisterReader: Reads[Deregister] =
+      (__ \ "dataset").read[String].map { dataset => Deregister(dataset) }
+  }
 
   case object FlushMeta
 

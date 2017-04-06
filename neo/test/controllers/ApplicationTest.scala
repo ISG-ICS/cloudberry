@@ -5,15 +5,14 @@ import java.io.File
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
+import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.SpecificationLike
-import play.api.libs.json.JsArray
+import play.api.libs.json._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-/**
-  * Created by zongh on 10/26/2016.
-  */
 class ApplicationTest extends SpecificationLike {
 
   "application" should {
@@ -55,6 +54,45 @@ class ApplicationTest extends SpecificationLike {
       val future = Source.single(42).via(flow).runWith(Sink.fold[Int, Int](0)(_ + _))
       val result = Await.result(future, 3.seconds)
       result must_== (1 to 10).sum
+    }
+
+    "register new schema" in {
+
+      val registerRequest = Json.parse(
+        s"""
+           |{
+           |  "dataset": "testTable",
+           |  "schema" : {
+           |    "typeName"    : "newType",
+           |    "dimension"   : [],
+           |    "measurement" : [],
+           |    "primaryKey"  : ["key"],
+           |    "timeField"   : "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+           |  }
+           |}
+       """.stripMargin
+      )
+
+      // Need to reconsider test logic.
+      // instantiate Application Class is not a good choice:
+      // 1. some dependencies cannot find, i.e. city.sample.json
+      // 2. it links to a real data manager and adds test tables to database
+
+      // Alternatives:
+      // 1. Repick EssentialAction
+      // 2. define a function in object and call the function in Action and then test the function in object instead, like function actorFlow in Action BerryQuery
+
+      /*
+      val wsClient = mock[WSClient]
+      val configuration = mock[Configuration]
+      val environment = mock[Environment]
+      val application = new Application(wsClient, configuration, environment)
+      val result : Future[Result] = application.register.apply(FakeRequest(POST, "/").withJsonBody(registerRequest)).run()
+      status(result) mustEqual OK
+      contentAsString(result) mustEqual "Dataset test has been registered."
+      */
+
+      ok
     }
   }
 }
