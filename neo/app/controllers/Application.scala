@@ -85,63 +85,51 @@ class Application @Inject()(val wsClient: WSClient,
     Ok.chunked((source via flow) via toStringFlow)
   }
 
-  def register = Action(parse.json) { request =>
+  def register = Action.async(parse.json) { request =>
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
 
     request.body.validate[Register] match {
       case registerRequest: JsSuccess[Register] =>
         val newTable = registerRequest.get
-        val receipt = (manager ? newTable).mapTo[JsValue]
-
-        /*
-          Receipt format:
-          {
-            "type": "Done"/"Error",
-            "message": "error messages only"
-          }
-        */
+        val receipt = (manager ? newTable).mapTo[FrontEndRequestReceipt]
 
         receipt.map{ r =>
-          (r \ "type").asOpt[String] match {
-            case Some("Done") =>
-              Ok("Dataset " + newTable.dataset + " has been registered.")
-            case Some("Error") =>
-              BadRequest("Register operation denied: " + (r \ "message").as[String])
-            case _ =>
-              InternalServerError("Strange receipt format from dataStore manager. " + r.toString)
+          if(r.isSuccess){
+            Ok("Dataset " + newTable.dataset + " has been registered.")
+          }
+          else{
+            BadRequest("Register operation denied: " + r.message)
           }
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
-        }.result(timeout.duration)
+        }
 
       case e: JsError =>
-        BadRequest("Not a valid register Json POST: " + e.toString)
+        Future{ BadRequest("Not a valid register Json POST: " + e.toString) }
     }
   }
 
-  def deregister = Action(parse.json) { request =>
+  def deregister = Action.async(parse.json) { request =>
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)
 
     request.body.validate[Deregister] match {
       case deregisterRequest: JsSuccess[Deregister] =>
         val dropTable = deregisterRequest.get
-        val receipt = (manager ? dropTable).mapTo[JsValue]
+        val receipt = (manager ? dropTable).mapTo[FrontEndRequestReceipt]
 
         receipt.map{ r =>
-          (r \ "type").asOpt[String] match {
-            case Some("Done") =>
-              Ok("Dataset " + dropTable.dataset + " has been deregistered.")
-            case Some("Error") =>
-              BadRequest("Deregister operation denied: " + (r \ "message").as[String])
-            case _ =>
-              InternalServerError("Strange receipt format from dataStore manager. " + r.toString)
+          if(r.isSuccess){
+            Ok("Dataset " + dropTable.dataset + " has been removed.")
+          }
+          else{
+            BadRequest("Deregister operation denied: " + r.message)
           }
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
-        }.result(timeout.duration)
+        }
 
       case e: JsError =>
-        BadRequest("Not valid Json POST: " + e.toString)
+        Future{ BadRequest("Not valid Json POST: " + e.toString) }
     }
   }
 

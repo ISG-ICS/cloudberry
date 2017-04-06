@@ -251,6 +251,8 @@ object DataStoreManager {
       (__ \ "dataset").read[String].map { dataset => Deregister(dataset) }
   }
 
+  case class FrontEndRequestReceipt(isSuccess: Boolean, message: String)
+
   case object FlushMeta
 
   case object AreYouReady

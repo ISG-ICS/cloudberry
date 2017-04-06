@@ -56,43 +56,5 @@ class ApplicationTest extends SpecificationLike {
       result must_== (1 to 10).sum
     }
 
-    "register new schema" in {
-
-      val registerRequest = Json.parse(
-        s"""
-           |{
-           |  "dataset": "testTable",
-           |  "schema" : {
-           |    "typeName"    : "newType",
-           |    "dimension"   : [],
-           |    "measurement" : [],
-           |    "primaryKey"  : ["key"],
-           |    "timeField"   : "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
-           |  }
-           |}
-       """.stripMargin
-      )
-
-      // Need to reconsider test logic.
-      // instantiate Application Class is not a good choice:
-      // 1. some dependencies cannot find, i.e. city.sample.json
-      // 2. it links to a real data manager and adds test tables to database
-
-      // Alternatives:
-      // 1. Repick EssentialAction
-      // 2. define a function in object and call the function in Action and then test the function in object instead, like function actorFlow in Action BerryQuery
-
-      /*
-      val wsClient = mock[WSClient]
-      val configuration = mock[Configuration]
-      val environment = mock[Environment]
-      val application = new Application(wsClient, configuration, environment)
-      val result : Future[Result] = application.register.apply(FakeRequest(POST, "/").withJsonBody(registerRequest)).run()
-      status(result) mustEqual OK
-      contentAsString(result) mustEqual "Dataset test has been registered."
-      */
-
-      ok
-    }
   }
 }
