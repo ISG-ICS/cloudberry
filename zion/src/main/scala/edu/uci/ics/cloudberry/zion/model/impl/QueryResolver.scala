@@ -50,7 +50,6 @@ object QueryResolver {
                              schemaMap: Map[String, Schema]): (Seq[LookupStatement], Map[String, Field]) = {
     val producedFields = mutable.Map.newBuilder[String, Field]
     val resolved = lookups.map { lookup =>
-
       val sourceKeys = resolveFields(lookup.sourceKeys, fieldMap)
       val lookupKeys = resolveFields(lookup.lookupKeys, schemaMap(lookup.dataset).fieldMap)
       val selectValues = resolveFields(lookup.selectValues, schemaMap(lookup.dataset).fieldMap)

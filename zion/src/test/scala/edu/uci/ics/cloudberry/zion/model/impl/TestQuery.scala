@@ -138,6 +138,21 @@ object TestQuery {
     selectValues = Seq(literacy),
     as = Seq(Field.as(literacy, "literacy")))
 
+
+  val lookupPopulationByState = LookupStatement(
+    sourceKeys = Seq(Field("state", DataType.Number)),
+    dataset = PopulationDataSet,
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(population),
+    as = Seq(Field.as(population, "population")))
+
+  val lookupLiteracyByState = LookupStatement(
+    sourceKeys = Seq(Field("state", DataType.Number)),
+    dataset = literacyDataSet,
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(literacy),
+    as = Seq(Field.as(literacy, "literacy")))
+
   val filterJSON =
     s"""
        |"filter": [

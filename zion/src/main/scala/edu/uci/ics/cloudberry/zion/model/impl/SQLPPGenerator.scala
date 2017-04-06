@@ -103,7 +103,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     val fromStr = s"from ${query.dataset} $sourceVar".trim
     queryBuilder.append(fromStr)
 
-    val resultAfterLookup = parseLookup(query.lookup, exprMap, queryBuilder)
+    val resultAfterLookup = parseLookup(query.lookup, exprMap, queryBuilder, false)
 
     val resultAfterUnnest = parseUnnest(query.unnest, resultAfterLookup.exprMap, queryBuilder)
     val unnestTests = resultAfterUnnest.strs
@@ -120,17 +120,20 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
 
   private def parseLookup(lookups: Seq[LookupStatement],
-                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
+                          exprMap: Map[String, FieldExpr],
+                          queryBuilder: StringBuilder,
+                          inGroup: Boolean): ParsedResult = {
     //use LinkedHashMap to preserve the order of fields
     val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
-
+    producedExprs ++= exprMap
+    val actualLookupVar = if (inGroup) groupedLookupVar else lookupVar
     val lookupStr = lookups.zipWithIndex.map {
       case (lookup, id) =>
-        val lookupExpr = s"l$id"
+        val lookupExpr = s"$actualLookupVar$id"
         val conditions = lookup.lookupKeys.zip(lookup.sourceKeys).map {
           case (lookupKey, sourceKey) =>
             val sourceExpr = exprMap(sourceKey.name)
-            s"$lookupExpr.${lookupKey.name} = ${sourceExpr.refExpr}"
+            s"$lookupExpr.$quote${lookupKey.name}$quote = ${sourceExpr.refExpr}"
         }
         lookup.as.zip(lookup.selectValues).foreach {
           case (as, selectValue) =>
@@ -141,7 +144,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     }.mkString("\n")
     append(queryBuilder, lookupStr)
 
-    ParsedResult(Seq.empty, (producedExprs ++= exprMap).result().toMap)
+    ParsedResult(Seq.empty, (producedExprs).result().toMap)
   }
 
   private def parseFilter(filters: Seq[FilterStatement], exprMap: Map[String, FieldExpr], unnestTestStrs: Seq[String], queryBuilder: StringBuilder): ParsedResult = {
@@ -202,8 +205,21 @@ class SQLPPGenerator extends AsterixQueryGenerator {
           val newExpr = s"$quote${aggr.as.name}$quote"
           producedExprs += aggr.as.name -> FieldExpr(newExpr, aggrExpr)
         }
+        if (!group.lookups.isEmpty) {
+          //we need to update producedExprs
+          val producedExprMap = producedExprs.result().toMap
+          val newExprMap =
+            producedExprMap.map {
+              case (field, expr) => field -> FieldExpr(s"$groupedLookupSourceVar.$quote$field$quote", s"$groupedLookupSourceVar.$quote$field$quote")
+            }
+          queryBuilder.insert(0, s"from (\n${parseProject(producedExprMap)}\n")
+          queryBuilder.append(s"\n) $groupedLookupSourceVar\n")
+          val resultAfterLookup = parseLookup(group.lookups, newExprMap, queryBuilder, true)
+          ParsedResult(Seq.empty, resultAfterLookup.exprMap)
+        } else {
+          ParsedResult(Seq.empty, producedExprs.result().toMap)
+        }
 
-        ParsedResult(Seq(groupStr), producedExprs.result().toMap)
 
       case None => ParsedResult(Seq(""), exprMap)
     }
