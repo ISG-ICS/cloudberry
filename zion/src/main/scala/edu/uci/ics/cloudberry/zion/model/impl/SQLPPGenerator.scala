@@ -356,7 +356,10 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   }
 
   /**
-    * Append a new line and queryStr to the queryBuilder if queryStr is not empty
+    * Append a new line and queryStr to the queryBuilder if queryStr is not empty.
+    * Sometimes the generated queryStr could be empty, e.g., an empty sequence of [[FilterStatement]] or [[SelectStatement]],
+    * which should not be appended to the queryBuilder.
+    *
     * @param queryBuilder
     * @param queryStr
     */
