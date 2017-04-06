@@ -355,6 +355,11 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     }
   }
 
+  /**
+    * Append a new line and queryStr to the queryBuilder if queryStr is not empty
+    * @param queryBuilder
+    * @param queryStr
+    */
   protected def appendIfNotEmpty(queryBuilder: StringBuilder, queryStr: String): Unit = {
     if (!queryStr.isEmpty) {
       queryBuilder.append("\n")
