@@ -12,6 +12,7 @@ object QueryResolver {
 
   /**
     * Resolves an [[UnresolvedQuery]], and returns a [[Query]] based on the given schemaMap
+    *
     * @param query
     * @param schemaMap
     * @return
@@ -36,7 +37,7 @@ object QueryResolver {
 
     val (filter, fieldMapAfterFilter) = resolveFilters(query.filter, fieldMapAfterUnnest)
 
-    val (groups, fieldMapAfterGroup) = resolveGroup(query.groups, fieldMapAfterFilter)
+    val (groups, fieldMapAfterGroup) = resolveGroup(query.groups, fieldMapAfterFilter, schemaMap)
     val (select, fieldMapAfterSelect) = resolveSelect(query.select, fieldMapAfterGroup)
 
     val (globalAggr, fieldMapAfterGlobalAggr) = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
@@ -85,7 +86,7 @@ object QueryResolver {
     (resolved, fieldMap)
   }
 
-  private def resolveGroup(group: Option[UnresolvedGroupStatement], fieldMap: Map[String, Field]): (Option[GroupStatement], Map[String, Field]) = {
+  private def resolveGroup(group: Option[UnresolvedGroupStatement], fieldMap: Map[String, Field], schemaMap: Map[String, Schema]): (Option[GroupStatement], Map[String, Field]) = {
     group match {
       case Some(groupStatement) =>
         val producedFields = mutable.Map.newBuilder[String, Field]
@@ -113,8 +114,10 @@ object QueryResolver {
           AggregateStatement(field, aggregate.func, as)
         }
 
-        val resolved = GroupStatement(resolvedBys, resolvedAggrs)
-        (Some(resolved), producedFields.result().toMap)
+        val (resolvedLookups, newFieldMap) = resolveLookups(groupStatement.lookups, producedFields.result().toMap, schemaMap)
+
+        val resolved = GroupStatement(resolvedBys, resolvedAggrs, resolvedLookups)
+        (Some(resolved), newFieldMap)
       case None =>
         (None, fieldMap)
     }
