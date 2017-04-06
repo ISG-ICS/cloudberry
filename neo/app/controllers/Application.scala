@@ -96,23 +96,23 @@ class Application @Inject()(val wsClient: WSClient,
         /*
           Receipt format:
           {
-            "type": "Ok"/"Bad",
+            "type": "Done"/"Error",
             "message": "error messages only"
           }
         */
 
         receipt.map{ r =>
           (r \ "type").asOpt[String] match {
-            case Some("OK") =>
+            case Some("Done") =>
               Ok("Dataset " + newTable.dataset + " has been registered.")
-            case Some("Bad") =>
+            case Some("Error") =>
               BadRequest("Register operation denied: " + (r \ "message").as[String])
             case _ =>
               InternalServerError("Strange receipt format from dataStore manager. " + r.toString)
           }
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
-        }.result(2 seconds)
+        }.result(timeout.duration)
 
       case e: JsError =>
         BadRequest("Not a valid register Json POST: " + e.toString)
@@ -129,16 +129,16 @@ class Application @Inject()(val wsClient: WSClient,
 
         receipt.map{ r =>
           (r \ "type").asOpt[String] match {
-            case Some("OK") =>
+            case Some("Done") =>
               Ok("Dataset " + dropTable.dataset + " has been deregistered.")
-            case Some("Bad") =>
+            case Some("Error") =>
               BadRequest("Deregister operation denied: " + (r \ "message").as[String])
             case _ =>
               InternalServerError("Strange receipt format from dataStore manager. " + r.toString)
           }
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
-        }.result(2 seconds)
+        }.result(timeout.duration)
 
       case e: JsError =>
         BadRequest("Not valid Json POST: " + e.toString)

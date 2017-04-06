@@ -5,7 +5,8 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo._
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
@@ -234,12 +235,12 @@ object DataStoreManager {
 
   case class AskInfo(who: String)
 
-  case class Register(dataset: String, schema: Schema)
+  case class Register(dataset: String, schema: UnresolvedSchema)
 
   object Register{
     implicit val registerReader: Reads[Register] = {
       (__ \ "dataset").read[String] and
-      (__ \ "schema").read[Schema]
+      (__ \ "schema").read[UnresolvedSchema]
     }.apply(Register.apply _)
   }
 

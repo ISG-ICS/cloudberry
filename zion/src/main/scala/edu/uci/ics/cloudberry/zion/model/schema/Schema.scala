@@ -220,11 +220,4 @@ object Schema {
     Hierarchy -> Set()
   )
 
-  implicit val schemaReader: Reads[Schema] = {
-    (__ \ "typeName").read[String] and
-    (__ \ "dimension").read[Seq[Field]] and
-    (__ \ "measurement").read[Seq[Field]] and
-    (__ \ "primaryKey").read[Seq[Field]] and
-    (__ \ "timeField").read[TimeField]
-  }.apply(Schema.apply _)
 }
