@@ -142,7 +142,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
         }
         s"""left outer join ${lookup.dataset} $lookupExpr on ${conditions.mkString(" and ")}"""
     }.mkString("\n")
-    append(queryBuilder, lookupStr)
+    appendIfNotEmpty(queryBuilder, lookupStr)
 
     ParsedResult(Seq.empty, (producedExprs).result().toMap)
   }
@@ -155,7 +155,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
         parseFilterRelation(filter, exprMap(filter.field.name).refExpr)
       }
       val filterStr = (unnestTestStrs ++ filterStrs).mkString("where ", " and ", "")
-      append(queryBuilder, filterStr)
+      appendIfNotEmpty(queryBuilder, filterStr)
 
       ParsedResult(Seq.empty, exprMap)
     }
@@ -175,7 +175,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
         }
         s"unnest ${expr.refExpr} $newExpr"
     }.mkString("\n")
-    append(queryBuilder, unnestStr)
+    appendIfNotEmpty(queryBuilder, unnestStr)
 
     ParsedResult(unnestTestStrs.toSeq, (producedExprs ++= exprMap).result().toMap)
   }
@@ -195,7 +195,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
           s"$groupExpr as $newExpr"
         }
         val groupStr = s"group by ${groupStrs.mkString(",")} group as $groupVar"
-        append(queryBuilder, groupStr)
+        appendIfNotEmpty(queryBuilder, groupStr)
 
         group.aggregates.foreach { aggr =>
           val fieldExpr = exprMap(aggr.field.name)
@@ -247,9 +247,9 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
         val limitStr = s"limit ${select.limit}"
         val offsetStr = s"offset ${select.offset}"
-        append(queryBuilder, orderStr)
-        append(queryBuilder, limitStr)
-        append(queryBuilder, offsetStr)
+        appendIfNotEmpty(queryBuilder, orderStr)
+        appendIfNotEmpty(queryBuilder, limitStr)
+        appendIfNotEmpty(queryBuilder, offsetStr)
 
         if (select.fields.isEmpty) {
           producedExprs ++= exprMap
@@ -355,7 +355,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     }
   }
 
-  protected def append(queryBuilder: StringBuilder, queryStr: String): Unit = {
+  protected def appendIfNotEmpty(queryBuilder: StringBuilder, queryStr: String): Unit = {
     if (!queryStr.isEmpty) {
       queryBuilder.append("\n")
       queryBuilder.append(queryStr)
