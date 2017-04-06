@@ -5,23 +5,15 @@ import java.io.File
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.specs2.mock._
 import org.specs2.mutable.SpecificationLike
-import play.api.{Configuration, Environment}
 import play.api.libs.json._
-import play.api.mvc._
-import play.api.test._
-import play.api.libs.ws._
-import play.api.test.Helpers._
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ApplicationTest extends SpecificationLike with Mockito {
-
-  implicit val system : ActorSystem = ActorSystem("test")
-  implicit val mat: Materializer = ActorMaterializer()
+class ApplicationTest extends SpecificationLike {
 
   "application" should {
 
@@ -48,6 +40,8 @@ class ApplicationTest extends SpecificationLike with Mockito {
 
     "generate a actor flow" in {
 
+      implicit val system : ActorSystem = ActorSystem("test")
+      implicit val mat: Materializer = ActorMaterializer()
       def props(outActor: ActorRef) = Props(new Actor {
         override def receive = {
           case _ =>
@@ -64,22 +58,20 @@ class ApplicationTest extends SpecificationLike with Mockito {
 
     "register new schema" in {
 
-      // TODO rewrite Register
       val registerRequest = Json.parse(
         s"""
            |{
-           |  "dataset": "test",
+           |  "dataset": "testTable",
            |  "schema" : {
            |    "typeName"    : "newType",
            |    "dimension"   : [],
            |    "measurement" : [],
-           |    "primaryKey"  : [],
-           |    "timeField"   : ""
+           |    "primaryKey"  : ["key"],
+           |    "timeField"   : "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
            |  }
            |}
        """.stripMargin
       )
-
 
       // Need to reconsider test logic.
       // instantiate Application Class is not a good choice:
