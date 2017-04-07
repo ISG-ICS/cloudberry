@@ -5,8 +5,6 @@ import java.io.File
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
-import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
 
@@ -55,6 +53,5 @@ class ApplicationTest extends SpecificationLike {
       val result = Await.result(future, 3.seconds)
       result must_== (1 to 10).sum
     }
-
   }
 }

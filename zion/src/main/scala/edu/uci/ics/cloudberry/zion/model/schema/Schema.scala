@@ -1,10 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
 
 //TODO support nested type
 object DataType extends Enumeration {
