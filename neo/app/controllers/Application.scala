@@ -95,10 +95,10 @@ class Application @Inject()(val wsClient: WSClient,
 
         receipt.map{ r =>
           if(r.isSuccess){
-            Ok("Dataset " + newTable.dataset + " has been registered.")
+            Ok(r.message)
           }
           else{
-            BadRequest("Register operation denied: " + r.message)
+            BadRequest(r.message)
           }
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
@@ -119,10 +119,10 @@ class Application @Inject()(val wsClient: WSClient,
 
         receipt.map{ r =>
           if(r.isSuccess){
-            Ok("Dataset " + dropTable.dataset + " has been removed.")
+            Ok(r.message)
           }
           else{
-            BadRequest("Deregister operation denied: " + r.message)
+            BadRequest(r.message)
           }
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)

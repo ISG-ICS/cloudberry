@@ -4,11 +4,11 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
 import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo._
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Interval}
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -68,8 +68,47 @@ class DataStoreManager(metaDataset: String,
 
   def normal: Receive = {
     case AreYouReady => sender() ! true
-    case register: Register => ???
-    case deregister: Deregister => ???
+    case register: Register =>
+      if(!metaData.contains(register.dataset)){
+
+        val primaryKey = register.schema.primaryKey.map(register.schema.getField(_).get)
+        val timeField = register.schema.getField(register.schema.timeField) match {
+          case Some(f)
+            if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
+          case None
+            if register.schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${register.schema.typeName}.")
+          case _ =>
+            throw new QueryParsingException(s"${register.schema.timeField} is not a valid time field.")
+        }
+        val resolvedSchema = Schema(register.schema.typeName, register.schema.dimension, register.schema.measurement, primaryKey, timeField)
+
+        //TODO: Send query to get actual information when a dataset is registered.
+        val currentDateTime = new DateTime()
+        val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+
+        val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
+        val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+
+        val registerDataSetInfo = DataSetInfo(register.dataset, None, resolvedSchema, fakeInterval, fakeStats)
+        metaData.put(register.dataset, registerDataSetInfo)
+        flushMetaData()
+
+        sender() ! FrontEndRequestReceipt(true, "Register Finished: dataset " + register.dataset + " has successfully registered.")
+      }
+      else{
+        sender() ! FrontEndRequestReceipt(false, "Register Denied: another dataset with the same name " + register.dataset + " has already existed in database.")
+      }
+    case deregister: Deregister =>
+      if(metaData.contains(deregister.dataset)){
+        metaData.remove(deregister.dataset)
+
+        //TODO send query to DELETE dataset in database
+
+        sender() ! FrontEndRequestReceipt(true, "Deregister Finished: dataset " + deregister.dataset + " has successfully removed.")
+      }
+      else{
+        sender() ! FrontEndRequestReceipt(false, "Deregister Denied: dataset " + deregister.dataset + " does not exist in database.")
+      }
     case query: Query => answerQuery(query)
     case append: AppendView => answerQuery(append, Some(DateTime.now()))
     case append: AppendViewAutomatic =>
