@@ -34,6 +34,7 @@ trait AsterixImpl {
 
 
   val similarityJaccard: String
+  val fullTextContains: String
   val contains: String
   val wordTokens: String
 
@@ -195,11 +196,9 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     }
   }
 
-  protected def parseTextRelation(filter: FilterStatement,
-                                  fieldExpr: String): String = {
-    val first = s"${typeImpl.similarityJaccard}(${typeImpl.wordTokens}($fieldExpr), ${typeImpl.wordTokens}('${filter.values.head}')) > 0.0"
-    val rest = filter.values.tail.map(keyword => s"""and ${typeImpl.contains}($fieldExpr, "$keyword")""")
-    (first +: rest).mkString("\n")
+  protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
+    val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", "," ,"]")
+    s"${typeImpl.fullTextContains}($fieldExpr, $words, {'mode':'all'})"
   }
 
 
