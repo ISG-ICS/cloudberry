@@ -82,7 +82,8 @@ object Unresolved {
   def toUnresolved(group: GroupStatement): UnresolvedGroupStatement =
     UnresolvedGroupStatement(
       group.bys.map(toUnresolved(_)),
-      group.aggregates.map(toUnresolved(_))
+      group.aggregates.map(toUnresolved(_)),
+      group.lookups.map(toUnresolved(_))
     )
 
 
@@ -181,7 +182,8 @@ case class UnresolvedAggregateStatement(field: String,
                                        ) extends Statement
 
 case class UnresolvedGroupStatement(bys: Seq[UnresolvedByStatement],
-                                    aggregates: Seq[UnresolvedAggregateStatement]
+                                    aggregates: Seq[UnresolvedAggregateStatement],
+                                    lookups: Seq[UnresolvedLookupStatement]
                                    ) extends Statement
 
 case class UnresolvedGlobalAggregateStatement(aggregate: UnresolvedAggregateStatement

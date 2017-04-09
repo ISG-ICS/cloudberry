@@ -103,11 +103,8 @@ object AQLFuncVisitor {
                                     aqlExpr: String,
                                     relation: Relation,
                                     values: Seq[String]): String = {
-    val first = s"similarity-jaccard(word-tokens($aqlExpr), word-tokens('${values.head}')) > 0.0"
-    val rest = values.tail.map(
-      keyword => s"""and contains($aqlExpr, "$keyword")"""
-    )
-    (first +: rest).mkString("\n")
+    val words = values.map(w => s"'${w.trim}'").mkString("[", "," ,"]")
+    s"ftcontains($aqlExpr, $words, {'mode':'all'})"
   }
 
   private def validateNumberValue(relation: Relation, values: Seq[Any]): Unit = {

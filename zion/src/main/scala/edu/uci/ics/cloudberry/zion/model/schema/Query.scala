@@ -171,7 +171,8 @@ case class AggregateStatement(field: Field,
                              ) extends Statement
 
 case class GroupStatement(bys: Seq[ByStatement],
-                          aggregates: Seq[AggregateStatement]
+                          aggregates: Seq[AggregateStatement],
+                          lookups: Seq[LookupStatement] = Seq.empty
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
 }
