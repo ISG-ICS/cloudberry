@@ -1,6 +1,7 @@
 package db
 
-import edu.uci.ics.cloudberry.zion.model.datastore.{AsterixAQLConn, IDataConn}
+import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
+import edu.uci.ics.cloudberry.zion.model.impl.AsterixAQLConn
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, TwitterDataStore}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json

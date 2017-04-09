@@ -11,7 +11,7 @@ import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{AsterixAQLConn, AsterixSQLPPConn}
+import edu.uci.ics.cloudberry.zion.model.impl.{AsterixAQLConn, AsterixSQLPPConn}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner, SQLPPGenerator}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
