@@ -35,6 +35,7 @@ object SQLPPAsterixImpl extends AsterixImpl {
   val getPoints: String = "get_points"
 
   val similarityJaccard: String = "similarity_jaccard"
+  val fullTextContains: String = "ftcontains"
   val contains: String = "contains"
   val wordTokens: String = "word_tokens"
 
