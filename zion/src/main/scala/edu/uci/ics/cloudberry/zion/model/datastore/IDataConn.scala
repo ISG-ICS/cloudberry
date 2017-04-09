@@ -19,9 +19,50 @@ trait IDataConn {
   def post(statement: String): Future[WSResponse]
 }
 
-class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn with Logging {
+class AsterixAQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn with Logging {
 
-  import AsterixConn._
+  import AsterixAQLConn._
+
+  override def defaultQueryResponse: JsValue = defaultEmptyResponse
+
+  def postQuery(aql: String): Future[JsValue] = {
+    postWithCheckingStatus(aql, (ws: WSResponse) => ws.json, (ws: WSResponse) => defaultQueryResponse)
+  }
+
+  def postControl(aql: String): Future[Boolean] = {
+    postWithCheckingStatus(aql, (ws: WSResponse) => true, (ws: WSResponse) => false)
+  }
+
+  protected def postWithCheckingStatus[T](aql: String, succeedHandler: WSResponse => T, failureHandler: WSResponse => T): Future[T] = {
+    post(aql).map { wsResponse =>
+      if (wsResponse.status == 200) {
+        succeedHandler(wsResponse)
+      } else {
+        log.error("AQL failed:" + Json.prettyPrint(wsResponse.json))
+        failureHandler(wsResponse)
+      }
+    }
+  }
+
+  def post(aql: String): Future[WSResponse] = {
+    log.debug("AQL:" + aql)
+    val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
+    f.onFailure(wsFailureHandler(aql))
+    f
+  }
+
+  protected def wsFailureHandler(aql: String): PartialFunction[Throwable, Unit] = {
+    case e: Throwable => log.error("WS Error:" + aql, e); throw e
+  }
+}
+
+object AsterixAQLConn {
+  val defaultEmptyResponse = Json.toJson(Seq(Seq.empty[JsValue]))
+}
+
+class AsterixSQLPPConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn with Logging {
+
+  import AsterixSQLPPConn._
 
   override def defaultQueryResponse: JsValue = defaultEmptyResponse
 
@@ -64,6 +105,6 @@ class AsterixConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext
   }
 }
 
-object AsterixConn {
+object AsterixSQLPPConn {
   val defaultEmptyResponse = Json.toJson(Seq(Seq.empty[JsValue]))
 }
