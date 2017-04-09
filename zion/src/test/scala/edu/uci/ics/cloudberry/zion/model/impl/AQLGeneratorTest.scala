@@ -35,8 +35,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |let $taggr := $t
           |group by $g0 := get-interval-start-datetime(interval-bin($t.'create_at', datetime('1990-01-01T00:00:00.000Z'),  day-time-duration("PT1H") )) with $taggr
           |return {
@@ -72,8 +71,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'}) and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |let $taggr := $t
@@ -91,8 +89,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'}) and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |order by $t.'create_at' desc
@@ -112,8 +109,7 @@ class AQLGeneratorTest extends Specification {
         """
           |for $g in (
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'}) and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |where not(is-null($t.'hashtags'))
@@ -208,8 +204,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.1, 0.1))[0] with $taggr
           |return {
@@ -226,8 +221,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.01, 0.01))[0] with $taggr
           |return {
@@ -246,8 +240,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |let $taggr := $t
           |group by $g0 := get-points(spatial-cell($t.'coordinate', create-point(0.0,0.0), 0.001, 0.001))[0] with $taggr
           |return {
@@ -265,8 +258,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |let $taggr := $t
           |group by $g0 := round($t.'geo_tag'.'stateID'/10)*10 with $taggr
           |return {
@@ -298,8 +290,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |limit 10
           |offset 0
           |return
@@ -488,8 +479,7 @@ class AQLGeneratorTest extends Specification {
           |for $s in (
           |for $g in (
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus") and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'}) and $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and true
           |for $setgeo_tag_stateID in [ 37,51,24,11,10,34,42,9,44 ]
           |where $t.'geo_tag'.'stateID' = $setgeo_tag_stateID
           |where not(is-null($t.'hashtags'))
@@ -541,8 +531,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |limit 0
           |offset 0
           |return
@@ -552,32 +541,6 @@ class AQLGeneratorTest extends Specification {
         """.stripMargin.trim
       )
     }
-
-    //TODO parseLookup should be able to handle multiple fields in the lookup statement
-    //        "translate lookup one table with one join key multiple select" in {
-    //          val populationDataSet = PopulationDataStore.DatasetName
-    //          val populationSchema = PopulationDataStore.PopulationSchema
-    //
-    //          val selectStatement = SelectStatement(Seq.empty, 0, 0, Seq("*", populationDataSet))
-    //          val lookup = LookupStatement(Seq("geo_tag.stateID"), populationDataSet, Seq("stateId"), Seq("population","stateId"),
-    //            Seq("population", "stateID"))
-    //          val filter = Seq(textFilter)
-    //          val query = new Query(TwitterDataSet, Seq(lookup), filter, Seq.empty, select = Some(selectStatement))
-    //          val result = parser.generate(query, Map(TwitterDataSet -> schema, populationDataSet -> populationSchema))
-    //          removeEmptyLine(result) must_== unifyNewLine(
-    //            """
-    //              |for $t in dataset twitter.ds_tweet
-    //              |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-    //              |and contains($t.'text', "virus")
-    //              |limit 0
-    //              |offset 0
-    //              |return
-    //              |{ '*': $t, 'twitter.US_population': for $l0 in dataset twitter.US_population
-    //              |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateId
-    //              |return {'population' : $l0.population, 'stateID' : $l0.stateId}}
-    //            """.stripMargin.trim
-    //          )
-    //        }
 
     "translate lookup multiple table with one join key on each" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -598,8 +561,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |limit 0
           |offset 0
           |return
@@ -627,8 +589,7 @@ class AQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
-          |and contains($t.'text', "virus")
+          |where ftcontains($t.'text', ['zika','virus'], {'mode':'all'})
           |let $population_aggr := (for $l0 in dataset twitter.US_population
           |where $t.'geo_tag'.'stateID' /* +indexnl */ = $l0.stateID
           |return $l0.population)[0]
@@ -707,7 +668,7 @@ class AQLGeneratorTest extends Specification {
           |create dataset zika(twitter.typeTweet) primary key id //with filter on 'create_at'
           |insert into dataset zika (
           |for $t in dataset twitter.ds_tweet
-          |where similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |where ftcontains($t.'text', ['zika'], {'mode':'all'})
           |return $t
           |)
           |
@@ -723,7 +684,7 @@ class AQLGeneratorTest extends Specification {
         """
           |upsert into dataset zika (
           |for $t in dataset twitter.ds_tweet
-          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and similarity-jaccard(word-tokens($t.'text'), word-tokens('zika')) > 0.0
+          |where $t.'create_at' >= datetime('2016-01-01T00:00:00.000Z') and $t.'create_at' < datetime('2016-12-01T00:00:00.000Z') and ftcontains($t.'text', ['zika'], {'mode':'all'})
           |return $t
           |)
         """.stripMargin.trim)
