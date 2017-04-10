@@ -1,6 +1,7 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
+import edu.uci.ics.cloudberry.zion.model.impl.AsterixAQLConn
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, TwitterDataStore}
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json.Json
@@ -27,12 +28,13 @@ private[db] class Migration_20160814() {
          |
          |create dataset $berryMeta(berry.metaType) if not exists primary key name;
          |
-         |upsert into dataset $berryMeta (
+         |upsert into ${if (conn.isInstanceOf[AsterixAQLConn]) "dataset" else ""} $berryMeta (
          |  ${Json.toJson(DataSetInfo.write(twitterInfo))}
          |)
        """.stripMargin
     }
   }
+
 }
 
 object Migration_20160814 {

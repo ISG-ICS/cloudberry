@@ -35,6 +35,12 @@ case class Query(dataset: String,
                  isEstimable: Boolean = false
                 ) extends IReadQuery {
 
+  def hasUnnest: Boolean = !unnest.isEmpty
+
+  def hasGroup: Boolean = groups.isDefined
+
+  def hasSelect: Boolean = select.isDefined
+
   import TimeField.TimeFormat
 
   def setInterval(field: Field, interval: org.joda.time.Interval): Query = {
@@ -165,7 +171,8 @@ case class AggregateStatement(field: Field,
                              ) extends Statement
 
 case class GroupStatement(bys: Seq[ByStatement],
-                          aggregates: Seq[AggregateStatement]
+                          aggregates: Seq[AggregateStatement],
+                          lookups: Seq[LookupStatement] = Seq.empty
                          ) extends Statement {
   def finerThan(group: GroupStatement): Boolean = ???
 }
@@ -174,11 +181,11 @@ case class GlobalAggregateStatement(aggregate: AggregateStatement
                                    ) extends Statement
 
 object SortOrder extends Enumeration {
-    val ASC, DSC = Value
+  val ASC, DSC = Value
 }
 
 case class SelectStatement(orderOn: Seq[Field],
-                           order:Seq[SortOrder.Value],
+                           order: Seq[SortOrder.Value],
                            limit: Int,
                            offset: Int,
                            fields: Seq[Field]

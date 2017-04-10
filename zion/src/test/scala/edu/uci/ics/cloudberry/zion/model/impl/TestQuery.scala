@@ -33,6 +33,8 @@ object TestQuery {
 
   val population = populationField("population")
   val stateID = populationField("stateID")
+  val state = Field("state", DataType.Number)
+  val min = Field("min", DataType.Number)
 
   val literacy = literacyField("literacy")
 
@@ -45,6 +47,7 @@ object TestQuery {
   val stateFilter = FilterStatement(geoStateID, None, Relation.in, stateValue)
   val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
   val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
+  val pointFilter = FilterStatement(coordinate, None, Relation.inRange, Seq(Seq(0.0, 0.0), Seq(1.0, 1.0)))
 
   val intValues = Seq(1)
   val stringValue = Seq("English")
@@ -132,6 +135,21 @@ object TestQuery {
 
   val lookupLiteracy = LookupStatement(
     sourceKeys = Seq(geoStateID),
+    dataset = literacyDataSet,
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(literacy),
+    as = Seq(Field.as(literacy, "literacy")))
+
+
+  val lookupPopulationByState = LookupStatement(
+    sourceKeys = Seq(Field("state", DataType.Number)),
+    dataset = PopulationDataSet,
+    lookupKeys = Seq(stateID),
+    selectValues = Seq(population),
+    as = Seq(Field.as(population, "population")))
+
+  val lookupLiteracyByState = LookupStatement(
+    sourceKeys = Seq(Field("state", DataType.Number)),
     dataset = literacyDataSet,
     lookupKeys = Seq(stateID),
     selectValues = Seq(literacy),
@@ -736,6 +754,178 @@ object TestQuery {
        |}
      """.stripMargin
   )
+
+  val groupLookupJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "geo",
+       |        "apply": {
+       |          "name": "level",
+       |          "args": {
+       |            "level": "state"
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "*",
+       |        "apply": {
+       |          "name" : "count"
+       |        },
+       |        "as": "count"
+       |      }
+       |    ],
+       |    "lookup": [
+       |    {
+       |      "joinKey":["state"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateID"],
+       |      "select":["population"],
+       |      "as" : ["population"]
+       |    }
+       |    ]
+       |  },
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["state","count","population"]
+       |  }
+       |}
+    """.stripMargin)
+
+
+  val groupMultipleLookupJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "geo",
+       |        "apply": {
+       |          "name": "level",
+       |          "args": {
+       |            "level": "state"
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "*",
+       |        "apply": {
+       |          "name" : "count"
+       |        },
+       |        "as": "count"
+       |      }
+       |    ],
+       |    "lookup": [
+       |    {
+       |      "joinKey":["state"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateID"],
+       |      "select":["population"],
+       |      "as" : ["population"]
+       |    },
+       |     {
+       |      "joinKey":["state"],
+       |      "dataset":"twitter.US_literacy",
+       |      "lookupKey":["stateID"],
+       |      "select":["literacy"],
+       |      "as" : ["literacy"]
+       |    }
+       |    ]
+       |  },
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["state","count","population","literacy"]
+       |  }
+       |}
+    """.stripMargin)
+
+  val lookupsInOutGroupJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "lookup": [ {
+       |      "joinKey":["geo_tag.stateID"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateID"],
+       |      "select":["population"],
+       |      "as" : ["population"]
+       |    }
+       | ],
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "geo",
+       |        "apply": {
+       |          "name": "level",
+       |          "args": {
+       |            "level": "state"
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "population",
+       |        "apply": {
+       |          "name" : "min"
+       |        },
+       |        "as": "min"
+       |      }
+       |    ],
+       |    "lookup": [
+       |    {
+       |      "joinKey":["state"],
+       |      "dataset":"twitter.US_literacy",
+       |      "lookupKey":["stateID"],
+       |      "select":["literacy"],
+       |      "as" : ["literacy"]
+       |    }
+       |    ]
+       |  },
+       |  "select": {
+       |    "order" : [],
+       |    "limit" : 0,
+       |    "offset" : 0,
+       |    "field" : ["state","min", "literacy"]
+       |  }
+       |}
+    """.stripMargin)
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 

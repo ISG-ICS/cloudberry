@@ -11,9 +11,8 @@ import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.AsterixConn
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner}
-import org.joda.time.DateTime
+import edu.uci.ics.cloudberry.zion.model.impl.{AsterixAQLConn, AsterixSQLPPConn}
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner, SQLPPGenerator}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
@@ -35,11 +34,16 @@ class Application @Inject()(val wsClient: WSClient,
 
   val config = new Config(configuration)
   val cities = Application.loadCity(environment.getFile(config.USCityDataPath))
-  val asterixConn = new AsterixConn(config.AsterixURL, wsClient)
+  val (asterixConn, qlGenerator) =
+    config.AsterixLang match {
+      case "aql" => (new AsterixAQLConn(config.AsterixURL, wsClient), AQLGenerator)
+      case "sqlpp" => (new AsterixSQLPPConn(config.AsterixURL, wsClient), SQLPPGenerator)
+      case _ => throw new IllegalArgumentException(s"unknown asterixdb.lang option:${config.AsterixLang}")
+    }
 
   Await.result(Migration_20160814.migration.up(asterixConn), 10.seconds)
 
-  val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, AQLGenerator, config))
+  val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, qlGenerator, config))
 
   Logger.info("I'm initializing")
 
@@ -59,7 +63,7 @@ class Application @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    ActorFlow.actorRef{ out =>
+    ActorFlow.actorRef { out =>
       RequestRouter.props(BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config)
     }
   }
