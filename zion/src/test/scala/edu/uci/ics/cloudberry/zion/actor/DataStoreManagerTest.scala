@@ -4,10 +4,10 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory, Props}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AgentType
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AgentType, Deregister, FrontEndRequestReceipt, Register}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo}
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, Unresolved, UnresolvedSchema}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.joda.time.DateTime
@@ -169,6 +169,40 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
     "use existing child to solve the query" in {
+      ok
+    }
+    "register/deregister new data model" in {
+      val field1 = NumberField("myNumber")
+      val field2 = StringField("myString")
+      val field3 = TimeField("myTime")
+      val newSchema = UnresolvedSchema("type", Seq(field1), Seq(field2, field3), Seq("myString"), "myTime")
+      val registerRequest = Register("newTable", newSchema)
+
+
+      val mockParserFactory = mock[IQLGeneratorFactory]
+      val mockConn = mock[IDataConn]
+
+      //val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
+      val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
+      //meta.reply(initialInfo)
+
+      sender.send(dataManager, DataStoreManager.AreYouReady)
+      sender.expectMsg(true)
+
+      sender.send(dataManager, registerRequest)
+      sender.expectMsg(FrontEndRequestReceipt(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered."))
+
+      sender.send(dataManager, registerRequest)
+      sender.expectMsg(FrontEndRequestReceipt(false, "Register Denied: another dataset with the same name " + registerRequest.dataset + " has already existed in database."))
+
+      val deregisterRequest = Deregister("newTable")
+      sender.send(dataManager, deregisterRequest)
+      sender.expectMsg(FrontEndRequestReceipt(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed."))
+
+      val anotherDeregisterRequest = Deregister("anotherTable")
+      sender.send(dataManager, anotherDeregisterRequest)
+      sender.expectMsg(FrontEndRequestReceipt(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database."))
+
       ok
     }
   }

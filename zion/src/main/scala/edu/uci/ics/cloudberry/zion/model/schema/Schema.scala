@@ -38,8 +38,7 @@ object Relation extends Enumeration {
   val ~= = Value("~=")
 }
 
-// TODO If no case class is admitted to inherit the trait anywhere but in this file, the trait should be sealed.
-trait Field {
+sealed trait Field {
   val name: String
   val dataType: DataType
   val isOptional: Boolean = false

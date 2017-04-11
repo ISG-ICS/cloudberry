@@ -94,12 +94,8 @@ class Application @Inject()(val wsClient: WSClient,
         val receipt = (manager ? newTable).mapTo[FrontEndRequestReceipt]
 
         receipt.map{ r =>
-          if(r.isSuccess){
-            Ok(r.message)
-          }
-          else{
-            BadRequest(r.message)
-          }
+          if(r.isSuccess) Ok(r.message)
+          else BadRequest(r.message)
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
         }
@@ -118,12 +114,8 @@ class Application @Inject()(val wsClient: WSClient,
         val receipt = (manager ? dropTable).mapTo[FrontEndRequestReceipt]
 
         receipt.map{ r =>
-          if(r.isSuccess){
-            Ok(r.message)
-          }
-          else{
-            BadRequest(r.message)
-          }
+          if(r.isSuccess) Ok(r.message)
+          else BadRequest(r.message)
         }.recover{ case e =>
           InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
         }

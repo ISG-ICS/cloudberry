@@ -94,7 +94,7 @@ object DataSetInfo {
     override def reads(json: JsValue): JsResult[Field] = {
       val name = (json \ "name").as[String]
       val isOptional = (json \ "isOptional").as[Boolean]
-      DataType.withName((json \ "datatype").as[String]) match {
+      DataType.withName((json \ "dataType").as[String]) match {
         case DataType.Number =>
           JsSuccess(NumberField(name, isOptional))
         case DataType.Record => ???
