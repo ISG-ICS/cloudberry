@@ -519,12 +519,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     $scope.$watchCollection(
       function() {
-        return [Asterix.mapResult, Asterix.totalCount, $('#toggle-normalize').prop('checked')];
+        return {
+          'mapResult': Asterix.mapResult,
+          'totalCount': Asterix.totalCount,
+          'doNormalization': $('#toggle-normalize').prop('checked')
+        };
       },
 
       function(newResult, oldValue) {
-        if (newResult[0] != oldValue[0]) {
-            $scope.result = newResult[0];
+        if (newResult['mapResult'] != oldValue['mapResult']) {
+            $scope.result = newResult['mapResult'];
             if (Object.keys($scope.result).length != 0) {
                 $scope.status.init = false;
                 drawMap($scope.result);
@@ -533,11 +537,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
                 drawMap($scope.result);
             }
         }
-        if (newResult[1] != oldValue[1]) {
-            $scope.totalCount = newResult[1];
+        if (newResult['totalCount'] != oldValue['totalCount']) {
+            $scope.totalCount = newResult['totalCount'];
         }
-        if(newResult[2] != oldValue[2]) {
-          $scope.doNormalization = newResult[2];
+        if(newResult['doNormalization'] != oldValue['doNormalization']) {
+          $scope.doNormalization = newResult['doNormalization'];
         }
       }
     );
