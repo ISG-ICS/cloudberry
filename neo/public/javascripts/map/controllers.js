@@ -491,6 +491,28 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       if ($scope.map)
         $scope.legend.addTo($scope.map);
 
+      // add toggle normalize
+      var normalize = $('.normalize');
+      if (normalize) {
+        normalize.remove();
+      }
+
+      $scope.normalize= L.control({
+        position: 'topleft'
+      });
+
+      $scope.normalize.onAdd = function() {
+        var div = L.DomUtil.create('div', 'info normalize');
+        div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
+        return div;
+      };
+      if ($scope.map) {
+        $scope.normalize.addTo($scope.map);
+        $('#toggle-normalize').bootstrapToggle({
+          size: 'default'
+        });
+      }
+
     }
 
     $scope.$watchCollection(
