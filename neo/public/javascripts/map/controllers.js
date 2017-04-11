@@ -1,6 +1,7 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
     $scope.result = {};
+    $scope.doNormalization = false;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -503,21 +504,22 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       $scope.normalize.onAdd = function() {
         var div = L.DomUtil.create('div', 'info normalize');
-        div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
+        if($scope.doNormalization)
+          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
+        else
+          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
         return div;
       };
       if ($scope.map) {
         $scope.normalize.addTo($scope.map);
-        $('#toggle-normalize').bootstrapToggle({
-          size: 'default'
-        });
+        $('#toggle-normalize').bootstrapToggle();
       }
 
     }
 
     $scope.$watchCollection(
       function() {
-        return [Asterix.mapResult, Asterix.totalCount];
+        return [Asterix.mapResult, Asterix.totalCount, $('#toggle-normalize').prop('checked')];
       },
 
       function(newResult, oldValue) {
@@ -532,7 +534,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             }
         }
         if (newResult[1] != oldValue[1]) {
-            $scope.totalCount = newResult[1]
+            $scope.totalCount = newResult[1];
+        }
+        if(newResult[2] != oldValue[2]) {
+          $scope.doNormalization = newResult[2];
         }
       }
     );
