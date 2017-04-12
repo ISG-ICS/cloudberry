@@ -123,10 +123,10 @@ class DataStoreManager(metaDataset: String,
         case Some(f) if f.isInstanceOf[TimeField] =>
           f.asInstanceOf[TimeField]
         case None if dataSetRawSchema.timeField.isEmpty =>
-          sender ! FrontEndRequestReceipt(false, "Time field is not specified for " + dataSetRawSchema.typeName)
+          sender ! FrontEndRequestReceipt(false, "Time field is not specified for " + dataSetRawSchema.typeName + "\n")
           return
         case _ =>
-          sender ! FrontEndRequestReceipt(false, dataSetRawSchema.timeField + " is not a valid time field.")
+          sender ! FrontEndRequestReceipt(false, dataSetRawSchema.timeField + " is not a valid time field.\n")
           return
       }
       val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
@@ -142,10 +142,10 @@ class DataStoreManager(metaDataset: String,
       metaData.put(dataSetName, registerDataSetInfo)
       flushMetaData()
 
-      sender ! FrontEndRequestReceipt(true, "Register Finished: dataset " + dataSetName + " has successfully registered.")
+      sender ! FrontEndRequestReceipt(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
 
     } else{
-      sender ! FrontEndRequestReceipt(false, "Register Denied: dataset " + dataSetName + " already existed.")
+      sender ! FrontEndRequestReceipt(false, "Register Denied: dataset " + dataSetName + " already existed.\n")
     }
   }
 
@@ -157,10 +157,10 @@ class DataStoreManager(metaDataset: String,
 
       //TODO send query to DELETE dataset in database
 
-      sender ! FrontEndRequestReceipt(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.")
+      sender ! FrontEndRequestReceipt(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
 
     } else{
-      sender ! FrontEndRequestReceipt(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.")
+      sender ! FrontEndRequestReceipt(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
     }
   }
 

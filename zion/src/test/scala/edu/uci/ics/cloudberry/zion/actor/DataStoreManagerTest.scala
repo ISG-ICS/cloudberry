@@ -207,18 +207,18 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.expectMsg(true)
 
       sender.send(dataManager, registerRequest)
-      sender.expectMsg(FrontEndRequestReceipt(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered."))
+      sender.expectMsg(FrontEndRequestReceipt(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
 
       sender.send(dataManager, registerRequest)
-      sender.expectMsg(FrontEndRequestReceipt(false, "Register Denied: dataset " + registerRequest.dataset + " already existed."))
+      sender.expectMsg(FrontEndRequestReceipt(false, "Register Denied: dataset " + registerRequest.dataset + " already existed.\n"))
 
       val deregisterRequest = Deregister("newTable")
       sender.send(dataManager, deregisterRequest)
-      sender.expectMsg(FrontEndRequestReceipt(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed."))
+      sender.expectMsg(FrontEndRequestReceipt(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
 
       val anotherDeregisterRequest = Deregister("anotherTable")
       sender.send(dataManager, anotherDeregisterRequest)
-      sender.expectMsg(FrontEndRequestReceipt(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database."))
+      sender.expectMsg(FrontEndRequestReceipt(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database.\n"))
 
       ok
     }
