@@ -1,10 +1,7 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.impl.AsterixAQLConn
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, TwitterDataStore}
-import org.joda.time.{DateTime, Interval}
-import play.api.libs.json.Json
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -14,10 +11,6 @@ private[db] class Migration_20160814() {
 
   //TODO it supposes to automatically register the dataset from AsterixDB
   def up(conn: IDataConn)(implicit ec: ExecutionContext): Future[Boolean] = {
-    //TODO generate the schema and fetch the stats automatically
-    val interval = new Interval(new DateTime(2015, 11, 22, 0, 0), DateTime.now())
-    val stats = Stats(new DateTime(2015, 11, 22, 0, 0), DateTime.now, DateTime.now, 1000 * 1000 * 1000)
-    val twitterInfo = DataSetInfo(TwitterDataStore.DatasetName, None, TwitterDataStore.TwitterSchema, interval, stats)
     conn.postControl {
       s"""
          |create dataverse berry if not exists;

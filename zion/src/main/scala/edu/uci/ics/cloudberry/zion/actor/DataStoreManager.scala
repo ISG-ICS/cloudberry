@@ -67,8 +67,8 @@ class DataStoreManager(metaDataset: String,
 
   def normal: Receive = {
     case AreYouReady => sender() ! true
-    case register: Register => registerNewTable(sender(), register)
-    case deregister: Deregister => deregisterTable(sender(), deregister)
+    case register: Register => registerNewDataset(sender(), register)
+    case deregister: Deregister => deregisterDataSet(sender(), deregister)
     case query: Query => answerQuery(query)
     case append: AppendView => answerQuery(append, Some(DateTime.now()))
     case append: AppendViewAutomatic =>
@@ -112,7 +112,7 @@ class DataStoreManager(metaDataset: String,
   //persistent metadata periodically
   context.system.scheduler.schedule(config.ViewMetaFlushInterval, config.ViewMetaFlushInterval, self, FlushMeta)
 
-  private def registerNewTable(sender: ActorRef, registerTable: Register): Unit = {
+  private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
 
@@ -120,12 +120,14 @@ class DataStoreManager(metaDataset: String,
 
       val primaryKey = dataSetRawSchema.primaryKey.map(dataSetRawSchema.getField(_).get)
       val timeField = dataSetRawSchema.getField(dataSetRawSchema.timeField) match {
-        case Some(f)
-          if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
-        case None
-          if dataSetRawSchema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${dataSetRawSchema.typeName}.")
+        case Some(f) if f.isInstanceOf[TimeField] =>
+          f.asInstanceOf[TimeField]
+        case None if dataSetRawSchema.timeField.isEmpty =>
+          sender ! FrontEndRequestReceipt(false, "Time field is not specified for " + dataSetRawSchema.typeName)
+          return
         case _ =>
-          throw new QueryParsingException(s"${dataSetRawSchema.timeField} is not a valid time field.")
+          sender ! FrontEndRequestReceipt(false, dataSetRawSchema.timeField + " is not a valid time field.")
+          return
       }
       val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
 
@@ -141,13 +143,13 @@ class DataStoreManager(metaDataset: String,
       flushMetaData()
 
       sender ! FrontEndRequestReceipt(true, "Register Finished: dataset " + dataSetName + " has successfully registered.")
-    }
-    else{
-      sender ! FrontEndRequestReceipt(false, "Register Denied: another dataset with the same name " + dataSetName + " has already existed in database.")
+
+    } else{
+      sender ! FrontEndRequestReceipt(false, "Register Denied: dataset " + dataSetName + " already existed.")
     }
   }
 
-  private def deregisterTable(sender: ActorRef, dropTable: Deregister): Unit = {
+  private def deregisterDataSet(sender: ActorRef, dropTable: Deregister): Unit = {
     val dropTableName = dropTable.dataset
 
     if(metaData.contains(dropTableName)){
@@ -156,8 +158,8 @@ class DataStoreManager(metaDataset: String,
       //TODO send query to DELETE dataset in database
 
       sender ! FrontEndRequestReceipt(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.")
-    }
-    else{
+
+    } else{
       sender ! FrontEndRequestReceipt(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.")
     }
   }
