@@ -1,1 +1,1 @@
-curl -d "@twitterMapRegister.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
+curl -d "@./script/twitterMapRegister.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
