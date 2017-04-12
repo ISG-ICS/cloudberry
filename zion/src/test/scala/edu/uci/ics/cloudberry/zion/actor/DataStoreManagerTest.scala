@@ -7,7 +7,7 @@ import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AgentType, Deregister, FrontEndRequestReceipt, Register}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, Unresolved, UnresolvedSchema}
+import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, UnresolvedSchema}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.joda.time.DateTime
@@ -178,14 +178,31 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val newSchema = UnresolvedSchema("type", Seq(field1), Seq(field2, field3), Seq("myString"), "myTime")
       val registerRequest = Register("newTable", newSchema)
 
-
       val mockParserFactory = mock[IQLGeneratorFactory]
       val mockConn = mock[IDataConn]
 
-      //val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
-      val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
-      //meta.reply(initialInfo)
+      val newMeta = new TestProbe(system)
+      def newTestActorMaker(agentType: AgentType.Value,
+                         context: ActorRefFactory,
+                         actorName: String,
+                         dbName: String,
+                         dbSchema: Schema,
+                         qLGenerator: IQLGenerator,
+                         conn: IDataConn,
+                         appConfig: Config
+                        )(implicit ec: ExecutionContext): ActorRef = {
+        import AgentType._
+        agentType match {
+          case Meta => newMeta.ref
+          case Origin => base.ref
+          case View => view.ref
+        }
+      }
 
+      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
+      val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, newTestActorMaker)))
+      newMeta.receiveOne(1 second)
+      newMeta.reply(initialInfo)
       sender.send(dataManager, DataStoreManager.AreYouReady)
       sender.expectMsg(true)
 

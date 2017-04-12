@@ -47,7 +47,6 @@ class DataStoreManager(metaDataset: String,
           metaData.put(info.name, info)
           schemaMap.put(info.name, info.schema)
         }
-
         self ! Prepared
       case any => log.error(s"received unknown object from meta actor: $any ")
     }
