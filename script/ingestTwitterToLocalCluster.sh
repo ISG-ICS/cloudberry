@@ -74,7 +74,7 @@ create dataset ds_tweet(typeTweet) if not exists primary key id
 using compaction policy prefix (("max-mergable-component-size"="134217728"),("max-tolerance-component-count"="10")) with filter on create_at ;
 // with filter on create_at;
 //"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
-create index text_idx if not exists on ds_tweet("text") type keyword;
+create index text_idx if not exists on ds_tweet("text") type fulltext;
 //create index time_idx if not exists on ds_tweet(create_at) type btree;
 //create index location_idx if not exists on ds_tweet(coordinate) type rtree;
 //create index state_idx if not exists on ds_tweet(geo_tag.stateID) type btree;
@@ -88,7 +88,6 @@ create feed TweetFeed using socket_adapter
     ("type-name"="typeTweet"),
     ("format"="adm")
 );
-set wait-for-completion-feed "false";
 connect feed TweetFeed to dataset ds_tweet;
 start feed TweetFeed;
 EOF

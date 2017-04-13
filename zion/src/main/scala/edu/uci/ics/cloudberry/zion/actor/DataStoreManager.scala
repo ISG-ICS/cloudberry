@@ -4,14 +4,17 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats}
+import edu.uci.ics.cloudberry.zion.model.datastore._
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo._
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, Json}
+import org.joda.time.{DateTime, Interval}
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class DataStoreManager(metaDataset: String,
@@ -45,7 +48,6 @@ class DataStoreManager(metaDataset: String,
           metaData.put(info.name, info)
           schemaMap.put(info.name, info.schema)
         }
-
         self ! Prepared
       case any => log.error(s"received unknown object from meta actor: $any ")
     }
@@ -66,8 +68,8 @@ class DataStoreManager(metaDataset: String,
 
   def normal: Receive = {
     case AreYouReady => sender() ! true
-    case register: Register => ???
-    case deregister: Deregister => ???
+    case register: Register => registerNewDataset(sender(), register)
+    case deregister: Deregister => deregisterDataSet(sender(), deregister)
     case query: Query => answerQuery(query)
     case append: AppendView => answerQuery(append, Some(DateTime.now()))
     case append: AppendViewAutomatic =>
@@ -110,6 +112,65 @@ class DataStoreManager(metaDataset: String,
 
   //persistent metadata periodically
   context.system.scheduler.schedule(config.ViewMetaFlushInterval, config.ViewMetaFlushInterval, self, FlushMeta)
+
+  private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
+    val dataSetName = registerTable.dataset
+    val dataSetRawSchema = registerTable.schema
+
+    if(!metaData.contains(dataSetName)){
+
+      try{
+        val primaryKey = dataSetRawSchema.primaryKey.map(dataSetRawSchema.getField(_).get)
+        val timeField = dataSetRawSchema.getField(dataSetRawSchema.timeField) match {
+          case Some(f) =>
+            if(f.isInstanceOf[TimeField]){
+              f.asInstanceOf[TimeField]
+            } else {
+              throw new QueryParsingException("Time field of " + dataSetRawSchema.typeName + "is not in TimeField format.\n")
+            }
+          case None =>
+            throw new QueryParsingException("Time field is not specified for " + dataSetRawSchema.typeName + ".\n")
+        }
+        val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
+
+        //TODO: Send query to get actual information when a dataset is registered.
+        val currentDateTime = new DateTime()
+        val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+
+        val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
+        val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+
+        val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
+        metaData.put(dataSetName, registerDataSetInfo)
+        flushMetaData()
+
+        sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
+
+      } catch {
+        case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")
+        case queryParsingError: QueryParsingException => sender ! DataManagerResponse(false, "Register Denied. Field Parsing Error: " + queryParsingError.getMessage)
+        case NonFatal(e) => sender ! DataManagerResponse(false, "Register Denied. " + e.getMessage)
+      }
+
+    } else{
+      sender ! DataManagerResponse(false, "Register Denied: dataset " + dataSetName + " already existed.\n")
+    }
+  }
+
+  private def deregisterDataSet(sender: ActorRef, dropTable: Deregister): Unit = {
+    val dropTableName = dropTable.dataset
+
+    if(metaData.contains(dropTableName)){
+      metaData.remove(dropTableName)
+
+      //TODO send query to DELETE dataset in database
+
+      sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
+
+    } else{
+      sender ! DataManagerResponse(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
+    }
+  }
 
   private def answerQuery(query: IQuery, now: Option[DateTime] = None): Unit = {
     if (!metaData.contains(query.dataset)) return
@@ -233,9 +294,23 @@ object DataStoreManager {
 
   case class AskInfo(who: String)
 
-  case class Register(dataset: String, schema: Schema)
+  case class Register(dataset: String, schema: UnresolvedSchema)
+
+  object Register{
+    implicit val registerReader: Reads[Register] = {
+      (__ \ "dataset").read[String] and
+      (__ \ "schema").read[UnresolvedSchema]
+    }.apply(Register.apply _)
+  }
 
   case class Deregister(dataset: String)
+
+  object Deregister{
+    implicit val deregisterReader: Reads[Deregister] =
+      (__ \ "dataset").read[String].map { dataset => Deregister(dataset) }
+  }
+
+  case class DataManagerResponse(isSuccess: Boolean, message: String)
 
   case object FlushMeta
 
