@@ -96,7 +96,7 @@ class Application @Inject()(val wsClient: WSClient,
     request.body.validate[Register] match {
       case registerRequest: JsSuccess[Register] =>
         val newTable = registerRequest.get
-        val receipt = (manager ? newTable).mapTo[FrontEndRequestReceipt]
+        val receipt = (manager ? newTable).mapTo[DataManagerResponse]
 
         receipt.map{ r =>
           if(r.isSuccess) Ok(r.message)
@@ -116,7 +116,7 @@ class Application @Inject()(val wsClient: WSClient,
     request.body.validate[Deregister] match {
       case deregisterRequest: JsSuccess[Deregister] =>
         val dropTable = deregisterRequest.get
-        val receipt = (manager ? dropTable).mapTo[FrontEndRequestReceipt]
+        val receipt = (manager ? dropTable).mapTo[DataManagerResponse]
 
         receipt.map{ r =>
           if(r.isSuccess) Ok(r.message)

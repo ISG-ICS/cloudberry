@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory, QueryParsingException}
+import edu.uci.ics.cloudberry.zion.model.datastore._
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
 import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo._
 import edu.uci.ics.cloudberry.zion.model.schema._
@@ -14,6 +14,7 @@ import play.api.libs.json._
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 class DataStoreManager(metaDataset: String,
@@ -118,34 +119,41 @@ class DataStoreManager(metaDataset: String,
 
     if(!metaData.contains(dataSetName)){
 
-      val primaryKey = dataSetRawSchema.primaryKey.map(dataSetRawSchema.getField(_).get)
-      val timeField = dataSetRawSchema.getField(dataSetRawSchema.timeField) match {
-        case Some(f) if f.isInstanceOf[TimeField] =>
-          f.asInstanceOf[TimeField]
-        case None if dataSetRawSchema.timeField.isEmpty =>
-          sender ! FrontEndRequestReceipt(false, "Time field is not specified for " + dataSetRawSchema.typeName + "\n")
-          return
-        case _ =>
-          sender ! FrontEndRequestReceipt(false, dataSetRawSchema.timeField + " is not a valid time field.\n")
-          return
+      try{
+        val primaryKey = dataSetRawSchema.primaryKey.map(dataSetRawSchema.getField(_).get)
+        val timeField = dataSetRawSchema.getField(dataSetRawSchema.timeField) match {
+          case Some(f) =>
+            if(f.isInstanceOf[TimeField]){
+              f.asInstanceOf[TimeField]
+            } else {
+              throw new QueryParsingException("Time field of " + dataSetRawSchema.typeName + "is not in TimeField format.\n")
+            }
+          case None =>
+            throw new QueryParsingException("Time field is not specified for " + dataSetRawSchema.typeName + ".\n")
+        }
+        val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
+
+        //TODO: Send query to get actual information when a dataset is registered.
+        val currentDateTime = new DateTime()
+        val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+
+        val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
+        val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+
+        val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
+        metaData.put(dataSetName, registerDataSetInfo)
+        flushMetaData()
+
+        sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
+
+      } catch {
+        case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")
+        case queryParsingError: QueryParsingException => sender ! DataManagerResponse(false, "Register Denied. Field Parsing Error: " + queryParsingError.getMessage)
+        case NonFatal(e) => sender ! DataManagerResponse(false, "Register Denied. " + e.getMessage)
       }
-      val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
-
-      //TODO: Send query to get actual information when a dataset is registered.
-      val currentDateTime = new DateTime()
-      val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
-
-      val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
-      val fakeInterval = new Interval(fakeStartDate, currentDateTime)
-
-      val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
-      metaData.put(dataSetName, registerDataSetInfo)
-      flushMetaData()
-
-      sender ! FrontEndRequestReceipt(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
 
     } else{
-      sender ! FrontEndRequestReceipt(false, "Register Denied: dataset " + dataSetName + " already existed.\n")
+      sender ! DataManagerResponse(false, "Register Denied: dataset " + dataSetName + " already existed.\n")
     }
   }
 
@@ -157,10 +165,10 @@ class DataStoreManager(metaDataset: String,
 
       //TODO send query to DELETE dataset in database
 
-      sender ! FrontEndRequestReceipt(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
+      sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
 
     } else{
-      sender ! FrontEndRequestReceipt(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
+      sender ! DataManagerResponse(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
     }
   }
 
@@ -302,7 +310,7 @@ object DataStoreManager {
       (__ \ "dataset").read[String].map { dataset => Deregister(dataset) }
   }
 
-  case class FrontEndRequestReceipt(isSuccess: Boolean, message: String)
+  case class DataManagerResponse(isSuccess: Boolean, message: String)
 
   case object FlushMeta
 

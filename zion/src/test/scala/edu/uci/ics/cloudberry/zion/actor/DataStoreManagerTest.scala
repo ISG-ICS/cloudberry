@@ -4,7 +4,7 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory, Props}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AgentType, Deregister, FrontEndRequestReceipt, Register}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AgentType, DataManagerResponse, Deregister, Register}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, UnresolvedSchema}
@@ -12,7 +12,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
 import org.joda.time.DateTime
 import org.specs2.mutable.SpecificationLike
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.{JsArray, JsSuccess, Json}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -172,25 +172,18 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
     "register/deregister new data model" in {
-      val field1 = NumberField("myNumber")
-      val field2 = StringField("myString")
-      val field3 = TimeField("myTime")
-      val newSchema = UnresolvedSchema("type", Seq(field1), Seq(field2, field3), Seq("myString"), "myTime")
-      val registerRequest = Register("newTable", newSchema)
-
       val mockParserFactory = mock[IQLGeneratorFactory]
       val mockConn = mock[IDataConn]
-
       val newMeta = new TestProbe(system)
       def newTestActorMaker(agentType: AgentType.Value,
-                         context: ActorRefFactory,
-                         actorName: String,
-                         dbName: String,
-                         dbSchema: Schema,
-                         qLGenerator: IQLGenerator,
-                         conn: IDataConn,
-                         appConfig: Config
-                        )(implicit ec: ExecutionContext): ActorRef = {
+                            context: ActorRefFactory,
+                            actorName: String,
+                            dbName: String,
+                            dbSchema: Schema,
+                            qLGenerator: IQLGenerator,
+                            conn: IDataConn,
+                            appConfig: Config
+                           )(implicit ec: ExecutionContext): ActorRef = {
         import AgentType._
         agentType match {
           case Meta => newMeta.ref
@@ -206,19 +199,77 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.send(dataManager, DataStoreManager.AreYouReady)
       sender.expectMsg(true)
 
-      sender.send(dataManager, registerRequest)
-      sender.expectMsg(FrontEndRequestReceipt(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      val jsonRegisterRequest = Json.parse(
+        """
+          |{
+          |  "dataset": "test",
+          |  "schema": {
+          |    "typeName": "testType",
+          |    "dimension": [
+          |      {"name":"myTime","isOptional":false,"datatype":"Time"},
+          |      {"name":"myText","isOptional":false,"datatype":"Text"}
+          |    ],
+          |    "measurement": [
+          |      {"name":"myString","isOptional":false,"datatype":"String"},
+          |      {"name":"myNumber","isOptional":false,"datatype":"Number"}
+          |    ],
+          |    "primaryKey": ["myString"],
+          |    "timeField": "myTime"
+          |  }
+          |}
+        """.stripMargin)
+
+      val field1 = TimeField("myTime")
+      val field2 = TextField("myText")
+      val field3 = StringField("myString")
+      val field4 = NumberField("myNumber")
+      val schema = UnresolvedSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myTime")
+      val registerRequest = Register("test", schema)
+
+      jsonRegisterRequest.validate[Register] match {
+        case jsonResult: JsSuccess[Register] => jsonResult.get mustEqual(registerRequest)
+        case _ => throw new IllegalArgumentException
+      }
 
       sender.send(dataManager, registerRequest)
-      sender.expectMsg(FrontEndRequestReceipt(false, "Register Denied: dataset " + registerRequest.dataset + " already existed.\n"))
+      sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      sender.send(dataManager, registerRequest)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied: dataset " + registerRequest.dataset + " already existed.\n"))
 
-      val deregisterRequest = Deregister("newTable")
+      val schemaNoTimeField = UnresolvedSchema("typeNoTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "")
+      val registerRequestNoTimeField = Register("TableNoTimeField", schemaNoTimeField)
+      sender.send(dataManager, registerRequestNoTimeField)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field is not specified for " + schemaNoTimeField.typeName + ".\n"))
+
+      val schemaFalseTimeField = UnresolvedSchema("typeFalseTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "falseTimeField")
+      val registerRequestFalseTimeField = Register("TableFalseTimeField", schemaFalseTimeField)
+      sender.send(dataManager, registerRequestFalseTimeField)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField + " is not found in dimensions and measurements: not a valid field.\n"))
+
+      val schemaNotATimeField = UnresolvedSchema("typeNotATimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myNumber")
+      val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
+      sender.send(dataManager, registerRequestNotATimeField)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
+
+      val jsonDeregisterRequest = Json.parse(
+        """
+          |{
+          |   "dataset": "test"
+          |}
+        """.stripMargin)
+      val deregisterRequest = Deregister("test")
+
+      jsonDeregisterRequest.validate[Deregister] match {
+        case jsonResult: JsSuccess[Deregister] => jsonResult.get mustEqual(deregisterRequest)
+        case _ => throw new IllegalArgumentException
+      }
+
       sender.send(dataManager, deregisterRequest)
-      sender.expectMsg(FrontEndRequestReceipt(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
+      sender.expectMsg(DataManagerResponse(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
 
       val anotherDeregisterRequest = Deregister("anotherTable")
       sender.send(dataManager, anotherDeregisterRequest)
-      sender.expectMsg(FrontEndRequestReceipt(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database.\n"))
+      sender.expectMsg(DataManagerResponse(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database.\n"))
 
       ok
     }
