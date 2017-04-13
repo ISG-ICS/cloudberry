@@ -5,11 +5,13 @@ import javax.inject.{Inject, Singleton}
 
 import actor.RequestRouter
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, ActorSystem, DeadLetter, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
+import akka.pattern.ask
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.{AsterixAQLConn, AsterixSQLPPConn}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, JSONParser, QueryPlanner, SQLPPGenerator}
@@ -21,8 +23,9 @@ import play.api.mvc._
 import play.api.{Configuration, Environment}
 import play.Logger
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.util.{Success, Failure}
 
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
@@ -85,6 +88,46 @@ class Application @Inject()(val wsClient: WSClient,
     // ??? do we need to convert it to string ??? will be more clear after we have the use case.
     val toStringFlow = Flow[JsValue].map(js => js.toString() + System.lineSeparator())
     Ok.chunked((source via flow) via toStringFlow)
+  }
+
+  def register = Action.async(parse.json) { request =>
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+
+    request.body.validate[Register] match {
+      case registerRequest: JsSuccess[Register] =>
+        val newTable = registerRequest.get
+        val receipt = (manager ? newTable).mapTo[DataManagerResponse]
+
+        receipt.map{ r =>
+          if(r.isSuccess) Ok(r.message)
+          else BadRequest(r.message)
+        }.recover{ case e =>
+          InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
+        }
+
+      case e: JsError =>
+        Future{ BadRequest("Not a valid register Json POST: " + e.toString) }
+    }
+  }
+
+  def deregister = Action.async(parse.json) { request =>
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+
+    request.body.validate[Deregister] match {
+      case deregisterRequest: JsSuccess[Deregister] =>
+        val dropTable = deregisterRequest.get
+        val receipt = (manager ? dropTable).mapTo[DataManagerResponse]
+
+        receipt.map{ r =>
+          if(r.isSuccess) Ok(r.message)
+          else BadRequest(r.message)
+        }.recover{ case e =>
+          InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
+        }
+
+      case e: JsError =>
+        Future{ BadRequest("Not valid Json POST: " + e.toString) }
+    }
   }
 
   def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action {

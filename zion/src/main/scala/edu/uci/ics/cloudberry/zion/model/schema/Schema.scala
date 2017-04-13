@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
 
@@ -39,7 +38,7 @@ object Relation extends Enumeration {
   val ~= = Value("~=")
 }
 
-trait Field {
+sealed trait Field {
   val name: String
   val dataType: DataType
   val isOptional: Boolean = false
@@ -216,4 +215,5 @@ object Schema {
     Bag -> Set(Relation.contains),
     Hierarchy -> Set()
   )
+
 }
