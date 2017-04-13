@@ -38,22 +38,29 @@ cd cloudberry; sbt compile
 ./script/ingestTwitterToLocalCluster.sh
 ```
 
-* Finally run
+* Run cloudberry
 
 ```
 sbt "project neo" "run"
 ```
 
-You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000).
-
 *Please notice that the first time you open the page, it could take several minutes (depending on your machine) to load the front-end data.
-If you see the following messages from the console, it means the loading process is done and you can play with the front-end now!*
+If you see the following messages from the console, it means the loading process is done.*
 
 ```
 ...
 [info] application - I'm initializing
 [info] play.api.Play - Application started (Dev)
 ```
+
+* Once cloudberry successfully launched, register twitter map data model into cloudberry.
+
+```
+./script/twitterMapRegister.sh
+```
+
+You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000) and start to play with it!
+
 
 ## Concepts
 The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
