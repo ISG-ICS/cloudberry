@@ -27,30 +27,30 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
   import scala.concurrent.duration._
 
-  val sender = new TestProbe(system)
-  val view = new TestProbe(system)
-  val base = new TestProbe(system)
-  val meta = new TestProbe(system)
-  val metaDataSet = "metaDataSet"
-
-  def testActorMaker(agentType: AgentType.Value,
-                   context: ActorRefFactory,
-                   actorName: String,
-                   dbName: String,
-                   dbSchema: Schema,
-                   qLGenerator: IQLGenerator,
-                   conn: IDataConn,
-                   appConfig: Config
-                  )(implicit ec: ExecutionContext): ActorRef = {
-    import AgentType._
-    agentType match {
-      case Meta => meta.ref
-      case Origin => base.ref
-      case View => view.ref
-    }
-  }
-
   "DataManager" should {
+    val sender = new TestProbe(system)
+    val view = new TestProbe(system)
+    val base = new TestProbe(system)
+    val meta = new TestProbe(system)
+    val metaDataSet = "metaDataSet"
+
+    def testActorMaker(agentType: AgentType.Value,
+                       context: ActorRefFactory,
+                       actorName: String,
+                       dbName: String,
+                       dbSchema: Schema,
+                       qLGenerator: IQLGenerator,
+                       conn: IDataConn,
+                       appConfig: Config
+                      )(implicit ec: ExecutionContext): ActorRef = {
+      import AgentType._
+      agentType match {
+        case Meta => meta.ref
+        case Origin => base.ref
+        case View => view.ref
+      }
+    }
+
     "load the meta info when preStart" in {
       val mockParserFactory = mock[IQLGeneratorFactory]
       val mockConn = mock[IDataConn]
@@ -130,7 +130,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       viewInfo.dataInterval.getStart must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "min").head.as[String])
       viewInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
       viewInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
-      viewInfo.stats.lastModifyTime.getMillis must be_>= (now.getMillis)
+      viewInfo.stats.lastModifyTime.getMillis must be_>=(now.getMillis)
       ok
     }
     "update meta stats if append view succeeds" in {
@@ -163,7 +163,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       newInfo.name must_== zikaHalfYearViewInfo.name
       newInfo.dataInterval.getEnd must_== TimeField.TimeFormat.parseDateTime((viewStatJson \\ "max").head.as[String])
       newInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
-      newInfo.stats.lastModifyTime.getMillis must be_>= (now.getMillis)
+      newInfo.stats.lastModifyTime.getMillis must be_>=(now.getMillis)
     }
     "update meta info if receive drop request" in {
       ok
@@ -171,34 +171,50 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     "use existing child to solve the query" in {
       ok
     }
-    "register/deregister new data model" in {
-      val mockParserFactory = mock[IQLGeneratorFactory]
-      val mockConn = mock[IDataConn]
-      val newMeta = new TestProbe(system)
-      def newTestActorMaker(agentType: AgentType.Value,
-                            context: ActorRefFactory,
-                            actorName: String,
-                            dbName: String,
-                            dbSchema: Schema,
-                            qLGenerator: IQLGenerator,
-                            conn: IDataConn,
-                            appConfig: Config
-                           )(implicit ec: ExecutionContext): ActorRef = {
-        import AgentType._
-        agentType match {
-          case Meta => newMeta.ref
-          case Origin => base.ref
-          case View => view.ref
-        }
+  }
+
+  "Register/Deregister Data model" should {
+    val sender = new TestProbe(system)
+    val view = new TestProbe(system)
+    val base = new TestProbe(system)
+    val meta = new TestProbe(system)
+    val metaDataSet = "metaDataSet"
+
+    def testActorMaker(agentType: AgentType.Value,
+                       context: ActorRefFactory,
+                       actorName: String,
+                       dbName: String,
+                       dbSchema: Schema,
+                       qLGenerator: IQLGenerator,
+                       conn: IDataConn,
+                       appConfig: Config
+                      )(implicit ec: ExecutionContext): ActorRef = {
+      import AgentType._
+      agentType match {
+        case Meta => meta.ref
+        case Origin => base.ref
+        case View => view.ref
       }
+    }
 
-      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
-      val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, newTestActorMaker)))
-      newMeta.receiveOne(1 second)
-      newMeta.reply(initialInfo)
-      sender.send(dataManager, DataStoreManager.AreYouReady)
-      sender.expectMsg(true)
+    val mockParserFactory = mock[IQLGeneratorFactory]
+    val mockConn = mock[IDataConn]
+    val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
+    val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
+    meta.receiveOne(1 second)
+    meta.reply(initialInfo)
+    sender.send(dataManager, DataStoreManager.AreYouReady)
+    sender.expectMsg(true)
 
+    val field1 = TimeField("myTime")
+    val field2 = TextField("myText")
+    val field3 = StringField("myString")
+    val field4 = NumberField("myNumber")
+    val schema = UnresolvedSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myTime")
+    val registerRequest = Register("test", schema)
+    val deregisterRequest = Deregister("test")
+
+    "parse json register/deregister request" in {
       val jsonRegisterRequest = Json.parse(
         """
           |{
@@ -219,37 +235,10 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
           |}
         """.stripMargin)
 
-      val field1 = TimeField("myTime")
-      val field2 = TextField("myText")
-      val field3 = StringField("myString")
-      val field4 = NumberField("myNumber")
-      val schema = UnresolvedSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myTime")
-      val registerRequest = Register("test", schema)
-
       jsonRegisterRequest.validate[Register] match {
         case jsonResult: JsSuccess[Register] => jsonResult.get mustEqual(registerRequest)
         case _ => throw new IllegalArgumentException
       }
-
-      sender.send(dataManager, registerRequest)
-      sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
-      sender.send(dataManager, registerRequest)
-      sender.expectMsg(DataManagerResponse(false, "Register Denied: dataset " + registerRequest.dataset + " already existed.\n"))
-
-      val schemaNoTimeField = UnresolvedSchema("typeNoTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "")
-      val registerRequestNoTimeField = Register("TableNoTimeField", schemaNoTimeField)
-      sender.send(dataManager, registerRequestNoTimeField)
-      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field is not specified for " + schemaNoTimeField.typeName + ".\n"))
-
-      val schemaFalseTimeField = UnresolvedSchema("typeFalseTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "falseTimeField")
-      val registerRequestFalseTimeField = Register("TableFalseTimeField", schemaFalseTimeField)
-      sender.send(dataManager, registerRequestFalseTimeField)
-      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField + " is not found in dimensions and measurements: not a valid field.\n"))
-
-      val schemaNotATimeField = UnresolvedSchema("typeNotATimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myNumber")
-      val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
-      sender.send(dataManager, registerRequestNotATimeField)
-      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
 
       val jsonDeregisterRequest = Json.parse(
         """
@@ -257,20 +246,53 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
           |   "dataset": "test"
           |}
         """.stripMargin)
-      val deregisterRequest = Deregister("test")
 
       jsonDeregisterRequest.validate[Deregister] match {
         case jsonResult: JsSuccess[Deregister] => jsonResult.get mustEqual(deregisterRequest)
         case _ => throw new IllegalArgumentException
       }
-
+      ok
+    }
+    "respond success if register a correct data model" in {
+      sender.send(dataManager, registerRequest)
+      sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      ok
+    }
+    "respond failure if register an existing data model" in {
+      sender.send(dataManager, registerRequest)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied: dataset " + registerRequest.dataset + " already existed.\n"))
+      ok
+    }
+    "respond failure if register a data model without time field" in {
+      val schemaNoTimeField = UnresolvedSchema("typeNoTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "")
+      val registerRequestNoTimeField = Register("TableNoTimeField", schemaNoTimeField)
+      sender.send(dataManager, registerRequestNoTimeField)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field is not specified for " + schemaNoTimeField.typeName + ".\n"))
+      ok
+    }
+    "respond failure if register a data model where time field cannot be found in dimensions and measurements" in {
+      val schemaFalseTimeField = UnresolvedSchema("typeFalseTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "falseTimeField")
+      val registerRequestFalseTimeField = Register("TableFalseTimeField", schemaFalseTimeField)
+      sender.send(dataManager, registerRequestFalseTimeField)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField + " is not found in dimensions and measurements: not a valid field.\n"))
+      ok
+    }
+    "respond failure if register a data model where time field is not a field type of timeField" in {
+      val schemaNotATimeField = UnresolvedSchema("typeNotATimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myNumber")
+      val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
+      sender.send(dataManager, registerRequestNotATimeField)
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
+      ok
+    }
+    "respond success if deregister an existing data model" in {
       sender.send(dataManager, deregisterRequest)
       sender.expectMsg(DataManagerResponse(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
-
+      ok
+    }
+    "respond failure if deregister a non-existing data model" in {
       val anotherDeregisterRequest = Deregister("anotherTable")
       sender.send(dataManager, anotherDeregisterRequest)
       sender.expectMsg(DataManagerResponse(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database.\n"))
-
       ok
     }
   }
