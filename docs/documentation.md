@@ -111,14 +111,18 @@ The following JSON request can be used to register the Twitter dataset inside As
 
 ```
 {
-  "name":"twitter.ds_tweet",
-  "schema":{"typeName":"twitter.typeTweet",
+  "dataset":"twitter.ds_tweet",
+  "schema":{
+  	"typeName":"twitter.typeTweet",
     "dimension":[
       {"name":"create_at","isOptional":false,"datatype":"Time"},
       {"name":"id","isOptional":false,"datatype":"Number"},
       {"name":"coordinate","isOptional":false,"datatype":"Point"},
       {"name":"lang","isOptional":false,"datatype":"String"},
+      {"name":"is_retweet","isOptional":false,"datatype":"Boolean"},
       {"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},
+      {"name":"user_mentions","isOptional":true,"datatype":"Bag","innerType":"Number"},
+      {"name":"user.id","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
@@ -130,8 +134,11 @@ The following JSON request can be used to register the Twitter dataset inside As
     ],
     "measurement":[
       {"name":"text","isOptional":false,"datatype":"Text"},
+      {"name":"in_reply_to_status","isOptional":false,"datatype":"Number"},
+      {"name":"in_reply_to_user","isOptional":false,"datatype":"Number"},
       {"name":"favorite_count","isOptional":false,"datatype":"Number"},
-      {"name":"retweet_count","isOptional":false,"datatype":"Number"}
+      {"name":"retweet_count","isOptional":false,"datatype":"Number"},
+      {"name":"user.status_count","isOptional":false,"datatype":"Number"}
     ],
     "primaryKey":["id"],
     "timeField":"create_at"
