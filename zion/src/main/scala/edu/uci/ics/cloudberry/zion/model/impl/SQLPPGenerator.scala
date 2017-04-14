@@ -97,10 +97,18 @@ class SQLPPGenerator extends AsterixQueryGenerator {
        |)""".stripMargin
   }
 
+  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
+    val queryBuilder = new StringBuilder()
+    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
+    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
+    return queryBuilder.toString()
+  }
+
   def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
-    val exprMap: Map[String, FieldExpr] = initExprMap(query, schemaMap)
+    val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)
     val fromStr = s"from ${query.dataset} $sourceVar".trim
     queryBuilder.append(fromStr)
 
@@ -283,7 +291,6 @@ class SQLPPGenerator extends AsterixQueryGenerator {
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, exprMap)
     }
-
   }
 
   private def parseProject(exprMap: Map[String, FieldExpr]): String = {
