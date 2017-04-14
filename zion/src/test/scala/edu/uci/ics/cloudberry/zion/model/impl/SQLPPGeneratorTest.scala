@@ -697,14 +697,6 @@ class SQLPPGeneratorTest extends Specification {
   }
 
   "SQLPPGenerator deleteRecord" should {
-    "generate the delete query without filter" in {
-      val sql = parser.generate(DeleteRecord(TwitterDataSet, Seq.empty), Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
-      removeEmptyLine(sql) must_== unifyNewLine(
-        """
-          |delete from twitter.ds_tweet t;
-        """.stripMargin.trim)
-    }
-
     "generate the delete query " in {
       val sql = parser.generate(DeleteRecord(TwitterDataSet, Seq(timeFilter)), Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
       removeEmptyLine(sql) must_== unifyNewLine(

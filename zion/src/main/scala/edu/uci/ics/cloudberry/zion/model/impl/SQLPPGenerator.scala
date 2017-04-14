@@ -98,6 +98,9 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   }
 
   protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+    if (delete.filters.isEmpty) {
+      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
+    }
     val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
     val queryBuilder = new StringBuilder()
     queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
