@@ -695,4 +695,16 @@ class SQLPPGeneratorTest extends Specification {
         """.stripMargin.trim)
     }
   }
+
+  "SQLPPGenerator deleteRecord" should {
+    "generate the delete query " in {
+      val sql = parser.generate(DeleteRecord(TwitterDataSet, Seq(timeFilter)), Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
+      removeEmptyLine(sql) must_== unifyNewLine(
+        """
+          |delete from twitter.ds_tweet t
+          |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z');
+          |""".stripMargin.trim)
+    }
+  }
+
 }
