@@ -4,7 +4,7 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory, Props}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AgentType, DataManagerResponse, Deregister, Register}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, UnresolvedSchema}
@@ -282,6 +282,16 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
       sender.send(dataManager, registerRequestNotATimeField)
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
+      ok
+    }
+    "test if registered dataset can be successfully retrieved" in {
+      sender.send(dataManager, AskInfoAndViews("test"))
+      val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
+      infos.map { dataset: DataSetInfo =>
+        dataset.name must_==("test")
+        val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
+        dataset.schema must_==(datasetSchema)
+      }
       ok
     }
     "respond success if deregister an existing data model" in {
