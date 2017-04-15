@@ -231,4 +231,18 @@ class JSONParserTest extends Specification {
       option.sliceMills must_== 1234
     }
   }
+
+
+  "JSONParser getDatasets" should{
+    "parse a single dataset" in{
+      val datasets = parser.getDatasets(zikaJSON)
+      datasets must_== Seq("twitter.ds_tweet")
+    }
+
+    "parse two datasets" in{
+      val datasets = parser.getDatasets(groupLookupJSON)
+      datasets must_== Seq("twitter.ds_tweet", "twitter.US_population")
+    }
+  }
+  
 }

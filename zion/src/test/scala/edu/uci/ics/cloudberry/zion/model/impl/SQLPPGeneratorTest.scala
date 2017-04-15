@@ -47,8 +47,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select `hour` as `hour`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
           | """.stripMargin.trim)
     }
@@ -76,8 +75,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select `hour` as `hour`,`state` as `state`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'}) and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour`,t.geo_tag.stateID as `state` group as g;
           | """.stripMargin.trim)
     }
@@ -90,8 +88,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'}) and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
           |order by t.`create_at` desc
           |limit 100
           |offset 0;
@@ -108,8 +105,7 @@ class SQLPPGeneratorTest extends Specification {
           |select `tag` as `tag`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |unnest t.`hashtags` `unnest0`
-          |where not(is_null(t.`hashtags`)) and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
+          |where not(is_null(t.`hashtags`)) and ftcontains(t.`text`, ['zika','virus'], {'mode':'all'}) and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
           |group by `unnest0` as `tag` group as g
           |order by `count` desc
           |limit 10
@@ -182,8 +178,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.1, 0.1))[0] as `cell` group as g;
         """.stripMargin.trim)
     }
@@ -197,8 +192,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.01, 0.01))[0] as `cell` group as g;
         """.
           stripMargin.trim)
@@ -213,8 +207,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select `cell` as `cell`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.001, 0.001))[0] as `cell` group as g;
         """.
           stripMargin.trim)
@@ -229,8 +222,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select `state` as `state`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by round(t.`geo_tag`.`stateID`/10)*10 as `state` group as g;
           | """.stripMargin.trim)
     }
@@ -256,8 +248,7 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select value t
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |limit 10
           |offset 0;
           | """.stripMargin.trim)
@@ -404,8 +395,7 @@ class SQLPPGeneratorTest extends Specification {
           |(select value c.`count` from (select `tag` as `tag`,coll_count(g) as `count`
           |from twitter.ds_tweet t
           |unnest t.`hashtags` `unnest0`
-          |where not(is_null(t.`hashtags`)) and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus") and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
+          |where not(is_null(t.`hashtags`)) and ftcontains(t.`text`, ['zika','virus'], {'mode':'all'}) and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
           |group by `unnest0` as `tag` group as g
           |order by `count` desc
           |limit 10
@@ -440,8 +430,7 @@ class SQLPPGeneratorTest extends Specification {
           |select t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,l0.`population` as `population`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
           |from twitter.ds_tweet t
           |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |limit 0
           |offset 0;""".stripMargin.trim
       )
@@ -462,8 +451,7 @@ class SQLPPGeneratorTest extends Specification {
           |select t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,l0.`population` as `population`,l0.`stateID` as `stateID`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
           |from twitter.ds_tweet t
           |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |limit 0
           |offset 0;""".stripMargin.trim
       )
@@ -492,8 +480,7 @@ class SQLPPGeneratorTest extends Specification {
           |from twitter.ds_tweet t
           |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
           |left outer join twitter.US_literacy l1 on l1.`stateID` = t.`geo_tag`.`stateID`
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |limit 0
           |offset 0;""".stripMargin.trim
       )
@@ -519,8 +506,7 @@ class SQLPPGeneratorTest extends Specification {
         """select `state` as `state`,coll_sum( (select value g.l0.`population` from g) ) as `sum`
           |from twitter.ds_tweet t
           |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by t.geo_tag.stateID as `state` group as g;""".stripMargin.trim
       )
     }
@@ -560,8 +546,7 @@ class SQLPPGeneratorTest extends Specification {
           |from (
           |select `state` as `state`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by t.geo_tag.stateID as `state` group as g
           |) tt
           |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`;""".stripMargin.trim
@@ -585,8 +570,7 @@ class SQLPPGeneratorTest extends Specification {
           |from (
           |select `state` as `state`,coll_count(g) as `count`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by t.geo_tag.stateID as `state` group as g
           |) tt
           |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`
@@ -615,8 +599,7 @@ class SQLPPGeneratorTest extends Specification {
           |select `state` as `state`,coll_min( (select value g.l0.`population` from g) ) as `min`
           |from twitter.ds_tweet t
           |left outer join twitter.US_population l0 on l0.`stateID` = t.`geo_tag`.`stateID`
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by t.geo_tag.stateID as `state` group as g
           |) tt
           |left outer join twitter.US_literacy ll0 on ll0.`stateID` = tt.`state`
@@ -641,8 +624,7 @@ class SQLPPGeneratorTest extends Specification {
           |from (
           |select `state` as `state`
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
-          |and contains(t.`text`, "virus")
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})
           |group by t.geo_tag.stateID as `state` group as g
           |) tt
           |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`
@@ -694,7 +676,7 @@ class SQLPPGeneratorTest extends Specification {
           |insert into zika (
           |select value t
           |from twitter.ds_tweet t
-          |where similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |where ftcontains(t.`text`, ['zika'], {'mode':'all'})
           |);""".stripMargin.trim)
     }
   }
@@ -708,9 +690,21 @@ class SQLPPGeneratorTest extends Specification {
           |upsert into zika (
           |select value t
           |from twitter.ds_tweet t
-          |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and similarity_jaccard(word_tokens(t.`text`), word_tokens('zika')) > 0.0
+          |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and ftcontains(t.`text`, ['zika'], {'mode':'all'})
           |);
         """.stripMargin.trim)
     }
   }
+
+  "SQLPPGenerator deleteRecord" should {
+    "generate the delete query " in {
+      val sql = parser.generate(DeleteRecord(TwitterDataSet, Seq(timeFilter)), Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
+      removeEmptyLine(sql) must_== unifyNewLine(
+        """
+          |delete from twitter.ds_tweet t
+          |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z');
+          |""".stripMargin.trim)
+    }
+  }
+
 }

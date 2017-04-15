@@ -105,6 +105,8 @@ case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boo
 
 case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
+case class DeleteRecord(dataset: String, filters: Seq[FilterStatement]) extends IWriteQuery
+
 trait Statement
 
 /**

@@ -34,6 +34,7 @@ trait AsterixImpl {
 
 
   val similarityJaccard: String
+  val fullTextContains: String
   val contains: String
   val wordTokens: String
 
@@ -107,6 +108,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case q: AppendView => parseAppend(q, schemaMap)
       case q: UpsertRecord => parseUpsert(q, schemaMap)
       case q: DropView => ???
+      case q: DeleteRecord => parseDelete(q, schemaMap)
       case _ => ???
     }
     s"$result$suffix"
@@ -120,7 +122,8 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, Schema]): String
 
-
+  protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, Schema]): String
+  
   def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copy()
@@ -129,8 +132,8 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     }
   }
 
-  protected def initExprMap(query: Query, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
-    val schema = schemaMap(query.dataset)
+  protected def initExprMap(dataset: String, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
+    val schema = schemaMap(dataset)
     schema.fieldMap.mapValues { f =>
       f.dataType match {
         case DataType.Record => FieldExpr(sourceVar, sourceVar)
@@ -195,11 +198,9 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     }
   }
 
-  protected def parseTextRelation(filter: FilterStatement,
-                                  fieldExpr: String): String = {
-    val first = s"${typeImpl.similarityJaccard}(${typeImpl.wordTokens}($fieldExpr), ${typeImpl.wordTokens}('${filter.values.head}')) > 0.0"
-    val rest = filter.values.tail.map(keyword => s"""and ${typeImpl.contains}($fieldExpr, "$keyword")""")
-    (first +: rest).mkString("\n")
+  protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
+    val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
+    s"${typeImpl.fullTextContains}($fieldExpr, $words, {'mode':'all'})"
   }
 
 

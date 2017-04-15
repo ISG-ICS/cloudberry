@@ -38,22 +38,29 @@ cd cloudberry; sbt compile
 ./script/ingestTwitterToLocalCluster.sh
 ```
 
-* Finally run
+* Run cloudberry
 
 ```
 sbt "project neo" "run"
 ```
 
-You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000).
-
 *Please notice that the first time you open the page, it could take several minutes (depending on your machine) to load the front-end data.
-If you see the following messages from the console, it means the loading process is done and you can play with the front-end now!*
+If you see the following messages from the console, it means the loading process is done.*
 
 ```
 ...
 [info] application - I'm initializing
 [info] play.api.Play - Application started (Dev)
 ```
+
+* Once cloudberry successfully launched, register twitter map data model into cloudberry.
+
+```
+./script/twitterMapRegister.sh
+```
+
+You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000) and start to play with it!
+
 
 ## Concepts
 The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
@@ -104,14 +111,18 @@ The following JSON request can be used to register the Twitter dataset inside As
 
 ```
 {
-  "name":"twitter.ds_tweet",
-  "schema":{"typeName":"twitter.typeTweet",
+  "dataset":"twitter.ds_tweet",
+  "schema":{
+  	"typeName":"twitter.typeTweet",
     "dimension":[
       {"name":"create_at","isOptional":false,"datatype":"Time"},
       {"name":"id","isOptional":false,"datatype":"Number"},
       {"name":"coordinate","isOptional":false,"datatype":"Point"},
       {"name":"lang","isOptional":false,"datatype":"String"},
+      {"name":"is_retweet","isOptional":false,"datatype":"Boolean"},
       {"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},
+      {"name":"user_mentions","isOptional":true,"datatype":"Bag","innerType":"Number"},
+      {"name":"user.id","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
@@ -123,8 +134,11 @@ The following JSON request can be used to register the Twitter dataset inside As
     ],
     "measurement":[
       {"name":"text","isOptional":false,"datatype":"Text"},
+      {"name":"in_reply_to_status","isOptional":false,"datatype":"Number"},
+      {"name":"in_reply_to_user","isOptional":false,"datatype":"Number"},
       {"name":"favorite_count","isOptional":false,"datatype":"Number"},
-      {"name":"retweet_count","isOptional":false,"datatype":"Number"}
+      {"name":"retweet_count","isOptional":false,"datatype":"Number"},
+      {"name":"user.status_count","isOptional":false,"datatype":"Number"}
     ],
     "primaryKey":["id"],
     "timeField":"create_at"
