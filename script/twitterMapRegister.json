@@ -14,7 +14,6 @@
       {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
-
       {"name":"geo","isOptional":false,"datatype":"Hierarchy","innerType":"Number",
         "levels":[
           {"level":"state","field":"geo_tag.stateID"},
