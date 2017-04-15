@@ -13,12 +13,7 @@ class JSONParser extends IJSONParser {
 
   override def getDatasets(json: JsValue): Set[String] = {
     val datasets = (json \\ "dataset").filter(_.isInstanceOf[JsString]).map(_.asInstanceOf[JsString].value)
-    if (datasets.isEmpty) {
-      datasets.toSet
-    } else {
-      //TODO currently do not handle lookup queries
-      Set(datasets.head)
-    }
+    datasets.toSet
   }
 
   /**
