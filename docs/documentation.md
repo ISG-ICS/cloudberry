@@ -319,6 +319,44 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
 }
 ```
 
+#### Transform response format
+Very often, we want our response in a designated format so that the front end can differentiate responses of different queries easily. Cloudberry support this response transformation by adding an optional "transform" field to json request, whose purpose is to define the transformation format of response. The main transform function we support now is "wrap", which wrappes the whole response as a key-value pair in json with a pre-defined key. For example, if the json request (to get 100 latest sample tweets that mention "zika") is defined in the following way:
+
+```
+{
+  "dataset": "twitter.ds_tweet",
+  "filter": [{
+    "field": "text",
+    "relation": "contains",
+    "values": [ "zika"]
+  }],
+  "select" : {
+    "order" : [ "-create_at"],
+    "limit": 100,
+    "offset" : 0,
+    "field": ["create_at", "id"]
+  }
+  "transform" : {
+    "warp": {
+      "key": "sample"
+    }
+  }
+}
+```
+
+Then the response is in the format below. It is now very easy to identify that this is the response of the request above.
+
+```
+{
+  "sample":{ 
+    response of samples
+  }
+}
+```
+
+We encourage you to take advantage of the "transform" field because in this way, you can add your customized header to your response and make it efficient to correspond them with requests.
+Note that "transform" field is optional. If no "transform" field designated, the response will remain its raw format and return to front end.
+
 ### Advanced users
 
 Some applications may require a multi-node AsterixDB cluster.
