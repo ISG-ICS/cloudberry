@@ -38,22 +38,29 @@ cd cloudberry; sbt compile
 ./script/ingestTwitterToLocalCluster.sh
 ```
 
-* Finally run
+* Run cloudberry
 
 ```
 sbt "project neo" "run"
 ```
 
-You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000).
-
 *Please notice that the first time you open the page, it could take several minutes (depending on your machine) to load the front-end data.
-If you see the following messages from the console, it means the loading process is done and you can play with the front-end now!*
+If you see the following messages from the console, it means the loading process is done.*
 
 ```
 ...
 [info] application - I'm initializing
 [info] play.api.Play - Application started (Dev)
 ```
+
+* Once cloudberry successfully launched, register twitter map data model into cloudberry.
+
+```
+./script/twitterMapRegister.sh
+```
+
+You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000) and start to play with it!
+
 
 ## Concepts
 The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
@@ -104,14 +111,18 @@ The following JSON request can be used to register the Twitter dataset inside As
 
 ```
 {
-  "name":"twitter.ds_tweet",
-  "schema":{"typeName":"twitter.typeTweet",
+  "dataset":"twitter.ds_tweet",
+  "schema":{
+  	"typeName":"twitter.typeTweet",
     "dimension":[
       {"name":"create_at","isOptional":false,"datatype":"Time"},
       {"name":"id","isOptional":false,"datatype":"Number"},
       {"name":"coordinate","isOptional":false,"datatype":"Point"},
       {"name":"lang","isOptional":false,"datatype":"String"},
+      {"name":"is_retweet","isOptional":false,"datatype":"Boolean"},
       {"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},
+      {"name":"user_mentions","isOptional":true,"datatype":"Bag","innerType":"Number"},
+      {"name":"user.id","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
@@ -123,8 +134,11 @@ The following JSON request can be used to register the Twitter dataset inside As
     ],
     "measurement":[
       {"name":"text","isOptional":false,"datatype":"Text"},
+      {"name":"in_reply_to_status","isOptional":false,"datatype":"Number"},
+      {"name":"in_reply_to_user","isOptional":false,"datatype":"Number"},
       {"name":"favorite_count","isOptional":false,"datatype":"Number"},
-      {"name":"retweet_count","isOptional":false,"datatype":"Number"}
+      {"name":"retweet_count","isOptional":false,"datatype":"Number"},
+      {"name":"user.status_count","isOptional":false,"datatype":"Number"}
     ],
     "primaryKey":["id"],
     "timeField":"create_at"
@@ -304,6 +318,54 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
   }
 }
 ```
+
+#### Transform response format
+The front end can **optionally** add a "transform" operation in JSON request to define the post-processing operations. 
+For example, front-ends can define a `wrap` operation to wrap the whole response in a key-value pair JSON object in which the `key` is pre-defined. The following request asks the Cloudberry to wrap the result in the value with the key of `sample`:
+
+```
+{
+  "dataset": "twitter.ds_tweet",
+  "filter": [{
+    "field": "text",
+    "relation": "contains",
+    "values": [ "zika"]
+  }],
+  "select" : {
+    "order" : [ "-create_at"],
+    "limit": 100,
+    "offset" : 0,
+    "field": ["create_at", "id"]
+  }
+  "transform" : {
+    "warp": {
+      "key": "sample"
+    }
+  }
+}
+```
+
+The response is as below:
+
+```
+{
+  "key":"sample",
+  "value":[[
+    {"create_at":"2016-10-04T10:00:17.000Z","id":783351045829357568,"user.id":439304013},
+    {"create_at":"2016-09-09T10:00:28.000Z","id":774291393749643264,"user.id":2870762297},
+    {"create_at":"2016-09-09T10:00:08.000Z","id":774291307858722820,"user.id":2870783428},
+    {"create_at":"2016-09-07T10:00:15.000Z","id":773566563895042049,"user.id":2870762297},
+    {"create_at":"2016-09-06T10:39:19.000Z","id":773214008237318144,"user.id":3783815248},
+    {"create_at":"2016-08-31T10:00:24.000Z","id":771029887025090560,"user.id":2866011003},
+    {"create_at":"2016-08-25T10:00:07.000Z","id":768855489073455104,"user.id":115230811},
+    {"create_at":"2016-08-19T10:00:36.000Z","id":766681282453594112,"user.id":254059750},
+    {"create_at":"2016-08-09T10:00:35.000Z","id":763057397464043521,"user.id":383512034},
+    {"create_at":"2016-08-08T10:00:29.000Z","id":762694985355436032,"user.id":518129224}
+  ]]
+}
+```
+
+`wrap` transformation is often preferable when the front-end send many different requests in the same WebSocket interface. 
 
 ### Advanced users
 

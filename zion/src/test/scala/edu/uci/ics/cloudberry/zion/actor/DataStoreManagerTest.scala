@@ -4,7 +4,7 @@ import java.util.concurrent.Executors
 
 import akka.actor.{ActorRef, ActorRefFactory, Props}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AgentType, DataManagerResponse, Deregister, Register}
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, UnresolvedSchema}
@@ -253,9 +253,16 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       }
       ok
     }
-    "respond success if register a correct data model" in {
+    "respond success if register a correct data model and registered dataset can be successfully retrieved" in {
       sender.send(dataManager, registerRequest)
       sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      sender.send(dataManager, AskInfoAndViews("test"))
+      val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
+      infos.map { dataset: DataSetInfo =>
+        dataset.name must_==("test")
+        val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
+        dataset.schema must_==(datasetSchema)
+      }
       ok
     }
     "respond failure if register an existing data model" in {
