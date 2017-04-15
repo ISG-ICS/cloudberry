@@ -253,9 +253,16 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       }
       ok
     }
-    "respond success if register a correct data model" in {
+    "respond success if register a correct data model and registered dataset can be successfully retrieved" in {
       sender.send(dataManager, registerRequest)
       sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      sender.send(dataManager, AskInfoAndViews("test"))
+      val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
+      infos.map { dataset: DataSetInfo =>
+        dataset.name must_==("test")
+        val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
+        dataset.schema must_==(datasetSchema)
+      }
       ok
     }
     "respond failure if register an existing data model" in {
@@ -282,16 +289,6 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
       sender.send(dataManager, registerRequestNotATimeField)
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
-      ok
-    }
-    "test if registered dataset can be successfully retrieved" in {
-      sender.send(dataManager, AskInfoAndViews("test"))
-      val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
-      infos.map { dataset: DataSetInfo =>
-        dataset.name must_==("test")
-        val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
-        dataset.schema must_==(datasetSchema)
-      }
       ok
     }
     "respond success if deregister an existing data model" in {
