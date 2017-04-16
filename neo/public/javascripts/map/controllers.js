@@ -379,7 +379,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else {
             d = Math.ceil(Math.log10(d));
           }
-          d = Math.min(d + colors.length, colors.length-1);
+          d = d + colors.length <= 0 ? 0:d + colors.length;
+          d = Math.min(d, colors.length-1);
           return colors[d];
         }
         else{
@@ -507,10 +508,23 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000];
-        for (var i = 0 ; i < grades.length; i++) {
-          grades[i] = Math.pow(10, i);
+
+        if($scope.doNormalization){
+          for(var i = 0; i < grades.length; i++){
+            grades[i] = Math.pow(10, i - colors.length);
+          }
+
         }
+        else{
+          for (var i = 0 ; i < grades.length; i++) {
+            grades[i] = Math.pow(10, i);
+          }
+        }
+
         var gName  = grades.map( function(d) {
+          if (d < 1){
+            return d.toString();
+          }
           if (d < 1000){
             return d.toString();
           }
@@ -522,12 +536,23 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         });//["1", "10", "100", "1K", "10K", "100K"];
 
         // loop through our density intervals and generate a label with a colored square for each interval
-        var i = 1;
-        for (; i < grades.length; i++) {
-          div.innerHTML +=
-            '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
+        if($scope.doNormalization){
+          div.innerHTML += '<i style="background:' + getColor(grades[0], true) + '"></i> &le;' + gName[0] + '<br>';
+          var i = 1;
+          for (; i < grades.length; i++) {
+            div.innerHTML +=
+              '<i style="background:' + getColor(grades[i], true) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
+          }
+          div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10, true) + '"></i> ' + gName[i-1] + '+';
         }
-        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
+        else{
+          var i = 1;
+          for (; i < grades.length; i++) {
+            div.innerHTML +=
+              '<i style="background:' + getColor(grades[i], false) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
+          }
+          div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10, false) + '"></i> ' + gName[i-1] + '+';
+        }
 
         return div;
       };
