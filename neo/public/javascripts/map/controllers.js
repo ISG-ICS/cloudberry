@@ -2,6 +2,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
     $scope.result = {};
     $scope.doNormalization = false;
+    $scope.upscaleFactor = 1000 * 1000;
+    $scope.upscaleFactorText = "M";
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -372,70 +374,54 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       var colors = $scope.styles.colors;
 
-      function getColor(d, doNormalization) {
-        if(doNormalization){
-          if(!d || d <= 0){
-            d = 0;
-          } else {
-            d = Math.ceil(Math.log10(d));
-          }
-          d = d + colors.length <= 0 ? 0:d + colors.length;
-          d = Math.min(d, colors.length-1);
-          return colors[d];
-        }
-        else{
-          if(!d || d <= 0) {
-            d = 0;
-          } else if (d ===1 ){
-            d = 1;
-          } else {
-            d = Math.ceil(Math.log10(d));
-          }
-          d = Math.min(d, colors.length-1);
-          return colors[d];
-        }
-      }
-
-      function setBlankStyle(){
-        return {
-          fillColor: '#f7f7f7',
-          weight: 2,
-          opacity: 1,
-          color: '#92c5de',
-          dashArray: '3',
-          fillOpacity: 0.2
-        };
-      }
-
-      function setColoredStyle(feature, doNormalization){
-        return {
-          fillColor: getColor(feature.properties.count, doNormalization),
-          weight: 2,
-          opacity: 1,
-          color: 'white',
-          dashArray: '3',
-          fillOpacity: 0.5
-        };
-      }
-
-      function normalizedStyle(feature){
-        if (!feature.properties.count || feature.properties.count == 0){
-          return setBlankStyle();
+      function getColor(d) {
+        if(!d || d <= 0) {
+          d = 0;
+        } else if (d ===1 ){
+          d = 1;
         } else {
-          return setColoredStyle(feature, true);
+          d = Math.ceil(Math.log10(d));
+          if(d <= 0) // treat smaller counts the same as 0
+            d = 0
         }
+        d = Math.min(d, colors.length-1);
+        return colors[d];
       }
 
       function style(feature) {
         if (!feature.properties.count || feature.properties.count == 0){
-          return setBlankStyle();
+          return {
+            fillColor: '#f7f7f7',
+            weight: 2,
+            opacity: 1,
+            color: '#92c5de',
+            dashArray: '3',
+            fillOpacity: 0.2
+          };
         } else {
-          return setColoredStyle(feature, false);
+          return {
+            fillColor: getColor(feature.properties.count),
+            weight: 2,
+            opacity: 1,
+            color: 'white',
+            dashArray: '3',
+            fillOpacity: 0.5
+          };
+        }
+      }
+
+      function setNormalizedPropCountText(d){
+        // beautify 0.0000123 => 1.23e-5, 1.123 => 1.1
+        if(d.properties.count < 1){
+          d.properties.countText = d.properties.count.toExponential(1);
+        }
+        else{
+          d.properties.countText = d.properties.count.toFixed(1);
         }
       }
 
       //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
-      if ($scope.status.logicLevel == "state" && $scope.geojsonData.state) {
+      if ($scope.status.logicLevel === "state" && $scope.geojsonData.state) {
           angular.forEach($scope.geojsonData.state.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
@@ -443,19 +429,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             d.properties.countText = "";
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
-            if (result[k].state == d.properties.stateID) {
+            if (result[k].state === d.properties.stateID) {
               if($scope.doNormalization){
-                d.properties.count = result[k]['count'] / result[k]['population'];
+                d.properties.count = result[k]['count'] / result[k]['population'] * $scope.upscaleFactor;
+                setNormalizedPropCountText(d);
               }
               else{
                 d.properties.count = result[k]['count'];
-              }
-
-              // beautify numbers like 0.0000123 into 1.23e-5
-              if(d.properties.count < 1){
-                d.properties.countText = d.properties.count.toExponential(1);
-              }
-              else{
                 d.properties.countText = d.properties.count.toString();
               }
             }
@@ -463,9 +443,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         });
 
         // draw
-        $scope.polygons.statePolygons.setStyle($scope.doNormalization? normalizedStyle:style);
+        $scope.polygons.statePolygons.setStyle(style);
 
-      } else if ($scope.status.logicLevel == "county" && $scope.geojsonData.county) {
+      } else if ($scope.status.logicLevel === "county" && $scope.geojsonData.county) {
           angular.forEach($scope.geojsonData.county.features, function(d) {
             if (d.properties.count)
               d.properties.count = 0;
@@ -473,19 +453,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               d.properties.countText = "";
             for (var k in result) {
               //TODO make a hash map from ID to make it faster
-              if (result[k].county == d.properties.countyID) {
+              if (result[k].county === d.properties.countyID) {
                 if($scope.doNormalization){
-                  d.properties.count = result[k]['count'] / result[k]['population'];
+                  d.properties.count = result[k]['count'] / result[k]['population'] * $scope.upscaleFactor;
+                  setNormalizedPropCountText(d);
                 }
                 else{
                   d.properties.count = result[k]['count'];
-                }
-
-                // beautify numbers like 0.0000123 into 1.23e-5
-                if(d.properties.count < 1){
-                  d.properties.countText = d.properties.count.toExponential(1);
-                }
-                else{
                   d.properties.countText = d.properties.count.toString();
                 }
               }
@@ -493,9 +467,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           });
 
         // draw
-        $scope.polygons.countyPolygons.setStyle($scope.doNormalization? normalizedStyle:style);
+        $scope.polygons.countyPolygons.setStyle(style);
 
-      }else if ($scope.status.logicLevel == "city" && $scope.geojsonData.city) {
+      }else if ($scope.status.logicLevel === "city" && $scope.geojsonData.city) {
         angular.forEach($scope.geojsonData.city.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
@@ -503,19 +477,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             d.properties.countText = "";
           for (var k in result) {
             //TODO make a hash map from ID to make it faster
-            if (result[k].city == d.properties.cityID) {
+            if (result[k].city === d.properties.cityID) {
               if($scope.doNormalization){
-                d.properties.count = result[k]['count'] / result[k]['population'];
+                d.properties.count = result[k]['count'] / result[k]['population'] * $scope.upscaleFactor;
+                setNormalizedPropCountText(d);
               }
               else{
                 d.properties.count = result[k]['count'];
-              }
-
-              // beautify numbers like 0.0000123 into 1.23e-5
-              if(d.properties.count < 1){
-                d.properties.countText = d.properties.count.toExponential(1);
-              }
-              else{
                 d.properties.countText = d.properties.count.toString();
               }
             }
@@ -523,7 +491,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         });
 
         // draw
-        $scope.polygons.cityPolygons.setStyle($scope.doNormalization? normalizedStyle:style);
+        $scope.polygons.cityPolygons.setStyle(style);
       }
 
       // add legend
@@ -537,47 +505,39 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
-        var grades = new Array(colors.length -1);
+        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000];
 
-          for(var i = 0; i < grades.length; i++){
-            if($scope.doNormalization)
-              grades[i] = Math.pow(10, i - colors.length); //[10^-7, 10^-6, 10^-5, 10^-4, 10^-3, 10^-2]
-            else
-              grades[i] = Math.pow(10, i); //[1, 10, 100, 1000, 10000, 100000];
-          }
+        for(var i = 0; i < grades.length; i++){
+          grades[i] = Math.pow(10, i);
+        }
 
         var gName  = grades.map( function(d) {
-          if (d < 1){
-            return '10<sup>'+Math.log10(d)+'</sup>';
-          }
+          var returnText = "";
           if (d < 1000){
-            return d.toString();
+            returnText = d.toString();
           }
-          if (d < 1000 * 1000) {
-            return (d / 1000).toString() + "K";
+          else if (d < 1000 * 1000) {
+            returnText = (d / 1000).toString() + "K";
           }
-          //if (d < 1000 * 1000 * 1000)
-          return (d / 1000 / 1000).toString() + "M";
-        });//["1", "10", "100", "1K", "10K", "100K"];
+          else if (d < 1000 * 1000 * 1000) {
+            returnText = (d / 1000 / 1000).toString() + "M";
+          }
+
+          if($scope.doNormalization){
+            return returnText + "/" + $scope.upscaleFactorText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
+          }
+          else{
+            return returnText; //["1", "10", "100", "1K", "10K", "100K"];
+          }
+        });
 
         // loop through our density intervals and generate a label with a colored square for each interval
-        if($scope.doNormalization){
-          div.innerHTML += '<i style="background:' + getColor(grades[0], true) + '"></i> &le;' + gName[0] + '<br>';
-          var i = 1;
-          for (; i < grades.length; i++) {
-            div.innerHTML +=
-              '<i style="background:' + getColor(grades[i], true) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
-          }
-          div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10, true) + '"></i> ' + gName[i-1] + '+';
+        var i = 1;
+        for (; i < grades.length; i++) {
+          div.innerHTML +=
+            '<i style="background:' + getColor(grades[i], false) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
         }
-        else{
-          var i = 1;
-          for (; i < grades.length; i++) {
-            div.innerHTML +=
-              '<i style="background:' + getColor(grades[i], false) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
-          }
-          div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10, false) + '"></i> ' + gName[i-1] + '+';
-        }
+        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10, false) + '"></i> ' + gName[i-1] + '+';
 
         return div;
       };
