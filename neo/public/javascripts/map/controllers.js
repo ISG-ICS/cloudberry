@@ -523,7 +523,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
         var gName  = grades.map( function(d) {
           if (d < 1){
-            return d.toString();
+            return '10<sup>'+Math.log10(d)+'</sup>';
           }
           if (d < 1000){
             return d.toString();
