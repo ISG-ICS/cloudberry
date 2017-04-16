@@ -172,7 +172,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           '<h4>Count by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          'Count: {{ selectedPlace.properties.count || "0" }}'
+          'Count: {{ selectedPlace.properties.countText || "0" }}'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -439,6 +439,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           angular.forEach($scope.geojsonData.state.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
+          if (d.properties.countText)
+            d.properties.countText = "";
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
             if (result[k].state == d.properties.stateID) {
@@ -447,6 +449,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               }
               else{
                 d.properties.count = result[k]['count'];
+              }
+
+              // beautify numbers like 0.0000123 into 1.23e-5
+              if(d.properties.count < 1){
+                d.properties.countText = d.properties.count.toExponential(1);
+              }
+              else{
+                d.properties.countText = d.properties.count.toString();
               }
             }
           }
@@ -459,6 +469,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           angular.forEach($scope.geojsonData.county.features, function(d) {
             if (d.properties.count)
               d.properties.count = 0;
+            if (d.properties.countText)
+              d.properties.countText = "";
             for (var k in result) {
               //TODO make a hash map from ID to make it faster
               if (result[k].county == d.properties.countyID) {
@@ -467,6 +479,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
                 }
                 else{
                   d.properties.count = result[k]['count'];
+                }
+
+                // beautify numbers like 0.0000123 into 1.23e-5
+                if(d.properties.count < 1){
+                  d.properties.countText = d.properties.count.toExponential(1);
+                }
+                else{
+                  d.properties.countText = d.properties.count.toString();
                 }
               }
             }
@@ -479,6 +499,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         angular.forEach($scope.geojsonData.city.features, function(d) {
           if (d.properties.count)
             d.properties.count = 0;
+          if (d.properties.countText)
+            d.properties.countText = "";
           for (var k in result) {
             //TODO make a hash map from ID to make it faster
             if (result[k].city == d.properties.cityID) {
@@ -487,6 +509,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               }
               else{
                 d.properties.count = result[k]['count'];
+              }
+
+              // beautify numbers like 0.0000123 into 1.23e-5
+              if(d.properties.count < 1){
+                d.properties.countText = d.properties.count.toExponential(1);
+              }
+              else{
+                d.properties.countText = d.properties.count.toString();
               }
             }
           }
