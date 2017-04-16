@@ -87,7 +87,6 @@ angular.module('cloudberry.common', [])
     }
 
     function byGeoRequest(parameters) {
-      console.log("target: "+ JSON.stringify(getPopulationTarget(parameters)));
       return {
         dataset: parameters.dataset,
         filter: getFilter(parameters, defaultNonSamplingDayRange),
@@ -237,9 +236,6 @@ angular.module('cloudberry.common', [])
             asterixService.timeResult = result.value[0];
             asterixService.mapResult = result.value[1];
             asterixService.hashTagResult = result.value[2];
-            console.log("geoResult: " + JSON.stringify(result.value[1]));
-            // console.log("timeResult: " + JSON.stringify(result.value[0]));
-            // console.log("hashTagResult: " + JSON.stringify(result.value[2]));
             break;
           case "totalCount":
             asterixService.totalCount = result.value[0][0].count;

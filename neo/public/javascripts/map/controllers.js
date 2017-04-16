@@ -372,37 +372,64 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       var colors = $scope.styles.colors;
 
-      function getColor(d) {
-        if(!d || d <= 0) {
-          d = 0;
-        } else if (d ===1 ){
-          d = 1;
-        } else {
-          d = Math.ceil(Math.log10(d));
+      function getColor(d, doNormalization) {
+        if(doNormalization){
+          if(!d || d <= 0){
+            d = 0;
+          } else {
+            d = Math.ceil(Math.log10(d));
+          }
+          d = Math.min(d + colors.length, colors.length-1);
+          return colors[d];
         }
-        d = Math.min(d, colors.length-1);
-        return colors[d];
+        else{
+          if(!d || d <= 0) {
+            d = 0;
+          } else if (d ===1 ){
+            d = 1;
+          } else {
+            d = Math.ceil(Math.log10(d));
+          }
+          d = Math.min(d, colors.length-1);
+          return colors[d];
+        }
       }
 
-      function style(feature) {
-        if (!feature.properties.count || feature.properties.count == 0){
-          return {
-            fillColor: '#f7f7f7',
-            weight: 2,
-            opacity: 1,
-            color: '#92c5de',
-            dashArray: '3',
-            fillOpacity: 0.2
-          };
-        } else {
-            return {
-          fillColor: getColor(feature.properties.count),
+      function setBlankStyle(){
+        return {
+          fillColor: '#f7f7f7',
+          weight: 2,
+          opacity: 1,
+          color: '#92c5de',
+          dashArray: '3',
+          fillOpacity: 0.2
+        };
+      }
+
+      function setColoredStyle(feature, doNormalization){
+        return {
+          fillColor: getColor(feature.properties.count, doNormalization),
           weight: 2,
           opacity: 1,
           color: 'white',
           dashArray: '3',
           fillOpacity: 0.5
-          };
+        };
+      }
+
+      function normalizedStyle(feature){
+        if (!feature.properties.count || feature.properties.count == 0){
+          return setBlankStyle();
+        } else {
+          return setColoredStyle(feature, true);
+        }
+      }
+
+      function style(feature) {
+        if (!feature.properties.count || feature.properties.count == 0){
+          return setBlankStyle();
+        } else {
+          return setColoredStyle(feature, false);
         }
       }
 
@@ -414,13 +441,18 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           for (var k in result) {
           //TODO make a hash map from ID to make it faster
             if (result[k].state == d.properties.stateID) {
-              d.properties.count = result[k].count;
+              if($scope.doNormalization){
+                d.properties.count = result[k]['count'] / result[k]['population'];
+              }
+              else{
+                d.properties.count = result[k].count;
+              }
             }
           }
         });
 
         // draw
-        $scope.polygons.statePolygons.setStyle(style);
+        $scope.polygons.statePolygons.setStyle($scope.doNormalization? normalizedStyle:style);
 
       } else if ($scope.status.logicLevel == "county" && $scope.geojsonData.county) {
           angular.forEach($scope.geojsonData.county.features, function(d) {
