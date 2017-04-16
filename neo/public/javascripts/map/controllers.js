@@ -639,6 +639,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
         if(newResult['doNormalization'] != oldValue['doNormalization']) {
           $scope.doNormalization = newResult['doNormalization'];
+          drawMap($scope.result);
         }
       }
     );
