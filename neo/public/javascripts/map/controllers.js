@@ -445,7 +445,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
                 d.properties.count = result[k]['count'] / result[k]['population'];
               }
               else{
-                d.properties.count = result[k].count;
+                d.properties.count = result[k]['count'];
               }
             }
           }
@@ -461,13 +461,18 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             for (var k in result) {
               //TODO make a hash map from ID to make it faster
               if (result[k].county == d.properties.countyID) {
-                d.properties.count = result[k].count;
+                if($scope.doNormalization){
+                  d.properties.count = result[k]['count'] / result[k]['population'];
+                }
+                else{
+                  d.properties.count = result[k]['count'];
+                }
               }
             }
           });
 
         // draw
-        $scope.polygons.countyPolygons.setStyle(style);
+        $scope.polygons.countyPolygons.setStyle($scope.doNormalization? normalizedStyle:style);
 
       }else if ($scope.status.logicLevel == "city" && $scope.geojsonData.city) {
         angular.forEach($scope.geojsonData.city.features, function(d) {
@@ -476,13 +481,18 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           for (var k in result) {
             //TODO make a hash map from ID to make it faster
             if (result[k].city == d.properties.cityID) {
-              d.properties.count = result[k].count;
+              if($scope.doNormalization){
+                d.properties.count = result[k]['count'] / result[k]['population'];
+              }
+              else{
+                d.properties.count = result[k]['count'];
+              }
             }
           }
         });
 
         // draw
-        $scope.polygons.cityPolygons.setStyle(style);
+        $scope.polygons.cityPolygons.setStyle($scope.doNormalization? normalizedStyle:style);
       }
 
       // add legend
