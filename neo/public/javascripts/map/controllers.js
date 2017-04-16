@@ -522,6 +522,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           else if (d < 1000 * 1000 * 1000) {
             returnText = (d / 1000 / 1000).toString() + "M";
           }
+          else{
+            returnText = (d / 1000 / 1000).toString() + "M+";
+          }
 
           if($scope.doNormalization){
             return returnText + "/" + $scope.upscaleFactorText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
@@ -535,9 +538,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         var i = 1;
         for (; i < grades.length; i++) {
           div.innerHTML +=
-            '<i style="background:' + getColor(grades[i], false) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
+            '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
         }
-        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10, false) + '"></i> ' + gName[i-1] + '+';
+        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
 
         return div;
       };
