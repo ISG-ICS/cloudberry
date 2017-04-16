@@ -537,19 +537,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
-        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000];
+        var grades = new Array(colors.length -1);
 
-        if($scope.doNormalization){
           for(var i = 0; i < grades.length; i++){
-            grades[i] = Math.pow(10, i - colors.length);
+            if($scope.doNormalization)
+              grades[i] = Math.pow(10, i - colors.length); //[10^-7, 10^-6, 10^-5, 10^-4, 10^-3, 10^-2]
+            else
+              grades[i] = Math.pow(10, i); //[1, 10, 100, 1000, 10000, 100000];
           }
-
-        }
-        else{
-          for (var i = 0 ; i < grades.length; i++) {
-            grades[i] = Math.pow(10, i);
-          }
-        }
 
         var gName  = grades.map( function(d) {
           if (d < 1){
