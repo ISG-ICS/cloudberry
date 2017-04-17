@@ -418,7 +418,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         else{
           d.properties.countText = d.properties.count.toFixed(1);
         }
-        d.properties.countText += "M";
+        d.properties.countText += "/" + $scope.upscaleFactorText; // "M"
       }
 
       //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
