@@ -53,10 +53,16 @@ If you see the following messages from the console, it means the loading process
 [info] play.api.Play - Application started (Dev)
 ```
 
-* Once cloudberry successfully launched, register twitter map data model into cloudberry.
+* Once cloudberry successfully launched, register Tweets and US population data models and into Cloudberry.
 
 ```
-./script/twitterMapRegister.sh
+./script/registerTwitterMapDataModel.sh
+```
+
+* You can also deregister Tweets and US population data models from the Cloudberry to experiment on other data models. (NOTE: The TwitterMap won't work without these data models mentioned above) 
+
+```
+./script/deregisterTwitterMapDataModel.sh
 ```
 
 You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000) and start to play with it!
