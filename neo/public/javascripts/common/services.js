@@ -2,10 +2,40 @@ angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
     return {
       normalizationUpscaleFactor: 1000 * 1000,
-      normalizationUpscaleText: "/M"
+      normalizationUpscaleText: "/M",
+      getPopulationTarget: function(parameters){
+        switch (parameters.geoLevel) {
+          case "state":
+            return {
+              joinKey: ["state"],
+              dataset: "twitter.dsStatePopulation",
+              lookupKey: ["stateID"],
+              select: ["population"],
+              as: ["population"]
+            }
+          case "county":
+            return {
+              joinKey: ["county"],
+              dataset: "twitter.dsCountyPopulation",
+              lookupKey: ["countyID"],
+              select: ["population"],
+              as: ["population"]
+            }
+          case "city":
+            return {
+              joinKey: ["city"],
+              dataset: "twitter.dsCityPopulation",
+              lookupKey: ["cityID"],
+              select: ["population"],
+              as: ["population"]
+            }
+          default:
+            console.error(parameters.geoLevel + " is not valid for look up query");
+        }
+      }
     };
   })
-  .service('Asterix', function($http, $timeout, $location) {
+  .service('Asterix', function($http, $timeout, $location, cloudberryConfig) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
@@ -80,17 +110,7 @@ angular.module('cloudberry.common', [])
       ];
     }
 
-    function getPopulationTarget(parameters){
-      var targetLowerCase = parameters.geoLevel;
-      var targetUpperCase = targetLowerCase.charAt(0).toUpperCase() + targetLowerCase.substr(1);
-      return {
-        joinKey: [targetLowerCase],
-        dataset: "twitter.ds" + targetUpperCase + "Population",
-        lookupKey: [targetLowerCase + "ID"],
-        select: ["population"],
-        as: ["population"]
-      };
-    }
+
 
     function byGeoRequest(parameters) {
       return {
@@ -115,7 +135,7 @@ angular.module('cloudberry.common', [])
             as: "count"
           }],
           lookup: [
-            getPopulationTarget(parameters)
+            cloudberryConfig.getPopulationTarget(parameters)
           ]
         }
       };
