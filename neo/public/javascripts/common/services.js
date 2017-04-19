@@ -1,4 +1,10 @@
 angular.module('cloudberry.common', [])
+  .factory('cloudberryConfig', function(){
+    return {
+      normalizationUpscaleFactor: 1000 * 1000,
+      normalizationUpscaleText: "/M"
+    };
+  })
   .service('Asterix', function($http, $timeout, $location) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var defaultNonSamplingDayRange = 1500;

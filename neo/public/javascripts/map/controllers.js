@@ -1,9 +1,7 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, cloudberryConfig) {
     $scope.result = {};
     $scope.doNormalization = false;
-    $scope.upscaleFactor = 1000 * 1000;
-    $scope.upscaleFactorText = "M";
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -418,7 +416,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         else{
           d.properties.countText = d.properties.count.toFixed(1);
         }
-        d.properties.countText += "/" + $scope.upscaleFactorText; // "M"
+        d.properties.countText += cloudberryConfig.normalizationUpscaleText; // "/M"
       }
 
       //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
@@ -432,7 +430,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           //TODO make a hash map from ID to make it faster
             if (result[k].state === d.properties.stateID) {
               if($scope.doNormalization){
-                d.properties.count = result[k]['count'] / result[k]['population'] * $scope.upscaleFactor;
+                d.properties.count = result[k]['count'] / result[k]['population'] * cloudberryConfig.normalizationUpscaleFactor;
                 setNormalizedPropCountText(d);
               }
               else{
@@ -456,7 +454,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
               //TODO make a hash map from ID to make it faster
               if (result[k].county === d.properties.countyID) {
                 if($scope.doNormalization){
-                  d.properties.count = result[k]['count'] / result[k]['population'] * $scope.upscaleFactor;
+                  d.properties.count = result[k]['count'] / result[k]['population'] * cloudberryConfig.normalizationUpscaleFactor;
                   setNormalizedPropCountText(d);
                 }
                 else{
@@ -480,7 +478,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             //TODO make a hash map from ID to make it faster
             if (result[k].city === d.properties.cityID) {
               if($scope.doNormalization){
-                d.properties.count = result[k]['count'] / result[k]['population'] * $scope.upscaleFactor;
+                d.properties.count = result[k]['count'] / result[k]['population'] * cloudberryConfig.normalizationUpscaleFactor;
                 setNormalizedPropCountText(d);
               }
               else{
@@ -528,7 +526,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           }
 
           if($scope.doNormalization){
-            return returnText + "/" + $scope.upscaleFactorText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
+            return returnText + "/" + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
           }
           else{
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
