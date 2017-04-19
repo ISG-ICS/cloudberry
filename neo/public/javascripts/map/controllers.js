@@ -1,5 +1,5 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, cloudberryConfig) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
     $scope.result = {};
     $scope.doNormalization = false;
     // map setting
@@ -76,13 +76,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     });
 
     function resetGeoIds(bounds, polygons, idTag) {
-      Asterix.parameters.geoIds = [];
+      cloudberry.parameters.geoIds = [];
       polygons.features.forEach(function(polygon){
         if (bounds._southWest.lat <= polygon.properties.centerLat &&
               polygon.properties.centerLat <= bounds._northEast.lat &&
               bounds._southWest.lng <= polygon.properties.centerLog &&
               polygon.properties.centerLog <= bounds._northEast.lng) {
-            Asterix.parameters.geoIds.push(polygon.properties[idTag]);
+            cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
         }
       });
     }
@@ -206,9 +206,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             $scope.status.logicLevel = 'county';
             if (!$scope.status.init) {
               resetGeoIds($scope.bounds, $scope.geojsonData.county, 'countyID');
-              Asterix.parameters.geoLevel = 'county';
-              Asterix.queryType = 'zoom';
-              Asterix.query(Asterix.parameters, Asterix.queryType);
+              cloudberry.parameters.geoLevel = 'county';
+              cloudberry.queryType = 'zoom';
+              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
             if($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -225,9 +225,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             $scope.status.logicLevel = 'state';
             if (!$scope.status.init) {
               resetGeoIds($scope.bounds, $scope.geojsonData.state, 'stateID');
-              Asterix.parameters.geoLevel = 'state';
-              Asterix.queryType = 'zoom';
-              Asterix.query(Asterix.parameters, Asterix.queryType);
+              cloudberry.parameters.geoLevel = 'state';
+              cloudberry.queryType = 'zoom';
+              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
             if($scope.polygons.countyPolygons) {
               $scope.map.removeLayer($scope.polygons.countyPolygons);
@@ -266,9 +266,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           loadCityJsonByBound(onEachFeature);
         }
         resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
-        Asterix.parameters.geoLevel = $scope.status.logicLevel;
-        Asterix.queryType = 'drag';
-        Asterix.query(Asterix.parameters, Asterix.queryType);
+        cloudberry.parameters.geoLevel = $scope.status.logicLevel;
+        cloudberry.queryType = 'drag';
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       });
 
     }
@@ -352,9 +352,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           setCenterAndBoundry($scope.geojsonData.city.features);
           if (!$scope.status.init) {
             resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
-            Asterix.parameters.geoLevel = 'city';
-            Asterix.queryType = 'zoom';
-            Asterix.query(Asterix.parameters, Asterix.queryType);
+            cloudberry.parameters.geoLevel = 'city';
+            cloudberry.queryType = 'zoom';
+            cloudberry.query(cloudberry.parameters, cloudberry.queryType);
           }
           $scope.map.addLayer($scope.polygons.cityPolygons);
         })
@@ -574,8 +574,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     $scope.$watchCollection(
       function() {
         return {
-          'mapResult': Asterix.mapResult,
-          'totalCount': Asterix.totalCount,
+          'mapResult': cloudberry.mapResult,
+          'totalCount': cloudberry.totalCount,
           'doNormalization': $('#toggle-normalize').prop('checked')
         };
       },

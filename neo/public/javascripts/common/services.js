@@ -33,7 +33,7 @@ angular.module('cloudberry.common', [])
       }
     };
   })
-  .service('Asterix', function($http, $timeout, $location, cloudberryConfig) {
+  .service('cloudberry', function($http, $timeout, $location, cloudberryConfig) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
