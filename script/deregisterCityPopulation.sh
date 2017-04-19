@@ -1,0 +1,1 @@
+curl -d "@./script/deregisterCityPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/disregister
