@@ -419,6 +419,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         geo["properties"]["countText"] += cloudberryConfig.normalizationUpscaleText; // "/M"
       }
 
+      function resetCount(geo) {
+        if (geo['properties']['count'])
+          geo['properties']['count'] = 0;
+        if (geo['properties']['countText'])
+          geo['properties']['countText'] = "";
+      }
+
       function setNormalizedCount(geo, r){
         geo['properties']['count'] = r['count'] / r['population'] * cloudberryConfig.normalizationUpscaleFactor;
         setNormalizedCountText(geo);
@@ -434,8 +441,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         var geojsonData = $scope.geojsonData[level];
         if(geojsonData){
           angular.forEach(geojsonData['features'], function (geo) {
-            if (geo['properties']['count'])
-              geo['properties']['count'] = 0;
+            resetCount(geo);
             angular.forEach(result, function (r) {
               if (r[level] === geo['properties'][level+"ID"]){
                 if ($scope.doNormalization)
