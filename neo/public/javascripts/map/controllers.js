@@ -408,90 +408,50 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
       }
 
-      function setNormalizedPropCountText(d){
+      function setNormalizedCountText(geo){
         // beautify 0.0000123 => 1.23e-5, 1.123 => 1.1
-        if(d.properties.count < 1){
-          d.properties.countText = d.properties.count.toExponential(1);
+        if(geo["properties"]["count"] < 1){
+          geo["properties"]["countText"] = geo["properties"]["count"].toExponential(1);
         }
         else{
-          d.properties.countText = d.properties.count.toFixed(1);
+          geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
         }
-        d.properties.countText += cloudberryConfig.normalizationUpscaleText; // "/M"
+        geo["properties"]["countText"] += cloudberryConfig.normalizationUpscaleText; // "/M"
       }
 
-      //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
-      if ($scope.status.logicLevel === "state" && $scope.geojsonData.state) {
-          angular.forEach($scope.geojsonData.state.features, function(d) {
-          if (d.properties.count)
-            d.properties.count = 0;
-          if (d.properties.countText)
-            d.properties.countText = "";
-          for (var k in result) {
-          //TODO make a hash map from ID to make it faster
-            if (result[k].state === d.properties.stateID) {
-              if($scope.doNormalization){
-                d.properties.count = result[k]['count'] / result[k]['population'] * cloudberryConfig.normalizationUpscaleFactor;
-                setNormalizedPropCountText(d);
-              }
-              else{
-                d.properties.count = result[k]['count'];
-                d.properties.countText = d.properties.count.toString();
-              }
-            }
-          }
-        });
+      function setNormalizedCount(geo, r){
+        geo['properties']['count'] = r['count'] / r['population'] * cloudberryConfig.normalizationUpscaleFactor;
+        setNormalizedCountText(geo);
+      }
 
-        // draw
-        $scope.polygons.statePolygons.setStyle(style);
+      function setUnnormalizedCount(geo ,r) {
+        geo['properties']['count'] = r['count'];
+        geo['properties']['countText'] = geo['properties']['count'].toString();
+      }
 
-      } else if ($scope.status.logicLevel === "county" && $scope.geojsonData.county) {
-          angular.forEach($scope.geojsonData.county.features, function(d) {
-            if (d.properties.count)
-              d.properties.count = 0;
-            if (d.properties.countText)
-              d.properties.countText = "";
-            for (var k in result) {
-              //TODO make a hash map from ID to make it faster
-              if (result[k].county === d.properties.countyID) {
-                if($scope.doNormalization){
-                  d.properties.count = result[k]['count'] / result[k]['population'] * cloudberryConfig.normalizationUpscaleFactor;
-                  setNormalizedPropCountText(d);
-                }
-                else{
-                  d.properties.count = result[k]['count'];
-                  d.properties.countText = d.properties.count.toString();
-                }
+      function updateTweetCountInGeojson(){
+        var level = $scope.status.logicLevel;
+        var geojsonData = $scope.geojsonData[level];
+        if(geojsonData){
+          angular.forEach(geojsonData['features'], function (geo) {
+            if (geo['properties']['count'])
+              geo['properties']['count'] = 0;
+            angular.forEach(result, function (r) {
+              if (r[level] === geo['properties'][level+"ID"]){
+                if ($scope.doNormalization)
+                  setNormalizedCount(geo, r);
+                else
+                  setUnnormalizedCount(geo, r);
               }
-            }
+            });
           });
 
-        // draw
-        $scope.polygons.countyPolygons.setStyle(style);
-
-      }else if ($scope.status.logicLevel === "city" && $scope.geojsonData.city) {
-        angular.forEach($scope.geojsonData.city.features, function(d) {
-          if (d.properties.count)
-            d.properties.count = 0;
-          if (d.properties.countText)
-            d.properties.countText = "";
-          for (var k in result) {
-            //TODO make a hash map from ID to make it faster
-            if (result[k].city === d.properties.cityID) {
-              if($scope.doNormalization){
-                d.properties.count = result[k]['count'] / result[k]['population'] * cloudberryConfig.normalizationUpscaleFactor;
-                setNormalizedPropCountText(d);
-              }
-              else{
-                d.properties.count = result[k]['count'];
-                d.properties.countText = d.properties.count.toString();
-              }
-            }
-          }
-        });
-
-        // draw
-        $scope.polygons.cityPolygons.setStyle(style);
+          // draw
+          $scope.polygons[level+"Polygons"].setStyle(style);
+        }
       }
+
+      updateTweetCountInGeojson();
 
       // add legend
       var legend = $('.legend');
