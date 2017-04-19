@@ -457,6 +457,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
       }
 
+      // Loop through each result and update its count information on its associated geo record
       updateTweetCountInGeojson();
 
       // add legend
