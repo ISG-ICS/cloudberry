@@ -12,7 +12,7 @@ angular.module('cloudberry.common', [])
               lookupKey: ["stateID"],
               select: ["population"],
               as: ["population"]
-            }
+            };
           case "county":
             return {
               joinKey: ["county"],
@@ -20,7 +20,7 @@ angular.module('cloudberry.common', [])
               lookupKey: ["countyID"],
               select: ["population"],
               as: ["population"]
-            }
+            };
           case "city":
             return {
               joinKey: ["city"],
@@ -28,9 +28,7 @@ angular.module('cloudberry.common', [])
               lookupKey: ["cityID"],
               select: ["population"],
               as: ["population"]
-            }
-          default:
-            console.error(parameters.geoLevel + " is not valid for look up query");
+            };
         }
       }
     };
