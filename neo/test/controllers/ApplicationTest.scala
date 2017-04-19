@@ -6,14 +6,11 @@ import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import akka.stream.scaladsl.{Sink, Source}
 import akka.stream.{ActorMaterializer, Materializer}
 import org.specs2.mutable.SpecificationLike
-import play.api.libs.json.JsArray
+import play.api.libs.json._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-/**
-  * Created by zongh on 10/26/2016.
-  */
 class ApplicationTest extends SpecificationLike {
 
   "application" should {
