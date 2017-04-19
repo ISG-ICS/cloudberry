@@ -480,14 +480,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           var returnText = "";
           if (d < 1000){
             returnText = d.toString();
-          }
-          else if (d < 1000 * 1000) {
+          } else if (d < 1000 * 1000) {
             returnText = (d / 1000).toString() + "K";
-          }
-          else if (d < 1000 * 1000 * 1000) {
+          } else if (d < 1000 * 1000 * 1000) {
             returnText = (d / 1000 / 1000).toString() + "M";
-          }
-          else{
+          } else{
             returnText = (d / 1000 / 1000).toString() + "M+";
           }
 
