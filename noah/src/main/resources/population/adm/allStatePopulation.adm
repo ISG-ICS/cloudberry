@@ -1,0 +1,260 @@
+  {
+    "name": "Alabama",
+    "population": 4863300,
+    "stateID": 1
+  }
+  {
+    "name": "Alaska",
+    "population": 741894,
+    "stateID": 2
+  }
+  {
+    "name": "Arizona",
+    "population": 6931071,
+    "stateID": 4
+  }
+  {
+    "name": "Arkansas",
+    "population": 2988248,
+    "stateID": 5
+  }
+  {
+    "name": "California",
+    "population": 39250017,
+    "stateID": 6
+  }
+  {
+    "name": "Colorado",
+    "population": 5540545,
+    "stateID": 8
+  }
+  {
+    "name": "Connecticut",
+    "population": 3576452,
+    "stateID": 9
+  }
+  {
+    "name": "Delaware",
+    "population": 952065,
+    "stateID": 10
+  }
+  {
+    "name": "District of Columbia",
+    "population": 681170,
+    "stateID": 11
+  }
+  {
+    "name": "Florida",
+    "population": 20612439,
+    "stateID": 12
+  }
+  {
+    "name": "Georgia",
+    "population": 10310371,
+    "stateID": 13
+  }
+  {
+    "name": "Hawaii",
+    "population": 1428557,
+    "stateID": 15
+  }
+  {
+    "name": "Idaho",
+    "population": 1683140,
+    "stateID": 16
+  }
+  {
+    "name": "Illinois",
+    "population": 12801539,
+    "stateID": 17
+  }
+  {
+    "name": "Indiana",
+    "population": 6633053,
+    "stateID": 18
+  }
+  {
+    "name": "Iowa",
+    "population": 3134693,
+    "stateID": 19
+  }
+  {
+    "name": "Kansas",
+    "population": 2907289,
+    "stateID": 20
+  }
+  {
+    "name": "Kentucky",
+    "population": 4436974,
+    "stateID": 21
+  }
+  {
+    "name": "Louisiana",
+    "population": 4681666,
+    "stateID": 22
+  }
+  {
+    "name": "Maine",
+    "population": 1331479,
+    "stateID": 23
+  }
+  {
+    "name": "Maryland",
+    "population": 6016447,
+    "stateID": 24
+  }
+  {
+    "name": "Massachusetts",
+    "population": 6811779,
+    "stateID": 25
+  }
+  {
+    "name": "Michigan",
+    "population": 9928300,
+    "stateID": 26
+  }
+  {
+    "name": "Minnesota",
+    "population": 5519952,
+    "stateID": 27
+  }
+  {
+    "name": "Mississippi",
+    "population": 2988726,
+    "stateID": 28
+  }
+  {
+    "name": "Missouri",
+    "population": 6093000,
+    "stateID": 29
+  }
+  {
+    "name": "Montana",
+    "population": 1042520,
+    "stateID": 30
+  }
+  {
+    "name": "Nebraska",
+    "population": 1907116,
+    "stateID": 31
+  }
+  {
+    "name": "Nevada",
+    "population": 2940058,
+    "stateID": 32
+  }
+  {
+    "name": "New Hampshire",
+    "population": 1334795,
+    "stateID": 33
+  }
+  {
+    "name": "New Jersey",
+    "population": 8944469,
+    "stateID": 34
+  }
+  {
+    "name": "New Mexico",
+    "population": 2081015,
+    "stateID": 35
+  }
+  {
+    "name": "New York",
+    "population": 19745289,
+    "stateID": 36
+  }
+  {
+    "name": "North Carolina",
+    "population": 10146788,
+    "stateID": 37
+  }
+  {
+    "name": "North Dakota",
+    "population": 757952,
+    "stateID": 38
+  }
+  {
+    "name": "Ohio",
+    "population": 11614373,
+    "stateID": 39
+  }
+  {
+    "name": "Oklahoma",
+    "population": 3923561,
+    "stateID": 40
+  }
+  {
+    "name": "Oregon",
+    "population": 4093465,
+    "stateID": 41
+  }
+  {
+    "name": "Pennsylvania",
+    "population": 12784227,
+    "stateID": 42
+  }
+  {
+    "name": "Rhode Island",
+    "population": 1056426,
+    "stateID": 44
+  }
+  {
+    "name": "South Carolina",
+    "population": 4961119,
+    "stateID": 45
+  }
+  {
+    "name": "South Dakota",
+    "population": 865454,
+    "stateID": 46
+  }
+  {
+    "name": "Tennessee",
+    "population": 6651194,
+    "stateID": 47
+  }
+  {
+    "name": "Texas",
+    "population": 27862596,
+    "stateID": 48
+  }
+  {
+    "name": "Utah",
+    "population": 3051217,
+    "stateID": 49
+  }
+  {
+    "name": "Vermont",
+    "population": 624594,
+    "stateID": 50
+  }
+  {
+    "name": "Virginia",
+    "population": 8411808,
+    "stateID": 51
+  }
+  {
+    "name": "Washington",
+    "population": 7288000,
+    "stateID": 53
+  }
+  {
+    "name": "West Virginia",
+    "population": 1831102,
+    "stateID": 54
+  }
+  {
+    "name": "Wisconsin",
+    "population": 5778708,
+    "stateID": 55
+  }
+  {
+    "name": "Wyoming",
+    "population": 585501,
+    "stateID": 56
+  }
+  {
+    "name": "Puerto Rico",
+    "population": 3411307,
+    "stateID": 72
+  }

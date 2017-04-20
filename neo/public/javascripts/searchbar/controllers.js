@@ -1,13 +1,13 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
-  .controller('SearchCtrl', function($scope, $window, Asterix) {
+  .controller('SearchCtrl', function($scope, $window, cloudberry) {
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
-        Asterix.parameters.keywords = $scope.keyword.trim().split(/\s+/);
+        cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
         // skip the empty query for now.
-        Asterix.queryType = 'search';
-        Asterix.query(Asterix.parameters, Asterix.queryType);
+        cloudberry.queryType = 'search';
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       } else {
-        Asterix.parameters.keywords = [];
+        cloudberry.parameters.keywords = [];
       }
     };
   })
@@ -28,15 +28,15 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       ].join('')
     };
   })
-  .controller('ExceptionCtrl', function($scope, $window, Asterix) {
+  .controller('ExceptionCtrl', function($scope, $window, cloudberry) {
     $scope.$watch(
       function() {
-        return Asterix.errorMessage;
+        return cloudberry.errorMessage;
       },
   
       function(newMsg) {
         if (newMsg) $window.alert(newMsg);
-        Asterix.errorMessage = null;
+        cloudberry.errorMessage = null;
       }
     );
   })
@@ -49,6 +49,6 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       ].join('')
     }
   })
-  .controller('D3Ctrl', function($scope, $http, $timeout, Asterix) {
+  .controller('D3Ctrl', function($scope, $http, $timeout, cloudberry) {
 
   });
