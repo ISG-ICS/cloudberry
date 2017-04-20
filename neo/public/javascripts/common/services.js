@@ -1,5 +1,39 @@
 angular.module('cloudberry.common', [])
-  .service('Asterix', function($http, $timeout, $location) {
+  .factory('cloudberryConfig', function(){
+    return {
+      normalizationUpscaleFactor: 1000 * 1000,
+      normalizationUpscaleText: "/M",
+      getPopulationTarget: function(parameters){
+        switch (parameters.geoLevel) {
+          case "state":
+            return {
+              joinKey: ["state"],
+              dataset: "twitter.dsStatePopulation",
+              lookupKey: ["stateID"],
+              select: ["population"],
+              as: ["population"]
+            };
+          case "county":
+            return {
+              joinKey: ["county"],
+              dataset: "twitter.dsCountyPopulation",
+              lookupKey: ["countyID"],
+              select: ["population"],
+              as: ["population"]
+            };
+          case "city":
+            return {
+              joinKey: ["city"],
+              dataset: "twitter.dsCityPopulation",
+              lookupKey: ["cityID"],
+              select: ["population"],
+              as: ["population"]
+            };
+        }
+      }
+    };
+  })
+  .service('cloudberry', function($http, $timeout, $location, cloudberryConfig) {
     var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
@@ -74,6 +108,8 @@ angular.module('cloudberry.common', [])
       ];
     }
 
+
+
     function byGeoRequest(parameters) {
       return {
         dataset: parameters.dataset,
@@ -95,7 +131,10 @@ angular.module('cloudberry.common', [])
               name: "count"
             },
             as: "count"
-          }]
+          }],
+          lookup: [
+            cloudberryConfig.getPopulationTarget(parameters)
+          ]
         }
       };
     }

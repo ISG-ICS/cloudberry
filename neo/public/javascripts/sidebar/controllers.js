@@ -1,9 +1,9 @@
 angular.module('cloudberry.sidebar', ['cloudberry.common'])
-  .controller('HashTagCtrl', function ($scope, $window, Asterix) {
+  .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
     $scope.result = null;
     $scope.$watch(
       function () {
-        return Asterix.hashTagResult;
+        return cloudberry.hashTagResult;
       },
       function (newResult) {
         $scope.result = newResult;
@@ -23,7 +23,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       ].join('')
     };
   })
-  .controller('TweetCtrl', function ($scope, $window, $http, Asterix) {
+  .controller('TweetCtrl', function ($scope, $window, $http, cloudberry) {
     $scope.results = {};
 
     function drawTweets(message) {
@@ -40,7 +40,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
     $scope.$watch(
       function () {
-        return Asterix.tweetResult;
+        return cloudberry.tweetResult;
       },
       function (newResult) {
         $scope.results = newResult;
