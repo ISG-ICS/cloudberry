@@ -22,6 +22,8 @@ object TestQuery {
   val createAt = twitterField("create_at").asInstanceOf[TimeField]
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
+  val lang = twitterField("lang")
+
   val tag = Field.as(hashtags, "tag")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
@@ -48,6 +50,8 @@ object TestQuery {
   val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
   val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
   val pointFilter = FilterStatement(coordinate, None, Relation.inRange, Seq(Seq(0.0, 0.0), Seq(1.0, 1.0)))
+  val langMatchFilter =  FilterStatement(lang, None, Relation.matches, Seq("en"))
+  val langNotMatchFilter =  FilterStatement(lang, None, Relation.!=, Seq("en"))
 
   val intValues = Seq(1)
   val stringValue = Seq("English")
