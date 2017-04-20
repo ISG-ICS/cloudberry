@@ -67,6 +67,7 @@ object QueryValidator {
         validatePointRelation(filter.relation, filter.values)
       case DataType.Boolean =>
       case DataType.String =>
+        validateStringRelation(filter.relation, filter.values)
       case DataType.Text =>
         validateTextRelation(filter.relation, filter.values)
       case DataType.Bag =>
@@ -117,6 +118,18 @@ object QueryValidator {
         if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
     }
   }
+
+  def validateStringRelation(relation: Relation, values: Seq[Any]): Unit = {
+    requireOrThrow(values.forall(_.isInstanceOf[String]), s"values contain non compatible data type for relation: $relation.")
+
+    relation match {
+      case Relation.matches | Relation.!= =>
+        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
+      case Relation.contains => ???
+    }
+
+  }
+
 
   def validateTimeRelation(relation: Relation, values: Seq[Any]): Unit = {
     //required string format : http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html
