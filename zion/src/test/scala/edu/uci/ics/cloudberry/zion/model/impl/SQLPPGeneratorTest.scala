@@ -38,6 +38,36 @@ class SQLPPGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
+
+    "translate a simple filter with string not match" in {
+      val filter = Seq(langNotMatchFilter)
+      val group = GroupStatement(Seq(byHour), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select `hour` as `hour`,coll_count(g) as `count`
+          |from twitter.ds_tweet t
+          |where t.`lang`!="en"
+          |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
+          | """.stripMargin.trim)
+    }
+
+
+    "translate a simple filter with string matches" in {
+      val filter = Seq(langMatchFilter)
+      val group = GroupStatement(Seq(byHour), Seq(aggrCount))
+      val query = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select `hour` as `hour`,coll_count(g) as `count`
+          |from twitter.ds_tweet t
+          |where t.`lang`="en"
+          |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
+          | """.stripMargin.trim)
+    }
+    
     "translate a text contain filter and group by time query" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
