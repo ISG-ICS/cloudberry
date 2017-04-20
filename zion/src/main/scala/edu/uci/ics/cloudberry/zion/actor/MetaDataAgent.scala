@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor.Props
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
-import edu.uci.ics.cloudberry.zion.model.schema.{Query, Schema, UpsertRecord}
+import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.JsValue
 
 import scala.concurrent.ExecutionContext
@@ -21,6 +21,8 @@ class MetaDataAgent(override val dbName: String,
   override protected def maintenanceWork: Receive = {
     case upsert: UpsertRecord =>
       processUpdate(queryParser.generate(upsert, Map(dbName -> schema)))
+    case delete: DeleteRecord =>
+      processUpdate(queryParser.generate(delete, Map(dbName -> schema)))
   }
 }
 

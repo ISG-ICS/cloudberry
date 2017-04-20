@@ -162,8 +162,8 @@ class DataStoreManager(metaDataset: String,
 
     if(metaData.contains(dropTableName)){
       metaData.remove(dropTableName)
-
-      //TODO send query to DELETE dataset in database
+      val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
+      metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
 
       sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
 
