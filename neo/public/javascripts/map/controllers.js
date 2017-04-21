@@ -1,6 +1,10 @@
+
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, Cache) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, Cache ,cloudberryConfig) {
+
+
     $scope.result = {};
+    $scope.doNormalization = false;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -75,13 +79,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     });
 
     function resetGeoIds(bounds, polygons, idTag) {
-      Asterix.parameters.geoIds = [];
+      cloudberry.parameters.geoIds = [];
       polygons.features.forEach(function(polygon){
         if (bounds._southWest.lat <= polygon.properties.centerLat &&
               polygon.properties.centerLat <= bounds._northEast.lat &&
               bounds._southWest.lng <= polygon.properties.centerLog &&
               polygon.properties.centerLog <= bounds._northEast.lng) {
-            Asterix.parameters.geoIds.push(polygon.properties[idTag]);
+            cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
         }
       });
     }
@@ -171,7 +175,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           '<h4>Count by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          'Count: {{ selectedPlace.properties.count || "0" }}'
+          'Count: {{ selectedPlace.properties.countText || "0" }}'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -205,9 +209,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             $scope.status.logicLevel = 'county';
             if (!$scope.status.init) {
               resetGeoIds($scope.bounds, $scope.geojsonData.county, 'countyID');
-              Asterix.parameters.geoLevel = 'county';
-              Asterix.queryType = 'zoom';
-              Asterix.query(Asterix.parameters, Asterix.queryType);
+              cloudberry.parameters.geoLevel = 'county';
+              cloudberry.queryType = 'zoom';
+              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
             if($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -224,9 +228,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             $scope.status.logicLevel = 'state';
             if (!$scope.status.init) {
               resetGeoIds($scope.bounds, $scope.geojsonData.state, 'stateID');
-              Asterix.parameters.geoLevel = 'state';
-              Asterix.queryType = 'zoom';
-              Asterix.query(Asterix.parameters, Asterix.queryType);
+              cloudberry.parameters.geoLevel = 'state';
+              cloudberry.queryType = 'zoom';
+              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
             if($scope.polygons.countyPolygons) {
               $scope.map.removeLayer($scope.polygons.countyPolygons);
@@ -265,9 +269,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           loadCityJsonByBound(onEachFeature);
         }
         resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
-        Asterix.parameters.geoLevel = $scope.status.logicLevel;
-        Asterix.queryType = 'drag';
-        Asterix.query(Asterix.parameters, Asterix.queryType);
+        cloudberry.parameters.geoLevel = $scope.status.logicLevel;
+        cloudberry.queryType = 'drag';
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       });
 
     }
@@ -352,6 +356,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
 
           if (!$scope.status.init) {
+
                         resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
                         Asterix.parameters.geoLevel = 'city';
                         Asterix.queryType = 'zoom';
@@ -360,6 +365,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
            $scope.map.addLayer($scope.polygons.cityPolygons);
 
       });
+
 
     }
 
@@ -379,6 +385,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           d = 1;
         } else {
           d = Math.ceil(Math.log10(d));
+          if(d <= 0) // treat smaller counts the same as 0
+            d = 0
         }
         d = Math.min(d, colors.length-1);
         return colors[d];
@@ -395,63 +403,68 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             fillOpacity: 0.2
           };
         } else {
-            return {
-          fillColor: getColor(feature.properties.count),
-          weight: 2,
-          opacity: 1,
-          color: 'white',
-          dashArray: '3',
-          fillOpacity: 0.5
+          return {
+            fillColor: getColor(feature.properties.count),
+            weight: 2,
+            opacity: 1,
+            color: 'white',
+            dashArray: '3',
+            fillOpacity: 0.5
           };
         }
       }
 
-      //FIXME: the code in county and city (and probably the state) levels are quite similar. Find a way to combine them.
-      if ($scope.status.logicLevel == "state" && $scope.geojsonData.state) {
-          angular.forEach($scope.geojsonData.state.features, function(d) {
-          if (d.properties.count)
-            d.properties.count = 0;
-          for (var k in result) {
-          //TODO make a hash map from ID to make it faster
-            if (result[k].state == d.properties.stateID) {
-              d.properties.count = result[k].count;
-            }
-          }
-        });
+      function setNormalizedCountText(geo){
+        // beautify 0.0000123 => 1.23e-5, 1.123 => 1.1
+        if(geo["properties"]["count"] < 1){
+          geo["properties"]["countText"] = geo["properties"]["count"].toExponential(1);
+        }
+        else{
+          geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
+        }
+        geo["properties"]["countText"] += cloudberryConfig.normalizationUpscaleText; // "/M"
+      }
 
-        // draw
-        $scope.polygons.statePolygons.setStyle(style);
+      function resetCount(geo) {
+        if (geo['properties']['count'])
+          geo['properties']['count'] = 0;
+        if (geo['properties']['countText'])
+          geo['properties']['countText'] = "";
+      }
 
-      } else if ($scope.status.logicLevel == "county" && $scope.geojsonData.county) {
-          angular.forEach($scope.geojsonData.county.features, function(d) {
-            if (d.properties.count)
-              d.properties.count = 0;
-            for (var k in result) {
-              //TODO make a hash map from ID to make it faster
-              if (result[k].county == d.properties.countyID) {
-                d.properties.count = result[k].count;
+      function setNormalizedCount(geo, r){
+        geo['properties']['count'] = r['count'] / r['population'] * cloudberryConfig.normalizationUpscaleFactor;
+        setNormalizedCountText(geo);
+      }
+
+      function setUnnormalizedCount(geo ,r) {
+        geo['properties']['count'] = r['count'];
+        geo['properties']['countText'] = geo['properties']['count'].toString();
+      }
+
+      function updateTweetCountInGeojson(){
+        var level = $scope.status.logicLevel;
+        var geojsonData = $scope.geojsonData[level];
+        if(geojsonData){
+          angular.forEach(geojsonData['features'], function (geo) {
+            resetCount(geo);
+            angular.forEach(result, function (r) {
+              if (r[level] === geo['properties'][level+"ID"]){
+                if ($scope.doNormalization)
+                  setNormalizedCount(geo, r);
+                else
+                  setUnnormalizedCount(geo, r);
               }
-            }
+            });
           });
 
-        // draw
-        $scope.polygons.countyPolygons.setStyle(style);
-
-      }else if ($scope.status.logicLevel == "city" && $scope.geojsonData.city) {
-        angular.forEach($scope.geojsonData.city.features, function(d) {
-          if (d.properties.count)
-            d.properties.count = 0;
-          for (var k in result) {
-            //TODO make a hash map from ID to make it faster
-            if (result[k].city == d.properties.cityID) {
-              d.properties.count = result[k].count;
-            }
-          }
-        });
-
-        // draw
-        $scope.polygons.cityPolygons.setStyle(style);
+          // draw
+          $scope.polygons[level+"Polygons"].setStyle(style);
+        }
       }
+
+      // Loop through each result and update its count information on its associated geo record
+      updateTweetCountInGeojson();
 
       // add legend
       var legend = $('.legend');
@@ -465,19 +478,30 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000];
-        for (var i = 0 ; i < grades.length; i++) {
+
+        for(var i = 0; i < grades.length; i++){
           grades[i] = Math.pow(10, i);
         }
+
         var gName  = grades.map( function(d) {
+          var returnText = "";
           if (d < 1000){
-            return d.toString();
+            returnText = d.toString();
+          } else if (d < 1000 * 1000) {
+            returnText = (d / 1000).toString() + "K";
+          } else if (d < 1000 * 1000 * 1000) {
+            returnText = (d / 1000 / 1000).toString() + "M";
+          } else{
+            returnText = (d / 1000 / 1000).toString() + "M+";
           }
-          if (d < 1000 * 1000) {
-            return (d / 1000).toString() + "K";
+
+          if($scope.doNormalization){
+            return returnText + "/" + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
           }
-          //if (d < 1000 * 1000 * 1000)
-          return (d / 1000 / 1000).toString() + "M";
-        });//["1", "10", "100", "1K", "10K", "100K"];
+          else{
+            return returnText; //["1", "10", "100", "1K", "10K", "100K"];
+          }
+        });
 
         // loop through our density intervals and generate a label with a colored square for each interval
         var i = 1;
@@ -492,16 +516,43 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.map)
         $scope.legend.addTo($scope.map);
 
+      // add toggle normalize
+      var normalize = $('.normalize');
+      if (normalize) {
+        normalize.remove();
+      }
+
+      $scope.normalize= L.control({
+        position: 'topleft'
+      });
+
+      $scope.normalize.onAdd = function() {
+        var div = L.DomUtil.create('div', 'info normalize');
+        if($scope.doNormalization)
+          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
+        else
+          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
+        return div;
+      };
+      if ($scope.map) {
+        $scope.normalize.addTo($scope.map);
+        $('#toggle-normalize').bootstrapToggle();
+      }
+
     }
 
     $scope.$watchCollection(
       function() {
-        return [Asterix.mapResult, Asterix.totalCount];
+        return {
+          'mapResult': cloudberry.mapResult,
+          'totalCount': cloudberry.totalCount,
+          'doNormalization': $('#toggle-normalize').prop('checked')
+        };
       },
 
       function(newResult, oldValue) {
-        if (newResult[0] != oldValue[0]) {
-            $scope.result = newResult[0];
+        if (newResult['mapResult'] != oldValue['mapResult']) {
+            $scope.result = newResult['mapResult'];
             if (Object.keys($scope.result).length != 0) {
                 $scope.status.init = false;
                 drawMap($scope.result);
@@ -510,8 +561,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 drawMap($scope.result);
             }
         }
-        if (newResult[1] != oldValue[1]) {
-            $scope.totalCount = newResult[1]
+        if (newResult['totalCount'] != oldValue['totalCount']) {
+            $scope.totalCount = newResult['totalCount'];
+        }
+        if(newResult['doNormalization'] != oldValue['doNormalization']) {
+          $scope.doNormalization = newResult['doNormalization'];
+          drawMap($scope.result);
         }
       }
     );
