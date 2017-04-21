@@ -5,10 +5,9 @@ import javax.inject.{Inject, Singleton}
 import actor.RequestRouter
 import akka.actor._
 import akka.pattern.ask
-import akka.stream.{Materializer, OverflowStrategy}
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
-import controllers.Cloudberry.DataSetInfoView
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{DataManagerResponse, Register, _}
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
@@ -24,8 +23,8 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller, WebSocket}
 import play.api.{Configuration, Environment}
 
-import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.concurrent.{Await, Future}
 
 @Singleton
 class Cloudberry @Inject()(val wsClient: WSClient,
@@ -46,7 +45,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
 
   val manager = system.actorOf(DataStoreManager.props(Migration_20160814.berryMeta, asterixConn, qlGenerator, config))
 
-  Logger.info("I'm initializing")
+  Logger.info("Cloudberry is initializing")
 
   val listener = system.actorOf(Props(classOf[Listener], this))
   system.eventStream.subscribe(listener, classOf[DeadLetter])
@@ -54,12 +53,8 @@ class Cloudberry @Inject()(val wsClient: WSClient,
   def index = Action.async {
     implicit val askTimeOut: Timeout = config.UserTimeOut
     (manager ? DataStoreManager.ListAllDataset).map { case dataset : Seq[DataSetInfo] =>
-      Ok(views.html.cloudberry(dataset.map(DataSetInfo.write)))
+      Ok(views.html.cloudberry.index(dataset.map(DataSetInfo.write)))
     }
-  }
-
-  def dashboard = Action {
-    Ok(views.html.dashboard("Dashboard"))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>

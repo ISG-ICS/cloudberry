@@ -2,7 +2,7 @@
 @import play.api.libs.json.Json
 @(datasets: Seq[JsValue])
 
-@metaMain("Cloudberry Admin") {
+@main("Cloudberry Admin") {
     <h1>Datasets Information</h1>
     <div class="list-group">
         @for(d <- datasets) {

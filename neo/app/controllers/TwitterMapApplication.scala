@@ -24,14 +24,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val config = new Config(configuration)
   val cities = TwitterMapApplication.loadCity(environment.getFile(config.USCityDataPath))
 
-  Logger.info("I'm initializing")
-
   def index = Action {
-    Ok(views.html.twitterMapIndex("TwitterMap"))
+    Ok(views.html.twittermap.index("TwitterMap"))
   }
 
   def debug = Action {
-    Ok(views.html.debug("Debug"))
+    Ok(views.html.twittermap.debug("Debug"))
   }
 
   def tweet(id: String) = Action.async {
