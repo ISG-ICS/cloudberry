@@ -107,7 +107,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case q: CreateView => parseCreate(q, schemaMap)
       case q: AppendView => parseAppend(q, schemaMap)
       case q: UpsertRecord => parseUpsert(q, schemaMap)
-      case q: DropView => ???
+      case q: DropView => parseDrop(q, schemaMap)
       case q: DeleteRecord => parseDelete(q, schemaMap)
       case _ => ???
     }
@@ -123,6 +123,8 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
   protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, Schema]): String
 
   protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, Schema]): String
+
+  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String
 
   def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
