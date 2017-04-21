@@ -23,6 +23,9 @@ class MetaDataAgent(override val dbName: String,
       processUpdate(queryParser.generate(upsert, Map(dbName -> schema)))
     case delete: DeleteRecord =>
       processUpdate(queryParser.generate(delete, Map(dbName -> schema)))
+    case drop: DropView =>
+      // parameter SchemaMap is not used in parseDrop, note this for future.
+      processUpdate(queryParser.generate(drop, Map()))
   }
 }
 
