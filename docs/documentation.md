@@ -318,7 +318,7 @@ A request is composed of the following parameters:
 Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each "small query" to get the results progressively.
 For example, the following option specifies that the front-end wants to slice a query and the expected response time for each sliced "small query" is 2000 ms.
 
-```json
+```
 {
  ...
  "option":{
@@ -331,7 +331,7 @@ For example, the following option specifies that the front-end wants to slice a 
 
 Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results. In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
 
-```json
+```
 {
   "batch" : [
     { request1 },
@@ -348,7 +348,7 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
 The front end can **optionally** add a "transform" operation in JSON request to define the post-processing operations. 
 For example, front-ends can define a `wrap` operation to wrap the whole response in a key-value pair JSON object in which the `key` is pre-defined. The following request asks the Cloudberry to wrap the result in the value with the key of `sample`:
 
-```json
+```
 {
   "dataset": "twitter.ds_tweet",
   "filter": [{
