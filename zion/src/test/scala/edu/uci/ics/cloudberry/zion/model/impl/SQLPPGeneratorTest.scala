@@ -67,7 +67,7 @@ class SQLPPGeneratorTest extends Specification {
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
           | """.stripMargin.trim)
     }
-    
+
     "translate a text contain filter and group by time query" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrCount))
@@ -733,6 +733,16 @@ class SQLPPGeneratorTest extends Specification {
         """
           |delete from twitter.ds_tweet t
           |where t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z');
+          |""".stripMargin.trim)
+    }
+  }
+
+  "SQLPPGenerator dropView" should {
+    "generate the drop view query" in {
+      val sql = parser.generate(DropView(TwitterDataSet), Map(TwitterDataSet -> TwitterDataStore.TwitterSchema))
+      removeEmptyLine(sql) must_== unifyNewLine(
+        """
+          |drop dataset twitter.ds_tweet if exists;
           |""".stripMargin.trim)
     }
   }
