@@ -9,74 +9,76 @@ Now let's checkout the code and run a TwitterMap demo on your local machine!
 You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
 *This demo requires at least 4G memory*.
 
-* Clone the code
+1. Clone the code
 
-```
-git clone https://github.com/ISG-ICS/cloudberry.git
-```
+    ```
+    git clone https://github.com/ISG-ICS/cloudberry.git
+    ```
 
-* Compile the project
+2. Compile the project
 
-```
-cd cloudberry; sbt compile
-```
+    ```
+    cd cloudberry; sbt compile
+    ```
 
-* Prepare the AsterixDB cluster: Cloudberry runs on an Apache AsterixDB cluster. You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
-  * Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
-  * Simply run the following command in the **cloudberry** folder to create an AsterixDB cluster locally.
+3. Prepare the AsterixDB cluster: Cloudberry runs on an Apache AsterixDB cluster. You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
+   1. Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
+   2. Simply run the following command in the **cloudberry** folder to create an AsterixDB cluster locally.
 
-```
-./script/dockerRunAsterixDB.sh
-```
+        ```
+        ./script/dockerRunAsterixDB.sh
+        ```
 
-* Ingest 324,000 sample tweets into AsterixDB
+4. Ingest 324,000 sample tweets into AsterixDB
 
-```
-./script/ingestTwitterToLocalCluster.sh
-```
+    ```
+    ./script/ingestTwitterToLocalCluster.sh
+    ```
 
-* Ingest 33,107 US population data into AsterixDB (assume you are using Docker)
-  * Run the following commands in **cloudberry** folder to copy population data into nc1  
-  ```
-  docker cp noah/src/main/resources/population/adm/allStatePopulation.adm nc1:/home
+5. Ingest 33,107 US population data into AsterixDB (assume you are using Docker)
+   1. Run the following commands in the **cloudberry** folder to copy three population datasets into nc1
+        ```
+        docker cp noah/src/main/resources/population/adm/allStatePopulation.adm nc1:/home
 
-  docker cp noah/src/main/resources/population/adm/allCountyPopulation.adm nc1:/home
+        docker cp noah/src/main/resources/population/adm/allCountyPopulation.adm nc1:/home
 
-  docker cp noah/src/main/resources/population/adm/allCityPopulation.adm nc1:/home
-  ```
-  * Open `noah/src/main/resources/population/sqlpp/ingestPopulation.sqlpp` using a text editor and copy all of its contents. Based on the IP address of nc1 and the path you copied population data into in the last step, you may need to modify the query a little bit, but in most of the cases you don't need to. Detailed instructions can be found in the comments of the queries. You can check the IP address of nc1 by running:  
-  ```
-  docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nc1
-  ```
-  * Go to `http://localhost:19001/ `. Copy and paste all the queries from the last step and click **run** with the default settings **SQL++** to ingest data into AsterixDB. After that, you should see **Success: Query Complete** in the output.
+        docker cp noah/src/main/resources/population/adm/allCityPopulation.adm nc1:/home
+        ```
+   2. Open `noah/src/main/resources/population/sqlpp/ingestPopulation.sqlpp` using a text editor and copy all of its contents. Based on the IP address of nc1 and the path you copied population data into in the last step, you may need to modify the query a little bit, but in most of the cases you don't need to. Detailed instructions can be found in the comments of the queries. You can check the IP address of nc1 by running:
 
-* Now that you have finished setting up the backend. Run cloudberry
+        ```
+        docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nc1
+        ```
 
-```
-sbt "project neo" "run"
-```
+   3. Go to `http://localhost:19001/ `. Copy and paste all the queries from the last step and click **run** with the default settings **SQL++** to ingest data into AsterixDB. After that, you should see **Success: Query Complete** in the output.
 
-*Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data. If you see the following messages from the console, it means the loading process is done.*
+6. Now that you have finished setting up the backend. Run cloudberry
 
-```
-...
-[info] application - I'm initializing
-[info] play.api.Play - Application started (Dev)
-```
+    ```
+    sbt "project neo" "run"
+    ```
 
-* Once Cloudberry has successfully launched, register data models into Cloudberry by running the following scripts in the **cloudberry** folder.
+   *Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data. If you see the following messages from the console, it means the loading process is done.*
 
-```
-./script/registerTwitterMapDataModel.sh
-```
+    ```
+    ...
+    [info] application - I'm initializing
+    [info] play.api.Play - Application started (Dev)
+    ```
 
-* (Optional) You may also deregister these data models from the Cloudberry to experiment with other data models. But be careful when doing this as the TwitterMap won't work without these data models.
+7. Once Cloudberry has successfully launched, register data models into Cloudberry by running the following scripts in the **cloudberry** folder
 
-```
-./script/deregisterTwitterMapDataModel.sh
-```
+    ```
+    ./script/registerTwitterMapDataModel.sh
+    ```
 
-* **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost. Check it out at [http://localhost:9000](http://localhost:9000) and start playing with it!
+8. (Skip this step if you are setting up for the first time) You may also deregister these data models from the Cloudberry to experiment with other data models. But be careful when doing this as the TwitterMap won't work without these data models.
+
+    ```
+    ./script/deregisterTwitterMapDataModel.sh
+    ```
+
+9. **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost. Check it out at [http://localhost:9000](http://localhost:9000) and start playing with it!
 
 
 ## Concepts
@@ -210,101 +212,106 @@ A request is composed of the following parameters:
 
 ### Examples
 
-1. Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.  
-```json
-{
-  "dataset": "twitter.ds_tweet",
-  "filter": [
+1. Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.
+
+    ```json
     {
-      "field": "create_at",
-      "relation": "inRange",
-      "values": [ "2016-01-01T00:00:00.000Z", "2016-12-31T00:00:00.000Z"]
-    },
-    {
-      "field": "text",
-      "relation": "contains",
-      "values": [ "zika", "virus" ]
-    }
-  ],
-  "group": {
-     "by": [
-        {
-          "field": "geo.state",
-          "as": "state"
-        },
+      "dataset": "twitter.ds_tweet",
+      "filter": [
         {
           "field": "create_at",
-          "apply": {
-            "name": "interval",
-            "args": {
-              "unit": "hour"
-            }
-          },
-          "as": "hour"
+          "relation": "inRange",
+          "values": [ "2016-01-01T00:00:00.000Z", "2016-12-31T00:00:00.000Z"]
+        },
+        {
+          "field": "text",
+          "relation": "contains",
+          "values": [ "zika", "virus" ]
         }
       ],
-     "aggregate": [
-       {
-         "field": "*",
-         "apply": {
-           "name": "count"
-         },
-         "as": "count"
-       }
-      ]
-  }
-}
-```
-2. Get the top-10 related hashtags for tweets that mention "zika".  
-```json
-{
-  "dataset": "twitter.ds_tweet",
-  "filter": [
-  {
-    "field": "text",
-    "relation": "contains",
-    "values": [ "zika"]
-  }
-  ],
-  "unnest" : [{ "hashtags": "tag"}],
-  "group": {
-    "by": [
-      { "field": "tag" }
-    ],
-    "aggregate": [
-      {
-        "field" : "*",
-        "apply" : {
-          "name": "count"
-        },
-        "as" : "count"
+      "group": {
+        "by": [
+            {
+              "field": "geo.state",
+              "as": "state"
+            },
+            {
+              "field": "create_at",
+              "apply": {
+                "name": "interval",
+                "args": {
+                  "unit": "hour"
+                }
+              },
+              "as": "hour"
+            }
+          ],
+        "aggregate": [
+          {
+            "field": "*",
+            "apply": {
+              "name": "count"
+            },
+            "as": "count"
+          }
+          ]
       }
-    ]
-  },
-  "select" : {
-    "order" : [ "-count"],
-    "limit": 10,
-    "offset" : 0
-  }
-}
-```
-3. Get 100 latest sample tweets that mention "zika".  
-```json
-{
-  "dataset": "twitter.ds_tweet",
-  "filter": [{
-    "field": "text",
-    "relation": "contains",
-    "values": [ "zika"]
-  }],
-  "select" : {
-    "order" : [ "-create_at"],
-    "limit": 100,
-    "offset" : 0,
-    "field": ["create_at", "id"]
-  }
-}
-```
+    }
+    ```
+
+2. Get the top-10 related hashtags for tweets that mention "zika".
+
+    ```json
+    {
+      "dataset": "twitter.ds_tweet",
+      "filter": [
+      {
+        "field": "text",
+        "relation": "contains",
+        "values": [ "zika"]
+      }
+      ],
+      "unnest" : [{ "hashtags": "tag"}],
+      "group": {
+        "by": [
+          { "field": "tag" }
+        ],
+        "aggregate": [
+          {
+            "field" : "*",
+            "apply" : {
+              "name": "count"
+            },
+            "as" : "count"
+          }
+        ]
+      },
+      "select" : {
+        "order" : [ "-count"],
+        "limit": 10,
+        "offset" : 0
+      }
+    }
+    ```
+
+3. Get 100 latest sample tweets that mention "zika".
+
+    ```json
+    {
+      "dataset": "twitter.ds_tweet",
+      "filter": [{
+        "field": "text",
+        "relation": "contains",
+        "values": [ "zika"]
+      }],
+      "select" : {
+        "order" : [ "-create_at"],
+        "limit": 100,
+        "offset" : 0,
+        "field": ["create_at", "id"]
+      }
+    }
+    ```
 
 ### Request options
 
