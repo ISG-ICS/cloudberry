@@ -490,7 +490,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           }
 
           if($scope.doNormalization){
-            return returnText + "/" + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
+            return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
           }
           else{
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
