@@ -1,0 +1,16 @@
+{
+    "dataset": "twitter.dsCityPopulation",
+    "schema": {
+        "typeName": "twitter.typeCityPopulation",
+        "dimension": [
+            { "name": "name", "isOptional": false, "datatype": "String" },
+            { "name": "cityID", "isOptional": false, "datatype": "Number" },
+            { "name": "create_at", "isOptional": false, "datatype": "Time" }
+        ],
+        "measurement": [
+            { "name": "population", "isOptional": false, "datatype": "Number" }
+        ],
+        "primaryKey": ["cityID"],
+        "timeField": "create_at"
+    }
+}
