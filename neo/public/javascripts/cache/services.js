@@ -40,16 +40,16 @@
 
        if(cachedRegion != undefined && turf.difference(currentRequestPolygon,cachedRegion) == undefined) {
               //cache HIT
-             var t0 = performance.now();
+//              var t0 = performance.now();
              var result = cachedCityPolygonTree.search(item);
              data_response = turf.featureCollection(result);
              deferred.resolve(data_response);
-             console.log("Cache HIT took",performance.now()-t0);
+//              console.log("Cache HIT took",performance.now()-t0);
              return deferred.promise();
 
        }else{
                    //cache MISS
-              var MISSt0 = performance.now();
+//               var MISSt0 = performance.now();
               var buffered = turf.buffer(currentRequestPolygon, preFetchDistance , 'miles');
               var bboxBuffer = turf.bbox(buffered);
                    //Pre Fetch
@@ -75,7 +75,7 @@
               }).error(function(data) {
                                     console.error("Load city data failure");
               });
-              console.log("Cache MISS took",performance.now()-MISSt0);
+//               console.log("Cache MISS took",performance.now()-MISSt0);
               return deferred.promise();
        }
   }
