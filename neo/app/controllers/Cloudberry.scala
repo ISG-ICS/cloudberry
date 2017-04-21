@@ -22,6 +22,7 @@ import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc.{Action, Controller, WebSocket}
 import play.api.{Configuration, Environment}
+import play.api.i18n.{I18nSupport, MessagesApi}
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
@@ -29,10 +30,11 @@ import scala.concurrent.{Await, Future}
 @Singleton
 class Cloudberry @Inject()(val wsClient: WSClient,
                            val configuration: Configuration,
+                           val messagesApi: MessagesApi,
                            val environment: Environment)
                           (implicit val system: ActorSystem,
                            implicit val materializer: Materializer
-                          ) extends Controller {
+                          ) extends Controller with I18nSupport {
   val config = new Config(configuration)
   val (asterixConn, qlGenerator) =
     config.AsterixLang match {
@@ -52,9 +54,47 @@ class Cloudberry @Inject()(val wsClient: WSClient,
 
   def index = Action.async {
     implicit val askTimeOut: Timeout = config.UserTimeOut
-    (manager ? DataStoreManager.ListAllDataset).map { case dataset : Seq[DataSetInfo] =>
-      Ok(views.html.cloudberry.index(dataset.map(DataSetInfo.write)))
+    (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[DataSetInfo] =>
+      Ok(views.html.cloudberry.index(dataset.filter(_.createQueryOpt.isEmpty).map(DataSetInfo.write), Cloudberry.createRegisterForm))
     }
+  }
+
+  def webRegister = Action.async { implicit request =>
+    import Cloudberry.createRegisterForm
+    val formValidationResult = createRegisterForm.bindFromRequest
+    formValidationResult.fold({ formWithErrors =>
+      // This is the bad case, where the form had validation errors.
+      // Let's show the user the form again, with the errors highlighted.
+      // Note how we pass the form with errors to the template.
+      implicit val askTimeOut: Timeout = config.UserTimeOut
+      (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[DataSetInfo] =>
+        BadRequest(views.html.cloudberry.index(dataset.map(DataSetInfo.write), formWithErrors))
+      }
+    }, { registerForm =>
+      // This is the good case, where the form was successfully parsed as a Widget.
+      val json = Json.parse(registerForm.registerJSONString)
+      json.validate[Register] match {
+        case registerRequest: JsSuccess[Register] =>
+          val newTable = registerRequest.get
+          implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+          val receipt = (manager ? newTable).mapTo[DataManagerResponse]
+
+          receipt.map { r =>
+            if (r.isSuccess) {
+              Redirect(routes.Cloudberry.index)
+            } else {
+              BadRequest(r.message)
+            }
+          }.recover { case e =>
+            InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
+          }
+
+        case e: JsError =>
+          Future {
+            BadRequest("Not a valid register Json POST: " + e.toString)
+          }
+      }
+    })
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
@@ -128,13 +168,13 @@ class Cloudberry @Inject()(val wsClient: WSClient,
 }
 
 object Cloudberry {
-  case class DataSetInfoView(name: String, info: String)
 
-  val createDatasetForm = Form(
+  case class RegisterForm(registerJSONString: String)
+
+  val createRegisterForm = Form(
     mapping(
-      "name" -> text,
-      "info" -> text
-    )(DataSetInfoView.apply)(DataSetInfoView.unapply))
+      "RegisterJSONString" -> text
+    )(RegisterForm.apply)(RegisterForm.unapply))
 
   /**
     * Copy and revised based on [[play.api.libs.streams.ActorFlow.actorRef()]]

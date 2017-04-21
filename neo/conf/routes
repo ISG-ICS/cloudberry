@@ -5,6 +5,7 @@
 # index routes
 GET        /                                    controllers.Cloudberry.index
 GET        /ws                                  controllers.Cloudberry.ws
+POST       /webregister                         controllers.Cloudberry.webRegister
 POST       /berry                               controllers.Cloudberry.berryQuery
 POST       /admin/register                      controllers.Cloudberry.register
 POST       /admin/deregister                    controllers.Cloudberry.deregister

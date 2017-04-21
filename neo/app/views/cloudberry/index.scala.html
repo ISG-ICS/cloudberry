@@ -1,15 +1,32 @@
 @import play.api.libs.json.JsValue
 @import play.api.libs.json.Json
-@(datasets: Seq[JsValue])
+@(datasets: Seq[JsValue], form: Form[Cloudberry.RegisterForm])(implicit messages: play.api.i18n.Messages)
+
+@import views.html.cloudberry.textarea
 
 @main("Cloudberry Admin") {
-    <h1>Datasets Information</h1>
+    <h3>Registered Datasets</h3>
     <div class="list-group">
-        @for(d <- datasets) {
-            <li class="list-group-item">@{Json.prettyPrint(d)}</li>
-        }
+    @for(d <- datasets) {
+        <li class="list-group-item">@{
+            Json.prettyPrint(d)
+        }</li>
+    }
     </div>
 
     <hr/>
+
+    <div class="well">
+    @helper.form(routes.Cloudberry.webRegister(), 'class -> "form-horizontal") {
+
+        @textarea(form("RegisterJSONString"), rows = "10", label = "Register Dataset JSON", placeholder = "copy DDL json to here")
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button id="submit" type="submit" value="Submit" class="btn btn-primary">Submit</button>
+            </div>
+        </div>
+    }
+    </div>
 
 }
