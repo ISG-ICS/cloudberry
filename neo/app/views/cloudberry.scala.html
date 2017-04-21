@@ -1,0 +1,15 @@
+@import play.api.libs.json.JsValue
+@import play.api.libs.json.Json
+@(datasets: Seq[JsValue])
+
+@metaMain("Cloudberry Admin") {
+    <h1>Datasets Information</h1>
+    <div class="list-group">
+        @for(d <- datasets) {
+            <li class="list-group-item">@{Json.prettyPrint(d)}</li>
+        }
+    </div>
+
+    <hr/>
+
+}

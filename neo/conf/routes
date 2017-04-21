@@ -2,18 +2,21 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-GET        /                                    controllers.Application.index
-GET        /debug                               controllers.Application.debug
-GET        /dashboard                           controllers.Application.dashboard
-GET        /ws                                  controllers.Application.ws
-GET        /tweet/:id                           controllers.Application.tweet(id: String)
+# cloudberry routes
+GET        /                                    controllers.Cloudberry.index
+GET        /ws                                  controllers.Cloudberry.ws
+GET        /dashboard                           controllers.Cloudberry.dashboard
+POST       /berry                               controllers.Cloudberry.berryQuery
+POST       /admin/register                      controllers.Cloudberry.register
+POST       /admin/deregister                    controllers.Cloudberry.deregister
 
-GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.Application.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
+# TwitterMap routes
+GET        /twittermap                          controllers.TwitterMapApplication.index
+GET        /debug                               controllers.TwitterMapApplication.debug
+GET        /tweet/:id                           controllers.TwitterMapApplication.tweet(id: String)
 
-POST       /berry                               controllers.Application.berryQuery
+GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
 
-POST       /admin/register                      controllers.Application.register
-POST       /admin/deregister                   controllers.Application.deregister
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)

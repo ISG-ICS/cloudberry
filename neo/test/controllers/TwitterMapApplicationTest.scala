@@ -11,11 +11,11 @@ import play.api.libs.json._
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
-class ApplicationTest extends SpecificationLike {
+class TwitterMapApplicationTest extends SpecificationLike {
 
   "application" should {
 
-    val cities = Application.loadCity(new File("test/resources/data/city.sample.json"))
+    val cities = TwitterMapApplication.loadCity(new File("test/resources/data/city.sample.json"))
 
     "load the city data from a file" in {
       cities.size must_== 1006
@@ -27,7 +27,7 @@ class ApplicationTest extends SpecificationLike {
     }
 
     "find cities whose centroids are in the current region" in {
-      val result = Application.findCity(35, 33, -85, -87, cities)
+      val result = TwitterMapApplication.findCity(35, 33, -85, -87, cities)
       val features = (result \ "features").as[JsArray]
       val cityIDs = List.newBuilder[Double]
       for (city <- features.value) {
@@ -36,22 +36,5 @@ class ApplicationTest extends SpecificationLike {
       cityIDs.result().contains(100820) must_== true
     }
 
-    "generate a actor flow" in {
-
-      implicit val system : ActorSystem = ActorSystem("test")
-      implicit val mat: Materializer = ActorMaterializer()
-      def props(outActor: ActorRef) = Props(new Actor {
-        override def receive = {
-          case _ =>
-            (1 to 10).foreach(outActor ! _)
-            outActor ! done
-        }
-      })
-
-      val flow = Application.actorFlow(props, done)
-      val future = Source.single(42).via(flow).runWith(Sink.fold[Int, Int](0)(_ + _))
-      val result = Await.result(future, 3.seconds)
-      result must_== (1 to 10).sum
-    }
   }
 }
