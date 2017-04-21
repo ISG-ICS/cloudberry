@@ -36,7 +36,7 @@ cd cloudberry; sbt compile
 ```
 
 * Ingest 33,107 US population data into AsterixDB (assume you are using Docker):
-* Run the following commands in the **cloudberry** folder to copy three population datasets into nc1
+* Run the following commands in the **cloudberry** folder to copy three population datasets into docker container `nc1`
 
 ```
 docker cp noah/src/main/resources/population/adm/allStatePopulation.adm nc1:/home
@@ -44,7 +44,7 @@ docker cp noah/src/main/resources/population/adm/allCountyPopulation.adm nc1:/ho
 docker cp noah/src/main/resources/population/adm/allCityPopulation.adm nc1:/home
 ```
 
-* Open `noah/src/main/resources/population/sqlpp/ingestPopulation.sqlpp` using a text editor and copy all of its contents. Based on the IP address of nc1 and the path you copied population data into in the last step, you may need to modify the query a little bit, but in most of the cases you don't need to. Detailed instructions can be found in the comments of the queries. You can check the IP address of nc1 by running:
+* Open `noah/src/main/resources/population/sqlpp/ingestPopulation.sqlpp` using a text editor and copy all of its contents. You may need to change the IP address of `nc1` by running the following script:
 
 {% raw %}
 ```
@@ -52,8 +52,8 @@ docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nc1
 ```
 {% endraw %}
 
-* Go to `http://localhost:19001/ `. Copy and paste all the queries from the last step and click **run** with the default settings **SQL++** to ingest data into AsterixDB. After that, you should see **Success: Query Complete** in the output.
-* Now that you have finished setting up the backend. Run cloudberry
+* Go to the AsterixDB web interface (`http://localhost:19001/` in the docker case). Copy and paste the `ingestPopulation.sqlpp` content into the web page and execute the query. You should see **Success: Query Complete** in the output.
+* Run cloudberry
 
 ```
 sbt "project neo" "run"
@@ -71,12 +71,6 @@ sbt "project neo" "run"
 
 ```
 ./script/registerTwitterMapDataModel.sh
-```
-
-* (Skip this step if you are setting up for the first time) You may also deregister these data models from the Cloudberry to experiment with other data models. But be careful when doing this as the TwitterMap won't work without these data models.
-
-```
-./script/deregisterTwitterMapDataModel.sh
 ```
 
 * **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost. Check it out at [http://localhost:9000](http://localhost:9000) and start playing with it!
@@ -395,6 +389,8 @@ The response is as below:
 
 ### Advanced users
 
+#### Multi-node AsterixDB cluster
+
 Some applications may require a multi-node AsterixDB cluster.
 You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
 
@@ -419,3 +415,10 @@ In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` val
 asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
 ```
 
+#### Deregister Tweets and US Population Data Models
+
+You may also deregister these data models from the Cloudberry to experiment with other data models. But be careful when doing this as the TwitterMap won't work without these data models.
+
+```
+./script/deregisterTwitterMapDataModel.sh
+```
