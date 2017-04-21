@@ -108,6 +108,11 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     return queryBuilder.toString()
   }
 
+  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
+    s"drop dataset ${query.dataset} if exists"
+  }
+
+
   def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
