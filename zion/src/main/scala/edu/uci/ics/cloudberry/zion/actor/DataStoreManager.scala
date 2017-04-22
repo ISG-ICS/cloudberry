@@ -161,23 +161,28 @@ class DataStoreManager(metaDataset: String,
     val dropTableName = dropTable.dataset
 
     if(metaData.contains(dropTableName)){
-      metaData.remove(dropTableName)
       val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
       metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
 
       metaData.foreach( dataSchema =>
         dataSchema._2.createQueryOpt match {
           case Some(query) =>
-            if(query.dataset == dataSchema._1){
-              metaData.remove(dataSchema._1)
+            if(query.dataset == dropTableName){
               metaActor ! DropView(dataSchema._1)
+              val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dataSchema._1))
+              metaActor ! DeleteRecord(metaDataset, Seq(viewRecordFilter))
             }
           case None =>
         }
       )
 
-      sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
+      val newMetaData = metaData.filterNot{ case (key, value) =>
+        key == dropTableName || value.createQueryOpt.exists(q => q.dataset == dropTableName)
+      }
+      metaData.clear()
+      metaData ++= newMetaData
 
+      sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
     } else{
       sender ! DataManagerResponse(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
     }
