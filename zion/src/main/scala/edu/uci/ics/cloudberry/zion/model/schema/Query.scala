@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import play.api.libs.json.JsArray
 

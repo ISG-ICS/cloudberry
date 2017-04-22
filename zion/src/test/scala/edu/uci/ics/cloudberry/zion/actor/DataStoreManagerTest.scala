@@ -256,6 +256,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     "respond success if register a correct data model and registered dataset can be successfully retrieved" in {
       sender.send(dataManager, registerRequest)
       sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      meta.receiveOne(1 second)
+
       sender.send(dataManager, AskInfoAndViews("test"))
       val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
       infos.map { dataset: DataSetInfo =>
@@ -291,9 +293,14 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
       ok
     }
-    "respond success if deregister an existing data model" in {
+    "respond success if deregister an existing data model, send DeleteRecord to metaActor and remove from metaData" in {
       sender.send(dataManager, deregisterRequest)
       sender.expectMsg(DataManagerResponse(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
+      val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(deregisterRequest.dataset))
+      meta.expectMsg(DeleteRecord(metaDataSet, Seq(metaRecordFilter)))
+
+      sender.send(dataManager, AskInfoAndViews(deregisterRequest.dataset))
+      sender.expectMsg(Seq.empty)
       ok
     }
     "respond failure if deregister a non-existing data model" in {
