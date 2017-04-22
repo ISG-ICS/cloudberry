@@ -79,7 +79,7 @@
               return deferred.promise();
        }
   }
-
+//to insert polygons into the Rtree
  var insertIntoTree = function insertIntoTree(features,currentRequest){
 
        var deferred = new $.Deferred();
@@ -122,7 +122,7 @@
  }
 
 
-
+//determine which region of cached region to cut to satisfy Target,if first region couldn't satisfy the Target go to new region
   var evict = function Evict(currentRequest){
 
        var deferred = new $.Deferred();
@@ -294,7 +294,7 @@
            return deferred.promise();
        }
  }
-
+//sees whether cutting the region can satisfy the target ,If not sends a failed message to evict function
  var cutRegion =  function findCornerofEviction(minX,minY,maxX,maxY){
             var deferred = new $.Deferred();
             var line = turf.lineString([[minX,maxY],[maxX,maxY]]);
@@ -325,6 +325,9 @@
 
             deletion(removeItems).done(function(){
 //                    console.log("Delete is complete");
+                    var PolygonRegionRemovedFromCache = turf.bboxPolygon(remove_search);
+                    cacheSize -= DeletedCount;
+                    CachedRegion = turf.difference(CachedRegion,PolygonRegionRemovedFromCache);
                     DeleteTarget -= DeletedCount;
                     DeletedCount = 0;
             });
@@ -340,7 +343,7 @@
                   return deferred.promise();
             }
  }
-
+//wher real deletion from tree occurs
  var deletion = function deleteNodesfromTree(removeItems){
       var deferred = new $.Deferred();
       for (var i = 0;i<removeItems.length;i++)
