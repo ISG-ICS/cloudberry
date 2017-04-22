@@ -327,7 +327,7 @@
 //                    console.log("Delete is complete");
                     var PolygonRegionRemovedFromCache = turf.bboxPolygon(remove_search);
                     cacheSize -= DeletedCount;
-                    CachedRegion = turf.difference(CachedRegion,PolygonRegionRemovedFromCache);
+                    cachedRegion = turf.difference(cachedRegion,PolygonRegionRemovedFromCache);
                     DeleteTarget -= DeletedCount;
                     DeletedCount = 0;
             });
