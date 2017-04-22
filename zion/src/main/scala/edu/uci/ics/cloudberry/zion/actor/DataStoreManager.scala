@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, InvalidActorNameException, PoisonPill, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -161,28 +161,22 @@ class DataStoreManager(metaDataset: String,
     val dropTableName = dropTable.dataset
 
     if(metaData.contains(dropTableName)){
-      context.child("data-" + dropTableName) match {
-        case Some(datasetActor) => datasetActor ! PoisonPill
-        case None =>
-      }
 
+      metaData.remove(dropTableName)
+      context.child("data-" + dropTableName).foreach( child => child ! PoisonPill)
       val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
       metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
 
-      metaData.foreach( dataSchema =>
-        dataSchema._2.createQueryOpt match {
-          case Some(query) =>
-            if(query.dataset == dropTableName){
-              metaActor ! DropView(dataSchema._1)
-              val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dataSchema._1))
-              metaActor ! DeleteRecord(metaDataset, Seq(viewRecordFilter))
-            }
-          case None =>
-        }
-      )
+      metaData.filter{ p =>
+        p._2.createQueryOpt.exists( query => query.dataset == dropTableName)
+      }.foreach { p =>
+        metaActor ! DropView(p._1)
+        val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(p._1))
+        metaActor ! DeleteRecord(metaDataset, Seq(viewRecordFilter))
+      }
 
-      val newMetaData = metaData.filterNot{ case (key, value) =>
-        key == dropTableName || value.createQueryOpt.exists(q => q.dataset == dropTableName)
+      val newMetaData = metaData.filterNot{ p =>
+        p._2.createQueryOpt.exists(q => q.dataset == dropTableName)
       }
       metaData.clear()
       metaData ++= newMetaData
