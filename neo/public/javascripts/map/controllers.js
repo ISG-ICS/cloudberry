@@ -530,7 +530,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       if ($scope.map) {
         $scope.normalize.addTo($scope.map);
-        $('#toggle-normalize').bootstrapToggle();
+        $('#toggle-normalize').bootstrapToggle({
+          on: "By Population"
+        });
       }
 
     }
