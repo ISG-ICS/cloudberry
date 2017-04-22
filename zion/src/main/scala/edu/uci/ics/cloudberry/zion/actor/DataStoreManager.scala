@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, InvalidActorNameException, PoisonPill, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -161,6 +161,11 @@ class DataStoreManager(metaDataset: String,
     val dropTableName = dropTable.dataset
 
     if(metaData.contains(dropTableName)){
+      context.child("data-" + dropTableName) match {
+        case Some(datasetActor) => datasetActor ! PoisonPill
+        case None =>
+      }
+
       val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
       metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
 
