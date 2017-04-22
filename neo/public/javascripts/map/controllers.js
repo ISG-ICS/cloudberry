@@ -497,6 +497,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           }
         });
 
+        if($scope.doNormalization)
+          div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
+
         // loop through our density intervals and generate a label with a colored square for each interval
         var i = 1;
         for (; i < grades.length; i++) {
