@@ -1,5 +1,5 @@
  angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
- .service('Cache', function( $window, $http, $compile, Asterix){
+ .service('Cache', function( $window, $http, $compile, cloudberry){
 
 
   var cachedCityPolygonTree = rbush();
@@ -12,7 +12,8 @@
   var preFetchDistance = 25;
 
 
-
+  /*Call will happen from map controller and this functions sees whether a required data is present in cache or not 
+  if not gets from midleware*/
   this.getCityPolygonsFromCache = function city(bounds){
 
        var deferred = new $.Deferred();
@@ -40,16 +41,13 @@
 
        if(cachedRegion != undefined && turf.difference(currentRequestPolygon,cachedRegion) == undefined) {
               //cache HIT
-//              var t0 = performance.now();
              var result = cachedCityPolygonTree.search(item);
              data_response = turf.featureCollection(result);
              deferred.resolve(data_response);
-//              console.log("Cache HIT took",performance.now()-t0);
              return deferred.promise();
 
        }else{
                    //cache MISS
-//               var MISSt0 = performance.now();
               var buffered = turf.buffer(currentRequestPolygon, preFetchDistance , 'miles');
               var bboxBuffer = turf.bbox(buffered);
                    //Pre Fetch
@@ -75,7 +73,6 @@
               }).error(function(data) {
                                     console.error("Load city data failure");
               });
-//               console.log("Cache MISS took",performance.now()-MISSt0);
               return deferred.promise();
        }
   }
@@ -144,7 +141,7 @@
        var LowerLeftCorner  = turf.point([R_minX,R_minY]);
        var LowerRightCorner = turf.point([R_maxY,R_minY]);
 
-//       console.log("evict function called");
+
        var CacheMBR = turf.bboxPolygon(cache_bbox);
        if(turf.inside(LowerLeftCorner,CacheMBR)&&turf.inside(LowerRightCorner,CacheMBR)){
 
@@ -324,7 +321,7 @@
             }
 
             deletion(removeItems).done(function(){
-//                    console.log("Delete is complete");
+                    //Delete is complete
                     var PolygonRegionRemovedFromCache = turf.bboxPolygon(remove_search);
                     cacheSize -= DeletedCount;
                     cachedRegion = turf.difference(cachedRegion,PolygonRegionRemovedFromCache);
@@ -334,16 +331,16 @@
 
             if(DeleteTarget>0){
 
-//                  console.log("UnSucessFul Delete");
+                 //UnSucessFul Delete
                   deferred.reject();
                   return deferred.promise();
             }else{
-//                  console.log("SucessFul Delete");
+                  // SucessFul Delete
                   deferred.resolve();
                   return deferred.promise();
             }
  }
-//wher real deletion from tree occurs
+//wher deletion from tree occurs
  var deletion = function deleteNodesfromTree(removeItems){
       var deferred = new $.Deferred();
       for (var i = 0;i<removeItems.length;i++)
