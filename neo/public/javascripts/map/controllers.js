@@ -490,12 +490,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           }
 
           if($scope.doNormalization){
-            return returnText + "/" + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
+            return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
           }
           else{
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
           }
         });
+
+        if($scope.doNormalization)
+          div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
 
         // loop through our density intervals and generate a label with a colored square for each interval
         var i = 1;
@@ -530,7 +533,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       };
       if ($scope.map) {
         $scope.normalize.addTo($scope.map);
-        $('#toggle-normalize').bootstrapToggle();
+        $('#toggle-normalize').bootstrapToggle({
+          on: "By Population"
+        });
       }
 
     }
