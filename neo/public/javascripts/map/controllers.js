@@ -1,6 +1,6 @@
 
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile,cloudberry, Asterix, leafletData, Cache ,cloudberryConfig) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, Cache ,cloudberryConfig) {
 
 
     $scope.result = {};
@@ -356,9 +356,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
           if (!$scope.status.init) {
                 resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
-                Asterix.parameters.geoLevel = 'city';
-                Asterix.queryType = 'zoom';
-                Asterix.query(Asterix.parameters, Asterix.queryType);
+                cloudberry.parameters.geoLevel = 'city';
+                cloudberry.queryType = 'zoom';
+                cloudberry.query(Asterix.parameters, Asterix.queryType);
             }
            $scope.map.addLayer($scope.polygons.cityPolygons);
 
