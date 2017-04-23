@@ -1,6 +1,6 @@
 
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, Asterix, leafletData, Cache ,cloudberryConfig) {
+  .controller('MapCtrl', function($scope, $window, $http, $compile,cloudberry, Asterix, leafletData, Cache ,cloudberryConfig) {
 
 
     $scope.result = {};
@@ -342,14 +342,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     function loadCityJsonByBound(onEachFeature){
       var bounds = $scope.map.getBounds();
 
-      var data_from_cache = Cache.getCityPolygonsFromCache(bounds).done(function(data_response){
+      var data_from_cache = Cache.getCityPolygonsFromCache(bounds).done(function(data){
 
-          $scope.geojsonData.city = data_response;
+          $scope.geojsonData.city = data;
 
           if($scope.polygons.cityPolygons) {
                 $scope.map.removeLayer($scope.polygons.cityPolygons);
               }
-          $scope.polygons.cityPolygons = L.geoJson(data_response, {
+          $scope.polygons.cityPolygons = L.geoJson(data, {
                             style: $scope.styles.cityStyle,
                             onEachFeature: onEachFeature
               });
@@ -364,8 +364,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             }
            $scope.map.addLayer($scope.polygons.cityPolygons);
 
-      });
-
+         });
 
     }
 
