@@ -350,17 +350,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 $scope.map.removeLayer($scope.polygons.cityPolygons);
               }
           $scope.polygons.cityPolygons = L.geoJson(data, {
-                            style: $scope.styles.cityStyle,
-                            onEachFeature: onEachFeature
+                style: $scope.styles.cityStyle,
+                onEachFeature: onEachFeature
               });
 
-
           if (!$scope.status.init) {
-
-                        resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
-                        Asterix.parameters.geoLevel = 'city';
-                        Asterix.queryType = 'zoom';
-                        Asterix.query(Asterix.parameters, Asterix.queryType);
+                resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
+                Asterix.parameters.geoLevel = 'city';
+                Asterix.queryType = 'zoom';
+                Asterix.query(Asterix.parameters, Asterix.queryType);
             }
            $scope.map.addLayer($scope.polygons.cityPolygons);
 
