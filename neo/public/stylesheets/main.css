@@ -151,3 +151,7 @@ time-series {
 #count-text{
   font-size: 13px;
 }
+
+.normalize p{
+  text-align: center;
+}
