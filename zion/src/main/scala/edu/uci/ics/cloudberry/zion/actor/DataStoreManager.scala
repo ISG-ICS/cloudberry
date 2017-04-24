@@ -171,15 +171,11 @@ class DataStoreManager(metaDataset: String,
         p._2.createQueryOpt.exists( query => query.dataset == dropTableName)
       }.foreach { p =>
         metaActor ! DropView(p._1)
+        context.child("data-" + p._1).foreach( child => child ! PoisonPill)
+        metaData.remove(p._1)
         val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(p._1))
         metaActor ! DeleteRecord(metaDataset, Seq(viewRecordFilter))
       }
-
-      val newMetaData = metaData.filterNot{ p =>
-        p._2.createQueryOpt.exists(q => q.dataset == dropTableName)
-      }
-      metaData.clear()
-      metaData ++= newMetaData
 
       sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
     } else{
