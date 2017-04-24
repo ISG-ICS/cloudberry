@@ -172,10 +172,18 @@ class DataStoreManager(metaDataset: String,
       }.foreach { p =>
         metaActor ! DropView(p._1)
         context.child("data-" + p._1).foreach( child => child ! PoisonPill)
-        metaData.remove(p._1)
         val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(p._1))
         metaActor ! DeleteRecord(metaDataset, Seq(viewRecordFilter))
       }
+
+      // Before retrieve subset of metaData using .filter or .filterNot, etc.,
+      // Use .toMap method to change metaData into immutable map
+      // Otherwise when metaData is clear, no information will be retained.
+      val newMetaData = metaData.toMap.filterNot{ p =>
+        p._2.createQueryOpt.exists(q => q.dataset == dropTableName)
+      }
+      metaData.clear()
+      metaData ++= newMetaData
 
       sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
     } else{
