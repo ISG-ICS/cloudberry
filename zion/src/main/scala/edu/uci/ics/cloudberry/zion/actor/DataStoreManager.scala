@@ -172,8 +172,6 @@ class DataStoreManager(metaDataset: String,
       }.foreach { p =>
         metaActor ! DropView(p._1)
         context.child("data-" + p._1).foreach( child => child ! PoisonPill)
-        val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(p._1))
-        metaActor ! DeleteRecord(metaDataset, Seq(viewRecordFilter))
       }
 
       // Before retrieve subset of metaData using .filter or .filterNot, etc.,
