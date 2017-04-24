@@ -8,9 +8,11 @@
     <h3>Registered Datasets</h3>
     <div class="list-group">
     @for(d <- datasets) {
-        <li class="list-group-item">@{
-            Json.prettyPrint(d)
-        }</li>
+        <li class="list-group-item">
+            <pre class="prettyprint">@{
+                Json.prettyPrint(d)
+            }</pre>
+        </li>
     }
     </div>
 

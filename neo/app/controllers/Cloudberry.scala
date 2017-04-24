@@ -116,7 +116,6 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     val flow = Cloudberry.actorFlow[JsValue, JsValue]({ out =>
       BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out)
     }, BerryClient.Done)
-    // ??? do we need to convert it to string ??? will be more clear after we have the use case.
     val toStringFlow = Flow[JsValue].map(js => js.toString() + System.lineSeparator())
     Ok.chunked((source via flow) via toStringFlow)
   }
