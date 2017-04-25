@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import java.util.concurrent.Executors
 
-import akka.actor.{ActorRef, ActorRefFactory, Props}
+import akka.actor.{ActorRef, ActorRefFactory, PoisonPill, Props}
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -166,6 +166,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       newInfo.stats.lastModifyTime.getMillis must be_>=(now.getMillis)
     }
     "update meta info if receive drop request" in {
+      // this test case is for ???
       ok
     }
     "use existing child to solve the query" in {
@@ -173,7 +174,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     }
   }
 
-  "Register/Deregister Data model" should {
+  "Data schema registering process" should {
     val sender = new TestProbe(system)
     val view = new TestProbe(system)
     val base = new TestProbe(system)
@@ -212,9 +213,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     val field4 = NumberField("myNumber")
     val schema = UnresolvedSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myTime")
     val registerRequest = Register("test", schema)
-    val deregisterRequest = Deregister("test")
 
-    "parse json register/deregister request" in {
+    "parse json register request" in {
       val jsonRegisterRequest = Json.parse(
         """
           |{
@@ -239,18 +239,6 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
         case jsonResult: JsSuccess[Register] => jsonResult.get mustEqual(registerRequest)
         case _ => throw new IllegalArgumentException
       }
-
-      val jsonDeregisterRequest = Json.parse(
-        """
-          |{
-          |   "dataset": "test"
-          |}
-        """.stripMargin)
-
-      jsonDeregisterRequest.validate[Deregister] match {
-        case jsonResult: JsSuccess[Deregister] => jsonResult.get mustEqual(deregisterRequest)
-        case _ => throw new IllegalArgumentException
-      }
       ok
     }
     "respond success if register a correct data model and registered dataset can be successfully retrieved" in {
@@ -261,9 +249,9 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.send(dataManager, AskInfoAndViews("test"))
       val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
       infos.map { dataset: DataSetInfo =>
-        dataset.name must_==("test")
+        dataset.name must_== "test"
         val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
-        dataset.schema must_==(datasetSchema)
+        dataset.schema must_== datasetSchema
       }
       ok
     }
@@ -293,18 +281,74 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
       ok
     }
-    "respond success if deregister an existing data model, send DeleteRecord to metaActor and remove from metaData" in {
+  }
+
+  "Data schema deregistering process" should {
+    val sender = new TestProbe(system)
+    val view = new TestProbe(system)
+    val base = new TestProbe(system)
+    val meta = new TestProbe(system)
+    val metaDataSet = "metaDataSet"
+
+    def testActorMaker(agentType: AgentType.Value,
+                       context: ActorRefFactory,
+                       actorName: String,
+                       dbName: String,
+                       dbSchema: Schema,
+                       qLGenerator: IQLGenerator,
+                       conn: IDataConn,
+                       appConfig: Config
+                      )(implicit ec: ExecutionContext): ActorRef = {
+      import AgentType._
+      agentType match {
+        case Meta => meta.ref
+        case Origin => base.ref
+        case View => view.ref
+      }
+    }
+
+    val mockParserFactory = mock[IQLGeneratorFactory]
+    val mockConn = mock[IDataConn]
+    val initialInfo = Json.toJson(Seq(DataSetInfo.write(sourceInfo), DataSetInfo.write(zikaHalfYearViewInfo))).asInstanceOf[JsArray]
+    val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
+    meta.receiveOne(1 second)
+    meta.reply(initialInfo)
+    sender.send(dataManager, DataStoreManager.AreYouReady)
+    sender.expectMsg(true)
+    sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
+    sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
+
+    val deregisterRequest = Deregister(sourceInfo.name)
+
+    "parse deregister request" in {
+      val jsonDeregisterRequest = Json.parse(
+        s"""
+          |{
+          |   "dataset": "${sourceInfo.name}"
+          |}
+        """.stripMargin)
+
+      jsonDeregisterRequest.validate[Deregister] match {
+        case jsonResult: JsSuccess[Deregister] => jsonResult.get mustEqual deregisterRequest
+        case _ => throw new IllegalArgumentException
+      }
+      ok
+    }
+    "If deregister an existing data model, remove from metaData, delete meta dataset record, drop views, kill dataset and views actor and respond success" in {
       sender.send(dataManager, deregisterRequest)
       sender.expectMsg(DataManagerResponse(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
-      val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(deregisterRequest.dataset))
-      meta.expectMsg(DeleteRecord(metaDataSet, Seq(metaRecordFilter)))
+      val datasetFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(deregisterRequest.dataset))
+      meta.expectMsg(DeleteRecord(metaDataSet, Seq(datasetFilter)))
+      meta.expectMsg(DropView(zikaHalfYearViewInfo.name))
+      base.expectMsg(PoisonPill)
+      view.expectMsg(PoisonPill)
 
       sender.send(dataManager, AskInfoAndViews(deregisterRequest.dataset))
       sender.expectMsg(Seq.empty)
       ok
     }
-    "respond failure if deregister a non-existing data model" in {
-      val anotherDeregisterRequest = Deregister("anotherTable")
+    "If deregister a non-existing data model, respond failure" in {
+      val anotherDeregisterRequest = Deregister("NoSuchDataSet")
       sender.send(dataManager, anotherDeregisterRequest)
       sender.expectMsg(DataManagerResponse(false, "Deregister Denied: dataset " + anotherDeregisterRequest.dataset + " does not exist in database.\n"))
       ok
