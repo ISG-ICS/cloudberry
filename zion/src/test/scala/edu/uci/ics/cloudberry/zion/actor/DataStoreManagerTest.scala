@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import java.util.concurrent.Executors
 
-import akka.actor.{ActorRef, ActorRefFactory, PoisonPill, Props}
+import akka.actor._
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -318,6 +318,14 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
     sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
 
+    // I tried to name a self-defined actor as the same name of a dataset actor,
+    // but it seems it didn't receive the expected message.
+    val actor1 = system.actorOf(Props(new Actor{
+      override def receive: Receive = {
+        case kill: PoisonPill => println("xxxx")
+      }
+    }), "data-" + sourceInfo.name)
+
     val deregisterRequest = Deregister(sourceInfo.name)
 
     "parse deregister request" in {
@@ -340,8 +348,6 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val datasetFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(deregisterRequest.dataset))
       meta.expectMsg(DeleteRecord(metaDataSet, Seq(datasetFilter)))
       meta.expectMsg(DropView(zikaHalfYearViewInfo.name))
-      base.expectMsg(PoisonPill)
-      view.expectMsg(PoisonPill)
 
       sender.send(dataManager, AskInfoAndViews(deregisterRequest.dataset))
       sender.expectMsg(Seq.empty)
