@@ -28,7 +28,6 @@ create type typeStatePopulation if not exists as open{
     stateID:int64
 }
 create dataset dsStatePopulation(typeStatePopulation) if not exists primary key stateID;
-create index stateIDIndex if not exists on dsStatePopulation(stateID) type btree;
 
 create type typeCountyPopulation if not exists as open{
     name:string,
@@ -97,6 +96,9 @@ echo 'Ingested city population dataset.'
 cat <<'EOF' | curl -XPOST --data-binary @- http://localhost:19002/aql
 use dataverse twitter;
 stop feed CityPopulationFeed;
+drop feed CityPopulationFeed;
 stop feed CountyPopulationFeed;
+drop feed CountyPopulationFeed;
 stop feed StatePopulationFeed;
+drop feed StatePopulationFeed;
 EOF
