@@ -37,7 +37,6 @@ create type typeCountyPopulation if not exists as open{
     stateID:int64
 }
 create dataset dsCountyPopulation(typeCountyPopulation) if not exists primary key countyID;
-create index countyIDIndex if not exists on dsCountyPopulation(countyID) type btree;
 
 create type typeCityPopulation if not exists as open{
     name:string,
@@ -49,7 +48,6 @@ create type typeCityPopulation if not exists as open{
     stateID:int64
 }
 create dataset dsCityPopulation(typeCityPopulation) if not exists primary key cityID;
-create index cityIDIndex if not exists on dsCityPopulation(cityID) type btree;
 
 create feed StatePopulationFeed using socket_adapter
 (
