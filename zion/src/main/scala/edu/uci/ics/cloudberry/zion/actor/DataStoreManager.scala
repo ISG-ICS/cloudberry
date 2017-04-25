@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, PoisonPill, Props, Stash}
+import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -167,18 +167,18 @@ class DataStoreManager(metaDataset: String,
       val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
       metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
 
-      metaData.filter{ p =>
-        p._2.createQueryOpt.exists( query => query.dataset == dropTableName)
-      }.foreach { p =>
-        metaActor ! DropView(p._1)
-        context.child("data-" + p._1).foreach( child => child ! PoisonPill)
+      metaData.filter{ case(name, info) =>
+        info.createQueryOpt.exists( query => query.dataset == dropTableName)
+      }.foreach { case(name, info) =>
+        metaActor ! DropView(name)
+        context.child("data-" + name).foreach( child => child ! PoisonPill)
       }
 
       // Before retrieve subset of metaData using .filter or .filterNot, etc.,
       // Use .toMap method to change metaData into immutable map
       // Otherwise when metaData is clear, no information will be retained.
-      val newMetaData = metaData.toMap.filterNot{ p =>
-        p._2.createQueryOpt.exists(q => q.dataset == dropTableName)
+      val newMetaData = metaData.toMap.filterNot{ case(name, info) =>
+        info.createQueryOpt.exists(q => q.dataset == dropTableName)
       }
       metaData.clear()
       metaData ++= newMetaData

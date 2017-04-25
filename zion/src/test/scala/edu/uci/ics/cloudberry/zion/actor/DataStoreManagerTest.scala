@@ -165,10 +165,6 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       newInfo.stats.cardinality must_== (viewStatJson \\ "count").head.as[Long]
       newInfo.stats.lastModifyTime.getMillis must be_>=(now.getMillis)
     }
-    "update meta info if receive drop request" in {
-      // this test case is for ???
-      ok
-    }
     "use existing child to solve the query" in {
       ok
     }
@@ -318,13 +314,13 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
     sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
 
-    // I tried to name a self-defined actor as the same name of a dataset actor,
-    // but it seems it didn't receive the expected message.
+    /*
     val actor1 = system.actorOf(Props(new Actor{
       override def receive: Receive = {
         case kill: PoisonPill => println("xxxx")
       }
     }), "data-" + sourceInfo.name)
+    */
 
     val deregisterRequest = Deregister(sourceInfo.name)
 
@@ -348,6 +344,9 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val datasetFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(deregisterRequest.dataset))
       meta.expectMsg(DeleteRecord(metaDataSet, Seq(datasetFilter)))
       meta.expectMsg(DropView(zikaHalfYearViewInfo.name))
+      //base.expectMsg(PoisonPill)
+      //view.expectMsg(PoisonPill)
+      // The above two actors receive nothing. Maybe the actor is created in answering Queries, thus we should send query to them?
 
       sender.send(dataManager, AskInfoAndViews(deregisterRequest.dataset))
       sender.expectMsg(Seq.empty)
