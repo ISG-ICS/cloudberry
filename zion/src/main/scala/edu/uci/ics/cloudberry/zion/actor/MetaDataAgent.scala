@@ -25,7 +25,7 @@ class MetaDataAgent(override val dbName: String,
     case delete: DeleteRecord =>
       processUpdate(queryParser.generate(delete, Map(dbName -> schema)))
     case drop: DropView =>
-      // Note: parameter SchemaMap is not used in parseDrop.
+      // Note: parameter SchemaMap is not used in this case.
       processUpdate(queryParser.generate(drop, Map()))
       val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(drop.dataset))
       self ! DeleteRecord(DataSetInfo.MetaDataDBName, Seq(viewRecordFilter))
