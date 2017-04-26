@@ -286,6 +286,18 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     val meta = new TestProbe(system)
     val metaDataSet = "metaDataSet"
 
+    def createDelegateActor(name: String, context: ActorRefFactory, actor: ActorRef) : ActorRef = {
+      context.actorOf(Props(new Actor{
+        override def receive: Receive = {
+          case any => actor.forward(any)
+        }
+
+        override def postStop(): Unit = {
+          actor ! "PoisonPill"
+        }
+      }), name)
+    }
+
     def testActorMaker(agentType: AgentType.Value,
                        context: ActorRefFactory,
                        actorName: String,
@@ -297,9 +309,9 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                       )(implicit ec: ExecutionContext): ActorRef = {
       import AgentType._
       agentType match {
-        case Meta => meta.ref
-        case Origin => base.ref
-        case View => view.ref
+        case Meta => createDelegateActor(actorName, context, meta.ref)
+        case Origin => createDelegateActor(actorName, context, base.ref)
+        case View => createDelegateActor(actorName, context, view.ref)
       }
     }
 
@@ -313,14 +325,6 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     sender.expectMsg(true)
     sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
     sender.expectMsg(Seq(sourceInfo, zikaHalfYearViewInfo))
-
-    /*
-    val actor1 = system.actorOf(Props(new Actor{
-      override def receive: Receive = {
-        case kill: PoisonPill => println("xxxx")
-      }
-    }), "data-" + sourceInfo.name)
-    */
 
     val deregisterRequest = Deregister(sourceInfo.name)
 
@@ -339,14 +343,20 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
     "If deregister an existing data model, remove from metaData, delete meta dataset record, drop views, kill dataset and views actor and respond success" in {
+      val query = Query(sourceInfo.name)
+      sender.send(dataManager, query)
+      base.expectMsg(query)
+      val appendView = AppendView(zikaHalfYearViewInfo.name, Query(sourceInfo.name))
+      sender.send(dataManager, appendView)
+      view.expectMsg(appendView)
+
       sender.send(dataManager, deregisterRequest)
       sender.expectMsg(DataManagerResponse(true, "Deregister Finished: dataset " + deregisterRequest.dataset + " has successfully removed.\n"))
       val datasetFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(deregisterRequest.dataset))
       meta.expectMsg(DeleteRecord(metaDataSet, Seq(datasetFilter)))
       meta.expectMsg(DropView(zikaHalfYearViewInfo.name))
-      //base.expectMsg(PoisonPill)
-      //view.expectMsg(PoisonPill)
-      // The above two actors receive nothing. Maybe the actor is created in answering Queries, thus we should send query to them?
+      base.expectMsg("PoisonPill")
+      view.expectMsg("PoisonPill")
 
       sender.send(dataManager, AskInfoAndViews(deregisterRequest.dataset))
       sender.expectMsg(Seq.empty)
