@@ -497,7 +497,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       $scope.legend.onAdd = function(map) {
         var div = L.DomUtil.create('div', 'info legend');
         if($scope.doSentiment){
-          div.setAttribute("title", "Sentiment: 0-4, Negative-Positive");  // add tool-tips for the legend
+          div.setAttribute("title", "Sentiment Score: Negative(0)-Positive(4)");  // add tool-tips for the legend
           div.innerHTML +=
             '<i style="background:' + getColor(1) + '"></i>Negative<br>';
           div.innerHTML +=
@@ -543,7 +543,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           }
           div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
         }
+
         return div;
+
       };
       if ($scope.map)
         $scope.legend.addTo($scope.map);
@@ -571,6 +573,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         $('#toggle-normalize').bootstrapToggle({
           on: "By Population"
         });
+        if($scope.doSentiment){
+          $('#toggle-normalize').bootstrapToggle('off');
+          $('#toggle-normalize').bootstrapToggle('disable');
+        }
       }
 
       // add toggle sentiment analysis
