@@ -17,4 +17,7 @@
 #      REVISION:  ---
 #===============================================================================
 
-curl -d "@./script/dataModel/registerTweets.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register; curl -d "@./script/dataModel/registerStatePopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register; curl -d "@./script/dataModel/registerCountyPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register; curl -d "@./script/dataModel/registerCityPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
+curl -d "@./script/dataModel/registerTweets.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
+curl -d "@./script/dataModel/registerStatePopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
+curl -d "@./script/dataModel/registerCountyPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
+curl -d "@./script/dataModel/registerCityPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/register
