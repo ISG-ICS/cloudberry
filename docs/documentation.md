@@ -3,14 +3,13 @@ layout: page
 title: Documentation
 toc: true
 ---
-
 ## Quick Start
 
 Now let's checkout the code and run a TwitterMap demo on your local machine!
 You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
 *This demo requires at least 4G memory*.
 
-* Clone the code  
+* Clone the code
 
 ```
 git clone https://github.com/ISG-ICS/cloudberry.git
@@ -22,30 +21,45 @@ git clone https://github.com/ISG-ICS/cloudberry.git
 cd cloudberry; sbt compile
 ```
 
-* Prepare the AsterixDB cluster:
-  Cloudberry runs on an Apache AsterixDB cluster.
-  You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
+* Prepare the AsterixDB cluster: Cloudberry runs on an Apache AsterixDB cluster. You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
+   1. Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
+   2. Simply run the following command in the **cloudberry** folder to create an AsterixDB cluster locally.
 
-   - Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
-   - Simply run the following command in the `cloudberry` folder to create an AsterixDB cluster locally.
-   ```
-   ./script/dockerRunAsterixDB.sh
-   ```
+```
+./script/dockerRunAsterixDB.sh
+```
 
-* Ingest 324,000 sample tweets to AsterixDB.
+* Ingest 324,000 sample tweets into AsterixDB
 
 ```
 ./script/ingestTwitterToLocalCluster.sh
 ```
 
+* Ingest 33,107 US population data into AsterixDB (assume you are using Docker):
+* Run the following commands in the **cloudberry** folder to copy three population datasets into docker container `nc1`
+
+```
+docker cp noah/src/main/resources/population/adm/allStatePopulation.adm nc1:/home
+docker cp noah/src/main/resources/population/adm/allCountyPopulation.adm nc1:/home
+docker cp noah/src/main/resources/population/adm/allCityPopulation.adm nc1:/home
+```
+
+* Open `noah/src/main/resources/population/sqlpp/ingestPopulation.sqlpp` using a text editor and copy all of its contents. You may need to change the IP address of `nc1` by running the following script:
+
+{% raw %}
+```
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nc1
+```
+{% endraw %}
+
+* Go to the AsterixDB web interface (`http://localhost:19001/` in the docker case). Copy and paste the `ingestPopulation.sqlpp` content into the web page and execute the query. You should see **Success: Query Complete** in the output.
 * Run cloudberry
 
 ```
 sbt "project neo" "run"
 ```
 
-*Please notice that the first time you open the page, it could take several minutes (depending on your machine) to load the front-end data.
-If you see the following messages from the console, it means the loading process is done.*
+*Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data. If you see the following messages from the console, it means the loading process is done.*
 
 ```
 ...
@@ -53,16 +67,17 @@ If you see the following messages from the console, it means the loading process
 [info] play.api.Play - Application started (Dev)
 ```
 
-* Once cloudberry successfully launched, register twitter map data model into cloudberry.
+* Once Cloudberry has successfully launched, register data models into Cloudberry by running the following scripts in the **cloudberry** folder
 
 ```
-./script/twitterMapRegister.sh
+./script/registerTwitterMapDataModel.sh
 ```
 
-You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000) and start to play with it!
+* **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost. Check it out at [http://localhost:9000](http://localhost:9000) and start playing with it!
 
 
 ## Concepts
+
 The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
 
 The following document uses an already ingested AsterixDB Twitter dataset to illustrate how to set up the Cloudberry system on the dataset.
@@ -97,6 +112,7 @@ create type typeTweet if not exists as open{
 ```
 
 ## Data Schema
+
 Front-end developers need to tell Cloudberry which dataset to query and how the dataset looks like so that it can utilize the Cloudberry optimization techniques.
 
 The data set schema declaration is composed of five distinct components.
@@ -109,7 +125,7 @@ The data set schema declaration is composed of five distinct components.
 
 The following JSON request can be used to register the Twitter dataset inside AsterixDB to the middleware.
 
-```
+```json
 {
   "dataset":"twitter.ds_tweet",
   "schema":{
@@ -150,6 +166,7 @@ The following JSON request can be used to register the Twitter dataset inside As
 Fields that are not relevant to the visualization queries are not required to appear in the schema declaration.
 
 ### Data Types
+
 Cloudberry supports the following data types:
 
 * **Boolean** : the same `Boolean` type as in AsterixDB.
@@ -176,6 +193,7 @@ Cloudberry supports the following data types:
 
 
 ## Format of requests to the middleware
+
 After defining the dataset, the front-end can send a JSON request to query it.
 A request is composed of the following parameters:
 
@@ -189,9 +207,9 @@ A request is composed of the following parameters:
 
 ### Examples
 
-1. Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.
+* Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.
 
-```
+```json
 {
   "dataset": "twitter.ds_tweet",
   "filter": [
@@ -207,7 +225,7 @@ A request is composed of the following parameters:
     }
   ],
   "group": {
-     "by": [
+    "by": [
         {
           "field": "geo.state",
           "as": "state"
@@ -223,22 +241,22 @@ A request is composed of the following parameters:
           "as": "hour"
         }
       ],
-     "aggregate": [
-       {
-         "field": "*",
-         "apply": {
-           "name": "count"
-         },
-         "as": "count"
-       }
+    "aggregate": [
+      {
+        "field": "*",
+        "apply": {
+          "name": "count"
+        },
+        "as": "count"
+      }
       ]
   }
 }
 ```
 
-2. Get the top-10 related hashtags for tweets that mention "zika"
+* Get the top-10 related hashtags for tweets that mention "zika".
 
-```
+```json
 {
   "dataset": "twitter.ds_tweet",
   "filter": [
@@ -271,9 +289,9 @@ A request is composed of the following parameters:
 }
 ```
 
-3. Get 100 latest sample tweets that mention "zika".
+* Get 100 latest sample tweets that mention "zika".
 
-```
+```json
 {
   "dataset": "twitter.ds_tweet",
   "filter": [{
@@ -295,7 +313,7 @@ A request is composed of the following parameters:
 Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each "small query" to get the results progressively.
 For example, the following option specifies that the front-end wants to slice a query and the expected response time for each sliced "small query" is 2000 ms.
 
-```
+```json
 {
  ...
  "option":{
@@ -305,9 +323,10 @@ For example, the following option specifies that the front-end wants to slice a 
 ```
 
 #### Format of multiple requests
+
 Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results. In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
 
-```
+```json
 {
   "batch" : [
     { request1 },
@@ -320,6 +339,7 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
 ```
 
 #### Transform response format
+
 The front end can **optionally** add a "transform" operation in JSON request to define the post-processing operations. 
 For example, front-ends can define a `wrap` operation to wrap the whole response in a key-value pair JSON object in which the `key` is pre-defined. The following request asks the Cloudberry to wrap the result in the value with the key of `sample`:
 
@@ -347,7 +367,7 @@ For example, front-ends can define a `wrap` operation to wrap the whole response
 
 The response is as below:
 
-```
+```json
 {
   "key":"sample",
   "value":[[
@@ -368,6 +388,8 @@ The response is as below:
 `wrap` transformation is often preferable when the front-end send many different requests in the same WebSocket interface. 
 
 ### Advanced users
+
+#### Multi-node AsterixDB cluster
 
 Some applications may require a multi-node AsterixDB cluster.
 You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
@@ -393,3 +415,10 @@ In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` val
 asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
 ```
 
+#### Deregister Tweets and US Population Data Models
+
+You may also deregister these data models from the Cloudberry to experiment with other data models. But be careful when doing this as the TwitterMap won't work without these data models.
+
+```
+./script/deregisterTwitterMapDataModel.sh
+```

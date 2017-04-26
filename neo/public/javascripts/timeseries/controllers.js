@@ -1,5 +1,5 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
-  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, Asterix) {
+  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry) {
     $scope.ndx = null;
     $scope.result = {};
     $scope.resultArray = [];
@@ -10,7 +10,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.totalCount = 0;
     $scope.currentTweetCount = 0;
     $scope.queried = false;
-    for (var date = new Date(); date >= Asterix.startDate; date.setDate(date.getDate()-1)) {
+    for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
     $scope.preProcess = function (result) {
@@ -45,7 +45,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
     $scope.$watch(
       function() {
-        return Asterix.timeResult;
+        return cloudberry.timeResult;
       },
 
       function(newResult) {
@@ -61,7 +61,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
     $scope.$watch(
       function () {
-        return Asterix.totalCount;
+        return cloudberry.totalCount;
       },
 
       function (newCount) {
@@ -72,7 +72,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     );
 
   })
-  .directive('timeSeries', function (Asterix) {
+  .directive('timeSeries', function (cloudberry) {
     var margin = {
       top: 10,
       right: 30,
@@ -118,10 +118,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var timeBrush = timeSeries.brush();
 
             var requestFunc = function(min, max) {
-              Asterix.parameters.timeInterval.start = min;
-              Asterix.parameters.timeInterval.end = max;
-              Asterix.queryType = 'time';
-              Asterix.query(Asterix.parameters, Asterix.queryType);
+              cloudberry.parameters.timeInterval.start = min;
+              cloudberry.parameters.timeInterval.end = max;
+              cloudberry.queryType = 'time';
+              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             };
 
             timeBrush.on('brushend', function (e) {
@@ -129,7 +129,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               requestFunc(extent[0], extent[1])
             });
 
-            var minDate = Asterix.startDate;
+            var minDate = cloudberry.startDate;
             var maxDate = new Date();
             chart.selectAll('a').remove();
             chart.append('a')

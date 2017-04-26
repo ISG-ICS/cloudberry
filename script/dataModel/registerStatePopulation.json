@@ -1,0 +1,16 @@
+{
+    "dataset": "twitter.dsStatePopulation",
+    "schema": {
+        "typeName": "twitter.typeStatePopulation",
+        "dimension": [
+            { "name": "name", "isOptional": false, "datatype": "String" },
+            { "name": "stateID", "isOptional": false, "datatype": "Number" },
+            { "name": "create_at", "isOptional": false, "datatype": "Time" }
+        ],
+        "measurement": [
+            { "name": "population", "isOptional": false, "datatype": "Number" }
+        ],
+        "primaryKey": ["stateID"],
+        "timeField": "create_at"
+    }
+}

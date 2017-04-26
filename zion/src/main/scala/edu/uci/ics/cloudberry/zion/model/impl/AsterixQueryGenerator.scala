@@ -107,7 +107,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case q: CreateView => parseCreate(q, schemaMap)
       case q: AppendView => parseAppend(q, schemaMap)
       case q: UpsertRecord => parseUpsert(q, schemaMap)
-      case q: DropView => ???
+      case q: DropView => parseDrop(q, schemaMap)
       case q: DeleteRecord => parseDelete(q, schemaMap)
       case _ => ???
     }
@@ -123,7 +123,9 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
   protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, Schema]): String
 
   protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, Schema]): String
-  
+
+  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String
+
   def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copy()
@@ -158,7 +160,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case DataType.Point =>
         parsePointRelation(filter, fieldExpr)
       case DataType.Boolean => ???
-      case DataType.String => ???
+      case DataType.String => parseStringRelation(filter, fieldExpr)
       case DataType.Text =>
         parseTextRelation(filter, fieldExpr)
       case DataType.Bag => ???
@@ -197,6 +199,23 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       }
     }
   }
+
+  protected def parseStringRelation(filter: FilterStatement, fieldExpr: String): String = {
+    filter.relation match {
+      case Relation.matches => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"""$fieldExpr="${values(0)}""""
+      }
+      case Relation.!= => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"""$fieldExpr!="${values(0)}""""
+      }
+      case Relation.contains => ???
+
+    }
+
+  }
+
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
     val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
