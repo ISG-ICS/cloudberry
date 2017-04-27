@@ -222,6 +222,7 @@
                 }
             }
 
+  
             var distance = turf.lineDistance(line, 'miles');
             var Move = distance/10;
             var start = 0;
