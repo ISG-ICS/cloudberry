@@ -259,8 +259,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else if ($scope.status.logicLevel === 'city') {
             geoData = $scope.geojsonData.city;
           } else {
-            console.error("Error: Illegal value of logicLevel, set to default: state")
-            $scope.status.logicLevel = 'state'
+            console.error("Error: Illegal value of logicLevel, set to default: state");
+            $scope.status.logicLevel = 'state';
             geoData = $scope.geojsonData.state;
           }
         }
@@ -368,7 +368,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     /**
      * Update map based on a set of spatial query result cells
-     * @param    [Array]     mapPlotData, an array of coordinate and weight objects
+     * @param    result  =>  mapPlotData, an array of coordinate and weight objects
      */
     function drawMap(result) {
 
@@ -408,7 +408,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       }
 
       function style(feature) {
-        if (!feature.properties.count || feature.properties.count == 0){
+        if (!feature.properties.count || feature.properties.count === 0){
           return {
             fillColor: '#f7f7f7',
             weight: 2,
@@ -520,12 +520,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       }
 
       function initNormalizeToggle() {
-        $('#toggle-normalize').bootstrapToggle({
+        var toggle = $('#toggle-normalize');
+        toggle.bootstrapToggle({
           on: "By Population"
         });
         if($scope.doSentiment){
-          $('#toggle-normalize').bootstrapToggle('off');
-          $('#toggle-normalize').bootstrapToggle('disable');
+          toggle.bootstrapToggle('off');
+          toggle.bootstrapToggle('disable');
         }
       }
 
@@ -624,23 +625,23 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       },
 
       function(newResult, oldValue) {
-        if (newResult['mapResult'] != oldValue['mapResult']) {
+        if (newResult['mapResult'] !== oldValue['mapResult']) {
             $scope.result = newResult['mapResult'];
-            if (Object.keys($scope.result).length != 0) {
+            if (Object.keys($scope.result).length !== 0) {
                 $scope.status.init = false;
                 drawMap($scope.result);
             } else {
                 drawMap($scope.result);
             }
         }
-        if (newResult['totalCount'] != oldValue['totalCount']) {
+        if (newResult['totalCount'] !== oldValue['totalCount']) {
             $scope.totalCount = newResult['totalCount'];
         }
-        if(newResult['doNormalization'] != oldValue['doNormalization']) {
+        if(newResult['doNormalization'] !== oldValue['doNormalization']) {
           $scope.doNormalization = newResult['doNormalization'];
           drawMap($scope.result);
         }
-        if(newResult['doSentiment'] != oldValue['doSentiment']) {
+        if(newResult['doSentiment'] !== oldValue['doSentiment']) {
           $scope.doSentiment = newResult['doSentiment'];
           drawMap($scope.result);
         }
