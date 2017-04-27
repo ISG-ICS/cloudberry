@@ -490,89 +490,36 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       * add information control: legend, toggle
       * */
 
-      // add legend
-      var legend = $('.legend');
-      if (legend)
-        legend.remove();
-
-      $scope.legend = L.control({
-        position: 'topleft'
-      });
-
-      $scope.legend.onAdd = function(map) {
-        var div = L.DomUtil.create('div', 'info legend');
-        if($scope.doSentiment){
-          div.setAttribute("title", "Sentiment Score: Negative(0)-Positive(4)");  // add tool-tips for the legend
-          div.innerHTML +=
-            '<i style="background:' + getColor(1) + '"></i>Negative<br>';
-          div.innerHTML +=
-            '<i style="background:' + getColor(2) + '"></i>Neutral<br>';
-          div.innerHTML +=
-            '<i style="background:' + getColor(3) + '"></i>Positive<br>';
-        } else {
-          var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
-
-          for(var i = 0; i < grades.length; i++){
-            grades[i] = Math.pow(10, i);
-          }
-
-          var gName  = grades.map( function(d) {
-            var returnText = "";
-            if (d < 1000){
-              returnText = d.toString();
-            } else if (d < 1000 * 1000) {
-              returnText = (d / 1000).toString() + "K";
-            } else if (d < 1000 * 1000 * 1000) {
-              returnText = (d / 1000 / 1000).toString() + "M";
-            } else{
-              returnText = (d / 1000 / 1000).toString() + "M+";
-            }
-
-            if($scope.doNormalization){
-              return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
-            } else {
-              return returnText; //["1", "10", "100", "1K", "10K", "100K"];
-            }
-          });
-
-          if($scope.doNormalization)
-            div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
-
-          // loop through our density intervals and generate a label with a colored square for each interval
-          var i = 1;
-          for (; i < grades.length; i++) {
-            div.innerHTML +=
-              '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
-          }
-          div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
+      function addMapControl(name, position, initDiv, initJS){
+        var ctrlClass = $("."+name);
+        if (ctrlClass) {
+          ctrlClass.remove();
         }
 
-        return div;
+        $scope[name]= L.control({
+          position: position
+        });
 
-      };
-      if ($scope.map)
-        $scope.legend.addTo($scope.map);
-
-      // add toggle normalize
-      var normalize = $('.normalize');
-      if (normalize) {
-        normalize.remove();
+        $scope[name].onAdd = function() {
+          var div = L.DomUtil.create('div', 'info ' + name);
+          initDiv(div);
+          return div;
+        };
+        if ($scope.map) {
+          $scope[name].addTo($scope.map);
+          if (initJS)
+            initJS();
+        }
       }
 
-      $scope.normalize= L.control({
-        position: 'topleft'
-      });
-
-      $scope.normalize.onAdd = function() {
-        var div = L.DomUtil.create('div', 'info normalize');
+      function initNormalize(div) {
         if($scope.doNormalization)
           div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
         else
           div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
-        return div;
-      };
-      if ($scope.map) {
-        $scope.normalize.addTo($scope.map);
+      }
+
+      function initNormalizeToggle() {
         $('#toggle-normalize').bootstrapToggle({
           on: "By Population"
         });
@@ -582,30 +529,87 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
       }
 
-      // add toggle sentiment analysis
-      var sentiment = $('.sentiment');
-      if (sentiment) {
-        sentiment.remove();
-      }
-
-      $scope.sentiment= L.control({
-        position: 'topleft'
-      });
-
-      $scope.sentiment.onAdd = function() {
-        var div = L.DomUtil.create('div', 'info sentiment');
+      function initSentiment(div) {
         if($scope.doSentiment)
           div.innerHTML = '<p>Sentiment Analysis</p><input id="toggle-sentiment" checked type="checkbox">';
         else
           div.innerHTML = '<p>Sentiment Analysis</p><input id="toggle-sentiment" type="checkbox">';
-        return div;
-      };
-      if ($scope.map) {
-        $scope.sentiment.addTo($scope.map);
+      }
+
+      function initSentimentToggle() {
         $('#toggle-sentiment').bootstrapToggle({
           on: "By OpenNLP"
         });
       }
+
+      function setSentimentLegend(div) {
+        div.setAttribute("title", "Sentiment Score: Negative(0)-Positive(4)");  // add tool-tips for the legend
+        div.innerHTML +=
+          '<i style="background:' + getColor(1) + '"></i>Negative<br>';
+        div.innerHTML +=
+          '<i style="background:' + getColor(2) + '"></i>Neutral<br>';
+        div.innerHTML +=
+          '<i style="background:' + getColor(3) + '"></i>Positive<br>';
+      }
+
+      function setGrades(grades) {
+        var i = 0;
+        for(; i < grades.length; i++){
+          grades[i] = Math.pow(10, i);
+        }
+      }
+
+      function getGradesNames(grades) {
+        return grades.map( function(d) {
+          var returnText = "";
+          if (d < 1000){
+            returnText = d.toString();
+          } else if (d < 1000 * 1000) {
+            returnText = (d / 1000).toString() + "K";
+          } else if (d < 1000 * 1000 * 1000) {
+            returnText = (d / 1000 / 1000).toString() + "M";
+          } else{
+            returnText = (d / 1000 / 1000).toString() + "M+";
+          }
+          if($scope.doNormalization){
+            return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
+          } else {
+            return returnText; //["1", "10", "100", "1K", "10K", "100K"];
+          }
+        });
+      }
+
+      function setCountLegend(div) {
+        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
+        setGrades(grades);
+        var gName  = getGradesNames(grades);
+        if($scope.doNormalization)
+          div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
+        // loop through our density intervals and generate a label with a colored square for each interval
+        i = 1;
+        for (; i < grades.length; i++) {
+          div.innerHTML +=
+            '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
+        }
+        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
+      }
+
+      function initLegend(div) {
+        if($scope.doSentiment){
+          setSentimentLegend(div);
+        } else {
+          setCountLegend(div);
+        }
+      }
+
+      // add legend
+      addMapControl('legend', 'topleft', initLegend, null);
+
+      // add toggle normalize
+      addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
+
+      // add toggle sentiment analysis
+      addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
 
