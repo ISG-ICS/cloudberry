@@ -375,28 +375,35 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       var colors = $scope.styles.colors;
       var sentimentColors = $scope.styles.sentimentColors;
 
+      function getSentimentColor(d) {
+        if( d < 4 / 3) {    // 1/3
+          return sentimentColors[0];
+        } else if( d < 2 * 4 / 3){    // 2/3
+          return sentimentColors[1];
+        } else{     // 3/3
+          return sentimentColors[2];
+        }
+      }
+
+      function getCountColor(d) {
+        if(!d || d <= 0) {
+          d = 0;
+        } else if (d ===1 ){
+          d = 1;
+        } else {
+          d = Math.ceil(Math.log10(d));
+          if(d <= 0) // treat smaller counts the same as 0
+            d = 0
+        }
+        d = Math.min(d, colors.length-1);
+        return colors[d];
+      }
+
       function getColor(d) {
         if($scope.doSentiment){  // 0 <= d <= 4
-          if( d < 1 * 4 / 3) {
-            return sentimentColors[0];
-          } else if( d < 2 * 4 / 3){
-            return sentimentColors[1];
-          } else{
-            return sentimentColors[2];
-          }
-        }
-        else{
-          if(!d || d <= 0) {
-            d = 0;
-          } else if (d ===1 ){
-            d = 1;
-          } else {
-            d = Math.ceil(Math.log10(d));
-            if(d <= 0) // treat smaller counts the same as 0
-              d = 0
-          }
-          d = Math.min(d, colors.length-1);
-          return colors[d];
+          return getSentimentColor(d)
+        } else {
+          return getCountColor(d)
         }
       }
 
@@ -426,8 +433,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         // beautify 0.0000123 => 1.23e-5, 1.123 => 1.1
         if(geo["properties"]["count"] < 1){
           geo["properties"]["countText"] = geo["properties"]["count"].toExponential(1);
-        }
-        else{
+        } else{
           geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
         }
         geo["properties"]["countText"] += cloudberryConfig.normalizationUpscaleText; // "/M"
@@ -462,8 +468,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
                   // TODO: change fake random number to real sentiment (0-4)
                   geo['properties']['count'] = Math.random() * 4;
                   geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
-                }
-                else{
+                } else {
                   if ($scope.doNormalization)
                     setNormalizedCount(geo, r);
                   else
@@ -504,8 +509,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             '<i style="background:' + getColor(2) + '"></i>Neutral<br>';
           div.innerHTML +=
             '<i style="background:' + getColor(3) + '"></i>Positive<br>';
-        }
-        else{
+        } else {
           var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
 
           for(var i = 0; i < grades.length; i++){
@@ -526,8 +530,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
             if($scope.doNormalization){
               return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
-            }
-            else{
+            } else {
               return returnText; //["1", "10", "100", "1K", "10K", "100K"];
             }
           });
@@ -622,8 +625,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             if (Object.keys($scope.result).length != 0) {
                 $scope.status.init = false;
                 drawMap($scope.result);
-            }
-            else {
+            } else {
                 drawMap($scope.result);
             }
         }
