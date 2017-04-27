@@ -1,6 +1,5 @@
  angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
- .service('Cache', function( $window, $http, $compile, cloudberry){
-
+ .service('Cache', function( $window, $http, $compile, Asterix){
 
   var cachedCityPolygonTree = rbush();
   var cachedRegion ;
@@ -12,7 +11,7 @@
   var preFetchDistance = 25;
 
 
-  /*Call will happen from map controller and this functions sees whether a required data is present in cache or not 
+  /*Call will happen from map controller and this functions sees whether a required data is present in cache or not
   if not gets from midleware*/
   this.getCityPolygonsFromCache = function city(bounds){
 
@@ -103,22 +102,28 @@
        if(cacheSize >= cacheThreshold){
 
              DeleteTarget = cacheSize - cacheThreshold;
-             evict(currentRequest).then(function(){
-                   cachedCityPolygonTree.load(nodes);
+             evict(currentRequest).done(function(){
 
+                   cachedCityPolygonTree.load(nodes);
+                    console.log(" Size:",cacheSize);
               });
           deferred.resolve();
           return deferred.promise();
 
        }else{
                cachedCityPolygonTree.load(nodes);
+               console.log(" Size:",cacheSize);
                deferred.resolve();
                return deferred.promise();
        }
-  
+
  }
 
-
+//X = true Y = false
+//TopTo Bottom = true
+//BottomToTop = false
+//LeftToRight = True
+//RightToLeft = False
 //determine which region of cached region to cut to satisfy Target,if first region couldn't satisfy the Target go to new region
   var evict = function Evict(currentRequest){
 
@@ -135,151 +140,54 @@
        var R_maxX = request_bbox[2];
        var R_maxY = request_bbox[3];
 
-       //Four Corners of Request to see which is inside cache_region
-       var UpperRightCorner = turf.point([R_maxX,R_maxY]);
-       var UpperLeftCorner  = turf.point([R_minX,R_maxY]);
-       var LowerLeftCorner  = turf.point([R_minX,R_minY]);
-       var LowerRightCorner = turf.point([R_maxY,R_minY]);
-
-
        var CacheMBR = turf.bboxPolygon(cache_bbox);
-       if(turf.inside(LowerLeftCorner,CacheMBR)&&turf.inside(LowerRightCorner,CacheMBR)){
+       //Four Corners of Request to see which is inside cache_region
+       var UpperRight = turf.inside(turf.point([R_maxX,R_maxY]),CacheMBR);
+       var UpperLeft  = turf.inside(turf.point([R_minX,R_maxY]),CacheMBR);
+       var LowerLeft  = turf.inside(turf.point([R_minX,R_minY]),CacheMBR);
+       var LowerRight = turf.inside(turf.point([R_maxY,R_minY]),CacheMBR);
 
-           cutRegion(R_maxX,C_minY,C_maxX,C_maxY).done(function(){
+
+       if(LowerRight || LowerLeft && !UpperRight && !UpperLeft){
+            cutRegion(C_minX,C_minY,C_maxX,R_minY,false,true) .done(function(){
                     deferred.resolve();
             }).fail(function(){
-                        cutRegion(C_minX,C_minY,R_minX,C_maxY).done(function(){
-                            deferred.resolve();
-                        }).fail(function(){
-                              cutRegion(R_minX,C_minY,R_maxY,R_minY).done(function(){
-                                deferred.resolve();
-                              }).fail(function(){
-                                  cacheThreshold += DeleteTarget;
-                                  deferred.resolve();
-                              })
-                       })
-            });
-             return deferred.promise();
-
-       }else if(turf.inside(LowerLeftCorner,CacheMBR) && !turf.inside(LowerRightCorner,CacheMBR) && !turf.inside(UpperRightCorner,CacheMBR) &&!turf.inside(UpperLeftCorner,CacheMBR)){
-
-            cutRegion(C_minX,C_minY,R_minX,C_maxY).done(function(){
-                        deferred.resolve();
+                     cacheThreshold += DeleteTarget;
+                     deferred.resolve();
+            })          //Y from bottom
+            return deferred.promise();
+       }
+       else if(UpperRight || UpperLeft && !LowerLeft && !LowerRight){
+            cutRegion(C_minX,R_maxY,C_maxX,C_maxY,false,false).done(function(){
+                   deferred.resolve();
             }).fail(function(){
-                        cutRegion(R_minX,C_minY,C_maxX,R_minY).done(function(){
-                            deferred.resolve();
-                        }).fail(function(){
-                                cacheThreshold += DeleteTarget;
-                                deferred.resolve();
-                        })
-             });
-             return deferred.promise();
-
-       }else if(turf.inside(LowerLeftCorner,CacheMBR) &&    turf.inside(UpperLeftCorner,CacheMBR) ){
-
-           cutRegion(C_minX,C_minY,R_minX,C_maxY).done(function(){
-                  deferred.resolve();
-           }).fail(function(){
-
-              cutRegion(R_minX,R_maxY,C_maxX,C_maxY).done(function(){
-                       deferred.resolve();
-                   }).fail(function(){
-                                cutRegion(R_minX,C_minY,C_maxX,R_maxY).done(function(){
-                                        deferred.resolve();
-                                }).fail(function(){
-                                    cacheThreshold += DeleteTarget;
-                                    deferred.resolve();
-                               })
-                   })
-           });
-           return deferred.promise();
-
-       }else if(turf.inside(UpperLeftCorner,CacheMBR) && !turf.inside(UpperRightCorner,CacheMBR) && !turf.inside(LowerLeftCorner ,CacheMBR) && !turf.inside(LowerRightCorner,CacheMBR)){
-
-            cutRegion(C_minX,C_minY,R_minX,C_maxY).done(function(){
-
-                deferred.resolve();
-
-            }).fail(function(){
-                   cutRegion(R_minX,R_maxY,C_maxX,C_maxY).done(function(){
-                          deferred.resolve();
-                      }).fail(function(){
-                          cacheThreshold += DeleteTarget;
-                          deferred.resolve();
-                      })
-             });
+                    cacheThreshold += DeleteTarget;
+                    deferred.resolve();
+            })          //Y from top
             return deferred.promise();
 
-       }else if(turf.inside(UpperLeftCorner,CacheMBR) && turf.inside(UpperRightCorner,CacheMBR)){
+       }
+       else if(UpperRight && LowerRight){
+            cutRegion(R_maxX,C_minY,C_maxX,C_maxY,true,true).done(function(){
+                   deferred.resolve();
+            }).fail(function(){
+                    cacheThreshold += DeleteTarget;
+                    deferred.resolve();
+            })
+            return deferred.promise();
 
-               cutRegion(C_minX,C_minY,R_minX,R_maxY).done(function(){
-                     deferred.resolve();
-               }).fail(function(){
-                     cutRegion(R_maxX,C_minY,C_maxX,C_maxY).done(function(){
-                               deferred.resolve();
-                     }).fail(function(){
-                                     cutRegion(R_minX,R_maxY,R_maxX,C_maxY).done(function(){
-                                          deferred.resolve();
-                                     }).fail(function(){
-                                          cacheThreshold += DeleteTarget;
-                                          deferred.resolve();
-                                     })
-                     })
-               });
-               return deferred.promise();
+       }else if(UpperLeft && LowerLeft){
+            cutRegion(C_minX,C_minY,R_minX,C_maxY,true,false).done(function(){
+                   deferred.resolve();
+            }).fail(function(){
+                    cacheThreshold += DeleteTarget;
+                    deferred.resolve();
+            })
+            return deferred.promise();
 
-       }else if(turf.inside(UpperRightCorner,CacheMBR) && !turf.inside(LowerLeftCorner,CacheMBR) && !turf.inside(UpperLeftCorner,CacheMBR) && !turf.inside(LowerRightCorner,CacheMBR)){
+       }else if(!LowerRight &&   !LowerLeft && !UpperLeft && !UpperRight){
 
-               cutRegion(R_maxX,C_minY,C_maxX,C_maxY).done(function(){
-                          deferred.resolve();
-               }).fail(function(){
-                              cutRegion(C_minX,R_maxY,R_maxX,C_maxY).done(function(){
-                                      deferred.resolve();
-                              }).fail(function(){
-                                  cacheThreshold += DeleteTarget;
-                                  deferred.resolve();
-                          })
-               });
-               return deferred.promise();
-
-       }else if(turf.inside(UpperRightCorner,CacheMBR) &&   turf.inside(LowerRightCorner,CacheMBR)){
-
-             cutRegion(R_maxX,C_minY,C_maxX,C_maxY).done(function(){
-                          deferred.resolve();
-             }).fail(function(){
-
-                          cutRegion(C_minX,R_maxY,R_maxX,C_maxY).done(function(){
-                                   deferred.resolve();
-                          }).fail(function(){
-                                  cutRegion(C_minX,C_minY,R_maxX,R_minY).done(function(){
-                                           deferred.resolve();
-                                  }).fail(function(){
-                                           cacheThreshold += DeleteTarget;
-                                           deferred.resolve();
-                                  })
-                          })
-             });
-             return deferred.promise();
-
-       }else if(turf.inside(LowerRightCorner,CacheMBR) &&   !turf.inside(LowerLeftCorner,CacheMBR) && !turf.inside(UpperLeftCorner,CacheMBR) && !turf.inside(UpperRightCorner,CacheMBR)){
-
-
-               cutRegion(R_maxX,C_minY,C_maxX,C_maxY).done(function(){
-                       deferred.resolve();
-               }).fail(function(){
-                          cutRegion(C_minX,C_minY,R_maxX,R_minY).done(function(){
-                              deferred.resolve();
-
-                          }).fail(function(){
-                              cacheThreshold += DeleteTarget;
-                              deferred.resolve();
-                          })
-               });
-               return deferred.promise();
-
-       }else if(!turf.inside(LowerRightCorner,CacheMBR) &&   !turf.inside(LowerLeftCorner,CacheMBR) && !turf.inside(UpperLeftCorner,CacheMBR) && !turf.inside(UpperRightCorner,CacheMBR)){
-
-              cutRegion(C_minX,C_minY,C_maxX,C_maxY).done(function(){
+              cutRegion(C_minX,C_minY,C_maxX,C_maxY,true,true).done(function(){
                      deferred.resolve();
               }).fail(function(){
                       cacheThreshold += DeleteTarget;
@@ -292,9 +200,28 @@
        }
  }
 //sees whether cutting the region can satisfy the target ,If not sends a failed message to evict function
- var cutRegion =  function findCornerofEviction(minX,minY,maxX,maxY){
+ var cutRegion =  function findCornerofEviction(minX,minY,maxX,maxY,XorY,Direction){
+
             var deferred = new $.Deferred();
-            var line = turf.lineString([[minX,maxY],[maxX,maxY]]);
+            var line;
+            if(XorY){
+                if(Direction){
+                    console.log("Left to Right");
+                    line = turf.lineString([[minX,maxY],[maxX,maxY]]);
+                }else{
+                    console.log("Right to Left");
+                    line = turf.lineString([[maxX,maxY],[minX,maxY]]);
+                }
+            }else{
+                if(Direction){
+                    console.log("TopToBottom");
+                    line = turf.lineString([[maxX,maxY],[maxX,minY]]);
+                }else{
+                    console.log("BottomToTop");
+                    line = turf.lineString([[maxX,minY],[maxX,maxY]]);
+                }
+            }
+
             var distance = turf.lineDistance(line, 'miles');
             var Move = distance/10;
             var start = 0;
@@ -305,7 +232,12 @@
             while(DeletedCount<DeleteTarget){
 
                   sliced = turf.lineSliceAlong(line, start, Move, 'miles');
+                  if(XorY){
                   cutPoint = sliced["geometry"]["coordinates"][1][0];
+                  }else{
+                  cutPoint = sliced["geometry"]["coordinates"][1][1];
+                  }
+
                   cutBbox = [minX,minY,cutPoint,maxY];
                   remove_search = {
                                         minX: cutBbox[0],
@@ -340,6 +272,7 @@
                   return deferred.promise();
             }
  }
+
 //wher deletion from tree occurs
  var deletion = function deleteNodesfromTree(removeItems){
       var deferred = new $.Deferred();
@@ -354,3 +287,4 @@
 
 
 })
+
