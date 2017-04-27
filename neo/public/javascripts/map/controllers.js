@@ -376,9 +376,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       var sentimentColors = $scope.styles.sentimentColors;
 
       function getSentimentColor(d) {
-        if( d < 4 / 3) {    // 1/3
+        if( d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3
           return sentimentColors[0];
-        } else if( d < 2 * 4 / 3){    // 2/3
+        } else if( d < 2 * cloudberryConfig.sentimentUpperBound / 3){    // 2/3
           return sentimentColors[1];
         } else{     // 3/3
           return sentimentColors[2];

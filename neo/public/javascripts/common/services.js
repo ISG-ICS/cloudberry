@@ -3,6 +3,7 @@ angular.module('cloudberry.common', [])
     return {
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
+      sentimentUpperBound: 4,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
