@@ -377,7 +377,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
       case Relation.in =>
         s"$fieldExpr in [ ${filter.values.mkString(",")} ]"
       case _ =>
-        s"$fieldExpr ${filter.relation} ${filter.values.head}"
+        s"$fieldExpr ${filter.relation} ${filter.values(0)}"
     }
   }
 
