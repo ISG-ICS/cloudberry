@@ -11,10 +11,10 @@ class QueryPlannerTest extends Specification {
 
   val filter = Seq(textFilter, timeFilter, stateFilter)
   val group = GroupStatement(Seq(byHour, byState), Seq(aggrCount))
-  val queryCount = Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+  val queryCount = Query(TwitterDataSet, Seq.empty,  Seq.empty, filter, Seq.empty, Some(group), None)
   val groupTag = GroupStatement(Seq(byTag), Seq(aggrCount))
-  val queryTag = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(groupTag), Some(selectTop10Tag))
-  val querySample = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
+  val queryTag = new Query(TwitterDataSet, Seq.empty,  Seq.empty, filter, Seq(unnestHashTag), Some(groupTag), Some(selectTop10Tag))
+  val querySample = new Query(TwitterDataSet, Seq.empty,  Seq.empty, filter, Seq.empty, None, Some(selectRecent))
 
   val planner = new QueryPlanner
 
@@ -31,11 +31,11 @@ class QueryPlannerTest extends Specification {
       queries.exists(_.dataset == QueryPlanner.getViewKey(TwitterDataSet, "zika")) must_== true
       queries.exists(_.dataset == QueryPlanner.getViewKey(TwitterDataSet, "virus")) must_== true
       queries.exists(_.query == zikaCreateQuery) must_== true
-      queries.exists(_.query == Query(TwitterDataSet, filter = Seq(virusFilter))) must_== true
+      queries.exists(_.query == Query(TwitterDataSet, Seq.empty,  filter = Seq(virusFilter))) must_== true
     }
     "makePlan should choose a smaller view" in {
 
-      val virusCreateQuery = Query(TwitterDataSet, filter = Seq(virusFilter))
+      val virusCreateQuery = Query(TwitterDataSet, Seq.empty,  filter = Seq(virusFilter))
       val virusStats = zikaFullStats.copy(cardinality = 500)
       val virusFullYearViewInfo = DataSetInfo("virus", Some(virusCreateQuery), twitterSchema, sourceInterval, virusStats)
       val (queries, _) = planner.makePlan(queryCount, sourceInfo, Seq(zikaFullYearViewInfo, virusFullYearViewInfo))
