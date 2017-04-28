@@ -98,7 +98,6 @@ class MetaDataAgentTest extends TestkitExample with SpecificationLike with MockC
       when(mockQueryParser.generate(drop, Map())).thenReturn(aqlDropString)
       when(mockConn.postControl(aqlDropString)).thenAnswer(new Answer[Future[Boolean]] {
         override def answer(invocation: InvocationOnMock): Future[Boolean] = {
-          // TODO only Boolean return value can be received by sender. Int, String would fail.
           Future(true)
         }
       })
@@ -109,12 +108,9 @@ class MetaDataAgentTest extends TestkitExample with SpecificationLike with MockC
         }
       })
 
-      val agent = system.actorOf(MetaDataAgent.props(testDB, DataSetInfo.MetaSchema, mockQueryParser, mockConn, Config.Default))
-
-      sender.send(agent, drop)
+      val meta = system.actorOf(MetaDataAgent.props(testDB, DataSetInfo.MetaSchema, mockQueryParser, mockConn, Config.Default))
+      sender.send(meta, drop)
       sender.expectMsg(true)
-      // TODO The second true value cannot be received by sender, although we tracked DeleteRecord is received by agent.
-      //sender.expectMsg(true)
       ok
     }
   }

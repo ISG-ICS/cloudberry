@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.Props
+import akka.pattern.ask
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo
@@ -26,9 +27,11 @@ class MetaDataAgent(override val dbName: String,
       processUpdate(queryParser.generate(delete, Map(dbName -> schema)))
     case drop: DropView =>
       // Note: parameter SchemaMap is not used in this case.
-      processUpdate(queryParser.generate(drop, Map()))
+      val dropStatement = queryParser.generate(drop, Map())
       val viewRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(drop.dataset))
-      self ! DeleteRecord(DataSetInfo.MetaDataDBName, Seq(viewRecordFilter))
+      val delete = DeleteRecord(DataSetInfo.MetaDataDBName, Seq(viewRecordFilter))
+      val deleteStatement = queryParser.generate(delete, Map(dbName -> schema))
+      processUpdate(Seq(dropStatement, deleteStatement))
   }
 }
 
