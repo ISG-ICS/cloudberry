@@ -38,7 +38,8 @@ angular.module('cloudberry.common', [])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
-    var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
+    // var ws = new WebSocket("ws://" + $location.host() + ":" + $location.port() + "/ws");
+    var ws = new WebSocket("ws://localhost:9000/ws");
 
     var countRequest = JSON.stringify({
       dataset: "twitter.ds_tweet",

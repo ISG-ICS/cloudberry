@@ -3,11 +3,15 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
+import model.Migration_20170428
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment}
+
+import scala.concurrent.Await
+import scala.concurrent.duration._
 
 @Singleton
 class TwitterMapApplication @Inject()(val wsClient: WSClient,
@@ -15,7 +19,11 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       val environment: Environment) extends Controller {
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
+  val cloudberryRegisterURL: String = config.getString("cloudberry.register").get
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
+
+  val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
+  Await.result(register, 1 minutes)
 
   def index = Action {
     Ok(views.html.twittermap.index("TwitterMap"))

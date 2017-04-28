@@ -8,6 +8,7 @@ import akka.pattern.ask
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
+import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{DataManagerResponse, Register, _}
 import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -135,9 +136,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
         }
 
       case e: JsError =>
-        Future {
-          BadRequest("Not a valid register Json POST: " + e.toString)
-        }
+        Future{ BadRequest("Not a valid register Json POST: " + e.toString) }
     }
   }
 
@@ -157,9 +156,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
         }
 
       case e: JsError =>
-        Future {
-          BadRequest("Not valid Json POST: " + e.toString)
-        }
+        Future{ BadRequest("Not valid Json POST: " + e.toString) }
     }
   }
 
