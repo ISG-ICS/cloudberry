@@ -32,11 +32,6 @@ lazy val neo = (project in file("neo")).
   settings(
     libraryDependencies ++= neoDependencies
   ).
-  settings(
-    mappings in Universal ++=
-      (baseDirectory.value / "public" / "data" * "*" get) map
-        (x => x -> ("public/data/" + x.getName))
-  ).
   enablePlugins(PlayScala).
   dependsOn(gnosis, util, zion % "test->test;compile->compile")
 

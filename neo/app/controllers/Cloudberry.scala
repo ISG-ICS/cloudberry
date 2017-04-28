@@ -55,7 +55,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
   def index = Action.async {
     implicit val askTimeOut: Timeout = config.UserTimeOut
     (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[DataSetInfo] =>
-      Ok(views.html.cloudberry.index(dataset.filter(_.createQueryOpt.isEmpty).map(DataSetInfo.write), Cloudberry.createRegisterForm))
+      Ok(views.html.index(dataset.filter(_.createQueryOpt.isEmpty).map(DataSetInfo.write), Cloudberry.createRegisterForm))
     }
   }
 
@@ -68,7 +68,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
       // Note how we pass the form with errors to the template.
       implicit val askTimeOut: Timeout = config.UserTimeOut
       (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[DataSetInfo] =>
-        BadRequest(views.html.cloudberry.index(dataset.map(DataSetInfo.write), formWithErrors))
+        BadRequest(views.html.index(dataset.map(DataSetInfo.write), formWithErrors))
       }
     }, { registerForm =>
       // This is the good case, where the form was successfully parsed as a Widget.

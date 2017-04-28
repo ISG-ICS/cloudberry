@@ -5,17 +5,10 @@
 # cloudberry routes
 GET        /                                    controllers.Cloudberry.index
 GET        /ws                                  controllers.Cloudberry.ws
-GET        /dashboard                           controllers.Cloudberry.dashboard
 POST       /berry                               controllers.Cloudberry.berryQuery
+POST       /webregister                         controllers.Cloudberry.webRegister
 POST       /admin/register                      controllers.Cloudberry.register
 POST       /admin/deregister                    controllers.Cloudberry.deregister
-
-# TwitterMap routes
-GET        /twittermap                          controllers.TwitterMapApplication.index
-GET        /debug                               controllers.TwitterMapApplication.debug
-GET        /tweet/:id                           controllers.TwitterMapApplication.tweet(id: String)
-
-GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
 
 
 # Map static resources from the /public folder to the /assets URL path
