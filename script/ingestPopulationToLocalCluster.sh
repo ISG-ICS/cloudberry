@@ -19,8 +19,9 @@
 
 set -o nounset                              # Treat unset variables as an error
 
+host=${1:-'http://localhost:19002/aql'}
 # ddl to register the twitter dataset
-cat <<'EOF' | curl -XPOST --data-binary @- http://localhost:19002/aql
+cat <<'EOF' | curl -XPOST --data-binary @- $host
 use dataverse twitter;
 create type typeStatePopulation if not exists as open{
     name:string,
@@ -91,7 +92,7 @@ echo 'Ingested county population dataset.'
 cat ./noah/src/main/resources/population/adm/allCityPopulation.adm | ./script/fileFeed.sh 10004
 echo 'Ingested city population dataset.'
 
-cat <<'EOF' | curl -XPOST --data-binary @- http://localhost:19002/aql
+cat <<'EOF' | curl -XPOST --data-binary @- $host
 use dataverse twitter;
 stop feed CityPopulationFeed;
 drop feed CityPopulationFeed;

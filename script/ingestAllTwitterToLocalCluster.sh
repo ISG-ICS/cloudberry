@@ -17,5 +17,6 @@
 #      REVISION:  ---
 #===============================================================================
 
-./script/ingestTwitterToLocalCluster.sh
-./script/ingestPopulationToLocalCluster.sh
+host=${1:-'http://localhost:19002/aql'}
+./script/ingestTwitterToLocalCluster.sh $host
+./script/ingestPopulationToLocalCluster.sh $host

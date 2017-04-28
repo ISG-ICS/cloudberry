@@ -20,7 +20,8 @@
 set -o nounset                              # Treat unset variables as an error
 
 # ddl to register the twitter dataset
-cat <<'EOF' | curl -XPOST --data-binary @- http://localhost:19002/aql
+host=${1:-'http://localhost:19002/aql'}
+cat <<'EOF' | curl -XPOST --data-binary @- $host
 drop dataverse twitter if exists;
 create dataverse twitter if not exists;
 use dataverse twitter
@@ -94,6 +95,6 @@ EOF
 
 
 #Serve socket feed using local file
-git lfs fetch 
+#git lfs fetch
 gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh
 
