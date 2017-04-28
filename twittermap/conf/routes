@@ -2,16 +2,8 @@
 # This file defines all application routes (Higher priority routes first)
 # ~~~~
 
-# cloudberry routes
-GET        /                                    controllers.Cloudberry.index
-GET        /ws                                  controllers.Cloudberry.ws
-GET        /dashboard                           controllers.Cloudberry.dashboard
-POST       /berry                               controllers.Cloudberry.berryQuery
-POST       /admin/register                      controllers.Cloudberry.register
-POST       /admin/deregister                    controllers.Cloudberry.deregister
-
 # TwitterMap routes
-GET        /twittermap                          controllers.TwitterMapApplication.index
+GET        /                                    controllers.TwitterMapApplication.index
 GET        /debug                               controllers.TwitterMapApplication.debug
 GET        /tweet/:id                           controllers.TwitterMapApplication.tweet(id: String)
 
