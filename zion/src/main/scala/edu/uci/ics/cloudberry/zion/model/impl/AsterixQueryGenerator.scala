@@ -71,6 +71,8 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def sourceVar: String
 
+  protected def appendVar: String
+
   protected def lookupVar: String
 
   protected def unnestVar: String

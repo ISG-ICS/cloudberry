@@ -87,7 +87,7 @@ class AQLGenerator extends IQLGenerator {
         }
       }
     }
-
+    
     val varMapAfterLookup = parseLookup(query.lookup, schemaVars, schemaMap)
     val filter = parseFilter(query.filter, varMapAfterLookup)
     val (unnest, varMapAfterUnnest) = parseUnnest(query.unnest, varMapAfterLookup)

@@ -33,6 +33,7 @@ object Unresolved {
   def toUnresolved(query: Query): UnresolvedQuery =
     UnresolvedQuery(
       query.dataset,
+      query.append.map(toUnresolved(_)),
       query.lookup.map(toUnresolved(_)),
       query.filter.map(toUnresolved(_)),
       query.unnest.map(toUnresolved(_)),
@@ -41,6 +42,15 @@ object Unresolved {
       query.globalAggr.map(toUnresolved(_)),
       query.isEstimable
     )
+
+  def toUnresolved(append: AppendStatement): UnresolvedAppendStatement = {
+    UnresolvedAppendStatement(
+      append.field.name,
+      append.definition,
+      append.as.dataType,
+      append.as.name
+    )
+  }
 
   def toUnresolved(lookup: LookupStatement): UnresolvedLookupStatement =
     UnresolvedLookupStatement(
@@ -104,7 +114,6 @@ object Unresolved {
       select.limit,
       select.offset,
       select.fields.map(_.name)
-
     )
 
 
@@ -147,6 +156,7 @@ case class UnresolvedDataSetInfo(name: String,
                                  stats: Stats)
 
 case class UnresolvedQuery(dataset: String,
+                           append: Seq[UnresolvedAppendStatement] = Seq.empty,
                            lookup: Seq[UnresolvedLookupStatement] = Seq.empty,
                            filter: Seq[UnresolvedFilterStatement] = Seq.empty,
                            unnest: Seq[UnresolvedUnnestStatement] = Seq.empty,
@@ -155,6 +165,12 @@ case class UnresolvedQuery(dataset: String,
                            globalAggr: Option[UnresolvedGlobalAggregateStatement] = None,
                            estimable: Boolean = false
                           ) extends IReadQuery
+
+case class UnresolvedAppendStatement(field: String,
+                                     definition: String,
+                                     resultType: DataType.DataType,
+                                     as: String) extends Statement
+
 
 case class UnresolvedLookupStatement(sourceKeys: Seq[String],
                                      dataset: String,

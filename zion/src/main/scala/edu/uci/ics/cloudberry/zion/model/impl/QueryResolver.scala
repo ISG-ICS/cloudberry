@@ -32,7 +32,8 @@ object QueryResolver {
   private def resolveQuery(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
     val schema = schemaMap(query.dataset)
     val fieldMap = schema.fieldMap
-    val (lookup, fieldMapAfterLookup) = resolveLookups(query.lookup, fieldMap, schemaMap)
+    val (append, fieldMapAfterAppend) = resolveAppends(query.append, fieldMap)
+    val (lookup, fieldMapAfterLookup) = resolveLookups(query.lookup, fieldMapAfterAppend, schemaMap)
     val (unnest, fieldMapAfterUnnest) = resolveUnnests(query.unnest, fieldMapAfterLookup)
 
     val (filter, fieldMapAfterFilter) = resolveFilters(query.filter, fieldMapAfterUnnest)
@@ -42,8 +43,22 @@ object QueryResolver {
 
     val (globalAggr, fieldMapAfterGlobalAggr) = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
 
-    Query(query.dataset, lookup, filter, unnest, groups, select, globalAggr, query.estimable)
+    Query(query.dataset, append, lookup, filter, unnest, groups, select, globalAggr, query.estimable)
   }
+
+  private def resolveAppends(appends: Seq[UnresolvedAppendStatement],
+                             fieldMap: Map[String, Field]): (Seq[AppendStatement], Map[String, Field]) = {
+    val producedFields = mutable.Map.newBuilder[String, Field]
+    val resolved = appends.map { append =>
+      val field = resolveField(append.field, fieldMap)
+      val as = Field(append.as, append.resultType)
+      producedFields += as.name -> as
+      AppendStatement(field, append.definition, as)
+    }
+
+    (resolved, (producedFields ++= fieldMap).result().toMap)
+  }
+
 
   private def resolveLookups(lookups: Seq[UnresolvedLookupStatement],
                              fieldMap: Map[String, Field],
