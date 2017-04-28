@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import play.api.libs.json.JsArray
 
@@ -26,6 +25,7 @@ object QueryExeOption {
 }
 
 case class Query(dataset: String,
+                 append: Seq[AppendStatement] = Seq.empty,
                  lookup: Seq[LookupStatement] = Seq.empty,
                  filter: Seq[FilterStatement] = Seq.empty,
                  unnest: Seq[UnnestStatement] = Seq.empty,
@@ -108,6 +108,10 @@ case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 case class DeleteRecord(dataset: String, filters: Seq[FilterStatement]) extends IWriteQuery
 
 trait Statement
+
+case class AppendStatement(field: Field,
+                           definition: String,
+                           as: Field) extends Statement
 
 /**
   * Augments the source data to contain more fields.

@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json._
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
   * Abstract class of DataSetAgent.
@@ -76,6 +76,21 @@ abstract class AbstractUpdatableDataSetAgent(override val dbName: String,
     val curSender = sender()
     conn.postControl(statement).map { result =>
       curSender ! result
+      self ! DoneUpdate
+    }
+    context.become(updatingDataSet)
+  }
+
+  protected def processUpdate(statements: Seq[String]): Unit = {
+    val curSender = sender()
+    Future.traverse(statements){ statement =>
+      conn.postControl(statement)
+    }.map { results =>
+      if (results.forall(_ == true)) {
+        curSender ! true
+      } else {
+        curSender ! false
+      }
       self ! DoneUpdate
     }
     context.become(updatingDataSet)

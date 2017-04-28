@@ -28,7 +28,7 @@ class QueryPlanner {
         kwFilter.values.map { wordAny =>
           val word = wordAny.asInstanceOf[String]
           val wordFilter = FilterStatement(kwFilter.field, None, Relation.contains, Seq(word))
-          val wordQuery = Query(query.dataset, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
+          val wordQuery = Query(query.dataset, Seq.empty, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
           CreateView(getViewKey(query.dataset, word), wordQuery)
         }
       }

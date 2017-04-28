@@ -21,9 +21,9 @@ object TestDataSetInfo {
   val groupByBin = GroupStatement(Seq(byBin), Seq(aggrCount))
 
   val createQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-  val berryAggrByTagQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
-  val unnestQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(groupByTag), Some(selectTop10Tag))
-  val groupByBinQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(groupByBin), None)
+  val berryAggrByTagQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
+  val unnestQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(groupByTag), Some(selectTop10Tag))
+  val groupByBinQuery = new Query(TwitterDataSet, groups = Some(groupByBin))
 
 
   val simpleDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
