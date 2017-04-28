@@ -27,7 +27,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   Await.result(register, 1 minutes)
 
   def index = Action {
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS))
+    Ok(views.html.twittermap.index("TwitterMap"))
   }
 
   def tweet(id: String) = Action.async {
