@@ -1,4 +1,4 @@
-@(title: String)(body: Html)
+@(title: String, ws: String)(body: Html)
 
 <!DOCTYPE html>
 <html ng-app="cloudberry">
@@ -17,6 +17,11 @@
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap-toggle/css/bootstrap-toggle.min.css")'>
   <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
 
+  <script>
+    var config= {
+      wsURL:"@ws"
+    }
+  </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/json-bigint/dist/json-bigint.js")'></script>
   <script src='@routes.Assets.versioned("lib/leaflet/leaflet.js")'></script>

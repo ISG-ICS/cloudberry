@@ -1,7 +1,7 @@
 angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
     return {
-      ws:"ws://localhost:9000/ws",
+      ws: config.wsURL,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       getPopulationTarget: function(parameters){
