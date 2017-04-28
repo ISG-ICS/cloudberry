@@ -3,10 +3,6 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, DeadLetter, Props}
-import akka.stream.Materializer
-import edu.uci.ics.cloudberry.zion.common.Config
-import play.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.ws.WSClient
@@ -15,21 +11,14 @@ import play.api.{Configuration, Environment}
 
 @Singleton
 class TwitterMapApplication @Inject()(val wsClient: WSClient,
-                                      val configuration: Configuration,
-                                      val environment: Environment)
-                                     (implicit val system: ActorSystem,
-                                      implicit val materializer: Materializer
-                                     ) extends Controller {
+                                      val config: Configuration,
+                                      val environment: Environment) extends Controller {
 
-  val config = new Config(configuration)
-  val cities = TwitterMapApplication.loadCity(environment.getFile(config.USCityDataPath))
+  val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
+  val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
 
   def index = Action {
     Ok(views.html.twittermap.index("TwitterMap"))
-  }
-
-  def debug = Action {
-    Ok(views.html.twittermap.debug("Debug"))
   }
 
   def tweet(id: String) = Action.async {
