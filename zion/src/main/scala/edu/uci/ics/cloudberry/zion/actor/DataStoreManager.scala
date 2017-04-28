@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorRefFactory, Props, Stash}
+import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.common.Config
@@ -161,12 +161,29 @@ class DataStoreManager(metaDataset: String,
     val dropTableName = dropTable.dataset
 
     if(metaData.contains(dropTableName)){
-      metaData.remove(dropTableName)
 
-      //TODO send query to DELETE dataset in database
+      metaData.remove(dropTableName)
+      context.child("data-" + dropTableName).foreach( child => child ! PoisonPill)
+      val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
+      metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
+
+      metaData.filter{ case(name, info) =>
+        info.createQueryOpt.exists( query => query.dataset == dropTableName)
+      }.foreach { case(name, info) =>
+        metaActor ! DropView(name)
+        context.child("data-" + name).foreach( child => child ! PoisonPill)
+      }
+
+      // Before retrieve subset of metaData using .filter or .filterNot, etc.,
+      // Use .toMap method to change metaData into immutable map
+      // Otherwise when metaData is clear, no information will be retained.
+      val newMetaData = metaData.toMap.filterNot{ case(name, info) =>
+        info.createQueryOpt.exists(q => q.dataset == dropTableName)
+      }
+      metaData.clear()
+      metaData ++= newMetaData
 
       sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
-
     } else{
       sender ! DataManagerResponse(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
     }

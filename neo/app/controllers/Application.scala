@@ -25,7 +25,6 @@ import play.Logger
 
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
-import scala.util.{Success, Failure}
 
 @Singleton
 class Application @Inject()(val wsClient: WSClient,
