@@ -20,7 +20,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsSuccess, JsValue, _}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
-import play.api.mvc.{Action, Controller, WebSocket}
+import play.api.mvc.{Action, Controller, Result, WebSocket}
 import play.api.{Configuration, Environment}
 import play.api.i18n.{I18nSupport, MessagesApi}
 
@@ -54,8 +54,10 @@ class Cloudberry @Inject()(val wsClient: WSClient,
 
   def index = Action.async {
     implicit val askTimeOut: Timeout = config.UserTimeOut
-    (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[DataSetInfo] =>
-      Ok(views.html.index(dataset.filter(_.createQueryOpt.isEmpty).map(DataSetInfo.write), Cloudberry.createRegisterForm))
+    (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[_] =>
+      Ok(views.html.index(
+        dataset.filter(_.asInstanceOf[DataSetInfo].createQueryOpt.isEmpty).map(s => DataSetInfo.write(s.asInstanceOf[DataSetInfo])),
+        Cloudberry.createRegisterForm))
     }
   }
 
@@ -67,33 +69,13 @@ class Cloudberry @Inject()(val wsClient: WSClient,
       // Let's show the user the form again, with the errors highlighted.
       // Note how we pass the form with errors to the template.
       implicit val askTimeOut: Timeout = config.UserTimeOut
-      (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[DataSetInfo] =>
-        BadRequest(views.html.index(dataset.map(DataSetInfo.write), formWithErrors))
+      (manager ? DataStoreManager.ListAllDataset).map { case dataset: Seq[_] =>
+        BadRequest(views.html.index(dataset.map(s => DataSetInfo.write(s.asInstanceOf[DataSetInfo])), formWithErrors))
       }
     }, { registerForm =>
       // This is the good case, where the form was successfully parsed as a Widget.
       val json = Json.parse(registerForm.registerJSONString)
-      json.validate[Register] match {
-        case registerRequest: JsSuccess[Register] =>
-          val newTable = registerRequest.get
-          implicit val timeout: Timeout = Timeout(config.UserTimeOut)
-          val receipt = (manager ? newTable).mapTo[DataManagerResponse]
-
-          receipt.map { r =>
-            if (r.isSuccess) {
-              Redirect(routes.Cloudberry.index)
-            } else {
-              BadRequest(r.message)
-            }
-          }.recover { case e =>
-            InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
-          }
-
-        case e: JsError =>
-          Future {
-            BadRequest("Not a valid register Json POST: " + e.toString)
-          }
-      }
+      handleRegisterPartial(json.validate[Register])((r: DataManagerResponse) => Redirect(routes.Cloudberry.index))
     })
   }
 
@@ -121,23 +103,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
   }
 
   def register = Action.async(parse.json) { request =>
-    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
-
-    request.body.validate[Register] match {
-      case registerRequest: JsSuccess[Register] =>
-        val newTable = registerRequest.get
-        val receipt = (manager ? newTable).mapTo[DataManagerResponse]
-
-        receipt.map { r =>
-          if (r.isSuccess) Ok(r.message)
-          else BadRequest(r.message)
-        }.recover { case e =>
-          InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
-        }
-
-      case e: JsError =>
-        Future{ BadRequest("Not a valid register Json POST: " + e.toString) }
-    }
+    handleRegisterPartial(request.body.validate[Register])((r: DataManagerResponse) => Ok(r.message))
   }
 
   def deregister = Action.async(parse.json) { request =>
@@ -156,10 +122,33 @@ class Cloudberry @Inject()(val wsClient: WSClient,
         }
 
       case e: JsError =>
-        Future{ BadRequest("Not valid Json POST: " + e.toString) }
+        Future {
+          BadRequest("Not valid Json POST: " + e.toString)
+        }
     }
   }
 
+  private def handleRegisterPartial(jsResult: JsResult[Register])
+                                      (successHandler: DataManagerResponse => Result): Future[Result] = {
+    implicit val timeout: Timeout = Timeout(config.UserTimeOut)
+    jsResult match {
+      case registerRequest: JsSuccess[_] =>
+        val newTable = registerRequest.get.asInstanceOf[Register]
+        val receipt = (manager ? newTable).mapTo[DataManagerResponse]
+
+        receipt.map { r =>
+          if (r.isSuccess) successHandler(r)
+          else BadRequest(r.message)
+        }.recover { case e =>
+          InternalServerError("Fail to get receipt from dataStore manager. " + e.toString)
+        }
+
+      case e: JsError =>
+        Future {
+          BadRequest("Not a valid register Json POST: " + e.toString)
+        }
+    }
+  }
 }
 
 object Cloudberry {
