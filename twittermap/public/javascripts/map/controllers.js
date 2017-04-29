@@ -2,6 +2,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
     $scope.result = {};
     $scope.doNormalization = false;
+    $scope.doSentiment = false;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -71,7 +72,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           dashArray: '',
           fillOpacity: 0.7
         },
-        colors: [ '#f7f7f7', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b']
+        colors: [ '#ffffff', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
+        sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       }
     });
 
@@ -79,10 +81,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       cloudberry.parameters.geoIds = [];
       polygons.features.forEach(function(polygon){
         if (bounds._southWest.lat <= polygon.properties.centerLat &&
-              polygon.properties.centerLat <= bounds._northEast.lat &&
-              bounds._southWest.lng <= polygon.properties.centerLog &&
-              polygon.properties.centerLog <= bounds._northEast.lng) {
-            cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
+          polygon.properties.centerLat <= bounds._northEast.lat &&
+          bounds._southWest.lng <= polygon.properties.centerLog &&
+          polygon.properties.centerLog <= bounds._northEast.lng) {
+          cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
         }
       });
     }
@@ -98,20 +100,20 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
       });
 
-    //Reset Zoom Button
-    var button = document.createElement("a");
-    var text =  document.createTextNode("Reset");
-        button.appendChild(text);
-        button.title = "Reset";
-        button.href = "#";
-        button.style.position = 'inherit';
-        button.style.top = '150%';
-        button.style.left = '-53%';
-    var body = document.getElementsByTagName("search-bar")[0];
-        body.appendChild(button);
-        button.addEventListener ("click", function() {
-          $scope.map.setView([$scope.lat, $scope.lng], 4);
-        });
+      //Reset Zoom Button
+      var button = document.createElement("a");
+      var text =  document.createTextNode("Reset");
+      button.appendChild(text);
+      button.title = "Reset";
+      button.href = "#";
+      button.style.position = 'inherit';
+      button.style.top = '150%';
+      button.style.left = '-53%';
+      var body = document.getElementsByTagName("search-bar")[0];
+      body.appendChild(button);
+      button.addEventListener ("click", function() {
+        $scope.map.setView([$scope.lat, $scope.lng], 4);
+      });
 
       //Adjust Map to be County or State
       setInfoControl();
@@ -257,8 +259,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else if ($scope.status.logicLevel === 'city') {
             geoData = $scope.geojsonData.city;
           } else {
-            console.error("Error: Illegal value of logicLevel, set to default: state")
-            $scope.status.logicLevel = 'state'
+            console.error("Error: Illegal value of logicLevel, set to default: state");
+            $scope.status.logicLevel = 'state';
             geoData = $scope.geojsonData.state;
           }
         }
@@ -275,31 +277,31 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     function setCenterAndBoundry(features) {
 
-       for(var id in features){
-         var minLog = Number.POSITIVE_INFINITY;
-         var maxLog = Number.NEGATIVE_INFINITY;
-         var minLat = Number.POSITIVE_INFINITY;
-         var maxLat = Number.NEGATIVE_INFINITY;
-         if(features[id].geometry.type === "Polygon") {
-            features[id].geometry.coordinates[0].forEach(function(pair) {
+      for(var id in features){
+        var minLog = Number.POSITIVE_INFINITY;
+        var maxLog = Number.NEGATIVE_INFINITY;
+        var minLat = Number.POSITIVE_INFINITY;
+        var maxLat = Number.NEGATIVE_INFINITY;
+        if(features[id].geometry.type === "Polygon") {
+          features[id].geometry.coordinates[0].forEach(function(pair) {
+            minLog = Math.min(minLog, pair[0]);
+            maxLog = Math.max(maxLog, pair[0]);
+            minLat = Math.min(minLat, pair[1]);
+            maxLat = Math.max(maxLat, pair[1]);
+          });
+        } else if( features[id].geometry.type === "MultiPolygon") {
+          features[id].geometry.coordinates.forEach(function(array){
+            array[0].forEach(function(pair){
               minLog = Math.min(minLog, pair[0]);
               maxLog = Math.max(maxLog, pair[0]);
               minLat = Math.min(minLat, pair[1]);
               maxLat = Math.max(maxLat, pair[1]);
             });
-         } else if( features[id].geometry.type === "MultiPolygon") {
-            features[id].geometry.coordinates.forEach(function(array){
-                array[0].forEach(function(pair){
-                  minLog = Math.min(minLog, pair[0]);
-                  maxLog = Math.max(maxLog, pair[0]);
-                  minLat = Math.min(minLat, pair[1]);
-                  maxLat = Math.max(maxLat, pair[1]);
-                });
-            });
-         }
-         features[id].properties["centerLog"] = (maxLog + minLog) / 2;
-         features[id].properties["centerLat"] = (maxLat + minLat) / 2;
-       }
+          });
+        }
+        features[id].properties["centerLog"] = (maxLog + minLog) / 2;
+        features[id].properties["centerLat"] = (maxLat + minLat) / 2;
+      }
     }
     // load geoJson
     function loadGeoJsonFiles(onEachFeature) {
@@ -366,13 +368,24 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     /**
      * Update map based on a set of spatial query result cells
-     * @param    [Array]     mapPlotData, an array of coordinate and weight objects
+     * @param    result  =>  mapPlotData, an array of coordinate and weight objects
      */
     function drawMap(result) {
 
       var colors = $scope.styles.colors;
+      var sentimentColors = $scope.styles.sentimentColors;
 
-      function getColor(d) {
+      function getSentimentColor(d) {
+        if( d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3
+          return sentimentColors[0];
+        } else if( d < 2 * cloudberryConfig.sentimentUpperBound / 3){    // 2/3
+          return sentimentColors[1];
+        } else{     // 3/3
+          return sentimentColors[2];
+        }
+      }
+
+      function getCountColor(d) {
         if(!d || d <= 0) {
           d = 0;
         } else if (d ===1 ){
@@ -386,8 +399,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         return colors[d];
       }
 
+      function getColor(d) {
+        if($scope.doSentiment){  // 0 <= d <= 4
+          return getSentimentColor(d)
+        } else {
+          return getCountColor(d)
+        }
+      }
+
       function style(feature) {
-        if (!feature.properties.count || feature.properties.count == 0){
+        if (!feature.properties.count || feature.properties.count === 0){
           return {
             fillColor: '#f7f7f7',
             weight: 2,
@@ -412,8 +433,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         // beautify 0.0000123 => 1.23e-5, 1.123 => 1.1
         if(geo["properties"]["count"] < 1){
           geo["properties"]["countText"] = geo["properties"]["count"].toExponential(1);
-        }
-        else{
+        } else{
           geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
         }
         geo["properties"]["countText"] += cloudberryConfig.normalizationUpscaleText; // "/M"
@@ -444,10 +464,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             resetCount(geo);
             angular.forEach(result, function (r) {
               if (r[level] === geo['properties'][level+"ID"]){
-                if ($scope.doNormalization)
-                  setNormalizedCount(geo, r);
-                else
-                  setUnnormalizedCount(geo, r);
+                if($scope.doSentiment){
+                  // TODO: change fake random number to real sentiment (0-4)
+                  geo['properties']['count'] = Math.random() * 4;
+                  geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
+                } else {
+                  if ($scope.doNormalization)
+                    setNormalizedCount(geo, r);
+                  else
+                    setUnnormalizedCount(geo, r);
+                }
               }
             });
           });
@@ -460,24 +486,82 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       // Loop through each result and update its count information on its associated geo record
       updateTweetCountInGeojson();
 
-      // add legend
-      var legend = $('.legend');
-      if (legend)
-        legend.remove();
+      /**
+       * add information control: legend, toggle
+       * */
 
-      $scope.legend = L.control({
-        position: 'topleft'
-      });
-
-      $scope.legend.onAdd = function(map) {
-        var div = L.DomUtil.create('div', 'info legend');
-        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000];
-
-        for(var i = 0; i < grades.length; i++){
-          grades[i] = Math.pow(10, i);
+      function addMapControl(name, position, initDiv, initJS){
+        var ctrlClass = $("."+name);
+        if (ctrlClass) {
+          ctrlClass.remove();
         }
 
-        var gName  = grades.map( function(d) {
+        $scope[name]= L.control({
+          position: position
+        });
+
+        $scope[name].onAdd = function() {
+          var div = L.DomUtil.create('div', 'info ' + name);
+          initDiv(div);
+          return div;
+        };
+        if ($scope.map) {
+          $scope[name].addTo($scope.map);
+          if (initJS)
+            initJS();
+        }
+      }
+
+      function initNormalize(div) {
+        if($scope.doNormalization)
+          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
+        else
+          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
+      }
+
+      function initNormalizeToggle() {
+        var toggle = $('#toggle-normalize');
+        toggle.bootstrapToggle({
+          on: "By Population"
+        });
+        if($scope.doSentiment){
+          toggle.bootstrapToggle('off');
+          toggle.bootstrapToggle('disable');
+        }
+      }
+
+      function initSentiment(div) {
+        if($scope.doSentiment)
+          div.innerHTML = '<p>Sentiment Analysis</p><input id="toggle-sentiment" checked type="checkbox">';
+        else
+          div.innerHTML = '<p>Sentiment Analysis</p><input id="toggle-sentiment" type="checkbox">';
+      }
+
+      function initSentimentToggle() {
+        $('#toggle-sentiment').bootstrapToggle({
+          on: "By OpenNLP"
+        });
+      }
+
+      function setSentimentLegend(div) {
+        div.setAttribute("title", "Sentiment Score: Negative(0)-Positive(4)");  // add tool-tips for the legend
+        div.innerHTML +=
+          '<i style="background:' + getColor(1) + '"></i>Negative<br>';
+        div.innerHTML +=
+          '<i style="background:' + getColor(2) + '"></i>Neutral<br>';
+        div.innerHTML +=
+          '<i style="background:' + getColor(3) + '"></i>Positive<br>';
+      }
+
+      function setGrades(grades) {
+        var i = 0;
+        for(; i < grades.length; i++){
+          grades[i] = Math.pow(10, i);
+        }
+      }
+
+      function getGradesNames(grades) {
+        return grades.map( function(d) {
           var returnText = "";
           if (d < 1000){
             returnText = d.toString();
@@ -488,55 +572,45 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           } else{
             returnText = (d / 1000 / 1000).toString() + "M+";
           }
-
           if($scope.doNormalization){
             return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
-          }
-          else{
+          } else {
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
           }
         });
+      }
 
+      function setCountLegend(div) {
+        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
+        setGrades(grades);
+        var gName  = getGradesNames(grades);
         if($scope.doNormalization)
           div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
-
         // loop through our density intervals and generate a label with a colored square for each interval
-        var i = 1;
+        i = 1;
         for (; i < grades.length; i++) {
           div.innerHTML +=
             '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
         }
         div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
+      }
 
-        return div;
-      };
-      if ($scope.map)
-        $scope.legend.addTo($scope.map);
+      function initLegend(div) {
+        if($scope.doSentiment){
+          setSentimentLegend(div);
+        } else {
+          setCountLegend(div);
+        }
+      }
+
+      // add legend
+      addMapControl('legend', 'topleft', initLegend, null);
 
       // add toggle normalize
-      var normalize = $('.normalize');
-      if (normalize) {
-        normalize.remove();
-      }
+      addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
 
-      $scope.normalize= L.control({
-        position: 'topleft'
-      });
-
-      $scope.normalize.onAdd = function() {
-        var div = L.DomUtil.create('div', 'info normalize');
-        if($scope.doNormalization)
-          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
-        else
-          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
-        return div;
-      };
-      if ($scope.map) {
-        $scope.normalize.addTo($scope.map);
-        $('#toggle-normalize').bootstrapToggle({
-          on: "By Population"
-        });
-      }
+      // add toggle sentiment analysis
+      addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
 
@@ -545,26 +619,30 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         return {
           'mapResult': cloudberry.mapResult,
           'totalCount': cloudberry.totalCount,
-          'doNormalization': $('#toggle-normalize').prop('checked')
+          'doNormalization': $('#toggle-normalize').prop('checked'),
+          'doSentiment': $('#toggle-sentiment').prop('checked')
         };
       },
 
       function(newResult, oldValue) {
-        if (newResult['mapResult'] != oldValue['mapResult']) {
-            $scope.result = newResult['mapResult'];
-            if (Object.keys($scope.result).length != 0) {
-                $scope.status.init = false;
-                drawMap($scope.result);
-            }
-            else {
-                drawMap($scope.result);
-            }
+        if (newResult['mapResult'] !== oldValue['mapResult']) {
+          $scope.result = newResult['mapResult'];
+          if (Object.keys($scope.result).length !== 0) {
+            $scope.status.init = false;
+            drawMap($scope.result);
+          } else {
+            drawMap($scope.result);
+          }
         }
-        if (newResult['totalCount'] != oldValue['totalCount']) {
-            $scope.totalCount = newResult['totalCount'];
+        if (newResult['totalCount'] !== oldValue['totalCount']) {
+          $scope.totalCount = newResult['totalCount'];
         }
-        if(newResult['doNormalization'] != oldValue['doNormalization']) {
+        if(newResult['doNormalization'] !== oldValue['doNormalization']) {
           $scope.doNormalization = newResult['doNormalization'];
+          drawMap($scope.result);
+        }
+        if(newResult['doSentiment'] !== oldValue['doSentiment']) {
+          $scope.doSentiment = newResult['doSentiment'];
           drawMap($scope.result);
         }
       }
