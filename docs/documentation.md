@@ -50,6 +50,7 @@ sbt "project neo" "run"
 ```
 
 * Run TwitterMap demo
+In a separate window run the following command:
 
 ```
 sbt "project twittermap" "run 9001"

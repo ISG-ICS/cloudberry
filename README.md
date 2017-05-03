@@ -40,8 +40,8 @@ The default value points to the localhost docker cluster
 ```
 
 ### Run TwitterMap demo
-TwitterMap demo is a demonstration application that shows how front-end services communicate with Cloudberry.
-You can run the following command in a separate command line windown
+TwitterMap is a demonstration application that shows how front-end services communicate with Cloudberry.
+You can run the following command in a separate command line window.
 ```
  sbt "project twittermap" "run 9001"
 ```
