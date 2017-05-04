@@ -7,10 +7,11 @@ import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
-import edu.uci.ics.cloudberry.zion.model.impl.{AQLGenerator, DataSetInfo, UnresolvedSchema}
+import edu.uci.ics.cloudberry.zion.model.impl._
+import edu.uci.ics.cloudberry.zion.model.schema.TimeField.TimeFormat
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.util.MockConnClient
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Interval}
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json.{JsArray, JsSuccess, Json}
 
@@ -194,8 +195,12 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       }
     }
 
+    val parser = new AQLGenerator
     val mockParserFactory = mock[IQLGeneratorFactory]
+    when(mockParserFactory.apply()).thenReturn(parser)
     val mockConn = mock[IDataConn]
+    when(mockConn.postControl(any[String])).thenReturn(Future(true))
+
     val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
     val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
     meta.receiveOne(1 second)
@@ -237,7 +242,14 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       }
       ok
     }
-    "respond success if register a correct data model and registered dataset can be successfully retrieved" in {
+    "respond success if register a correct data model and registered dataset can be successfully retrieved with correct stats information" in {
+      val statJson = JsArray(Seq(Json.obj(
+        "min" -> "2015-01-01T00:00:00.000Z",
+        "max" -> "2016-01-01T00:00:00.000Z",
+        "count" -> 2000
+      )))
+      when(mockConn.postQuery(any[String])).thenReturn(Future(statJson))
+
       sender.send(dataManager, registerRequest)
       sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
       meta.receiveOne(1 second)
@@ -246,8 +258,18 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val infos = sender.receiveOne(1 second).asInstanceOf[List[DataSetInfo]]
       infos.map { dataset: DataSetInfo =>
         dataset.name must_== "test"
+        dataset.createQueryOpt must_== None
+
         val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
         dataset.schema must_== datasetSchema
+
+        val minTime = "2015-01-01T00:00:00.000Z"
+        val maxTime = "2016-01-01T00:00:00.000Z"
+        val interval = new Interval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime))
+        dataset.dataInterval must_== interval
+
+        val size: Long = 2000
+        dataset.stats.cardinality must_== size
       }
       ok
     }
