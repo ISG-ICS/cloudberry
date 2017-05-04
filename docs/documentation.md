@@ -41,14 +41,6 @@ cd cloudberry; sbt compile
 sbt "project neo" "run"
 ```
 
-*Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data. If you see the following messages from the console, it means the loading process is done.*
-
-```
-...
-[info] application - I'm initializing
-[info] play.api.Play - Application started (Dev)
-```
-
 * Run TwitterMap demo
 In a separate window run the following command:
 
@@ -58,6 +50,15 @@ sbt "project twittermap" "run 9001"
 
 * **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost.
 Check it out at [http://localhost:9001](http://localhost:9001) and start playing with it!
+
+*Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data.
+If you see the following messages from the console, it means the loading process is done.*
+
+```
+...
+[info] application - I'm initializing
+[info] play.api.Play - Application started (Dev)
+```
 
 * Run your own front-end server
 
