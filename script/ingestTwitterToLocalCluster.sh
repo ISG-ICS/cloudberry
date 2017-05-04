@@ -94,7 +94,11 @@ start feed TweetFeed;
 EOF
 
 
+[ -f ./script/sample.adm.gz ] || { echo "Downloading the data...";  ./script/getSampleTweetsFromGDrive.sh; }
 #Serve socket feed using local file
 #git lfs fetch
+
+echo "Start ingestion ..." 
 gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh
+echo "Done!" 
 
