@@ -41,14 +41,6 @@ cd cloudberry; sbt compile
 sbt "project neo" "run"
 ```
 
-*Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data. If you see the following messages from the console, it means the loading process is done.*
-
-```
-...
-[info] application - I'm initializing
-[info] play.api.Play - Application started (Dev)
-```
-
 * Run TwitterMap demo
 In a separate window run the following command:
 
@@ -58,6 +50,15 @@ sbt "project twittermap" "run 9001"
 
 * **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost.
 Check it out at [http://localhost:9001](http://localhost:9001) and start playing with it!
+
+*Note when you open the page for the first time, it could take up to several minutes (depending on your machine) to load the front-end data.
+If you see the following messages from the console, it means the loading process is done.*
+
+```
+...
+[info] application - I'm initializing
+[info] play.api.Play - Application started (Dev)
+```
 
 * Run your own front-end server
 
@@ -151,6 +152,12 @@ The following JSON request can be used to register the Twitter dataset inside As
 }
 ```
 
+The front-end application can send the ddl JSON file to Cloudberry `/admin/register` path by using `POST` HTTP method.
+E.g., we can register the previous ddl using the following command line:
+```
+curl -XPOST -d @JSON_FILE_NAME http://localhost:9000/berry
+```
+
 *Note*:
 Fields that are not relevant to the visualization queries are not required to appear in the schema declaration.
 
@@ -181,9 +188,19 @@ Cloudberry supports the following data types:
 |Hierarchy |         | rollup | |
 
 
-## Format of requests to the middleware
+## Cloudberry Request Format
 
-After defining the dataset, the front-end can send a JSON request to query it.
+After defining the dataset, the front-end can `POST` a JSON request to `/berry` path to ask for results. E.g., for the
+illustration purpose, clients can use the `curl` command to send the JSON file as following.
+
+```
+curl -XPOST -d @JSON_FILE --header "Content-Type:application/json" http://localhost:9000/berry
+```
+
+In the production system, the front-end application can send the request by JavaScripts to the `/berry` path.
+We also provide the websocket connection at `ws://cloudberry_host_name/ws`. It will return the same result as HTTP POST requests.
+
+
 A request is composed of the following parameters:
 
 * **Dataset** : the dataset to query on.
@@ -216,7 +233,7 @@ A request is composed of the following parameters:
   "group": {
     "by": [
         {
-          "field": "geo.state",
+          "field": "geo_tag.stateID",
           "as": "state"
         },
         {
@@ -241,6 +258,17 @@ A request is composed of the following parameters:
       ]
   }
 }
+```
+
+Using `curl` command, you should see the following responses:
+```
+[[
+    {"state":6,"hour":"2016-04-09T10:00:00.000Z","count":1},
+    {"state":6,"hour":"2016-08-05T10:00:00.000Z","count":1},
+    {"state":12,"hour":"2016-07-26T10:00:00.000Z","count":1},
+    {"state":12,"hour":"2016-10-04T10:00:00.000Z","count":1}
+    ...
+]]
 ```
 
 * Get the top-10 related hashtags for tweets that mention "zika".
@@ -278,6 +306,16 @@ A request is composed of the following parameters:
 }
 ```
 
+The expected results are as following:
+```
+[[
+  {"tag":"Zika","count":6},
+  {"tag":"trndnl","count":6},
+  {"tag":"ColdWater","count":1},
+  ...
+]]
+```
+
 * Get 100 latest sample tweets that mention "zika".
 
 ```json
@@ -297,10 +335,20 @@ A request is composed of the following parameters:
 }
 ```
 
+The expected results are as following:
+```
+[[
+ {"create_at":"2016-10-04T10:00:17.000Z","id":783351045829357568},
+ {"create_at":"2016-09-09T10:00:28.000Z","id":774291393749643264},
+ {"create_at":"2016-09-09T10:00:08.000Z","id":774291307858722820},
+ ...
+]]
+```
+
 ### Request options
 
-Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each "small query" to get the results progressively.
-For example, the following option specifies that the front-end wants to slice a query and the expected response time for each sliced "small query" is 2000 ms.
+Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each
+"small query" to get the results progressively.
 
 ```json
 {
@@ -311,9 +359,53 @@ For example, the following option specifies that the front-end wants to slice a 
 }
 ```
 
+For example, the following query asks the top-10 hashtags with an option to accept an updated results every 200ms.
+```json
+{
+    "dataset": "twitter.ds_tweet",
+    "filter": [{
+        "field": "text",
+        "relation": "contains",
+        "values": ["zika"]
+    }],
+    "unnest": [{
+        "hashtags": "tag"
+    }],
+    "group": {
+        "by": [{
+            "field": "tag"
+        }],
+        "aggregate": [{
+            "field": "*",
+            "apply": {
+                "name": "count"
+            },
+            "as": "count"
+        }]
+    },
+    "select": {
+        "order": ["-count"],
+        "limit": 10,
+        "offset": 0
+    },
+    "option": {
+        "sliceMillis": 200
+    }
+}
+```
+
+There will be a stream of results return from Cloudberry as following:
+```
+[[{"tag":"Zika","count":3},{"tag":"ColdWater","count":1},{"tag":"Croatia","count":1}, ... ]]
+[[{"tag":"Zika","count":4},{"tag":"Croatia","count":1},{"tag":"OperativoNU","count":1}, ... ]]
+[[{"tag":"trndnl","count":6},{"tag":"Zika","count":4},{"tag":"ProjectHomeLouisDay","count":1}, ... ]]
+...
+```
+
 #### Format of multiple requests
 
-Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results. In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
+Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results.
+In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
 
 ```json
 {
@@ -325,6 +417,93 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
     "sliceMillis": 2000  
   }
 }
+```
+
+E.g., the following query shows an `batch` example that asks the by-state count and the top-10 hashtags and these two
+queries should be sliced synchronized.
+
+```json
+{
+    "batch": [{
+        "dataset": "twitter.ds_tweet",
+        "filter": [{
+            "field": "create_at",
+            "relation": "inRange",
+            "values": ["2016-01-01T00:00:00.000Z", "2016-12-31T00:00:00.000Z"]
+        }, {
+            "field": "text",
+            "relation": "contains",
+            "values": ["zika", "virus"]
+        }],
+        "group": {
+            "by": [{
+                "field": "geo_tag.stateID",
+                "as": "state"
+            }, {
+                "field": "create_at",
+                "apply": {
+                    "name": "interval",
+                    "args": {
+                        "unit": "hour"
+                    }
+                },
+                "as": "hour"
+            }],
+            "aggregate": [{
+                "field": "*",
+                "apply": {
+                    "name": "count"
+                },
+                "as": "count"
+            }]
+        }
+    }, {
+        "dataset": "twitter.ds_tweet",
+        "filter": [{
+            "field": "text",
+            "relation": "contains",
+            "values": ["zika"]
+        }],
+        "unnest": [{
+            "hashtags": "tag"
+        }],
+        "group": {
+            "by": [{
+                "field": "tag"
+            }],
+            "aggregate": [{
+                "field": "*",
+                "apply": {
+                    "name": "count"
+                },
+                "as": "count"
+            }]
+        },
+        "select": {
+            "order": ["-count"],
+            "limit": 10,
+            "offset": 0
+        }
+    }],
+    "option": {
+        "sliceMillis": 200
+    }
+}
+```
+
+The response is as following:
+```
+[
+  [ {"state":6,"hour":"2016-08-05T10:00:00.000Z","count":1}, {"state":12,"hour":"2016-07-26T10:00:00.000Z","count":1}, ...],
+  [ {"tag":"trndnl","count":6},{"tag":"Zika","count":5},{"tag":"ColdWater","count":1}, ...]
+]
+
+[
+  [ {"state":72,"hour":"2016-05-06T10:00:00.000Z","count":1},{"state":48,"hour":"2016-09-09T10:00:00.000Z","count":2}, ...],
+  [ {"tag":"trndnl","count":6},{"tag":"Zika","count":6},{"tag":"Croatia","count":1}, ...]
+]
+
+...
 ```
 
 #### Transform response format
