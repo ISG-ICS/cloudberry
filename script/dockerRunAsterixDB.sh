@@ -25,8 +25,8 @@ NC_JVM_MEM=1024      # the JVM -Xmx2048m memory budget for each NC. the Unit is 
 docName=dbstore
 
 #clean up the existing images
-docker stop cc nc1
-docker rm cc nc1
+docker stop -f cc nc1
+docker rm -f cc nc1
 docker volume rm $docName
 # remove the local image to fetch the newest remote version
 docker rmi jianfeng/asterixdb
