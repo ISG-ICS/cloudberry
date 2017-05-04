@@ -8,7 +8,7 @@ import edu.uci.ics.cloudberry.util.Profile._
 import twitter4j.{TwitterException, TwitterObjectFactory}
 
 object TagTweet {
-  var shapeMap = Seq( StateLevel -> "twittermap/public/data/state.json",
+  val shapeMap = Seq( StateLevel -> "twittermap/public/data/state.json",
     CountyLevel -> "twittermap/public/data/county.json",
     CityLevel -> "twittermap/public/data/city.json").toMap
 
