@@ -22,8 +22,15 @@ set -o nounset                              # Treat unset variables as an error
 
 ncs=${1:-1}          # the number of NCs in local cluster, default is 1 ncs
 NC_JVM_MEM=1024      # the JVM -Xmx2048m memory budget for each NC. the Unit is in meta bytes
-
 docName=dbstore
+
+#clean up the existing images
+docker stop cc nc1
+docker rm cc nc1
+docker volume rm $docName
+# remove the local image to fetch the newest remote version
+docker rmi jianfeng/asterixdb
+
 docker volume create --driver local --name $docName
 
 echo "build the cc"
