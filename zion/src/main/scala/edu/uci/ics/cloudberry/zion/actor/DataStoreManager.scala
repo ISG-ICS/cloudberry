@@ -134,18 +134,27 @@ class DataStoreManager(metaDataset: String,
         }
         val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
 
-        //TODO: Send query to get actual information when a dataset is registered.
-        val currentDateTime = new DateTime()
-        val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+        collectStats(dataSetName, resolvedSchema) onComplete {
+          case Success((interval, size)) =>
+            val currentDateTime = new DateTime()
+            val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, interval, stats)
 
-        val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
-        val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+            metaData.put(dataSetName, registerDataSetInfo)
+            flushMetaData()
+            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
 
-        val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
-        metaData.put(dataSetName, registerDataSetInfo)
-        flushMetaData()
+          case Failure(_) =>
+            val currentDateTime = new DateTime()
+            val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+            val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
+            val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
 
-        sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
+            metaData.put(dataSetName, registerDataSetInfo)
+            flushMetaData()
+            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered, with fake stats information.\n")
+        }
 
       } catch {
         case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")
