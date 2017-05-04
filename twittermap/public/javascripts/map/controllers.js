@@ -374,6 +374,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
       var colors = $scope.styles.colors;
       var sentimentColors = $scope.styles.sentimentColors;
+      var normalizedCountMax = 0,
+          normalizedCountMin = 0,
+          intervals = colors.length - 1,
+          difference = 0;
 
       function getSentimentColor(d) {
         if( d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3
@@ -385,7 +389,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
       }
 
-      function getCountColor(d) {
+      function getNormalizedCountColor(d) {
+        var i = 1;
+        for (; i <= intervals; i++){
+          if ( d <= normalizedCountMin + ((i * difference) / intervals)){  // bound = min + (i / 6) * difference
+            return colors[i];
+          }
+        }
+        return colors[intervals]; // in case of max
+      }
+
+      function getUnnormalizedCountColor(d) {
         if(!d || d <= 0) {
           d = 0;
         } else if (d ===1 ){
@@ -400,11 +414,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       }
 
       function getColor(d) {
-        if($scope.doSentiment){  // 0 <= d <= 4
-          return getSentimentColor(d)
-        } else {
-          return getCountColor(d)
-        }
+        if($scope.doSentiment)  // 0 <= d <= 4
+          return getSentimentColor(d);
+        else if($scope.doNormalization)
+          return getNormalizedCountColor(d);
+        else
+          return getUnnormalizedCountColor(d);
       }
 
       function style(feature) {
@@ -447,7 +462,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       }
 
       function setNormalizedCount(geo, r){
-        geo['properties']['count'] = r['count'] / r['population'] * cloudberryConfig.normalizationUpscaleFactor;
+        var normalizedCount = r['count'] / r['population'] * cloudberryConfig.normalizationUpscaleFactor;
+        geo['properties']['count'] = normalizedCount;
+        if(normalizedCount > normalizedCountMax)  // update max to enable dynamic legends
+          normalizedCountMax = normalizedCount;
         setNormalizedCountText(geo);
       }
 
@@ -468,16 +486,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
                   // TODO: change fake random number to real sentiment (0-4)
                   geo['properties']['count'] = Math.random() * 4;
                   geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
-                } else {
-                  if ($scope.doNormalization)
-                    setNormalizedCount(geo, r);
-                  else
-                    setUnnormalizedCount(geo, r);
+                } else if ($scope.doNormalization) {
+                  setNormalizedCount(geo, r);
+                } else{
+                  setUnnormalizedCount(geo, r);
                 }
               }
             });
           });
-
+          difference = normalizedCountMax - normalizedCountMin;  // to enable dynamic legend for normalization
           // draw
           $scope.polygons[level+"Polygons"].setStyle(style);
         }
@@ -556,7 +573,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       function setGrades(grades) {
         var i = 0;
         for(; i < grades.length; i++){
-          grades[i] = Math.pow(10, i);
+          if ($scope.doNormalization)
+            grades[i] = normalizedCountMin + ((i * difference) / intervals);
+          else
+            grades[i] = Math.pow(10, i);
         }
       }
 
@@ -564,19 +584,18 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         return grades.map( function(d) {
           var returnText = "";
           if (d < 1000){
-            returnText = d.toString();
+            returnText = d.toFixed();
           } else if (d < 1000 * 1000) {
-            returnText = (d / 1000).toString() + "K";
+            returnText = (d / 1000).toFixed() + "K";
           } else if (d < 1000 * 1000 * 1000) {
-            returnText = (d / 1000 / 1000).toString() + "M";
+            returnText = (d / 1000 / 1000).toFixed() + "M";
           } else{
-            returnText = (d / 1000 / 1000).toString() + "M+";
+            returnText = (d / 1000 / 1000).toFixed() + "M+";
           }
-          if($scope.doNormalization){
+          if($scope.doNormalization)
             return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
-          } else {
+          else
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
-          }
         });
       }
 
@@ -592,7 +611,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           div.innerHTML +=
             '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
         }
-        div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
+        if ($scope.doNormalization)
+          div.innerHTML += '<i style="background:' + getColor(grades[i-1] + ((difference) / intervals)) + '"></i> ' + gName[i-1] + '+';
+        else
+          div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
       }
 
       function initLegend(div) {
