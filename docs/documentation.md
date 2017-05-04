@@ -29,31 +29,13 @@ cd cloudberry; sbt compile
 ./script/dockerRunAsterixDB.sh
 ```
 
-* Ingest 324,000 sample tweets into AsterixDB
+* Ingest 324,000 sample tweets and US population data into AsterixDB
 
 ```
-./script/ingestTwitterToLocalCluster.sh
+./script/ingestAllTwitterToLocalCluster.sh
 ```
 
-* Ingest 33,107 US population data into AsterixDB (assume you are using Docker):
-* Run the following commands in the **cloudberry** folder to copy three population datasets into docker container `nc1`
-
-```
-docker cp noah/src/main/resources/population/adm/allStatePopulation.adm nc1:/home
-docker cp noah/src/main/resources/population/adm/allCountyPopulation.adm nc1:/home
-docker cp noah/src/main/resources/population/adm/allCityPopulation.adm nc1:/home
-```
-
-* Open `noah/src/main/resources/population/sqlpp/ingestPopulation.sqlpp` using a text editor and copy all of its contents. You may need to change the IP address of `nc1` by running the following script:
-
-{% raw %}
-```
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' nc1
-```
-{% endraw %}
-
-* Go to the AsterixDB web interface (`http://localhost:19001/` in the docker case). Copy and paste the `ingestPopulation.sqlpp` content into the web page and execute the query. You should see **Success: Query Complete** in the output.
-* Run cloudberry
+* Run Cloudberry server
 
 ```
 sbt "project neo" "run"
@@ -67,13 +49,20 @@ sbt "project neo" "run"
 [info] play.api.Play - Application started (Dev)
 ```
 
-* Once Cloudberry has successfully launched, register data models into Cloudberry by running the following scripts in the **cloudberry** folder
+* Run TwitterMap demo
+In a separate window run the following command:
 
 ```
-./script/registerTwitterMapDataModel.sh
+sbt "project twittermap" "run 9001"
 ```
 
-* **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost. Check it out at [http://localhost:9000](http://localhost:9000) and start playing with it!
+* **Congratulations!** You have finished setting up AsterixDB, Cloudberry, and TwitterMap on your localhost.
+Check it out at [http://localhost:9001](http://localhost:9001) and start playing with it!
+
+* Run your own front-end server
+
+TwitterMap is our homemade front-end that shows how to use Cloudberry server. You can implement own front-end service
+and let it talk to Cloudberry to achieve the same interactive user experience.
 
 
 ## Concepts
