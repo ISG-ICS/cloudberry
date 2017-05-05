@@ -18,5 +18,10 @@
 #===============================================================================
 
 host=${1:-'http://localhost:19002/aql'}
+echo "Ingesting sample tweets..."
 ./script/ingestTwitterToLocalCluster.sh $host
+
+echo "Ingesting population data..."
 ./script/ingestPopulationToLocalCluster.sh $host
+
+echo "Data ingestion completed!"

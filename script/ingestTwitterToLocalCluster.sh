@@ -100,5 +100,5 @@ EOF
 
 echo "Start ingestion ..." 
 gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh
-echo "Done!" 
+echo "Ingested sample tweets."
 
