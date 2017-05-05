@@ -5,7 +5,7 @@
   var cachedRegion ;
   var cacheSize = 0;
   var insertedTreeIDs = new Set();
-  var cacheThreshold = 600;//soft limit
+  var cacheThreshold = 7500;//hard limit
   var DeleteTarget = 0;
   var DeletedCount = 0;
   var preFetchDistance = 25;
@@ -86,6 +86,7 @@
        var deferred = new $.Deferred();
        var nodes = [];
        var treeID;
+
        for(var id in features){
 
            var box = turf.bbox(features[id]);
@@ -111,7 +112,8 @@
              evict(currentRequest).done(function(){
 
                    cachedCityPolygonTree.load(nodes);
-                    console.log(" Size:",cacheSize);
+                   cacheSize = nodes.length;
+                   console.log(" Size:",cacheSize);
               });
           deferred.resolve();
           return deferred.promise();
@@ -159,7 +161,8 @@
             cutRegion(C_minX,C_minY,C_maxX,R_minY,false,true) .done(function(){
                     deferred.resolve();
             }).fail(function(){
-                     cacheThreshold += DeleteTarget;
+//                     cacheThreshold += DeleteTarget;
+                     clearCache().done();
                      deferred.resolve();
             })
             return deferred.promise();
@@ -169,7 +172,8 @@
             //Y from top to bottom
                    deferred.resolve();
             }).fail(function(){
-                    cacheThreshold += DeleteTarget;
+//                    cacheThreshold += DeleteTarget;
+                    clearCache().done();
                     deferred.resolve();
             })
             return deferred.promise();
@@ -180,7 +184,8 @@
             //X from left to right
                    deferred.resolve();
             }).fail(function(){
-                    cacheThreshold += DeleteTarget;
+//                    cacheThreshold += DeleteTarget;
+                    clearCache().done();
                     deferred.resolve();
             })
             return deferred.promise();
@@ -190,7 +195,8 @@
             //X from right to left
                    deferred.resolve();
             }).fail(function(){
-                    cacheThreshold += DeleteTarget;
+//                    cacheThreshold += DeleteTarget;
+                    clearCache().done();
                     deferred.resolve();
             })
             return deferred.promise();
@@ -201,7 +207,8 @@
               //NO Overlap
                      deferred.resolve();
               }).fail(function(){
-                      cacheThreshold += DeleteTarget;
+//                      cacheThreshold += DeleteTarget;
+                      clearCache().done();
                       deferred.resolve();
               })
               return deferred.promise();
