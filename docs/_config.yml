@@ -30,6 +30,7 @@ navbar-links:
   Demo :
     - TwitterMap: "http://cloudberry.ics.uci.edu/demos/twittermap/"
   Resources:
+    - Quick Start: "quick-start"
     - Documentation: "documentation"
     - GitHub: "https://github.com/ISG-ICS/cloudberry"
   Pubs: "pubs"
