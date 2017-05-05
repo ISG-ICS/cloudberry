@@ -6,7 +6,9 @@ title: Quick Start
 ## Setup TwitterMap locally
 
 This page includes instructions on how to setup a small instance of the
-[TwitterMap](http://cloudberry.ics.uci.edu/demos/twittermap/) on a local machine.
+[TwitterMap](http://cloudberry.ics.uci.edu/demos/twittermap/) on a local machine. 
+The relation between TwitterMap and Cloudberry is shown in the following figure:
+![architecture][architecture]
 
 System requirements:
 
@@ -80,6 +82,8 @@ Wait until the shell prints the messages as shown in the following screenshot:
 TwitterMap is our homemade front-end that shows how to use Cloudberry server. You can implement own front-end service
 and let it talk to Cloudberry to achieve the same interactive user experience.
 
+[architecture]: /img/quick-start-architecture.png
+{: width="800px"}
 [docker]: /img/docker.png
 {: width="800px"}
 [ingestion]: /img/ingestion.png
