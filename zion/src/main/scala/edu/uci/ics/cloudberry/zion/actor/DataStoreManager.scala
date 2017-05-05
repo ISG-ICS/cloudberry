@@ -68,6 +68,7 @@ class DataStoreManager(metaDataset: String,
 
   def normal: Receive = {
     case AreYouReady => sender() ! true
+    case ListAllDataset => sender() ! metaData.values.toSeq
     case register: Register => registerNewDataset(sender(), register)
     case deregister: Deregister => deregisterDataSet(sender(), deregister)
     case query: Query => answerQuery(query)
@@ -337,4 +338,5 @@ object DataStoreManager {
 
   case class AppendViewAutomatic(dataset: String)
 
+  case object ListAllDataset
 }

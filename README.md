@@ -32,9 +32,18 @@ you can simply run the following command to create a two nc AsterixDB cluster lo
  sbt compile
 ```
 
-### Run front-end demo 
+### Run Cloudberry service 
 You will need to give the AsterixDB cluster link to `neo` by change the `asterixdb.url` configuration in `neo/conf/application.conf` file.
 The default value points to the localhost docker cluster
 ```
  sbt "project neo" "run"
 ```
+
+### Run TwitterMap demo
+TwitterMap is a demonstration application that shows how front-end services communicate with Cloudberry.
+You can run the following command in a separate command line window.
+```
+ sbt "project twittermap" "run 9001"
+```
+You should see the TwitterMap demo on [http://localhost:9001](http://localhost:9001)
+

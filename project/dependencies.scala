@@ -19,6 +19,12 @@ object Dependencies {
 
   val neoDependencies: Seq[ModuleID] = Seq(
     ws, // Play's web services module
+    "org.webjars" % "bootstrap" % "3.3.6"
+    // other module
+  ) ++ testDeps
+
+  val twittermapDependencies: Seq[ModuleID] = Seq(
+    ws, // Play's web services module
     "org.webjars" % "bootstrap" % "3.3.6",
     "org.webjars" % "flot" % "0.8.0",
     "org.webjars" % "angularjs" % "1.5.0",
@@ -33,10 +39,8 @@ object Dependencies {
     "org.webjars" % "d3js" % "3.5.16",
     // sidebar module
     "org.webjars" % "font-awesome" % "4.5.0",
-    "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
+    "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1"
     // other module
-    "com.github.nscala-time" %% "nscala-time" % "2.10.0",
-    "org.scalactic" %% "scalactic" % "2.2.6"
   ) ++ testDeps
 
   val noahDependencies: Seq[ModuleID] = Seq(
