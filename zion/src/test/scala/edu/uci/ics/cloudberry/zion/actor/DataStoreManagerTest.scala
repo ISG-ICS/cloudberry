@@ -199,7 +199,6 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     val mockParserFactory = mock[IQLGeneratorFactory]
     when(mockParserFactory.apply()).thenReturn(parser)
     val mockConn = mock[IDataConn]
-    when(mockConn.postControl(any[String])).thenReturn(Future(true))
 
     val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
     val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
