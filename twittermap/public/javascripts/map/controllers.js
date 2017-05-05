@@ -1,5 +1,5 @@
-angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
+angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common',,'cloudberry.cache'])
+  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig ,Cache) {
     $scope.result = {};
     $scope.doNormalization = false;
     $scope.doSentiment = false;
@@ -341,8 +341,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     function loadCityJsonByBound(onEachFeature){
       var bounds = $scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
-      $http.get(rteBounds)
-        .success(function(data) {
+
+        var getDataFromCache = Cache.getCityPolygonsFromCache(bounds).done(function(data) {
           $scope.geojsonData.city = data;
           if($scope.polygons.cityPolygons) {
             $scope.map.removeLayer($scope.polygons.cityPolygons);
@@ -351,7 +351,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             style: $scope.styles.cityStyle,
             onEachFeature: onEachFeature
           });
-          setCenterAndBoundry($scope.geojsonData.city.features);
+          //set center and boundary done by Cache
           if (!$scope.status.init) {
             resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
             cloudberry.parameters.geoLevel = 'city';
@@ -360,9 +360,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           }
           $scope.map.addLayer($scope.polygons.cityPolygons);
         })
-        .error(function(data) {
-          console.error("Load city data failure");
-        });
+
     }
 
 
