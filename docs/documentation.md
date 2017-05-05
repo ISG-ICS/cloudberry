@@ -1,14 +1,14 @@
 ---
 layout: page
-title: Documentation
+title: Quick Start
 toc: true
 ---
-## Quick Start
+## Setup TwitterMap locally
 
-This page provides instructions on how to setup a small instance of the
-[TwitterMap](cloudberry.ics.uci.edu/demos/twittermap/) on a local machine.
+This page includes instructions on how to setup a small instance of the
+[TwitterMap](http://cloudberry.ics.uci.edu/demos/twittermap/) on a local machine.
 
-System Requirements:
+System requirements:
 
  - Linux or Mac
  - At least 4GB memory
@@ -21,32 +21,32 @@ Step 2: Clone the codebase.
 shell> git clone https://github.com/ISG-ICS/cloudberry.git
 ```
 
+Suppose the repostory is cloned to the folder `~/cloudberry`.
+
 Step 3: Use the following steps to install an AsterixDB cluster on the local machine in order to run the Cloudberry middleware.  
 
    1. Install [Docker](https://www.docker.com/products/docker) (version at least 1.10) on the local machine;
-   2. Run the following command to create an AsterixDB cluster locally:
+   2. Run the following commands to create an AsterixDB cluster locally:
 
 ```
-shell> cd cloudberry
-shell> ./script/dockerRunAsterixDB.sh
+~> cd cloudberry
+~/cloudberry> ./script/dockerRunAsterixDB.sh
 ```
 This command will download and run a prebuilt AsterixDB docker image from [here](https://hub.docker.com/r/jianfeng/asterixdb/). This step may take 5-10 minutes or even longer, depending on your network speed.
 
 Step 4: Run the following command to ingest sample tweets (about 324K) and US population data into AsterixDB.
 
 ```
-shell> cd cloudberry
-shell> ./script/ingestAllTwitterToLocalCluster.sh
+~/cloudberry> ./script/ingestAllTwitterToLocalCluster.sh
 ```
 
-This step is downloading about 70MB of data, so it may take 5 minutes, again, depending on your network speed.  This step is successful after you see a message "Data ingestion completed!" in the shell.
+This step is downloading about 70MB of data, and it may take 5 minutes, again, depending on your network speed.  This step is successful after you see a message "Data ingestion completed!" in the shell.
 
 Step 5: Compile and run the Cloudberry server.
 
 ```
-shell> cd cloudberry
-shell> sbt compile
-shell> sbt "project neo" "run"
+~/cloudberry> sbt compile
+~/cloudberry> sbt "project neo" "run"
 ```
 
 Wait until the shell prints a message "Server started, use Ctrl+D to stop and go back to the console....".
@@ -54,7 +54,7 @@ Wait until the shell prints a message "Server started, use Ctrl+D to stop and go
 Step 6: Start the TwitterMap frontend by running the following command in another shell:
 
 ```
-shell> sbt "project twittermap" "run 9001"
+~/cloudberry> sbt "project twittermap" "run 9001"
 ```
 
 Step 7: Open a browser to access [http://localhost:9001](http://localhost:9001) to see the TwitterMap frontend.  Notice that the first time you open the page, it could take up to several minutes (depending on your machine) to load the front-end data.
