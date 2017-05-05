@@ -76,11 +76,22 @@ Wait until the shell prints the messages as shown in the following screenshot:
 **Congratulations!** You have successfully set up TwitterMap using AsterixDB and Cloudberry!
 
 
+### Connect to your own AsterixDB cluster 
+
+To connect with an existing AsterixDB cluster, you can modify the AsterixDB hostname in the 
+configuration file `neo/conf/application.conf` and change the `asterixdb.url` value to the AsterixDB hostname.
+
+```
+asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
+```
 
 ### Run your own front-end server
 
 TwitterMap is our homemade front-end that shows how to use Cloudberry server. You can implement own front-end service
 and let it talk to Cloudberry to achieve the same interactive user experience.
+
+### Customize front-end requests
+Read more on [documentation](/documentation) about how to write Cloudberry requests for your own front-end applications.
 
 [architecture]: /img/quick-start-architecture.png
 {: width="800px"}

@@ -92,8 +92,9 @@ The following JSON request can be used to register the Twitter dataset inside As
 
 The front-end application can send the ddl JSON file to Cloudberry `/admin/register` path by using `POST` HTTP method.
 E.g., we can register the previous ddl using the following command line:
+
 ```
-curl -XPOST -d @JSON_FILE_NAME http://localhost:9000/berry
+curl -XPOST -d @JSON_FILE_NAME http://localhost:9000/admin/register
 ```
 
 *Note*:
@@ -132,11 +133,18 @@ After defining the dataset, the front-end can `POST` a JSON request to `/berry` 
 illustration purpose, clients can use the `curl` command to send the JSON file as following.
 
 ```
-curl -XPOST -d @JSON_FILE --header "Content-Type:application/json" http://localhost:9000/berry
+curl -XPOST -d @JSON_FILE http://localhost:9000/berry
 ```
 
 In the production system, the front-end application can send the request by JavaScripts to the `/berry` path.
-We also provide the websocket connection at `ws://cloudberry_host_name/ws`. It will return the same result as HTTP POST requests.
+We also provide the websocket connection at `ws://cloudberry_host_name/ws`. You can let the front-end to directly talk
+to Cloudberry server in Javascript as following:
+
+```
+var ws = new WebSocket("ws://localhost:9000/ws"");
+```
+
+It will return the same result as HTTP POST requests.
 
 
 A request is composed of the following parameters:
@@ -198,7 +206,14 @@ A request is composed of the following parameters:
 }
 ```
 
-Using `curl` command, you should see the following responses:
+You can test the query by putting the above JSON record into a file and using `curl` command to send it to Cloudberry.
+
+```
+curl -XPOST -d @JSON_FILE http://localhost:9000/berry
+```
+
+You should see the following responses:
+
 ```
 [[
     {"state":6,"hour":"2016-04-09T10:00:00.000Z","count":1},
@@ -245,6 +260,7 @@ Using `curl` command, you should see the following responses:
 ```
 
 The expected results are as following:
+
 ```
 [[
   {"tag":"Zika","count":6},
@@ -274,6 +290,7 @@ The expected results are as following:
 ```
 
 The expected results are as following:
+
 ```
 [[
  {"create_at":"2016-10-04T10:00:17.000Z","id":783351045829357568},
@@ -298,6 +315,7 @@ Cloudberry supports automatic query-slicing on the `timeField`. The front-end ca
 ```
 
 For example, the following query asks the top-10 hashtags with an option to accept an updated results every 200ms.
+
 ```json
 {
     "dataset": "twitter.ds_tweet",
@@ -333,6 +351,7 @@ For example, the following query asks the top-10 hashtags with an option to acce
 ```
 
 There will be a stream of results return from Cloudberry as following:
+
 ```
 [[{"tag":"Zika","count":3},{"tag":"ColdWater","count":1},{"tag":"Croatia","count":1}, ... ]]
 [[{"tag":"Zika","count":4},{"tag":"Croatia","count":1},{"tag":"OperativoNU","count":1}, ... ]]
@@ -430,17 +449,16 @@ queries should be sliced synchronized.
 ```
 
 The response is as following:
+
 ```
 [
   [ {"state":6,"hour":"2016-08-05T10:00:00.000Z","count":1}, {"state":12,"hour":"2016-07-26T10:00:00.000Z","count":1}, ...],
   [ {"tag":"trndnl","count":6},{"tag":"Zika","count":5},{"tag":"ColdWater","count":1}, ...]
 ]
-
 [
   [ {"state":72,"hour":"2016-05-06T10:00:00.000Z","count":1},{"state":48,"hour":"2016-09-09T10:00:00.000Z","count":2}, ...],
   [ {"tag":"trndnl","count":6},{"tag":"Zika","count":6},{"tag":"Croatia","count":1}, ...]
 ]
-
 ...
 ```
 
@@ -493,38 +511,12 @@ The response is as below:
 
 `wrap` transformation is often preferable when the front-end send many different requests in the same WebSocket interface. 
 
-### Advanced users
+### Deregister Dataset
 
-#### Multi-node AsterixDB cluster
-
-Some applications may require a multi-node AsterixDB cluster.
-You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
-
-After the cluster is set up, you should make the following changes
-
-* Change the AsterixDB NC name for feed connection
-
-In the script `./script/ingestTwitterToLocalCluster.sh`, line 86:
+You may also deregister a dataset from Cloudberry. To do so, you can send the JSON record as following to the `/admin/deregister` path.
 
 ```
-("sockets"="my_asterix_nc1:10001")
-```
-
-where *my_asterix* is the name of your cluster instance, and *nc1* is the name of one NC node.
-
-
-* Modify the AsterixDB hostname
-
-In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` value to the previously set AsterixDB CC RESTFul API address.
-
-```
-asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
-```
-
-#### Deregister Tweets and US Population Data Models
-
-You may also deregister these data models from the Cloudberry to experiment with other data models. But be careful when doing this as the TwitterMap won't work without these data models.
-
-```
-./script/deregisterTwitterMapDataModel.sh
+{
+    "dataset": "twitter.dsCountyPopulation"
+}
 ```
