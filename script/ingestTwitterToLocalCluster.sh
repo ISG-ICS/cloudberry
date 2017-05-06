@@ -23,7 +23,7 @@ set -o nounset                              # Treat unset variables as an error
 host=${1:-"http://localhost:19002/aql"}
 nc=${2:-"nc1"}
 cat <<EOF | curl -XPOST --data-binary @- $host
-drop dataverse twitter if exists;
+//drop dataverse twitter if exists;
 create dataverse twitter if not exists;
 use dataverse twitter
 create type typeUser if not exists as open {
