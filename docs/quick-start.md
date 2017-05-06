@@ -80,9 +80,16 @@ The instructions above assume that we use an AsterixDB instance in a Docker cont
 
 **Step 8**: Follow the instructions on the [AsterixDB Installation Guide](https://ci.apache.org/projects/asterixdb/index.html) to install an AsterixDB cluster.  Select your preferred installation option. 
 
-**Step 9**: Ingest twitter data.
+**Step 9**: Ingest twitter data to AsterixDB
 
-**Step 10**: Change the Cloudberry middleware configuration to connect to this new AsterixDB cluster. You can modify the AsterixDB hostname in the configuration file `neo/conf/application.conf` and change the `asterixdb.url` value to the AsterixDB hostname.
+You need to give the RESTFul API link of the AsterixDB cluster and one of its NC name to the ingestion script as following:
+
+```
+~/cloudberry> ./script/ingestAllTwitterToLocalCluster.sh http://YourAsterixDBServerIP:19002/aql ONE_OF_NC_NAME
+```
+
+**Step 10**: Change the Cloudberry middleware configuration to connect to this new AsterixDB cluster. 
+You can modify the AsterixDB hostname in the configuration file `neo/conf/application.conf` by changing the `asterixdb.url` value.
 
 ```
 asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
@@ -90,7 +97,7 @@ asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
 
 ## Build your own application
 
-For more information about Cloudberry, please read its [documentation](/documentation).
+TwitterMap is one example of how to use Cloudberry. To develop your own front-end application, please find more information in [documentation](/documentation).
 
 [architecture]: /img/quick-start-architecture.png
 {: width="800px"}
