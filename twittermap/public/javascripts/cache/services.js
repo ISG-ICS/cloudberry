@@ -1,4 +1,7 @@
- angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
+
+//Cache module stores user requested city polygons.When Users requests these same city polygon area again we have it inn cache and
+// and provide it to the user without sending http request.
+angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
  .service('Cache', function( $window, $http, $compile){
 
   var cachedCityPolygonTree = rbush();
