@@ -103,27 +103,24 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
            if( insertedTreeIDs.has(treeID) == false){
                    nodes.push(features[id]);
                    insertedTreeIDs.add(treeID);
-                   cacheSize = cacheSize + 1;
 
            }
 
        }
+       //Cachesize already present cachesize,We need to add nodes.length polygons,CacheThreshold is the max size of Cache
+       if((cacheSize+nodes.length) >= cacheThreshold){
 
-       if(cacheSize >= cacheThreshold){
-
-             DeleteTarget = cacheSize - cacheThreshold;
+             DeleteTarget = (cacheSize+nodes.length) - cacheThreshold;
              evict(currentRequest).done(function(){
 
                    cachedCityPolygonTree.load(nodes);
-                   cacheSize = nodes.length;
-                   console.log(" Size:",cacheSize);
+                   cacheSize += nodes.length;       
               });
           deferred.resolve();
           return deferred.promise();
 
        }else{
                cachedCityPolygonTree.load(nodes);
-               console.log(" Size:",cacheSize);
                deferred.resolve();
                return deferred.promise();
        }
@@ -164,7 +161,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
             cutRegion(C_minX,C_minY,C_maxX,R_minY,false,true) .done(function(){
                     deferred.resolve();
             }).fail(function(){
-//                     cacheThreshold += DeleteTarget;
+
                      clearCache().done();
                      deferred.resolve();
             })
@@ -175,7 +172,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
             //Y from top to bottom
                    deferred.resolve();
             }).fail(function(){
-//                    cacheThreshold += DeleteTarget;
+
                     clearCache().done();
                     deferred.resolve();
             })
@@ -187,7 +184,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
             //X from left to right
                    deferred.resolve();
             }).fail(function(){
-//                    cacheThreshold += DeleteTarget;
+
                     clearCache().done();
                     deferred.resolve();
             })
@@ -198,7 +195,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
             //X from right to left
                    deferred.resolve();
             }).fail(function(){
-//                    cacheThreshold += DeleteTarget;
+
                     clearCache().done();
                     deferred.resolve();
             })
@@ -210,7 +207,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
               //NO Overlap
                      deferred.resolve();
               }).fail(function(){
-//                      cacheThreshold += DeleteTarget;
+
                       clearCache().done();
                       deferred.resolve();
               })
@@ -315,7 +312,6 @@ var clearCache = function remove(){
     DeletedCount = 0;
     insertedTreeIDs.clear();
     deferred.resolve();
-    console.log("cache_cleared");
     return deferred.promise();
 }
 
