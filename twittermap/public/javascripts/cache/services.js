@@ -1,6 +1,6 @@
 
-//Cache module stores user requested city polygons.When Users requests these same city polygon area again we have it inn cache and
-// and provide it to the user without sending http request.
+/*Cache module stores user requested city polygons.When Users requests these same city polygon area again we have it in cache 
+and provide it to the user without sending http request.*/
 angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
  .service('Cache', function( $window, $http, $compile){
 
@@ -14,8 +14,8 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
   var preFetchDistance = 25;
 
 
-  /*Call will happen from map controller and this functions sees whether a required data is present in cache or not
-  if not gets from midleware*/
+ /* Map controller calls this function and this function checks whether a requested region is present in the cache or not. If not, 
+ it gets the requested region data from the middleware.*/
   this.getCityPolygonsFromCache = function city(bounds){
 
        var deferred = new $.Deferred();
