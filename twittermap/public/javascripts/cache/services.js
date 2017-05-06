@@ -33,7 +33,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
                                 ]]);
 
        var bbox = turf.bbox(currentRequestPolygon);
-        // to search in Rbush Tree we need this in this format
+        // to search in Rbush Tree ,we need the MBR of the requested region.
        var item = {
            minX : bbox[0],
            minY : bbox[1],
