@@ -483,8 +483,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             angular.forEach(result, function (r) {
               if (r[level] === geo['properties'][level+"ID"]){
                 if($scope.doSentiment){
-                  // TODO: change fake random number to real sentiment (0-4)
-                  geo['properties']['count'] = Math.random() * 4;
+                  // sentimentScore for all the tweets in the same polygon / number of tweets with the score
+                  geo['properties']['count'] = r['sentimentScoreSum'] / r['sentimentScoreCount'];
                   geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
                 } else if ($scope.doNormalization) {
                   setNormalizedCount(geo, r);
@@ -632,7 +632,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
 
       // add toggle sentiment analysis
-      addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
+      if(cloudberryConfig.sentimentAnalysisEnabled)
+        addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
 

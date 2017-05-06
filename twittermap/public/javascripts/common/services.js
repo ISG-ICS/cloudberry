@@ -2,6 +2,7 @@ angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
     return {
       ws: config.wsURL,
+      sentimentAnalysisEnabled: false,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
@@ -113,32 +114,78 @@ angular.module('cloudberry.common', [])
 
 
     function byGeoRequest(parameters) {
-      return {
-        dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange),
-        group: {
-          by: [{
-            field: "geo",
-            apply: {
-              name: "level",
-              args: {
-                level: parameters.geoLevel
-              }
-            },
-            as: parameters.geoLevel
+      if(cloudberryConfig.sentimentAnalysisEnabled)
+        return {
+          dataset: parameters.dataset,
+          append: [{
+            field: "text",
+            definition: "twitter.`snlp#getSentimentScore`(text)",
+            type: "Number",
+            as: "sentimentScore"
           }],
-          aggregate: [{
-            field: "*",
-            apply: {
-              name: "count"
-            },
-            as: "count"
-          }],
-          lookup: [
-            cloudberryConfig.getPopulationTarget(parameters)
-          ]
-        }
-      };
+          filter: getFilter(parameters, defaultNonSamplingDayRange),
+          group: {
+            by: [{
+              field: "geo",
+              apply: {
+                name: "level",
+                args: {
+                  level: parameters.geoLevel
+                }
+              },
+              as: parameters.geoLevel
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            },{
+              field: "sentimentScore",
+              apply: {
+                name: "sum"
+              },
+              as: "sentimentScoreSum"
+            }, {
+              field: "sentimentScore",
+              apply: {
+                name: "count"
+              },
+              as: "sentimentScoreCount"
+            }],
+            lookup: [
+              cloudberryConfig.getPopulationTarget(parameters)
+            ]
+          }
+        };
+      else
+        return {
+          dataset: parameters.dataset,
+          filter: getFilter(parameters, defaultNonSamplingDayRange),
+          group: {
+            by: [{
+              field: "geo",
+              apply: {
+                name: "level",
+                args: {
+                  level: parameters.geoLevel
+                }
+              },
+              as: parameters.geoLevel
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }],
+            lookup: [
+              cloudberryConfig.getPopulationTarget(parameters)
+            ]
+          }
+        };
     }
 
     function byTimeRequest(parameters) {
