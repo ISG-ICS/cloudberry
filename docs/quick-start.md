@@ -36,14 +36,14 @@ The second command will download and run a prebuilt AsterixDB docker container f
 After it finishes, you should see the messages as shown in the following screenshot:
 ![docker][docker]
 
-**Step 4**: Run the following command to ingest sample tweets (about 324K) and US population data into AsterixDB.
+**Step 4**: Run the following command to ingest sample tweets (about 47K) and US population data into AsterixDB.
 
 
 ```
 ~/cloudberry> ./script/ingestAllTwitterToLocalCluster.sh
 ```
 
-This step is downloading about 70MB of data, and it may take 5 minutes, again, depending on your network speed. You should see the messages as shown in the following screenshot:
+When it finishes you should see the messages as shown in the following screenshot:
 ![ingestion][ingestion]
 
 **Step 5**: Compile and run the Cloudberry server.
