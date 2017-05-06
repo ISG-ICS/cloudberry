@@ -2,7 +2,7 @@ angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
     return {
       ws: config.wsURL,
-      sentimentAnalysisEnabled: false,
+      sentimentAnalysisEnabled: true,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
