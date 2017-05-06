@@ -61,19 +61,19 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
 
               $http.get(rteExtends).success(function(data) {
 
-                      var result_set = insertIntoTree(data.features,currentRequestPolygon).done(function(){
+                               var result_set = insertIntoTree(data.features,currentRequestPolygon).done(function(){
 
-                               var extendPoly = turf.bboxPolygon(bboxBuffer);
+                                                var extendPoly = turf.bboxPolygon(bboxBuffer);
 
-                               if(cachedRegion == undefined)
-                                   {cachedRegion = extendPoly;}
-                               else
-                                   {cachedRegion = turf.union(extendPoly,cachedRegion);}
+                                                if(cachedRegion == undefined)
+                                                    {cachedRegion = extendPoly;}
+                                                else
+                                                    {cachedRegion = turf.union(extendPoly,cachedRegion);}
 
-                               var result = cachedCityPolygonTree.search(item);
-                               data_response = turf.featureCollection(result);
+                                                var result = cachedCityPolygonTree.search(item);
+                                                data_response = turf.featureCollection(result);
 
-                               deferred.resolve(data_response);
+                                                deferred.resolve(data_response);
 
 
                       });
