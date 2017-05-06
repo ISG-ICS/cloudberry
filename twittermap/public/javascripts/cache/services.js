@@ -83,7 +83,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
               return deferred.promise();
        }
   }
-//to insert polygons into the Rtree
+//to insert polygons into the Rtree,features are the city polygons
  var insertIntoTree = function insertIntoTree(features,currentRequest){
 
        var deferred = new $.Deferred();
