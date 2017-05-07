@@ -111,10 +111,8 @@ angular.module('cloudberry.common', [])
       ];
     }
 
-
-
     function byGeoRequest(parameters) {
-      if(cloudberryConfig.sentimentAnalysisEnabled)
+      if(cloudberryConfig.sentimentAnalysisEnabled) {
         return {
           dataset: parameters.dataset,
           append: [{
@@ -159,7 +157,7 @@ angular.module('cloudberry.common', [])
             ]
           }
         };
-      else
+      } else{
         return {
           dataset: parameters.dataset,
           filter: getFilter(parameters, defaultNonSamplingDayRange),

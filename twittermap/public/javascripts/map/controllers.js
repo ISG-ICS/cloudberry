@@ -667,10 +667,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
         if(newResult['doSentiment'] !== oldValue['doSentiment']) {
           $scope.doSentiment = newResult['doSentiment'];
-          if($scope.doSentiment)
+          if($scope.doSentiment) {
             $scope.infoPromp = "Score";  // change the info promp
-          else
+          } else {
             $scope.infoPromp = "Count";
+          }
           drawMap($scope.result);
         }
       }
