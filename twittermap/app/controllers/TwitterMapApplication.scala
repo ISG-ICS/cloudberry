@@ -21,13 +21,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").get
   val cloudberryWS: String = config.getString("cloudberry.ws").get
+  val twitterMapSentimentAnalysisEnabled: Boolean = config.getBoolean("twitterMap.sentimentAnalysisEnabled").get
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
 
   val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
   Await.result(register, 1 minutes)
 
   def index = Action {
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS))
+    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, twitterMapSentimentAnalysisEnabled))
   }
 
   def tweet(id: String) = Action.async {
