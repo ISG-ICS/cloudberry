@@ -3,6 +3,7 @@ angular.module('cloudberry.common', [])
     return {
       ws: config.wsURL,
       sentimentEnabled: config.sentimentEnabled,
+      sentimentUDF: config.sentimentUDF,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
@@ -117,7 +118,7 @@ angular.module('cloudberry.common', [])
           dataset: parameters.dataset,
           append: [{
             field: "text",
-            definition: "twitter.`snlp#getSentimentScore`(text)",
+            definition: cloudberryConfig.sentimentUDF,
             type: "Number",
             as: "sentimentScore"
           }],
