@@ -1,4 +1,4 @@
-@(title: String, ws: String, sentimentAnalysisEnabled: Boolean)(body: Html)
+@(title: String, ws: String, sentimentEnabled: Boolean)(body: Html)
 
 <!DOCTYPE html>
 <html ng-app="cloudberry">
@@ -20,7 +20,7 @@
   <script>
     var config= {
       wsURL:"@ws",
-      sentimentAnalysisEnabled: @sentimentAnalysisEnabled
+      sentimentAnalysisEnabled: @sentimentEnabled
     }
   </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
