@@ -112,7 +112,7 @@ angular.module('cloudberry.common', [])
     }
 
     function byGeoRequest(parameters) {
-      if(cloudberryConfig.sentimentAnalysisEnabled) {
+      if (cloudberryConfig.sentimentAnalysisEnabled) {
         return {
           dataset: parameters.dataset,
           append: [{
@@ -139,7 +139,7 @@ angular.module('cloudberry.common', [])
                 name: "count"
               },
               as: "count"
-            },{
+            }, {
               field: "sentimentScore",
               apply: {
                 name: "sum"
@@ -157,7 +157,7 @@ angular.module('cloudberry.common', [])
             ]
           }
         };
-      } else{
+      } else {
         return {
           dataset: parameters.dataset,
           filter: getFilter(parameters, defaultNonSamplingDayRange),
@@ -184,6 +184,7 @@ angular.module('cloudberry.common', [])
             ]
           }
         };
+      }
     }
 
     function byTimeRequest(parameters) {
