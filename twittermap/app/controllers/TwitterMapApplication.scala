@@ -19,10 +19,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       val environment: Environment) extends Controller {
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
-  val cloudberryRegisterURL: String = config.getString("cloudberry.register").get
-  val cloudberryWS: String = config.getString("cloudberry.ws").get
-  val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").get
-  val sentimentUDF: String = config.getString("sentimentUDF").get
+  val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
+  val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
+  val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
+  val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
 
   val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
