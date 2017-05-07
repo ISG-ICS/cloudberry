@@ -3,6 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.{Cardinality, NewStats}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore._
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
@@ -37,7 +38,7 @@ class DataStoreManager(metaDataset: String,
   val managerParser = queryGenFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
-  val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
+  val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, new Cardinality(new DateTime(), new DateTime(), 0), queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
@@ -108,6 +109,19 @@ class DataStoreManager(metaDataset: String,
       metaData += info.name -> info
       creatingSet.remove(info.name)
       flushMetaData()
+
+    case newStats: NewStats =>
+      if(metaData.contains(newStats.dbName)) {
+        val originInfo = metaData.get(newStats.dbName).head
+        val updatedCardinality = originInfo.stats.cardinality + newStats.additionalCount
+        val updatedStats = originInfo.stats.copy(cardinality = updatedCardinality)
+        val updatedInfo = originInfo.copy(stats = updatedStats)
+        metaData.put(newStats.dbName, updatedInfo)
+        flushMetaData()
+      } else{
+        log.error("Database not existed in meta table: " + newStats.dbName)
+      }
+
     case FlushMeta => flushMetaData()
   }
 
@@ -145,6 +159,7 @@ class DataStoreManager(metaDataset: String,
             sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
 
           case Failure(_) =>
+            //FIXME Need to introduce static dataset to handle this
             val currentDateTime = new DateTime()
             val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
             val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
@@ -205,13 +220,14 @@ class DataStoreManager(metaDataset: String,
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
       val schema: Schema = info.schema
+      val initCardinality: Cardinality = new Cardinality(info.dataInterval.getStart, info.dataInterval.getEnd, info.stats.cardinality)
       info.createQueryOpt match {
         case Some(_) =>
-          val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
+          val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, initCardinality, queryGenFactory(), conn, config)
           context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
           ret
         case None =>
-          childMaker(AgentType.Origin, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
+          childMaker(AgentType.Origin, context, "data-" + query.dataset, query.dataset, schema, initCardinality, queryGenFactory(), conn, config)
       }
     }
     query match {
@@ -286,7 +302,7 @@ object DataStoreManager {
     val View = Value("view")
   }
 
-  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, IQLGenerator, IDataConn, Config) => ActorRef
+  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, Cardinality, IQLGenerator, IDataConn, Config) => ActorRef
 
   def props(metaDataSet: String,
             conn: IDataConn,
@@ -301,6 +317,7 @@ object DataStoreManager {
                    actorName: String,
                    dbName: String,
                    dbSchema: Schema,
+                   initCardinality: Cardinality,
                    qLGenerator: IQLGenerator,
                    conn: IDataConn,
                    appConfig: Config
@@ -310,7 +327,7 @@ object DataStoreManager {
       case Meta =>
         context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
       case Origin =>
-        context.actorOf(OriginalDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
+        context.actorOf(OriginalDataAgent.props(dbName, dbSchema, initCardinality, qLGenerator, conn, appConfig), actorName)
       case View =>
         context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
     }

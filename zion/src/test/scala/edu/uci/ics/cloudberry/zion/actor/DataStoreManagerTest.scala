@@ -5,6 +5,7 @@ import java.util.concurrent.Executors
 import akka.actor._
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
+import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.Cardinality
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl._
@@ -40,6 +41,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                        actorName: String,
                        dbName: String,
                        dbSchema: Schema,
+                       initCardinality: Cardinality,
                        qLGenerator: IQLGenerator,
                        conn: IDataConn,
                        appConfig: Config
@@ -169,6 +171,10 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     "use existing child to solve the query" in {
       ok
     }
+    "receive NewStats and update Stats in meta" in {
+      // TODO to implement
+      ok
+    }
   }
 
   "Data schema registering process" should {
@@ -183,6 +189,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                        actorName: String,
                        dbName: String,
                        dbSchema: Schema,
+                       initCardinality: Cardinality,
                        qLGenerator: IQLGenerator,
                        conn: IDataConn,
                        appConfig: Config
@@ -324,6 +331,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                        actorName: String,
                        dbName: String,
                        dbSchema: Schema,
+                       initCardinality: Cardinality,
                        qLGenerator: IQLGenerator,
                        conn: IDataConn,
                        appConfig: Config

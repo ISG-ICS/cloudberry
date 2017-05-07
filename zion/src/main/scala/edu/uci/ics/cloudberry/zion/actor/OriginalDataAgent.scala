@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.Props
 import akka.pattern.pipe
+import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.Cardinality
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.schema._
@@ -12,6 +13,7 @@ import scala.concurrent.ExecutionContext
 
 class OriginalDataAgent(override val dbName: String,
                         override val schema: Schema,
+                        val initCardinality: Cardinality,
                         override val queryParser: IQLGenerator,
                         override val conn: IDataConn,
                         override val config: Config)(implicit ec: ExecutionContext)
@@ -19,24 +21,10 @@ class OriginalDataAgent(override val dbName: String,
 
   import OriginalDataAgent._
 
-  val lastCount: Cardinality = UnInitialCardinality
+  val lastCount: Cardinality = initCardinality
 
-  /**
-    * Ask for the initial stats when the Agent starts.
-    * Stats including: minTimeStamp, maxTimeStamp, cardinality
-    */
-  override def preStart(): Unit = {
-    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Field.as(Min(schema.timeField), "min")))))
-    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Field.as(Max(schema.timeField), "max")))))
-    val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))))
-    val schemaMap = Map(dbName -> schema)
-    val future = for {
-      minTime <- conn.postQuery(queryParser.generate(minTimeQuery, schemaMap)).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(queryParser.generate(maxTimeQuery, schemaMap)).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(queryParser.generate(cardinalityQuery, schemaMap)).map(r => (r \\ "count").head.as[Long])
-    } yield new Cardinality(TimeField.TimeFormat.parseDateTime(minTime), TimeField.TimeFormat.parseDateTime(maxTime), cardinality)
-    future pipeTo self
-  }
+  //update Stats periodically
+  context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
 
   /**
     * Estimate the result of the query w/o visiting DB
@@ -58,12 +46,8 @@ class OriginalDataAgent(override val dbName: String,
 
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
-      if (lastCount.count == UnInitialCount) {
-        lastCount.reset(newCount.from, newCount.till, newCount.count)
-        context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
-      } else {
-        lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
-      }
+      lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
+      context.parent ! NewStats(dbName, newCount.count)
     case UpdateStats =>
       collectStats(lastCount.till)
   }
@@ -97,8 +81,7 @@ object OriginalDataAgent {
 
   object UpdateStats
 
-  val UnInitialCount = -1
-  val UnInitialCardinality = new Cardinality(DateTime.now(), DateTime.now(), UnInitialCount)
+  case class NewStats(dbName: String, additionalCount: Long)
 
   class Cardinality(var from: DateTime, var till: DateTime, var count: Long) {
     def reset(from: DateTime, till: DateTime, count: Long): Unit = {
@@ -110,7 +93,7 @@ object OriginalDataAgent {
     def ratePerSecond: Double = count.toDouble / new Duration(from, till).getStandardSeconds
   }
 
-  def props(dbName: String, schema: Schema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
+  def props(dbName: String, schema: Schema, initCardinality: Cardinality, queryParser: IQLGenerator, conn: IDataConn, config: Config)
            (implicit ec: ExecutionContext) =
-    Props(new OriginalDataAgent(dbName, schema, queryParser, conn, config))
+    Props(new OriginalDataAgent(dbName, schema, initCardinality, queryParser, conn, config))
 }

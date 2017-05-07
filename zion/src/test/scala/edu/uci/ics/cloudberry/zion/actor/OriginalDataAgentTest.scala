@@ -3,6 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import java.util.concurrent.Executors
 
 import akka.testkit.TestProbe
+import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.Cardinality
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
@@ -24,9 +25,14 @@ class OriginalDataAgentTest extends Specification with Mockito {
   sequential
 
   val schema = TwitterDataStore.TwitterSchema
-  val minTimeResponse = Json.obj("min" -> JsString(TimeField.TimeFormat.print(new DateTime(2016, 1, 1, 0, 0))))
-  val maxTimeResponse = Json.obj("max" -> JsString(TimeField.TimeFormat.print(new DateTime(2017, 1, 1, 0, 0))))
+
+  val initialMinTime = new DateTime(2016, 1, 1, 0, 0)
+  val initialMaxTime = new DateTime(2017, 1, 1, 0, 0)
   val initialCount = 9876
+  val initCardinality = new Cardinality(initialMinTime, initialMaxTime, initialCount)
+
+  val minTimeResponse = Json.obj("min" -> JsString(TimeField.TimeFormat.print(initialMinTime)))
+  val maxTimeResponse = Json.obj("max" -> JsString(TimeField.TimeFormat.print(initialMaxTime)))
   val countResponse = Json.obj("count" -> JsNumber(initialCount))
 
   "BaseDataSetAgent" should {
@@ -35,24 +41,14 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val mockQueryParserSpecial = mock[IQLGenerator]
       val mockConnSpecial = mock[IDataConn]
 
-      val initialAQL = "initial"
       val updateCountAQL = "update"
       when(mockQueryParserSpecial.generate(any, any))
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(updateCountAQL) // update count
-
-      when(mockConnSpecial.postQuery(initialAQL))
-        .thenReturn(Future(minTimeResponse))
-        .thenReturn(Future(maxTimeResponse))
-        .thenReturn(Future(countResponse))
-
+        .thenReturn(updateCountAQL)
       when(mockConnSpecial.postQuery(updateCountAQL))
         .thenReturn(Future(countResponse))
 
       val updatePerSecondConfig = new Config(Configuration("agent.collect.stats.interval" -> "1 second"))
-      val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
+      val agent = system.actorOf(OriginalDataAgent.props("test", schema, initCardinality, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
       sender.expectNoMsg(500 milli)
 
       val globalCount = GlobalAggregateStatement(AggregateStatement(AllField, Count, Field.as(Count(AllField), "count")))
@@ -68,58 +64,31 @@ class OriginalDataAgentTest extends Specification with Mockito {
 
       ok
     }
-    "collect stats information when start" in new TestkitExample {
-      val sender = new TestProbe(system)
-      val mockQueryParser = mock[IQLGenerator]
-      val mockConn = mock[IDataConn]
-
-      val initialAQL = "initial"
-      when(mockQueryParser.generate(any, any))
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-
-      when(mockConn.postQuery(initialAQL))
-        .thenReturn(Future(minTimeResponse))
-        .thenReturn(Future(maxTimeResponse))
-        .thenReturn(Future(countResponse))
-
-      system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
-      sender.expectNoMsg(1 seconds)
-
-      //initial 3 times AQL call
-      import org.mockito.Mockito
-
-      verify(mockQueryParser, Mockito.times(3)).generate(any, any)
-      verify(mockConn, Mockito.times(3)).postQuery(any)
-      ok
-    }
     "answer query" in new TestkitExample {
       val sender = new TestProbe(system)
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
-      val initialAQL = "initial"
       val actualAQL = "actual"
-      when(mockQueryParser.generate(any, any))
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(actualAQL)
-
-      when(mockConn.postQuery(initialAQL))
-        .thenReturn(Future(minTimeResponse))
-        .thenReturn(Future(maxTimeResponse))
-        .thenReturn(Future(countResponse))
-
       val jsResponse = JsObject(Seq("a" -> JsNumber(1)))
-      val query = Query("twitter")
-      when(mockConn.postQuery(actualAQL)).thenReturn(Future(jsResponse))
 
-      val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      when(mockQueryParser.generate(any, any))
+        .thenReturn(actualAQL)
+      when(mockConn.postQuery(actualAQL))
+        .thenReturn(Future(jsResponse))
+
+      val query = Query("twitter")
+      val agent = system.actorOf(OriginalDataAgent.props("test", schema, initCardinality, mockQueryParser, mockConn, Config.Default))
+
       sender.expectNoMsg(1 seconds)
       sender.send(agent, query)
       sender.expectMsg(jsResponse)
+
+      ok
+    }
+    "send updated stats to data store manager" in new TestkitExample{
+      //TODO to implement
+
       ok
     }
     "answer estimable query using stats only" in new TestkitExample {
@@ -127,32 +96,16 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
-      val initialAQL = "initial"
-      when(mockQueryParser.generate(any, any))
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-        .thenReturn(initialAQL)
-
-      when(mockConn.postQuery(initialAQL))
-        .thenReturn(Future(minTimeResponse))
-        .thenReturn(Future(maxTimeResponse))
-        .thenReturn(Future(countResponse))
-
       val globalCount = GlobalAggregateStatement(AggregateStatement(AllField, Count, Field.as(Count(AllField), "count")))
       val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
 
-      val agent = system.actorOf(OriginalDataAgent.props("test", schema, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(OriginalDataAgent.props("test", schema, initCardinality, mockQueryParser, mockConn, Config.Default))
 
       sender.expectNoMsg(1 seconds)
       sender.send(agent, query)
       val countResult = sender.receiveOne(1 seconds).asInstanceOf[JsValue]
       (countResult \\ "count").head.as[Int] must be_>=(initialCount)
 
-      //initial 3 times AQL call
-      import org.mockito.Mockito
-
-      verify(mockQueryParser, Mockito.times(3)).generate(any, any)
-      verify(mockConn, Mockito.times(3)).postQuery(any)
       ok
     }
 
