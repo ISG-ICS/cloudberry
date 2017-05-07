@@ -2,7 +2,7 @@ angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
     return {
       ws: config.wsURL,
-      sentimentAnalysisEnabled: config.sentimentAnalysisEnabled,
+      sentimentEnabled: config.sentimentEnabled,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
@@ -112,7 +112,7 @@ angular.module('cloudberry.common', [])
     }
 
     function byGeoRequest(parameters) {
-      if (cloudberryConfig.sentimentAnalysisEnabled) {
+      if (cloudberryConfig.sentimentEnabled) {
         return {
           dataset: parameters.dataset,
           append: [{

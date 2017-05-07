@@ -633,7 +633,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
 
       // add toggle sentiment analysis
-      if(cloudberryConfig.sentimentAnalysisEnabled)
+      if(cloudberryConfig.sentimentEnabled)
         addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
