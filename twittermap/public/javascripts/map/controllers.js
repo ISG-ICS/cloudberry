@@ -3,6 +3,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     $scope.result = {};
     $scope.doNormalization = false;
     $scope.doSentiment = false;
+    $scope.infoPromp = "Count";
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -171,10 +172,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
         this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
-          '<h4>Count by {{ status.logicLevel }}</h4>',
+          '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          'Count: {{ selectedPlace.properties.countText || "0" }}'
+          '{{ infoPromp }}: {{ selectedPlace.properties.countText || "0" }}'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -483,8 +484,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             angular.forEach(result, function (r) {
               if (r[level] === geo['properties'][level+"ID"]){
                 if($scope.doSentiment){
-                  // TODO: change fake random number to real sentiment (0-4)
-                  geo['properties']['count'] = Math.random() * 4;
+                  // sentimentScore for all the tweets in the same polygon / number of tweets with the score
+                  geo['properties']['count'] = r['sentimentScoreSum'] / r['sentimentScoreCount'];
                   geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
                 } else if ($scope.doNormalization) {
                   setNormalizedCount(geo, r);
@@ -632,7 +633,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
 
       // add toggle sentiment analysis
-      addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
+      if(cloudberryConfig.sentimentEnabled)
+        addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
 
@@ -665,6 +667,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         }
         if(newResult['doSentiment'] !== oldValue['doSentiment']) {
           $scope.doSentiment = newResult['doSentiment'];
+          if($scope.doSentiment) {
+            $scope.infoPromp = "Score";  // change the info promp
+          } else {
+            $scope.infoPromp = "Count";
+          }
           drawMap($scope.result);
         }
       }
