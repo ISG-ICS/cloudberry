@@ -41,7 +41,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                        actorName: String,
                        dbName: String,
                        dbSchema: Schema,
-                       initCardinality: Cardinality,
+                       dataSetInfoOpt: Option[DataSetInfo],
                        qLGenerator: IQLGenerator,
                        conn: IDataConn,
                        appConfig: Config
@@ -189,7 +189,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                        actorName: String,
                        dbName: String,
                        dbSchema: Schema,
-                       initCardinality: Cardinality,
+                       dataSetInfoOpt: Option[DataSetInfo],
                        qLGenerator: IQLGenerator,
                        conn: IDataConn,
                        appConfig: Config
@@ -331,7 +331,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
                        actorName: String,
                        dbName: String,
                        dbSchema: Schema,
-                       initCardinality: Cardinality,
+                       dataSetInfoOpt: Option[DataSetInfo],
                        qLGenerator: IQLGenerator,
                        conn: IDataConn,
                        appConfig: Config

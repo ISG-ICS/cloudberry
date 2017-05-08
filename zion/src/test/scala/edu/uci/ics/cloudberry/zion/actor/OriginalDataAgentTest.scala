@@ -3,12 +3,11 @@ package edu.uci.ics.cloudberry.zion.actor
 import java.util.concurrent.Executors
 
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.Cardinality
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
-import edu.uci.ics.cloudberry.zion.model.impl.TwitterDataStore
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, TwitterDataStore}
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, Interval}
 import org.mockito.Mockito._
 import org.specs2.mock.Mockito
 import org.specs2.mutable.Specification
@@ -24,12 +23,13 @@ class OriginalDataAgentTest extends Specification with Mockito {
 
   sequential
 
-  val schema = TwitterDataStore.TwitterSchema
-
   val initialMinTime = new DateTime(2016, 1, 1, 0, 0)
   val initialMaxTime = new DateTime(2017, 1, 1, 0, 0)
   val initialCount = 9876
-  val initCardinality = new Cardinality(initialMinTime, initialMaxTime, initialCount)
+
+  val interval = new Interval(initialMinTime.getMillis, initialMaxTime.getMillis)
+  val stats = Stats(new DateTime(), new DateTime(), new DateTime(), initialCount)
+  val dataSetInfo = new DataSetInfo("test", None, TwitterDataStore.TwitterSchema, interval, stats)
 
   val minTimeResponse = Json.obj("min" -> JsString(TimeField.TimeFormat.print(initialMinTime)))
   val maxTimeResponse = Json.obj("max" -> JsString(TimeField.TimeFormat.print(initialMaxTime)))
@@ -48,7 +48,7 @@ class OriginalDataAgentTest extends Specification with Mockito {
         .thenReturn(Future(countResponse))
 
       val updatePerSecondConfig = new Config(Configuration("agent.collect.stats.interval" -> "1 second"))
-      val agent = system.actorOf(OriginalDataAgent.props("test", schema, initCardinality, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
+      val agent = system.actorOf(OriginalDataAgent.props(dataSetInfo, mockQueryParserSpecial, mockConnSpecial, updatePerSecondConfig))
       sender.expectNoMsg(500 milli)
 
       val globalCount = GlobalAggregateStatement(AggregateStatement(AllField, Count, Field.as(Count(AllField), "count")))
@@ -78,7 +78,7 @@ class OriginalDataAgentTest extends Specification with Mockito {
         .thenReturn(Future(jsResponse))
 
       val query = Query("twitter")
-      val agent = system.actorOf(OriginalDataAgent.props("test", schema, initCardinality, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(OriginalDataAgent.props(dataSetInfo, mockQueryParser, mockConn, Config.Default))
 
       sender.expectNoMsg(1 seconds)
       sender.send(agent, query)
@@ -99,7 +99,7 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val globalCount = GlobalAggregateStatement(AggregateStatement(AllField, Count, Field.as(Count(AllField), "count")))
       val query = Query("twitter", globalAggr = Some(globalCount), isEstimable = true)
 
-      val agent = system.actorOf(OriginalDataAgent.props("test", schema, initCardinality, mockQueryParser, mockConn, Config.Default))
+      val agent = system.actorOf(OriginalDataAgent.props(dataSetInfo, mockQueryParser, mockConn, Config.Default))
 
       sender.expectNoMsg(1 seconds)
       sender.send(agent, query)

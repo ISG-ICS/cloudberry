@@ -2,26 +2,28 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.Props
 import akka.pattern.pipe
-import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.Cardinality
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, Duration}
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
 
-class OriginalDataAgent(override val dbName: String,
-                        override val schema: Schema,
-                        val initCardinality: Cardinality,
+class OriginalDataAgent(val dataSetInfo: DataSetInfo,
                         override val queryParser: IQLGenerator,
                         override val conn: IDataConn,
                         override val config: Config)(implicit ec: ExecutionContext)
-  extends AbstractDataSetAgent(dbName, schema, queryParser, conn, config)(ec) {
+  extends AbstractDataSetAgent(dataSetInfo.name, dataSetInfo.schema, queryParser, conn, config)(ec) {
 
   import OriginalDataAgent._
 
-  val lastCount: Cardinality = initCardinality
+  val lastCount: Cardinality = new Cardinality(
+    dataSetInfo.dataInterval.getStart,
+    dataSetInfo.dataInterval.getEnd,
+    dataSetInfo.stats.cardinality
+  )
 
   //update Stats periodically
   context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
@@ -93,7 +95,7 @@ object OriginalDataAgent {
     def ratePerSecond: Double = count.toDouble / new Duration(from, till).getStandardSeconds
   }
 
-  def props(dbName: String, schema: Schema, initCardinality: Cardinality, queryParser: IQLGenerator, conn: IDataConn, config: Config)
+  def props(dataSetInfo: DataSetInfo, queryParser: IQLGenerator, conn: IDataConn, config: Config)
            (implicit ec: ExecutionContext) =
-    Props(new OriginalDataAgent(dbName, schema, initCardinality, queryParser, conn, config))
+    Props(new OriginalDataAgent(dataSetInfo, queryParser, conn, config))
 }
