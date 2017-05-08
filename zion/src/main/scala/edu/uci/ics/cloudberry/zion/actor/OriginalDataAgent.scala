@@ -25,8 +25,16 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     dataSetInfo.stats.cardinality
   )
 
-  //update Stats periodically
-  context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
+  /**
+    * When the Agent starts,
+    *   1. Ask for the stats from maxTimeStamp till now,
+    *   2. Start a scheduler to query for cardinality periodically.
+    * Stats including: minTimeStamp, maxTimeStamp, cardinality.
+    */
+  override def preStart(): Unit = {
+    collectStats(lastCount.till)
+    context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
+  }
 
   /**
     * Estimate the result of the query w/o visiting DB

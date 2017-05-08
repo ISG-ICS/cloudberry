@@ -5,7 +5,7 @@ import java.util.concurrent.Executors
 import akka.actor._
 import akka.testkit.TestProbe
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager._
-import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.Cardinality
+import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.NewStats
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator, IQLGeneratorFactory}
 import edu.uci.ics.cloudberry.zion.model.impl._
@@ -89,7 +89,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
-      meta.receiveOne(5 seconds)
+      val metaQuery = meta.receiveOne(5 seconds)
+      metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
 
       val query = Query(dataset = sourceInfo.name)
@@ -111,7 +112,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
-      meta.receiveOne(5 seconds)
+      val metaQuery = meta.receiveOne(5 seconds)
+      metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
 
       sender.send(dataManager, DataStoreManager.AskInfoAndViews(sourceInfo.name))
@@ -148,7 +150,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
 
       val initialInfo = Json.toJson(Seq(DataSetInfo.write(sourceInfo), DataSetInfo.write(zikaHalfYearViewInfo))).asInstanceOf[JsArray]
       val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
-      meta.receiveOne(3 seconds)
+      val metaQuery = meta.receiveOne(5 seconds)
+      metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
 
       sender.send(dataManager, DataStoreManager.AreYouReady)
@@ -161,6 +164,8 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       view.expectMsg(appendView)
       view.reply(true)
       sender.expectNoMsg(1 seconds)
+      meta.receiveOne(1 seconds)
+
       sender.send(dataManager, DataStoreManager.AskInfoAndViews(zikaHalfYearViewInfo.name))
       val newInfo = sender.receiveOne(1 second).asInstanceOf[Seq[DataSetInfo]].head
       newInfo.name must_== zikaHalfYearViewInfo.name
@@ -172,7 +177,23 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
     "receive NewStats and update Stats in meta" in {
-      // TODO to implement
+      val mockParserFactory = mock[IQLGeneratorFactory]
+      val mockConn = mock[IDataConn]
+
+      val initialInfo = JsArray(Seq(DataSetInfo.write(sourceInfo)))
+      val dataManager = system.actorOf(Props(new DataStoreManager(metaDataSet, mockConn, mockParserFactory, Config.Default, testActorMaker)))
+      val metaQuery = meta.receiveOne(5 seconds)
+      metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
+      meta.reply(initialInfo)
+
+      val newStats = NewStats(sourceInfo.name, 999)
+      sender.send(dataManager, newStats)
+      meta.receiveOne(1 second)
+
+      sender.send(dataManager, AskInfoAndViews(sourceInfo.name))
+      val updatedInfo = sender.receiveOne(5 second).asInstanceOf[Seq[DataSetInfo]].head
+      updatedInfo.stats.cardinality must_== sourceStat.cardinality + newStats.additionalCount
+
       ok
     }
   }

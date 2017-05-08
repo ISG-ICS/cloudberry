@@ -168,7 +168,7 @@ class DataStoreManager(metaDataset: String,
 
             metaData.put(dataSetName, registerDataSetInfo)
             flushMetaData()
-            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered, with fake stats information.\n")
+            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered without stats information.\n")
         }
 
       } catch {
