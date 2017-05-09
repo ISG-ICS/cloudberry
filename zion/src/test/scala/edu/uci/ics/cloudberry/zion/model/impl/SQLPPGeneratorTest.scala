@@ -666,16 +666,16 @@ class SQLPPGeneratorTest extends Specification {
     }
 
     "translate a append and filter and group by time query" in {
-      val filter = Seq(langLenFilter)
-      val group = GroupStatement(Seq(byHour), Seq(aggrCount))
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byHour), Seq(aggrAvgLangLen))
       val query = new Query(TwitterDataSet, Seq(appendLangLen), Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select `hour` as `hour`,coll_count(g) as `count`
+          |select `hour` as `hour`,coll_avg( (select value g.ta.`lang_len` from g) ) as `avgLangLen`
           |from (select length(lang) as `lang_len`,t
-          |from twitter.ds_tweet t) ta
-          |where ta.`lang_len` >= 1
+          |from twitter.ds_tweet t
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})) ta
           |group by get_interval_start_datetime(interval_bin(ta.t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
           |""".stripMargin.trim)
     }
@@ -694,15 +694,14 @@ class SQLPPGeneratorTest extends Specification {
           |from (
           |select `state` as `state`,coll_avg( (select value g.ta.`lang_len` from g) ) as `avgLangLen`
           |from (select length(lang) as `lang_len`,t
-          |from twitter.ds_tweet t) ta
-          |where ftcontains(ta.t.`text`, ['zika','virus'], {'mode':'all'})
+          |from twitter.ds_tweet t
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})) ta
           |group by ta.t.geo_tag.stateID as `state` group as g
           |) tt
           |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`;
           |""".stripMargin.trim
       )
     }
-
   }
 
 
