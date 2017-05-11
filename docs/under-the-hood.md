@@ -2,7 +2,7 @@
 layout: page
 ---
 
-## Why Cloudberry?
+## What can Cloudberry do ? 
 A client application is highly customized for one specific domain. The types of queries sent to the database are limited 
 and the consecutive queries usually have certain semantic relations. On the other hand, database systems are general 
 purpose systems that each incoming query is treated independently. The relation between queries is difficult to 
@@ -10,13 +10,18 @@ capture if the application directly talks with a database system.
 
 Cloudberry is a middleware service that connects the general purpose backend database system and the client application. 
 It can understand the semantic of queries, automatically store and maintain the query result, analyse the relation between the new query and the existing 
-results, and then only send the necessary queries to the database system. As such, the client application can achieve 
-the ultimate query performance while don't need to handle the complex view design and maintenance logic itself.
+results, and then only send the necessary queries to the database system. In this way the client application can achieve 
+the fast query performance and don't have to handle the complex view design and maintenance logic itself.
 
 
 ## Cloudberry Architecture
 
-Take TwitterMap application as an example, here is the architecture figure of the entire stack:
+The main component of the Cloudberry is the `Query Planner` and the `View Manager`. The `Query Planner` is responsible 
+for query rewriting depending on the given views information. If there is an appropriate view, the original query will be
+split into multiple queries to ask different datasets. After all results come back, the `Query Planner` will merge 
+the results from all queries and return to the client. The `View Manager` is responsible for view maintenance. Each view
+is generated, maintained, and removed automatically.
+
 ![twittermap-artitecture][architecture]
 
 The following figures shows an example how Cloudberry answer the request using the existing query result. 
@@ -39,16 +44,18 @@ be in the view to speedup the future queries.
 
 ## Query Slicing
 
+Not every query can find an appropriate view, especially at the beginning when the system just started. In this case, 
+instead of waiting for the entire query result, Cloudberry can return a serials of partial results as a streaming fashion 
+in a steady pace.
+
+Under the hood of the system, Cloudberry splits the query into a serials of mini-queries. The selectivity 
+of each mini-query is adapted based on the query performance so that each mini-query is guaranteed to finish within 
+a short time limit. 
 
 
 
 
-
-
-
-
-
-[architecture]: https://docs.google.com/drawings/d/17DBcWPDoOb1yAL-OJeznJVz6vdQQ-_kcBcOganbaRYE/pub?w=715&h=448
+[architecture]: https://www.lucidchart.com/publicSegments/view/c810ca78-6690-4505-9b67-a27c4f2bcc6a/image.png
 {: width="800px"}
 [view-cache]: https://www.lucidchart.com/publicSegments/view/24b3c182-a055-4ba0-a966-5916033e7ae5/image.png
 {: width="800px"}
