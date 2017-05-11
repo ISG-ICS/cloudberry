@@ -9,6 +9,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, Duration}
 import play.api.libs.json._
 
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
 class OriginalDataAgent(val dataSetInfo: DataSetInfo,
@@ -32,8 +33,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     * Stats including: minTimeStamp, maxTimeStamp, cardinality.
     */
   override def preStart(): Unit = {
-    collectStats(lastCount.till)
-    context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
+    context.system.scheduler.schedule(0 second, config.AgentCollectStatsInterval, self, UpdateStats)
   }
 
   /**
