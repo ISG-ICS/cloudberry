@@ -107,7 +107,7 @@ angular.module('cloudberry.common', [])
         }, {
           field: "text",
           relation: "contains",
-          values: [mkString(keywords, ",")]
+          values: keywords,
         }
       ];
     }

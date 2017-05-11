@@ -3,6 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+import edu.uci.ics.cloudberry.zion.actor.OriginalDataAgent.NewStats
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore._
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, Stats, UnresolvedSchema}
@@ -37,7 +38,7 @@ class DataStoreManager(metaDataset: String,
   val managerParser = queryGenFactory()
   implicit val askTimeOut: Timeout = Timeout(config.DataManagerAppendViewTimeOut)
 
-  val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, queryGenFactory(), conn, config)
+  val metaActor: ActorRef = childMaker(AgentType.Meta, context, "meta", DataSetInfo.MetaDataDBName, DataSetInfo.MetaSchema, None, queryGenFactory(), conn, config)
 
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
@@ -108,6 +109,19 @@ class DataStoreManager(metaDataset: String,
       metaData += info.name -> info
       creatingSet.remove(info.name)
       flushMetaData()
+
+    case newStats: NewStats =>
+      if(metaData.contains(newStats.dbName)) {
+        val originInfo = metaData.get(newStats.dbName).head
+        val updatedCardinality = originInfo.stats.cardinality + newStats.additionalCount
+        val updatedStats = originInfo.stats.copy(cardinality = updatedCardinality)
+        val updatedInfo = originInfo.copy(stats = updatedStats)
+        metaData.put(newStats.dbName, updatedInfo)
+        flushMetaData()
+      } else{
+        log.error("Database not existed in meta table: " + newStats.dbName)
+      }
+
     case FlushMeta => flushMetaData()
   }
 
@@ -134,18 +148,28 @@ class DataStoreManager(metaDataset: String,
         }
         val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
 
-        //TODO: Send query to get actual information when a dataset is registered.
-        val currentDateTime = new DateTime()
-        val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+        collectStats(dataSetName, resolvedSchema) onComplete {
+          case Success((interval, size)) =>
+            val currentDateTime = new DateTime()
+            val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, interval, stats)
 
-        val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
-        val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+            metaData.put(dataSetName, registerDataSetInfo)
+            flushMetaData()
+            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
 
-        val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
-        metaData.put(dataSetName, registerDataSetInfo)
-        flushMetaData()
+          case Failure(_) =>
+            //FIXME Need to introduce static dataset to handle this
+            val currentDateTime = new DateTime()
+            val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+            val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
+            val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
 
-        sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
+            metaData.put(dataSetName, registerDataSetInfo)
+            flushMetaData()
+            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered without stats information.\n")
+        }
 
       } catch {
         case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")
@@ -198,11 +222,11 @@ class DataStoreManager(metaDataset: String,
       val schema: Schema = info.schema
       info.createQueryOpt match {
         case Some(_) =>
-          val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
+          val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, None, queryGenFactory(), conn, config)
           context.system.scheduler.schedule(config.ViewUpdateInterval, config.ViewUpdateInterval, self, AppendViewAutomatic(query.dataset))
           ret
         case None =>
-          childMaker(AgentType.Origin, context, "data-" + query.dataset, query.dataset, schema, queryGenFactory(), conn, config)
+          childMaker(AgentType.Origin, context, "data-" + query.dataset, query.dataset, schema, Some(info), queryGenFactory(), conn, config)
       }
     }
     query match {
@@ -277,7 +301,7 @@ object DataStoreManager {
     val View = Value("view")
   }
 
-  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, IQLGenerator, IDataConn, Config) => ActorRef
+  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, Option[DataSetInfo], IQLGenerator, IDataConn, Config) => ActorRef
 
   def props(metaDataSet: String,
             conn: IDataConn,
@@ -292,6 +316,7 @@ object DataStoreManager {
                    actorName: String,
                    dbName: String,
                    dbSchema: Schema,
+                   dataSetInfoOpt: Option[DataSetInfo],
                    qLGenerator: IQLGenerator,
                    conn: IDataConn,
                    appConfig: Config
@@ -301,7 +326,7 @@ object DataStoreManager {
       case Meta =>
         context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
       case Origin =>
-        context.actorOf(OriginalDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
+        context.actorOf(OriginalDataAgent.props(dataSetInfoOpt.get, qLGenerator, conn, appConfig), actorName)
       case View =>
         context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
     }
