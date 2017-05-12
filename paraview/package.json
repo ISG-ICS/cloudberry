@@ -1,0 +1,41 @@
+{
+  "name": "MyWebProject",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "build": "fix-autobahn && webpack",
+    "build:debug": "fix-autobahn && webpack --display-modules",
+    "build:release": "export NODE_ENV=production && fix-autobahn && webpack -p",
+    "commit": "git cz",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post",
+    "start": "http-server ./dist"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "angular": "^1.6.4",
+    "babel-polyfill": "^6.23.0",
+    "hammerjs": "^2.0.8",
+    "http-server": "^0.9.0",
+    "kw-web-suite": "^2.2.1",
+    "lodash": "^4.17.4"
+  },
+  "dependencies": {
+    "babel": "^6.23.0",
+    "babel-polyfill": "^6.23.0",
+    "enhanced-resolve": "^3.1.0",
+    "font-awesome": "^4.7.0",
+    "hammerjs": "^2.0.8",
+    "json-bigint": "^0.2.3",
+    "kw-web-suite": "^2.2.1",
+    "lodash": "^4.17.4",
+    "monologue.js": "^0.3.5",
+    "mout": "^1.0.0",
+    "normalize.css": "^6.0.0",
+    "paraviewweb": "^2.2.97",
+    "react": "^15.5.4",
+    "react-dom": "^15.5.4"
+  }
+}
