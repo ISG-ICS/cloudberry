@@ -24,7 +24,7 @@ object TestQuery {
   val text = twitterField("text")
   val lang = twitterField("lang")
 
-  val tag = Field.as(hashtags, "tag")
+  val tag = Field.as(hashtags, "hash")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
@@ -121,8 +121,13 @@ object TestQuery {
   )
 
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
-  val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectTop100 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 100, 0, Seq.empty)
+  val selectTop10byHashTag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq(tag))
+  val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
+  val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
 
   val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
   val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))

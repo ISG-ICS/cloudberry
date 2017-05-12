@@ -8,25 +8,26 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
-  * Provide constant query strings for SQL++
+  * Provide constant query strings for SparkSQL
   */
-object SQLPPAsterixImpl extends AsterixImpl {
+object SparkSqlAsterixImpl extends AsterixImplForSparkSQL {
   override val aggregateFuncMap: Map[AggregateFunc, String] = Map(
-    Count -> "coll_count",
-    Max -> "coll_max",
-    Min -> "coll_min",
-    Avg -> "coll_avg",
-    Sum -> "coll_sum"
+    Count -> "count",
+    Max -> "max",
+    Min -> "min",
+    Avg -> "avg",
+    Sum -> "sum"
   )
 
 
-  val datetime: String = "datetime"
+  val datetime: String = ""
   val round: String = "round"
 
   val dayTimeDuration: String = "day_time_duration"
   val yearMonthDuration: String = "year_month_duration"
   val getIntervalStartDatetime: String = "get_interval_start_datetime"
   val intervalBin: String = "interval_bin"
+  val hour: String = "hour"
 
   val spatialIntersect: String = "spatial_intersect"
   val createRectangle: String = "create_rectangle"
@@ -35,16 +36,16 @@ object SQLPPAsterixImpl extends AsterixImpl {
   val getPoints: String = "get_points"
 
   val similarityJaccard: String = "similarity_jaccard"
-  val fullTextContains: String = "ftcontains"
+  val fullTextContains: String = "like"
   val contains: String = "contains"
   val wordTokens: String = "word_tokens"
 
 
 }
 
-class SQLPPGenerator extends AsterixQueryGenerator {
+class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
 
-  protected val typeImpl: AsterixImpl = SQLPPAsterixImpl
+  protected val typeImpl: AsterixImplForSparkSQL = SparkSqlAsterixImpl
 
   protected val sourceVar: String = "t"
 
@@ -54,7 +55,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   protected val lookupVar: String = "l"
 
-  protected val groupVar: String = "g"
+  protected val groupVar: String = "*"
 
   protected val groupedLookupVar: String = "ll"
 
@@ -123,20 +124,19 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     queryBuilder.append(fromStr)
 
     val resultAfterAppend = parseAppend(query.append, exprMap, queryBuilder)
-    println(resultAfterAppend)
+
     val resultAfterLookup = parseLookup(query.lookup, resultAfterAppend.exprMap, queryBuilder, false)
-    println(resultAfterLookup)
+
     val resultAfterUnnest = parseUnnest(query.unnest, resultAfterLookup.exprMap, queryBuilder)
     val unnestTests = resultAfterUnnest.strs
-    println(resultAfterUnnest)
+
     val resultAfterFilter = parseFilter(query.filter, resultAfterUnnest.exprMap, unnestTests, queryBuilder)
-    println(resultAfterFilter)
+
     val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap, queryBuilder)
-    println(resultAfterGroup)
+
     val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, queryBuilder)
-    println(resultAfterSelect)
+
     val resultAfterGlobalAggr = parseGlobalAggr(query.globalAggr, resultAfterSelect.exprMap, queryBuilder)
-    println(resultAfterGlobalAggr)
     queryBuilder.toString
   }
 
@@ -213,12 +213,13 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     val unnestStr = unnest.zipWithIndex.map {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
-        val newExpr = s"${quote}unnest$id$quote"
+//        val newExpr = s"${quote}hash$id$quote"
+        val newExpr = s"${quote}hash$quote"
         producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
         if (unnest.field.isOptional) {
-          unnestTestStrs += s"not(is_null(${expr.refExpr}))"
+          unnestTestStrs += s"${expr.refExpr} is not null"
         }
-        s"unnest ${expr.refExpr} $newExpr"
+        s"lateral view explode(${expr.refExpr}) as $newExpr"
     }.mkString("\n")
     appendIfNotEmpty(queryBuilder, unnestStr)
 
@@ -235,11 +236,17 @@ class SQLPPGenerator extends AsterixQueryGenerator {
           val fieldExpr = exprMap(by.field.name)
           val as = by.as.getOrElse(by.field)
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
-          val newExpr = s"$quote${as.name}$quote"
+            val newExpr = s"$quote${as.name}$quote"
           producedExprs += (as.name -> FieldExpr(newExpr, newExpr))
-          s"$groupExpr as $newExpr"
+          if (newExpr != s"`hash`"){
+            s"$newExpr($groupExpr)"
+          }
+          else{
+            s"$groupExpr"
+          }
         }
-        val groupStr = s"group by ${groupStrs.mkString(",")} group as $groupVar"
+        val groupStr = s"group by ${groupStrs.mkString(",")}"
+//        println(groupStrs)
         appendIfNotEmpty(queryBuilder, groupStr)
 
         group.aggregates.foreach { aggr =>
@@ -274,45 +281,67 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   private def parseSelect(selectOpt: Option[SelectStatement],
                           exprMap: Map[String, FieldExpr], query: Query,
                           queryBuilder: StringBuilder): ParsedResult = {
+    println("exprMap is:", exprMap)
     selectOpt match {
       case Some(select) =>
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
+        println("producedExprs is:", producedExprs)
+
         val orderStrs = select.orderOn.zip(select.order).map {
           case (orderOn, order) =>
             val expr = exprMap(orderOn.name).refExpr
             val orderStr = if (order == SortOrder.DSC) "desc" else ""
             s"${expr} $orderStr"
+//          "order by `count` desc": expr = `count`(orderOn), orderStr = desc
         }
+        println("orderStrs is:", orderStrs)
+
         val orderStr =
           if (!orderStrs.isEmpty) {
             orderStrs.mkString("order by ", ",", "")
           } else {
             ""
           }
+        println("orderStr is:", orderStr)
 
         val limitStr = s"limit ${select.limit}"
-        val offsetStr = s"offset ${select.offset}"
         appendIfNotEmpty(queryBuilder, orderStr)
-        appendIfNotEmpty(queryBuilder, limitStr)
-        appendIfNotEmpty(queryBuilder, offsetStr)
+        if (select.limit != 0) {
+          appendIfNotEmpty(queryBuilder, limitStr)
+        }
+        //appendIfNotEmpty(queryBuilder, orderStr)
+
 
         if (select.fields.isEmpty) {
           producedExprs ++= exprMap
+          println("producedExprs after ++:", producedExprs)
         } else {
+          println("exprMap is:", exprMap)
           select.fields.foreach {
-            case AllField => producedExprs ++= exprMap
-            case field => producedExprs += field.name -> exprMap(field.name)
+            case AllField =>
+              producedExprs ++= exprMap
+            case field =>
+              if (field.name == "create_at"){
+//                producedExprs +=
+              }
+              else {
+                producedExprs += field.name -> exprMap(field.name)
+              }
           }
         }
         val newExprMap = producedExprs.result().toMap
+        println("newExprMap:", newExprMap)
+        //check if fields is empty
         val projectStr = if (select.fields.isEmpty) {
-          if (query.hasUnnest || query.hasGroup) {
-            parseProject(exprMap)
-          } else {
-            s"select value $sourceVar"
-          }
+//          if (query.hasUnnest || query.hasGroup) {
+//            parseProject(exprMap)
+//          } else {
+//            s"select *"
+//          }
+          s"select *"
         } else {
-          parseProject(newExprMap)
+//          parseProject(newExprMap)
+          parseProject(exprMap)
         }
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, newExprMap)
@@ -322,7 +351,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
           if (query.hasUnnest || query.hasGroup) {
             parseProject(exprMap)
           } else {
-            s"select value $sourceVar"
+            s"select *"
           }
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, exprMap)
@@ -333,7 +362,14 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     exprMap.filter {
       case (field, expr) => field != "*" && expr.refExpr != sourceVar
     }.map {
-      case (field, expr) => s"${expr.defExpr} as $quote$field$quote"
+      case (field, expr) =>
+        if (s"${expr.defExpr}" == "`hour`" || s"${expr.defExpr}" == "`day`" || s"${expr.defExpr}" == "`month`"){
+//          s"${expr.defExpr}(t.`create_at`) as $quote$field$quote"
+          s"${expr.defExpr}(t.`create_at`)"
+        }
+        else {
+          s"${expr.defExpr} as $quote$field$quote"
+        }
     }.mkString("select ", ",", "")
   }
 
@@ -376,7 +412,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
         if (filter.values.size != 2) throw new QueryParsingException(s"relation: ${filter.relation} require two parameters")
         s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
       case Relation.in =>
-        s"$fieldExpr in [ ${filter.values.mkString(",")} ]"
+        s"$fieldExpr in ( ${filter.values.mkString(",")} )"
       case _ =>
         s"$fieldExpr ${filter.relation} ${filter.values(0)}"
     }
@@ -415,6 +451,6 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   }
 }
 
-object SQLPPGenerator extends IQLGeneratorFactory {
-  override def apply(): IQLGenerator = new SQLPPGenerator()
+object SparkSQLGenerator extends IQLGeneratorFactory {
+  override def apply(): IQLGenerator = new SparkSQLGenerator()
 }
