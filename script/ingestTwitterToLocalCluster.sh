@@ -20,9 +20,9 @@
 set -o nounset                              # Treat unset variables as an error
 
 # ddl to register the twitter dataset
-host=${1:-'http://localhost:19002/aql'}
-cat <<'EOF' | curl -XPOST --data-binary @- $host
-drop dataverse twitter if exists;
+host=${1:-"http://localhost:19002/aql"}
+nc=${2:-"nc1"}
+cat <<EOF | curl -XPOST --data-binary @- $host
 create dataverse twitter if not exists;
 use dataverse twitter
 create type typeUser if not exists as open {
@@ -84,7 +84,7 @@ create index text_idx if not exists on ds_tweet("text") type fulltext;
 
 create feed TweetFeed using socket_adapter
 (
-    ("sockets"="nc1:10001"),
+    ("sockets"="$nc:10001"),
     ("address-type"="nc"),
     ("type-name"="typeTweet"),
     ("format"="adm")
@@ -94,7 +94,9 @@ start feed TweetFeed;
 EOF
 
 
-#Serve socket feed using local file
-#git lfs fetch
-gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh
+#[ -f ./script/sample.adm.gz ] || { echo "Downloading the data...";  ./script/getSampleTweetsFromGDrive.sh; }
+
+echo "Start ingestion ..." 
+gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh $host 10001
+echo "Ingested sample tweets."
 
