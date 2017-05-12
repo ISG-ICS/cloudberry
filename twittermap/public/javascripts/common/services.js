@@ -77,14 +77,6 @@ angular.module('cloudberry.common', [])
       }
     }
 
-    function mkString(array, delimiter){
-      var s = "";
-      array.forEach(function (item) {
-        s += item.toString() + delimiter;
-      });
-      return s.substring(0, s.length-1);
-    }
-
     function getFilter(parameters, maxDay) {
       var spatialField = getLevel(parameters.geoLevel);
       var keywords = [];
@@ -107,7 +99,7 @@ angular.module('cloudberry.common', [])
         }, {
           field: "text",
           relation: "contains",
-          values: keywords,
+          values: keywords
         }
       ];
     }
