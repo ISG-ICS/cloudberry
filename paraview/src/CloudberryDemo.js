@@ -1,7 +1,4 @@
 /* global document */
-import 'normalize.css';
-import 'babel-polyfill';
-
 import CompositeClosureHelper from 'paraviewweb/src/Common/Core/CompositeClosureHelper';
 import FieldProvider from 'paraviewweb/src/InfoViz/Core/FieldProvider';
 import LegendProvider from 'paraviewweb/src/InfoViz/Core/LegendProvider';
