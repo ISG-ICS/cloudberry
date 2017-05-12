@@ -99,7 +99,7 @@ Next we explain the details of the TwitterMap.
 
 ### 2.1 Create a Dataset in AsterixDB
 
-In Step 9, we ran a script called `./script/ingestAllTwitterToLocalCluster.sh` to create data sets and ingest data into them. 
+In Step 9, we ran a script called `./script/ingestAllTwitterToLocalCluster.sh` to create data sets in AsterixDB and ingest data into them. 
 The following are the executed DDL statements.
  
 
@@ -174,7 +174,7 @@ connect feed TweetFeed to dataset ds_tweet;
 start feed TweetFeed;
 ```
 
-The following shell command ingests the data from a local file into AsterixDB using the defined `TweetFeed`:
+The following shell command ingests the data from a local file with tweets into AsterixDB using the defined `TweetFeed`:
 
 
 ```bash
@@ -190,18 +190,24 @@ AsterixDB instance.
 
 ### 2.3 Setup TwitterMap Web Server
 
-TwitterMap demo is also Play! application that talks with Cloudberry service. Similarity, we can change the
-configuration file in `twittermap/conf/application.conf` to provide the information about the Cloudberry service.
-
-The `cloudberry.register` property specify the data registration HTTP API to register the AsterixDB dataset to Cloudberry
+The TwitterMap Web application uses the [Play Framework](http://playframework.com) to talk to the Cloudberry service. The configuration
+of the framework is in the file `twittermap/conf/application.conf`.  In the file, the `cloudberry.register` property specifies the 
+HTTP API of Cloudberry:
 
 ```properties
 cloudberry.register = "http://CLOUDBERRY-HOST-NAME:CLOUDBERRY-PORT/admin/register"
 ```
 
-When the TwitterMap server starts, it will register the `twitter.ds_tweet` dataset to the Cloudberry server.
-The corresponding logic is implemented in the `twittermap/app/model/Migration_20170428.scala`. Basically, it 
-sends the following Cloudberry DDL request to let Cloudberry collect the information of `twitter.ds_tweet` dataset in AsterixDB.
+When the TwitterMap server starts, it will run `controllers/TwitterMapApplication.scala`, which will run 
+`twittermap/app/model/Migration_20170428.scala`. This script registers four data sets to the Cloudberry server.
+They are:
+
+* twitter.ds_tweet
+* twitter.dsStatePopulation
+* twitter.dsCountyPopulation
+* twitter.dsCityPopulation
+
+Cloudberry will talk to AsterixDB to collect information about these data sets. Take the data set `twitter.ds_tweet` as an example.   The script sends the following DDL request to Cloudberry to register the information about this data set in AsterixDB.
 
 ```JSON
 {
@@ -240,48 +246,28 @@ sends the following Cloudberry DDL request to let Cloudberry collect the informa
 }
 ```
 
-The demo also needs to query the population dataset in AsterixDB. The following JSON file declare a  `twitter.dsStatePopulation` dataset.
-
-```JSON
-{
-    "dataset": "twitter.dsStatePopulation",
-    "schema": {
-        "typeName": "twitter.typeStatePopulation",
-        "dimension": [
-            { "name": "name", "isOptional": false, "datatype": "String" },
-            { "name": "stateID", "isOptional": false, "datatype": "Number" },
-            { "name": "create_at", "isOptional": false, "datatype": "Time" }
-        ],
-        "measurement": [
-            { "name": "population", "isOptional": false, "datatype": "Number" }
-        ],
-        "primaryKey": ["stateID"],
-        "timeField": "create_at"
-    }
-}
-```
-
-The `cloudberry.ws` property is given to the front-end webpage to let the browser directly talk to the Cloudbery server. 
+In the configuration file, the `cloudberry.ws` property tells the front-end the Web socket address of the Cloudbery server. 
 
 ```properties
 cloudberry.ws = "ws://CLOUDBERRY_HOST_NAME:CLOUDBERRY_PORT/ws"
 ```
 
-This web socket is used for send the Cloudberry request and receive the responses. The conresponding logic can be found
-in `twittermap/public/javascripts/common/services.js` file.
+The frontend uses the web socket to communicate with the Cloudberry server directly. The corresponding logic can be found in `twittermap/public/javascripts/common/services.js` file.
 
-For more information about how to write registration DDL and Cloudberry request please refer to [documentation](/documentation).
+For more information about how to write registration DDL and Cloudberry request please refer to this [page](/documentation).
 
 ## 3. Build your own application
 
-TwitterMap is one example of how to use Cloudberry. To develop your own application, you will need to change the following places.
+TwitterMap is one example of how to use Cloudberry. To develop your own application, you can do the following steps:
 
-1. Give the link of the AsterixDB Instance to Cloudberry by following 2.2
-2. Register the necessary datasets into Cloudberry as in 2.3
-3. Set up the web socket connection between your front-end webpage and the Cloudberry server as in 2.3
-4. Define your query and response handling logic in your own applications. 
+1. Use AsterixDB to create your own data sets; 
+2. Give the link of the AsterixDB instance to Cloudberry by following step 10;
+3. Register the necessary datasets into Cloudberry as in Section 2.3;
+4. Set up the Web socket connection between the front-end web page and the Cloudberry server as in Section 2.3;
+5. Define your queries and responses as in `twittermap/public/javascripts/common/services.js`. 
 
-Then you should achieve the similar user experience as TwitterMap demo.
+Have fun!  If you need assistance, please feel to contact us at 
+&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;
 
 
 [architecture]: /img/quick-start-architecture.png
