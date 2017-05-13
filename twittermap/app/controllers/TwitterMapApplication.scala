@@ -34,7 +34,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     Logger.info("user IP address: " + remoteAddress)
     Logger.info("user agent: " + userAgent)
-
     Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, sentimentEnabled, sentimentUDF))
   }
 
