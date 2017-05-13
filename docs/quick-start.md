@@ -36,7 +36,7 @@ The second command will download and run a prebuilt AsterixDB docker container f
 After it finishes, you should see the messages as shown in the following screenshot:
 ![docker][docker]
 
-After you have installed the docker container for the first time, you may restart it later using the following command in case the docker is shutdown:
+After you have installed the docker container for the first time, you can restart it using the following command in case the docker is shutdown:
 
 ```
 ~> docker start cc nc1
