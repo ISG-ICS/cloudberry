@@ -9,6 +9,7 @@ import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment}
+import play.Logger
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -28,7 +29,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
   Await.result(register, 1 minutes)
 
-  def index = Action {
+  def index = Action { request =>
+    val remoteAddress = request.remoteAddress
+    val userAgent = request.headers.get("user-agent").getOrElse("unknown")
+    Logger.info("user IP address: " + remoteAddress)
+    Logger.info("user agent: " + userAgent)
+
     Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, sentimentEnabled, sentimentUDF))
   }
 
