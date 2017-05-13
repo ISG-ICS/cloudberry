@@ -36,6 +36,18 @@ The second command will download and run a prebuilt AsterixDB docker container f
 After it finishes, you should see the messages as shown in the following screenshot:
 ![docker][docker]
 
+After you have installed the docker container for the first time, you can restart it using the following command in case the docker is shutdown:
+
+```
+~> docker start cc nc1
+```
+
+If you want to shutdown the docker container later, you can use the following command:
+
+```
+~> docker stop cc nc1
+```
+
 **Step 4**: Run the following command to ingest sample tweets (about 47K) and US population data into AsterixDB.
 
 
@@ -45,6 +57,7 @@ After it finishes, you should see the messages as shown in the following screens
 
 When it finishes you should see the messages as shown in the following screenshot:
 ![ingestion][ingestion]
+
 
 **Step 5**: Compile and run the Cloudberry server.
 
