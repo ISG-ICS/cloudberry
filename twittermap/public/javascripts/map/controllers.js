@@ -92,9 +92,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
     function resetGeoInfo(level) {
       $scope.status.logicLevel = level;
+      cloudberry.parameters.geoLevel = level;
       if ($scope.geojsonData[level])
         resetGeoIds($scope.bounds, $scope.geojsonData[level], level + 'ID');
-      cloudberry.parameters.geoLevel = level;
     }
 
 
