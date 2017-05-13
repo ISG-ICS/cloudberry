@@ -36,12 +36,18 @@ The second command will download and run a prebuilt AsterixDB docker container f
 After it finishes, you should see the messages as shown in the following screenshot:
 ![docker][docker]
 
-After you have installed the docker container for the first time, you may restart it later using the following commands:
+After you have installed the docker container for the first time, you may restart it later using the following command:
 
 ```
-~> docker start cc
-~> docker start nc1
+~> docker start cc nc1
 ```
+
+If you want to stop the docker container, you can use the following command:
+
+```
+~> docker stop cc nc1
+```
+
 **Step 4**: Run the following command to ingest sample tweets (about 47K) and US population data into AsterixDB.
 
 
