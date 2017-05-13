@@ -77,14 +77,6 @@ angular.module('cloudberry.common', [])
       }
     }
 
-    function mkString(array, delimiter){
-      var s = "";
-      array.forEach(function (item) {
-        s += item.toString() + delimiter;
-      });
-      return s.substring(0, s.length-1);
-    }
-
     function getFilter(parameters, maxDay) {
       var spatialField = getLevel(parameters.geoLevel);
       var keywords = [];
@@ -107,7 +99,7 @@ angular.module('cloudberry.common', [])
         }, {
           field: "text",
           relation: "contains",
-          values: keywords,
+          values: keywords
         }
       ];
     }
@@ -241,7 +233,7 @@ angular.module('cloudberry.common', [])
       };
     }
 
-    var asterixService = {
+    var cloudberryService = {
 
       totalCount: 0,
       startDate: startDate,
@@ -303,29 +295,29 @@ angular.module('cloudberry.common', [])
         var result = JSONbig.parse(event.data);
         switch (result.key) {
           case "sample":
-            asterixService.tweetResult = result.value[0];
+            cloudberryService.tweetResult = result.value[0];
             break;
           case "batch":
-            asterixService.timeResult = result.value[0];
-            asterixService.mapResult = result.value[1];
-            asterixService.hashTagResult = result.value[2];
+            cloudberryService.timeResult = result.value[0];
+            cloudberryService.mapResult = result.value[1];
+            cloudberryService.hashTagResult = result.value[2];
             break;
           case "totalCount":
-            asterixService.totalCount = result.value[0][0].count;
+            cloudberryService.totalCount = result.value[0][0].count;
             break;
           case "error":
             console.error(result);
-            asterixService.errorMessage = result.value;
+            cloudberryService.errorMessage = result.value;
             break;
           case "done":
             break;
           default:
             console.error("ws get unknown data: ", result);
-            asterixService.errorMessage = "ws get unknown data: " + result.toString();
+            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });
     };
 
-    return asterixService;
+    return cloudberryService;
   });
