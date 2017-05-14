@@ -18,6 +18,17 @@
     </encoder>
   </appender>
 
+  <appender name="CLIENT_FILE" class="ch.qos.logback.core.FileAppender">
+    <file>logs/client.log</file>
+    <encoder>
+      <pattern>%date [%level] - %message%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- additivity=false ensures client log data only goes to the client log -->
+  <logger name="client" level="INFO" additivity="false">
+    <appender-ref ref="CLIENT_FILE" />
+  </logger>
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
 
