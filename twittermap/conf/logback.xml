@@ -21,7 +21,7 @@
   <appender name="CLIENT_FILE" class="ch.qos.logback.core.FileAppender">
     <file>logs/client.log</file>
     <encoder>
-      <pattern>%date [%level] from %logger in %thread - %message%n</pattern>
+      <pattern>%date [%level] - %message%n</pattern>
     </encoder>
   </appender>
 

@@ -23,7 +23,7 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
     case requestBody: JsValue =>
       val remoteAddress = requestHeader.remoteAddress
       val userAgent = requestHeader.headers.get("user-agent").getOrElse("unknown")
-      clientLogger.info(s"user-IP = $remoteAddress; user-agent = $userAgent; user-query = ${requestBody.toString}")
+      clientLogger.info(s"Request: user-IP = $remoteAddress; user-agent = $userAgent; user-query = ${requestBody.toString}")
 
       val transformer = parseTransform(requestBody)
       val berryRequestBody = getBerryRequest(requestBody)
