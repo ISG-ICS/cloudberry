@@ -299,7 +299,7 @@ If not, returns a failure message to the caller*/
       deferred.resolve();
       return deferred.promise();
   }
-
+     
 var clearCache = function remove(){
     var deferred = new $.Deferred();
     cachedRegion = undefined ;
