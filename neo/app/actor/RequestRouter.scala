@@ -5,19 +5,26 @@ import akka.stream.Materializer
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
 import play.api.libs.json._
+import play.api.Logger
+import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
 
-class RequestRouter (berryClientProp: Props, config: Config)
+class RequestRouter (berryClientProp: Props, config: Config, requestHeader: RequestHeader)
                     (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import RequestRouter._
 
   val streamingBerryClient = context.actorOf(berryClientProp, streamingClientName)
   val nonStreamingBerryClient = context.actorOf(berryClientProp, nonStreamingClientName)
+  val clientLogger = Logger("client")
 
   override def receive: Receive = {
     case requestBody: JsValue =>
+      val remoteAddress = requestHeader.remoteAddress
+      val userAgent = requestHeader.headers.get("user-agent").getOrElse("unknown")
+      clientLogger.info(s"Request: user-IP = $remoteAddress; user-agent = $userAgent; user-query = ${requestBody.toString}")
+
       val transformer = parseTransform(requestBody)
       val berryRequestBody = getBerryRequest(requestBody)
       (berryRequestBody \\ "sliceMillis").isEmpty match {
@@ -60,8 +67,8 @@ object RequestRouter {
   val streamingClientName = "streamingClient"
   val nonStreamingClientName = "nonStreamingClient"
 
-  def props(berryClientProp: Props, config: Config)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config))
+  def props(berryClientProp: Props, config: Config, requestHeader: RequestHeader)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config, requestHeader))
 
   case class WrapTransform(key: String) extends IPostTransform {
     override def transform(jsonBody: JsValue): JsValue = {
