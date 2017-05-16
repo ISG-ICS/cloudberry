@@ -78,7 +78,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
 
                       });
               }).error(function(data) {
-                                    console.error("Load city data failure");
+                                    console.error("Cache module: Prefetching the additional region to the current request fails.");
               });
               return deferred.promise();
        }
