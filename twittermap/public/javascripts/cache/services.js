@@ -11,7 +11,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
   var cacheThreshold = 7500;//hard limit
   var DeleteTarget = 0;
   var DeletedCount = 0;
-  var preFetchDistance = 25;
+  var preFetchDistance = 25;//  Radius distance from corners of request
 
 
  /* Map controller calls this function and this function checks whether a requested region is present in the cache or not. If not, 
@@ -107,7 +107,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
            }
 
        }
-       //Cachesize already present cachesize,We need to add nodes.length polygons,CacheThreshold is the max size of Cache
+       //Checking Cache Overflow ,occurs when current polygons(nodes) to get inserted plus cachesize is greater than Cache Threshold
        if((cacheSize+nodes.length) >= cacheThreshold){
 
              DeleteTarget = (cacheSize+nodes.length) - cacheThreshold;
@@ -127,12 +127,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
 
  }
 
-//X = true Y = false
-//TopTo Bottom = true
-//BottomToTop = false
-//LeftToRight = True
-//RightToLeft = False
-//determine which region of cached region to cut to satisfy Target,if first region couldn't satisfy the Target go to new region
+//Determines which part of the cached region needs to be evicted to reduce the cached city polygons to ensure staying within the cache budget.
   var evict = function Evict(currentRequest){
 
        var deferred = new $.Deferred();
@@ -149,7 +144,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
        var R_maxY = request_bbox[3];
 
        var CacheMBR = turf.bboxPolygon(cache_bbox);
-       //Four Corners of Request to see which is inside cache_region
+       //Checks which part of requested region is overlapped with the cached region.
        var UpperRight = turf.inside(turf.point([R_maxX,R_maxY]),CacheMBR);
        var UpperLeft  = turf.inside(turf.point([R_minX,R_maxY]),CacheMBR);
        var LowerLeft  = turf.inside(turf.point([R_minX,R_minY]),CacheMBR);
@@ -214,8 +209,9 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
               return deferred.promise();
        }
  }
-//sees whether cutting the region can satisfy the target ,If not sends a failed message to evict function
-//X = true Y = false
+/*Checks whether evicting some city polygons in a part of the cache region satisfies the target deletion count. 
+If not, returns a failure message to the caller*/
+///Whether evicting the cached region vertically or horizontally. true - X axis (horizontally), false - Y axis (vertically)
 //TopTo Bottom = true
 //BottomToTop = false
 //LeftToRight = true
@@ -234,15 +230,16 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
                 }
             }else{
                 if(Direction){
-                    //TopToBottom
+                    //Top to Bottom
                     line = turf.lineString([[maxX,maxY],[maxX,minY]]);
                 }else{
-                    //BottomToTop
+                    //Bottom toTop
                     line = turf.lineString([[maxX,minY],[maxX,maxY]]);
                 }
             }
 
             var distance = turf.lineDistance(line, 'miles');
+            //Make 10 slices
             var Move = distance/10;
             var start = 0;
             var stop= distance;
