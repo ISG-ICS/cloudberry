@@ -1,5 +1,5 @@
 
-/*Cache module stores user requested city polygons.When Users requests these same city polygon area again we have it in cache 
+/*Cache module stores user requested city polygons.When Users requests these same city polygon area again we have it in cache
 and provide it to the user without sending http request.*/
 angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
  .service('Cache', function( $window, $http, $compile){
@@ -9,12 +9,12 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
   var cacheSize = 0;
   var insertedTreeIDs = new Set();
   var cacheThreshold = 7500;//hard limit
-  var DeleteTarget = 0;
-  var DeletedCount = 0;
+  var targetDeleteCount = 0;
+  var deletedPolygonCount = 0;
   var preFetchDistance = 25;//  Radius distance from corners of request
 
 
- /* Map controller calls this function and this function checks whether a requested region is present in the cache or not. If not, 
+ /* Map controller calls this function and this function checks whether a requested region is present in the cache or not. If not,
  it gets the requested region data from the middleware.*/
   this.getCityPolygonsFromCache = function city(bounds){
 
@@ -54,8 +54,8 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
        }else{
                    //cache MISS
 
-              var buffered = turf.buffer(currentRequestPolygon, preFetchDistance , 'miles');
-              var bboxBuffer = turf.bbox(buffered);
+              var prefetchAdditionalRegion = turf.buffer(currentRequestPolygon, preFetchDistance , 'miles');
+              var bboxBuffer = turf.bbox(prefetchAdditionalRegion);
                    //Pre Fetch
               var rteExtends = "city/" + bboxBuffer[3] + "/" + bboxBuffer[1] + "/" + bboxBuffer[2] + "/" + bboxBuffer[0];
 
@@ -110,11 +110,11 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
        //Checking Cache Overflow ,occurs when current polygons(nodes) to get inserted plus cachesize is greater than Cache Threshold
        if((cacheSize+nodes.length) >= cacheThreshold){
 
-             DeleteTarget = (cacheSize+nodes.length) - cacheThreshold;
+             targetDeleteCount = (cacheSize+nodes.length) - cacheThreshold;
              evict(currentRequest).done(function(){
 
                    cachedCityPolygonTree.load(nodes);
-                   cacheSize += nodes.length;       
+                   cacheSize += nodes.length;
               });
           deferred.resolve();
           return deferred.promise();
@@ -143,12 +143,12 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
        var R_maxX = request_bbox[2];
        var R_maxY = request_bbox[3];
 
-       var CacheMBR = turf.bboxPolygon(cache_bbox);
+       var cachedRegionMBR = turf.bboxPolygon(cache_bbox);
        //Checks which part of requested region is overlapped with the cached region.
-       var UpperRight = turf.inside(turf.point([R_maxX,R_maxY]),CacheMBR);
-       var UpperLeft  = turf.inside(turf.point([R_minX,R_maxY]),CacheMBR);
-       var LowerLeft  = turf.inside(turf.point([R_minX,R_minY]),CacheMBR);
-       var LowerRight = turf.inside(turf.point([R_maxY,R_minY]),CacheMBR);
+       var UpperRight = turf.inside(turf.point([R_maxX,R_maxY]),cachedRegionMBR);
+       var UpperLeft  = turf.inside(turf.point([R_minX,R_maxY]),cachedRegionMBR);
+       var LowerLeft  = turf.inside(turf.point([R_minX,R_minY]),cachedRegionMBR);
+       var LowerRight = turf.inside(turf.point([R_maxY,R_minY]),cachedRegionMBR);
 
 
        if(LowerRight || LowerLeft && !UpperRight && !UpperLeft){
@@ -209,18 +209,18 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common' ])
               return deferred.promise();
        }
  }
-/*Checks whether evicting some city polygons in a part of the cache region satisfies the target deletion count. 
+/*Checks whether evicting some city polygons in a part of the cache region satisfies the target deletion count.
 If not, returns a failure message to the caller*/
-///Whether evicting the cached region vertically or horizontally. true - X axis (horizontally), false - Y axis (vertically)
+//Whether evicting the cached region vertically or horizontally. true - X axis (horizontally), false - Y axis (vertically)
 //TopTo Bottom = true
 //BottomToTop = false
 //LeftToRight = true
 //RightToLeft = false
- var cutRegion =  function findCornerofEviction(minX,minY,maxX,maxY,XorY,Direction){
+ var cutRegion =  function findCornerofEviction(minX,minY,maxX,maxY,isHorizontalEviction,Direction){
 
             var deferred = new $.Deferred();
             var line;
-            if(XorY){
+            if(isHorizontalEviction){
                 if(Direction){
                     //Left to Right
                     line = turf.lineString([[minX,maxY],[maxX,maxY]]);
@@ -246,10 +246,10 @@ If not, returns a failure message to the caller*/
             var removeItems;
             var sliced,cutPoint,cutBbox,remove_search;
 
-            while(DeletedCount<DeleteTarget){
+            while(deletedPolygonCount<targetDeleteCount){
 
                   sliced = turf.lineSliceAlong(line, start, Move, 'miles');
-                  if(XorY){
+                  if(isHorizontalEviction){
                   cutPoint = sliced["geometry"]["coordinates"][1][0];
                   }else{
                   cutPoint = sliced["geometry"]["coordinates"][1][1];
@@ -263,7 +263,7 @@ If not, returns a failure message to the caller*/
                                         maxY: cutBbox[3]
                                     }
                   removeItems = cachedCityPolygonTree.search(remove_search);
-                  DeletedCount = removeItems.length;
+                  deletedPolygonCount = removeItems.length;
                   Move += Move;
                   if(Move>stop)
                   {break;}
@@ -272,13 +272,13 @@ If not, returns a failure message to the caller*/
             deletion(removeItems).done(function(){
                     //Delete is complete
                     var PolygonRegionRemovedFromCache = turf.bboxPolygon(remove_search);
-                    cacheSize -= DeletedCount;
+                    cacheSize -= deletedPolygonCount;
                     cachedRegion = turf.difference(cachedRegion,PolygonRegionRemovedFromCache);
-                    DeleteTarget -= DeletedCount;
-                    DeletedCount = 0;
+                    targetDeleteCount -= deletedPolygonCount;
+                    deletedPolygonCount = 0;
             });
 
-            if(DeleteTarget>0){
+            if(targetDeleteCount>0){
 
                  //UnSucessFul Delete
                   deferred.reject();
@@ -290,7 +290,7 @@ If not, returns a failure message to the caller*/
             }
  }
 
-//wher deletion from tree occurs
+// deleting polygons from Rtree
  var deletion = function deleteNodesfromTree(removeItems){
       var deferred = new $.Deferred();
       for (var i = 0;i<removeItems.length;i++)
@@ -305,8 +305,8 @@ var clearCache = function remove(){
     cachedRegion = undefined ;
     cacheSize = 0;
     cachedCityPolygonTree.clear();
-    DeleteTarget = 0;
-    DeletedCount = 0;
+    targetDeleteCount = 0;
+    deletedPolygonCount = 0;
     insertedTreeIDs.clear();
     deferred.resolve();
     return deferred.promise();
