@@ -1,9 +1,12 @@
 angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
+    console.log("removeSearchBar="+config.removeSearchBar + "\npreDefinedKeywords="+config.predefinedKeywords);
     return {
       ws: config.wsURL,
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
+      removeSearchBar: config.removeSearchBar,
+      predefinedKeywords: config.predefinedKeywords,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
