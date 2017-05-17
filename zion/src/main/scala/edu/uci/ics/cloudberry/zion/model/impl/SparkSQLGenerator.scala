@@ -43,7 +43,7 @@ class SparkSQLGenerator extends IQLGenerator {
 
   protected val groupedLookupSourceVar: String = "tt"
 
-  protected val globalAggrVar: String = "c"
+  protected val globalAggrVar: String = "*"
 
   protected val outerSelectVar: String = "s"
 
@@ -92,7 +92,7 @@ class SparkSQLGenerator extends IQLGenerator {
   def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
     val result = query match {
       case q: Query => parseQuery(q, schemaMap)
-      //      case q: CreateView => parseCreate(q, schemaMap)
+      case q: CreateView => parseCreate(q, schemaMap)
       //      case q: AppendView => parseAppend(q, schemaMap)
       //      case q: UpsertRecord => parseUpsert(q, schemaMap)
       //      case q: DropView => parseDrop(q, schemaMap)
@@ -103,23 +103,56 @@ class SparkSQLGenerator extends IQLGenerator {
   }
 
 
-  //  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
-  //    val sourceSchema = schemaMap(create.query.dataset)
-  //    val resultSchema = calcResultSchema(create.query, schemaMap(create.query.dataset))
-  //    val ddl: String = genDDL(resultSchema)
-  //    val createDataSet =
-  //      s"""
-  //         |drop dataset ${create.dataset} if exists;
-  //         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
-  //         |""".stripMargin
-  //    val insert =
-  //      s"""
-  //         |insert into ${create.dataset} (
-  //         |${parseQuery(create.query, schemaMap)}
-  //         |)""".stripMargin
-  //    ddl + createDataSet + insert
-  //  }
-  //
+  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
+    val sourceSchema = schemaMap(create.query.dataset)
+    val resultSchema = calcResultSchema(create.query, schemaMap(create.query.dataset))
+    val ddl: String = genDDL(resultSchema)
+    val createDataSet =
+      s"""
+         |drop dataset ${create.dataset} if exists;
+         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
+         |""".stripMargin
+    val insert =
+      s"""
+         |insert into ${create.dataset} (
+         |${parseQuery(create.query, schemaMap)}
+         |)""".stripMargin
+    ddl + createDataSet + insert
+  }
+
+  protected def genDDL(schema: Schema): String = {
+    //FIXME this function is wrong for nested types if it contains multiple sub-fields
+    def mkNestDDL(names: List[String], typeStr: String): String = {
+      names match {
+        case List(e) => s"  $e : $typeStr"
+        case e :: tail => s"  $e : { ${mkNestDDL(tail, typeStr)} }"
+      }
+    }
+
+    val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
+      f => mkNestDDL(f.name.split("\\.").toList, fieldType2ADMType(f) + (if (f.isOptional) "?" else ""))
+    }
+    s"""
+       |create type ${schema.typeName} if not exists as open {
+       |${fields.mkString(",\n")}
+       |}
+      """.stripMargin
+  }
+
+  protected def fieldType2ADMType(field: Field): String = {
+    field.dataType match {
+      case DataType.Number => "double"
+      case DataType.Time => "datetime"
+      case DataType.Point => "point"
+      case DataType.Boolean => "boolean"
+      case DataType.String => "string"
+      case DataType.Text => "string"
+      case DataType.Bag => s"{{${fieldType2ADMType(Field("", field.asInstanceOf[BagField].innerType))}}}"
+      case DataType.Hierarchy => ??? // should be skipped
+      case DataType.Record => ???
+    }
+  }
+
   //  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
   //    s"""
   //       |upsert into ${append.dataset} (
@@ -548,18 +581,17 @@ class SparkSQLGenerator extends IQLGenerator {
         val newDefExpr = if (aggr.func == Count) {
           globalAggrVar
         } else {
-          s"${globalAggrVar}.$quote${aggr.field.name}$quote"
+          s"${sourceVar}.$quote${aggr.field.name}$quote"
         }
         val newRefExpr = s"$quote${aggr.as.name}$quote"
 
         producedExprs += aggr.as.name -> FieldExpr(newRefExpr, newDefExpr)
         val prepend =
           s"""
-             |select $funcName(
-             |(select $newDefExpr from (""".stripMargin
+             |select $funcName($newDefExpr) as $quote${aggr.as.name}$quote from
+             |(""".stripMargin
         val append =
-          s""") as $globalAggrVar)
-             |) as $quote${aggr.as.name}$quote""".stripMargin
+          s""")""".stripMargin
         queryBuilder.insert(0, prepend)
         queryBuilder.append(append)
         ParsedResult(Seq.empty, producedExprs.result().toMap)
