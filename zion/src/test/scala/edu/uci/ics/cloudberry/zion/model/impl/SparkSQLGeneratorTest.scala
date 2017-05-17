@@ -11,20 +11,6 @@ class SparkSQLGeneratorTest extends Specification {
   val parser = new SparkSQLGenerator
 
   "SparkSQLGenerator generate" should {
-    "eeee" in {
-      val filter = Seq(textFilter, timeFilter, stateFilter)
-      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
-      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
-          |from twitter.ds_tweet t
-          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'}) and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
-          |order by t.`create_at` desc
-          |limit 100
-          |offset 0;
-          | """.stripMargin.trim)
-    }
 
     //self query test1
     "translate a simple query group by hour" in {
@@ -116,10 +102,9 @@ class SparkSQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select count(
-          |(select `c` from (select value t
-          |from twitter.ds_tweet t) as `c`)
-          |) as `count`;""".stripMargin)
+        """select count(*) as `count` from
+          |(select *
+          |from twitter.ds_tweet t);""".stripMargin)
     }
     //self query test 8
     "translate get min field value query without group by" in {
@@ -138,7 +123,7 @@ class SparkSQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """select max(t.`id`) as `max` from
-          |(select * t
+          |(select *
           |from twitter.ds_tweet t);""".stripMargin)
     }
     //self query test 10
