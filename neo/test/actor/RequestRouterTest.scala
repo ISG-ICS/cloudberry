@@ -7,12 +7,16 @@ import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import java.util.concurrent.Executors
+
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
+import play.api.mvc.{Headers, RequestHeader}
+import org.mockito.Mockito._
+import org.specs2.mock.Mockito
 
 import scala.concurrent.ExecutionContext
 
-class RequestRouterTest extends TestkitExample with SpecificationLike{
+class RequestRouterTest extends TestkitExample with SpecificationLike with Mockito {
 
   implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
   implicit val materializer: Materializer = ActorMaterializer()
@@ -84,7 +88,13 @@ class RequestRouterTest extends TestkitExample with SpecificationLike{
             throw new IllegalArgumentException("Message type sent to berry is not correct.")
         }
       })
-      val router = system.actorOf(RequestRouter.props(clientProps, Config.Default))
+      val mockHeader = mock[RequestHeader]
+      val mockHttpHeaders = mock[Headers]
+      when(mockHeader.remoteAddress) thenReturn "0.0.0.1"
+      when(mockHeader.headers) thenReturn mockHttpHeaders
+      when(mockHttpHeaders.get("user-agent")) thenReturn None
+
+      val router = system.actorOf(RequestRouter.props(clientProps, Config.Default, mockHeader))
 
       frontEnd.send(router, nonStreamingRequest)
       frontEnd.expectMsg(Json.obj(
