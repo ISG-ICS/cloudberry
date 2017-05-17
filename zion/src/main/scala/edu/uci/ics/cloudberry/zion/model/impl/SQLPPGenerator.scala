@@ -144,14 +144,14 @@ class SQLPPGenerator extends AsterixQueryGenerator {
       ParsedResult(Seq.empty, exprMap)
     } else {
       val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
-
+      
       appends.foreach { append =>
         val as = append.as
         producedExprs += append.as.name -> FieldExpr(s"$appendVar.$quote${as.name}$quote", append.definition)
       }
       val producedExprMap = producedExprs.result().toMap
-      val selectStr = parseProject(producedExprMap)+s",$sourceVar"
-
+      val selectStr = parseProject(producedExprMap)+s",$sourceVar" 
+      
       val newExprMap = producedExprMap ++ exprMap.mapValues{expr=>
         FieldExpr(s"$appendVar.${expr.refExpr}", s"${expr.defExpr}")
       }

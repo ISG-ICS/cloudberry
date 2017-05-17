@@ -156,7 +156,6 @@ class AQLGenerator extends IQLGenerator {
 
   private def parseFilter(filters: Seq[FilterStatement], varMap: Map[String, AQLVar]): String = {
     if (filters.isEmpty) return ""
-    println(filters)
     filters.map { filter =>
       varMap.get(filter.field.name) match {
         case Some(variable) =>
