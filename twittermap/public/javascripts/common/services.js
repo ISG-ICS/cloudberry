@@ -1,6 +1,5 @@
 angular.module('cloudberry.common', [])
   .factory('cloudberryConfig', function(){
-    console.log("removeSearchBar="+config.removeSearchBar + "\npreDefinedKeywords="+config.predefinedKeywords);
     return {
       ws: config.wsURL,
       sentimentEnabled: config.sentimentEnabled,
