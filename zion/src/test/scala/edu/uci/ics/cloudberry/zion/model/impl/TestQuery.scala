@@ -25,6 +25,7 @@ object TestQuery {
   val lang = twitterField("lang")
 
   val tag = Field.as(hashtags, "hash")
+  val hash = Field.as(hashtags, "hash")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
@@ -78,6 +79,7 @@ object TestQuery {
 
   val unnestHashTag = UnnestStatement(hashtags, tag)
   val byTag = ByStatement(tag, None, None)
+  val byHashTag = ByStatement(hash, None, None)
 
   val secondInterval = Interval(TimeUnit.Second)
   val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
@@ -125,7 +127,7 @@ object TestQuery {
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
   val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
   val selectTop100 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 100, 0, Seq.empty)
-  val selectTop10byHashTag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq(tag))
+  val selectTop10byHashTag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq(hash))
   val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
   val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
 

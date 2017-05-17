@@ -3,49 +3,31 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.Json
-
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
-/**
-  * Provide constant query strings for SparkSQL
-  */
-object SparkSqlAsterixImpl extends AsterixImplForSparkSQL {
-  override val aggregateFuncMap: Map[AggregateFunc, String] = Map(
-    Count -> "count",
-    Max -> "max",
-    Min -> "min",
-    Avg -> "avg",
-    Sum -> "sum"
-  )
+import scala.collection.mutable.ArrayBuffer
 
 
-  val datetime: String = ""
-  val round: String = "round"
+class SparkSQLGenerator extends IQLGenerator {
 
-  val dayTimeDuration: String = "day_time_duration"
-  val yearMonthDuration: String = "year_month_duration"
-  val getIntervalStartDatetime: String = "get_interval_start_datetime"
-  val intervalBin: String = "interval_bin"
-  val hour: String = "hour"
+  /**
+    * represent the expression for a [[Field]]
+    *
+    * @param refExpr the expression for referring this field by the subsequent statements
+    * @param defExpr the expression the defines the field
+    *
+    */
+  case class FieldExpr(refExpr: String, defExpr: String)
 
-  val spatialIntersect: String = "spatial_intersect"
-  val createRectangle: String = "create_rectangle"
-  val createPoint: String = "create_point"
-  val spatialCell: String = "spatial_cell"
-  val getPoints: String = "get_points"
+  /**
+    * Partial parse results after parsing each [[Statement]]
+    *
+    * @param strs    a sequence of parsed query strings, which would be composed together later.
+    * @param exprMap a new field expression map
+    */
+  case class ParsedResult(strs: Seq[String], exprMap: Map[String, FieldExpr])
 
-  val similarityJaccard: String = "similarity_jaccard"
-  val fullTextContains: String = "like"
-  val contains: String = "contains"
-  val wordTokens: String = "word_tokens"
-
-
-}
-
-class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
-
-  protected val typeImpl: AsterixImplForSparkSQL = SparkSqlAsterixImpl
+  //  protected val typeImpl: SparkSqlImpl
 
   protected val sourceVar: String = "t"
 
@@ -69,52 +51,127 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
 
   protected val suffix: String = ";"
 
-  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
-    val sourceSchema = schemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, schemaMap(create.query.dataset))
-    val ddl: String = genDDL(resultSchema)
-    val createDataSet =
-      s"""
-         |drop dataset ${create.dataset} if exists;
-         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
-         |""".stripMargin
-    val insert =
-      s"""
-         |insert into ${create.dataset} (
-         |${parseQuery(create.query, schemaMap)}
-         |)""".stripMargin
-    ddl + createDataSet + insert
-  }
+  val datetime: String = ""
+  val round: String = "round"
 
-  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
-    s"""
-       |upsert into ${append.dataset} (
-       |${parseQuery(append.query, schemaMap)}
-       |)""".stripMargin
-  }
+  val dayTimeDuration: String = "day_time_duration"
+  val yearMonthDuration: String = "year_month_duration"
+  val getIntervalStartDatetime: String = "get_interval_start_datetime"
+  val intervalBin: String = "interval_bin"
+  val hour: String = "hour"
 
-  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
-    s"""
-       |upsert into ${q.dataset} (
-       |${Json.toJson(q.records)}
-       |)""".stripMargin
-  }
+  val spatialIntersect: String = "spatial_intersect"
+  val createRectangle: String = "create_rectangle"
+  val createPoint: String = "create_point"
+  val spatialCell: String = "spatial_cell"
+  val getPoints: String = "get_points"
 
-  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
-    if (delete.filters.isEmpty) {
-      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
+  val similarityJaccard: String = "similarity_jaccard"
+  val fullTextContains: String = "like"
+  val contains: String = "contains"
+  val wordTokens: String = "word_tokens"
+
+  val aggregateFuncMap: Map[AggregateFunc, String] = Map(
+    Count -> "count",
+    Max -> "max",
+    Min -> "min",
+    Avg -> "avg",
+    Sum -> "sum"
+  )
+
+  def getAggregateStr(aggregate: AggregateFunc): String = {
+    aggregateFuncMap.get(aggregate) match {
+      case Some(impl) =>
+        impl
+      case None =>
+        throw new QueryParsingException(s"No implementation is provided for aggregate function ${aggregate.name}")
     }
-    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
-    val queryBuilder = new StringBuilder()
-    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
-    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
-    return queryBuilder.toString()
   }
 
-  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
-    s"drop dataset ${query.dataset} if exists"
+
+  def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
+    val result = query match {
+      case q: Query => parseQuery(q, schemaMap)
+      //      case q: CreateView => parseCreate(q, schemaMap)
+      //      case q: AppendView => parseAppend(q, schemaMap)
+      //      case q: UpsertRecord => parseUpsert(q, schemaMap)
+      //      case q: DropView => parseDrop(q, schemaMap)
+      //      case q: DeleteRecord => parseDelete(q, schemaMap)
+      case _ => ???
+    }
+    s"$result$suffix"
   }
 
+
+  //  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
+  //    val sourceSchema = schemaMap(create.query.dataset)
+  //    val resultSchema = calcResultSchema(create.query, schemaMap(create.query.dataset))
+  //    val ddl: String = genDDL(resultSchema)
+  //    val createDataSet =
+  //      s"""
+  //         |drop dataset ${create.dataset} if exists;
+  //         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
+  //         |""".stripMargin
+  //    val insert =
+  //      s"""
+  //         |insert into ${create.dataset} (
+  //         |${parseQuery(create.query, schemaMap)}
+  //         |)""".stripMargin
+  //    ddl + createDataSet + insert
+  //  }
+  //
+  //  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
+  //    s"""
+  //       |upsert into ${append.dataset} (
+  //       |${parseQuery(append.query, schemaMap)}
+  //       |)""".stripMargin
+  //  }
+  //
+  //  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
+  //    s"""
+  //       |upsert into ${q.dataset} (
+  //       |${Json.toJson(q.records)}
+  //       |)""".stripMargin
+  //  }
+  //
+  //  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+  //    if (delete.filters.isEmpty) {
+  //      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
+  //    }
+  //    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
+  //    val queryBuilder = new StringBuilder()
+  //    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
+  //    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
+  //    return queryBuilder.toString()
+  //  }
+  //
+  //  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
+  //    s"drop dataset ${query.dataset} if exists"
+  //  }
+
+
+  def calcResultSchema(query: Query, schema: Schema): Schema = {
+    if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
+      schema.copy()
+    } else {
+      ???
+    }
+  }
+
+  protected def initExprMap(dataset: String, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
+    val schema = schemaMap(dataset)
+    schema.fieldMap.mapValues { f =>
+      f.dataType match {
+        case DataType.Record => FieldExpr(sourceVar, sourceVar)
+        case DataType.Hierarchy => FieldExpr(sourceVar, sourceVar) // TODO rethink this type: a type or just a relation between types?
+        case _ => {
+          //Add the quote to wrap the name in order to not touch the SQL reserved keyword
+          val quoted = f.name.split('.').map(name => s"$quote$name$quote").mkString(".")
+          FieldExpr(s"$sourceVar.$quoted", s"$sourceVar.$quoted")
+        }
+      }
+    }
+  }
 
   def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
     val queryBuilder = new mutable.StringBuilder()
@@ -159,8 +216,6 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
       queryBuilder.append(s") $appendVar")
       ParsedResult(Seq.empty, newExprMap)
     }
-
-
   }
 
 
@@ -192,6 +247,91 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
     ParsedResult(Seq.empty, (producedExprs).result().toMap)
   }
 
+
+
+
+
+  protected def parseFilterRelation(filter: FilterStatement, fieldExpr: String): String = {
+    filter.field.dataType match {
+      case DataType.Number =>
+        parseNumberRelation(filter, fieldExpr)
+      case DataType.Time =>
+        parseTimeRelation(filter, fieldExpr)
+      //      case DataType.Point =>
+      //        parsePointRelation(filter, fieldExpr)
+      case DataType.Boolean => ???
+      case DataType.String =>
+        parseStringRelation(filter, fieldExpr)
+      case DataType.Text =>
+        parseTextRelation(filter, fieldExpr)
+      case DataType.Bag => ???
+      case DataType.Hierarchy =>
+        throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+      case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
+    }
+  }
+
+  protected def parseTimeRelation(filter: FilterStatement,
+                                  fieldExpr: String): String = {
+    filter.relation match {
+      case Relation.inRange => {
+        s"$fieldExpr >= '${filter.values(0)}' and $fieldExpr < '${filter.values(1)}'"
+      }
+      case _ => {
+        s"$fieldExpr ${filter.relation} '${filter.values(0)}'"
+      }
+    }
+  }
+
+  protected def parseStringRelation(filter: FilterStatement, fieldExpr: String): String = {
+    filter.relation match {
+      case Relation.matches => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"""$fieldExpr="${values(0)}""""
+      }
+      case Relation.!= => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"""$fieldExpr!="${values(0)}""""
+      }
+      case Relation.contains => ???
+
+    }
+  }
+  protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
+    val wordsArr = ArrayBuffer[String]()
+    filter.values.foreach(w => wordsArr += "%" + w + "%")
+    val sb = new StringBuilder
+    for (i <- 0 until (wordsArr.length - 1)){
+      sb.append(s"lower($fieldExpr) ${fullTextContains} '${wordsArr(i)}' and ")
+    }
+    sb.append(s"lower($fieldExpr) ${fullTextContains} '${wordsArr(wordsArr.length - 1)}'")
+    sb.toString()
+  }
+
+
+  protected def parseGeoCell(scale: Double, fieldExpr: String, dataType: DataType.Value): String = {
+    val origin = s"${createPoint}(0.0,0.0)"
+    s"${getPoints}(${spatialCell}(${fieldExpr}, $origin, ${1 / scale}, ${1 / scale}))[0]"
+  }
+
+  protected def parseAggregateFunc(aggr: AggregateStatement,
+                                   fieldExpr: String): String = {
+    def aggFuncExpr(aggFunc: String): String = {
+      if (aggr.field.name.equals("*")) {
+        s"$aggFunc($groupVar)"
+      } else {
+        s"$aggFunc( (select value $groupVar.$fieldExpr from $groupVar) )"
+      }
+    }
+
+    aggr.func match {
+      case topK: TopK => ???
+      case DistinctCount => ???
+      case _ => aggFuncExpr(getAggregateStr(aggr.func))
+    }
+  }
+
+
   private def parseFilter(filters: Seq[FilterStatement], exprMap: Map[String, FieldExpr], unnestTestStrs: Seq[String], queryBuilder: StringBuilder): ParsedResult = {
     if (filters.isEmpty && unnestTestStrs.isEmpty) {
       ParsedResult(Seq.empty, exprMap)
@@ -213,17 +353,41 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
     val unnestStr = unnest.zipWithIndex.map {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
-//        val newExpr = s"${quote}hash$id$quote"
+        //        val newExpr = s"${quote}hash$id$quote"
         val newExpr = s"${quote}hash$quote"
         producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
         if (unnest.field.isOptional) {
           unnestTestStrs += s"${expr.refExpr} is not null"
         }
-        s"lateral view explode(${expr.refExpr}) as $newExpr"
+        s"lateral view explode(${expr.refExpr}) tab as $newExpr"
     }.mkString("\n")
     appendIfNotEmpty(queryBuilder, unnestStr)
 
     ParsedResult(unnestTestStrs.toSeq, (producedExprs ++= exprMap).result().toMap)
+  }
+
+  protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String = {
+    groupBy.funcOpt match {
+      case Some(func) =>
+        func match {
+          case bin: Bin => s"${round}($fieldExpr/${bin.scale})*${bin.scale}"
+          //          case interval: Interval =>
+          //            val duration = parseIntervalDuration(interval)
+          //            s"${typeImpl.getIntervalStartDatetime}(${typeImpl.intervalBin}($fieldExpr, '1990-01-01T00:00:00.000Z', $duration))"
+          case interval: Interval => s"$fieldExpr"
+          //get_interval_start_datetime(interval_bin(t.`create_at`, '1990-01-01T00:00:00.000Z',  day_time_duration("PT1H") ))
+          case level: Level =>
+            //TODO remove this data type
+            val hierarchyField = groupBy.field.asInstanceOf[HierarchyField]
+            val field = hierarchyField.levels.find(_._1 == level.levelTag).get
+            s"$fieldExpr.${field._2}"
+          case GeoCellTenth => parseGeoCell(10, fieldExpr, groupBy.field.dataType)
+          case GeoCellHundredth => parseGeoCell(100, fieldExpr, groupBy.field.dataType)
+          case GeoCellThousandth => parseGeoCell(1000, fieldExpr, groupBy.field.dataType)
+          case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
+        }
+      case None => fieldExpr
+    }
   }
 
   private def parseGroupby(groupOpt: Option[GroupStatement],
@@ -236,7 +400,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
           val fieldExpr = exprMap(by.field.name)
           val as = by.as.getOrElse(by.field)
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
-            val newExpr = s"$quote${as.name}$quote"
+          val newExpr = s"$quote${as.name}$quote"
           producedExprs += (as.name -> FieldExpr(newExpr, newExpr))
           if (newExpr != s"`hash`"){
             s"$newExpr($groupExpr)"
@@ -246,7 +410,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
           }
         }
         val groupStr = s"group by ${groupStrs.mkString(",")}"
-//        println(groupStrs)
+        //        println(groupStrs)
         appendIfNotEmpty(queryBuilder, groupStr)
 
         group.aggregates.foreach { aggr =>
@@ -292,7 +456,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
             val expr = exprMap(orderOn.name).refExpr
             val orderStr = if (order == SortOrder.DSC) "desc" else ""
             s"${expr} $orderStr"
-//          "order by `count` desc": expr = `count`(orderOn), orderStr = desc
+          //          "order by `count` desc": expr = `count`(orderOn), orderStr = desc
         }
         println("orderStrs is:", orderStrs)
 
@@ -309,7 +473,6 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
         if (select.limit != 0) {
           appendIfNotEmpty(queryBuilder, limitStr)
         }
-        //appendIfNotEmpty(queryBuilder, orderStr)
 
 
         if (select.fields.isEmpty) {
@@ -322,7 +485,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
               producedExprs ++= exprMap
             case field =>
               if (field.name == "create_at"){
-//                producedExprs +=
+                //                producedExprs +=
               }
               else {
                 producedExprs += field.name -> exprMap(field.name)
@@ -333,14 +496,14 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
         println("newExprMap:", newExprMap)
         //check if fields is empty
         val projectStr = if (select.fields.isEmpty) {
-//          if (query.hasUnnest || query.hasGroup) {
-//            parseProject(exprMap)
-//          } else {
-//            s"select *"
-//          }
+          //          if (query.hasUnnest || query.hasGroup) {
+          //            parseProject(exprMap)
+          //          } else {
+          //            s"select *"
+          //          }
           s"select *"
         } else {
-//          parseProject(newExprMap)
+          //          parseProject(newExprMap)
           parseProject(exprMap)
         }
         queryBuilder.insert(0, projectStr + "\n")
@@ -364,7 +527,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
     }.map {
       case (field, expr) =>
         if (s"${expr.defExpr}" == "`hour`" || s"${expr.defExpr}" == "`day`" || s"${expr.defExpr}" == "`month`"){
-//          s"${expr.defExpr}(t.`create_at`) as $quote$field$quote"
+          //          s"${expr.defExpr}(t.`create_at`) as $quote$field$quote"
           s"${expr.defExpr}(t.`create_at`)"
         }
         else {
@@ -380,7 +543,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
       case Some(globalAggr) =>
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val aggr = globalAggr.aggregate
-        val funcName = typeImpl.getAggregateStr(aggr.func)
+        val funcName = getAggregateStr(aggr.func)
 
         val newDefExpr = if (aggr.func == Count) {
           globalAggrVar
@@ -393,7 +556,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
         val prepend =
           s"""
              |select $funcName(
-             |(select value $newDefExpr from (""".stripMargin
+             |(select $newDefExpr from (""".stripMargin
         val append =
           s""") as $globalAggrVar)
              |) as $quote${aggr.as.name}$quote""".stripMargin
@@ -418,22 +581,7 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
     }
   }
 
-  protected def parseAggregateFunc(aggr: AggregateStatement,
-                                   fieldExpr: String): String = {
-    def aggFuncExpr(aggFunc: String): String = {
-      if (aggr.field.name.equals("*")) {
-        s"$aggFunc($groupVar)"
-      } else {
-        s"$aggFunc( (select value $groupVar.$fieldExpr from $groupVar) )"
-      }
-    }
 
-    aggr.func match {
-      case topK: TopK => ???
-      case DistinctCount => ???
-      case _ => aggFuncExpr(typeImpl.getAggregateStr(aggr.func))
-    }
-  }
 
   /**
     * Append a new line and queryStr to the queryBuilder if queryStr is not empty.
@@ -451,6 +599,6 @@ class SparkSQLGenerator extends AsterixQueryGeneratorForSparkSQL {
   }
 }
 
-object SparkSQLGenerator extends IQLGeneratorFactory {
-  override def apply(): IQLGenerator = new SparkSQLGenerator()
-}
+//object SparkSQLGenerator extends IQLGeneratorFactory {
+//  override def apply(): IQLGenerator = new SparkSQLGenerator()
+//}

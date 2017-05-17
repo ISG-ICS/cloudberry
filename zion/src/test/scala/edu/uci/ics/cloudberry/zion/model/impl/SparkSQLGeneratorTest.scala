@@ -11,20 +11,6 @@ class SparkSQLGeneratorTest extends Specification {
   val parser = new SparkSQLGenerator
 
   "SparkSQLGenerator generate" should {
-    "eeee" in {
-      val filter = Seq(textFilter, timeFilter, stateFilter)
-      val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
-      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
-          |from twitter.ds_tweet t
-          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'}) and t.`create_at` >= datetime('2016-01-01T00:00:00.000Z') and t.`create_at` < datetime('2016-12-01T00:00:00.000Z') and t.`geo_tag`.`stateID` in [ 37,51,24,11,10,34,42,9,44 ]
-          |order by t.`create_at` desc
-          |limit 100
-          |offset 0;
-          | """.stripMargin.trim)
-    }
 
     //self query test1
     "translate a simple query group by hour" in {
@@ -38,7 +24,6 @@ class SparkSQLGeneratorTest extends Specification {
            |where t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z'
            |group by `hour`(t.`create_at`);
            |""".stripMargin.trim)
-     // println("passed the test")
     }
 
     //self query test2
@@ -98,28 +83,30 @@ class SparkSQLGeneratorTest extends Specification {
     //self query test6
     "translate a simple unnest query111" in {
       val filter = Seq(timeFilter, textFilter, stateFilter)
-      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val group = GroupStatement(Seq(byHashTag), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10byHashTag))
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """|select `hash` as `hash`,count(*) as `count`
            |from twitter.ds_tweet t
-           |lateral view explode(t.`hashtags`) as `hash`
+           |lateral view explode(t.`hashtags`) tab as `hash`
            |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z' and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`geo_tag`.`stateID` in ( 37,51,24,11,10,34,42,9,44 )
            |group by `hash`
            |order by `count` desc
            |limit 10;""".stripMargin.trim)
     }
 
-    //    """
-    //      |select count(*) as `count`
-    //      |from twitter.ds_tweet t
-    //      |LATERAL VIEW explode(t.`hashtags`) tab AS hash
-    //      |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z' and lower(text) like '%zika%' and lower(text) like '%virus%' and t.`geo_tag`.`stateID` in ( 37,51,24,11,10,34,42,9,44 )
-    //      |group by `hash`
-    //      |order by `count` desc
-    //      |limit 10
-    //      | """.stripMargin
+    //selft query test 7
+    "translate a count cardinality query without group by" in {
+      val globalAggr = GlobalAggregateStatement(aggrCount)
+      val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
+      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """select count(
+          |(select `c` from (select value t
+          |from twitter.ds_tweet t) as `c`)
+          |) as `count`;""".stripMargin)
+    }
 
     //   change
     "translate a simple filter by time and group by time query" in {
@@ -453,16 +440,7 @@ class SparkSQLGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
-    "translate a count cardinality query without group by" in {
-      val globalAggr = GlobalAggregateStatement(aggrCount)
-      val query = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """select coll_count(
-          |(select value c from (select value t
-          |from twitter.ds_tweet t) as c)
-          |) as `count`;""".stripMargin)
-    }
+
 
     "translate get min field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMin)
