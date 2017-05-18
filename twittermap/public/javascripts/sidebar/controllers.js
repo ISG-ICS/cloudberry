@@ -56,6 +56,10 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
   })
   .controller('PredefinedKeywordsCtrl', function ($scope, cloudberry, cloudberryConfig) {
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
+    $scope.predefinedSearch = function (keyword) {
+      $scope.keyword = keyword;
+      $scope.search();
+    }
   })
   .directive('predefinedKeywords', function () {
     return {
@@ -64,7 +68,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       template: [
         '<table class="table" id="keyword-list">',
         '<thead>',
-        '<tr ng-repeat="keyword in predefinedKeywords"><td>{{keyword}}</td></tr>',
+        '<tr ng-repeat="keyword in predefinedKeywords"><td><a ng-click="predefinedSearch(keyword)">{{keyword}}</a></td></tr>',
         '</thead>',
         '</table>'
       ].join('')

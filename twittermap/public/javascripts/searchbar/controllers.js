@@ -11,10 +11,10 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       }
     };
   })
-  .directive('searchBar', ['cloudberryConfig', function (cloudberryConfig) {
+  .directive('searchBar', function (cloudberryConfig) {
     if(cloudberryConfig.removeSearchBar)
       return{
-      }
+      };
     else {
       return {
         restrict: "E",
@@ -32,7 +32,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         ].join('')
       };
     }
-  }])
+  })
   .controller('ExceptionCtrl', function($scope, $window, cloudberry) {
     $scope.$watch(
       function() {
