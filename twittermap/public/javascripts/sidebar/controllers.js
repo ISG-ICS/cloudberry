@@ -58,19 +58,32 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
     $scope.predefinedSearch = function (keyword) {
       $scope.keyword = keyword;
-      $scope.search();
+      if ($scope.keyword && $scope.keyword.trim().length > 0) {
+        cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
+        // skip the empty query for now.
+        cloudberry.queryType = 'search';
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+      } else {
+        cloudberry.parameters.keywords = [];
+      }
     }
   })
-  .directive('predefinedKeywords', function () {
-    return {
-      restrict: 'E',
-      controller: 'PredefinedKeywordsCtrl',
-      template: [
-        '<table class="table" id="keyword-list">',
-        '<thead>',
-        '<tr ng-repeat="keyword in predefinedKeywords"><td><a ng-click="predefinedSearch(keyword)">{{keyword}}</a></td></tr>',
-        '</thead>',
-        '</table>'
-      ].join('')
-    };
+  .directive('predefinedKeywords', function (cloudberryConfig) {
+    if(cloudberryConfig.removeSearchBar) {
+      return {
+        restrict: 'E',
+        controller: 'PredefinedKeywordsCtrl',
+        template: [
+          '<table class="table" id="keyword-list">',
+          '<thead>',
+          '<tr ng-repeat="keyword in predefinedKeywords"><td class="predefined-keywords"><a ng-click="predefinedSearch(keyword)">{{keyword}}</a></td></tr>',
+          '</thead>',
+          '</table>'
+        ].join('')
+      };
+    }
+    else{
+      return{
+      };
+    }
   });

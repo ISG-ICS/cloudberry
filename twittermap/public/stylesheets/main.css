@@ -155,3 +155,9 @@ time-series {
 .normalize p{
   text-align: center;
 }
+
+.predefined-keywords{
+  text-align: center;
+  cursor: pointer;
+  font-weight: bold;
+}
