@@ -53,4 +53,20 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       restrict: 'E',
       controller: 'TweetCtrl'
     };
+  })
+  .controller('PredefinedKeywordsCtrl', function ($scope, cloudberry, cloudberryConfig) {
+    $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
+  })
+  .directive('predefinedKeywords', function () {
+    return {
+      restrict: 'E',
+      controller: 'PredefinedKeywordsCtrl',
+      template: [
+        '<table class="table" id="keyword-list">',
+        '<thead>',
+        '<tr ng-repeat="keyword in predefinedKeywords"><td>{{keyword}}</td></tr>',
+        '</thead>',
+        '</table>'
+      ].join('')
+    };
   });
