@@ -37,6 +37,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, sentimentEnabled, sentimentUDF))
   }
 
+  def money = Action {
+    request =>
+      val remoteAddress = request.remoteAddress
+      val userAgent = request.headers.get("user-agent").getOrElse("unknown")
+      clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
+      Ok(views.html.twittermap.money("TwitterMap", cloudberryWS, false, sentimentUDF))
+  }
+
   def tweet(id: String) = Action.async {
     val url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id
     wsClient.url(url).get().map { response =>

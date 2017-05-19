@@ -10,7 +10,7 @@ private[model] class Migration_20170428() {
   import Migration_20170428._
 
   def up(wsClient: WSClient, cloudberryURL: String)(implicit ec: ExecutionContext): Future[Boolean] = {
-    Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
+    Future.traverse(Seq(TwitterMoneyDDL, TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
       wsClient.url(cloudberryURL).withHeaders("Content-Type" -> "application/json").post(jsonStr).map { response =>
         if (response.status % 100 == 2) {
           true
@@ -25,6 +25,36 @@ private[model] class Migration_20170428() {
 
 object Migration_20170428 {
   val migration = new Migration_20170428()
+
+  val TwitterMoneyDDL: String =
+    """
+      |{
+      |  "dataset":"twitter.ds_tweet_money",
+      |  "schema":{
+      |  	"typeName":"twitter.typeTweet",
+      |    "dimension":[
+      |      {"name":"create_at","isOptional":false,"datatype":"Time"},
+      |      {"name":"id","isOptional":false,"datatype":"Number"},
+      |      {"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},
+      |      {"name":"user.id","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo","isOptional":false,"datatype":"Hierarchy","innerType":"Number",
+      |        "levels":[
+      |          {"level":"state","field":"geo_tag.stateID"},
+      |          {"level":"county","field":"geo_tag.countyID"},
+      |          {"level":"city","field":"geo_tag.cityID"}]}
+      |    ],
+      |    "measurement":[
+      |      {"name":"text","isOptional":false,"datatype":"Text"},
+      |      {"name":"money","isOptional":false,"datatype":"Number"}
+      |    ],
+      |    "primaryKey":["id"],
+      |    "timeField":"create_at"
+      |  }
+      |}
+    """.stripMargin
 
   val TwitterMapDDL: String =
     """
