@@ -17,10 +17,9 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     };
   })
   .directive('searchBar', function (cloudberryConfig) {
-    if(cloudberryConfig.removeSearchBar)
-      return{
-      };
-    else {
+    if(cloudberryConfig.removeSearchBar) {
+      return {};
+    } else {
       return {
         restrict: "E",
         controller: 'SearchCtrl',
@@ -75,9 +74,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
           '</div>'
         ].join('')
       };
-    }
-    else{
-      return{
-      };
+    } else{
+      return{};
     }
   });
