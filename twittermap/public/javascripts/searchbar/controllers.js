@@ -1,5 +1,5 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
-  .controller('SearchCtrl', function($scope, $window, cloudberry) {
+  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
         cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
@@ -9,6 +9,11 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       } else {
         cloudberry.parameters.keywords = [];
       }
+    };
+    $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
+    $scope.predefinedSearch = function (keyword) {
+      $scope.keyword = keyword;
+      $scope.search();
     };
   })
   .directive('searchBar', function (cloudberryConfig) {
@@ -57,25 +62,11 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('D3Ctrl', function($scope, $http, $timeout, cloudberry) {
 
   })
-  .controller('PredefinedKeywordsCtrl', function ($scope, cloudberry, cloudberryConfig) {
-    $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
-    $scope.predefinedSearch = function (keyword) {
-      $scope.keyword = keyword;
-      if ($scope.keyword && $scope.keyword.trim().length > 0) {
-        cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
-        // skip the empty query for now.
-        cloudberry.queryType = 'search';
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
-      } else {
-        cloudberry.parameters.keywords = [];
-      }
-    }
-  })
   .directive('predefinedKeywords', function (cloudberryConfig) {
     if(cloudberryConfig.removeSearchBar) {
       return {
         restrict: 'E',
-        controller: 'PredefinedKeywordsCtrl',
+        controller: 'SearchCtrl',
         template: [
           '<div class="btn-group btn-group-justified" role="group" aria-label="predefined-keywords-list">',
             '<div ng-repeat="keyword in predefinedKeywords" class="btn-group" role="group">',
