@@ -70,7 +70,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         template: [
           '<div class="btn-group btn-group-justified" role="group" aria-label="predefined-keywords-list">',
             '<div ng-repeat="keyword in predefinedKeywords" class="btn-group" role="group">',
-              '<button type="button" class="btn btn-default predefined-keywords" ng-click="predefinedSearch(keyword)">{{ keyword }}</button>',
+              '<button type="button" class="btn btn-default search-keyword-btn" ng-click="predefinedSearch(keyword)">{{ keyword }}</button>',
             '</div>',
           '</div>'
         ].join('')
