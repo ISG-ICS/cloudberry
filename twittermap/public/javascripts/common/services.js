@@ -65,9 +65,12 @@ angular.module('cloudberry.common', [])
     function requestLiveCounts() {
       if(ws.readyState === ws.OPEN){
         ws.send(countRequest);
+        if (myVar) {
+          clearInterval(myVar);
+        }
       }
     }
-    setInterval(requestLiveCounts, 1000);
+    var myVar = setInterval(requestLiveCounts, 1000);
 
     function getLevel(level){
       switch(level){
