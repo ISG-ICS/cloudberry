@@ -11,18 +11,33 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       }
     };
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
+    $scope.updateSearchBox = function (keyword) {
+      $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');
+    }
     $scope.predefinedSearch = function (keyword) {
       $scope.keyword = keyword;
       $scope.search();
+      $scope.updateSearchBox(keyword);
     };
   })
   .directive('searchBar', function (cloudberryConfig) {
     if(cloudberryConfig.removeSearchBar) {
-      return {};
+      return {
+        restrict: "E",
+        controller: "SearchCtrl",
+        template: [
+          '<div class="btn-group search-keyword-btn-group col-lg-12">',
+            '<button type="button" data-toggle="dropdown" class="btn btn-primary search-keyword-btn dropdown-toggle">Keywords List <span class="caret"></span></button>',
+            '<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">',
+              '<li ng-repeat="keyword in predefinedKeywords"><a href="#" ng-click="predefinedSearch(keyword)">{{ keyword }}</a></li>',
+            '</ul>',
+          '</div>'
+        ].join('')
+      };
     } else {
       return {
         restrict: "E",
-        controller: 'SearchCtrl',
+        controller: "SearchCtrl",
         template: [
           '<form class="form-inline" id="input-form" ng-submit="search()" >',
           '<div class="input-group col-lg-12">',
@@ -60,21 +75,4 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   })
   .controller('D3Ctrl', function($scope, $http, $timeout, cloudberry) {
 
-  })
-  .directive('predefinedKeywords', function (cloudberryConfig) {
-    if(cloudberryConfig.removeSearchBar) {
-      return {
-        restrict: 'E',
-        controller: 'SearchCtrl',
-        template: [
-          '<div class="btn-group btn-group-justified" role="group" aria-label="predefined-keywords-list">',
-            '<div ng-repeat="keyword in predefinedKeywords" class="btn-group" role="group">',
-              '<button type="button" class="btn btn-default search-keyword-btn" ng-click="predefinedSearch(keyword)">{{ keyword }}</button>',
-            '</div>',
-          '</div>'
-        ].join('')
-      };
-    } else{
-      return{};
-    }
   });

@@ -168,3 +168,7 @@ time-series {
   background-color: transparent;
   color: black;
 }
+
+.search-keyword-btn-group{
+  margin-left: 36%;
+}
