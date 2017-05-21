@@ -63,14 +63,21 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
   }
 
   private def collectStats(start: DateTime): Unit = {
-    val now = DateTime.now().minusMillis(1)
-    val filter = FilterStatement(schema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
-    val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))
-    val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
+    schema match {
+      case temporal: TemporalSchema =>
+        val now = DateTime.now().minusMillis(1)
+        val filter = FilterStatement(temporal.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
+        val aggr = GlobalAggregateStatement(AggregateStatement(temporal.fieldMap("*"), Count, Field.as(Count(temporal.fieldMap("*")), "count")))
+        val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
+        conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporal)))
+          .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
+          .pipeTo(self)
 
-    conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))
-      .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
-      .pipeTo(self)
+      case static: StaticSchema =>
+        log.error("Cannot do aggregation query for static dataset " + static.typeName)
+    }
+
+
   }
 
   //TODO extend the logic of using stats to solve more queries

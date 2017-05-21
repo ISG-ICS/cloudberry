@@ -184,18 +184,30 @@ trait Measurement {
 
 //TODO when UI get the schema, it should know which is dimension/measure, functions that can apply onto it, etc.
 // so that it won't ask for a inapplicable function such that get the max to a string field
-case class Schema(typeName: String,
-                  dimension: Seq[Field],
-                  measurement: Seq[Field],
-                  primaryKey: Seq[Field],
-                  timeField: TimeField
-                 ) {
+abstract class Schema(typeName: String,
+                      dimension: Seq[Field],
+                      measurement: Seq[Field],
+                      primaryKey: Seq[Field]
+                     ) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
 
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
 }
+
+case class TemporalSchema(typeName: String,
+                          dimension: Seq[Field],
+                          measurement: Seq[Field],
+                          primaryKey: Seq[Field],
+                          timeField: TimeField
+                         ) extends Schema(typeName, dimension, measurement, primaryKey)
+
+case class StaticSchema(typeName: String,
+                        dimension: Seq[Field],
+                        measurement: Seq[Field],
+                        primaryKey: Seq[Field]
+                       ) extends Schema(typeName, dimension, measurement, primaryKey)
 
 object Schema {
 

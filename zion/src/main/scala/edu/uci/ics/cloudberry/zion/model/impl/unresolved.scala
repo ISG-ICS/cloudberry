@@ -21,13 +21,24 @@ object Unresolved {
     )
 
   def toUnresolved(schema: Schema): UnresolvedSchema = {
-    UnresolvedSchema(
-      schema.typeName,
-      schema.dimension,
-      schema.measurement,
-      schema.primaryKey.map(_.name),
-      schema.timeField.name
-    )
+    schema match {
+      case temporal: TemporalSchema =>
+        UnresolvedSchema(
+          temporal.typeName,
+          temporal.dimension,
+          temporal.measurement,
+          temporal.primaryKey.map(_.name),
+          Some(temporal.timeField.name)
+        )
+      case static: StaticSchema =>
+        UnresolvedSchema(
+          static.typeName,
+          static.dimension,
+          static.measurement,
+          static.primaryKey.map(_.name),
+          None
+        )
+    }
   }
 
   def toUnresolved(query: Query): UnresolvedQuery =
@@ -122,14 +133,16 @@ object Unresolved {
 
 /**
   * This class is an unresolved version of [[Schema]].
-  * The difference is that [[primaryKey]] and [[timeField]] here are strings,
-  * which are resolved later into [[Field]]
+  * The differences are
+  *   [[primaryKey]] is string,
+  *   [[timeField]] is Option[String] corresponding to temporal schema and static schema.
+  * which are resolved later into [[Field]] and to [[TemporalSchema]] or [[StaticSchema]].
   */
 case class UnresolvedSchema(typeName: String,
                             dimension: Seq[Field],
                             measurement: Seq[Field],
                             primaryKey: Seq[String],
-                            timeField: String
+                            timeField: Option[String]
                            ) {
   private lazy val fields = dimension ++ measurement
 

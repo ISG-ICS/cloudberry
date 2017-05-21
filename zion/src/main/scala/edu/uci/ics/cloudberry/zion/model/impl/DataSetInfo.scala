@@ -23,12 +23,13 @@ case class DataSetInfo(name: String,
 object DataSetInfo {
 
   val MetaDataDBName: String = "berry.meta"
-  val MetaSchema: Schema = Schema("berry.MetaType",
-    Seq(StringField("name"),
-        TimeField("stats.createTime")),
+  val MetaSchema = TemporalSchema(
+    "berry.MetaType",
+    Seq(StringField("name"), TimeField("stats.createTime")),
     Seq.empty,
     Seq(StringField("name")),
-    TimeField("stats.createTime"))
+    TimeField("stats.createTime")
+  )
 
   /**
     * Parse a json object to create a [[DataSetInfo]].
@@ -45,13 +46,17 @@ object DataSetInfo {
 
         val schema = dataSetInfo.schema
         val primaryKey = schema.primaryKey.map(schema.getField(_).get)
-        val timeField = schema.getField(schema.timeField) match {
-          case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
-          case None if schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${schema.typeName}.")
-          case _ => throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
+        val resolvedSchema = schema.timeField match {
+          case Some(field) =>
+            val timeField = schema.getField(field) match {
+              case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
+              case None if schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${schema.typeName}.")
+              case _ => throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
+            }
+            TemporalSchema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
+          case None =>
+            StaticSchema(schema.typeName, schema.dimension, schema.measurement, primaryKey)
         }
-
-        val resolvedSchema = Schema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
 
         DataSetInfo(dataSetInfo.name, resolvedQuery, resolvedSchema, dataSetInfo.dataInterval, dataSetInfo.stats)
 
@@ -170,7 +175,7 @@ object DataSetInfo {
       (JsPath \ "dimension").format[Seq[Field]] and
       (JsPath \ "measurement").format[Seq[Field]] and
       (JsPath \ "primaryKey").format[Seq[String]] and
-      (JsPath \ "timeField").format[String]
+      (JsPath \ "timeField").formatNullable[String]
     ) (UnresolvedSchema.apply, unlift(UnresolvedSchema.unapply))
 
   implicit val dataSetInfoFormat: Format[UnresolvedDataSetInfo] = (

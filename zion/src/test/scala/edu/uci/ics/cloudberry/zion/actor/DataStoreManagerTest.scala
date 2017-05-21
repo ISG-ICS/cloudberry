@@ -239,7 +239,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
     val field2 = TextField("myText")
     val field3 = StringField("myString")
     val field4 = NumberField("myNumber")
-    val schema = UnresolvedSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myTime")
+    val schema = UnresolvedSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq("myString"), Some("myTime"))
     val registerRequest = Register("test", schema)
 
     "parse json register request" in {
@@ -287,7 +287,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
         dataset.name must_== "test"
         dataset.createQueryOpt must_== None
 
-        val datasetSchema = Schema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
+        val datasetSchema = TemporalSchema("testType", Seq(field1, field2), Seq(field3, field4), Seq(field3), field1)
         dataset.schema must_== datasetSchema
 
         val minTime = "2015-01-01T00:00:00.000Z"
@@ -306,21 +306,21 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
     "respond failure if register a data model without time field" in {
-      val schemaNoTimeField = UnresolvedSchema("typeNoTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "")
+      val schemaNoTimeField = UnresolvedSchema("typeNoTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), Some(""))
       val registerRequestNoTimeField = Register("TableNoTimeField", schemaNoTimeField)
       sender.send(dataManager, registerRequestNoTimeField)
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field is not specified for " + schemaNoTimeField.typeName + ".\n"))
       ok
     }
     "respond failure if register a data model where time field cannot be found in dimensions and measurements" in {
-      val schemaFalseTimeField = UnresolvedSchema("typeFalseTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "falseTimeField")
+      val schemaFalseTimeField = UnresolvedSchema("typeFalseTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), Some("falseTimeField"))
       val registerRequestFalseTimeField = Register("TableFalseTimeField", schemaFalseTimeField)
       sender.send(dataManager, registerRequestFalseTimeField)
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField + " is not found in dimensions and measurements: not a valid field.\n"))
       ok
     }
     "respond failure if register a data model where time field is not a field type of timeField" in {
-      val schemaNotATimeField = UnresolvedSchema("typeNotATimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), "myNumber")
+      val schemaNotATimeField = UnresolvedSchema("typeNotATimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), Some("myNumber"))
       val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
       sender.send(dataManager, registerRequestNotATimeField)
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))

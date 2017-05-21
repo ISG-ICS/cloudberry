@@ -78,18 +78,23 @@ class DataStoreManager(metaDataset: String,
       //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
-          info.createQueryOpt match {
-            case Some(createQuery) =>
-              if (createQuery.filter.exists(_.field == info.schema.timeField)) {
-                log.error("the create view should not contains the time dimension")
-              } else {
-                val now = DateTime.now()
-                val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
-                  Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
-                val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
-                answerQuery(AppendView(info.name, appendQ), Some(now))
+          info.schema match {
+            case temporal: TemporalSchema =>
+              info.createQueryOpt match {
+                case Some(createQuery) =>
+                  if (createQuery.filter.exists(_.field == temporal.timeField)) {
+                    log.error("the create view should not contains the time dimension")
+                  } else {
+                    val now = DateTime.now()
+                    val compensate = FilterStatement(temporal.timeField, None, Relation.inRange,
+                      Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
+                    val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
+                    answerQuery(AppendView(info.name, appendQ), Some(now))
+                  }
+                case None => log.warning(s"can not append to a base dataset: $append.dataset.")
               }
-            case None => log.warning(s"can not append to a base dataset: $append.dataset.")
+            case static: StaticSchema =>
+              log.error("Append View operation cannot be applied to static dataset " + static.typeName)
           }
         case None => log.warning(s"view $append.dataset does not exist.")
       }
@@ -128,52 +133,63 @@ class DataStoreManager(metaDataset: String,
   //persistent metadata periodically
   context.system.scheduler.schedule(config.ViewMetaFlushInterval, config.ViewMetaFlushInterval, self, FlushMeta)
 
+  private def unresolvedSchemaToResolvedSchema(unresolved: UnresolvedSchema): Schema = {
+    val primaryKey = unresolved.primaryKey.map(unresolved.getField(_).get)
+    unresolved.timeField match {
+      case Some(field) =>
+        val timeField = unresolved.getField(field) match {
+          case Some(f) =>
+            if(f.isInstanceOf[TimeField]){
+              f.asInstanceOf[TimeField]
+            } else {
+              throw new QueryParsingException("Time field of " + unresolved.typeName + "is not in TimeField format.\n")
+            }
+          case None =>
+            throw new QueryParsingException("Time field is not specified for " + unresolved.typeName + ".\n")
+        }
+        TemporalSchema(unresolved.typeName, unresolved.dimension, unresolved.measurement, primaryKey, timeField)
+      case None =>
+        StaticSchema(unresolved.typeName, unresolved.dimension, unresolved.measurement, primaryKey)
+    }
+  }
+
   private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
 
     if(!metaData.contains(dataSetName)){
-
       try{
-        val primaryKey = dataSetRawSchema.primaryKey.map(dataSetRawSchema.getField(_).get)
-        val timeField = dataSetRawSchema.getField(dataSetRawSchema.timeField) match {
-          case Some(f) =>
-            if(f.isInstanceOf[TimeField]){
-              f.asInstanceOf[TimeField]
-            } else {
-              throw new QueryParsingException("Time field of " + dataSetRawSchema.typeName + "is not in TimeField format.\n")
+        unresolvedSchemaToResolvedSchema(dataSetRawSchema) match {
+          case temporal: TemporalSchema =>
+            collectStats(dataSetName, temporal) onComplete {
+              case Success((interval, size)) =>
+                val currentDateTime = new DateTime()
+                val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
+                val registerDataSetInfo = DataSetInfo(dataSetName, None, temporal, interval, stats)
+
+                metaData.put(dataSetName, registerDataSetInfo)
+                flushMetaData()
+                sender ! DataManagerResponse(true, "Register Finished: temporal dataset " + dataSetName + " has successfully registered.\n")
+
+              case Failure(f) =>
+                throw new CollectStatsException(f.getMessage)
             }
-          case None =>
-            throw new QueryParsingException("Time field is not specified for " + dataSetRawSchema.typeName + ".\n")
-        }
-        val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
 
-        collectStats(dataSetName, resolvedSchema) onComplete {
-          case Success((interval, size)) =>
+          case static: StaticSchema =>
             val currentDateTime = new DateTime()
-            val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
-            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, interval, stats)
-
-            metaData.put(dataSetName, registerDataSetInfo)
-            flushMetaData()
-            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
-
-          case Failure(_) =>
-            //FIXME Need to introduce static dataset to handle this
-            val currentDateTime = new DateTime()
-            val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
+            val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
             val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
             val fakeInterval = new Interval(fakeStartDate, currentDateTime)
-            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, static, fakeInterval, fakeStats)
 
             metaData.put(dataSetName, registerDataSetInfo)
             flushMetaData()
-            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered without stats information.\n")
+            sender ! DataManagerResponse(true, "Register Finished: static dataset " + dataSetName + " has successfully registered.\n")
         }
-
       } catch {
         case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")
         case queryParsingError: QueryParsingException => sender ! DataManagerResponse(false, "Register Denied. Field Parsing Error: " + queryParsingError.getMessage)
+        case collectStatsError: CollectStatsException => sender ! DataManagerResponse(false, "Register Denied. Collect Stats Error: " + collectStatsError.msg)
         case NonFatal(e) => sender ! DataManagerResponse(false, "Register Denied. " + e.getMessage)
       }
 
@@ -247,21 +263,26 @@ class DataStoreManager(metaDataset: String,
     }
     creatingSet.add(create.dataset)
     val sourceInfo = metaData(create.query.dataset)
-    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
-    val now = DateTime.now()
-    val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
-    val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
-    val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
-    conn.postControl(queryString) onSuccess {
-      case true =>
-        collectStats(create.dataset, schema) onComplete {
-          case Success((interval, size)) =>
-            self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
-          case Failure(ex) =>
-            log.error(s"collectStats error: $ex")
+    sourceInfo.schema match {
+      case temporal: TemporalSchema =>
+        val schema = managerParser.calcResultSchema(create.query, temporal)
+        val now = DateTime.now()
+        val fixEndFilter = FilterStatement(temporal.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
+        val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
+        val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> temporal))
+        conn.postControl(queryString) onSuccess {
+          case true =>
+            collectStats(create.dataset, schema) onComplete {
+              case Success((interval, size)) =>
+                self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
+              case Failure(ex) =>
+                log.error(s"collectStats error: $ex")
+            }
+          case false =>
+            log.error("Failed to create view:" + create)
         }
-      case false =>
-        log.error("Failed to create view:" + create)
+      case static: StaticSchema =>
+        log.error("Create View cannot be applied for static dataset " + static.typeName)
     }
   }
 
@@ -274,17 +295,24 @@ class DataStoreManager(metaDataset: String,
   }
 
   private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
-    val timeField = schema.timeField
-    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Field.as(Min(timeField), "min")))))
-    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Field.as(Max(timeField), "max")))))
-    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))
-    val parser = queryGenFactory()
-    import TimeField.TimeFormat
-    for {
-      minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
-    } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
+    schema match {
+      case temporal: TemporalSchema =>
+        val timeField = temporal.timeField
+        val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Field.as(Min(timeField), "min")))))
+        val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Field.as(Max(timeField), "max")))))
+        val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))
+        val parser = queryGenFactory()
+        import TimeField.TimeFormat
+        for {
+          minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
+          maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
+          cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
+        } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
+      case static: StaticSchema =>
+        throw new Exception("Cannot collect Stats information for static dataset " + static.typeName)
+    }
+
+
   }
 
   private def flushMetaData(): Unit = {
