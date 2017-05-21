@@ -278,7 +278,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       when(mockConn.postQuery(any[String])).thenReturn(Future(statJson))
 
       sender.send(dataManager, registerRequest)
-      sender.expectMsg(DataManagerResponse(true, "Register Finished: dataset " + registerRequest.dataset + " has successfully registered.\n"))
+      sender.expectMsg(DataManagerResponse(true, "Register Finished: temporal dataset " + registerRequest.dataset + " has successfully registered.\n"))
       meta.receiveOne(1 second)
 
       sender.send(dataManager, AskInfoAndViews("test"))
@@ -316,7 +316,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       val schemaFalseTimeField = UnresolvedSchema("typeFalseTimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), Some("falseTimeField"))
       val registerRequestFalseTimeField = Register("TableFalseTimeField", schemaFalseTimeField)
       sender.send(dataManager, registerRequestFalseTimeField)
-      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField + " is not found in dimensions and measurements: not a valid field.\n"))
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField.get + " is not found in dimensions and measurements: not a valid field.\n"))
       ok
     }
     "respond failure if register a data model where time field is not a field type of timeField" in {

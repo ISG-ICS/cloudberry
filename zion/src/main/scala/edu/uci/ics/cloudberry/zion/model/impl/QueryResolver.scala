@@ -41,7 +41,7 @@ object QueryResolver {
         val (groups, fieldMapAfterGroup) = resolveGroup(query.groups, fieldMapAfterFilter, schemaMap)
         val (select, fieldMapAfterSelect) = resolveSelect(query.select, fieldMapAfterGroup)
         val (globalAggr, fieldMapAfterGlobalAggr) = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
-        
+
         Query(query.dataset, append, lookup, filter, unnest, groups, select, globalAggr, query.estimable)
 
       case static: StaticSchema =>
