@@ -1,4 +1,6 @@
-@(title: String, ws: String, sentimentEnabled: Boolean, sentimentUDF: String)(body: Html)
+@(title: String, ws: String, sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String])(body: Html)
+
+@import play.api.libs.json.Json
 
 <!DOCTYPE html>
 <html ng-app="cloudberry">
@@ -21,7 +23,9 @@
     var config= {
       wsURL:"@ws",
       sentimentEnabled: @sentimentEnabled,
-      sentimentUDF: "@sentimentUDF"
+      sentimentUDF: "@sentimentUDF",
+      removeSearchBar: @removeSearchBar,
+      predefinedKeywords: @Html(Json.stringify(Json.toJson(predefinedKeywords)))
     }
   </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
