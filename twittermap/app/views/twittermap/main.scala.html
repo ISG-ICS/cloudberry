@@ -24,7 +24,7 @@
       wsURL:"@ws",
       sentimentEnabled: @sentimentEnabled,
       sentimentUDF: "@sentimentUDF",
-      startDate: new Date(@startDate),
+      startDate: new Date("@startDate"),
       @if(isDrugMap) {
         mapLegend: "$",
         sumText : "dollars",
@@ -49,7 +49,12 @@
 
   <script src='@routes.Assets.versioned("javascripts/app.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
-  <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
+
+  @if(isDrugMap) {
+    <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
+  } else {
+    <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
+  }
   <script src='@routes.Assets.versioned("javascripts/timeseries/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/sidebar/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/searchbar/controllers.js")'></script>

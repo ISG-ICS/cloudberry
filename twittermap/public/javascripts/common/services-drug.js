@@ -40,7 +40,7 @@ angular.module('cloudberry.common', [])
     };
   })
   .service('cloudberry', function($http, $timeout, $location, cloudberryConfig) {
-    var startDate = new Date(2017, 4, 1, 0, 0, 0, 0);
+    var startDate = config.startDate;
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
