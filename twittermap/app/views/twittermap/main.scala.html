@@ -1,4 +1,4 @@
-@(title: String, ws: String, sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String])(body: Html)
+@(title: String, ws: String, startDate: String, sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], isDrugMap: Boolean)(body: Html)
 
 @import play.api.libs.json.Json
 
@@ -24,6 +24,14 @@
       wsURL:"@ws",
       sentimentEnabled: @sentimentEnabled,
       sentimentUDF: "@sentimentUDF",
+      startDate: new Date("@startDate"),
+      @if(isDrugMap) {
+        mapLegend: "$",
+        sumText : "dollars",
+      } else {
+        mapLegend: "Count:",
+        sumText : "tweets",
+      }
       removeSearchBar: @removeSearchBar,
       predefinedKeywords: @Html(Json.stringify(Json.toJson(predefinedKeywords)))
     }
@@ -41,7 +49,12 @@
 
   <script src='@routes.Assets.versioned("javascripts/app.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
-  <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
+
+  @if(isDrugMap) {
+    <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
+  } else {
+    <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
+  }
   <script src='@routes.Assets.versioned("javascripts/timeseries/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/sidebar/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/searchbar/controllers.js")'></script>
