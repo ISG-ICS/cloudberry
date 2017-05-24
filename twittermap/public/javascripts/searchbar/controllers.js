@@ -27,7 +27,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         controller: "SearchCtrl",
         template: [
           '<div class="btn-group search-keyword-btn-group col-lg-12">',
-            '<button type="button" data-toggle="dropdown" class="btn btn-primary search-keyword-btn dropdown-toggle">Keywords List <span class="caret"></span></button>',
+            '<button type="button" data-toggle="dropdown" class="btn btn-primary search-keyword-btn dropdown-toggle">Keywords <span class="caret"></span></button>',
             '<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">',
               '<li ng-repeat="keyword in predefinedKeywords"><a href="#" ng-click="predefinedSearch(keyword)">{{ keyword }}</a></li>',
             '</ul>',
