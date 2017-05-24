@@ -201,6 +201,7 @@ abstract class Schema(typeName: String,
   def getTimeField: TimeField
   def copySchema: Schema
   def asTemporal: TemporalSchema
+  def isTemporal: Boolean
   def toUnresolved: UnresolvedSchema
 }
 
@@ -216,6 +217,8 @@ case class TemporalSchema(typeName: String,
   override def copySchema: TemporalSchema = this.copy()
 
   override def asTemporal: TemporalSchema = this
+
+  override def isTemporal: Boolean = true
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
 }
@@ -235,6 +238,8 @@ case class StaticSchema(typeName: String,
   override def asTemporal: TemporalSchema = {
     throw new IllegalArgumentException(s"$typeName is a static schema.")
   }
+
+  override def isTemporal: Boolean = false
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), None)
 }

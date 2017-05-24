@@ -158,7 +158,7 @@ class DataStoreManager(metaDataset: String,
           case static: StaticSchema =>
             val currentDateTime = new DateTime()
             val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
-            val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
+            val fakeStartDate = new DateTime(2017, 1, 1, 12, 0, 0, 0)
             val fakeInterval = new Interval(fakeStartDate, currentDateTime)
             val registerDataSetInfo = DataSetInfo(dataSetName, None, static, fakeInterval, fakeStats)
 
@@ -241,58 +241,54 @@ class DataStoreManager(metaDataset: String,
       log.warning(s"invalid dataset in the CreateView msg: $create")
       return
     }
-    creatingSet.add(create.dataset)
     val sourceInfo = metaData(create.query.dataset)
-    sourceInfo.schema match {
-      case temporal: TemporalSchema =>
-        val schema = managerParser.calcResultSchema(create.query, temporal)
-        val now = DateTime.now()
-        val fixEndFilter = FilterStatement(temporal.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
-        val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
-        val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> temporal))
-        conn.postControl(queryString) onSuccess {
-          case true =>
-            collectStats(create.dataset, schema) onComplete {
-              case Success((interval, size)) =>
-                self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
-              case Failure(ex) =>
-                log.error(s"collectStats error: $ex")
-            }
-          case false =>
-            log.error("Failed to create view:" + create)
+    if (!sourceInfo.schema.isTemporal) {
+      log.error("Create View cannot be applied for static dataset " + sourceInfo.schema.getTypeName)
+      return
+    }
+    creatingSet.add(create.dataset)
+    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema).asTemporal
+    val now = DateTime.now()
+    val fixEndFilter = FilterStatement(sourceInfo.schema.getTimeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
+    val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
+    val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
+    conn.postControl(queryString) onSuccess {
+      case true =>
+        collectStats(create.dataset, schema) onComplete {
+          case Success((interval, size)) =>
+            self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
+          case Failure(ex) =>
+            log.error(s"collectStats error: $ex")
         }
-      case static: StaticSchema =>
-        log.error("Create View cannot be applied for static dataset " + static.typeName)
+      case false =>
+        log.error("Failed to create view:" + create)
     }
   }
 
   private def updateStats(dataset: String, modifyTime: DateTime): Unit = {
     val originalInfo = metaData(dataset)
-    collectStats(dataset, originalInfo.schema) onSuccess { case (interval, size) =>
+    if (!originalInfo.schema.isTemporal) {
+      log.error("UpdateStats cannot be applied on static dataset " + originalInfo.schema.getTypeName)
+      return
+    }
+    collectStats(dataset, originalInfo.schema.asTemporal) onSuccess { case (interval, size) =>
       //TODO need to think the difference between the txn time and the ingest time
       self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(lastModifyTime = modifyTime, cardinality = size))
     }
   }
 
-  private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
-    schema match {
-      case temporal: TemporalSchema =>
-        val timeField = temporal.timeField
-        val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Field.as(Min(timeField), "min")))))
-        val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Field.as(Max(timeField), "max")))))
-        val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))
-        val parser = queryGenFactory()
-        import TimeField.TimeFormat
-        for {
-          minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
-          maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
-          cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
-        } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
-      case static: StaticSchema =>
-        throw CollectStatsException("Cannot collect Stats information for static dataset " + static.typeName)
-    }
-
-
+  private def collectStats(dataset: String, schema: TemporalSchema): Future[(TJodaInterval, Long)] = {
+    val timeField = schema.timeField
+    val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Field.as(Min(timeField), "min")))))
+    val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Field.as(Max(timeField), "max")))))
+    val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))
+    val parser = queryGenFactory()
+    import TimeField.TimeFormat
+    for {
+      minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
+      maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
+      cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
+    } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
   }
 
   private def flushMetaData(): Unit = {
