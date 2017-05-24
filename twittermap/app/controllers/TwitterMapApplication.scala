@@ -4,6 +4,7 @@ import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
 import model.Migration_20170428
+import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.ws.WSClient
@@ -25,6 +26,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
+  val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
 
   val clientLogger = Logger("client")
@@ -36,7 +38,16 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords))
+    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, false))
+  }
+
+  def drugmap = Action {
+    request =>
+      val startDateDrugMap = "2017-05-01T00:00:00.000"
+      val remoteAddress = request.remoteAddress
+      val userAgent = request.headers.get("user-agent").getOrElse("unknown")
+      clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
+      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, false, sentimentUDF, true, Seq("drug"), true))
   }
 
   def tweet(id: String) = Action.async {

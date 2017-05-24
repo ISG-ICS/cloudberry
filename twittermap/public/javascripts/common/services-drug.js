@@ -47,12 +47,12 @@ angular.module('cloudberry.common', [])
     var ws = new WebSocket(cloudberryConfig.ws);
 
     var countRequest = JSON.stringify({
-      dataset: "twitter.ds_tweet",
+      dataset: "twitter.ds_tweet_money",
       global: {
         globalAggregate: {
-          field: "*",
+          field: "money",
           apply: {
-            name: "count"
+            name: "sum"
           },
           as: "count"
         }},
@@ -67,6 +67,9 @@ angular.module('cloudberry.common', [])
     function requestLiveCounts() {
       if(ws.readyState === ws.OPEN){
         ws.send(countRequest);
+        if (myVar){
+          clearInterval(myVar);
+        }
       }
     }
     var myVar = setInterval(requestLiveCounts, 1000);
@@ -168,9 +171,9 @@ angular.module('cloudberry.common', [])
               as: parameters.geoLevel
             }],
             aggregate: [{
-              field: "*",
+              field: "money",
               apply: {
-                name: "count"
+                name: "sum"
               },
               as: "count"
             }],
@@ -198,9 +201,9 @@ angular.module('cloudberry.common', [])
             as: parameters.timeBin
           }],
           aggregate: [{
-            field: "*",
+            field: "money",
             apply: {
-              name: "count"
+              name: "sum"
             },
             as: "count"
           }]
@@ -220,9 +223,9 @@ angular.module('cloudberry.common', [])
             field: "tag"
           }],
           aggregate: [{
-            field: "*",
+            field: "money",
             apply: {
-              name: "count"
+              name: "sum"
             },
             as: "count"
           }]
@@ -240,7 +243,7 @@ angular.module('cloudberry.common', [])
       totalCount: 0,
       startDate: startDate,
       parameters: {
-        dataset: "twitter.ds_tweet",
+        dataset: "twitter.ds_tweet_money",
         keywords: [],
         timeInterval: {
           start: startDate,

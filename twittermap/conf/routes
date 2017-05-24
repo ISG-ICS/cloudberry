@@ -4,7 +4,7 @@
 
 # TwitterMap routes
 GET        /                                    controllers.TwitterMapApplication.index
-GET        /tweet/:id                           controllers.TwitterMapApplication.tweet(id: String)
+GET        /drugmap                             controllers.TwitterMapApplication.drugmap
 
 GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
 
