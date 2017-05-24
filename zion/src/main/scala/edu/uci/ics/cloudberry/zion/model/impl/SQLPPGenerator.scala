@@ -70,10 +70,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, sourceSchema) match {
-      case temporal: TemporalSchema => temporal
-      case static: StaticSchema => throw new Exception("Create View cannot be applied for static dataset " + static.typeName)
-    }
+    val resultSchema = calcResultSchema(create.query, sourceSchema).asTemporal
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""

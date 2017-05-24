@@ -130,10 +130,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
-      schema match {
-        case temporal: TemporalSchema => temporal.copy()
-        case static: StaticSchema => static.copy()
-      }
+      schema.copySchema
     } else {
       ???
     }
@@ -286,12 +283,8 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
       f => mkNestDDL(f.name.split("\\.").toList, fieldType2ADMType(f) + (if (f.isOptional) "?" else ""))
     }
-    val schemaTypeName: String = schema match {
-      case temporal: TemporalSchema => temporal.typeName
-      case static: StaticSchema => static.typeName
-    }
     s"""
-       |create type ${schemaTypeName} if not exists as open {
+       |create type ${schema.getTypeName} if not exists as open {
        |${fields.mkString(",\n")}
        |}
     """.stripMargin

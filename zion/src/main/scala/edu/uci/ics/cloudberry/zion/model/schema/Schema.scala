@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
+import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
+import edu.uci.ics.cloudberry.zion.model.impl.UnresolvedSchema
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
 
@@ -194,6 +196,12 @@ abstract class Schema(typeName: String,
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
 
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
+
+  def getTypeName: String = typeName
+  def getTimeField: TimeField
+  def copySchema: Schema
+  def asTemporal: TemporalSchema
+  def toUnresolved: UnresolvedSchema
 }
 
 case class TemporalSchema(typeName: String,
@@ -201,13 +209,35 @@ case class TemporalSchema(typeName: String,
                           measurement: Seq[Field],
                           primaryKey: Seq[Field],
                           timeField: TimeField
-                         ) extends Schema(typeName, dimension, measurement, primaryKey)
+                         ) extends Schema(typeName, dimension, measurement, primaryKey){
+
+  override def getTimeField: TimeField = timeField
+
+  override def copySchema: TemporalSchema = this.copy()
+
+  override def asTemporal: TemporalSchema = this
+
+  override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
+}
 
 case class StaticSchema(typeName: String,
                         dimension: Seq[Field],
                         measurement: Seq[Field],
                         primaryKey: Seq[Field]
-                       ) extends Schema(typeName, dimension, measurement, primaryKey)
+                       ) extends Schema(typeName, dimension, measurement, primaryKey) {
+
+  override def getTimeField: TimeField = {
+    throw FieldNotFound(s"Static schema $typeName does not have timeField.")
+  }
+
+  override def copySchema: StaticSchema = this.copy()
+
+  override def asTemporal: TemporalSchema = {
+    throw new IllegalArgumentException(s"$typeName is a static schema.")
+  }
+
+  override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), None)
+}
 
 object Schema {
 

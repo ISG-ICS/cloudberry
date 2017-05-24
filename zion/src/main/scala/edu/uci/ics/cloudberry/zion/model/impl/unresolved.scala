@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.Interval
@@ -21,24 +21,7 @@ object Unresolved {
     )
 
   def toUnresolved(schema: Schema): UnresolvedSchema = {
-    schema match {
-      case temporal: TemporalSchema =>
-        UnresolvedSchema(
-          temporal.typeName,
-          temporal.dimension,
-          temporal.measurement,
-          temporal.primaryKey.map(_.name),
-          Some(temporal.timeField.name)
-        )
-      case static: StaticSchema =>
-        UnresolvedSchema(
-          static.typeName,
-          static.dimension,
-          static.measurement,
-          static.primaryKey.map(_.name),
-          None
-        )
-    }
+    schema.toUnresolved
   }
 
   def toUnresolved(query: Query): UnresolvedQuery =
@@ -151,10 +134,29 @@ case class UnresolvedSchema(typeName: String,
       case "" => None
       case _ => fields.find(_.name == field) match {
         case some: Some[Field] => some
-        case None => throw new FieldNotFound(field)
+        case None => throw FieldNotFound(field)
       }
     }
 
+  def toResolved: Schema = {
+    val resolvedPrimaryKey = primaryKey.map(this.getField(_).get)
+    timeField match {
+      case Some(field) =>
+        val timeField = this.getField(field) match {
+          case Some(f) =>
+            if(f.isInstanceOf[TimeField]){
+              f.asInstanceOf[TimeField]
+            } else {
+              throw new QueryParsingException("Time field of " + typeName + "is not in TimeField format.\n")
+            }
+          case None =>
+            throw new QueryParsingException("Time field is not specified for " + typeName + ".\n")
+        }
+        TemporalSchema(typeName, dimension, measurement, resolvedPrimaryKey, timeField)
+      case None =>
+        StaticSchema(typeName, dimension, measurement, resolvedPrimaryKey)
+    }
+  }
 }
 
 /**

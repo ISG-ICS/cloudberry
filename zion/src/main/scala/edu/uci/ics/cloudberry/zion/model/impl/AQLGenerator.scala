@@ -31,21 +31,14 @@ class AQLGenerator extends IQLGenerator {
   //TODO combine with parseQuery
   override def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
-      schema match {
-        case temporal: TemporalSchema => temporal.copy()
-        case static: StaticSchema => static.copy()
-      }
+      schema.copySchema
     } else {
       ???
     }
   }
 
   def parseCreate(create: CreateView, sourceSchema: Schema): String = {
-    val resultSchema = calcResultSchema(create.query, sourceSchema) match {
-      case temporal: TemporalSchema => temporal
-      case static: StaticSchema => throw new Exception("Create View cannot be applied for static dataset " + static.typeName)
-    }
-
+    val resultSchema = calcResultSchema(create.query, sourceSchema).asTemporal
     val ddl: String = genDDL(resultSchema)
     val timeFilter = s"//with filter on '${resultSchema.timeField.name}'"
     val createDataSet =
@@ -358,12 +351,8 @@ class AQLGenerator extends IQLGenerator {
     val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
       f => mkNestDDL(f.name.split("\\.").toList, fieldType2ADMType(f) + (if (f.isOptional) "?" else ""))
     }
-    val schemaTypeName = schema match {
-      case temporal: TemporalSchema => temporal.typeName
-      case static: StaticSchema => static.typeName
-    }
     s"""
-       |create type ${schemaTypeName} if not exists as open {
+       |create type ${schema.getTypeName} if not exists as open {
        |${fields.mkString(",\n")}
        |}
     """.stripMargin

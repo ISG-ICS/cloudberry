@@ -63,7 +63,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
   }
 
   private def collectStats(start: DateTime): Unit = {
-    schema match {
+    dataSetInfo.schema match {
       case temporal: TemporalSchema =>
         val now = DateTime.now().minusMillis(1)
         val filter = FilterStatement(temporal.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))

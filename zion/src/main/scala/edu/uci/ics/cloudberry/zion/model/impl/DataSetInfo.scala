@@ -43,20 +43,7 @@ object DataSetInfo {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
         val dataSetInfo = js.get
         val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
-
-        val schema = dataSetInfo.schema
-        val primaryKey = schema.primaryKey.map(schema.getField(_).get)
-        val resolvedSchema = schema.timeField match {
-          case Some(field) =>
-            val timeField = schema.getField(field) match {
-              case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
-              case None if schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${schema.typeName}.")
-              case _ => throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
-            }
-            TemporalSchema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
-          case None =>
-            StaticSchema(schema.typeName, schema.dimension, schema.measurement, primaryKey)
-        }
+        val resolvedSchema = dataSetInfo.schema.toResolved
 
         DataSetInfo(dataSetInfo.name, resolvedQuery, resolvedSchema, dataSetInfo.dataInterval, dataSetInfo.stats)
 

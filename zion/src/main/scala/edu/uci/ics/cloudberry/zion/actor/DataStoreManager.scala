@@ -133,33 +133,13 @@ class DataStoreManager(metaDataset: String,
   //persistent metadata periodically
   context.system.scheduler.schedule(config.ViewMetaFlushInterval, config.ViewMetaFlushInterval, self, FlushMeta)
 
-  private def unresolvedSchemaToResolvedSchema(unresolved: UnresolvedSchema): Schema = {
-    val primaryKey = unresolved.primaryKey.map(unresolved.getField(_).get)
-    unresolved.timeField match {
-      case Some(field) =>
-        val timeField = unresolved.getField(field) match {
-          case Some(f) =>
-            if(f.isInstanceOf[TimeField]){
-              f.asInstanceOf[TimeField]
-            } else {
-              throw new QueryParsingException("Time field of " + unresolved.typeName + "is not in TimeField format.\n")
-            }
-          case None =>
-            throw new QueryParsingException("Time field is not specified for " + unresolved.typeName + ".\n")
-        }
-        TemporalSchema(unresolved.typeName, unresolved.dimension, unresolved.measurement, primaryKey, timeField)
-      case None =>
-        StaticSchema(unresolved.typeName, unresolved.dimension, unresolved.measurement, primaryKey)
-    }
-  }
-
   private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
 
     if(!metaData.contains(dataSetName)){
       try{
-        unresolvedSchemaToResolvedSchema(dataSetRawSchema) match {
+        dataSetRawSchema.toResolved match {
           case temporal: TemporalSchema =>
             collectStats(dataSetName, temporal) onComplete {
               case Success((interval, size)) =>
@@ -172,7 +152,7 @@ class DataStoreManager(metaDataset: String,
                 sender ! DataManagerResponse(true, "Register Finished: temporal dataset " + dataSetName + " has successfully registered.\n")
 
               case Failure(f) =>
-                throw new CollectStatsException(f.getMessage)
+                throw CollectStatsException(f.getMessage)
             }
 
           case static: StaticSchema =>
@@ -309,7 +289,7 @@ class DataStoreManager(metaDataset: String,
           cardinality <- conn.postQuery(parser.generate(cardinalityQuery, Map(dataset -> schema))).map(r => (r \\ "count").head.as[Long])
         } yield (new TJodaInterval(TimeFormat.parseDateTime(minTime), TimeFormat.parseDateTime(maxTime)), cardinality)
       case static: StaticSchema =>
-        throw new Exception("Cannot collect Stats information for static dataset " + static.typeName)
+        throw CollectStatsException("Cannot collect Stats information for static dataset " + static.typeName)
     }
 
 
