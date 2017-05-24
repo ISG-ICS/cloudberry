@@ -9,14 +9,16 @@ import edu.uci.ics.cloudberry.zion.model.schema._
   */
 object PopulationDataStore {
   val DatasetName = "twitter.US_population"
-  val PopulationSchema = StaticSchema(
-    "population",
-    Seq(
-      NumberField("id"),
-      NumberField("stateID")),
-    Seq(
-      NumberField("population")
-    ),
-    Seq(NumberField("id"))
+  val PopulationSchema = StaticSchema("population",
+                                      Seq(
+                                        NumberField("id"),
+                                        NumberField("stateID")
+                                      ),
+                                      Seq(
+                                        NumberField("population")
+                                      ),
+                                      Seq(
+                                        NumberField("id")
+                                      )
   )
 }

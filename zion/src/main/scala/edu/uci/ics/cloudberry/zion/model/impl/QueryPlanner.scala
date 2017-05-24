@@ -84,10 +84,7 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        val schema = source.schema match {
-          case temporal: TemporalSchema => temporal
-          case static: StaticSchema => throw new Exception("Split Query does not apply to static dataset " + static.typeName)
-        }
+        val schema = source.schema.asTemporal
         val queryInterval = query.getTimeInterval(schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
         val viewInterval = new Interval(new DateTime(0), view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
