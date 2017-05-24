@@ -31,7 +31,7 @@ object Migration_20170428 {
       |{
       |  "dataset":"twitter.ds_tweet_money",
       |  "schema":{
-      |  	"typeName":"twitter.typeTweet",
+      |  	"typeName":"twitter.typeTweetMoney",
       |    "dimension":[
       |      {"name":"create_at","isOptional":false,"datatype":"Time"},
       |      {"name":"id","isOptional":false,"datatype":"Number"},

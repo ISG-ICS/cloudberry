@@ -25,4 +25,7 @@ echo "Ingesting sample tweets..."
 echo "Ingesting population data..."
 ./script/ingestPopulationToLocalCluster.sh $host $nc
 
+echo "Ingesting drugmap data..."
+./script/ingestDrugMap.sh $host $nc
+
 echo "Data ingestion completed!"

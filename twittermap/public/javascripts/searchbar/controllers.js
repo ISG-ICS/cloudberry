@@ -13,7 +13,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
     $scope.updateSearchBox = function (keyword) {
       $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');
-    }
+    };
     $scope.predefinedSearch = function (keyword) {
       $scope.keyword = keyword;
       $scope.search();
