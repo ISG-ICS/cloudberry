@@ -9,6 +9,16 @@ import SelectionProvider from 'paraviewweb/src/InfoViz/Core/SelectionProvider';
 import HistogramSelector from 'paraviewweb/src/InfoViz/Native/HistogramSelector';
 import FieldSelector from 'paraviewweb/src/InfoViz/Native/FieldSelector';
 
+var asterixDBHost = "http://textdb.ics.uci.edu:19002/query/service";
+var cloudberryHost = "ws://localhost:9000/ws"
+var dataSource = "cloudberry";
+var dataModel = { fields: { byTimeResult: { }, byGeoResult: { } }, histogram1D_storage: { 32: { byTimeResult: { }, byGeoResult: { } } }, dirty: true };
+var xhttpState = "waiting";
+var Server;
+
+var t0;
+var t1;
+
 var JSONbig = require('json-bigint');
 
 var defaultNonSamplingDayRange = 1500;
@@ -17,8 +27,6 @@ var defaultSamplingSize = 10;
 
 // select a start date for the query
 var startDate = new Date(2015, 10, 22, 0, 0, 0, 0);
-
-var Server;
 
 var countRequest = JSON.stringify({
   dataset: 'twitter.ds_tweet',
@@ -139,60 +147,147 @@ function byTimeRequest(parameters) {
   };
 }
 
-function prepareButton() {
-  document.getElementById('cntBtn').onclick = function send() {
-    var parameters = {
-      dataset: 'twitter.ds_tweet',
-      keywords: document.getElementById('query').value.trim().split(/\s+/),
-      timeInterval: {
-        start: startDate,
-        end: new Date(),
-      },
-      timeBin: 'day',
-      geoLevel: 'state',
-      geoIds: [37, 51, 24, 11, 10, 34, 42, 9, 44, 48, 35, 4, 40, 6, 20, 32, 8, 49, 12, 22, 28, 1, 13, 45, 5, 47, 21, 29, 54, 17, 18, 39, 19, 55, 26, 27, 31, 56, 41, 46, 16, 30, 53, 38, 25, 36, 50, 33, 23, 2],
-    };
+function prepareSendButton() {
+    if (dataSource == "cloudberry"){
+    	// Prepare function to send query to cloudberry
+        document.getElementById('cntBtn').onclick = function send() {
+            var parameters = {
+            dataset: 'twitter.ds_tweet',
+            keywords: document.getElementById('query').value.trim().split(/\s+/),
+            timeInterval: {
+                start: startDate,
+                end: new Date(),
+            },
+            timeBin: 'day',
+            geoLevel: 'state',
+            geoIds: [37, 51, 24, 11, 10, 34, 42, 9, 44, 48, 35, 4, 40, 6, 20, 32, 8, 49, 12, 22, 28, 1, 13, 45, 5, 47, 21, 29, 54, 17, 18, 39, 19, 55, 26, 27, 31, 56, 41, 46, 16, 30, 53, 38, 25, 36, 50, 33, 23, 2],
+            };
 
-    var sampleJson = (JSON.stringify({
-      dataset: parameters.dataset,
-      filter: getFilter(parameters, defaultSamplingDayRange),
-      select: {
-        order: ['-create_at'],
-        limit: defaultSamplingSize,
-        offset: 0,
-        field: ['create_at', 'id', 'user.id', 'favorite_count', 'retweet_count'],
-      },
-      transform: {
-        wrap: {
-          key: 'sample',
-        },
-      },
-    }));
+            var sampleJson = (JSON.stringify({
+            dataset: parameters.dataset,
+            filter: getFilter(parameters, defaultSamplingDayRange),
+            select: {
+                order: ['-create_at'],
+                limit: defaultSamplingSize,
+                offset: 0,
+                field: ['create_at', 'id', 'user.id', 'favorite_count', 'retweet_count'],
+            },
+            transform: {
+                wrap: {
+                key: 'sample',
+                },
+            },
+            }));
 
-    var batchJson = (JSON.stringify({
-      batch: [byTimeRequest(parameters), byGeoRequest(parameters)],
-      option: {
-        sliceMillis: 2000,
-      },
-      transform: {
-        wrap: {
-          key: 'batch',
-        },
-      },
-    }));
+            var batchJson = (JSON.stringify({
+            batch: [byTimeRequest(parameters), byGeoRequest(parameters)],
+            option: {
+                sliceMillis: 2000,
+            },
+            transform: {
+                wrap: {
+                key: 'batch',
+                },
+            },
+            }));
 
-    Server.send(sampleJson);
-    Server.send(batchJson);
-  };
+            // Server.send(sampleJson);
+            Server.send(batchJson);
+            t0 = performance.now();
+        };
+    }
+    else if (dataSource == "asterixDB"){
+    	// Prepare function to send query to asterixDB
+        document.getElementById('cntBtn').onclick = function send() {
+            if (xhttpState == "waiting"){
+            	xhttpState = "time_query_pending";
+                var keyword = document.getElementById('query').value.trim().split(/\s+/);
+                var params = "statement=select day, count(*) as count from twitter.ds_tweet t where ftcontains(t.text, ['" + keyword + "']) group by get_interval_start_datetime(interval_bin(t.create_at, datetime('1990-01-01T00:00:00.000Z'), day_time_duration('P1D') )) as day";
+                xhttp.open("POST", asterixDBHost, true);
+                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhttp.send(params)
+                t0 = performance.now();
+            }
+        }
+    }
 }
 
-window.onload = prepareButton;
+function prepareSwitchButton(){
+    document.getElementById('cntBtn2').onclick = function change_source(){
+        if (dataSource == "cloudberry"){
+            dataSource = "asterixDB";
+        }
+        else {
+            dataSource = "cloudberry";
+        }
+        document.getElementById('source').innerHTML = dataSource;
+        prepareSendButton();
+    }
+}
+
+function onload_process(){
+    prepareSendButton();
+    prepareSwitchButton();
+}
 
 function dateDiffInDays(a, b) {
   var timeDiff = Math.abs(b.getTime() - a.getTime());
   var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
   return diffDays;
 }
+
+var xhttp = new XMLHttpRequest();
+xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+        // Typical action to be performed when the document is ready:
+        var response = JSONbig.parse(xhttp.responseText);
+        
+        if (xhttpState == "time_query_pending"){
+            // Processing time query result
+            var width = dateDiffInDays(startDate, new Date()) + 1;
+            var valuesTime = new Array(width);
+            valuesTime.fill(0.0001);
+
+            var tweetCount = 0;
+            for (var i = 0; i < response.results.length; i++) {
+                valuesTime[dateDiffInDays(startDate, new Date(response.results[i].day))] = response.results[i].count;
+                tweetCount += response.results[i].count;
+            }
+            document.getElementById('queryCount').innerHTML = tweetCount;
+            dataModel.fields.byTimeResult = { name: 'byTimeResult', range: [0.0, 1.0], active: true, id: 0 };
+            dataModel.histogram1D_storage['32'].byTimeResult = { max: 1.0, counts: valuesTime, name: 'byTimeResult', min: 0.0 };
+            
+            var keyword = document.getElementById('query').value.trim().split(/\s+/);
+            var params = "statement=select stateID, count(*) as count from twitter.ds_tweet t where ftcontains(t.text, ['" + keyword + "']) group by geo_tag.stateID as stateID";
+            xhttp.open("POST", asterixDBHost, true);
+            xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhttp.send(params);
+            
+            xhttpState = "geo_query_pending";            
+        }
+        else if (xhttpState == "geo_query_pending"){
+            // Processing geo query result
+            var valuesGeo = new Array(52);
+            valuesGeo.fill(0.0001);
+
+            for (var i = 0; i < response.results.length; i++) {
+                valuesGeo[parseInt(response.results[i].stateID, 10)] = parseInt(response.results[i].count, 10);
+            }
+            dataModel.fields.byGeoResult = { name: 'byGeoResult', range: [0, 52], active: true, id: 1 };
+            dataModel.histogram1D_storage['32'].byGeoResult = { max: 52, counts: valuesGeo, name: 'byGeoResult', min: 0 };
+
+            updateHistogram(dataModel);
+            
+            t1 = performance.now();
+            document.getElementById('queryTime').innerHTML = (t1 - t0) + " milliseconds."
+            
+            xhttpState = "waiting";
+        }
+    }
+};
+
+window.onload = onload_process();
+document.getElementById('source').innerHTML = dataSource;
 
 const bodyElt = document.querySelector('body');
 // '100vh' is 100% of the current screen height
@@ -265,7 +360,7 @@ function updateHistogram(dataModel) {
 }
 
 function connect() {
-  Server = new WebSocket('ws://localhost:9000/ws');
+  Server = new WebSocket(cloudberryHost);
 
   function requestLiveCounts() {
     if (Server.readyState === Server.OPEN) {
@@ -278,11 +373,10 @@ function connect() {
     var result = JSONbig.parse(event.data);
     var i;
     var width = dateDiffInDays(startDate, new Date()) + 1;
-    var dataModel = { fields: { byTimeResult: { }, byGeoResult: { } }, histogram1D_storage: { 32: { byTimeResult: { }, byGeoResult: { } } }, dirty: true };
     var valuesTime = new Array(width);
     var valuesGeo = new Array(52);
-    valuesTime.fill(0);
-    valuesGeo.fill(0);
+    valuesTime.fill(0.0001);
+    valuesGeo.fill(0.0001);
 
     switch (result.key) {
       case 'sample':
@@ -298,9 +392,12 @@ function connect() {
         break;
       case 'batch':
         // transform the query result to the JSON format required by ParaviewWeb
+        var tweetCount = 0;
         for (i = 0; i < result.value[0].length; i++) {
           valuesTime[dateDiffInDays(startDate, new Date(result.value[0][i].day))] = parseInt(result.value[0][i].count, 10);
+          tweetCount += parseInt(result.value[0][i].count, 10);
         }
+        document.getElementById('queryCount').innerHTML = tweetCount;
         dataModel.fields.byTimeResult = { name: 'byTimeResult', range: [0.0, 1.0], active: true, id: 0 };
         dataModel.histogram1D_storage['32'].byTimeResult = { max: 1.0, counts: valuesTime, name: 'byTimeResult', min: 0.0 };
 
@@ -311,6 +408,10 @@ function connect() {
         dataModel.histogram1D_storage['32'].byGeoResult = { max: 52, counts: valuesGeo, name: 'byGeoResult', min: 0 };
 
         updateHistogram(dataModel);
+        
+        t1 = performance.now();
+        document.getElementById('queryTime').innerHTML = (t1 - t0) + " milliseconds."
+        
         break;
       case 'totalCount':
         document.getElementById('totalCount').innerHTML = result.value[0][0].count;
