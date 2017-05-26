@@ -3,9 +3,9 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryParsingException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
-import scala.collection.mutable
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import play.api.Logger
 
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object QueryValidator {
   /**
@@ -13,27 +13,27 @@ object QueryValidator {
     *
     * @param query
     */
-  def validate(query: IQuery): Unit = {
+  def validate(query: IQuery, schemaMap: Map[String, Schema]): Unit = {
     query match {
       case q: Query =>
-        validateQuery(q)
-      case q: CreateView => validateCreate(q)
-      case q: AppendView => validateAppend(q)
-      case q: UpsertRecord => validateUpsert(q)
+        validateQuery(q, schemaMap)
+      case q: CreateView => validateCreate(q, schemaMap)
+      case q: AppendView => validateAppend(q, schemaMap)
+      case q: UpsertRecord => validateUpsert(q, schemaMap)
       case q: DropView => ???
       case _ => ???
     }
   }
 
-  private def validateCreate(q: CreateView): Unit = {
-    validateQuery(q.query)
+  private def validateCreate(q: CreateView, schemaMap: Map[String, Schema]): Unit = {
+    validateQuery(q.query, schemaMap)
   }
 
-  private def validateAppend(q: AppendView): Unit = {
-    validateQuery(q.query)
+  private def validateAppend(q: AppendView, schemaMap: Map[String, Schema]): Unit = {
+    validateQuery(q.query, schemaMap)
   }
 
-  private def validateUpsert(q: UpsertRecord): Unit = {
+  private def validateUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): Unit = {
     //TODO validate upsert
   }
 
@@ -46,7 +46,11 @@ object QueryValidator {
     t.isInstanceOf[Number] || implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
   }
 
-  def validateQuery(query: Query): Unit = {
+  def validateQuery(query: Query, schemaMap: Map[String, Schema]): Unit = {
+    if (!schemaMap(query.dataset).isTemporal) {
+      Logger.error("static dataset " + query.dataset + " does not support query " + query.toString)
+      return
+    }
     query.filter.foreach(validateFilter(_))
     query.lookup.foreach(validateLookup(_))
     query.unnest.foreach(validateUnnest(_))

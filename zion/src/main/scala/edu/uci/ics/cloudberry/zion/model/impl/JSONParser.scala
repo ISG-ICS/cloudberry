@@ -52,7 +52,7 @@ object JSONParser {
     */
   def resolve(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
     val resolved = QueryResolver.resolve(query, schemaMap).asInstanceOf[Query]
-    QueryValidator.validate(resolved)
+    QueryValidator.validate(resolved, schemaMap)
     resolved
   }
 

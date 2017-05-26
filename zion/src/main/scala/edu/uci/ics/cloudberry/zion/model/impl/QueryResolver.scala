@@ -30,26 +30,20 @@ object QueryResolver {
   }
 
   private def resolveQuery(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
-    schemaMap(query.dataset) match {
-      case temporal: TemporalSchema =>
-        val fieldMap = temporal.fieldMap
+    val schema = schemaMap(query.dataset)
+    val fieldMap = schema.fieldMap
+    val (append, fieldMapAfterAppend) = resolveAppends(query.append, fieldMap)
+    val (lookup, fieldMapAfterLookup) = resolveLookups(query.lookup, fieldMapAfterAppend, schemaMap)
+    val (unnest, fieldMapAfterUnnest) = resolveUnnests(query.unnest, fieldMapAfterLookup)
 
-        val (append, fieldMapAfterAppend) = resolveAppends(query.append, fieldMap)
-        val (lookup, fieldMapAfterLookup) = resolveLookups(query.lookup, fieldMapAfterAppend, schemaMap)
-        val (unnest, fieldMapAfterUnnest) = resolveUnnests(query.unnest, fieldMapAfterLookup)
-        val (filter, fieldMapAfterFilter) = resolveFilters(query.filter, fieldMapAfterUnnest)
-        val (groups, fieldMapAfterGroup) = resolveGroup(query.groups, fieldMapAfterFilter, schemaMap)
-        val (select, fieldMapAfterSelect) = resolveSelect(query.select, fieldMapAfterGroup)
-        val (globalAggr, fieldMapAfterGlobalAggr) = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
+    val (filter, fieldMapAfterFilter) = resolveFilters(query.filter, fieldMapAfterUnnest)
 
-        Query(query.dataset, append, lookup, filter, unnest, groups, select, globalAggr, query.estimable)
+    val (groups, fieldMapAfterGroup) = resolveGroup(query.groups, fieldMapAfterFilter, schemaMap)
+    val (select, fieldMapAfterSelect) = resolveSelect(query.select, fieldMapAfterGroup)
 
-      case static: StaticSchema =>
-        val fieldMap = static.fieldMap
-        val (append, fieldMapAfterAppend) = resolveAppends(query.append, fieldMap)
-        val (lookup, fieldMapAfterLookup) = resolveLookups(query.lookup, fieldMapAfterAppend, schemaMap)
-        Query(query.dataset, lookup = lookup, isEstimable = query.estimable)
-    }
+    val (globalAggr, fieldMapAfterGlobalAggr) = resolveGlobalAggregate(query.globalAggr, fieldMapAfterSelect)
+
+    Query(query.dataset, append, lookup, filter, unnest, groups, select, globalAggr, query.estimable)
   }
 
   private def resolveAppends(appends: Seq[UnresolvedAppendStatement],
