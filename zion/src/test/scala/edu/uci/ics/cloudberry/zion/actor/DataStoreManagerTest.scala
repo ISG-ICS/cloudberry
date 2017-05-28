@@ -355,11 +355,11 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Not Found Error: " + schemaFalseTimeField.timeField.get + " is not found in dimensions and measurements: not a valid field.\n"))
       ok
     }
-    "respond failure if register temporal dataset where time field is not a field type of timeField" in {
+    "respond failure if register temporal dataset where time field is not a valid type of timeField" in {
       val schemaNotATimeField = UnresolvedSchema("typeNotATimeField", Seq(field1, field2), Seq(field3, field4), Seq("myString"), Some("myNumber"))
       val registerRequestNotATimeField = Register("TableNotATimeField", schemaNotATimeField)
       sender.send(dataManager, registerRequestNotATimeField)
-      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Time field of " + schemaNotATimeField.typeName + "is not in TimeField format.\n"))
+      sender.expectMsg(DataManagerResponse(false, "Register Denied. Field Parsing Error: " + "Specified timeField " + schemaNotATimeField.timeField.get + " of schema " + schemaNotATimeField.typeName + " is not in TimeField format."))
       ok
     }
     "respond failure if register temporal dataset when collecting stats fails" in {

@@ -129,30 +129,28 @@ case class UnresolvedSchema(typeName: String,
                            ) {
   private lazy val fields = dimension ++ measurement
 
-  def getField(field: String): Option[Field] =
-    field.trim match {
-      case "" => None
-      case _ => fields.find(_.name == field) match {
-        case some: Some[Field] => some
-        case None => throw FieldNotFound(field)
-      }
+  def getField(field: String): Option[Field] = {
+    fields.find(_.name == field.trim) match {
+      case some: Some[Field] => some
+      case None => None
     }
+  }
 
   def toResolved: Schema = {
     val resolvedPrimaryKey = primaryKey.map(this.getField(_).get)
     timeField match {
       case Some(field) =>
-        val timeField = this.getField(field) match {
+        val resolvedTimeField = this.getField(field) match {
           case Some(f) =>
             if(f.isInstanceOf[TimeField]){
               f.asInstanceOf[TimeField]
             } else {
-              throw new QueryParsingException("Time field of " + typeName + "is not in TimeField format.\n")
+              throw new QueryParsingException("Specified timeField " + field + " of schema " + typeName + " is not in TimeField format.")
             }
           case None =>
-            throw new QueryParsingException("Time field is not specified for " + typeName + ".\n")
+            throw FieldNotFound(field)
         }
-        TemporalSchema(typeName, dimension, measurement, resolvedPrimaryKey, timeField)
+        TemporalSchema(typeName, dimension, measurement, resolvedPrimaryKey, resolvedTimeField)
       case None =>
         StaticSchema(typeName, dimension, measurement, resolvedPrimaryKey)
     }
