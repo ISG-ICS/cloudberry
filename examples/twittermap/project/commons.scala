@@ -4,7 +4,6 @@ import play.sbt.routes.RoutesKeys._
 import sbtassembly._
 import AssemblyKeys._
 
-
 object Commons {
   val appVersion = "1.0-SNAPSHOT"
   val appScalaVersion = "2.11.7"
