@@ -4,8 +4,7 @@
         "typeName": "twitter.typeCountyPopulation",
         "dimension": [
             { "name": "name", "isOptional": false, "datatype": "String" },
-            { "name": "countyID", "isOptional": false, "datatype": "Number" },
-            { "name": "create_at", "isOptional": false, "datatype": "Time" }
+            { "name": "countyID", "isOptional": false, "datatype": "Number" }
         ],
         "measurement": [
             { "name": "population", "isOptional": false, "datatype": "Number" }
