@@ -22,6 +22,9 @@ env:
     - TEST_COMMAND="clean coverage test"
 
 script:
+  - cd cloudberry
+  - travis_retry sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M clean coverage test coverageReport
+  - cd ../examples/twittermap
   - travis_retry sbt ++$TRAVIS_SCALA_VERSION -Dfile.encoding=UTF8 -J-XX:ReservedCodeCacheSize=256M clean coverage test coverageReport
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
