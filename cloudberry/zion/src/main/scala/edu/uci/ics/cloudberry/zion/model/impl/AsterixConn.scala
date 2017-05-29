@@ -1,14 +1,14 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.util.Logging
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
+import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json}
 import play.api.libs.ws.{WSClient, WSResponse}
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 
-class AsterixAQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn with Logging {
+class AsterixAQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn {
 
   import AsterixAQLConn._
 
@@ -27,21 +27,21 @@ class AsterixAQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionCont
       if (wsResponse.status == 200) {
         succeedHandler(wsResponse)
       } else {
-        log.error("AQL failed:" + Json.prettyPrint(wsResponse.json))
+        Logger.error("AQL failed:" + Json.prettyPrint(wsResponse.json))
         failureHandler(wsResponse)
       }
     }
   }
 
   def post(aql: String): Future[WSResponse] = {
-    log.debug("AQL:" + aql)
+    Logger.debug("AQL:" + aql)
     val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(aql)
     f.onFailure(wsFailureHandler(aql))
     f
   }
 
   protected def wsFailureHandler(aql: String): PartialFunction[Throwable, Unit] = {
-    case e: Throwable => log.error("WS Error:" + aql, e); throw e
+    case e: Throwable => Logger.error("WS Error:" + aql, e); throw e
   }
 }
 
@@ -49,7 +49,7 @@ object AsterixAQLConn {
   val defaultEmptyResponse = Json.toJson(Seq(Seq.empty[JsValue]))
 }
 
-class AsterixSQLPPConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn with Logging {
+class AsterixSQLPPConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn {
 
   import AsterixSQLPPConn._
 
@@ -71,21 +71,21 @@ class AsterixSQLPPConn(url: String, wSClient: WSClient)(implicit ec: ExecutionCo
         succeedHandler(wsResponse)
       }
       else {
-        log.error("Query failed:" + Json.prettyPrint(wsResponse.json))
+        Logger.error("Query failed:" + Json.prettyPrint(wsResponse.json))
         failureHandler(wsResponse)
       }
     }
   }
 
   def post(query: String): Future[WSResponse] = {
-    log.debug("Query:" + query)
+    Logger.debug("Query:" + query)
     val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(params(query))
     f.onFailure(wsFailureHandler(query))
     f
   }
 
   protected def wsFailureHandler(query: String): PartialFunction[Throwable, Unit] = {
-    case e: Throwable => log.error("WS Error:" + query, e)
+    case e: Throwable => Logger.error("WS Error:" + query, e)
       throw e
   }
 
