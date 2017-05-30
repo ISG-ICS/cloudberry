@@ -338,7 +338,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
         dataset.name must_== registerStatic.dataset
         dataset.createQueryOpt must_== None
         dataset.schema must_== registerStatic.schema.toResolved
-        dataset.dataInterval.getStart must_== new DateTime(2017, 1, 1, 12, 0, 0, 0)
+        dataset.dataInterval.getStart must_== new DateTime(1970, 1, 1, 0, 0, 0, 0)
         dataset.stats.cardinality must_== 1000.asInstanceOf[Long]
       }
       ok
