@@ -158,8 +158,9 @@ class DataStoreManager(metaDataset: String,
           case static: StaticSchema =>
             val currentDateTime = new DateTime()
             val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
-            val fakeStartDate = new DateTime(2017, 1, 1, 12, 0, 0, 0)
-            val fakeInterval = new Interval(fakeStartDate, currentDateTime)
+            val fakeStartDate = new DateTime(1970, 1, 1, 0, 0, 0, 0)
+            val fakeEndDate = new DateTime(Long.MaxValue)
+            val fakeInterval = new Interval(fakeStartDate, fakeEndDate)
             val registerDataSetInfo = DataSetInfo(dataSetName, None, static, fakeInterval, fakeStats)
 
             metaData.put(dataSetName, registerDataSetInfo)
