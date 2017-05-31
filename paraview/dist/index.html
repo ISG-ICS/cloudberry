@@ -17,10 +17,11 @@
     <div id='body'>
         <input type='text' id='query' name='query' />
         <button type="button" id='cntBtn'>Send</button>
-        <button type="button" id='cntBtn2'>Change data source</button>
+        <select id='datasource'>
+            <option value="cloudberry">Cloudberry</option>
+            <option value="asterixdb">AsterixDB</option>
+        </select>
     </div>
-    <div><strong>Data source:</strong></div>
-    <div id='source'></div>
     <div><strong>Total tweet count:</strong></div>
     <div id='totalCount'></div>
     <div><strong>Query result count:</strong></div>
