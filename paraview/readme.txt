@@ -6,7 +6,6 @@
     font-awesome
     mout
     json-bigint
-    http-server
 
 3) generate a single js file
     $ ./node_modules/.bin/webpack
@@ -14,9 +13,9 @@
 4) start cloudberry service
     $ sbt "project neo" "run"
 
-5) start http server for the demo
-    $ npm start
+5) start a php server for the demo under "cloudberry/paraview/dist" directory
+    $ php -S [IP address]:[port]
 
 The demo should be available at http://localhost:8080/
 
-Note: There is a cross origin request issue because of the query from the front end to the asterixDB. Since it is just for performance measurement purpose, I use a simple workaround to start chrom with the argument "--args --disable-web-security --user-data-dir" to enable cross origin request.
+Note: The cross origin request issue is solved by relaying the query to the AsterixDB from the php server.
