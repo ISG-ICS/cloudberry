@@ -1,7 +1,7 @@
 <?php
     function relayRequest($query){
-        $ch = curl_init(); 
-        curl_setopt($ch, CURLOPT_URL, "http://localhost:19002/query/service");
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "http://localhost:19002/query/service"); // URL to asterixDB
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
         curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/x-www-form-urlencoded'));
@@ -12,7 +12,7 @@
     }
     function registerDDL($ddl){
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "http://localhost:9000/admin/register");
+        curl_setopt($ch, CURLOPT_URL, "http://localhost:9000/admin/register"); // URL to Cloudberry registration service
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $ddl);
