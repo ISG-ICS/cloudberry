@@ -11,11 +11,12 @@ import FieldSelector from 'paraviewweb/src/InfoViz/Native/FieldSelector';
 
 var JSONbig = require('json-bigint');
 
-var asterixDBHost = "proxy.php";
+var httpProxy = "proxy.php";
 var cloudberryHost = "ws://localhost:9000/ws"
 var dataModel = { fields: { byTimeResult: { }, byGeoResult: { } }, histogram1D_storage: { 32: { byTimeResult: { }, byGeoResult: { } } }, dirty: true };
-var xhttpState = "waiting";
+var xhttpState = "initializing";
 var WSServer;
+var xhttp = new XMLHttpRequest();
 
 // timestamp for performance measurement
 var t0;
@@ -172,16 +173,59 @@ function dateDiffInDays(a, b) {
     return diffDays;
 }
 
-// http query for asterixDB
-var xhttp = new XMLHttpRequest();
+function register_dataset(){
+    var TwitterMapDDL = 
+    '{' +
+      '"dataset":"twitter.ds_tweet",' +
+      '"schema":{' +
+        '"typeName":"twitter.typeTweet",' +
+        '"dimension":[' +
+          '{"name":"create_at","isOptional":false,"datatype":"Time"},' +
+          '{"name":"id","isOptional":false,"datatype":"Number"},' +
+          '{"name":"coordinate","isOptional":false,"datatype":"Point"},' +
+          '{"name":"lang","isOptional":false,"datatype":"String"},' +
+          '{"name":"is_retweet","isOptional":false,"datatype":"Boolean"},' +
+          '{"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},' +
+          '{"name":"user_mentions","isOptional":true,"datatype":"Bag","innerType":"Number"},' +
+          '{"name":"user.id","isOptional":false,"datatype":"Number"},' +
+          '{"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},' +
+          '{"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},' +
+          '{"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},' +
+          '{"name":"geo","isOptional":false,"datatype":"Hierarchy","innerType":"Number",' +
+            '"levels":[' +
+              '{"level":"state","field":"geo_tag.stateID"},' +
+              '{"level":"county","field":"geo_tag.countyID"},' +
+              '{"level":"city","field":"geo_tag.cityID"}' +
+            ']' +
+          '}' +
+        '],' +
+        '"measurement":[' +
+          '{"name":"text","isOptional":false,"datatype":"Text"},' +
+          '{"name":"in_reply_to_status","isOptional":false,"datatype":"Number"},' +
+          '{"name":"in_reply_to_user","isOptional":false,"datatype":"Number"},' +
+          '{"name":"favorite_count","isOptional":false,"datatype":"Number"},' +
+          '{"name":"retweet_count","isOptional":false,"datatype":"Number"},' +
+          '{"name":"user.status_count","isOptional":false,"datatype":"Number"}' +
+        '],' +
+        '"primaryKey":["id"],' +
+        '"timeField":"create_at"' +
+      '}' +
+    '}';
+    
+    xhttp.open("POST", httpProxy, true);
+    xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+    xhttp.send("cloudberry=" + TwitterMapDDL);
+}
 
 // process query result from asterixDB
 xhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
-        var response = JSONbig.parse(xhttp.responseText);
-        
-        if (xhttpState == "query_pending"){
+        if (xhttpState == "initializing"){
+            xhttpState = "waiting";
+        }
+        else if (xhttpState == "query_pending"){
             // transform the query result into dataModel required by paraviewweb
+            var response = JSONbig.parse(xhttp.responseText);
             var tweetCount = 0;
             var width = dateDiffInDays(startDate, new Date()) + 1;
             var valuesTime = new Array(width);
@@ -262,9 +306,9 @@ function prepareSendButton() {
                 }
                 
                 // send the query and start the timer
-                xhttp.open("POST", asterixDBHost, true);
+                xhttp.open("POST", httpProxy, true);
                 xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xhttp.send(params)
+                xhttp.send("asterixdb=" + params);
                 t0 = performance.now();
             }
         }
@@ -273,6 +317,7 @@ function prepareSendButton() {
 
 function onload_process(){
     prepareSendButton();
+    register_dataset();
 }
 
 window.onload = onload_process();
