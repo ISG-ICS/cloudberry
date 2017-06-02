@@ -78,22 +78,23 @@ class DataStoreManager(metaDataset: String,
       //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
-          if (!info.schema.isTemporal) {
+          if (info.schema.isTemporal) {
             log.error("Append View operation cannot be applied to static dataset " + info.name)
-          }
-          info.createQueryOpt match {
-            case Some(createQuery) =>
-              if (createQuery.filter.exists(_.field == info.schema.getTimeField)) {
-                log.error("the create view should not contains the time dimension")
-              } else {
-                val now = DateTime.now()
-                val compensate = FilterStatement(info.schema.getTimeField, None, Relation.inRange,
-                  Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
-                val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
-                answerQuery(AppendView(info.name, appendQ), Some(now))
-              }
-            case None =>
-              log.warning(s"can not append to a base dataset: $append.dataset.")
+          } else {
+            info.createQueryOpt match {
+              case Some(createQuery) =>
+                if (createQuery.filter.exists(_.field == info.schema.getTimeField)) {
+                  log.error("the create view should not contains the time dimension")
+                } else {
+                  val now = DateTime.now()
+                  val compensate = FilterStatement(info.schema.getTimeField, None, Relation.inRange,
+                    Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
+                  val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
+                  answerQuery(AppendView(info.name, appendQ), Some(now))
+                }
+              case None =>
+                log.warning(s"can not append to a base dataset: $append.dataset.")
+            }
           }
         case None =>
           log.warning(s"view $append.dataset does not exist.")

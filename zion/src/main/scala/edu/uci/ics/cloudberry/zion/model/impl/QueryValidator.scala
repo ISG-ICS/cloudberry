@@ -48,8 +48,7 @@ object QueryValidator {
 
   def validateQuery(query: Query, schemaMap: Map[String, Schema]): Unit = {
     if (!schemaMap(query.dataset).isTemporal) {
-      Logger.error("static dataset " + query.dataset + " does not support query " + query.toString)
-      return
+      throw new IllegalArgumentException("static dataset " + query.dataset + " does not support query " + query.toString)
     }
     query.filter.foreach(validateFilter(_))
     query.lookup.foreach(validateLookup(_))
