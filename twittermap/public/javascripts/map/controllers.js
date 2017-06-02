@@ -3,7 +3,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     $scope.result = {};
     $scope.doNormalization = false;
     $scope.doSentiment = false;
-    $scope.infoPromp = "Count";
+    $scope.infoPromp = config.mapLegend;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -181,7 +181,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          '{{ infoPromp }}: {{ selectedPlace.properties.countText || "0" }}'
+          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -671,7 +671,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if($scope.doSentiment) {
             $scope.infoPromp = "Score";  // change the info promp
           } else {
-            $scope.infoPromp = "Count";
+            $scope.infoPromp = config.mapLegend;
           }
           drawMap($scope.result);
         }
