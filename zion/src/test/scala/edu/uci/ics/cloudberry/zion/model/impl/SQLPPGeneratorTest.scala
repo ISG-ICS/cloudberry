@@ -110,7 +110,6 @@ class SQLPPGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
@@ -125,7 +124,6 @@ class SQLPPGeneratorTest extends Specification {
           |offset 0;
           | """.stripMargin.trim)
     }
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     "translate a text contain + time + geo id set filter and group by hashtags" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
@@ -145,7 +143,6 @@ class SQLPPGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     "translate a simple filter by time and group by time query max id" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMax))
@@ -159,7 +156,6 @@ class SQLPPGeneratorTest extends Specification {
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
           | """.stripMargin.trim)
     }
-    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     "translate a simple filter by time and group by time query min id" in {
       val filter = Seq(timeFilter)
@@ -203,7 +199,6 @@ class SQLPPGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
-    // ~~~~~~ not done
     "translate a text contain filter and group by geocell 10th" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
@@ -217,7 +212,7 @@ class SQLPPGeneratorTest extends Specification {
           |group by get_points(spatial_cell(t.`coordinate`, create_point(0.0,0.0), 0.1, 0.1))[0] as `cell` group as g;
         """.stripMargin.trim)
     }
-// not done
+
     "translate a text contain filter and group by geocell 100th" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
@@ -248,7 +243,6 @@ class SQLPPGeneratorTest extends Specification {
           stripMargin.trim)
     }
 
-    // not done
     "translate a text contain filter and group by bin" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byBin), Seq(aggrCount))
@@ -300,7 +294,6 @@ class SQLPPGeneratorTest extends Specification {
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1S") )) as `sec` group as g;
           | """.stripMargin.trim)
     }
-    //~~~~~~~~~~~~~~~~~~~
     "translate group by minute" in {
       val group = GroupStatement(Seq(byMinute), Seq(aggrCount))
       val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
@@ -312,7 +305,6 @@ class SQLPPGeneratorTest extends Specification {
           |group by get_interval_start_datetime(interval_bin(t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1M") )) as `min` group as g;
           | """.stripMargin.trim)
     }
-    //~~~~~~~~~~~~~~~~~~~
 
     "translate group by day" in {
       val group = GroupStatement(Seq(byDay), Seq(aggrCount))
@@ -553,7 +545,7 @@ class SQLPPGeneratorTest extends Specification {
       ok
     }
 
-// intersect not done
+
     "translate a filter having point relation with select" in {
       val filter = Seq(pointFilter)
       val select = Option(selectRecent)
