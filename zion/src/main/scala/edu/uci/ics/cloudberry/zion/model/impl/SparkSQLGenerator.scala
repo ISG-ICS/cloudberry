@@ -45,31 +45,34 @@ class SparkSQLGenerator extends IQLGenerator {
 
   protected val globalAggrVar: String = "*"
 
-  protected val outerSelectVar: String = "s"
+  //  protected val outerSelectVar: String = "s"
 
   protected val quote = "`"
 
-  protected val suffix: String = ";"
-
-  val datetime: String = ""
+  //  val datetime: String = ""
   val round: String = "round"
 
-  val dayTimeDuration: String = "day_time_duration"
-  val yearMonthDuration: String = "year_month_duration"
-  val getIntervalStartDatetime: String = "get_interval_start_datetime"
-  val intervalBin: String = "interval_bin"
+  //  val dayTimeDuration: String = "day_time_duration"
+  //  val yearMonthDuration: String = "year_month_duration"
+  //  val getIntervalStartDatetime: String = "get_interval_start_datetime"
+  //  val intervalBin: String = "interval_bin"
   val hour: String = "hour"
+  val sec: String = "sec"
+  val minute: String = "minute"
+  val day: String = "day"
+  val month: String = "month"
+  val year: String = "year"
 
-  val spatialIntersect: String = "spatial_intersect"
-  val createRectangle: String = "create_rectangle"
+  //  val spatialIntersect: String = "spatial_intersect"
+  //  val createRectangle: String = "create_rectangle"
   val createPoint: String = "create_point"
   val spatialCell: String = "spatial_cell"
   val getPoints: String = "get_points"
 
-  val similarityJaccard: String = "similarity_jaccard"
+  //  val similarityJaccard: String = "similarity_jaccard"
   val fullTextContains: String = "like"
   val contains: String = "contains"
-  val wordTokens: String = "word_tokens"
+  //  val wordTokens: String = "word_tokens"
 
   val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "count",
@@ -79,7 +82,7 @@ class SparkSQLGenerator extends IQLGenerator {
     Sum -> "sum"
   )
 
-  def getAggregateStr(aggregate: AggregateFunc): String = {
+  protected def getAggregateStr(aggregate: AggregateFunc): String = {
     aggregateFuncMap.get(aggregate) match {
       case Some(impl) =>
         impl
@@ -93,13 +96,13 @@ class SparkSQLGenerator extends IQLGenerator {
     val result = query match {
       case q: Query => parseQuery(q, schemaMap)
       case q: CreateView => parseCreate(q, schemaMap)
-      //      case q: AppendView => parseAppend(q, schemaMap)
-      //      case q: UpsertRecord => parseUpsert(q, schemaMap)
-      //      case q: DropView => parseDrop(q, schemaMap)
-      //      case q: DeleteRecord => parseDelete(q, schemaMap)
+      case q: AppendView => parseAppend(q, schemaMap)
+      case q: UpsertRecord => parseUpsert(q, schemaMap)
+      case q: DropView => parseDrop(q, schemaMap)
+      case q: DeleteRecord => parseDelete(q, schemaMap)
       case _ => ???
     }
-    s"$result$suffix"
+    s"$result"
   }
 
 
@@ -109,8 +112,8 @@ class SparkSQLGenerator extends IQLGenerator {
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""
-         |drop dataset ${create.dataset} if exists;
-         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
+         |drop ${create.dataset} if exists;
+         |create ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
          |""".stripMargin
     val insert =
       s"""
@@ -153,34 +156,34 @@ class SparkSQLGenerator extends IQLGenerator {
     }
   }
 
-  //  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
-  //    s"""
-  //       |upsert into ${append.dataset} (
-  //       |${parseQuery(append.query, schemaMap)}
-  //       |)""".stripMargin
-  //  }
-  //
-  //  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
-  //    s"""
-  //       |upsert into ${q.dataset} (
-  //       |${Json.toJson(q.records)}
-  //       |)""".stripMargin
-  //  }
-  //
-  //  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
-  //    if (delete.filters.isEmpty) {
-  //      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
-  //    }
-  //    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
-  //    val queryBuilder = new StringBuilder()
-  //    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
-  //    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
-  //    return queryBuilder.toString()
-  //  }
-  //
-  //  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
-  //    s"drop dataset ${query.dataset} if exists"
-  //  }
+  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
+    s"""
+       |upsert into ${append.dataset} (
+       |${parseQuery(append.query, schemaMap)}
+       |)""".stripMargin
+  }
+
+  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
+    s"""
+       |upsert into ${q.dataset} (
+       |${Json.toJson(q.records)}
+       |)""".stripMargin
+  }
+
+  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+    if (delete.filters.isEmpty) {
+      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
+    }
+    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
+    val queryBuilder = new StringBuilder()
+    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
+    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
+    return queryBuilder.toString()
+  }
+
+  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
+    s"drop dataset ${query.dataset} if exists"
+  }
 
 
   def calcResultSchema(query: Query, schema: Schema): Schema = {
@@ -206,7 +209,7 @@ class SparkSQLGenerator extends IQLGenerator {
     }
   }
 
-  def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
+  protected def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
     val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)
@@ -341,11 +344,24 @@ class SparkSQLGenerator extends IQLGenerator {
     sb.toString()
   }
 
-
-  protected def parseGeoCell(scale: Double, fieldExpr: String, dataType: DataType.Value): String = {
-    val origin = s"${createPoint}(0.0,0.0)"
-    s"${getPoints}(${spatialCell}(${fieldExpr}, $origin, ${1 / scale}, ${1 / scale}))[0]"
+  protected def parseNumberRelation(filter: FilterStatement,
+                                    fieldExpr: String): String = {
+    filter.relation match {
+      case Relation.inRange =>
+        if (filter.values.size != 2) throw new QueryParsingException(s"relation: ${filter.relation} require two parameters")
+        s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
+      case Relation.in =>
+        s"$fieldExpr in ( ${filter.values.mkString(",")} )"
+      case _ =>
+        s"$fieldExpr ${filter.relation} ${filter.values(0)}"
+    }
   }
+
+
+  //  protected def parseGeoCell(scale: Double, fieldExpr: String, dataType: DataType.Value): String = {
+  //    val origin = s"${createPoint}(0.0,0.0)"
+  //    s"${getPoints}(${spatialCell}(${fieldExpr}, $origin, ${1 / scale}, ${1 / scale}))[0]"
+  //  }
 
   protected def parseAggregateFunc(aggr: AggregateStatement,
                                    fieldExpr: String): String = {
@@ -353,7 +369,7 @@ class SparkSQLGenerator extends IQLGenerator {
       if (aggr.field.name.equals("*")) {
         s"$aggFunc($groupVar)"
       } else {
-        s"$aggFunc( (select value $groupVar.$fieldExpr from $groupVar) )"
+        s"$aggFunc($fieldExpr)"
       }
     }
 
@@ -386,8 +402,7 @@ class SparkSQLGenerator extends IQLGenerator {
     val unnestStr = unnest.zipWithIndex.map {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
-        //        val newExpr = s"${quote}hash$id$quote"
-        val newExpr = s"${quote}hash$quote"
+        val newExpr = s"${quote}hashtags$quote"
         producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
         if (unnest.field.isOptional) {
           unnestTestStrs += s"${expr.refExpr} is not null"
@@ -403,7 +418,7 @@ class SparkSQLGenerator extends IQLGenerator {
     groupBy.funcOpt match {
       case Some(func) =>
         func match {
-          case bin: Bin => s"${round}($fieldExpr/${bin.scale})*${bin.scale}"
+          //          case bin: Bin => s"${round}($fieldExpr/${bin.scale})*${bin.scale}"
           //          case interval: Interval =>
           //            val duration = parseIntervalDuration(interval)
           //            s"${typeImpl.getIntervalStartDatetime}(${typeImpl.intervalBin}($fieldExpr, '1990-01-01T00:00:00.000Z', $duration))"
@@ -414,9 +429,9 @@ class SparkSQLGenerator extends IQLGenerator {
             val hierarchyField = groupBy.field.asInstanceOf[HierarchyField]
             val field = hierarchyField.levels.find(_._1 == level.levelTag).get
             s"$fieldExpr.${field._2}"
-          case GeoCellTenth => parseGeoCell(10, fieldExpr, groupBy.field.dataType)
-          case GeoCellHundredth => parseGeoCell(100, fieldExpr, groupBy.field.dataType)
-          case GeoCellThousandth => parseGeoCell(1000, fieldExpr, groupBy.field.dataType)
+          //          case GeoCellTenth => parseGeoCell(10, fieldExpr, groupBy.field.dataType)
+          //          case GeoCellHundredth => parseGeoCell(100, fieldExpr, groupBy.field.dataType)
+          //          case GeoCellThousandth => parseGeoCell(1000, fieldExpr, groupBy.field.dataType)
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
         }
       case None => fieldExpr
@@ -430,16 +445,21 @@ class SparkSQLGenerator extends IQLGenerator {
       case Some(group) =>
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val groupStrs = group.bys.map { by =>
+          //          println(exprMap)
           val fieldExpr = exprMap(by.field.name)
           val as = by.as.getOrElse(by.field)
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
           val newExpr = s"$quote${as.name}$quote"
           producedExprs += (as.name -> FieldExpr(newExpr, newExpr))
-          if (newExpr != s"`hash`"){
-            s"$newExpr($groupExpr)"
+          //          println("newExpr: ", newExpr)
+          if (newExpr == s"${quote}hashtags${quote}" || newExpr == s"${quote}tag${quote}"){
+            s"${quote}hashtags${quote}"
+          }
+          else if (newExpr == s"${quote}state${quote}"){
+            s"$groupExpr"
           }
           else{
-            s"$groupExpr"
+            s"$newExpr($groupExpr)"
           }
         }
         val groupStr = s"group by ${groupStrs.mkString(",")}"
@@ -478,11 +498,11 @@ class SparkSQLGenerator extends IQLGenerator {
   private def parseSelect(selectOpt: Option[SelectStatement],
                           exprMap: Map[String, FieldExpr], query: Query,
                           queryBuilder: StringBuilder): ParsedResult = {
-    println("exprMap is:", exprMap)
+    //    println("exprMap is:", exprMap)
     selectOpt match {
       case Some(select) =>
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
-        println("producedExprs is:", producedExprs)
+        //        println("producedExprs is:", producedExprs)
 
         val orderStrs = select.orderOn.zip(select.order).map {
           case (orderOn, order) =>
@@ -491,15 +511,15 @@ class SparkSQLGenerator extends IQLGenerator {
             s"${expr} $orderStr"
           //          "order by `count` desc": expr = `count`(orderOn), orderStr = desc
         }
-        println("orderStrs is:", orderStrs)
+        //        println("orderStrs is:", orderStrs)
 
         val orderStr =
-          if (!orderStrs.isEmpty) {
+          if (orderStrs.nonEmpty) {
             orderStrs.mkString("order by ", ",", "")
           } else {
             ""
           }
-        println("orderStr is:", orderStr)
+        //        println("orderStr is:", orderStr)
 
         val limitStr = s"limit ${select.limit}"
         appendIfNotEmpty(queryBuilder, orderStr)
@@ -510,9 +530,9 @@ class SparkSQLGenerator extends IQLGenerator {
 
         if (select.fields.isEmpty) {
           producedExprs ++= exprMap
-          println("producedExprs after ++:", producedExprs)
+          //          println("producedExprs after ++:", producedExprs)
         } else {
-          println("exprMap is:", exprMap)
+          //          println("exprMap is:", exprMap)
           select.fields.foreach {
             case AllField =>
               producedExprs ++= exprMap
@@ -526,15 +546,14 @@ class SparkSQLGenerator extends IQLGenerator {
           }
         }
         val newExprMap = producedExprs.result().toMap
-        println("newExprMap:", newExprMap)
+        //        println("newExprMap:", newExprMap)
         //check if fields is empty
         val projectStr = if (select.fields.isEmpty) {
-          //          if (query.hasUnnest || query.hasGroup) {
-          //            parseProject(exprMap)
-          //          } else {
-          //            s"select *"
-          //          }
-          s"select *"
+          if (query.hasUnnest || query.hasGroup) {
+            parseProject(exprMap)
+          } else {
+            s"select *"
+          }
         } else {
           //          parseProject(newExprMap)
           parseProject(exprMap)
@@ -559,9 +578,13 @@ class SparkSQLGenerator extends IQLGenerator {
       case (field, expr) => field != "*" && expr.refExpr != sourceVar
     }.map {
       case (field, expr) =>
-        if (s"${expr.defExpr}" == "`hour`" || s"${expr.defExpr}" == "`day`" || s"${expr.defExpr}" == "`month`"){
+        //        println(expr.defExpr)
+        if (s"${expr.defExpr}" == s"$quote$sec$quote" || s"${expr.defExpr}" == s"$quote$minute$quote" || s"${expr.defExpr}" == s"$quote$hour$quote" || s"${expr.defExpr}" == s"$quote$day$quote" || s"${expr.defExpr}" == s"$quote$month$quote" || s"${expr.defExpr}" == s"$quote$year$quote"){
           //          s"${expr.defExpr}(t.`create_at`) as $quote$field$quote"
-          s"${expr.defExpr}(t.`create_at`)"
+          s"${expr.defExpr}($sourceVar.${quote}create_at${quote}) as ${expr.defExpr}"
+        }
+        else if (s"${expr.defExpr}" == s"${quote}state${quote}"){
+          s"$sourceVar.geo_tag.stateID as ${expr.defExpr}"
         }
         else {
           s"${expr.defExpr} as $quote$field$quote"
@@ -581,7 +604,11 @@ class SparkSQLGenerator extends IQLGenerator {
         val newDefExpr = if (aggr.func == Count) {
           globalAggrVar
         } else {
-          s"${sourceVar}.$quote${aggr.field.name}$quote"
+          if (aggr.field.name == getAggregateStr(Count)){
+            s"$quote${aggr.field.name}$quote"
+          }
+          else
+            s"${sourceVar}.$quote${aggr.field.name}$quote"
         }
         val newRefExpr = s"$quote${aggr.as.name}$quote"
 
@@ -599,20 +626,6 @@ class SparkSQLGenerator extends IQLGenerator {
         ParsedResult(Seq.empty, exprMap)
     }
   }
-
-  protected def parseNumberRelation(filter: FilterStatement,
-                                    fieldExpr: String): String = {
-    filter.relation match {
-      case Relation.inRange =>
-        if (filter.values.size != 2) throw new QueryParsingException(s"relation: ${filter.relation} require two parameters")
-        s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
-      case Relation.in =>
-        s"$fieldExpr in ( ${filter.values.mkString(",")} )"
-      case _ =>
-        s"$fieldExpr ${filter.relation} ${filter.values(0)}"
-    }
-  }
-
 
 
   /**

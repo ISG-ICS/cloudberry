@@ -8,6 +8,7 @@ object TestQuery {
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
+  val TwitterDataSetForSparkSQL = "twitter_ds_tweet"
   val PopulationDataSet = PopulationDataStore.DatasetName
   val literacyDataSet = LiteracyDataStore.DatasetName
   val twitterSchema = TwitterDataStore.TwitterSchema
@@ -24,8 +25,8 @@ object TestQuery {
   val text = twitterField("text")
   val lang = twitterField("lang")
 
-  val tag = Field.as(hashtags, "hash")
-  val hash = Field.as(hashtags, "hash")
+  val tag = Field.as(hashtags, "tag")
+  val hash = Field.as(hashtags, "hashtags")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
@@ -85,6 +86,7 @@ object TestQuery {
   val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
   val minuteInterval = Interval(TimeUnit.Minute)
   val byMinute = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "min")))
+  val byMinuteForSparkSql = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "minute")))
   val hourInterval = Interval(TimeUnit.Hour)
   val byHour = ByStatement(createAt, Some(Interval(TimeUnit.Hour)), Some(Field.as(hourInterval(createAt), "hour")))
   val dayInterval = Interval(TimeUnit.Day)
