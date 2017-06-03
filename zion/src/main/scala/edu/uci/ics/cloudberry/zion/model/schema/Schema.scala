@@ -223,7 +223,7 @@ case class TemporalSchema(typeName: String,
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
 }
 
-case class StaticSchema(typeName: String,
+case class LookupSchema(typeName: String,
                         dimension: Seq[Field],
                         measurement: Seq[Field],
                         primaryKey: Seq[Field]
@@ -233,7 +233,7 @@ case class StaticSchema(typeName: String,
     throw FieldNotFound(s"Static schema $typeName does not have timeField.")
   }
 
-  override def copySchema: StaticSchema = this.copy()
+  override def copySchema: LookupSchema = this.copy()
 
   override def asTemporal: TemporalSchema = {
     throw new IllegalArgumentException(s"$typeName is a static schema.")

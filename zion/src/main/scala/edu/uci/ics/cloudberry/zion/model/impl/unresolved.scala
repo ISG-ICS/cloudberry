@@ -119,7 +119,7 @@ object Unresolved {
   * The differences are
   *   [[primaryKey]] is string,
   *   [[timeField]] is Option[String] corresponding to temporal schema and static schema.
-  * which are resolved later into [[Field]] and to [[TemporalSchema]] or [[StaticSchema]].
+  * which are resolved later into [[Field]] and to [[TemporalSchema]] or [[LookupSchema]].
   */
 case class UnresolvedSchema(typeName: String,
                             dimension: Seq[Field],
@@ -152,7 +152,7 @@ case class UnresolvedSchema(typeName: String,
         }
         TemporalSchema(typeName, dimension, measurement, resolvedPrimaryKey, resolvedTimeField)
       case None =>
-        StaticSchema(typeName, dimension, measurement, resolvedPrimaryKey)
+        LookupSchema(typeName, dimension, measurement, resolvedPrimaryKey)
     }
   }
 }

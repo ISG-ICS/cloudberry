@@ -156,7 +156,7 @@ class DataStoreManager(metaDataset: String,
                 throw CollectStatsException(f.getMessage)
             }
 
-          case static: StaticSchema =>
+          case static: LookupSchema =>
             val currentDateTime = new DateTime()
             val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
             val fakeStartDate = new DateTime(1970, 1, 1, 0, 0, 0, 0)
@@ -166,7 +166,7 @@ class DataStoreManager(metaDataset: String,
 
             metaData.put(dataSetName, registerDataSetInfo)
             flushMetaData()
-            sender ! DataManagerResponse(true, "Register Finished: static dataset " + dataSetName + " has successfully registered.\n")
+            sender ! DataManagerResponse(true, "Register Finished: lookup dataset " + dataSetName + " has successfully registered.\n")
         }
       } catch {
         case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")

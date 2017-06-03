@@ -9,7 +9,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
   */
 object LiteracyDataStore {
   val DatasetName = "twitter.US_literacy"
-  val LiteracySchema = StaticSchema("literacy",
+  val LiteracySchema = LookupSchema("literacy",
                                     Seq(
                                       NumberField("id"),
                                       NumberField("stateID")),

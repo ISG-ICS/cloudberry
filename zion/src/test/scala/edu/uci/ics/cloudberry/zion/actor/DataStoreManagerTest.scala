@@ -327,9 +327,9 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       }
       ok
     }
-    "respond success if register static dataset and registered dataset can be successfully retrieved with designated stats information" in {
+    "respond success if register lookup dataset and registered dataset can be successfully retrieved with designated stats information" in {
       sender.send(dataManager, registerStatic)
-      sender.expectMsg(DataManagerResponse(true, "Register Finished: static dataset " + registerStatic.dataset + " has successfully registered.\n"))
+      sender.expectMsg(DataManagerResponse(true, "Register Finished: lookup dataset " + registerStatic.dataset + " has successfully registered.\n"))
       meta.receiveOne(1 second)
 
       sender.send(dataManager, AskInfoAndViews(registerStatic.dataset))

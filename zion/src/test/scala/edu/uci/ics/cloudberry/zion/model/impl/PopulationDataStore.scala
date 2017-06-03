@@ -9,7 +9,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
   */
 object PopulationDataStore {
   val DatasetName = "twitter.US_population"
-  val PopulationSchema = StaticSchema("population",
+  val PopulationSchema = LookupSchema("population",
                                       Seq(
                                         NumberField("id"),
                                         NumberField("stateID")
