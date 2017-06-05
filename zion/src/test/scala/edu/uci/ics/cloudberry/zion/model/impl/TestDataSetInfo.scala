@@ -26,12 +26,12 @@ object TestDataSetInfo {
   val groupByBinQuery = new Query(TwitterDataSet, groups = Some(groupByBin))
 
 
-  val simpleDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, TemporalSchema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val fieldsDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, TemporalSchema("tweet", Seq(NumberField("id"), StringField("name"), createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val queryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(createQuery), TemporalSchema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val berryAggrByTagViewDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(berryAggrByTagQuery), TemporalSchema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val unnestQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(unnestQuery), TemporalSchema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
-  val byBinDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(groupByBinQuery), TemporalSchema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val simpleDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val fieldsDataSetInfo = new DataSetInfo("twitter.ds_tweet", None, Schema("tweet", Seq(NumberField("id"), StringField("name"), createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val queryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(createQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val berryAggrByTagViewDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(berryAggrByTagQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val unnestQueryDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(unnestQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
+  val byBinDataSetInfo = new DataSetInfo("twitter.ds_tweet", Some(groupByBinQuery), Schema("tweet", Seq(createAt), Seq.empty, Seq.empty, createAt), interval, new Stats(endDateTime, endDateTime, endDateTime, 0))
 
 
   val simpleDataSetInfoJSON = Json.parse(

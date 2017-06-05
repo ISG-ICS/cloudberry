@@ -43,7 +43,7 @@ class DataStoreManager(metaDataset: String,
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
-        val schemaMap: mutable.Map[String, Schema] = new mutable.HashMap[String, Schema]
+        val schemaMap: mutable.Map[String, AbstractSchema] = new mutable.HashMap[String, AbstractSchema]
         jsArray.value.foreach { json =>
           val info = DataSetInfo.parse(json, schemaMap.toMap)
           metaData.put(info.name, info)
@@ -78,7 +78,7 @@ class DataStoreManager(metaDataset: String,
       //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
-          if (info.schema.isTemporal) {
+          if (info.schema.hasTimeField) {
             log.error("Append View operation cannot be applied to static dataset " + info.name)
           } else {
             info.createQueryOpt match {
@@ -141,7 +141,7 @@ class DataStoreManager(metaDataset: String,
     if(!metaData.contains(dataSetName)){
       try{
         dataSetRawSchema.toResolved match {
-          case temporal: TemporalSchema =>
+          case temporal: Schema =>
             collectStats(dataSetName, temporal) onComplete {
               case Success((interval, size)) =>
                 val currentDateTime = new DateTime()
@@ -217,7 +217,7 @@ class DataStoreManager(metaDataset: String,
 
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
-      val schema: Schema = info.schema
+      val schema: AbstractSchema = info.schema
       info.createQueryOpt match {
         case Some(_) =>
           val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, None, queryGenFactory(), conn, config)
@@ -244,12 +244,12 @@ class DataStoreManager(metaDataset: String,
       return
     }
     val sourceInfo = metaData(create.query.dataset)
-    if (!sourceInfo.schema.isTemporal) {
+    if (!sourceInfo.schema.hasTimeField) {
       log.error("Create View cannot be applied for static dataset " + sourceInfo.schema.getTypeName)
       return
     }
     creatingSet.add(create.dataset)
-    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema).asTemporal
+    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema).asSchema
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.getTimeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
@@ -269,17 +269,17 @@ class DataStoreManager(metaDataset: String,
 
   private def updateStats(dataset: String, modifyTime: DateTime): Unit = {
     val originalInfo = metaData(dataset)
-    if (!originalInfo.schema.isTemporal) {
+    if (!originalInfo.schema.hasTimeField) {
       log.error("UpdateStats cannot be applied on static dataset " + originalInfo.schema.getTypeName)
       return
     }
-    collectStats(dataset, originalInfo.schema.asTemporal) onSuccess { case (interval, size) =>
+    collectStats(dataset, originalInfo.schema.asSchema) onSuccess { case (interval, size) =>
       //TODO need to think the difference between the txn time and the ingest time
       self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(lastModifyTime = modifyTime, cardinality = size))
     }
   }
 
-  private def collectStats(dataset: String, schema: TemporalSchema): Future[(TJodaInterval, Long)] = {
+  private def collectStats(dataset: String, schema: Schema): Future[(TJodaInterval, Long)] = {
     val timeField = schema.timeField
     val minTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Min, Field.as(Min(timeField), "min")))))
     val maxTimeQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(timeField, Max, Field.as(Max(timeField), "max")))))
@@ -307,7 +307,7 @@ object DataStoreManager {
     val View = Value("view")
   }
 
-  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, Option[DataSetInfo], IQLGenerator, IDataConn, Config) => ActorRef
+  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, AbstractSchema, Option[DataSetInfo], IQLGenerator, IDataConn, Config) => ActorRef
 
   def props(metaDataSet: String,
             conn: IDataConn,
@@ -321,7 +321,7 @@ object DataStoreManager {
                    context: ActorRefFactory,
                    actorName: String,
                    dbName: String,
-                   dbSchema: Schema,
+                   dbSchema: AbstractSchema,
                    dataSetInfoOpt: Option[DataSetInfo],
                    qLGenerator: IQLGenerator,
                    conn: IDataConn,

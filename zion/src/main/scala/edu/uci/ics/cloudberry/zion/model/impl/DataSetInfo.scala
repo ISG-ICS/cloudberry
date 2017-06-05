@@ -16,14 +16,14 @@ case class Stats(createTime: DateTime,
 
 case class DataSetInfo(name: String,
                        createQueryOpt: Option[Query],
-                       schema: Schema,
+                       schema: AbstractSchema,
                        dataInterval: Interval,
                        stats: Stats)
 
 object DataSetInfo {
 
   val MetaDataDBName: String = "berry.meta"
-  val MetaSchema = TemporalSchema(
+  val MetaSchema = Schema(
     "berry.MetaType",
     Seq(StringField("name"), TimeField("stats.createTime")),
     Seq.empty,
@@ -38,7 +38,7 @@ object DataSetInfo {
     * @param schemaMap
     * @return
     */
-  def parse(json: JsValue, schemaMap: Map[String, Schema]): DataSetInfo = {
+  def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): DataSetInfo = {
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
         val dataSetInfo = js.get

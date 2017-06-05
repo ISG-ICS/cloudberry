@@ -3,13 +3,13 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor.Props
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
-import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query, AbstractSchema}
 import play.api.libs.json.JsValue
 
 import scala.concurrent.ExecutionContext
 
 class ViewDataAgent(override val dbName: String,
-                    override val schema: Schema,
+                    override val schema: AbstractSchema,
                     override val queryParser: IQLGenerator,
                     override val conn: IDataConn,
                     override val config: Config
@@ -27,7 +27,7 @@ class ViewDataAgent(override val dbName: String,
 }
 
 object ViewDataAgent {
-  def props(dbName: String, schema: Schema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
+  def props(dbName: String, schema: AbstractSchema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
            (implicit ec: ExecutionContext) =
     Props(new ViewDataAgent(dbName, schema, queryParser, conn, config))
 }

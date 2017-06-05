@@ -17,7 +17,7 @@ object QueryResolver {
     * @param schemaMap
     * @return
     */
-  def resolve(query: IQuery, schemaMap: Map[String, Schema]): IQuery = {
+  def resolve(query: IQuery, schemaMap: Map[String, AbstractSchema]): IQuery = {
     query match {
       case q: UnresolvedQuery =>
         resolveQuery(q, schemaMap)
@@ -29,7 +29,7 @@ object QueryResolver {
     }
   }
 
-  private def resolveQuery(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
+  private def resolveQuery(query: UnresolvedQuery, schemaMap: Map[String, AbstractSchema]): Query = {
     val schema = schemaMap(query.dataset)
     val fieldMap = schema.fieldMap
     val (append, fieldMapAfterAppend) = resolveAppends(query.append, fieldMap)
@@ -62,7 +62,7 @@ object QueryResolver {
 
   private def resolveLookups(lookups: Seq[UnresolvedLookupStatement],
                              fieldMap: Map[String, Field],
-                             schemaMap: Map[String, Schema]): (Seq[LookupStatement], Map[String, Field]) = {
+                             schemaMap: Map[String, AbstractSchema]): (Seq[LookupStatement], Map[String, Field]) = {
     val producedFields = mutable.Map.newBuilder[String, Field]
     val resolved = lookups.map { lookup =>
       val sourceKeys = resolveFields(lookup.sourceKeys, fieldMap)
@@ -100,7 +100,7 @@ object QueryResolver {
     (resolved, fieldMap)
   }
 
-  private def resolveGroup(group: Option[UnresolvedGroupStatement], fieldMap: Map[String, Field], schemaMap: Map[String, Schema]): (Option[GroupStatement], Map[String, Field]) = {
+  private def resolveGroup(group: Option[UnresolvedGroupStatement], fieldMap: Map[String, Field], schemaMap: Map[String, AbstractSchema]): (Option[GroupStatement], Map[String, Field]) = {
     group match {
       case Some(groupStatement) =>
         val producedFields = mutable.Map.newBuilder[String, Field]

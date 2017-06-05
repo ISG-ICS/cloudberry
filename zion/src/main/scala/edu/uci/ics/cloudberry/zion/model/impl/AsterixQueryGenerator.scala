@@ -99,10 +99,10 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     * Returns a query string query after parsing the query object.
     *
     * @param query     [[IQuery]] object containing query details
-    * @param schemaMap a map of Dataset name to it's [[Schema]]
+    * @param schemaMap a map of Dataset name to it's [[AbstractSchema]]
     * @return query string
     **/
-  def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
+  def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
     val result = query match {
       case q: Query =>
         parseQuery(q, schemaMap)
@@ -116,19 +116,19 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     s"$result$suffix"
   }
 
-  protected def parseQuery(query: Query, schemaMap: Map[String, Schema]): String
+  protected def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String
 
-  protected def parseCreate(query: CreateView, schemaMap: Map[String, Schema]): String
+  protected def parseCreate(query: CreateView, schemaMap: Map[String, AbstractSchema]): String
 
-  protected def parseAppend(query: AppendView, schemaMap: Map[String, Schema]): String
+  protected def parseAppend(query: AppendView, schemaMap: Map[String, AbstractSchema]): String
 
-  protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, Schema]): String
+  protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String
 
-  protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, Schema]): String
+  protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String
 
-  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String
+  protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String
 
-  def calcResultSchema(query: Query, schema: Schema): Schema = {
+  def calcResultSchema(query: Query, schema: AbstractSchema): AbstractSchema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copySchema
     } else {
@@ -136,7 +136,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     }
   }
 
-  protected def initExprMap(dataset: String, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
+  protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr] = {
     val schema = schemaMap(dataset)
     schema.fieldMap.mapValues { f =>
       f.dataType match {
@@ -271,7 +271,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
   }
 
 
-  protected def genDDL(schema: Schema): String = {
+  protected def genDDL(schema: AbstractSchema): String = {
     //FIXME this function is wrong for nested types if it contains multiple sub-fields
     def mkNestDDL(names: List[String], typeStr: String): String = {
       names match {

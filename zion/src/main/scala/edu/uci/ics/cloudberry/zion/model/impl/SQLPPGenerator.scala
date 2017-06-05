@@ -68,9 +68,9 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   protected val suffix: String = ";"
 
-  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
+  def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, sourceSchema).asTemporal
+    val resultSchema = calcResultSchema(create.query, sourceSchema).asSchema
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""
@@ -85,21 +85,21 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     ddl + createDataSet + insert
   }
 
-  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
+  def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
        |upsert into ${append.dataset} (
        |${parseQuery(append.query, schemaMap)}
        |)""".stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
+  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
        |upsert into ${q.dataset} (
        |${Json.toJson(q.records)}
        |)""".stripMargin
   }
 
-  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
     if (delete.filters.isEmpty) {
       throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
     }
@@ -110,12 +110,12 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     return queryBuilder.toString()
   }
 
-  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
+  protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
     s"drop dataset ${query.dataset} if exists"
   }
 
 
-  def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
+  def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
     val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)

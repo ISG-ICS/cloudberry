@@ -5,7 +5,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 object TwitterDataStore {
   val DatasetName = "twitter.ds_tweet"
   val TimeFieldName = "create_at"
-  val TwitterSchema = TemporalSchema("twitter.typeTweet",
+  val TwitterSchema = Schema("twitter.typeTweet",
                                      Seq(
                                        TimeField(TimeFieldName),
                                        NumberField("id"),

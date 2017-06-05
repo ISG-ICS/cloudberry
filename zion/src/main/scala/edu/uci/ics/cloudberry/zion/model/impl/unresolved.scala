@@ -20,7 +20,7 @@ object Unresolved {
       dataSetInfo.stats
     )
 
-  def toUnresolved(schema: Schema): UnresolvedSchema = {
+  def toUnresolved(schema: AbstractSchema): UnresolvedSchema = {
     schema.toUnresolved
   }
 
@@ -115,11 +115,11 @@ object Unresolved {
 
 
 /**
-  * This class is an unresolved version of [[Schema]].
+  * This class is an unresolved version of [[AbstractSchema]].
   * The differences are
   *   [[primaryKey]] is string,
   *   [[timeField]] is Option[String] corresponding to temporal schema and static schema.
-  * which are resolved later into [[Field]] and to [[TemporalSchema]] or [[LookupSchema]].
+  * which are resolved later into [[Field]] and to [[Schema]] or [[LookupSchema]].
   */
 case class UnresolvedSchema(typeName: String,
                             dimension: Seq[Field],
@@ -136,7 +136,7 @@ case class UnresolvedSchema(typeName: String,
     }
   }
 
-  def toResolved: Schema = {
+  def toResolved: AbstractSchema = {
     val resolvedPrimaryKey = primaryKey.map(this.getField(_).get)
     timeField match {
       case Some(field) =>
@@ -150,7 +150,7 @@ case class UnresolvedSchema(typeName: String,
           case None =>
             throw FieldNotFound(field)
         }
-        TemporalSchema(typeName, dimension, measurement, resolvedPrimaryKey, resolvedTimeField)
+        Schema(typeName, dimension, measurement, resolvedPrimaryKey, resolvedTimeField)
       case None =>
         LookupSchema(typeName, dimension, measurement, resolvedPrimaryKey)
     }
@@ -160,7 +160,7 @@ case class UnresolvedSchema(typeName: String,
 /**
   * This class is an unresolved version of [[DataSetInfo]].
   * The difference is that [[createQueryOpt]] and [[schema]] are [[UnresolvedQuery]] and [[UnresolvedSchema]],
-  * which are resolved later into [[Query]] and [[Schema]]
+  * which are resolved later into [[Query]] and [[AbstractSchema]]
   */
 case class UnresolvedDataSetInfo(name: String,
                                  createQueryOpt: Option[UnresolvedQuery],

@@ -21,7 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
   * @param ec
   */
 abstract class AbstractDataSetAgent(val dbName: String,
-                                    val schema: Schema,
+                                    val schema: AbstractSchema,
                                     val queryParser: IQLGenerator,
                                     val conn: IDataConn,
                                     val config: Config)
@@ -62,7 +62,7 @@ abstract class AbstractDataSetAgent(val dbName: String,
 }
 
 abstract class AbstractUpdatableDataSetAgent(override val dbName: String,
-                                             override val schema: Schema,
+                                             override val schema: AbstractSchema,
                                              override val queryParser: IQLGenerator,
                                              override val conn: IDataConn,
                                              override val config: Config

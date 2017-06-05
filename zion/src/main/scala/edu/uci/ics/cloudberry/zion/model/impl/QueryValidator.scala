@@ -13,7 +13,7 @@ object QueryValidator {
     *
     * @param query
     */
-  def validate(query: IQuery, schemaMap: Map[String, Schema]): Unit = {
+  def validate(query: IQuery, schemaMap: Map[String, AbstractSchema]): Unit = {
     query match {
       case q: Query =>
         validateQuery(q, schemaMap)
@@ -25,15 +25,15 @@ object QueryValidator {
     }
   }
 
-  private def validateCreate(q: CreateView, schemaMap: Map[String, Schema]): Unit = {
+  private def validateCreate(q: CreateView, schemaMap: Map[String, AbstractSchema]): Unit = {
     validateQuery(q.query, schemaMap)
   }
 
-  private def validateAppend(q: AppendView, schemaMap: Map[String, Schema]): Unit = {
+  private def validateAppend(q: AppendView, schemaMap: Map[String, AbstractSchema]): Unit = {
     validateQuery(q.query, schemaMap)
   }
 
-  private def validateUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): Unit = {
+  private def validateUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): Unit = {
     //TODO validate upsert
   }
 
@@ -46,8 +46,8 @@ object QueryValidator {
     t.isInstanceOf[Number] || implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
   }
 
-  def validateQuery(query: Query, schemaMap: Map[String, Schema]): Unit = {
-    if (!schemaMap(query.dataset).isTemporal) {
+  def validateQuery(query: Query, schemaMap: Map[String, AbstractSchema]): Unit = {
+    if (!schemaMap(query.dataset).hasTimeField) {
       throw new IllegalArgumentException("static dataset " + query.dataset + " does not support query " + query.toString)
     }
     query.filter.foreach(validateFilter(_))
@@ -57,7 +57,7 @@ object QueryValidator {
   }
 
   def validateFilter(filter: FilterStatement): Unit = {
-    requireOrThrow(Schema.Type2Relations(filter.field.dataType).contains(filter.relation),
+    requireOrThrow(AbstractSchema.Type2Relations(filter.field.dataType).contains(filter.relation),
       s"field ${filter.field.name} of type ${filter.field.dataType} can not apply to relation: ${filter.relation}."
     )
 

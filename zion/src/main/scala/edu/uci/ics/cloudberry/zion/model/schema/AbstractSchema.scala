@@ -157,7 +157,7 @@ case class HierarchyField(override val name: String,
 
 }
 
-case class RecordField(override val name: String, val schema: Schema, override val isOptional: Boolean = false) extends Field {
+case class RecordField(override val name: String, val schema: AbstractSchema, override val isOptional: Boolean = false) extends Field {
   override val dataType = DataType.Record
 
 }
@@ -186,11 +186,11 @@ trait Measurement {
 
 //TODO when UI get the schema, it should know which is dimension/measure, functions that can apply onto it, etc.
 // so that it won't ask for a inapplicable function such that get the max to a string field
-abstract class Schema(typeName: String,
-                      dimension: Seq[Field],
-                      measurement: Seq[Field],
-                      primaryKey: Seq[Field]
-                     ) {
+abstract class AbstractSchema(typeName: String,
+                              dimension: Seq[Field],
+                              measurement: Seq[Field],
+                              primaryKey: Seq[Field]
+                             ) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
@@ -199,26 +199,26 @@ abstract class Schema(typeName: String,
 
   def getTypeName: String = typeName
   def getTimeField: TimeField
-  def copySchema: Schema
-  def asTemporal: TemporalSchema
-  def isTemporal: Boolean
+  def copySchema: AbstractSchema
+  def asSchema: Schema
+  def hasTimeField: Boolean
   def toUnresolved: UnresolvedSchema
 }
 
-case class TemporalSchema(typeName: String,
-                          dimension: Seq[Field],
-                          measurement: Seq[Field],
-                          primaryKey: Seq[Field],
-                          timeField: TimeField
-                         ) extends Schema(typeName, dimension, measurement, primaryKey){
+case class Schema(typeName: String,
+                  dimension: Seq[Field],
+                  measurement: Seq[Field],
+                  primaryKey: Seq[Field],
+                  timeField: TimeField
+                 ) extends AbstractSchema(typeName, dimension, measurement, primaryKey){
 
   override def getTimeField: TimeField = timeField
 
-  override def copySchema: TemporalSchema = this.copy()
+  override def copySchema: Schema = this.copy()
 
-  override def asTemporal: TemporalSchema = this
+  override def asSchema: Schema = this
 
-  override def isTemporal: Boolean = true
+  override def hasTimeField: Boolean = true
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
 }
@@ -227,24 +227,24 @@ case class LookupSchema(typeName: String,
                         dimension: Seq[Field],
                         measurement: Seq[Field],
                         primaryKey: Seq[Field]
-                       ) extends Schema(typeName, dimension, measurement, primaryKey) {
+                       ) extends AbstractSchema(typeName, dimension, measurement, primaryKey) {
 
   override def getTimeField: TimeField = {
-    throw FieldNotFound(s"Static schema $typeName does not have timeField.")
+    throw FieldNotFound(s"Lookup schema $typeName does not have timeField.")
   }
 
   override def copySchema: LookupSchema = this.copy()
 
-  override def asTemporal: TemporalSchema = {
-    throw new IllegalArgumentException(s"$typeName is a static schema.")
+  override def asSchema: Schema = {
+    throw new IllegalArgumentException(s"$typeName is a lookup schema.")
   }
 
-  override def isTemporal: Boolean = false
+  override def hasTimeField: Boolean = false
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), None)
 }
 
-object Schema {
+object AbstractSchema {
 
   import DataType._
   import Relation.Relation

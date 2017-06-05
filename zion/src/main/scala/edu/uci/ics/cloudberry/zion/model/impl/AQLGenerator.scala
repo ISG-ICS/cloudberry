@@ -12,10 +12,10 @@ class AQLGenerator extends IQLGenerator {
     * Returns a string having AQL query after parsing the query object.
     *
     * @param query     [[IQuery]] object containing query details
-    * @param schemaMap a map of Dataset name to it's [[Schema]]
+    * @param schemaMap a map of Dataset name to it's [[AbstractSchema]]
     * @return AQL Query
     **/
-  override def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
+  override def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
     query match {
       case q: Query =>
         validateQuery(q)
@@ -29,7 +29,7 @@ class AQLGenerator extends IQLGenerator {
   }
 
   //TODO combine with parseQuery
-  override def calcResultSchema(query: Query, schema: Schema): Schema = {
+  override def calcResultSchema(query: Query, schema: AbstractSchema): AbstractSchema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copySchema
     } else {
@@ -37,8 +37,8 @@ class AQLGenerator extends IQLGenerator {
     }
   }
 
-  def parseCreate(create: CreateView, sourceSchema: Schema): String = {
-    val resultSchema = calcResultSchema(create.query, sourceSchema).asTemporal
+  def parseCreate(create: CreateView, sourceSchema: AbstractSchema): String = {
+    val resultSchema = calcResultSchema(create.query, sourceSchema).asSchema
     val ddl: String = genDDL(resultSchema)
     val timeFilter = s"//with filter on '${resultSchema.timeField.name}'"
     val createDataSet =
@@ -55,7 +55,7 @@ class AQLGenerator extends IQLGenerator {
     ddl + createDataSet + insert
   }
 
-  def parseAppend(append: AppendView, sourceSchema: Schema): String = {
+  def parseAppend(append: AppendView, sourceSchema: AbstractSchema): String = {
     s"""
        |upsert into dataset ${append.dataset} (
        |${parseQuery(append.query, Map(append.query.dataset -> sourceSchema))}
@@ -63,7 +63,7 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord, schema: Schema): String = {
+  def parseUpsert(q: UpsertRecord, schema: AbstractSchema): String = {
     s"""
        |upsert into dataset ${q.dataset} (
        |${Json.toJson(q.records)}
@@ -71,7 +71,7 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
-  def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
+  def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
 
     val sourceVar = "$t"
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
@@ -124,7 +124,7 @@ class AQLGenerator extends IQLGenerator {
     */
   private def parseLookup(lookups: Seq[LookupStatement],
                           varMap: Map[String, AQLVar],
-                          schemaMap: Map[String, Schema]
+                          schemaMap: Map[String, AbstractSchema]
                          ): Map[String, AQLVar] = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     lookups.zipWithIndex.foreach { case (lookup, id) =>
@@ -338,7 +338,7 @@ class AQLGenerator extends IQLGenerator {
     requireOrThrow(query.select.isDefined || query.groups.isDefined || query.globalAggr.isDefined, "either group or select or global aggregate statement is required")
   }
 
-  private def genDDL(schema: Schema): String = {
+  private def genDDL(schema: AbstractSchema): String = {
 
     //FIXME this function is wrong for nested types if it contains multiple sub-fields
     def mkNestDDL(names: List[String], typeStr: String): String = {

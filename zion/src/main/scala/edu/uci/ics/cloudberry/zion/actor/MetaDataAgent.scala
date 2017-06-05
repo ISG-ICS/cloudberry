@@ -11,7 +11,7 @@ import play.api.libs.json.JsValue
 import scala.concurrent.ExecutionContext
 
 class MetaDataAgent(override val dbName: String,
-                    override val schema: Schema,
+                    override val schema: AbstractSchema,
                     override val queryParser: IQLGenerator,
                     override val conn: IDataConn,
                     override val config: Config
@@ -36,7 +36,7 @@ class MetaDataAgent(override val dbName: String,
 }
 
 object MetaDataAgent {
-  def props(dbName: String, schema: Schema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
+  def props(dbName: String, schema: AbstractSchema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
            (implicit ec: ExecutionContext) =
     Props(new MetaDataAgent(dbName, schema, queryParser, conn, config))
 }

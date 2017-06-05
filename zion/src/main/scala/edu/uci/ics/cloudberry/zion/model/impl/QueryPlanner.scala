@@ -35,7 +35,7 @@ class QueryPlanner {
     }
   }
 
-  def calculateMergeFunc(query: Query, schema: Schema): IMerger = {
+  def calculateMergeFunc(query: Query, schema: AbstractSchema): IMerger = {
     //TODO the current logic is very simple, all queries has to be the isomorphism.
     if (query.lookup.nonEmpty) {
       ???
@@ -84,7 +84,7 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        val schema = source.schema.asTemporal
+        val schema = source.schema.asSchema
         val queryInterval = query.getTimeInterval(schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
         val viewInterval = new Interval(new DateTime(0), view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
