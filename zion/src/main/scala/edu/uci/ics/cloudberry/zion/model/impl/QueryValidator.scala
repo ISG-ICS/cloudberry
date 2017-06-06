@@ -48,7 +48,7 @@ object QueryValidator {
 
   def validateQuery(query: Query, schemaMap: Map[String, AbstractSchema]): Unit = {
     if (!schemaMap(query.dataset).hasTimeField) {
-      throw new IllegalArgumentException("static dataset " + query.dataset + " does not support query " + query.toString)
+      throw new IllegalArgumentException("lookup dataset " + query.dataset + " does not support query " + query.toString)
     }
     query.filter.foreach(validateFilter(_))
     query.lookup.foreach(validateLookup(_))

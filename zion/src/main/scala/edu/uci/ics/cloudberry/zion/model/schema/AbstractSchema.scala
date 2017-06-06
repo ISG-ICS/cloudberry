@@ -200,7 +200,6 @@ abstract class AbstractSchema(typeName: String,
   def getTypeName: String = typeName
   def getTimeField: TimeField
   def copySchema: AbstractSchema
-  def asSchema: Schema
   def hasTimeField: Boolean
   def toUnresolved: UnresolvedSchema
 }
@@ -215,8 +214,6 @@ case class Schema(typeName: String,
   override def getTimeField: TimeField = timeField
 
   override def copySchema: Schema = this.copy()
-
-  override def asSchema: Schema = this
 
   override def hasTimeField: Boolean = true
 
@@ -234,10 +231,6 @@ case class LookupSchema(typeName: String,
   }
 
   override def copySchema: LookupSchema = this.copy()
-
-  override def asSchema: Schema = {
-    throw new IllegalArgumentException(s"$typeName is a lookup schema.")
-  }
 
   override def hasTimeField: Boolean = false
 

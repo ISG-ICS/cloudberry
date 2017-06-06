@@ -84,7 +84,10 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        val schema = source.schema.asSchema
+        if (!source.schema.hasTimeField) {
+          throw new IllegalArgumentException("Lookup dataset " + source.schema.getTypeName + " cannot split query.")
+        }
+        val schema = source.schema.asInstanceOf[Schema]
         val queryInterval = query.getTimeInterval(schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
         val viewInterval = new Interval(new DateTime(0), view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)

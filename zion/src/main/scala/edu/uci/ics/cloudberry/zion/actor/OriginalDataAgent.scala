@@ -64,10 +64,10 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
 
   private def collectStats(start: DateTime): Unit = {
     if (!dataSetInfo.schema.hasTimeField) {
-      log.error("Cannot do aggregation query for static dataset " + dataSetInfo.schema.getTypeName)
+      log.error("Cannot do aggregation query for lookup dataset " + dataSetInfo.schema.getTypeName)
       return
     }
-    val temporalSchema = dataSetInfo.schema.asSchema
+    val temporalSchema = dataSetInfo.schema.asInstanceOf[Schema]
     val now = DateTime.now().minusMillis(1)
     val filter = FilterStatement(temporalSchema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
     val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))

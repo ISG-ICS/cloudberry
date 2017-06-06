@@ -141,12 +141,12 @@ class DataStoreManager(metaDataset: String,
     if(!metaData.contains(dataSetName)){
       try{
         dataSetRawSchema.toResolved match {
-          case temporal: Schema =>
-            collectStats(dataSetName, temporal) onComplete {
+          case schema: Schema =>
+            collectStats(dataSetName, schema) onComplete {
               case Success((interval, size)) =>
                 val currentDateTime = new DateTime()
                 val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
-                val registerDataSetInfo = DataSetInfo(dataSetName, None, temporal, interval, stats)
+                val registerDataSetInfo = DataSetInfo(dataSetName, None, schema, interval, stats)
 
                 metaData.put(dataSetName, registerDataSetInfo)
                 flushMetaData()
@@ -156,13 +156,13 @@ class DataStoreManager(metaDataset: String,
                 throw CollectStatsException(f.getMessage)
             }
 
-          case static: LookupSchema =>
+          case lookupSchema: LookupSchema =>
             val currentDateTime = new DateTime()
             val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
             val fakeStartDate = new DateTime(1970, 1, 1, 0, 0, 0, 0)
             val fakeEndDate = new DateTime(Long.MaxValue)
             val fakeInterval = new Interval(fakeStartDate, fakeEndDate)
-            val registerDataSetInfo = DataSetInfo(dataSetName, None, static, fakeInterval, fakeStats)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, lookupSchema, fakeInterval, fakeStats)
 
             metaData.put(dataSetName, registerDataSetInfo)
             flushMetaData()
@@ -249,7 +249,7 @@ class DataStoreManager(metaDataset: String,
       return
     }
     creatingSet.add(create.dataset)
-    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema).asSchema
+    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema).asInstanceOf[Schema]
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.getTimeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
@@ -273,7 +273,7 @@ class DataStoreManager(metaDataset: String,
       log.error("UpdateStats cannot be applied on static dataset " + originalInfo.schema.getTypeName)
       return
     }
-    collectStats(dataset, originalInfo.schema.asSchema) onSuccess { case (interval, size) =>
+    collectStats(dataset, originalInfo.schema.asInstanceOf[Schema]) onSuccess { case (interval, size) =>
       //TODO need to think the difference between the txn time and the ingest time
       self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(lastModifyTime = modifyTime, cardinality = size))
     }

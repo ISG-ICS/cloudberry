@@ -38,7 +38,10 @@ class AQLGenerator extends IQLGenerator {
   }
 
   def parseCreate(create: CreateView, sourceSchema: AbstractSchema): String = {
-    val resultSchema = calcResultSchema(create.query, sourceSchema).asSchema
+    if (!sourceSchema.hasTimeField){
+      throw new IllegalArgumentException("Lookup dataset " + sourceSchema.getTypeName + " cannot support create view.")
+    }
+    val resultSchema = calcResultSchema(create.query, sourceSchema).asInstanceOf[Schema]
     val ddl: String = genDDL(resultSchema)
     val timeFilter = s"//with filter on '${resultSchema.timeField.name}'"
     val createDataSet =
