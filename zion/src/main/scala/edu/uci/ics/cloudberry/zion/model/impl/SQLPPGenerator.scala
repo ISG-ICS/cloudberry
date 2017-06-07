@@ -70,11 +70,10 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
-    val calcResult = calcResultSchema(create.query, sourceSchema)
-    if (!calcResult.hasTimeField) {
-      throw new IllegalArgumentException("Lookup Schema " + calcResult.getTypeName + " cannot support create view.")
+    if (!sourceSchema.hasTimeField) {
+      throw new IllegalArgumentException("Lookup Schema " + sourceSchema.getTypeName + " cannot support create view.")
     }
-    val resultSchema = calcResult.asInstanceOf[Schema]
+    val resultSchema = calcResultSchema(create.query, sourceSchema.asInstanceOf[Schema])
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""

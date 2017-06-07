@@ -20,16 +20,31 @@ class AQLGenerator extends IQLGenerator {
       case q: Query =>
         validateQuery(q)
         parseQuery(q, schemaMap)
-      case q: CreateView => parseCreate(q, schemaMap(q.query.dataset))
-      case q: AppendView => parseAppend(q, schemaMap(q.query.dataset))
-      case q: UpsertRecord => parseUpsert(q, schemaMap(query.dataset))
+      case q: CreateView =>
+        val schema = schemaMap(q.query.dataset)
+        if (!schema.hasTimeField) {
+          throw new IllegalArgumentException("Lookup Schema " + schema.getTypeName + " cannot support create view.")
+        }
+        parseCreate(q, schema.asInstanceOf[Schema])
+      case q: AppendView =>
+        val schema = schemaMap(q.query.dataset)
+        if (!schema.hasTimeField) {
+          throw new IllegalArgumentException("Lookup Schema " + schema.getTypeName + " cannot support append view.")
+        }
+        parseAppend(q, schema.asInstanceOf[Schema])
+      case q: UpsertRecord =>
+        val schema = schemaMap(query.dataset)
+        if (!schema.hasTimeField) {
+          throw new IllegalArgumentException("Lookup Schema " + schema.getTypeName + " cannot support upsert record.")
+        }
+        parseUpsert(q, schema.asInstanceOf[Schema])
       case q: DropView => ???
       case _ => ???
     }
   }
 
   //TODO combine with parseQuery
-  override def calcResultSchema(query: Query, schema: AbstractSchema): AbstractSchema = {
+  override def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copySchema
     } else {
@@ -37,11 +52,8 @@ class AQLGenerator extends IQLGenerator {
     }
   }
 
-  def parseCreate(create: CreateView, sourceSchema: AbstractSchema): String = {
-    if (!sourceSchema.hasTimeField){
-      throw new IllegalArgumentException("Lookup dataset " + sourceSchema.getTypeName + " cannot support create view.")
-    }
-    val resultSchema = calcResultSchema(create.query, sourceSchema).asInstanceOf[Schema]
+  def parseCreate(create: CreateView, sourceSchema: Schema): String = {
+    val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
     val timeFilter = s"//with filter on '${resultSchema.timeField.name}'"
     val createDataSet =
@@ -58,7 +70,7 @@ class AQLGenerator extends IQLGenerator {
     ddl + createDataSet + insert
   }
 
-  def parseAppend(append: AppendView, sourceSchema: AbstractSchema): String = {
+  def parseAppend(append: AppendView, sourceSchema: Schema): String = {
     s"""
        |upsert into dataset ${append.dataset} (
        |${parseQuery(append.query, Map(append.query.dataset -> sourceSchema))}
@@ -66,7 +78,7 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord, schema: AbstractSchema): String = {
+  def parseUpsert(q: UpsertRecord, schema: Schema): String = {
     s"""
        |upsert into dataset ${q.dataset} (
        |${Json.toJson(q.records)}

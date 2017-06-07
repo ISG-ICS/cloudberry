@@ -128,7 +128,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String
 
-  def calcResultSchema(query: Query, schema: AbstractSchema): AbstractSchema = {
+  def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
       schema.copySchema
     } else {

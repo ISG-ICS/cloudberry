@@ -249,7 +249,7 @@ class DataStoreManager(metaDataset: String,
       return
     }
     creatingSet.add(create.dataset)
-    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema).asInstanceOf[Schema]
+    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema.asInstanceOf[Schema])
     val now = DateTime.now()
     val fixEndFilter = FilterStatement(sourceInfo.schema.getTimeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
