@@ -83,7 +83,7 @@ class DataStoreManager(metaDataset: String,
           } else {
             info.createQueryOpt match {
               case Some(createQuery) =>
-                if (createQuery.filter.exists(_.field == info.schema.getTimeField)) {
+                if (createQuery.filter.exists(_.field == info.schema.getTimeField.get)) {
                   log.error("the create view should not contains the time dimension")
                 } else {
                   val now = DateTime.now()

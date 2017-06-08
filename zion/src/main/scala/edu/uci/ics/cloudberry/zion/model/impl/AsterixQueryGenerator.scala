@@ -103,7 +103,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     * @return query string
     **/
   def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
-    val (temporalSchemaMap, lookupSchemaMap) = splitSchemaMap(schemaMap)
+    val (temporalSchemaMap, lookupSchemaMap) = AsterixQueryGenerator.splitSchemaMap(schemaMap)
     val result = query match {
       case q: Query =>
         parseQuery(q, temporalSchemaMap)
@@ -135,25 +135,6 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     } else {
       ???
     }
-  }
-
-  private def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
-    val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
-    val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
-
-    schemaMap.filter{ case(name, schema) =>
-      schema.getTimeField.isDefined
-    }.foreach{ case(name, schema) =>
-      temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
-    }
-
-    schemaMap.filter{ case(name, schema) =>
-      schema.getTimeField.isEmpty
-    }.foreach{ case(name, schema) =>
-      lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
-    }
-
-    (temporalSchemaMap.toMap, lookupSchemaMap.toMap)
   }
 
   protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr] = {
@@ -322,5 +303,26 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case DataType.Hierarchy => ??? // should be skipped
       case DataType.Record => ???
     }
+  }
+}
+
+object AsterixQueryGenerator {
+  def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
+    val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
+    val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
+
+    schemaMap.filter{ case(name, schema) =>
+      schema.getTimeField.isDefined
+    }.foreach{ case(name, schema) =>
+      temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
+    }
+
+    schemaMap.filter{ case(name, schema) =>
+      schema.getTimeField.isEmpty
+    }.foreach{ case(name, schema) =>
+      lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
+    }
+
+    (temporalSchemaMap.toMap, lookupSchemaMap.toMap)
   }
 }

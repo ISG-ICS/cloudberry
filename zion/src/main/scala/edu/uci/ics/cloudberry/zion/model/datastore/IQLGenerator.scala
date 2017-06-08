@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.zion.model.schema.{IQuery, Query, AbstractSchema, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema._
 
 trait IQLGenerator {
   /**
