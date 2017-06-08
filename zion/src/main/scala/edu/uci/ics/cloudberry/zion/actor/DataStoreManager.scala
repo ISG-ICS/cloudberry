@@ -219,7 +219,7 @@ class DataStoreManager(metaDataset: String,
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
       if (!info.schema.isInstanceOf[Schema]) {
-        ???
+        throw new IllegalArgumentException("Cannot do query on lookup dataset " + info.schema.getTypeName)
       }
       val schema = info.schema.asInstanceOf[Schema]
       info.createQueryOpt match {

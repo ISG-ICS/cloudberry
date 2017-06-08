@@ -55,7 +55,7 @@ class BerryClient(val jsonParser: JSONParser,
       val queryInfos = initial.queries.map { query =>
         val info = initial.infos(query.dataset)
         if (!info.schema.isInstanceOf[Schema]) {
-          ??? // How to deal with this?
+          throw new IllegalArgumentException("Initial schema " + info.schema.getTypeName + " is a Lookup Schema")
         }
         val schema = info.schema.asInstanceOf[Schema]
         val bound = query.getTimeInterval(schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
@@ -154,9 +154,6 @@ class BerryClient(val jsonParser: JSONParser,
     val futures = Future.traverse(queryGroup.queries) { queryInfo =>
       if (queryInfo.queryBound.overlaps(interval)) {
         val overlaps = queryInfo.queryBound.overlap(interval)
-        if (!queryInfo.dataSetInfo.schema.isInstanceOf[Schema]){
-          ???
-        }
         val schema = queryInfo.dataSetInfo.schema.asInstanceOf[Schema]
         val timeFilter = FilterStatement(schema.timeField, None, Relation.inRange,
           Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
