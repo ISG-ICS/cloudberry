@@ -16,28 +16,14 @@ class AQLGenerator extends IQLGenerator {
     * @return AQL Query
     **/
   override def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
+    val (temporalSchemaMap, lookupSchemaMap) = splitSchemaMap(schemaMap)
     query match {
       case q: Query =>
         validateQuery(q)
-        parseQuery(q, schemaMap)
-      case q: CreateView =>
-        val schema = schemaMap(q.query.dataset)
-        if (!schema.hasTimeField) {
-          throw new IllegalArgumentException("Lookup Schema " + schema.getTypeName + " cannot support create view.")
-        }
-        parseCreate(q, schema.asInstanceOf[Schema])
-      case q: AppendView =>
-        val schema = schemaMap(q.query.dataset)
-        if (!schema.hasTimeField) {
-          throw new IllegalArgumentException("Lookup Schema " + schema.getTypeName + " cannot support append view.")
-        }
-        parseAppend(q, schema.asInstanceOf[Schema])
-      case q: UpsertRecord =>
-        val schema = schemaMap(query.dataset)
-        if (!schema.hasTimeField) {
-          throw new IllegalArgumentException("Lookup Schema " + schema.getTypeName + " cannot support upsert record.")
-        }
-        parseUpsert(q, schema.asInstanceOf[Schema])
+        parseQuery(q, temporalSchemaMap, lookupSchemaMap)
+      case q: CreateView => parseCreate(q, temporalSchemaMap(q.query.dataset))
+      case q: AppendView => parseAppend(q, temporalSchemaMap(q.query.dataset))
+      case q: UpsertRecord => parseUpsert(q, temporalSchemaMap(query.dataset))
       case q: DropView => ???
       case _ => ???
     }
@@ -52,6 +38,25 @@ class AQLGenerator extends IQLGenerator {
     }
   }
 
+  private def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
+    val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
+    val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
+
+    schemaMap.filter{ case(name, schema) =>
+      schema.getTimeField.isDefined
+    }.foreach{ case(name, schema) =>
+      temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
+    }
+
+    schemaMap.filter{ case(name, schema) =>
+      schema.getTimeField.isEmpty
+    }.foreach{ case(name, schema) =>
+      lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
+    }
+
+    (temporalSchemaMap.toMap, lookupSchemaMap.toMap)
+  }
+
   def parseCreate(create: CreateView, sourceSchema: Schema): String = {
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
@@ -64,7 +69,7 @@ class AQLGenerator extends IQLGenerator {
     val insert =
       s"""
          |insert into dataset ${create.dataset} (
-         |${parseQuery(create.query, Map(create.query.dataset -> sourceSchema))}
+         |${parseQuery(create.query, Map(create.query.dataset -> sourceSchema), Map.empty)}
          |)
        """.stripMargin
     ddl + createDataSet + insert
@@ -73,7 +78,7 @@ class AQLGenerator extends IQLGenerator {
   def parseAppend(append: AppendView, sourceSchema: Schema): String = {
     s"""
        |upsert into dataset ${append.dataset} (
-       |${parseQuery(append.query, Map(append.query.dataset -> sourceSchema))}
+       |${parseQuery(append.query, Map(append.query.dataset -> sourceSchema), Map.empty)}
        |)
      """.stripMargin
   }
@@ -86,7 +91,7 @@ class AQLGenerator extends IQLGenerator {
      """.stripMargin
   }
 
-  def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
+  def parseQuery(query: Query, schemaMap: Map[String, Schema], lookupSchemaMap: Map[String, LookupSchema]): String = {
 
     val sourceVar = "$t"
     val dataset = s"for $sourceVar in dataset ${query.dataset}"
@@ -103,7 +108,7 @@ class AQLGenerator extends IQLGenerator {
       }
     }
     
-    val varMapAfterLookup = parseLookup(query.lookup, schemaVars, schemaMap)
+    val varMapAfterLookup = parseLookup(query.lookup, schemaVars, lookupSchemaMap)
     val filter = parseFilter(query.filter, varMapAfterLookup)
     val (unnest, varMapAfterUnnest) = parseUnnest(query.unnest, varMapAfterLookup)
 
@@ -139,7 +144,7 @@ class AQLGenerator extends IQLGenerator {
     */
   private def parseLookup(lookups: Seq[LookupStatement],
                           varMap: Map[String, AQLVar],
-                          schemaMap: Map[String, AbstractSchema]
+                          schemaMap: Map[String, LookupSchema]
                          ): Map[String, AQLVar] = {
     val producedVar = mutable.Map.newBuilder[String, AQLVar]
     lookups.zipWithIndex.foreach { case (lookup, id) =>

@@ -68,12 +68,9 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   protected val suffix: String = ";"
 
-  def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
+  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
-    if (!sourceSchema.hasTimeField) {
-      throw new IllegalArgumentException("Lookup Schema " + sourceSchema.getTypeName + " cannot support create view.")
-    }
-    val resultSchema = calcResultSchema(create.query, sourceSchema.asInstanceOf[Schema])
+    val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""
@@ -88,7 +85,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     ddl + createDataSet + insert
   }
 
-  def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String = {
+  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
     s"""
        |upsert into ${append.dataset} (
        |${parseQuery(append.query, schemaMap)}
@@ -110,7 +107,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     val queryBuilder = new StringBuilder()
     queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
     parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
-    return queryBuilder.toString()
+    queryBuilder.toString
   }
 
   protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
@@ -118,7 +115,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   }
 
 
-  def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
+  def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
     val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)

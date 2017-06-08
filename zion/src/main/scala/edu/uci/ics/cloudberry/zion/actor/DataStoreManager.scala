@@ -78,8 +78,8 @@ class DataStoreManager(metaDataset: String,
       //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
-          if (info.schema.hasTimeField) {
-            log.error("Append View operation cannot be applied to static dataset " + info.name)
+          if (info.schema.getTimeField.isEmpty) {
+            log.error("Append View operation cannot be applied to lookup dataset " + info.name)
           } else {
             info.createQueryOpt match {
               case Some(createQuery) =>
@@ -87,7 +87,7 @@ class DataStoreManager(metaDataset: String,
                   log.error("the create view should not contains the time dimension")
                 } else {
                   val now = DateTime.now()
-                  val compensate = FilterStatement(info.schema.getTimeField, None, Relation.inRange,
+                  val compensate = FilterStatement(info.schema.getTimeField.get, None, Relation.inRange,
                     Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
                   val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
                   answerQuery(AppendView(info.name, appendQ), Some(now))
@@ -244,14 +244,14 @@ class DataStoreManager(metaDataset: String,
       return
     }
     val sourceInfo = metaData(create.query.dataset)
-    if (!sourceInfo.schema.hasTimeField) {
-      log.error("Create View cannot be applied for static dataset " + sourceInfo.schema.getTypeName)
+    if (sourceInfo.schema.getTimeField.isEmpty) {
+      log.error("Create View cannot be applied for lookup dataset " + sourceInfo.schema.getTypeName)
       return
     }
     creatingSet.add(create.dataset)
     val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema.asInstanceOf[Schema])
     val now = DateTime.now()
-    val fixEndFilter = FilterStatement(sourceInfo.schema.getTimeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
+    val fixEndFilter = FilterStatement(sourceInfo.schema.getTimeField.get, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
@@ -269,8 +269,8 @@ class DataStoreManager(metaDataset: String,
 
   private def updateStats(dataset: String, modifyTime: DateTime): Unit = {
     val originalInfo = metaData(dataset)
-    if (!originalInfo.schema.hasTimeField) {
-      log.error("UpdateStats cannot be applied on static dataset " + originalInfo.schema.getTypeName)
+    if (originalInfo.schema.getTimeField.isEmpty) {
+      log.error("UpdateStats cannot be applied on lookup dataset " + originalInfo.schema.getTypeName)
       return
     }
     collectStats(dataset, originalInfo.schema.asInstanceOf[Schema]) onSuccess { case (interval, size) =>

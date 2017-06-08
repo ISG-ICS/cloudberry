@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.impl.UnresolvedSchema
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
@@ -198,9 +197,8 @@ abstract class AbstractSchema(typeName: String,
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
 
   def getTypeName: String = typeName
-  def getTimeField: TimeField
+  def getTimeField: Option[TimeField]
   def copySchema: AbstractSchema
-  def hasTimeField: Boolean
   def toUnresolved: UnresolvedSchema
 }
 
@@ -211,11 +209,9 @@ case class Schema(typeName: String,
                   timeField: TimeField
                  ) extends AbstractSchema(typeName, dimension, measurement, primaryKey){
 
-  override def getTimeField: TimeField = timeField
+  override def getTimeField: Option[TimeField] = Some(timeField)
 
   override def copySchema: Schema = this.copy()
-
-  override def hasTimeField: Boolean = true
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
 }
@@ -226,13 +222,9 @@ case class LookupSchema(typeName: String,
                         primaryKey: Seq[Field]
                        ) extends AbstractSchema(typeName, dimension, measurement, primaryKey) {
 
-  override def getTimeField: TimeField = {
-    throw FieldNotFound(s"Lookup schema $typeName does not have timeField.")
-  }
+  override def getTimeField: Option[TimeField] = None
 
   override def copySchema: LookupSchema = this.copy()
-
-  override def hasTimeField: Boolean = false
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), None)
 }

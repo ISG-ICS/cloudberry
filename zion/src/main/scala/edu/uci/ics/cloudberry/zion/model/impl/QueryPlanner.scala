@@ -84,7 +84,7 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        if (!source.schema.hasTimeField) {
+        if (source.schema.getTimeField.isEmpty) {
           throw new IllegalArgumentException("Lookup dataset " + source.schema.getTypeName + " cannot split query.")
         }
         val schema = source.schema.asInstanceOf[Schema]
