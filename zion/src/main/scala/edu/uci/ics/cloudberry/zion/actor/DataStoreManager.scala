@@ -218,7 +218,10 @@ class DataStoreManager(metaDataset: String,
 
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
-      val schema: AbstractSchema = info.schema
+      if (!info.schema.isInstanceOf[Schema]) {
+        ???
+      }
+      val schema = info.schema.asInstanceOf[Schema]
       info.createQueryOpt match {
         case Some(_) =>
           val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, None, queryGenFactory(), conn, config)
@@ -309,7 +312,7 @@ object DataStoreManager {
     val View = Value("view")
   }
 
-  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, AbstractSchema, Option[DataSetInfo], IQLGenerator, IDataConn, Config) => ActorRef
+  type ChildMakerFuncType = (AgentType.Value, ActorRefFactory, String, String, Schema, Option[DataSetInfo], IQLGenerator, IDataConn, Config) => ActorRef
 
   def props(metaDataSet: String,
             conn: IDataConn,
@@ -323,7 +326,7 @@ object DataStoreManager {
                    context: ActorRefFactory,
                    actorName: String,
                    dbName: String,
-                   dbSchema: AbstractSchema,
+                   dbSchema: Schema,
                    dataSetInfoOpt: Option[DataSetInfo],
                    qLGenerator: IQLGenerator,
                    conn: IDataConn,

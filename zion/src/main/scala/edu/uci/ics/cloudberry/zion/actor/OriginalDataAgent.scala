@@ -16,7 +16,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
                         override val queryParser: IQLGenerator,
                         override val conn: IDataConn,
                         override val config: Config)(implicit ec: ExecutionContext)
-  extends AbstractDataSetAgent(dataSetInfo.name, dataSetInfo.schema, queryParser, conn, config)(ec) {
+  extends AbstractDataSetAgent(dataSetInfo.name, dataSetInfo.schema.asInstanceOf[Schema], queryParser, conn, config)(ec) {
 
   import OriginalDataAgent._
 
