@@ -54,10 +54,15 @@ class BerryClient(val jsonParser: JSONParser,
     case initial: Initial if initial.ts == curKey =>
       val queryInfos = initial.queries.map { query =>
         val info = initial.infos(query.dataset)
-        val bound = query.getTimeInterval(info.schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
+        if (!info.schema.isInstanceOf[Schema]) {
+          throw new IllegalArgumentException("Initial schema " + info.schema.getTypeName + " is a Lookup Schema")
+        }
+        val schema = info.schema.asInstanceOf[Schema]
+        val bound = query.getTimeInterval(schema.timeField).getOrElse(new TInterval(info.dataInterval.getStart, DateTime.now))
         val merger = planner.calculateMergeFunc(query, info.schema)
-        val queryWOTime = query.copy(filter = query.filter.filterNot(_.field == info.schema.timeField))
+        val queryWOTime = query.copy(filter = query.filter.filterNot(_.field == schema.timeField))
         QueryInfo(queryWOTime, info, bound, merger)
+
       }
       val min = queryInfos.map(_.queryBound.getStartMillis).min
       val max = queryInfos.map(_.queryBound.getEndMillis).max
@@ -149,7 +154,8 @@ class BerryClient(val jsonParser: JSONParser,
     val futures = Future.traverse(queryGroup.queries) { queryInfo =>
       if (queryInfo.queryBound.overlaps(interval)) {
         val overlaps = queryInfo.queryBound.overlap(interval)
-        val timeFilter = FilterStatement(queryInfo.dataSetInfo.schema.timeField, None, Relation.inRange,
+        val schema = queryInfo.dataSetInfo.schema.asInstanceOf[Schema]
+        val timeFilter = FilterStatement(schema.timeField, None, Relation.inRange,
           Seq(overlaps.getStart, overlaps.getEnd).map(TimeField.TimeFormat.print))
         solveAQuery(queryInfo.query.copy(filter = timeFilter +: queryInfo.query.filter))
       } else {

@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor.Props
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
-import edu.uci.ics.cloudberry.zion.model.schema.{AppendView, Query, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.json.JsValue
 
 import scala.concurrent.ExecutionContext

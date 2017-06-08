@@ -16,7 +16,7 @@ object AQLFuncVisitor {
                         values: Seq[Any]
                        ): String = {
     //TODO add the function handling logic
-    if (!Schema.Type2Relations(field.dataType).contains(relation)) {
+    if (!AbstractSchema.Type2Relations(field.dataType).contains(relation)) {
       throw new QueryParsingException(s"field ${field.name} of type ${field.dataType} can not apply to relation: ${relation}")
     }
     field.dataType match {
