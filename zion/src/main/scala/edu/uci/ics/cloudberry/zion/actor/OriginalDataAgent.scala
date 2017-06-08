@@ -63,7 +63,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
   }
 
   private def collectStats(start: DateTime): Unit = {
-    if (dataSetInfo.schema.getTimeField.isEmpty) {
+    if (!dataSetInfo.schema.isInstanceOf[Schema]) {
       log.error("Cannot do aggregation query for lookup dataset " + dataSetInfo.schema.getTypeName)
       return
     }

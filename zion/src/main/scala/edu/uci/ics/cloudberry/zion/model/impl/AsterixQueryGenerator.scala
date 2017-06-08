@@ -312,13 +312,13 @@ object AsterixQueryGenerator {
     val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
 
     schemaMap.filter{ case(name, schema) =>
-      schema.getTimeField.isDefined
+      schema.isInstanceOf[Schema]
     }.foreach{ case(name, schema) =>
       temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
     }
 
     schemaMap.filter{ case(name, schema) =>
-      schema.getTimeField.isEmpty
+      schema.isInstanceOf[LookupSchema]
     }.foreach{ case(name, schema) =>
       lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
     }

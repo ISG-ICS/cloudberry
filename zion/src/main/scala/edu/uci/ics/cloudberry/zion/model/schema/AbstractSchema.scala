@@ -197,7 +197,6 @@ abstract class AbstractSchema(typeName: String,
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
 
   def getTypeName: String = typeName
-  def getTimeField: Option[TimeField]
   def copySchema: AbstractSchema
   def toUnresolved: UnresolvedSchema
 }
@@ -209,8 +208,6 @@ case class Schema(typeName: String,
                   timeField: TimeField
                  ) extends AbstractSchema(typeName, dimension, measurement, primaryKey){
 
-  override def getTimeField: Option[TimeField] = Some(timeField)
-
   override def copySchema: Schema = this.copy()
 
   override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
@@ -221,8 +218,6 @@ case class LookupSchema(typeName: String,
                         measurement: Seq[Field],
                         primaryKey: Seq[Field]
                        ) extends AbstractSchema(typeName, dimension, measurement, primaryKey) {
-
-  override def getTimeField: Option[TimeField] = None
 
   override def copySchema: LookupSchema = this.copy()
 
