@@ -11,7 +11,7 @@ if(process.env.NODE_ENV === "production") {
     }));
 }
 module.exports = {
-    plugins: plugins,
+    plugins,
     entry: "./src/CloudberryDemo.js",
     output: {
         path: "./dist",
