@@ -14,9 +14,9 @@
     $ sbt "project neo" "run"
 
 5) start a php server for the demo under "cloudberry/paraview/dist" directory
-    $ php -S [IP address]:[port]
+    $ php -S localhost:8888
 
-The demo should be available at http://[IP address]:[port]/
+The demo should be available at http://localhost:8888/
 
 
 To change the Cloudberry servcie address, you need to modify the "cloudberryHost" variable in "paraview/src/CloudberryDemo.js", and the URL in "paraview/dist/proxy.php".
