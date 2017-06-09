@@ -3,7 +3,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     $scope.result = {};
     $scope.doNormalization = false;
     $scope.doSentiment = false;
-    $scope.infoPromp = "Count";
+    $scope.infoPromp = config.mapLegend;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -90,6 +90,13 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       });
     }
 
+    function resetGeoInfo(level) {
+      $scope.status.logicLevel = level;
+      cloudberry.parameters.geoLevel = level;
+      if ($scope.geojsonData[level])
+        resetGeoIds($scope.bounds, $scope.geojsonData[level], level + 'ID');
+    }
+
 
     // initialize
     $scope.init = function() {
@@ -120,7 +127,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
       setInfoControl();
 
     };
-
 
 
     function setInfoControl() {
@@ -175,7 +181,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
           '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
           '<br/>',
-          '{{ infoPromp }}: {{ selectedPlace.properties.countText || "0" }}'
+          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -193,7 +199,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           $scope.status.zoomLevel = $scope.map.getZoom();
           $scope.bounds = $scope.map.getBounds();
           if($scope.status.zoomLevel > 7) {
-            $scope.status.logicLevel = 'city';
+            resetGeoInfo("city");
             if ($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
             }
@@ -206,10 +212,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             $scope.map.addLayer($scope.polygons.countyUpperPolygons);
             loadCityJsonByBound(onEachFeature);
           } else if ($scope.status.zoomLevel > 5) {
-            $scope.status.logicLevel = 'county';
+            resetGeoInfo("county");
             if (!$scope.status.init) {
-              resetGeoIds($scope.bounds, $scope.geojsonData.county, 'countyID');
-              cloudberry.parameters.geoLevel = 'county';
               cloudberry.queryType = 'zoom';
               cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
@@ -225,10 +229,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             $scope.map.addLayer($scope.polygons.stateUpperPolygons);
             $scope.map.addLayer($scope.polygons.countyPolygons);
           } else if ($scope.status.zoomLevel <= 5) {
-            $scope.status.logicLevel = 'state';
+            resetGeoInfo("state");
             if (!$scope.status.init) {
-              resetGeoIds($scope.bounds, $scope.geojsonData.state, 'stateID');
-              cloudberry.parameters.geoLevel = 'state';
               cloudberry.queryType = 'zoom';
               cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
@@ -353,9 +355,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
             onEachFeature: onEachFeature
           });
           setCenterAndBoundry($scope.geojsonData.city.features);
+          resetGeoInfo("city");
           if (!$scope.status.init) {
-            resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
-            cloudberry.parameters.geoLevel = 'city';
             cloudberry.queryType = 'zoom';
             cloudberry.query(cloudberry.parameters, cloudberry.queryType);
           }
@@ -670,7 +671,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
           if($scope.doSentiment) {
             $scope.infoPromp = "Score";  // change the info promp
           } else {
-            $scope.infoPromp = "Count";
+            $scope.infoPromp = config.mapLegend;
           }
           drawMap($scope.result);
         }

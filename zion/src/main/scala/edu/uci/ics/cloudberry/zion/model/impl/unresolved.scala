@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
-import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
+import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.Interval
@@ -20,14 +20,8 @@ object Unresolved {
       dataSetInfo.stats
     )
 
-  def toUnresolved(schema: Schema): UnresolvedSchema = {
-    UnresolvedSchema(
-      schema.typeName,
-      schema.dimension,
-      schema.measurement,
-      schema.primaryKey.map(_.name),
-      schema.timeField.name
-    )
+  def toUnresolved(schema: AbstractSchema): UnresolvedSchema = {
+    schema.toUnresolved
   }
 
   def toUnresolved(query: Query): UnresolvedQuery =
@@ -121,33 +115,52 @@ object Unresolved {
 
 
 /**
-  * This class is an unresolved version of [[Schema]].
-  * The difference is that [[primaryKey]] and [[timeField]] here are strings,
-  * which are resolved later into [[Field]]
+  * This class is an unresolved version of [[AbstractSchema]].
+  * The differences are
+  *   [[primaryKey]] is string,
+  *   [[timeField]] is Option[String] corresponding to temporal schema and static schema.
+  * which are resolved later into [[Field]] and to [[Schema]] or [[LookupSchema]].
   */
 case class UnresolvedSchema(typeName: String,
                             dimension: Seq[Field],
                             measurement: Seq[Field],
                             primaryKey: Seq[String],
-                            timeField: String
+                            timeField: Option[String]
                            ) {
   private lazy val fields = dimension ++ measurement
 
-  def getField(field: String): Option[Field] =
-    field.trim match {
-      case "" => None
-      case _ => fields.find(_.name == field) match {
-        case some: Some[Field] => some
-        case None => throw new FieldNotFound(field)
-      }
+  def getField(field: String): Option[Field] = {
+    fields.find(_.name == field.trim) match {
+      case some: Some[Field] => some
+      case None => None
     }
+  }
 
+  def toResolved: AbstractSchema = {
+    val resolvedPrimaryKey = primaryKey.map(this.getField(_).get)
+    timeField match {
+      case Some(field) =>
+        val resolvedTimeField = this.getField(field) match {
+          case Some(f) =>
+            if(f.isInstanceOf[TimeField]){
+              f.asInstanceOf[TimeField]
+            } else {
+              throw new QueryParsingException("Specified timeField " + field + " of schema " + typeName + " is not in TimeField format.")
+            }
+          case None =>
+            throw FieldNotFound(field)
+        }
+        Schema(typeName, dimension, measurement, resolvedPrimaryKey, resolvedTimeField)
+      case None =>
+        LookupSchema(typeName, dimension, measurement, resolvedPrimaryKey)
+    }
+  }
 }
 
 /**
   * This class is an unresolved version of [[DataSetInfo]].
   * The difference is that [[createQueryOpt]] and [[schema]] are [[UnresolvedQuery]] and [[UnresolvedSchema]],
-  * which are resolved later into [[Query]] and [[Schema]]
+  * which are resolved later into [[Query]] and [[AbstractSchema]]
   */
 case class UnresolvedDataSetInfo(name: String,
                                  createQueryOpt: Option[UnresolvedQuery],

@@ -14,7 +14,7 @@ class JSONParserTest extends Specification {
 
 
   "JSONParser parse query" should {
-    def checkQueryOnly(json: JsValue, schemaMap: Map[String, Schema], expect: Query): MatchResult[Any] = {
+    def checkQueryOnly(json: JsValue, schemaMap: Map[String, AbstractSchema], expect: Query): MatchResult[Any] = {
       val (actualQuery, _) = parser.parse(json, schemaMap)
       actualQuery.size must_== 1
       actualQuery.head must_== expect
