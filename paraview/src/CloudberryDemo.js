@@ -12,7 +12,7 @@ import FieldSelector from 'paraviewweb/src/InfoViz/Native/FieldSelector';
 var JSONbig = require('json-bigint');
 
 var httpProxy = "proxy.php";
-var cloudberryHost = "ws://localhost:9000/ws"
+var cloudberryHost = "ws://localhost:9000/ws"       // change this line to connect to your Cloudberry middleware
 var dataModel = { fields: { byTimeResult: { }, byGeoResult: { } }, histogram1D_storage: { 32: { byTimeResult: { }, byGeoResult: { } } }, dirty: true };
 var xhttpState = "initializing";
 var WSServer;
