@@ -159,9 +159,8 @@
 	        case 'city':
 	            return 'cityID';
 	        default:
-	            break;
+	            throw 'no matching level';
 	    }
-	    return 'good';
 	}
 
 	function mkString(array, delimiter) {
@@ -174,7 +173,12 @@
 	}
 
 	function getFilter(parameters, maxDay) {
-	    var spatialField = getLevel(parameters.geoLevel);
+	    try {
+	        var spatialField = getLevel(parameters.geoLevel);
+	    } catch (e) {
+	        var spatialField = '';
+	        console.error(e.message);
+	    }
 	    var keywords = [];
 	    var queryStartDate = new Date(parameters.timeInterval.end);
 	    var i;
