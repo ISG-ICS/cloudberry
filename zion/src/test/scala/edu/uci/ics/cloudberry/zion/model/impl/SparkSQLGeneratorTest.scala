@@ -85,11 +85,11 @@ class SparkSQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10byHashTag))
       val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select `hashtags` as `hashtags`,count(*) as `count`
+        """|select `hashtag` as `hashtag`,count(*) as `count`
            |from twitter_ds_tweet t
-           |lateral view explode(t.`hashtags`) tab as `hashtags`
+           |lateral view explode(t.`hashtags`) tab as `hashtag`
            |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z' and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`geo_tag`.`stateID` in ( 37,51,24,11,10,34,42,9,44 )
-           |group by `hashtags`
+           |group by `hashtag`
            |order by `count` desc
            |limit 10""".stripMargin.trim)
     }
@@ -197,11 +197,11 @@ class SparkSQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """|select max(`count`) as `max` from
-           |(select `hashtags` as `hashtags`,count(*) as `count`
+           |(select `hashtag` as `hashtag`,count(*) as `count`
            |from twitter_ds_tweet t
-           |lateral view explode(t.`hashtags`) tab as `hashtags`
+           |lateral view explode(t.`hashtags`) tab as `hashtag`
            |where t.`hashtags` is not null and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z' and t.`geo_tag`.`stateID` in ( 37,51,24,11,10,34,42,9,44 )
-           |group by `hashtags`
+           |group by `hashtag`
            |order by `count` desc
            |limit 10)""".stripMargin.trim)
     }
@@ -337,11 +337,11 @@ class SparkSQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select `tag` as `tag`,count(*) as `count`
+          |select `hashtag` as `hashtag`,count(*) as `count`
           |from twitter_ds_tweet t
-          |lateral view explode(t.`hashtags`) tab as `hashtags`
+          |lateral view explode(t.`hashtags`) tab as `hashtag`
           |where t.`hashtags` is not null and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z' and t.`geo_tag`.`stateID` in ( 37,51,24,11,10,34,42,9,44 )
-          |group by `hashtags`
+          |group by `hashtag`
           |order by `count` desc
           |limit 10
           | """.stripMargin.trim)
@@ -593,7 +593,23 @@ class SparkSQLGeneratorTest extends Specification {
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
-
+    //41
+    //    "translate a filter having point relation with select" in {
+    //      val filter = Seq(pointFilter)
+    //      val select = Option(selectRecent)
+    //      val query = new Query(dataset = TwitterDataSetForSparkSQL, filter = filter, select = select)
+    //      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+    //      removeEmptyLine(result) must_== unifyNewLine(
+    //        """select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
+    //          |from twitter_ds_tweet t
+    //          |where spatial_intersect(t.`coordinate`,
+    //          |  create_rectangle(create_point(0.0,0.0),
+    //          |  create_point(1.0,1.0)))
+    //          |order by t.`create_at` desc
+    //          |limit 100
+    //          |""".stripMargin)
+    //    }
+    //42
     "translate lookup inside group by state and count" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
@@ -693,7 +709,21 @@ class SparkSQLGeneratorTest extends Specification {
       )
     }
 
-   // 47
+    //46
+    //    "translate a append and filter and group by time query" in {
+    //      val filter = Seq(langLenFilter)
+    //      val group = GroupStatement(Seq(byHour), Seq(aggrCount))
+    //      val query = new Query(TwitterDataSetForSparkSQL, Seq(appendLangLen), Seq.empty, filter, Seq.empty, Some(group), None)
+    //      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+    //      removeEmptyLine(result) must_== unifyNewLine(
+    //        """
+    //          |select `hour`(ta.`create_at`) as `hour`,count(*) as `count`
+    //          |from (select length(lang) as `lang_len`,t.`create_at` as `create_at`
+    //          |from twitter_ds_tweet t) ta
+    //          |where ta.lang_len >= 1
+    //          |group by `hour`(ta.create_at)""".stripMargin.trim)
+    //    }
+    //47
     "translate append with lookup inside group by state and sum" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
@@ -730,5 +760,74 @@ class SparkSQLGeneratorTest extends Specification {
     }
   }
 
+  //  "SparkSQLGenerator createView" should {
+  //    "generate the ddl for the twitter dataset" in {
+  //      val ddl = parser.generate(CreateView("zika", zikaCreateQuery), Map(TwitterDataSetForSparkSQL -> TwitterDataStore.TwitterSchema))
+  //      removeEmptyLine(ddl) must_== unifyNewLine(
+  //        """
+  //          |create type twitter.typeTweet if not exists as open {
+  //          |  favorite_count : double,
+  //          |  geo_tag : {   countyID : double },
+  //          |  user_mentions : {{double}}?,
+  //          |  user : {   id : double },
+  //          |  geo_tag : {   cityID : double },
+  //          |  is_retweet : boolean,
+  //          |  text : string,
+  //          |  retweet_count : double,
+  //          |  in_reply_to_user : double,
+  //          |  id : double,
+  //          |  coordinate : point,
+  //          |  in_reply_to_status : double,
+  //          |  user : {   status_count : double },
+  //          |  geo_tag : {   stateID : double },
+  //          |  create_at : datetime,
+  //          |  lang : string,
+  //          |  hashtags : {{string}}?
+  //          |}
+  //          |drop dataset zika if exists;
+  //          |create dataset zika(twitter.typeTweet) primary key id //with filter on 'create_at'
+  //          |insert into zika (
+  //          |select value t
+  //          |from twitter_ds_tweet t
+  //          |where ftcontains(t.`text`, ['zika'], {'mode':'all'})
+  //          |);""".stripMargin.trim)
+  //    }
+  //  }
+  //
+  //  "SparkSQLGenerator appendView" should {
+  //    "generate the upsert query" in {
+  //      val timeFilter = FilterStatement(TimeField(TwitterDataStore.TimeFieldName), None, Relation.inRange, Seq(startTime, endTime))
+  //      val sql = parser.generate(AppendView("zika", zikaCreateQuery.copy(filter = Seq(timeFilter) ++ zikaCreateQuery.filter)), Map("twitter_ds_tweet" -> TwitterDataStore.TwitterSchema))
+  //      removeEmptyLine(sql) must_== unifyNewLine(
+  //        """
+  //          |upsert into zika (
+  //          |select value t
+  //          |from twitter_ds_tweet t
+  //          |where t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z' and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+  //          |)
+  //        """.stripMargin.trim)
+  //    }
+  //  }
+
+  "SparkSQLGenerator deleteRecord" should {
+    "generate the delete query " in {
+      val sql = parser.generate(DeleteRecord(TwitterDataSetForSparkSQL, Seq(timeFilter)), Map(TwitterDataSetForSparkSQL -> TwitterDataStore.TwitterSchema))
+      removeEmptyLine(sql) must_== unifyNewLine(
+        """
+          |delete from twitter_ds_tweet t
+          |where t.`create_at` >= '2016-01-01T00:00:00.000Z' and t.`create_at` < '2016-12-01T00:00:00.000Z'
+          |""".stripMargin.trim)
+    }
+  }
+
+  "SparkSQLGenerator dropView" should {
+    "generate the drop view query" in {
+      val sql = parser.generate(DropView(TwitterDataSetForSparkSQL), Map(TwitterDataSetForSparkSQL -> TwitterDataStore.TwitterSchema))
+      removeEmptyLine(sql) must_== unifyNewLine(
+        """
+          |drop dataset twitter_ds_tweet if exists
+          |""".stripMargin.trim)
+    }
+  }
 
 }

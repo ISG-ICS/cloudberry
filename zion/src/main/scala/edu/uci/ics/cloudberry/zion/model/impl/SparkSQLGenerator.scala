@@ -402,7 +402,7 @@ class SparkSQLGenerator extends IQLGenerator {
     val unnestStr = unnest.zipWithIndex.map {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
-        val newExpr = s"${quote}hashtags$quote"
+        val newExpr = s"${quote}hashtag$quote"
         producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
         if (unnest.field.isOptional) {
           unnestTestStrs += s"${expr.refExpr} is not null"
@@ -445,7 +445,7 @@ class SparkSQLGenerator extends IQLGenerator {
       case Some(group) =>
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val groupStrs = group.bys.map { by =>
-          //          println(exprMap)
+          //          println("exprMap: ", exprMap)
           val fieldExpr = exprMap(by.field.name)
           val as = by.as.getOrElse(by.field)
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
@@ -453,7 +453,7 @@ class SparkSQLGenerator extends IQLGenerator {
           producedExprs += (as.name -> FieldExpr(newExpr, newExpr))
           //          println("newExpr: ", newExpr)
           if (newExpr == s"${quote}hashtags${quote}" || newExpr == s"${quote}tag${quote}"){
-            s"${quote}hashtags${quote}"
+            s"${quote}hashtag${quote}"
           }
           else if (newExpr == s"${quote}state${quote}"){
             s"$groupExpr"
@@ -586,6 +586,9 @@ class SparkSQLGenerator extends IQLGenerator {
         else if (s"${expr.defExpr}" == s"${quote}state${quote}"){
           s"$sourceVar.geo_tag.stateID as ${expr.defExpr}"
         }
+        else if (s"${expr.defExpr}" == s"${quote}hashtags${quote}" || s"${expr.defExpr}" == s"${quote}tag${quote}"){
+          s"`hashtag` as `hashtag`"
+        }
         else {
           s"${expr.defExpr} as $quote$field$quote"
         }
@@ -644,6 +647,6 @@ class SparkSQLGenerator extends IQLGenerator {
   }
 }
 
-//object SparkSQLGenerator extends IQLGeneratorFactory {
-//  override def apply(): IQLGenerator = new SparkSQLGenerator()
-//}
+object SparkSQLGenerator extends IQLGeneratorFactory {
+  override def apply(): IQLGenerator = new SparkSQLGenerator()
+}
