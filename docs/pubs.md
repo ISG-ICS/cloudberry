@@ -6,7 +6,7 @@ subtitle:
 
 ## Papers
 * **Supporting Visualizations on Large Twitter Datasets Using Cloudberry**,
-Shengjie Xu, Chen Li, Jianfeng Jia, Hao Chen.
+Shengjie Xu.
 [[PDF](../img/Supporting-Visualizations-on-Large-Twitter-Datasets-Using-Cloudberry.pdf)]
 * **Towards Interactive Analytics and Visualization on One Billion Tweets**,
 Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, ACM GIS 2016.
