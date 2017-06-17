@@ -81,7 +81,7 @@ class SparkSQLGenerator extends IQLGenerator {
   }
 
 
-  def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
+  def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
     val result = query match {
       case q: Query => parseQuery(q, schemaMap)
       case q: CreateView => parseCreate(q, schemaMap)
@@ -95,21 +95,8 @@ class SparkSQLGenerator extends IQLGenerator {
   }
 
 
-  def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
-    val sourceSchema = schemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, schemaMap(create.query.dataset))
-    val ddl: String = genDDL(resultSchema)
-    val createDataSet =
-      s"""
-         |drop ${create.dataset} if exists;
-         |create ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
-         |""".stripMargin
-    val insert =
-      s"""
-         |insert into ${create.dataset} (
-         |${parseQuery(create.query, schemaMap)}
-         |)""".stripMargin
-    ddl + createDataSet + insert
+  def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
+    ???
   }
 
   protected def genDDL(schema: Schema): String = {
@@ -145,21 +132,21 @@ class SparkSQLGenerator extends IQLGenerator {
     }
   }
 
-  def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
+  def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
        |upsert into ${append.dataset} (
        |${parseQuery(append.query, schemaMap)}
        |)""".stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
+  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
        |upsert into ${q.dataset} (
        |${Json.toJson(q.records)}
        |)""".stripMargin
   }
 
-  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
     if (delete.filters.isEmpty) {
       throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
     }
@@ -170,7 +157,7 @@ class SparkSQLGenerator extends IQLGenerator {
     return queryBuilder.toString()
   }
 
-  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
+  protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
     s"drop dataset ${query.dataset} if exists"
   }
 
@@ -183,7 +170,7 @@ class SparkSQLGenerator extends IQLGenerator {
     }
   }
 
-  protected def initExprMap(dataset: String, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
+  protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr] = {
     val schema = schemaMap(dataset)
     schema.fieldMap.mapValues { f =>
       f.dataType match {
@@ -197,7 +184,7 @@ class SparkSQLGenerator extends IQLGenerator {
     }
   }
 
-  protected def parseQuery(query: Query, schemaMap: Map[String, Schema]): String = {
+  protected def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
     val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)
@@ -375,6 +362,8 @@ class SparkSQLGenerator extends IQLGenerator {
       ParsedResult(Seq.empty, exprMap)
     }
   }
+  protected def parseGeoCell(scale: Double, fieldExpr: String, dataType: DataType.Value): String = ???
+
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
                           exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
@@ -405,7 +394,8 @@ class SparkSQLGenerator extends IQLGenerator {
             val hierarchyField = groupBy.field.asInstanceOf[HierarchyField]
             val field = hierarchyField.levels.find(_._1 == level.levelTag).get
             s"$fieldExpr.${field._2}"
-
+          case bin: Bin => ???
+          case interval: Interval => ???
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
         }
       case None => fieldExpr
@@ -549,9 +539,7 @@ class SparkSQLGenerator extends IQLGenerator {
       case (field, expr) => field != "*" && expr.refExpr != sourceVar
     }.map {
       case (field, expr) =>
-        //        println(expr.defExpr)
         if (s"${expr.defExpr}" == s"$quote$sec$quote" || s"${expr.defExpr}" == s"$quote$minute$quote" || s"${expr.defExpr}" == s"$quote$hour$quote" || s"${expr.defExpr}" == s"$quote$day$quote" || s"${expr.defExpr}" == s"$quote$month$quote" || s"${expr.defExpr}" == s"$quote$year$quote"){
-          //          s"${expr.defExpr}(t.`create_at`) as $quote$field$quote"
           s"${expr.defExpr}($sourceVar.${quote}create_at${quote}) as ${expr.defExpr}"
         }
         else if (s"${expr.defExpr}" == s"${quote}state${quote}"){

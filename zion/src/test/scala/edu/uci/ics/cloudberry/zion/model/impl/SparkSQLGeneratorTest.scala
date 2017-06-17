@@ -388,6 +388,27 @@ class SparkSQLGeneratorTest extends Specification {
           |group by `hour`(t.`create_at`)
           | """.stripMargin.trim)
     }
+    // 28
+    "translate a text contain filter and group by geocell 10th" in {
+      ok
+    }
+    //29
+    "translate a text contain filter and group by geocell 100th" in {
+      ok
+    }
+    //30
+    "translate a text contain filter and group by geocell 1000th" in {
+      ok
+    }
+    //31
+    "translate a text contain filter and group by bin" in {
+      ok
+    }
+    //32
+    "translate a group by geocell without filter" in {
+      ok
+    }
+
     //    33
     "translate a text contain filter and select 10" in {
       val filter = Seq(textFilter)
@@ -518,7 +539,7 @@ class SparkSQLGeneratorTest extends Specification {
           |""".stripMargin.trim
       )
     }
-
+    //41
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
@@ -622,7 +643,7 @@ class SparkSQLGeneratorTest extends Specification {
       )
     }
 
-    //47
+    //46
     "translate append with lookup inside group by state and sum" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
