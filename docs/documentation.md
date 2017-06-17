@@ -4,65 +4,8 @@ title: Documentation
 toc: true
 ---
 
-## Quick Start
-
-Now let's checkout the code and run a TwitterMap demo on your local machine!
-You will need [`sbt`](http://www.scala-sbt.org/release/docs/Setup.html) to compile the project.
-*This demo requires at least 4G memory*.
-
-* Clone the code  
-
-```
-git clone https://github.com/ISG-ICS/cloudberry.git
-```
-
-* Compile the project
-
-```
-cd cloudberry; sbt compile
-```
-
-* Prepare the AsterixDB cluster:
-  Cloudberry runs on an Apache AsterixDB cluster.
-  You can set up a small AsterixDB cluster locally by using the prebuilt AsterixDB [docker image](https://hub.docker.com/r/jianfeng/asterixdb/).
-
-   - Install [Docker](https://www.docker.com/products/docker) (>1.10) on your local machine.
-   - Simply run the following command in the `cloudberry` folder to create an AsterixDB cluster locally.
-   ```
-   ./script/dockerRunAsterixDB.sh
-   ```
-
-* Ingest 324,000 sample tweets to AsterixDB.
-
-```
-./script/ingestTwitterToLocalCluster.sh
-```
-
-* Run cloudberry
-
-```
-sbt "project neo" "run"
-```
-
-*Please notice that the first time you open the page, it could take several minutes (depending on your machine) to load the front-end data.
-If you see the following messages from the console, it means the loading process is done.*
-
-```
-...
-[info] application - I'm initializing
-[info] play.api.Play - Application started (Dev)
-```
-
-* Once cloudberry successfully launched, register twitter map data model into cloudberry.
-
-```
-./script/twitterMapRegister.sh
-```
-
-You should see the TwitterMap webpage on your localhost: [http://localhost:9000](http://localhost:9000) and start to play with it!
-
-
 ## Concepts
+
 The Cloudberry system provides an optimization framework to speed up visualization-oriented OLAP queries on [AsterixDB](http://asterixdb.apache.org).
 
 The following document uses an already ingested AsterixDB Twitter dataset to illustrate how to set up the Cloudberry system on the dataset.
@@ -97,6 +40,7 @@ create type typeTweet if not exists as open{
 ```
 
 ## Data Schema
+
 Front-end developers need to tell Cloudberry which dataset to query and how the dataset looks like so that it can utilize the Cloudberry optimization techniques.
 
 The data set schema declaration is composed of five distinct components.
@@ -109,7 +53,7 @@ The data set schema declaration is composed of five distinct components.
 
 The following JSON request can be used to register the Twitter dataset inside AsterixDB to the middleware.
 
-```
+```json
 {
   "dataset":"twitter.ds_tweet",
   "schema":{
@@ -146,10 +90,18 @@ The following JSON request can be used to register the Twitter dataset inside As
 }
 ```
 
+The front-end application can send the ddl JSON file to Cloudberry `/admin/register` path by using `POST` HTTP method.
+E.g., we can register the previous ddl using the following command line:
+
+```
+curl -XPOST -d @JSON_FILE_NAME http://localhost:9000/admin/register
+```
+
 *Note*:
 Fields that are not relevant to the visualization queries are not required to appear in the schema declaration.
 
 ### Data Types
+
 Cloudberry supports the following data types:
 
 * **Boolean** : the same `Boolean` type as in AsterixDB.
@@ -175,8 +127,26 @@ Cloudberry supports the following data types:
 |Hierarchy |         | rollup | |
 
 
-## Format of requests to the middleware
-After defining the dataset, the front-end can send a JSON request to query it.
+## Cloudberry Request Format
+
+After defining the dataset, the front-end can `POST` a JSON request to `/berry` path to ask for results. E.g., for the
+illustration purpose, clients can use the `curl` command to send the JSON file as following.
+
+```
+curl -XPOST -d @JSON_FILE http://localhost:9000/berry
+```
+
+In the production system, the front-end application can send the request by JavaScripts to the `/berry` path.
+We also provide the websocket connection at `ws://cloudberry_host_name/ws`. You can let the front-end to directly talk
+to Cloudberry server in Javascript as following:
+
+```
+var ws = new WebSocket("ws://localhost:9000/ws"");
+```
+
+It will return the same result as HTTP POST requests.
+
+
 A request is composed of the following parameters:
 
 * **Dataset** : the dataset to query on.
@@ -189,9 +159,9 @@ A request is composed of the following parameters:
 
 ### Examples
 
-1. Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.
+* Get the per-state and per-hour count of tweets that contain "zika" and "virus" in 2016.
 
-```
+```json
 {
   "dataset": "twitter.ds_tweet",
   "filter": [
@@ -207,9 +177,9 @@ A request is composed of the following parameters:
     }
   ],
   "group": {
-     "by": [
+    "by": [
         {
-          "field": "geo.state",
+          "field": "geo_tag.stateID",
           "as": "state"
         },
         {
@@ -223,22 +193,40 @@ A request is composed of the following parameters:
           "as": "hour"
         }
       ],
-     "aggregate": [
-       {
-         "field": "*",
-         "apply": {
-           "name": "count"
-         },
-         "as": "count"
-       }
+    "aggregate": [
+      {
+        "field": "*",
+        "apply": {
+          "name": "count"
+        },
+        "as": "count"
+      }
       ]
   }
 }
 ```
 
-2. Get the top-10 related hashtags for tweets that mention "zika"
+You can test the query by putting the above JSON record into a file and using `curl` command to send it to Cloudberry.
 
 ```
+curl -XPOST -d @JSON_FILE http://localhost:9000/berry
+```
+
+You should see the following responses:
+
+```
+[[
+    {"state":6,"hour":"2016-04-09T10:00:00.000Z","count":1},
+    {"state":6,"hour":"2016-08-05T10:00:00.000Z","count":1},
+    {"state":12,"hour":"2016-07-26T10:00:00.000Z","count":1},
+    {"state":12,"hour":"2016-10-04T10:00:00.000Z","count":1}
+    ...
+]]
+```
+
+* Get the top-10 related hashtags for tweets that mention "zika".
+
+```json
 {
   "dataset": "twitter.ds_tweet",
   "filter": [
@@ -271,9 +259,20 @@ A request is composed of the following parameters:
 }
 ```
 
-3. Get 100 latest sample tweets that mention "zika".
+The expected results are as following:
 
 ```
+[[
+  {"tag":"Zika","count":6},
+  {"tag":"trndnl","count":6},
+  {"tag":"ColdWater","count":1},
+  ...
+]]
+```
+
+* Get 100 latest sample tweets that mention "zika".
+
+```json
 {
   "dataset": "twitter.ds_tweet",
   "filter": [{
@@ -290,12 +289,23 @@ A request is composed of the following parameters:
 }
 ```
 
-### Request options
-
-Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each "small query" to get the results progressively.
-For example, the following option specifies that the front-end wants to slice a query and the expected response time for each sliced "small query" is 2000 ms.
+The expected results are as following:
 
 ```
+[[
+ {"create_at":"2016-10-04T10:00:17.000Z","id":783351045829357568},
+ {"create_at":"2016-09-09T10:00:28.000Z","id":774291393749643264},
+ {"create_at":"2016-09-09T10:00:08.000Z","id":774291307858722820},
+ ...
+]]
+```
+
+### Request options
+
+Cloudberry supports automatic query-slicing on the `timeField`. The front-end can specify a response time limit for each
+"small query" to get the results progressively.
+
+```json
 {
  ...
  "option":{
@@ -304,10 +314,57 @@ For example, the following option specifies that the front-end wants to slice a 
 }
 ```
 
-#### Format of multiple requests
-Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results. In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
+For example, the following query asks the top-10 hashtags with an option to accept an updated results every 200ms.
+
+```json
+{
+    "dataset": "twitter.ds_tweet",
+    "filter": [{
+        "field": "text",
+        "relation": "contains",
+        "values": ["zika"]
+    }],
+    "unnest": [{
+        "hashtags": "tag"
+    }],
+    "group": {
+        "by": [{
+            "field": "tag"
+        }],
+        "aggregate": [{
+            "field": "*",
+            "apply": {
+                "name": "count"
+            },
+            "as": "count"
+        }]
+    },
+    "select": {
+        "order": ["-count"],
+        "limit": 10,
+        "offset": 0
+    },
+    "option": {
+        "sliceMillis": 200
+    }
+}
+```
+
+There will be a stream of results return from Cloudberry as following:
 
 ```
+[[{"tag":"Zika","count":3},{"tag":"ColdWater","count":1},{"tag":"Croatia","count":1}, ... ]]
+[[{"tag":"Zika","count":4},{"tag":"Croatia","count":1},{"tag":"OperativoNU","count":1}, ... ]]
+[[{"tag":"trndnl","count":6},{"tag":"Zika","count":4},{"tag":"ProjectHomeLouisDay","count":1}, ... ]]
+...
+```
+
+#### Format of multiple requests
+
+Sometimes the front-end wants to slice multiple queries simultaneously so that it can show multiple consistent results.
+In this case, it can wrap the queries inside the `batch` field and specify only one `option` field.
+
+```json
 {
   "batch" : [
     { request1 },
@@ -319,29 +376,147 @@ Sometimes the front-end wants to slice multiple queries simultaneously so that i
 }
 ```
 
-### Advanced users
+E.g., the following query shows an `batch` example that asks the by-state count and the top-10 hashtags and these two
+queries should be sliced synchronized.
 
-Some applications may require a multi-node AsterixDB cluster.
-You can follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to set it up.
+```json
+{
+    "batch": [{
+        "dataset": "twitter.ds_tweet",
+        "filter": [{
+            "field": "create_at",
+            "relation": "inRange",
+            "values": ["2016-01-01T00:00:00.000Z", "2016-12-31T00:00:00.000Z"]
+        }, {
+            "field": "text",
+            "relation": "contains",
+            "values": ["zika", "virus"]
+        }],
+        "group": {
+            "by": [{
+                "field": "geo_tag.stateID",
+                "as": "state"
+            }, {
+                "field": "create_at",
+                "apply": {
+                    "name": "interval",
+                    "args": {
+                        "unit": "hour"
+                    }
+                },
+                "as": "hour"
+            }],
+            "aggregate": [{
+                "field": "*",
+                "apply": {
+                    "name": "count"
+                },
+                "as": "count"
+            }]
+        }
+    }, {
+        "dataset": "twitter.ds_tweet",
+        "filter": [{
+            "field": "text",
+            "relation": "contains",
+            "values": ["zika"]
+        }],
+        "unnest": [{
+            "hashtags": "tag"
+        }],
+        "group": {
+            "by": [{
+                "field": "tag"
+            }],
+            "aggregate": [{
+                "field": "*",
+                "apply": {
+                    "name": "count"
+                },
+                "as": "count"
+            }]
+        },
+        "select": {
+            "order": ["-count"],
+            "limit": 10,
+            "offset": 0
+        }
+    }],
+    "option": {
+        "sliceMillis": 200
+    }
+}
+```
 
-After the cluster is set up, you should make the following changes
-
-* Change the AsterixDB NC name for feed connection
-
-In the script `./script/ingestTwitterToLocalCluster.sh`, line 86:
+The response is as following:
 
 ```
-("sockets"="my_asterix_nc1:10001")
+[
+  [ {"state":6,"hour":"2016-08-05T10:00:00.000Z","count":1}, {"state":12,"hour":"2016-07-26T10:00:00.000Z","count":1}, ...],
+  [ {"tag":"trndnl","count":6},{"tag":"Zika","count":5},{"tag":"ColdWater","count":1}, ...]
+]
+[
+  [ {"state":72,"hour":"2016-05-06T10:00:00.000Z","count":1},{"state":48,"hour":"2016-09-09T10:00:00.000Z","count":2}, ...],
+  [ {"tag":"trndnl","count":6},{"tag":"Zika","count":6},{"tag":"Croatia","count":1}, ...]
+]
+...
 ```
 
-where *my_asterix* is the name of your cluster instance, and *nc1* is the name of one NC node.
+#### Transform response format
 
-
-* Modify the AsterixDB hostname
-
-In configuration file `neo/conf/application.conf`, chang the `asterixdb.url` value to the previously set AsterixDB CC RESTFul API address.
+The front end can **optionally** add a "transform" operation in JSON request to define the post-processing operations. 
+For example, front-ends can define a `wrap` operation to wrap the whole response in a key-value pair JSON object in which the `key` is pre-defined. The following request asks the Cloudberry to wrap the result in the value with the key of `sample`:
 
 ```
-asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
+{
+  "dataset": "twitter.ds_tweet",
+  "filter": [{
+    "field": "text",
+    "relation": "contains",
+    "values": [ "zika"]
+  }],
+  "select" : {
+    "order" : [ "-create_at"],
+    "limit": 100,
+    "offset" : 0,
+    "field": ["create_at", "id"]
+  }
+  "transform" : {
+    "warp": {
+      "key": "sample"
+    }
+  }
+}
 ```
 
+The response is as below:
+
+```json
+{
+  "key":"sample",
+  "value":[[
+    {"create_at":"2016-10-04T10:00:17.000Z","id":783351045829357568,"user.id":439304013},
+    {"create_at":"2016-09-09T10:00:28.000Z","id":774291393749643264,"user.id":2870762297},
+    {"create_at":"2016-09-09T10:00:08.000Z","id":774291307858722820,"user.id":2870783428},
+    {"create_at":"2016-09-07T10:00:15.000Z","id":773566563895042049,"user.id":2870762297},
+    {"create_at":"2016-09-06T10:39:19.000Z","id":773214008237318144,"user.id":3783815248},
+    {"create_at":"2016-08-31T10:00:24.000Z","id":771029887025090560,"user.id":2866011003},
+    {"create_at":"2016-08-25T10:00:07.000Z","id":768855489073455104,"user.id":115230811},
+    {"create_at":"2016-08-19T10:00:36.000Z","id":766681282453594112,"user.id":254059750},
+    {"create_at":"2016-08-09T10:00:35.000Z","id":763057397464043521,"user.id":383512034},
+    {"create_at":"2016-08-08T10:00:29.000Z","id":762694985355436032,"user.id":518129224}
+  ]]
+}
+```
+
+`wrap` transformation is often preferable when the front-end send many different requests in the same WebSocket interface. 
+
+### Deregister Dataset
+
+You may also deregister a dataset from Cloudberry. To do so, you can send the JSON record as following to the `/admin/deregister` path.
+
+```
+{
+    "dataset": "twitter.dsCountyPopulation"
+}
+```

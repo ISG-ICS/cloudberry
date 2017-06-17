@@ -1,43 +1,36 @@
-@(title: String)(body: Html)
+@(title: String)(content: Html)
 
 <!DOCTYPE html>
-<html ng-app="cloudberry">
+<html>
+    <head>
+        <title>Cloudberry Admin</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
 
-<head>
-  <title>@title</title>
-  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel='shortcut icon' type='image/png' href='@routes.Assets.versioned("images/hyrax.png")'>
-
-  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
-
-  <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
-
-  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/leaflet/leaflet.css")'>
-  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/dc.js/dc.min.css")'>
-  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/font-awesome/css/font-awesome.min.css")'>
-  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap-vertical-tabs/bootstrap.vertical-tabs.min.css")'>
-  <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
-
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/json-bigint/dist/json-bigint.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/leaflet/leaflet.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")'></script>
-
-
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/app.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/timeseries/controllers.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/sidebar/controllers.js")'></script>
-  <script type='text/javascript' src='@routes.Assets.versioned("javascripts/searchbar/controllers.js")'></script>
-
-</head>
-
-<body>
-@body
-</body>
+    </head>
+    <body>
+        <nav class="navbar navbar-default">
+            <div class="container">
+                <div class="navbar-header">
+                    <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+                        <span class="sr-only">Toggle navigation</span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                        <span class="icon-bar"></span>
+                    </button>
+                    <a class="navbar-brand" href="#">Cloudberry Admin Console</a>
+                </div>
+                <div id="navbar" class="navbar-collapse collapse">
+                    <ul class="nav navbar-nav">
+                        <li class="active"><a href="#">Home</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        <li><a href="/#">TwitterMap</a></li>
+                    </ul>
+                </div><!--/.nav-collapse -->
+            </div>
+        </nav>
+        @content
+    </body>
 </html>

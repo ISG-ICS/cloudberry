@@ -32,10 +32,17 @@ lazy val neo = (project in file("neo")).
   settings(
     libraryDependencies ++= neoDependencies
   ).
+  enablePlugins(PlayScala).
+  dependsOn(gnosis, util, zion % "test->test;compile->compile")
+
+lazy val twittermap = (project in file("twittermap")).
+  settings(Commons.playSettings: _*).
+  settings(
+    libraryDependencies ++= twittermapDependencies
+  ).
   settings(
     mappings in Universal ++=
       (baseDirectory.value / "public" / "data" * "*" get) map
         (x => x -> ("public/data/" + x.getName))
   ).
-  enablePlugins(PlayScala).
-  dependsOn(gnosis, util, zion % "test->test;compile->compile")
+  enablePlugins(PlayScala)

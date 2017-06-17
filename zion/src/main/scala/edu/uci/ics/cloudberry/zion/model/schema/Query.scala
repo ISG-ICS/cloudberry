@@ -1,6 +1,5 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
-import edu.uci.ics.cloudberry.zion.model.datastore.QueryInitException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import play.api.libs.json.JsArray
 
@@ -26,6 +25,7 @@ object QueryExeOption {
 }
 
 case class Query(dataset: String,
+                 append: Seq[AppendStatement] = Seq.empty,
                  lookup: Seq[LookupStatement] = Seq.empty,
                  filter: Seq[FilterStatement] = Seq.empty,
                  unnest: Seq[UnnestStatement] = Seq.empty,
@@ -61,7 +61,7 @@ case class Query(dataset: String,
     }
   }
 
-  def canSolve(another: Query, schema: Schema): Boolean = {
+  def canSolve(another: Query, schema: AbstractSchema): Boolean = {
     //unfiltered field can be covered anyway
     //TODO think another way: just using compare the output schema!!!
     //still need the filter, but won't need to consider the group/select/lookup
@@ -101,13 +101,17 @@ case class AppendView(dataset: String, query: Query) extends IWriteQuery
 
 case class DropView(dataset: String) extends IWriteQuery
 
-case class CreateDataSet(dataset: String, schema: Schema, createIffNotExist: Boolean) extends IWriteQuery
+case class CreateDataSet(dataset: String, schema: AbstractSchema, createIffNotExist: Boolean) extends IWriteQuery
 
 case class UpsertRecord(dataset: String, records: JsArray) extends IWriteQuery
 
 case class DeleteRecord(dataset: String, filters: Seq[FilterStatement]) extends IWriteQuery
 
 trait Statement
+
+case class AppendStatement(field: Field,
+                           definition: String,
+                           as: Field) extends Statement
 
 /**
   * Augments the source data to contain more fields.

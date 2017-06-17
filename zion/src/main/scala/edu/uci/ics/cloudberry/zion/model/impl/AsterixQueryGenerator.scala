@@ -71,6 +71,8 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def sourceVar: String
 
+  protected def appendVar: String
+
   protected def lookupVar: String
 
   protected def unnestVar: String
@@ -97,17 +99,18 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     * Returns a query string query after parsing the query object.
     *
     * @param query     [[IQuery]] object containing query details
-    * @param schemaMap a map of Dataset name to it's [[Schema]]
+    * @param schemaMap a map of Dataset name to it's [[AbstractSchema]]
     * @return query string
     **/
-  def generate(query: IQuery, schemaMap: Map[String, Schema]): String = {
+  def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
+    val (temporalSchemaMap, lookupSchemaMap) = AsterixQueryGenerator.splitSchemaMap(schemaMap)
     val result = query match {
       case q: Query =>
-        parseQuery(q, schemaMap)
-      case q: CreateView => parseCreate(q, schemaMap)
-      case q: AppendView => parseAppend(q, schemaMap)
+        parseQuery(q, temporalSchemaMap)
+      case q: CreateView => parseCreate(q, temporalSchemaMap)
+      case q: AppendView => parseAppend(q, temporalSchemaMap)
       case q: UpsertRecord => parseUpsert(q, schemaMap)
-      case q: DropView => ???
+      case q: DropView => parseDrop(q, schemaMap)
       case q: DeleteRecord => parseDelete(q, schemaMap)
       case _ => ???
     }
@@ -120,19 +123,21 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   protected def parseAppend(query: AppendView, schemaMap: Map[String, Schema]): String
 
-  protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, Schema]): String
+  protected def parseUpsert(query: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String
 
-  protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, Schema]): String
-  
+  protected def parseDelete(query: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String
+
+  protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String
+
   def calcResultSchema(query: Query, schema: Schema): Schema = {
     if (query.lookup.isEmpty && query.groups.isEmpty && query.select.isEmpty) {
-      schema.copy()
+      schema.copySchema
     } else {
       ???
     }
   }
 
-  protected def initExprMap(dataset: String, schemaMap: Map[String, Schema]): Map[String, FieldExpr] = {
+  protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr] = {
     val schema = schemaMap(dataset)
     schema.fieldMap.mapValues { f =>
       f.dataType match {
@@ -158,7 +163,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case DataType.Point =>
         parsePointRelation(filter, fieldExpr)
       case DataType.Boolean => ???
-      case DataType.String => ???
+      case DataType.String => parseStringRelation(filter, fieldExpr)
       case DataType.Text =>
         parseTextRelation(filter, fieldExpr)
       case DataType.Bag => ???
@@ -197,6 +202,23 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       }
     }
   }
+
+  protected def parseStringRelation(filter: FilterStatement, fieldExpr: String): String = {
+    filter.relation match {
+      case Relation.matches => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"""$fieldExpr="${values(0)}""""
+      }
+      case Relation.!= => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"""$fieldExpr!="${values(0)}""""
+      }
+      case Relation.contains => ???
+
+    }
+
+  }
+
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
     val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
@@ -250,7 +272,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
   }
 
 
-  protected def genDDL(schema: Schema): String = {
+  protected def genDDL(schema: AbstractSchema): String = {
     //FIXME this function is wrong for nested types if it contains multiple sub-fields
     def mkNestDDL(names: List[String], typeStr: String): String = {
       names match {
@@ -263,7 +285,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       f => mkNestDDL(f.name.split("\\.").toList, fieldType2ADMType(f) + (if (f.isOptional) "?" else ""))
     }
     s"""
-       |create type ${schema.typeName} if not exists as open {
+       |create type ${schema.getTypeName} if not exists as open {
        |${fields.mkString(",\n")}
        |}
     """.stripMargin
@@ -281,5 +303,26 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case DataType.Hierarchy => ??? // should be skipped
       case DataType.Record => ???
     }
+  }
+}
+
+object AsterixQueryGenerator {
+  def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
+    val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
+    val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
+
+    schemaMap.filter{ case(name, schema) =>
+      schema.isInstanceOf[Schema]
+    }.foreach{ case(name, schema) =>
+      temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
+    }
+
+    schemaMap.filter{ case(name, schema) =>
+      schema.isInstanceOf[LookupSchema]
+    }.foreach{ case(name, schema) =>
+      lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
+    }
+
+    (temporalSchemaMap.toMap, lookupSchemaMap.toMap)
   }
 }

@@ -3,9 +3,9 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.QueryParsingException
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
-import scala.collection.mutable
-import scala.reflect.runtime.universe.{TypeTag, typeOf}
+import play.api.Logger
 
+import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object QueryValidator {
   /**
@@ -13,27 +13,27 @@ object QueryValidator {
     *
     * @param query
     */
-  def validate(query: IQuery): Unit = {
+  def validate(query: IQuery, schemaMap: Map[String, AbstractSchema]): Unit = {
     query match {
       case q: Query =>
-        validateQuery(q)
-      case q: CreateView => validateCreate(q)
-      case q: AppendView => validateAppend(q)
-      case q: UpsertRecord => validateUpsert(q)
+        validateQuery(q, schemaMap)
+      case q: CreateView => validateCreate(q, schemaMap)
+      case q: AppendView => validateAppend(q, schemaMap)
+      case q: UpsertRecord => validateUpsert(q, schemaMap)
       case q: DropView => ???
       case _ => ???
     }
   }
 
-  private def validateCreate(q: CreateView): Unit = {
-    validateQuery(q.query)
+  private def validateCreate(q: CreateView, schemaMap: Map[String, AbstractSchema]): Unit = {
+    validateQuery(q.query, schemaMap)
   }
 
-  private def validateAppend(q: AppendView): Unit = {
-    validateQuery(q.query)
+  private def validateAppend(q: AppendView, schemaMap: Map[String, AbstractSchema]): Unit = {
+    validateQuery(q.query, schemaMap)
   }
 
-  private def validateUpsert(q: UpsertRecord): Unit = {
+  private def validateUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): Unit = {
     //TODO validate upsert
   }
 
@@ -46,7 +46,10 @@ object QueryValidator {
     t.isInstanceOf[Number] || implicitly[TypeTag[T]].tpe <:< typeOf[AnyVal]
   }
 
-  def validateQuery(query: Query): Unit = {
+  def validateQuery(query: Query, schemaMap: Map[String, AbstractSchema]): Unit = {
+    if (!schemaMap(query.dataset).isInstanceOf[Schema]) {
+      throw new IllegalArgumentException("lookup dataset " + query.dataset + " does not support query " + query.toString)
+    }
     query.filter.foreach(validateFilter(_))
     query.lookup.foreach(validateLookup(_))
     query.unnest.foreach(validateUnnest(_))
@@ -54,7 +57,7 @@ object QueryValidator {
   }
 
   def validateFilter(filter: FilterStatement): Unit = {
-    requireOrThrow(Schema.Type2Relations(filter.field.dataType).contains(filter.relation),
+    requireOrThrow(AbstractSchema.Type2Relations(filter.field.dataType).contains(filter.relation),
       s"field ${filter.field.name} of type ${filter.field.dataType} can not apply to relation: ${filter.relation}."
     )
 
@@ -67,6 +70,7 @@ object QueryValidator {
         validatePointRelation(filter.relation, filter.values)
       case DataType.Boolean =>
       case DataType.String =>
+        validateStringRelation(filter.relation, filter.values)
       case DataType.Text =>
         validateTextRelation(filter.relation, filter.values)
       case DataType.Bag =>
@@ -117,6 +121,18 @@ object QueryValidator {
         if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
     }
   }
+
+  def validateStringRelation(relation: Relation, values: Seq[Any]): Unit = {
+    requireOrThrow(values.forall(_.isInstanceOf[String]), s"values contain non compatible data type for relation: $relation.")
+
+    relation match {
+      case Relation.matches | Relation.!= =>
+        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
+      case Relation.contains => ???
+    }
+
+  }
+
 
   def validateTimeRelation(relation: Relation, values: Seq[Any]): Unit = {
     //required string format : http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html

@@ -22,6 +22,8 @@ object TestQuery {
   val createAt = twitterField("create_at").asInstanceOf[TimeField]
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
+  val lang = twitterField("lang")
+
   val tag = Field.as(hashtags, "tag")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
@@ -37,6 +39,7 @@ object TestQuery {
   val min = Field("min", DataType.Number)
 
   val literacy = literacyField("literacy")
+  val langLen = NumberField("lang_len")
 
   val textValue = Seq("zika", "virus")
   val stateValue = Seq(37, 51, 24, 11, 10, 34, 42, 9, 44)
@@ -48,6 +51,9 @@ object TestQuery {
   val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
   val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
   val pointFilter = FilterStatement(coordinate, None, Relation.inRange, Seq(Seq(0.0, 0.0), Seq(1.0, 1.0)))
+  val langMatchFilter = FilterStatement(lang, None, Relation.matches, Seq("en"))
+  val langNotMatchFilter = FilterStatement(lang, None, Relation.!=, Seq("en"))
+  val langLenFilter = FilterStatement(langLen, None, Relation.>=, Seq(1))
 
   val intValues = Seq(1)
   val stringValue = Seq("English")
@@ -106,6 +112,8 @@ object TestQuery {
   val aggrSum = AggregateStatement(id, Sum, Field.as(Sum(id), "sum"))
   val aggrAvg = AggregateStatement(id, Avg, Field.as(Avg(id), "avg"))
   val aggrPopulationMin = AggregateStatement(population, Min, Field.as(Min(population), "min"))
+  val aggrAvgLangLen = AggregateStatement(langLen, Avg, Field.as(Avg(langLen), "avgLangLen"))
+
 
   val groupPopulationSum = GroupStatement(
     bys = Seq(byState),
@@ -118,6 +126,9 @@ object TestQuery {
 
   val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
   val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))
+
+  val appendLangLen = AppendStatement(lang, "length(lang)", langLen)
+
 
   val lookupPopulation = LookupStatement(
     sourceKeys = Seq(geoStateID),
@@ -926,6 +937,105 @@ object TestQuery {
        |  }
        |}
     """.stripMargin)
+
+  val appendFilterGroupbyJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "append": [ {
+       |      "field":"lang",
+       |      "definition":"length(lang)",
+       |      "type":"Number",
+       |      "as":"lang_len"
+       |    }
+       | ],
+       | "filter":[
+       |    {
+       |      "field":"lang_len",
+       |      "relation":">=",
+       |      "values":[1]
+       |    }
+       |  ],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "create_at",
+       |        "apply": {
+       |          "name": "interval",
+       |          "args": {
+       |              "unit": "hour"
+       |            }
+       |        },
+       |        "as": "hour"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "*",
+       |        "apply": {
+       |          "name" : "count"
+       |        },
+       |        "as": "count"
+       |      }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
+
+
+  val appendGroupLookupJSON = Json.parse(
+    s"""
+       |{
+       | "dataset":"twitter.ds_tweet",
+       | "append": [ {
+       |      "field":"lang",
+       |      "definition":"length(lang)",
+       |      "type":"Number",
+       |      "as":"lang_len"
+       |    }
+       | ],
+       | "filter":[
+       |    {
+       |      "field":"text",
+       |      "relation":"contains",
+       |      "values":[${textValue.map("\"" + _ + "\"").mkString(",")}]
+       |    }
+       |  ],
+       |  "group": {
+       |    "by": [
+       |      {
+       |        "field": "geo",
+       |        "apply": {
+       |          "name": "level",
+       |          "args": {
+       |            "level": "state"
+       |          }
+       |        },
+       |        "as": "state"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field": "lang_len",
+       |        "apply": {
+       |          "name" : "avg"
+       |        },
+       |        "as": "avgLangLen"
+       |      }
+       |    ],
+       |    "lookup": [
+       |    {
+       |      "joinKey":["state"],
+       |      "dataset":"twitter.US_population",
+       |      "lookupKey":["stateID"],
+       |      "select":["population"],
+       |      "as" : ["population"]
+       |    }
+       |    ]
+       |  }
+       |}
+    """.stripMargin)
+
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 

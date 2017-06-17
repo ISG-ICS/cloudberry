@@ -1,0 +1,14 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# TwitterMap routes
+GET        /                                    controllers.TwitterMapApplication.index
+GET        /drugmap                             controllers.TwitterMapApplication.drugmap
+
+GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
+
+
+# Map static resources from the /public folder to the /assets URL path
+GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
+GET        /favicon.ico                         controllers.Assets.at(path="/public/images", file="favicon.ico")

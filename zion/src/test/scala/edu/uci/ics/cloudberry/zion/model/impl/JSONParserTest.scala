@@ -14,70 +14,70 @@ class JSONParserTest extends Specification {
 
 
   "JSONParser parse query" should {
-    def checkQueryOnly(json: JsValue, schemaMap: Map[String, Schema], expect: Query): MatchResult[Any] = {
+    def checkQueryOnly(json: JsValue, schemaMap: Map[String, AbstractSchema], expect: Query): MatchResult[Any] = {
       val (actualQuery, _) = parser.parse(json, schemaMap)
       actualQuery.size must_== 1
       actualQuery.head must_== expect
     }
 
     "parse the hourly count request" in {
-      val expect = Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
+      val expect = Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
       checkQueryOnly(hourCountJSON, twitterSchemaMap, expect)
     }
     "parse the by (state, hour) count request" in {
       val filter = Seq(stateFilter, timeFilter, textFilter)
       val group = GroupStatement(Seq(byState, byHour), Seq(aggrCount))
-      val expectQuery = Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), None)
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
       checkQueryOnly(filterSelectJSON, twitterSchemaMap, expectQuery)
     }
     "parse the by topK hashtag request" in {
       val filter = Seq(stateFilter, timeFilter, textFilter)
       val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val expectQuery = Query(TwitterDataSet, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
       checkQueryOnly(topKHashTagJSON, twitterSchemaMap, expectQuery)
     }
     "parse the by sample tweets" in {
       val filter = Seq(stateFilter, timeFilter, textFilter)
-      val expectQuery = Query(TwitterDataSet, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
       checkQueryOnly(sampleTweetJSON, twitterSchemaMap, expectQuery)
     }
     "parse the group by bin" in {
-      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
       checkQueryOnly(groupByBinJSON, twitterSchemaMap, expectQuery)
     }
     "parse int values " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq(intFilter), Seq.empty, None, None)
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(intFilter), Seq.empty, None, None)
       checkQueryOnly(intValuesJSON, twitterSchemaMap, expectQuery)
     }
     "parse string values " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq(stringFilter), Seq.empty, None, None)
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(stringFilter), Seq.empty, None, None)
       checkQueryOnly(stringValueJSON, twitterSchemaMap, expectQuery)
     }
     "parse long values " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq(longFilter), Seq.empty, None, None)
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(longFilter), Seq.empty, None, None)
       checkQueryOnly(longValuesJSON, twitterSchemaMap, expectQuery)
     }
     "parse double values " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq(doubleFilter), Seq.empty, None, None)
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(doubleFilter), Seq.empty, None, None)
       checkQueryOnly(doubleValuesJSON, twitterSchemaMap, expectQuery)
     }
     "parse geoCellTenth group function " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty,
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty,
         Some(GroupStatement(Seq(byGeocell10), Seq(aggrCount))), None)
       checkQueryOnly(geoCell10JSON, twitterSchemaMap, expectQuery)
     }
     "parse geoCellHundredth group function " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty,
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty,
         Some(GroupStatement(Seq(byGeocell100), Seq(aggrCount))), None)
       checkQueryOnly(geoCell100JSON, twitterSchemaMap, expectQuery)
     }
     "parse geoCellThousandth group function " in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty,
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty,
         Some(GroupStatement(Seq(byGeocell1000), Seq(aggrCount))), None)
       checkQueryOnly(geoCell1000JSON, twitterSchemaMap, expectQuery)
     }
     "parse boolean filter request" in {
-      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq(retweetFilter), Seq.empty,
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(retweetFilter), Seq.empty,
         Some(GroupStatement(Seq(byUser), Seq(aggrCount))), None)
       checkQueryOnly(booleanFilterJSON, twitterSchemaMap, expectQuery)
     }
@@ -110,7 +110,7 @@ class JSONParserTest extends Specification {
       val lookup = Seq(lookupPopulation)
       val filter = Seq(textFilter)
       val selectStatement = Some(selectPopulation)
-      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(simpleLookupFilterJSON, allSchemaMap, expectedQuery)
     }
 
@@ -118,7 +118,7 @@ class JSONParserTest extends Specification {
       val lookup = Seq(lookupPopulationMultiple)
       val filter = Seq(textFilter)
       val selectStatement = Some(selectPopulation)
-      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(multiFieldLookupFilterJSON, allSchemaMap, expectedQuery)
     }
 
@@ -126,7 +126,7 @@ class JSONParserTest extends Specification {
       val lookup = Seq(lookupPopulation, lookupLiteracy)
       val filter = Seq(textFilter)
       val selectStatement = Some(selectPopulationLiteracy)
-      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, select = selectStatement)
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, lookup, filter, Seq.empty, select = selectStatement)
       checkQueryOnly(multiLookupFilterJSON, allSchemaMap, expectedQuery)
     }
 
@@ -136,7 +136,7 @@ class JSONParserTest extends Specification {
       val filter = Seq(textFilter)
       val select = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, count, population))
       val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState))
-      val expectedQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(select))
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), select = Some(select))
       checkQueryOnly(groupLookupJSON, allSchemaMap, expectedQuery)
     }
 
@@ -145,7 +145,7 @@ class JSONParserTest extends Specification {
       val filter = Seq(textFilter)
       val select = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(state, count, population, literacy))
       val group = GroupStatement(Seq(byState), Seq(aggrCount), Seq(lookupPopulationByState, lookupLiteracyByState))
-      val expectedQuery = new Query(TwitterDataSet, Seq.empty, filter, Seq.empty, Some(group), select = Some(select))
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), select = Some(select))
       checkQueryOnly(groupMultipleLookupJSON, allSchemaMap, expectedQuery)
     }
 
@@ -154,9 +154,26 @@ class JSONParserTest extends Specification {
       val filter = Seq(textFilter)
       val lookup = Seq(lookupPopulation)
       val group = GroupStatement(Seq(byState), Seq(aggrPopulationMin), Seq(lookupLiteracyByState))
-      val query = new Query(TwitterDataSet, lookup, filter, Seq.empty, Some(group), select = Some(select))
-      val expectedQuery = new Query(TwitterDataSet, lookup, filter, Seq.empty, Some(group), select = Some(select))
+      val expectedQuery = new Query(TwitterDataSet, Seq.empty, lookup, filter, Seq.empty, Some(group), select = Some(select))
       checkQueryOnly(lookupsInOutGroupJSON, allSchemaMap, expectedQuery)
+    }
+
+    "parse a append and filter and group by time query" in {
+      val append = Seq(appendLangLen)
+      val filter = Seq(langLenFilter)
+      val group = Some(GroupStatement(Seq(byHour), Seq(aggrCount)))
+      val expectedQuery = new Query(TwitterDataSet, append, filter= filter, groups = group)
+      checkQueryOnly(appendFilterGroupbyJSON, allSchemaMap, expectedQuery)
+    }
+
+
+    "parse append with lookup inside group by state and sum" in {
+      val populationDataSet = PopulationDataStore.DatasetName
+      val populationSchema = PopulationDataStore.PopulationSchema
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byState), Seq(aggrAvgLangLen), Seq(lookupPopulationByState))
+      val expectedQuery = new Query(TwitterDataSet, Seq(appendLangLen), Seq.empty, filter, Seq.empty, Some(group))
+      checkQueryOnly(appendGroupLookupJSON, allSchemaMap, expectedQuery)
     }
 
   }
@@ -207,8 +224,8 @@ class JSONParserTest extends Specification {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(hourCountJSON, groupByBinJSON)))
       val (query, option) = parser.parse(batchQueryJson, twitterSchemaMap)
       query.size must_== 2
-      query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
-      query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
+      query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
+      query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
       option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse a batch of queries contains different estimable settings" in {
@@ -217,8 +234,8 @@ class JSONParserTest extends Specification {
         groupByBinJSON.as[JsObject] + ("estimable" -> JsBoolean(false)))))
       val (query, option) = parser.parse(batchQueryJson, twitterSchemaMap)
       query.size must_== 2
-      query.head must_== Query(TwitterDataSet, groups = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
-      query.last must_== Query(TwitterDataSet, groups = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
+      query.head must_== Query(TwitterDataSet, Seq.empty, groups = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
+      query.last must_== Query(TwitterDataSet, Seq.empty, groups = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
       option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse a batch of queries with option" in {
@@ -226,23 +243,23 @@ class JSONParserTest extends Specification {
       val optionJson = Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(1234))
       val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
       query.size must_== 2
-      query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
-      query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
+      query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
+      query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
       option.sliceMills must_== 1234
     }
   }
 
 
-  "JSONParser getDatasets" should{
-    "parse a single dataset" in{
+  "JSONParser getDatasets" should {
+    "parse a single dataset" in {
       val datasets = parser.getDatasets(zikaJSON)
       datasets must_== Seq("twitter.ds_tweet")
     }
 
-    "parse two datasets" in{
+    "parse two datasets" in {
       val datasets = parser.getDatasets(groupLookupJSON)
       datasets must_== Seq("twitter.ds_tweet", "twitter.US_population")
     }
   }
-  
+
 }

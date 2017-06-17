@@ -12,8 +12,6 @@ class Config(config: Configuration) {
 
   val AsterixLang = config.getString("asterixdb.lang").getOrElse("sqlpp").toLowerCase
 
-  val USCityDataPath = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
-
   val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)
 
   val ViewUpdateInterval = config.getString("view.update.interval").map(parseTimePair).getOrElse(60 minutes)

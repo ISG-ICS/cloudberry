@@ -4,38 +4,36 @@ import akka.actor.Props
 import akka.pattern.pipe
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, Duration}
 import play.api.libs.json._
 
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
 
-class OriginalDataAgent(override val dbName: String,
-                        override val schema: Schema,
+class OriginalDataAgent(val dataSetInfo: DataSetInfo,
                         override val queryParser: IQLGenerator,
                         override val conn: IDataConn,
                         override val config: Config)(implicit ec: ExecutionContext)
-  extends AbstractDataSetAgent(dbName, schema, queryParser, conn, config)(ec) {
+  extends AbstractDataSetAgent(dataSetInfo.name, dataSetInfo.schema.asInstanceOf[Schema], queryParser, conn, config)(ec) {
 
   import OriginalDataAgent._
 
-  val lastCount: Cardinality = UnInitialCardinality
+  val lastCount: Cardinality = new Cardinality(
+    dataSetInfo.dataInterval.getStart,
+    dataSetInfo.dataInterval.getEnd,
+    dataSetInfo.stats.cardinality
+  )
 
   /**
-    * Ask for the initial stats when the Agent starts.
-    * Stats including: minTimeStamp, maxTimeStamp, cardinality
+    * When the Agent starts,
+    *   1. Ask for the stats from maxTimeStamp till now,
+    *   2. Start a scheduler to query for cardinality periodically.
+    * Stats including: minTimeStamp, maxTimeStamp, cardinality.
     */
   override def preStart(): Unit = {
-    val minTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Min, Field.as(Min(schema.timeField), "min")))))
-    val maxTimeQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.timeField, Max, Field.as(Max(schema.timeField), "max")))))
-    val cardinalityQuery = Query(dbName, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))))
-    val schemaMap = Map(dbName -> schema)
-    val future = for {
-      minTime <- conn.postQuery(queryParser.generate(minTimeQuery, schemaMap)).map(r => (r \\ "min").head.as[String])
-      maxTime <- conn.postQuery(queryParser.generate(maxTimeQuery, schemaMap)).map(r => (r \\ "max").head.as[String])
-      cardinality <- conn.postQuery(queryParser.generate(cardinalityQuery, schemaMap)).map(r => (r \\ "count").head.as[Long])
-    } yield new Cardinality(TimeField.TimeFormat.parseDateTime(minTime), TimeField.TimeFormat.parseDateTime(maxTime), cardinality)
-    future pipeTo self
+    context.system.scheduler.schedule(0 second, config.AgentCollectStatsInterval, self, UpdateStats)
   }
 
   /**
@@ -58,23 +56,23 @@ class OriginalDataAgent(override val dbName: String,
 
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
-      if (lastCount.count == UnInitialCount) {
-        lastCount.reset(newCount.from, newCount.till, newCount.count)
-        context.system.scheduler.schedule(config.AgentCollectStatsInterval, config.AgentCollectStatsInterval, self, UpdateStats)
-      } else {
-        lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
-      }
+      lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
+      context.parent ! NewStats(dbName, newCount.count)
     case UpdateStats =>
       collectStats(lastCount.till)
   }
 
   private def collectStats(start: DateTime): Unit = {
+    if (!dataSetInfo.schema.isInstanceOf[Schema]) {
+      log.error("Cannot do aggregation query for lookup dataset " + dataSetInfo.schema.getTypeName)
+      return
+    }
+    val temporalSchema = dataSetInfo.schema.asInstanceOf[Schema]
     val now = DateTime.now().minusMillis(1)
-    val filter = FilterStatement(schema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
-    val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))
+    val filter = FilterStatement(temporalSchema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
+    val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
-
-    conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))
+    conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporalSchema)))
       .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
       .pipeTo(self)
   }
@@ -97,8 +95,7 @@ object OriginalDataAgent {
 
   object UpdateStats
 
-  val UnInitialCount = -1
-  val UnInitialCardinality = new Cardinality(DateTime.now(), DateTime.now(), UnInitialCount)
+  case class NewStats(dbName: String, additionalCount: Long)
 
   class Cardinality(var from: DateTime, var till: DateTime, var count: Long) {
     def reset(from: DateTime, till: DateTime, count: Long): Unit = {
@@ -110,7 +107,7 @@ object OriginalDataAgent {
     def ratePerSecond: Double = count.toDouble / new Duration(from, till).getStandardSeconds
   }
 
-  def props(dbName: String, schema: Schema, queryParser: IQLGenerator, conn: IDataConn, config: Config)
+  def props(dataSetInfo: DataSetInfo, queryParser: IQLGenerator, conn: IDataConn, config: Config)
            (implicit ec: ExecutionContext) =
-    Props(new OriginalDataAgent(dbName, schema, queryParser, conn, config))
+    Props(new OriginalDataAgent(dataSetInfo, queryParser, conn, config))
 }

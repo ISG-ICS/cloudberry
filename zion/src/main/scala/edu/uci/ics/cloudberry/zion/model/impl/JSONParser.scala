@@ -1,6 +1,7 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.{FieldNotFound, IJSONParser, JsonRequestException, QueryParsingException}
+import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo.parseLevels
 import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.libs.functional.syntax._
@@ -22,7 +23,7 @@ class JSONParser extends IJSONParser {
     * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
     * Finally, calls [[QueryValidator]] to validate the correctness of this query.
     */
-  override def parse(json: JsValue, schemaMap: Map[String, Schema]): (Seq[Query], QueryExeOption) = {
+  override def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
     val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
     val query = (json \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
@@ -49,9 +50,9 @@ object JSONParser {
     * @param schemaMap
     * @return
     */
-  def resolve(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
+  def resolve(query: UnresolvedQuery, schemaMap: Map[String, AbstractSchema]): Query = {
     val resolved = QueryResolver.resolve(query, schemaMap).asInstanceOf[Query]
-    QueryValidator.validate(resolved)
+    QueryValidator.validate(resolved, schemaMap)
     resolved
   }
 
@@ -185,6 +186,30 @@ object JSONParser {
       (JsPath \ "as").formatNullable[String]
     ) (UnresolvedByStatement.apply, unlift(UnresolvedByStatement.unapply))
 
+
+  implicit val typeFormat: Format[DataType.DataType] = new Format[DataType.DataType] {
+    override def reads(json: JsValue): JsResult[DataType.DataType] = {
+      val fieldType = json.as[String]
+      DataType.values.find(_.toString == fieldType) match {
+        case Some(v) => JsSuccess(v)
+        case None => JsError(s"Invalid field type: $fieldType")
+      }
+    }
+
+    override def writes(dataType: DataType.DataType): JsValue = {
+      JsString(dataType.toString)
+    }
+
+  }
+
+  implicit val appendFormat: Format[UnresolvedAppendStatement] = (
+    (JsPath \ "field").format[String] and
+      (JsPath \ "definition").format[String] and
+      (JsPath \ "type").format[DataType.DataType] and
+      (JsPath \ "as").format[String]
+    ) (UnresolvedAppendStatement.apply, unlift(UnresolvedAppendStatement.unapply))
+
+
   implicit val lookupFormat: Format[UnresolvedLookupStatement] = (
     (JsPath \ "joinKey").format[Seq[String]] and
       (JsPath \ "dataset").format[String] and
@@ -245,6 +270,10 @@ object JSONParser {
   // TODO find better name for 'global'
   implicit val queryFormat: Format[UnresolvedQuery] = (
     (JsPath \ "dataset").format[String] and
+      (JsPath \ "append").formatNullable[Seq[UnresolvedAppendStatement]].inmap[Seq[UnresolvedAppendStatement]](
+        o => o.getOrElse(Seq.empty[UnresolvedAppendStatement]),
+        s => if (s.isEmpty) None else Some(s)
+      ) and
       (JsPath \ "lookup").formatNullable[Seq[UnresolvedLookupStatement]].inmap[Seq[UnresolvedLookupStatement]](
         o => o.getOrElse(Seq.empty[UnresolvedLookupStatement]),
         s => if (s.isEmpty) None else Some(s)
