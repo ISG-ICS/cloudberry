@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.schema
 
+import edu.uci.ics.cloudberry.zion.model.impl.UnresolvedSchema
 import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 import org.joda.time.format.DateTimeFormat
 
@@ -155,7 +156,7 @@ case class HierarchyField(override val name: String,
 
 }
 
-case class RecordField(override val name: String, val schema: Schema, override val isOptional: Boolean = false) extends Field {
+case class RecordField(override val name: String, val schema: AbstractSchema, override val isOptional: Boolean = false) extends Field {
   override val dataType = DataType.Record
 
 }
@@ -184,20 +185,46 @@ trait Measurement {
 
 //TODO when UI get the schema, it should know which is dimension/measure, functions that can apply onto it, etc.
 // so that it won't ask for a inapplicable function such that get the max to a string field
-case class Schema(typeName: String,
-                  dimension: Seq[Field],
-                  measurement: Seq[Field],
-                  primaryKey: Seq[Field],
-                  timeField: TimeField
-                 ) {
+abstract class AbstractSchema(typeName: String,
+                              dimension: Seq[Field],
+                              measurement: Seq[Field],
+                              primaryKey: Seq[Field]
+                             ) {
 
   private val dimensionMap: Map[String, Field] = dimension.map(f => f.name -> f).toMap
   private val measurementMap: Map[String, Field] = measurement.map(f => f.name -> f).toMap
 
   val fieldMap: Map[String, Field] = dimensionMap ++ measurementMap ++ Map(AllField.name -> AllField)
+
+  def getTypeName: String = typeName
+  def copySchema: AbstractSchema
+  def toUnresolved: UnresolvedSchema
 }
 
-object Schema {
+case class Schema(typeName: String,
+                  dimension: Seq[Field],
+                  measurement: Seq[Field],
+                  primaryKey: Seq[Field],
+                  timeField: TimeField
+                 ) extends AbstractSchema(typeName, dimension, measurement, primaryKey){
+
+  override def copySchema: Schema = this.copy()
+
+  override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), Some(timeField.name))
+}
+
+case class LookupSchema(typeName: String,
+                        dimension: Seq[Field],
+                        measurement: Seq[Field],
+                        primaryKey: Seq[Field]
+                       ) extends AbstractSchema(typeName, dimension, measurement, primaryKey) {
+
+  override def copySchema: LookupSchema = this.copy()
+
+  override def toUnresolved: UnresolvedSchema = UnresolvedSchema(typeName, dimension, measurement, primaryKey.map(_.name), None)
+}
+
+object AbstractSchema {
 
   import DataType._
   import Relation.Relation

@@ -9,15 +9,16 @@ import edu.uci.ics.cloudberry.zion.model.schema._
   */
 object PopulationDataStore {
   val DatasetName = "twitter.US_population"
-  val TimeFieldName = "create_at"
-  val PopulationSchema: Schema = new Schema("population",
-                                            Seq(
-                                              TimeField(TimeFieldName),
-                                              NumberField("id"),
-                                              NumberField("stateID")),
-                                            Seq(
-                                              NumberField("population")
-                                            ),
-                                            Seq(NumberField("id")),
-                                            TimeField(TimeFieldName))
+  val PopulationSchema = LookupSchema("population",
+                                      Seq(
+                                        NumberField("id"),
+                                        NumberField("stateID")
+                                      ),
+                                      Seq(
+                                        NumberField("population")
+                                      ),
+                                      Seq(
+                                        NumberField("id")
+                                      )
+  )
 }

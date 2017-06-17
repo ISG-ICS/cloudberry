@@ -43,7 +43,7 @@ class DataStoreManager(metaDataset: String,
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
-        val schemaMap: mutable.Map[String, Schema] = new mutable.HashMap[String, Schema]
+        val schemaMap: mutable.Map[String, AbstractSchema] = new mutable.HashMap[String, AbstractSchema]
         jsArray.value.foreach { json =>
           val info = DataSetInfo.parse(json, schemaMap.toMap)
           metaData.put(info.name, info)
@@ -78,20 +78,27 @@ class DataStoreManager(metaDataset: String,
       //TODO move updating logics to ViewDataAgent
       metaData.get(append.dataset) match {
         case Some(info) =>
-          info.createQueryOpt match {
-            case Some(createQuery) =>
-              if (createQuery.filter.exists(_.field == info.schema.timeField)) {
-                log.error("the create view should not contains the time dimension")
-              } else {
-                val now = DateTime.now()
-                val compensate = FilterStatement(info.schema.timeField, None, Relation.inRange,
-                  Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
-                val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
-                answerQuery(AppendView(info.name, appendQ), Some(now))
-              }
-            case None => log.warning(s"can not append to a base dataset: $append.dataset.")
+          if (!info.schema.isInstanceOf[Schema]) {
+            log.error("Append View operation cannot be applied to lookup dataset " + info.name)
+          } else {
+            val schema = info.schema.asInstanceOf[Schema]
+            info.createQueryOpt match {
+              case Some(createQuery) =>
+                if (createQuery.filter.exists(_.field == schema.timeField)) {
+                  log.error("the create view should not contains the time dimension")
+                } else {
+                  val now = DateTime.now()
+                  val compensate = FilterStatement(schema.timeField, None, Relation.inRange,
+                    Seq(info.stats.lastModifyTime, now).map(TimeField.TimeFormat.print))
+                  val appendQ = createQuery.copy(filter = compensate +: createQuery.filter)
+                  answerQuery(AppendView(info.name, appendQ), Some(now))
+                }
+              case None =>
+                log.warning(s"can not append to a base dataset: $append.dataset.")
+            }
           }
-        case None => log.warning(s"view $append.dataset does not exist.")
+        case None =>
+          log.warning(s"view $append.dataset does not exist.")
       }
     case create: CreateView => createView(create)
     case drop: DropView => ???
@@ -133,47 +140,39 @@ class DataStoreManager(metaDataset: String,
     val dataSetRawSchema = registerTable.schema
 
     if(!metaData.contains(dataSetName)){
-
       try{
-        val primaryKey = dataSetRawSchema.primaryKey.map(dataSetRawSchema.getField(_).get)
-        val timeField = dataSetRawSchema.getField(dataSetRawSchema.timeField) match {
-          case Some(f) =>
-            if(f.isInstanceOf[TimeField]){
-              f.asInstanceOf[TimeField]
-            } else {
-              throw new QueryParsingException("Time field of " + dataSetRawSchema.typeName + "is not in TimeField format.\n")
+        dataSetRawSchema.toResolved match {
+          case schema: Schema =>
+            collectStats(dataSetName, schema) onComplete {
+              case Success((interval, size)) =>
+                val currentDateTime = new DateTime()
+                val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
+                val registerDataSetInfo = DataSetInfo(dataSetName, None, schema, interval, stats)
+
+                metaData.put(dataSetName, registerDataSetInfo)
+                flushMetaData()
+                sender ! DataManagerResponse(true, "Register Finished: temporal dataset " + dataSetName + " has successfully registered.\n")
+
+              case Failure(f) =>
+                throw CollectStatsException(f.getMessage)
             }
-          case None =>
-            throw new QueryParsingException("Time field is not specified for " + dataSetRawSchema.typeName + ".\n")
-        }
-        val resolvedSchema = Schema(dataSetRawSchema.typeName, dataSetRawSchema.dimension, dataSetRawSchema.measurement, primaryKey, timeField)
 
-        collectStats(dataSetName, resolvedSchema) onComplete {
-          case Success((interval, size)) =>
+          case lookupSchema: LookupSchema =>
             val currentDateTime = new DateTime()
-            val stats = Stats(currentDateTime, currentDateTime, currentDateTime, size)
-            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, interval, stats)
+            val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
+            val fakeStartDate = new DateTime(1970, 1, 1, 0, 0, 0, 0)
+            val fakeEndDate = new DateTime(Long.MaxValue)
+            val fakeInterval = new Interval(fakeStartDate, fakeEndDate)
+            val registerDataSetInfo = DataSetInfo(dataSetName, None, lookupSchema, fakeInterval, fakeStats)
 
             metaData.put(dataSetName, registerDataSetInfo)
             flushMetaData()
-            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered.\n")
-
-          case Failure(_) =>
-            //FIXME Need to introduce static dataset to handle this
-            val currentDateTime = new DateTime()
-            val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000000)
-            val fakeStartDate = new DateTime(2005, 3, 26, 12, 0, 0, 0)
-            val fakeInterval = new Interval(fakeStartDate, currentDateTime)
-            val registerDataSetInfo = DataSetInfo(dataSetName, None, resolvedSchema, fakeInterval, fakeStats)
-
-            metaData.put(dataSetName, registerDataSetInfo)
-            flushMetaData()
-            sender ! DataManagerResponse(true, "Register Finished: dataset " + dataSetName + " has successfully registered without stats information.\n")
+            sender ! DataManagerResponse(true, "Register Finished: lookup dataset " + dataSetName + " has successfully registered.\n")
         }
-
       } catch {
         case fieldNotFoundError: FieldNotFound => sender ! DataManagerResponse(false, "Register Denied. Field Not Found Error: " + fieldNotFoundError.fieldName + " is not found in dimensions and measurements: not a valid field.\n")
         case queryParsingError: QueryParsingException => sender ! DataManagerResponse(false, "Register Denied. Field Parsing Error: " + queryParsingError.getMessage)
+        case collectStatsError: CollectStatsException => sender ! DataManagerResponse(false, "Register Denied. Collect Stats Error: " + collectStatsError.msg)
         case NonFatal(e) => sender ! DataManagerResponse(false, "Register Denied. " + e.getMessage)
       }
 
@@ -219,7 +218,10 @@ class DataStoreManager(metaDataset: String,
 
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
-      val schema: Schema = info.schema
+      if (!info.schema.isInstanceOf[Schema]) {
+        throw new IllegalArgumentException("Cannot do query on lookup dataset " + info.schema.getTypeName)
+      }
+      val schema = info.schema.asInstanceOf[Schema]
       info.createQueryOpt match {
         case Some(_) =>
           val ret = childMaker(AgentType.View, context, "data-" + query.dataset, query.dataset, schema, None, queryGenFactory(), conn, config)
@@ -245,18 +247,23 @@ class DataStoreManager(metaDataset: String,
       log.warning(s"invalid dataset in the CreateView msg: $create")
       return
     }
-    creatingSet.add(create.dataset)
     val sourceInfo = metaData(create.query.dataset)
-    val schema = managerParser.calcResultSchema(create.query, sourceInfo.schema)
+    if (!sourceInfo.schema.isInstanceOf[Schema]) {
+      log.error("Create View cannot be applied for lookup dataset " + sourceInfo.schema.getTypeName)
+      return
+    }
+    creatingSet.add(create.dataset)
+    val schema = sourceInfo.schema.asInstanceOf[Schema]
+    val resultSchema = managerParser.calcResultSchema(create.query, schema)
     val now = DateTime.now()
-    val fixEndFilter = FilterStatement(sourceInfo.schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
+    val fixEndFilter = FilterStatement(schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
     conn.postControl(queryString) onSuccess {
       case true =>
-        collectStats(create.dataset, schema) onComplete {
+        collectStats(create.dataset, resultSchema) onComplete {
           case Success((interval, size)) =>
-            self ! DataSetInfo(create.dataset, Some(create.query), schema, interval, Stats(now, now, now, size))
+            self ! DataSetInfo(create.dataset, Some(create.query), resultSchema, interval, Stats(now, now, now, size))
           case Failure(ex) =>
             log.error(s"collectStats error: $ex")
         }
@@ -267,7 +274,11 @@ class DataStoreManager(metaDataset: String,
 
   private def updateStats(dataset: String, modifyTime: DateTime): Unit = {
     val originalInfo = metaData(dataset)
-    collectStats(dataset, originalInfo.schema) onSuccess { case (interval, size) =>
+    if (!originalInfo.schema.isInstanceOf[Schema]) {
+      log.error("UpdateStats cannot be applied on lookup dataset " + originalInfo.schema.getTypeName)
+      return
+    }
+    collectStats(dataset, originalInfo.schema.asInstanceOf[Schema]) onSuccess { case (interval, size) =>
       //TODO need to think the difference between the txn time and the ingest time
       self ! originalInfo.copy(dataInterval = interval, stats = originalInfo.stats.copy(lastModifyTime = modifyTime, cardinality = size))
     }

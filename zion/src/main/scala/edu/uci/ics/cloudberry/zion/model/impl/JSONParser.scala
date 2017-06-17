@@ -23,7 +23,7 @@ class JSONParser extends IJSONParser {
     * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
     * Finally, calls [[QueryValidator]] to validate the correctness of this query.
     */
-  override def parse(json: JsValue, schemaMap: Map[String, Schema]): (Seq[Query], QueryExeOption) = {
+  override def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
     val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
     val query = (json \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
@@ -50,9 +50,9 @@ object JSONParser {
     * @param schemaMap
     * @return
     */
-  def resolve(query: UnresolvedQuery, schemaMap: Map[String, Schema]): Query = {
+  def resolve(query: UnresolvedQuery, schemaMap: Map[String, AbstractSchema]): Query = {
     val resolved = QueryResolver.resolve(query, schemaMap).asInstanceOf[Query]
-    QueryValidator.validate(resolved)
+    QueryValidator.validate(resolved, schemaMap)
     resolved
   }
 

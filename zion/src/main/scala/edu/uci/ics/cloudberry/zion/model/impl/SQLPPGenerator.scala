@@ -70,7 +70,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
 
   def parseCreate(create: CreateView, schemaMap: Map[String, Schema]): String = {
     val sourceSchema = schemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, schemaMap(create.query.dataset))
+    val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(resultSchema)
     val createDataSet =
       s"""
@@ -92,14 +92,14 @@ class SQLPPGenerator extends AsterixQueryGenerator {
        |)""".stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, Schema]): String = {
+  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
        |upsert into ${q.dataset} (
        |${Json.toJson(q.records)}
        |)""".stripMargin
   }
 
-  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, Schema]): String = {
+  protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
     if (delete.filters.isEmpty) {
       throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
     }
@@ -107,10 +107,10 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     val queryBuilder = new StringBuilder()
     queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
     parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
-    return queryBuilder.toString()
+    queryBuilder.toString
   }
 
-  protected def parseDrop(query: DropView, schemaMap: Map[String, Schema]): String = {
+  protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
     s"drop dataset ${query.dataset} if exists"
   }
 

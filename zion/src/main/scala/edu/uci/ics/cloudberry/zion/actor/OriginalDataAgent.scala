@@ -16,7 +16,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
                         override val queryParser: IQLGenerator,
                         override val conn: IDataConn,
                         override val config: Config)(implicit ec: ExecutionContext)
-  extends AbstractDataSetAgent(dataSetInfo.name, dataSetInfo.schema, queryParser, conn, config)(ec) {
+  extends AbstractDataSetAgent(dataSetInfo.name, dataSetInfo.schema.asInstanceOf[Schema], queryParser, conn, config)(ec) {
 
   import OriginalDataAgent._
 
@@ -63,12 +63,16 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
   }
 
   private def collectStats(start: DateTime): Unit = {
+    if (!dataSetInfo.schema.isInstanceOf[Schema]) {
+      log.error("Cannot do aggregation query for lookup dataset " + dataSetInfo.schema.getTypeName)
+      return
+    }
+    val temporalSchema = dataSetInfo.schema.asInstanceOf[Schema]
     val now = DateTime.now().minusMillis(1)
-    val filter = FilterStatement(schema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
-    val aggr = GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Count(schema.fieldMap("*")), "count")))
+    val filter = FilterStatement(temporalSchema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
+    val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
-
-    conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> schema)))
+    conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporalSchema)))
       .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
       .pipeTo(self)
   }
