@@ -20,8 +20,9 @@
 set -o nounset                              # Treat unset variables as an error
 
 host=${1:-'http://localhost:19002/aql'}
+nc=${2:-"nc1"}
 # ddl to register the twitter dataset
-cat <<'EOF' | curl -XPOST --data-binary @- $host
+cat <<EOF | curl -XPOST --data-binary @- $host
 use dataverse twitter;
 create type typeStatePopulation if not exists as open{
     name:string,
@@ -52,7 +53,7 @@ create dataset dsCityPopulation(typeCityPopulation) if not exists primary key ci
 
 create feed StatePopulationFeed using socket_adapter
 (
-    ("sockets"="nc1:10002"),
+    ("sockets"="$nc:10002"),
     ("address-type"="nc"),
     ("type-name"="typeStatePopulation"),
     ("format"="adm")
@@ -62,7 +63,7 @@ start feed StatePopulationFeed;
 
 create feed CountyPopulationFeed using socket_adapter
 (
-    ("sockets"="nc1:10003"),
+    ("sockets"="$nc:10003"),
     ("address-type"="nc"),
     ("type-name"="typeCountyPopulation"),
     ("format"="adm")
@@ -72,7 +73,7 @@ start feed CountyPopulationFeed;
 
 create feed CityPopulationFeed using socket_adapter
 (
-    ("sockets"="nc1:10004"),
+    ("sockets"="$nc:10004"),
     ("address-type"="nc"),
     ("type-name"="typeCityPopulation"),
     ("format"="adm")
@@ -83,13 +84,13 @@ EOF
 
 echo 'Created population datasets in AsterixDB.'
 #Serve socket feed using local file
-cat ./noah/src/main/resources/population/adm/allStatePopulation.adm | ./script/fileFeed.sh 10002
+cat ./noah/src/main/resources/population/adm/allStatePopulation.adm | ./script/fileFeed.sh $host 10002
 echo 'Ingested state population dataset.'
 
-cat ./noah/src/main/resources/population/adm/allCountyPopulation.adm | ./script/fileFeed.sh 10003
+cat ./noah/src/main/resources/population/adm/allCountyPopulation.adm | ./script/fileFeed.sh $host 10003
 echo 'Ingested county population dataset.'
 
-cat ./noah/src/main/resources/population/adm/allCityPopulation.adm | ./script/fileFeed.sh 10004
+cat ./noah/src/main/resources/population/adm/allCityPopulation.adm | ./script/fileFeed.sh $host 10004
 echo 'Ingested city population dataset.'
 
 cat <<'EOF' | curl -XPOST --data-binary @- $host

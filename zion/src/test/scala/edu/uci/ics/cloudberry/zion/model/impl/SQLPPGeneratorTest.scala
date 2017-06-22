@@ -666,17 +666,17 @@ class SQLPPGeneratorTest extends Specification {
     }
 
     "translate a append and filter and group by time query" in {
-      val filter = Seq(langLenFilter)
-      val group = GroupStatement(Seq(byHour), Seq(aggrCount))
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byHour), Seq(aggrAvgLangLen))
       val query = new Query(TwitterDataSet, Seq(appendLangLen), Seq.empty, filter, Seq.empty, Some(group), None)
       val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select `hour` as `hour`,coll_count(g) as `count`
-          |from (select length(lang) as `lang_len`,t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,t as `geo`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
-          |from twitter.ds_tweet t) ta
-          |where ta.lang_len >= 1
-          |group by get_interval_start_datetime(interval_bin(ta.create_at, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
+          |select `hour` as `hour`,coll_avg( (select value g.ta.`lang_len` from g) ) as `avgLangLen`
+          |from (select length(lang) as `lang_len`,t
+          |from twitter.ds_tweet t
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})) ta
+          |group by get_interval_start_datetime(interval_bin(ta.t.`create_at`, datetime('1990-01-01T00:00:00.000Z'),  day_time_duration("PT1H") )) as `hour` group as g;
           |""".stripMargin.trim)
     }
 
@@ -692,17 +692,16 @@ class SQLPPGeneratorTest extends Specification {
         """
           |select tt.`state` as `state`,tt.`avgLangLen` as `avgLangLen`,ll0.`population` as `population`
           |from (
-          |select `state` as `state`,coll_avg( (select value g.ta.lang_len from g) ) as `avgLangLen`
-          |from (select length(lang) as `lang_len`,t.`favorite_count` as `favorite_count`,t.`geo_tag`.`countyID` as `geo_tag.countyID`,t.`user_mentions` as `user_mentions`,t as `geo`,t.`user`.`id` as `user.id`,t.`geo_tag`.`cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`retweet_count` as `retweet_count`,t.`in_reply_to_user` as `in_reply_to_user`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`in_reply_to_status` as `in_reply_to_status`,t.`user`.`status_count` as `user.status_count`,t.`geo_tag`.`stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`lang` as `lang`,t.`hashtags` as `hashtags`
-          |from twitter.ds_tweet t) ta
-          |where ftcontains(ta.text, ['zika','virus'], {'mode':'all'})
-          |group by ta.geo.geo_tag.stateID as `state` group as g
+          |select `state` as `state`,coll_avg( (select value g.ta.`lang_len` from g) ) as `avgLangLen`
+          |from (select length(lang) as `lang_len`,t
+          |from twitter.ds_tweet t
+          |where ftcontains(t.`text`, ['zika','virus'], {'mode':'all'})) ta
+          |group by ta.t.geo_tag.stateID as `state` group as g
           |) tt
           |left outer join twitter.US_population ll0 on ll0.`stateID` = tt.`state`;
           |""".stripMargin.trim
       )
     }
-
   }
 
 

@@ -1,0 +1,34 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset='UTF-8' />
+    <style>
+        input, textarea {border:1px solid #CCC;margin:0px;padding:0px}
+
+        #ip {line-height:20px}
+        #port {line-height:20px}
+        #body {max-width:800px;margin:auto}
+        #log {width:100%;height:400px}
+        #message {width:100%;line-height:20px}
+    </style>
+</head>
+
+<body>
+    <div id='body'>
+        <input type='text' id='query' name='query' />
+        <button type="button" id='cntBtn'>Send</button>
+        <select id='datasource'>
+            <option value="cloudberry">Cloudberry</option>
+            <option value="asterixdb">AsterixDB</option>
+        </select>
+    </div>
+    <div><strong>Total tweet count:</strong></div>
+    <div id='totalCount'></div>
+    <div><strong>Query result count:</strong></div>
+    <div id='queryCount'></div>
+    <div><strong>Query processing time:</strong></div>
+    <div id='queryTime'></div>
+    <script src="CloudberryDemo.js"></script>
+</body>
+
+</html>

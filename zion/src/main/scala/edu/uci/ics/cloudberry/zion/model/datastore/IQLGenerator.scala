@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.zion.model.schema.{IQuery, Query, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema._
 
 trait IQLGenerator {
   /**
@@ -10,7 +10,7 @@ trait IQLGenerator {
     * @param schemaMap
     * @return
     */
-  def generate(query: IQuery, schemaMap: Map[String, Schema]): String
+  def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String
 
   def calcResultSchema(query: Query, schema: Schema): Schema
 

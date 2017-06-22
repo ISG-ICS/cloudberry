@@ -1,12 +1,9 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.util.Logging
-import play.api.Logger
-import play.api.libs.json.{JsObject, JsString, JsValue, Json}
-import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.libs.json.JsValue
+import play.api.libs.ws.WSResponse
 
-import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 trait IDataConn {
 

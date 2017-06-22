@@ -100,21 +100,21 @@ search-bar {
 }
 
 .btn.btn-info{
-    position: relative;
-    left: 110%;
+  position: relative;
+  left: 110%;
 
 }
 
 #powerby{
-           position: absolute;
-           bottom: 0%;
-           left: 74%;
-           width: 10%;
-           z-index: 0;
+  position: absolute;
+  bottom: 0%;
+  left: 74%;
+  width: 10%;
+  z-index: 0;
 }
 
 .white {
-    color : white;
+  color : white;
 }
 
 .stats{
@@ -154,4 +154,21 @@ time-series {
 
 .normalize p{
   text-align: center;
+}
+
+.search-keyword-btn{
+  background-color: crimson;
+  color: white;
+  font-weight: bold;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+}
+
+.search-keyword-btn:active, .search-keyword-btn:focus, .search-keyword-btn:hover{
+  background-color: transparent;
+  color: black;
+}
+
+.search-keyword-btn-group{
+  margin-left: 36%;
 }

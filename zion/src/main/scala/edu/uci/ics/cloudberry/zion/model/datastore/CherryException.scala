@@ -18,3 +18,5 @@ class QueryParsingException(msg: String) extends CherryException(msg, null)
 case class JsonRequestException(msg: String) extends CherryException(msg, null)
 
 case class FieldNotFound(fieldName: String) extends QueryParsingException(s"cannot find field $fieldName")
+
+case class CollectStatsException(msg: String) extends CherryException(msg, null)
