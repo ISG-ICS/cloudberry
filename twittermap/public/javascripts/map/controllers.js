@@ -4,19 +4,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doNormalization = false;
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
-    $scope.cacheHitCount = 0;
-    $scope.cacheMissCount = 0;
-    $scope.cacheSize = 0;
-    $scope.centroid ;
-    $scope.hit = false;
-    $scope.cachedRegion;
-    $scope.cacheCapacity;
-    $scope.evictCount = 0;
-    $scope.requestCount = 0;
-    $scope.testInputs;
-    $scope.responseData;
-    $scope.times = [];
-    $scope.sums = 0;
+
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -119,7 +107,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
-        $scope.id = 0;
       });
 
       //Reset Zoom Button
@@ -362,11 +349,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
             $scope.geojsonData.city = data;
             
-
             if($scope.polygons.cityPolygons) {
                 $scope.map.removeLayer($scope.polygons.cityPolygons);
             }
-
             $scope.polygons.cityPolygons = L.geoJson(data, {
                 style: $scope.styles.cityStyle,
                 onEachFeature: onEachFeature
@@ -378,11 +363,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 cloudberry.queryType = 'zoom';
                 cloudberry.query(cloudberry.parameters, cloudberry.queryType);
             }
-
-
             resetGeoInfo("city");
             $scope.map.addLayer($scope.polygons.cityPolygons);
-
         })
 
     }
