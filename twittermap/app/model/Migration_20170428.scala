@@ -108,8 +108,7 @@ object Migration_20170428 {
       |        "measurement": [
       |            { "name": "population", "isOptional": false, "datatype": "Number" }
       |        ],
-      |        "primaryKey": ["stateID"],
-      |        "timeField": "create_at"
+      |        "primaryKey": ["stateID"]
       |    }
       |}
     """.stripMargin
@@ -128,8 +127,7 @@ object Migration_20170428 {
       |        "measurement": [
       |            { "name": "population", "isOptional": false, "datatype": "Number" }
       |        ],
-      |        "primaryKey": ["countyID"],
-      |        "timeField": "create_at"
+      |        "primaryKey": ["countyID"]
       |    }
       |}
     """.stripMargin
@@ -148,8 +146,7 @@ object Migration_20170428 {
       |        "measurement": [
       |            { "name": "population", "isOptional": false, "datatype": "Number" }
       |        ],
-      |        "primaryKey": ["cityID"],
-      |        "timeField": "create_at"
+      |        "primaryKey": ["cityID"]
       |    }
       |}
     """.stripMargin
