@@ -1,9 +1,22 @@
-angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
+angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
+  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig,Cache) {
     $scope.result = {};
     $scope.doNormalization = false;
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
+    $scope.cacheHitCount = 0;
+    $scope.cacheMissCount = 0;
+    $scope.cacheSize = 0;
+    $scope.centroid ;
+    $scope.hit = false;
+    $scope.cachedRegion;
+    $scope.cacheCapacity;
+    $scope.evictCount = 0;
+    $scope.requestCount = 0;
+    $scope.testInputs;
+    $scope.responseData;
+    $scope.times = [];
+    $scope.sums = 0;
     // map setting
     angular.extend($scope, {
       tiles: {
@@ -106,6 +119,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
+        $scope.id = 0;
       });
 
       //Reset Zoom Button
@@ -178,10 +192,19 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
         this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
-          '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
-          '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
-          '<br/>',
-          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
+            '<h4>Cache Info</h4>',
+            '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+            '<br/>',
+            '<p>cacheSize:{{cacheSize}}</p>',
+            '<p>cacheHitCount:{{cacheHitCount}}</p>',
+            '<p>cacheMissCount:{{cacheMissCount}}</p>',
+            '<p>requestCount:{{requestCount}}</p>',
+            '<p>cacheCapacity:{{cacheCapacity}}</p>',
+            '<p>evictCount:{{evictCount}}</p>',
+            '<p><button type="button" ng-click="newTest(onEachFeature)">Next</button></p>',
+            '<p><button type="button" ng-click="zoomto(onEachFeature)">zoom</button></p>',
+            '<p><button type="button" ng-click="zoomOut(onEachFeature)">zoomOut</button></p>',
+            '<p><button type ="button" ng-click="runSimulation(onEachFeature)">Run Simulation</button></p>'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -342,30 +365,368 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     }
 
     function loadCityJsonByBound(onEachFeature){
+
       var bounds = $scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
-      $http.get(rteBounds)
-        .success(function(data) {
-          $scope.geojsonData.city = data;
-          if($scope.polygons.cityPolygons) {
-            $scope.map.removeLayer($scope.polygons.cityPolygons);
-          }
-          $scope.polygons.cityPolygons = L.geoJson(data, {
-            style: $scope.styles.cityStyle,
-            onEachFeature: onEachFeature
-          });
-          setCenterAndBoundry($scope.geojsonData.city.features);
-          resetGeoInfo("city");
-          if (!$scope.status.init) {
-            cloudberry.queryType = 'zoom';
-            cloudberry.query(cloudberry.parameters, cloudberry.queryType);
-          }
-          $scope.map.addLayer($scope.polygons.cityPolygons);
+        Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
+            $scope.geojsonData.city = data;
+            $scope.cacheSize = Cache.getCacheSize();
+            $scope.cacheHitCount = Cache.getCacheHitCount();
+            $scope.cacheMissCount = Cache.getCacheMissCount();
+            $scope.centroid = Cache.getRequestCentroid();
+            $scope.hit = Cache.getHitorMiss();
+            $scope.cachedRegion = Cache.getCachedRegion();
+            $scope.requestCount = Cache.getRequestsCount();
+            $scope.cachedView;
+            $scope.cacheCapacity = Cache.getCacheThreshold();
+            $scope.evictCount = Cache.getEvictCount();
+            $scope.prefetchRegion = Cache.getPrefetchedRegion();
+            $scope.currentRequest = Cache.getCurrentRequest();
+            $scope.cachedPolygons = Cache.getCachePolygons();
+            $scope.cachedCitiesView;
+            $scope.prefetchView;
+            $scope.requestView;
+
+            if($scope.polygons.cityPolygons) {
+                $scope.map.removeLayer($scope.polygons.cityPolygons);
+            }
+
+            $scope.polygons.cityPolygons = L.geoJson(data, {
+                style: $scope.styles.cityStyle,
+                onEachFeature: onEachFeature
+            });
+            //set center and boundary done by Cache
+            if (!$scope.status.init) {
+                resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
+                cloudberry.parameters.geoLevel = 'city';
+                cloudberry.queryType = 'zoom';
+                cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+            }
+
+
+            var cacheStyle = {
+                "color": "#6495ed",
+                "weight": 6,
+                "opacity": 1.00
+            };
+
+            var cacheCityStyle =  {
+                fillColor: '#f7f7f7',
+                weight: 3,
+                opacity: 3,
+                color: '#000000',
+                fillOpacity: 1.
+            };
+            var prefetchStyle = {
+                "color": "#FFFF00",
+                "weight": 6,
+                "opacity": 1.00
+            };
+
+            var requestMissStyle = {
+                "color": "#8B0000",
+                "weight": 6,
+                "opacity": 1.00
+            };
+            var requestHitStyle = {
+                "color": "#006400",
+                "weight": 6,
+                "opacity": 1.00
+            };
+
+
+            if($scope.requestView){
+                //console.log("removing");
+                $scope.map.removeLayer($scope.requestView);
+            }
+
+            if($scope.hit) {
+
+                $scope.requestView = L.geoJson($scope.currentRequest, {
+                    style: requestHitStyle
+                });
+
+            }else{
+
+                $scope.requestView = L.geoJson($scope.currentRequest, {
+                    style: requestMissStyle
+                });
+
+            }
+            if($scope.cachedView){
+                $scope.map.removeLayer($scope.cachedView);
+                $scope.map.removeLayer($scope.prefetchView);
+
+            }
+            $scope.cachedView = L.geoJson($scope.cachedRegion, {
+                style: cacheStyle
+            });
+
+            $scope.prefetchView = L.geoJson($scope.prefetchRegion,{
+                style:prefetchStyle
+            });
+
+            if($scope.cachedCitiesView){
+                $scope.map.removeLayer($scope.cachedCitiesView);
+            }
+
+            $scope.cachedCitiesView = L.geoJson($scope.cachedPolygons,{
+                style:cacheCityStyle
+            });
+            resetGeoInfo("city");
+            $scope.map.addLayer($scope.polygons.cityPolygons);
+            $scope.map.addLayer($scope.cachedView);
+            $scope.map.addLayer($scope.prefetchView);
+            $scope.map.addLayer($scope.requestView);
+            $scope.map.addLayer($scope.cachedCitiesView);
+
         })
-        .error(function(data) {
-          console.error("Load city data failure");
-        });
+
     }
+      var testfunction = function loadCityJsonByBound(onEachFeature,rteBounds){
+
+
+          var deferred = new $.Deferred();
+          var bounds = rteBounds.split("/");
+
+          var bounds_northEast_lat = parseFloat(bounds[1]);
+          var bounds_southWest_lat = parseFloat(bounds[2]);
+          var bounds_northEast_lng = parseFloat(bounds[3]);
+          var bounds_southWest_lng = parseFloat(bounds[4]);
+
+          $scope.ExtraBounds = [[bounds_northEast_lat+1,bounds_northEast_lng+1],[bounds_southWest_lat-1,bounds_southWest_lng-1]];
+          var blow = Cache.getCache();
+          if(typeof blow != "undefined")
+          { $scope.CacheBounds = [[blow[3]+0.3,blow[2]+0.3],[blow[1]-0.3,blow[0]-0.3]];}
+
+
+
+          Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
+              $scope.geojsonData.city = data;
+              $scope.cacheSize = Cache.getCacheSize();
+              $scope.cacheHitCount = Cache.getCacheHitCount();
+              $scope.cacheMissCount = Cache.getCacheMissCount();
+              $scope.centroid = Cache.getRequestCentroid();
+              $scope.hit = Cache.getHitorMiss();
+              $scope.cachedRegion = Cache.getCachedRegion();
+              $scope.requestCount = Cache.getRequestsCount();
+              $scope.cachedView;
+              $scope.cacheCapacity = Cache.getCacheThreshold();
+              $scope.evictCount = Cache.getEvictCount();
+              $scope.prefetchRegion = Cache.getPrefetchedRegion();
+              $scope.currentRequest = Cache.getCurrentRequest();
+              //console.log("request",$scope.currentRequest);
+              $scope.cachedPolygons = Cache.getCachePolygons();
+              $scope.cachedCitiesView;
+              $scope.prefetchView;
+              $scope.requestView;
+
+              if($scope.polygons.cityPolygons) {
+                  $scope.map.removeLayer($scope.polygons.cityPolygons);
+              }
+
+              $scope.polygons.cityPolygons = L.geoJson(data, {
+                  style: $scope.styles.cityStyle,
+                  onEachFeature: onEachFeature
+              });
+
+
+              var cacheStyle = {
+                  "color": "#6495ed",
+                  "weight": 6,
+                  "opacity": 1.00
+              };
+
+              var cacheCityStyle =  {
+                  fillColor: '#f7f7f7',
+                  weight: 3,
+                  opacity: 3,
+                  color: '#000000',
+                  fillOpacity: 1.
+              };
+              var prefetchStyle = {
+                  "color": "#FFFF00",
+                  "weight": 6,
+                  "opacity": 1.00
+              };
+
+              var requestMissStyle = {
+                  "color": "#8B0000",
+                  "weight": 6,
+                  "opacity": 1.00
+              };
+              var requestHitStyle = {
+                  "color": "#006400",
+                  "weight": 6,
+                  "opacity": 1.00
+              };
+
+
+              if($scope.requestView){
+                  //console.log("removing");
+                  $scope.map.removeLayer($scope.requestView);
+              }
+
+              if($scope.hit) {
+
+                  $scope.requestView = L.geoJson($scope.currentRequest, {
+                      style: requestHitStyle
+                  });
+
+              }else{
+
+                  $scope.requestView = L.geoJson($scope.currentRequest, {
+                      style: requestMissStyle
+                  });
+
+              }
+              if($scope.cachedView){
+                  $scope.map.removeLayer($scope.cachedView);
+                  $scope.map.removeLayer($scope.prefetchView);
+
+              }
+              $scope.cachedView = L.geoJson($scope.cachedRegion, {
+                  style: cacheStyle
+              });
+
+              $scope.prefetchView = L.geoJson($scope.prefetchRegion,{
+                  style:prefetchStyle
+              });
+
+              if($scope.cachedCitiesView){
+                  $scope.map.removeLayer($scope.cachedCitiesView);
+              }
+
+              $scope.cachedCitiesView = L.geoJson($scope.cachedPolygons,{
+                  style:cacheCityStyle
+              });
+              $scope.map.addLayer($scope.polygons.cityPolygons);
+              $scope.map.addLayer($scope.cachedView);
+              $scope.map.addLayer($scope.prefetchView);
+              $scope.map.addLayer($scope.requestView);
+              $scope.map.addLayer($scope.cachedCitiesView);
+              deferred.resolve();
+          })
+          return deferred.promise();
+      }
+      function normalTest(onEachFeature,rteBounds){
+          var deferred = new $.Deferred();
+          $http.get(rteBounds).success(function(data) {
+              $scope.geojsonData.city = data;
+              if($scope.polygons.cityPolygons) {
+                  $scope.map.removeLayer($scope.polygons.cityPolygons);
+              }
+              $scope.polygons.cityPolygons = L.geoJson(data, {
+                  style: $scope.styles.cityStyle,
+                  onEachFeature: onEachFeature
+              });
+              setCenterAndBoundry($scope.geojsonData.city.features);
+
+              if (!$scope.status.init) {
+                  cloudberry.queryType = 'zoom';
+                  cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+              }
+              $scope.map.addLayer($scope.polygons.cityPolygons);
+              deferred.resolve();
+          })
+              .error(function(data) {
+                  console.error("Load city data failure");
+              });
+          return deferred.promise();
+      }
+
+
+      $scope.runSimulation = function(onEachFeature){
+          if(typeof $scope.testInputs == "undefined"){
+              loadFile();
+              return;
+          }
+          if($scope.id<$scope.testInputs.length){
+              testfunction(onEachFeature,$scope.testInputs[$scope.id]).done(function(){
+                  //console.log("ONE");
+                  $scope.id += 1;
+                  $scope.runSimulation();
+              })
+          }
+          else{
+              getAverage();
+          }
+      }
+      function getAverage(){
+          for(var i = 0 ;i<$scope.times.length;i++){
+              $scope.sums += $scope.times[i];
+          }
+          console.log($scope.times);
+          console.log($scope.sums);
+          console.log($scope.sums/$scope.times.length);
+      }
+      function loadFile(){
+          $http.get("assets/data/testInput3.json").success(function(data) {
+              $scope.testInputs = data["data"];
+              //console.log("data",data);
+          })
+      }
+      $scope.newTest = function(onEachFeature){
+          if(typeof $scope.testInputs == "undefined"){
+              loadFile();
+              return;
+          }
+          if($scope.id<$scope.testInputs.length){
+              testfunction(onEachFeature,$scope.testInputs[$scope.id]).done(function(){
+                  //console.log("ONE");
+                  $scope.id += 1;
+              })
+          }
+      }
+      $scope.zoomto = function(onEachFeature){
+          // $scope.map.fitBounds($scope.ExtraBounds);
+          var cacheCityStyle =  {
+              fillColor: '#f7f7f7',
+              weight: 3,
+              opacity: 3,
+              color: '#000000',
+              fillOpacity: 1.
+          };
+          if(typeof $scope.cachedRegion != "undefined") {
+              $scope.map.fitBounds($scope.CacheBounds);
+          }else{
+              $scope.map.fitBounds($scope.ExtraBounds);
+              console.log("Undefined");
+          }
+          $scope.polygons.cityPolygons = L.geoJson( $scope.geojsonData.city, {
+              style: $scope.styles.cityStyle,
+              onEachFeature: onEachFeature
+          });
+          console.log($scope.cachedPolygons);
+          $scope.cachedCitiesView = L.geoJson($scope.cachedPolygons,{
+              style:cacheCityStyle
+          });
+
+
+          $scope.map.addLayer($scope.polygons.cityPolygons);
+          $scope.map.addLayer($scope.cachedCitiesView);
+      }
+      $scope.zoomOut = function(onEachFeature){
+          var cacheCityStyle =  {
+              fillColor: '#f7f7f7',
+              weight: 3,
+              opacity: 3,
+              color: '#000000',
+              fillOpacity: 1.
+          };
+          $scope.map.setView([$scope.lat, $scope.lng],$scope.zoom);
+          $scope.polygons.cityPolygons = L.geoJson( $scope.geojsonData.city, {
+              style: $scope.styles.cityStyle,
+              onEachFeature: onEachFeature
+          });
+          console.log($scope.cachedPolygons);
+          $scope.cachedCitiesView = L.geoJson($scope.cachedPolygons,{
+              style:cacheCityStyle
+          });
+
+          $scope.map.addLayer($scope.polygons.cityPolygons);
+          $scope.map.addLayer($scope.cachedCitiesView);
+      }
 
 
     /**
