@@ -192,19 +192,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
         this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
-            '<h4>Cache Info</h4>',
-            '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
-            '<br/>',
-            '<p>cacheSize:{{cacheSize}}</p>',
-            '<p>cacheHitCount:{{cacheHitCount}}</p>',
-            '<p>cacheMissCount:{{cacheMissCount}}</p>',
-            '<p>requestCount:{{requestCount}}</p>',
-            '<p>cacheCapacity:{{cacheCapacity}}</p>',
-            '<p>evictCount:{{evictCount}}</p>',
-            '<p><button type="button" ng-click="newTest(onEachFeature)">Next</button></p>',
-            '<p><button type="button" ng-click="zoomto(onEachFeature)">zoom</button></p>',
-            '<p><button type="button" ng-click="zoomOut(onEachFeature)">zoomOut</button></p>',
-            '<p><button type ="button" ng-click="runSimulation(onEachFeature)">Run Simulation</button></p>'
+          '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
+          '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+          '<br/>',
+          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
