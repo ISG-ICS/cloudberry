@@ -17,19 +17,17 @@ class SparkConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
     .master(url)
     .appName("Cloudberry")
     .getOrCreate()
-
+  // This is the schema of dataset
   val schema = (new StructType).add("create_at", TimestampType).add("id",LongType).add("favorite_count", DoubleType).add("retweet_count ", DoubleType).add("in_reply_to_status", DoubleType).add("in_reply_to_user", DoubleType).add("text", StringType).add("lang", StringType).add("is_retweet", BooleanType).add("user_mentions",ArrayType(DoubleType)).add("hashtags",ArrayType(StringType)).add("geo_tag",(new StructType).add("stateID",IntegerType).add("countyID",IntegerType).add("cityID",IntegerType)).add("user",(new StructType).add("id",IntegerType).add("statues_count",DoubleType))
-  val testDF = spark.read.schema(schema).json("big.json")
-  val berry = spark.read.json("berry.json")
+  // change it to your path
+  val testDF = spark.read.schema(schema).json("twitter_dataset.json")
   testDF.createOrReplaceTempView("twitter_ds_tweet")
+  // just to make it work and remove this in future versions
+  val berry = spark.read.json("berry.json")
   berry.createOrReplaceTempView("berrymeta")
 
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   def post(query: String): Future[WSResponse] = {
-   // log.debug("Query:" + query)
-   // val f = wSClient.url(url).withRequestTimeout(Duration.Inf).post(params(query))
-    //f.onFailure(wsFailureHandler(query))
-    //f
     throw new UnsupportedOperationException
   }
   def postQuery(query: String): Future[JsValue] = {
@@ -38,17 +36,11 @@ class SparkConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
     for (rr <- result) {
       jArr = jArr :+ Json.parse(rr)
     }
-//    println("-------")
-//    println(jArr)
-//    println("-------")
     Future(jArr)
   }
 
   def postControl(query: String) = {
     Future(true)
   }
-//
-
-
 
 }

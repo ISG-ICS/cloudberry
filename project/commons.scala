@@ -31,6 +31,7 @@ object Commons {
 
   val playSettings = settings ++ Seq(
     routesGenerator := InjectedRoutesGenerator,
-    resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases"
+    resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
+    dependencyOverrides ++= Set("com.fasterxml.jackson.core" % "jackson-databind" % "2.6.7")
   )
 }
