@@ -68,7 +68,7 @@ class ViewDataAgentTest extends TestkitExample with SpecificationLike with MockC
       sender2.send(agent, append)
 
       sender1.expectNoMsg(900 milli)
-      sender1.expectMsg(1000 milli, true)
+      sender1.expectMsg(2000 milli, true)
       sender2.expectNoMsg(900 milli)
       sender2.expectMsg(true)
       ok
