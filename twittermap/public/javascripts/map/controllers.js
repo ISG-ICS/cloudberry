@@ -2,9 +2,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
 
     // add alert of IE
-    if (L.Browser.ie) {
+    if (!L.Browser.ie) {
     ieAlert();
-    return;
     }
 
     function ieAlert() {
@@ -12,15 +11,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
     var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
     div.innerHTML = [
       '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
-      '<strong>Warning!</strong> TweetMap currently doesn\'t support IE.'
+      '<strong>Warning! </strong> TwitterMap currently doesn\'t support IE.'
     ].join('');
     div.style.position = 'absolute';
     div.style.top = '0%';
     div.style.width = '100%';
-    div.style.z-index = 1;
+    div.style.zIndex = '9999';
+    div.style.fontSize = '23px';
     $compile(div);
     alertDiv.appendChild(div);
-    return;
     }
 
     $scope.result = {};
