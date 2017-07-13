@@ -147,7 +147,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
 
 
     function setInfoControl() {
-
       // Interaction function
       function highlightFeature(leafletEvent) {
         var layer = leafletEvent.target;
