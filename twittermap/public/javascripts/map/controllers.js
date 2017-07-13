@@ -1,25 +1,23 @@
+// add alert of IE
+
+
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
 
-    // add alert of IE
-    if (!L.Browser.ie) {
-    ieAlert();
-    }
-
-    function ieAlert() {
-    var alertDiv = document.getElementsByTagName("alert-bar")[0];
-    var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
-    div.innerHTML = [
-      '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
-      '<strong>Warning! </strong> TwitterMap currently doesn\'t support IE.'
-    ].join('');
-    div.style.position = 'absolute';
-    div.style.top = '0%';
-    div.style.width = '100%';
-    div.style.zIndex = '9999';
-    div.style.fontSize = '23px';
-    $compile(div);
-    alertDiv.appendChild(div);
+    // add an alert bar of IE
+    if (L.Browser.ie) {
+      var alertDiv = document.getElementsByTagName("alert-bar")[0];
+      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
+      div.innerHTML = [
+        '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
+        '<strong>Warning! </strong> TwitterMap currently doesn\'t support IE.'
+      ].join('');
+      div.style.position = 'absolute';
+      div.style.top = '0%';
+      div.style.width = '100%';
+      div.style.zIndex = '9999';
+      div.style.fontSize = '23px';
+      alertDiv.appendChild(div);
     }
 
     $scope.result = {};
