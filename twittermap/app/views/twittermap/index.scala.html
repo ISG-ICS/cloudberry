@@ -1,15 +1,15 @@
 
 @(title: String, ws: String, startDate: String, sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], isDrugMap: Boolean) @main(title, ws, startDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, isDrugMap){
 <div xmlns="http://www.w3.org/1999/html" ng-controller="AppCtrl">
-
   <div class="map-group">
+    <alert-bar></alert-bar>
 
 
     <map lat="39.5" lng="-96.35" zoom="4"></map>
 
     <div id="logo">
     </div>
-    
+
     <div id ='powerby'>
       <div class="btn btn-info btn-xs">
         <a href="http://cloudberry.ics.uci.edu/" title="A Distributed middleware by ICS,UCI" class="white"> Cloudberry</a>
@@ -18,8 +18,8 @@
       </div>
    </div>
 
-    
-   </div>
+
+  </div>
 
    <search-bar></search-bar>
    <predefined-keywords></predefined-keywords>
@@ -29,7 +29,6 @@
   <div class="stats">
     <time-series id="chart"></time-series>
   </div>
-
   <div id='sidebar' ng-init="click = -1" ng-class="{toggled: click === 1}" >
     <div class = "col-xs-2">
       <ul class="nav nav-tabs tabs-left">
