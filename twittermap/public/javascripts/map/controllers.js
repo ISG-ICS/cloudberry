@@ -1,6 +1,3 @@
-// add alert of IE
-
-
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common'])
   .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig) {
 

@@ -137,7 +137,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .text('Reset')
                 .attr('href',"#")
                 .on("click", function() { timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
-//                .style("position", "absolute")
+                .style("position", "absolute")
                 .style("bottom", "90%")
                 .style("left", "5%");
 
