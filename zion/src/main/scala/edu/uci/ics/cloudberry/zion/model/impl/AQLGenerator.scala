@@ -65,7 +65,7 @@ class AQLGenerator extends IQLGenerator {
   }
 
   def parseUpsert(q: UpsertRecord, schema: Schema): String = {
-    s"""
+    s"""parseFilterRelation
        |upsert into dataset ${q.dataset} (
        |${Json.toJson(q.records)}
        |)
