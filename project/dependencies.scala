@@ -78,6 +78,9 @@ object Dependencies {
     "com.typesafe.akka" %% "akka-actor" % "2.4.4",
     "org.apache.spark" % "spark-core_2.11" % "2.1.0",
     "org.apache.spark" % "spark-sql_2.11" % "2.1.0",
+    "org.scalikejdbc" %% "scalikejdbc" % "2.5.2",
+    "com.h2database" % "h2" % "1.4.196",
+    "ch.qos.logback" % "logback-classic" % "1.2.3"
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
     "com.typesafe.play" %% "play-ws" % playVersion
   ) ++ testDeps

@@ -16,6 +16,7 @@ object DataType extends Enumeration {
   val Bag = Value("Bag")
   val Hierarchy = Value("Hierarchy")
   val Record = Value("Record")
+  val Json = Value("Json")
 }
 
 object Relation extends Enumeration {
