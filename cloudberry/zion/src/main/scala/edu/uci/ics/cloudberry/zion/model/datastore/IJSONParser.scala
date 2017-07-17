@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.datastore
 
-import edu.uci.ics.cloudberry.zion.model.schema.{Query, QueryExeOption, Schema}
+import edu.uci.ics.cloudberry.zion.model.schema.{Query, QueryExeOption, AbstractSchema}
 import play.api.libs.json.JsValue
 
 trait IJSONParser {
@@ -19,5 +19,5 @@ trait IJSONParser {
     * @param schemaMap
     * @return
     */
-  def parse(json: JsValue, schemaMap: Map[String, Schema]): (Seq[Query], QueryExeOption)
+  def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption)
 }

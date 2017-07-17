@@ -16,19 +16,20 @@ case class Stats(createTime: DateTime,
 
 case class DataSetInfo(name: String,
                        createQueryOpt: Option[Query],
-                       schema: Schema,
+                       schema: AbstractSchema,
                        dataInterval: Interval,
                        stats: Stats)
 
 object DataSetInfo {
 
   val MetaDataDBName: String = "berry.meta"
-  val MetaSchema: Schema = Schema("berry.MetaType",
-    Seq(StringField("name"),
-        TimeField("stats.createTime")),
+  val MetaSchema = Schema(
+    "berry.MetaType",
+    Seq(StringField("name"), TimeField("stats.createTime")),
     Seq.empty,
     Seq(StringField("name")),
-    TimeField("stats.createTime"))
+    TimeField("stats.createTime")
+  )
 
   /**
     * Parse a json object to create a [[DataSetInfo]].
@@ -37,21 +38,12 @@ object DataSetInfo {
     * @param schemaMap
     * @return
     */
-  def parse(json: JsValue, schemaMap: Map[String, Schema]): DataSetInfo = {
+  def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): DataSetInfo = {
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
         val dataSetInfo = js.get
         val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
-
-        val schema = dataSetInfo.schema
-        val primaryKey = schema.primaryKey.map(schema.getField(_).get)
-        val timeField = schema.getField(schema.timeField) match {
-          case Some(f) if f.isInstanceOf[TimeField] => f.asInstanceOf[TimeField]
-          case None if schema.timeField.isEmpty => throw new QueryParsingException(s"Time field is not specified for ${schema.typeName}.")
-          case _ => throw new QueryParsingException(s"${schema.timeField} is not a valid time field.")
-        }
-
-        val resolvedSchema = Schema(schema.typeName, schema.dimension, schema.measurement, primaryKey, timeField)
+        val resolvedSchema = dataSetInfo.schema.toResolved
 
         DataSetInfo(dataSetInfo.name, resolvedQuery, resolvedSchema, dataSetInfo.dataInterval, dataSetInfo.stats)
 
@@ -170,7 +162,7 @@ object DataSetInfo {
       (JsPath \ "dimension").format[Seq[Field]] and
       (JsPath \ "measurement").format[Seq[Field]] and
       (JsPath \ "primaryKey").format[Seq[String]] and
-      (JsPath \ "timeField").format[String]
+      (JsPath \ "timeField").formatNullable[String]
     ) (UnresolvedSchema.apply, unlift(UnresolvedSchema.unapply))
 
   implicit val dataSetInfoFormat: Format[UnresolvedDataSetInfo] = (

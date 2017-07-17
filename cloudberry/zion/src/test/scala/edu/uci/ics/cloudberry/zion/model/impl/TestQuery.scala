@@ -8,6 +8,7 @@ object TestQuery {
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
+  val TwitterDataSetForSparkSQL = "twitter_ds_tweet"
   val PopulationDataSet = PopulationDataStore.DatasetName
   val literacyDataSet = LiteracyDataStore.DatasetName
   val twitterSchema = TwitterDataStore.TwitterSchema
@@ -25,6 +26,7 @@ object TestQuery {
   val lang = twitterField("lang")
 
   val tag = Field.as(hashtags, "tag")
+  val hash = Field.as(hashtags, "hashtags")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
@@ -78,11 +80,13 @@ object TestQuery {
 
   val unnestHashTag = UnnestStatement(hashtags, tag)
   val byTag = ByStatement(tag, None, None)
+  val byHashTag = ByStatement(hash, None, None)
 
   val secondInterval = Interval(TimeUnit.Second)
   val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
   val minuteInterval = Interval(TimeUnit.Minute)
   val byMinute = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "min")))
+  val byMinuteForSparkSql = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "minute")))
   val hourInterval = Interval(TimeUnit.Hour)
   val byHour = ByStatement(createAt, Some(Interval(TimeUnit.Hour)), Some(Field.as(hourInterval(createAt), "hour")))
   val dayInterval = Interval(TimeUnit.Day)
@@ -121,8 +125,13 @@ object TestQuery {
   )
 
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
-  val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
+  val selectTop100 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 100, 0, Seq.empty)
+  val selectTop10byHashTag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq(hash))
+  val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
+  val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
 
   val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
   val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))

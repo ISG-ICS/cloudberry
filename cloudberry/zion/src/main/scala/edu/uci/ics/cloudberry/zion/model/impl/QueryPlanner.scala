@@ -35,7 +35,7 @@ class QueryPlanner {
     }
   }
 
-  def calculateMergeFunc(query: Query, schema: Schema): IMerger = {
+  def calculateMergeFunc(query: Query, schema: AbstractSchema): IMerger = {
     //TODO the current logic is very simple, all queries has to be the isomorphism.
     if (query.lookup.nonEmpty) {
       ???
@@ -84,7 +84,11 @@ class QueryPlanner {
     bestView match {
       case None => (Seq(query), Unioner)
       case Some(view) =>
-        val queryInterval = query.getTimeInterval(source.schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
+        if (!source.schema.isInstanceOf[Schema]) {
+          throw new IllegalArgumentException("Lookup dataset " + source.schema.getTypeName + " cannot split query.")
+        }
+        val schema = source.schema.asInstanceOf[Schema]
+        val queryInterval = query.getTimeInterval(schema.timeField).getOrElse(new Interval(new DateTime(0), DateTime.now()))
         val viewInterval = new Interval(new DateTime(0), view.stats.lastModifyTime)
         val unCovered = getUnCoveredInterval(viewInterval, queryInterval)
 
@@ -97,9 +101,9 @@ class QueryPlanner {
         val newFilter = query.filter.filterNot(qf => viewFilters.exists(vf => qf.covers(vf)))
         seqBuilder += query.copy(dataset = view.name, filter = newFilter)
         for (interval <- unCovered) {
-          seqBuilder += query.setInterval(source.schema.timeField, interval)
+          seqBuilder += query.setInterval(schema.timeField, interval)
         }
-        (seqBuilder.result(), calculateMergeFunc(query, source.schema))
+        (seqBuilder.result(), calculateMergeFunc(query, schema))
     }
   }
 
