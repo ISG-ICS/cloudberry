@@ -4,7 +4,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.types._
 import play.api.libs.json._
 import play.api.libs.ws.{WSClient, WSResponse}
-import edu.uci.ics.cloudberry.util.Logging
 import org.apache.spark.sql.Encoders
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
