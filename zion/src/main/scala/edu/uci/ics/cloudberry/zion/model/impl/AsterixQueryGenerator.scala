@@ -103,6 +103,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     * @return query string
     **/
   def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
+    println("HERE GOES GENERATE")
     val (temporalSchemaMap, lookupSchemaMap) = AsterixQueryGenerator.splitSchemaMap(schemaMap)
     val result = query match {
       case q: Query =>

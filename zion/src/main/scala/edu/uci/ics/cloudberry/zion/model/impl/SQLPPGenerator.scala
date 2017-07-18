@@ -93,6 +93,9 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   }
 
   def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {
+    println("SQLPPGenerator, PARSEUPSERT!!!!!!!!!")
+    println("dataset: " + q.dataset)
+    println("records: " + q.records)
     s"""
        |upsert into ${q.dataset} (
        |${Json.toJson(q.records)}

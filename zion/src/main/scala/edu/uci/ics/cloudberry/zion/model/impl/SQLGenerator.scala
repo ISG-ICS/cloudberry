@@ -30,7 +30,7 @@ class SQLGenerator extends IQLGenerator {
 
   protected val sourceVar: String = "t"  // The alias of table?
 
-  protected val jsonVar: String = "$"
+  protected val jsonVar: String = "$."
 
   protected val appendVar: String = "ta"
 
@@ -156,13 +156,20 @@ class SQLGenerator extends IQLGenerator {
        |${parseQuery(append.query, schemaMap)}
        |)""".stripMargin
   }
-
-  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {  // Here: This function is modified to insert records into table
+  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {
+    println("NEW SQL Generator, PARSEUPSERT!!!!!!!!!" + q.dataset)
     s"""
-       |insert into ${q.dataset} values(
+       |upsert into ${q.dataset} (
        |${Json.toJson(q.records)}
        |)""".stripMargin
-  }  // Diff: and here should add an update and alter function?
+  }
+
+//  def parseUpsert(q: UpsertRecord, schemaMap: Map[String, AbstractSchema]): String = {  // Here: This function is modified to insert records into table
+//    s"""
+//       |insert into ${q.dataset} values(
+//       |${Json.toJson(q.records)}
+//       |)""".stripMargin
+//  }  // Diff: and here should add an update and alter function?
 
   protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
     if (delete.filters.isEmpty) {
@@ -569,7 +576,7 @@ class SQLGenerator extends IQLGenerator {
           s"${expr.defExpr}($sourceVar.${quote}create_at${quote}) as ${expr.defExpr}"
         }
         else if (s"${expr.defExpr}" == s"${quote}state${quote}"){
-          s"$sourceVar.geo_tag->\"$.stateID" as ${expr.defExpr}"
+          s"""$sourceVar.geo_tag->\"${jsonVar}\.stateID\" as ${expr.defExpr}"""
         }
         else if (s"${expr.defExpr}" == s"${quote}hashtag${quote}" || s"${expr.defExpr}" == s"${quote}tag${quote}"){
           s"hashtag as hashtag"

@@ -22,8 +22,10 @@ class MetaDataAgent(override val dbName: String,
 
   override protected def maintenanceWork: Receive = {
     case upsert: UpsertRecord =>
+      println("MetaDataAgent.scala: upsert")
       processUpdate(queryParser.generate(upsert, Map(dbName -> schema)))
     case delete: DeleteRecord =>
+      println("MetaDataAgent.scala: delete")
       processUpdate(queryParser.generate(delete, Map(dbName -> schema)))
     case drop: DropView =>
       // Note: parameter SchemaMap is not used in this case.

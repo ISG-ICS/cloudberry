@@ -43,6 +43,7 @@ class DataStoreManager(metaDataset: String,
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
+        println("DataStoreManager: preStart(): " + jsArray.toString())
         val schemaMap: mutable.Map[String, AbstractSchema] = new mutable.HashMap[String, AbstractSchema]
         jsArray.value.foreach { json =>
           val info = DataSetInfo.parse(json, schemaMap.toMap)
@@ -138,7 +139,7 @@ class DataStoreManager(metaDataset: String,
   private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
-
+    println("DataStoreManager.scala registerNewDataset(): " + dataSetName)
     if(!metaData.contains(dataSetName)){
       try{
         dataSetRawSchema.toResolved match {
@@ -215,7 +216,7 @@ class DataStoreManager(metaDataset: String,
 
   private def answerQuery(query: IQuery, now: Option[DateTime] = None): Unit = {
     if (!metaData.contains(query.dataset)) return
-
+    println("DataStoreManager.scala: answerQuery()" + query.dataset)
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
       if (!info.schema.isInstanceOf[Schema]) {
@@ -259,6 +260,7 @@ class DataStoreManager(metaDataset: String,
     val fixEndFilter = FilterStatement(schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
+    println("DataStoreManager.scala: createView" + queryString)
     conn.postControl(queryString) onSuccess {
       case true =>
         collectStats(create.dataset, resultSchema) onComplete {
@@ -291,6 +293,7 @@ class DataStoreManager(metaDataset: String,
     val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))
     val parser = queryGenFactory()
     import TimeField.TimeFormat
+    println("DataStoreManager: start timeFormat")
     for {
       minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
       maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])
@@ -335,10 +338,13 @@ object DataStoreManager {
     import AgentType._
     agentType match {
       case Meta =>
+        println("DataStoreManager object: Meta")
         context.actorOf(MetaDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
       case Origin =>
+        println("DataStoreManager object: Origin")
         context.actorOf(OriginalDataAgent.props(dataSetInfoOpt.get, qLGenerator, conn, appConfig), actorName)
       case View =>
+        println("DataStoreManager object: View")
         context.actorOf(ViewDataAgent.props(dbName, dbSchema, qLGenerator, conn, appConfig), actorName)
     }
   }
@@ -351,10 +357,12 @@ object DataStoreManager {
   case class Register(dataset: String, schema: UnresolvedSchema)
 
   object Register{
+    println("DataStoreManager.scala: Register")
     implicit val registerReader: Reads[Register] = {
       (__ \ "dataset").read[String] and
       (__ \ "schema").read[UnresolvedSchema]
     }.apply(Register.apply _)
+    println("apply finished")
   }
 
   case class Deregister(dataset: String)

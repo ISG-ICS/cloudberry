@@ -57,6 +57,7 @@ object Field {
       case DataType.Text => TextField(name, isOptional)
       case DataType.Point => PointField(name, isOptional)
       case DataType.Boolean => PointField(name, isOptional)
+      case DataType.Json => JsonField(name, isOptional)
       case _ => ???
     }
   }
@@ -75,6 +76,7 @@ object Field {
       case DataType.Text => TextField(name, field.isOptional)
       case DataType.Point => PointField(name, field.isOptional)
       case DataType.Boolean => PointField(name, field.isOptional)
+      case DataType.Json => JsonField(name, field.isOptional)
       case DataType.Hierarchy =>
         val hierarchyField = field.asInstanceOf[HierarchyField]
         HierarchyField(name, hierarchyField.innerType, hierarchyField.levels, hierarchyField.isOptional)
@@ -101,7 +103,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
 
 }
 
-object TimeField {
+object TimeField {  // Here, the formatter should be different?
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 
@@ -126,6 +128,12 @@ case class PointField(override val name: String, override val isOptional: Boolea
 case class BooleanField(override val name: String, override val isOptional: Boolean = false)
   extends Field {
   override val dataType = DataType.Boolean
+
+}
+
+case class JsonField(override val name: String, override val isOptional: Boolean = false)
+  extends Field {
+  override val dataType = DataType.Json
 
 }
 
@@ -233,7 +241,7 @@ object AbstractSchema {
   val BasicRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.<=, Relation.>=, Relation.>, Relation.<)
   val StringRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.in, Relation.contains, Relation.startsWith, Relation.endsWith, Relation.matches, Relation.~=)
 
-  val Type2Relations: Map[DataType, Set[Relation]] = Map(
+  val Type2Relations: Map[DataType, Set[Relation]] = Map(  // Here: should be appended?
     Number -> (BasicRelSet + Relation.in + Relation.inRange),
     Time -> (BasicRelSet + Relation.inRange),
     Boolean -> Set(Relation.isTrue, Relation.isFalse),

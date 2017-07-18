@@ -54,6 +54,8 @@ abstract class AbstractDataSetAgent(val dbName: String,
       estimate(query) match {
         case Some(result) => sender() ! result
         case None =>
+          println("HERE GOES UPSERT!")
+          println("The query is: " + query)
           //TODO should ask the MetaActor about other required schemas.
           conn.postQuery(queryParser.generate(query, Map(dbName -> schema))) pipeTo sender()
       }
@@ -78,6 +80,7 @@ abstract class AbstractUpdatableDataSetAgent(override val dbName: String,
       curSender ! result
       self ! DoneUpdate
     }
+    println(2)
     context.become(updatingDataSet)
   }
 
@@ -98,6 +101,7 @@ abstract class AbstractUpdatableDataSetAgent(override val dbName: String,
 
   protected def updatingDataSet: Receive = querying orElse {
     case DoneUpdate =>
+      println("DoneUpdate")
       unstashAll()
       context.unbecome()
     case _ => stash()

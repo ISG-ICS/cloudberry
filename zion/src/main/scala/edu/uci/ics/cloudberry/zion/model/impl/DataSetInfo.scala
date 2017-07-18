@@ -21,6 +21,7 @@ case class DataSetInfo(name: String,
                        stats: Stats)
 
 object DataSetInfo {
+  println("DataSetInfo object")
 
   val MetaDataDBName: String = "berry.meta"
   val MetaSchema = Schema(
@@ -41,6 +42,7 @@ object DataSetInfo {
   def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): DataSetInfo = {
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
+        println("DataSetInfro.scala: parse")
         val dataSetInfo = js.get
         val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
         val resolvedSchema = dataSetInfo.schema.toResolved
@@ -108,6 +110,8 @@ object DataSetInfo {
           JsSuccess(StringField(name, isOptional))
         case DataType.Time =>
           JsSuccess(TimeField(name, isOptional))
+        case DataType.Json =>
+          JsSuccess(JsonField(name, isOptional))
         case unknown: DataType.Value => JsError(s"field datatype invalid: $unknown")
       }
     }

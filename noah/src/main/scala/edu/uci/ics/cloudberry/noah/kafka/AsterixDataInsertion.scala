@@ -11,6 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class AsterixDataInsertion(wsClient: AhcWSClient){
 
   def insertRecord(url: String, dataverse: String, dataset: String, record: String) {
+    println("insert in AQL")
     val adm = TagTweet.tagOneTweet(record, false)
     val aql = s"use dataverse $dataverse; insert into dataset $dataset($adm);"
     httpRequest(url, aql)

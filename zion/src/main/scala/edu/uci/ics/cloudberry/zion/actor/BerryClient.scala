@@ -48,10 +48,14 @@ class BerryClient(val jsonParser: JSONParser,
 
   override def receive: Receive = {
     case json: JsValue =>
+      println("BerryClient: on recieve: this is a json")
+      println(json.toString()) // Here is correct js string
       handleNewRequest(Request(json, NoTransform), out.getOrElse(sender()))
     case request: Request =>
+      println("BerryClient: on recieve: this is a request")
       handleNewRequest(request, out.getOrElse(sender()))
     case initial: Initial if initial.ts == curKey =>
+      println("BerryClient: on recieve: this is initial")
       val queryInfos = initial.queries.map { query =>
         val info = initial.infos(query.dataset)
         if (!info.schema.isInstanceOf[Schema]) {
@@ -80,17 +84,27 @@ class BerryClient(val jsonParser: JSONParser,
     val key = DateTime.now()
     curKey = key
     val datasets = jsonParser.getDatasets(request.json).toSeq
+    println("BerryClient.scala: handleNewRequest() datasets:" + datasets.toString())
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
+    println("here goes case match")
     fDataInfos.foreach { seqInfos =>
       val schemaMap = seqInfos.zip(datasets).map {
         case (Some(info), _) =>
+          println("case matched")
+          println("name:"+ info.name)
+          println("schema:" + info.schema)
           info.name -> info.schema
         case (None, dataset) =>
+          println("NO INFO MACH!!!")
           curSender ! noSuchDatasetJson(dataset)
           return
+        case (_, _) =>
+          println("seems no matches")
+          return
       }.toMap
+      println("map finished")
       val (queries, runOption) = jsonParser.parse(request.json, schemaMap)
       if (runOption.sliceMills <= 0) {
         val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)

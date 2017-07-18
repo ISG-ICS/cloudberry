@@ -56,12 +56,14 @@ class AsterixSQLPPConn(url: String, wSClient: WSClient)(implicit ec: ExecutionCo
   override def defaultQueryResponse: JsValue = defaultEmptyResponse
 
   def postQuery(query: String): Future[JsValue] = {
+    println("postQuery2" + query)
     postWithCheckingStatus(query, (ws: WSResponse) => {
       ws.json.asInstanceOf[JsObject].value("results")
     }, (ws: WSResponse) => defaultQueryResponse)
   }
 
   def postControl(query: String): Future[Boolean] = {
+    println("postControl2" + query)
     postWithCheckingStatus(query, (ws: WSResponse) => true, (ws: WSResponse) => false)
   }
 
