@@ -7,8 +7,8 @@
 #
 #   DESCRIPTION: Run Asterix Docker containers
 #
-#       OPTIONS:    
-#                   ncs: number of nc. 
+#       OPTIONS:
+#                   ncs: number of nc.
 #  REQUIREMENTS: ---
 #          BUGS: ---
 #         NOTES: ---
@@ -40,7 +40,7 @@ sleep 2s
 for ((n=1; n <= ncs; n=n+1 ))
 do
     echo "build nc${n}"
-    #port=$((10000+n)) # these ports are used for feed 
+    #port=$((10000+n)) # these ports are used for feed
     docker run -d -v $docName:/db -p 10001:10001 -p 10002:10002 -p 10003:10003 -p 10004:10004 -e NC_JVM_MEM=$NC_JVM_MEM \
       --name "nc${n}" \
         jianfeng/asterixdb nc ${n} $ccip $ncs

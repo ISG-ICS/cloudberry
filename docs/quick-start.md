@@ -5,7 +5,7 @@ layout: page
 ## 1. Setup TwitterMap Using Cloudberry and AsterixDB
 
 This page includes instructions on how to use Cloudberry and AsterixDB to setup a small instance of the
-[TwitterMap](http://cloudberry.ics.uci.edu/demos/twittermap/) on a local machine. 
+[TwitterMap](http://cloudberry.ics.uci.edu/demos/twittermap/) on a local machine.
 The following diagram illustrates its architecture: ![architecture][architecture]
 
 System requirements:
@@ -29,7 +29,7 @@ Suppose the repostory is cloned to the folder `~/cloudberry`.
    2. Run the following commands:
 
 ```
-~> cd cloudberry
+~> cd cloudberry/
 ~/cloudberry> ./script/dockerRunAsterixDB.sh
 ```
 The second command will download and run a prebuilt AsterixDB docker container from [here](https://hub.docker.com/r/jianfeng/asterixdb/). This step may take 5-10 minutes or even longer, depending on your network speed.
@@ -48,18 +48,7 @@ If you want to shutdown the docker container later, you can use the following co
 ~> docker stop cc nc1
 ```
 
-**Step 4**: Run the following command to ingest sample tweets (about 47K) and US population data into AsterixDB.
-
-
-```
-~/cloudberry> ./script/ingestAllTwitterToLocalCluster.sh
-```
-
-When it finishes you should see the messages as shown in the following screenshot:
-![ingestion][ingestion]
-
-
-**Step 5**: Compile and run the Cloudberry server.
+**Step 4**: Compile and run the Cloudberry server.
 
 ```
 ~/cloudberry> sbt compile
@@ -69,10 +58,21 @@ When it finishes you should see the messages as shown in the following screensho
 Wait until the shell prints the messages shown in the following screenshot:
 ![neo][neo]
 
+**Step 5**: Open another terminal window to ingest sample tweets (about 47K) and US population data into AsterixDB.
+
+```
+~> cd examples/twittermap
+~/twittermap> ./script/ingestAllTwitterToLocalCluster.sh
+```
+
+When it finishes you should see the messages as shown in the following screenshot:
+![ingestion][ingestion]
+
+
 **Step 6**: Start the TwitterMap Web server (in port 9001) by running the following command in another shell:
 
 ```
-~/cloudberry> sbt "project twittermap" "run 9001"
+~/twittermap> sbt "project web" "run 9001"
 ```
 
 Wait until the shell prints the messages shown in the following screenshot:
@@ -85,22 +85,22 @@ Wait until the shell prints the messages shown in the following screenshot:
 
 **Congratulations!** You have successfully set up TwitterMap using Cloudberry and AsterixDB!
 
-## Setup your own AsterixDB cluster 
+## Setup your own AsterixDB cluster
 
 The instructions above assume that we use an AsterixDB instance in a Docker container. If you want to setup your AsterixDB cluster, please use the following steps.
 
-**Step 8**: Follow the instructions on the [AsterixDB Installation Guide](https://ci.apache.org/projects/asterixdb/index.html) to install an AsterixDB cluster.  Select your preferred installation option. 
+**Step 8**: Follow the instructions on the [AsterixDB Installation Guide](https://ci.apache.org/projects/asterixdb/index.html) to install an AsterixDB cluster.  Select your preferred installation option.
 
 **Step 9**: Ingest twitter data to AsterixDB
 
 You need to give the RESTFul API link of the AsterixDB cluster and one of its NC names to the ingestion script as following:
 
 ```bash
-~/cloudberry> ./script/ingestAllTwitterToLocalCluster.sh http://YourAsterixDBServerIP:19002/aql ONE_OF_NC_NAMES
+~/twittermap> ./script/ingestAllTwitterToLocalCluster.sh http://YourAsterixDBServerIP:19002/aql ONE_OF_NC_NAMES
 ```
 
-**Step 10**: Change the Cloudberry middleware configuration to connect to this new AsterixDB cluster. 
-You can modify the AsterixDB hostname in the configuration file `neo/conf/application.conf` by changing the `asterixdb.url` value.
+**Step 10**: Change the Cloudberry middleware configuration to connect to this new AsterixDB cluster.
+You can modify the AsterixDB hostname in the configuration file `cloudberry/neo/conf/application.conf` by changing the `asterixdb.url` value.
 
 ```properties
 asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
@@ -112,9 +112,9 @@ Next we explain the details of the TwitterMap.
 
 ### 2.1 Create a Dataset in AsterixDB
 
-In Step 9, we ran a script called `./script/ingestAllTwitterToLocalCluster.sh` to create data sets in AsterixDB and ingest data into them. 
+In Step 9, we ran a script called `examples/twittermap/script/ingestAllTwitterToLocalCluster.sh` to create data sets in AsterixDB and ingest data into them.
 The following are the executed DDL statements.
- 
+
 
 ```
 create dataverse twitter if not exists;
@@ -165,7 +165,7 @@ create type typeTweet if not exists as open{
     place : typePlace?,
     geo_tag: typeGeoTag
 }
-create dataset ds_tweet(typeTweet) if not exists primary key id 
+create dataset ds_tweet(typeTweet) if not exists primary key id
 using compaction policy prefix (("max-mergable-component-size"="134217728"),("max-tolerance-component-count"="10")) with filter on create_at ;
 create index text_idx if not exists on ds_tweet("text") type fulltext;
 ```
@@ -204,15 +204,15 @@ AsterixDB instance.
 ### 2.3 Setup TwitterMap Web Server
 
 The TwitterMap Web application uses the [Play Framework](http://playframework.com) to talk to the Cloudberry service. The configuration
-of the framework is in the file `twittermap/conf/application.conf`.  In the file, the `cloudberry.register` property specifies the 
+of the framework is in the file `examples/twittermap/web/conf/application.conf`.  In the file, the `cloudberry.register` property specifies the
 HTTP API of Cloudberry:
 
 ```properties
 cloudberry.register = "http://CLOUDBERRY-HOST-NAME:CLOUDBERRY-PORT/admin/register"
 ```
 
-When the TwitterMap server starts, it will run `controllers/TwitterMapApplication.scala`, which will run 
-`twittermap/app/model/Migration_20170428.scala`. This script registers four data sets to the Cloudberry server.
+When the TwitterMap server starts, it will run `twittermap/web/app/controllers/TwitterMapApplication.scala`, which will run
+`twittermap/web/app/model/Migration_20170428.scala`. This script registers four data sets to the Cloudberry server.
 They are:
 
 * twitter.ds_tweet
@@ -259,13 +259,13 @@ Cloudberry will talk to AsterixDB to collect information about these data sets. 
 }
 ```
 
-In the configuration file, the `cloudberry.ws` property tells the front-end the Web socket address of the Cloudbery server. 
+In the configuration file `twittermap/web/conf/application.conf`, the `cloudberry.ws` property tells the front-end the Web socket address of the Cloudbery server.
 
 ```properties
 cloudberry.ws = "ws://CLOUDBERRY_HOST_NAME:CLOUDBERRY_PORT/ws"
 ```
 
-The frontend uses the web socket to communicate with the Cloudberry server directly. The corresponding logic can be found in `twittermap/public/javascripts/common/services.js` file.
+The frontend uses the web socket to communicate with the Cloudberry server directly. The corresponding logic can be found in `twittermap/web/public/javascripts/common/services.js` file.
 
 For more information about how to write registration DDL and Cloudberry request please refer to this [page](/documentation).
 
@@ -273,13 +273,13 @@ For more information about how to write registration DDL and Cloudberry request 
 
 TwitterMap is one example of how to use Cloudberry. To develop your own application, you can do the following steps:
 
-1. Use AsterixDB to create your own data sets; 
+1. Use AsterixDB to create your own data sets;
 2. Give the link of the AsterixDB instance to Cloudberry by following step 10;
 3. Register the necessary datasets into Cloudberry as in Section 2.3;
 4. Set up the Web socket connection between the front-end web page and the Cloudberry server as in Section 2.3;
-5. Define your queries and responses as in `twittermap/public/javascripts/common/services.js`. 
+5. Define your queries and responses as in `twittermap/web/public/javascripts/common/services.js`.
 
-Have fun!  If you need assistance, please feel to contact us at 
+Have fun!  If you need assistance, please feel to contact us at
 &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;
 
 
@@ -295,6 +295,3 @@ Have fun!  If you need assistance, please feel to contact us at
 {: width="800px"}
 [web]: /img/web.png
 {: width="800px"}
-
-
-
