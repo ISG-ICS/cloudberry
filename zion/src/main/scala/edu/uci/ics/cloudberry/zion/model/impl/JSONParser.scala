@@ -87,7 +87,7 @@ object JSONParser {
       }
     }
 
-    override def writes(seq: Seq[Any]): JsValue = {  // Here: might be changed
+    override def writes(seq: Seq[Any]): JsValue = {
       JsArray(seq.map {
         case b: Boolean => JsBoolean(b)
         case s: String => JsString(s)

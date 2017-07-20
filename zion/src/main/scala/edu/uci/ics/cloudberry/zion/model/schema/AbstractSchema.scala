@@ -103,7 +103,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
 
 }
 
-object TimeField {  // Here, the formatter should be different?
+object TimeField {  // TODO: DateTime format might be different
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 
@@ -241,7 +241,7 @@ object AbstractSchema {
   val BasicRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.<=, Relation.>=, Relation.>, Relation.<)
   val StringRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.in, Relation.contains, Relation.startsWith, Relation.endsWith, Relation.matches, Relation.~=)
 
-  val Type2Relations: Map[DataType, Set[Relation]] = Map(  // Here: should be appended?
+  val Type2Relations: Map[DataType, Set[Relation]] = Map(
     Number -> (BasicRelSet + Relation.in + Relation.inRange),
     Time -> (BasicRelSet + Relation.inRange),
     Boolean -> Set(Relation.isTrue, Relation.isFalse),

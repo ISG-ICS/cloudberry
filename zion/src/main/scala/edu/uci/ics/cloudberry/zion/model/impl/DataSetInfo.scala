@@ -21,7 +21,6 @@ case class DataSetInfo(name: String,
                        stats: Stats)
 
 object DataSetInfo {
-  println("DataSetInfo object")
 
   val MetaDataDBName: String = "berry.meta"
   val MetaSchema = Schema(
@@ -42,7 +41,6 @@ object DataSetInfo {
   def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): DataSetInfo = {
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
-        println("DataSetInfro.scala: parse")
         val dataSetInfo = js.get
         val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
         val resolvedSchema = dataSetInfo.schema.toResolved
@@ -85,9 +83,8 @@ object DataSetInfo {
   }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
-    println("DataSetInfo: fieldFormat")
     override def reads(json: JsValue): JsResult[Field] = {
-      val name = ((json \ "name").as[String])
+      val name = (json \ "name").as[String]
       val isOptional = (json \ "isOptional").as[Boolean]
       DataType.withName((json \ "datatype").as[String]) match {
         case DataType.Number =>
@@ -118,7 +115,6 @@ object DataSetInfo {
     }
 
     override def writes(field: Field): JsValue = {
-      println("DataSetInfo: writes")
       val name = field.name
       val isOptional = field.isOptional
       val dataType = field.dataType.toString

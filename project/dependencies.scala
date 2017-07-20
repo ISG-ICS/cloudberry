@@ -79,8 +79,6 @@ object Dependencies {
     "org.apache.spark" % "spark-core_2.11" % "2.1.0",
     "org.apache.spark" % "spark-sql_2.11" % "2.1.0",
     "org.scalikejdbc" %% "scalikejdbc" % "2.5.2",
-//    "com.h2database" % "h2" % "1.4.196",
-//    "ch.qos.logback" % "logback-classic" % "1.2.3",
     "mysql" % "mysql-connector-java" % "5.1.24",
     "com.typesafe.play" %% "anorm" % "2.5.1",
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),

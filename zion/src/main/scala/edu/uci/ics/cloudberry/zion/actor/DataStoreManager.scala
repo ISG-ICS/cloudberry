@@ -43,7 +43,6 @@ class DataStoreManager(metaDataset: String,
   override def preStart(): Unit = {
     metaActor ? Query(metaDataset, select = Some(SelectStatement(Seq(DataSetInfo.MetaSchema.timeField), Seq(SortOrder.ASC), Int.MaxValue, 0, Seq.empty))) map {
       case jsArray: JsArray =>
-        println("DataStoreManager: preStart(): " + jsArray.toString())
         val schemaMap: mutable.Map[String, AbstractSchema] = new mutable.HashMap[String, AbstractSchema]
         jsArray.value.foreach { json =>
           val info = DataSetInfo.parse(json, schemaMap.toMap)
@@ -139,7 +138,6 @@ class DataStoreManager(metaDataset: String,
   private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
-    println("DataStoreManager.scala registerNewDataset(): " + dataSetName)
     if(!metaData.contains(dataSetName)){
       try{
         dataSetRawSchema.toResolved match {
@@ -216,6 +214,7 @@ class DataStoreManager(metaDataset: String,
 
   private def answerQuery(query: IQuery, now: Option[DateTime] = None): Unit = {
     if (!metaData.contains(query.dataset)) return
+
     val actor = context.child("data-" + query.dataset).getOrElse {
       val info = metaData(query.dataset)
       if (!info.schema.isInstanceOf[Schema]) {
