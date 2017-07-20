@@ -1,0 +1,64 @@
+{
+  "dataset": "dataset.name",
+  "lookup": [
+    {
+      "sourceKey": [
+        "keyName"
+      ],
+      "dataset": "name",
+      "lookupKey": [
+        "keyName"
+      ],
+      "select": [
+        "outputKeyName"
+      ],
+      "as": [
+        "asName"
+      ]
+    }
+  ],
+  "filter": [
+    {
+      "field": "fieldP",
+      "apply": "func",
+      "relation": "==|<|>|<=|>=|isTrue|isFalse|in|contains|inRange",
+      "value": [
+        "x"
+      ]
+    }
+  ],
+  "unnest" : {"hashtags": "hashtag"},
+  "group": {
+    "by": [
+      {
+        "field": "fieldA",
+        "apply": "function",
+        "groupNum": 1000,
+        "as": "outputString"
+      }
+    ],
+    "aggregate": [
+      {
+        "field": "fieldB|*",
+        "apply": {
+          "name": "topK",
+          "args": {
+            "k": 10
+          }
+        },
+        "as": "outputFieldName"
+      }
+    ]
+  },
+  "select": {
+    "order": [
+      "fields"
+    ],
+    "offset": 0,
+    "limit": 100,
+    "field": [
+      "fieldA",
+      "fieldB"
+    ]
+  }
+}

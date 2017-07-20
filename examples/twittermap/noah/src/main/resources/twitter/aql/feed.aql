@@ -1,0 +1,14 @@
+use dataverse twitter;
+drop feed TweetFeed if exists;
+create feed TweetFeed using socket_adapter
+(
+    ("sockets"="cloudberry_ac:10001"),
+    ("address-type"="nc"),
+    ("type-name"="typeTweet"),
+    ("format"="adm")
+);
+
+set wait-for-completion-feed "false";
+
+connect feed TweetFeed to dataset ds_zika_streaming;
+

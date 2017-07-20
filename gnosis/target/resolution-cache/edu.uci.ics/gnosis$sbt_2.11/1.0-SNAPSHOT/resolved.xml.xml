@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:e="http://ant.apache.org/ivy/extra">
+	<info organisation="edu.uci.ics"
+		module="gnosis$sbt_2.11"
+		revision="1.0-SNAPSHOT"
+		status="integration"
+		publication="20170720001019"
+	/>
+	<configurations>
+		<conf name="default" visibility="public"/>
+	</configurations>
+	<publications>
+	</publications>
+	<dependencies>
+		<dependency org="org.scala-sbt" name="sbt" rev="0.13.11" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbteclipse" name="sbteclipse-plugin" rev="5.1.0" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.scalaz" name="scalaz-core_2.10" rev="7.2.5" conf="default->default(compile)"/>
+		<dependency org="org.scala-lang" name="scala-library" rev="2.10.6" conf="default->default(compile)" info.apiURL="http://www.scala-lang.org/api/2.10.6/"/>
+		<dependency org="org.scalaz" name="scalaz-effect_2.10" rev="7.2.5" conf="default->default(compile)"/>
+		<dependency org="com.eed3si9n" name="sbt-assembly" rev="0.14.3" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.scalactic" name="scalactic_2.10" rev="2.2.1" conf="default->default(compile)"/>
+		<dependency org="org.scala-lang" name="scala-reflect" rev="2.10.6" conf="default->default(compile)" info.apiURL="http://www.scala-lang.org/api/2.10.6/"/>
+		<dependency org="org.pantsbuild" name="jarjar" rev="1.6.0" conf="default->default(compile)"/>
+		<dependency org="org.apache.ant" name="ant" rev="1.9.6" conf="default->default(compile)"/>
+		<dependency org="org.apache.ant" name="ant-launcher" rev="1.9.6" conf="default->default(compile)"/>
+		<dependency org="org.ow2.asm" name="asm" rev="5.0.4" conf="default->default(compile)"/>
+		<dependency org="org.ow2.asm" name="asm-commons" rev="5.0.4" conf="default->default(compile)"/>
+		<dependency org="org.ow2.asm" name="asm-tree" rev="5.0.4" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-plugin-api" rev="3.3.3" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-model" rev="3.3.3" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-utils" rev="3.0.20" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-artifact" rev="3.3.3" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.sisu" name="org.eclipse.sisu.plexus" rev="0.3.0" conf="default->default(compile)"/>
+		<dependency org="javax.enterprise" name="cdi-api" rev="1.0" conf="default->default(compile)"/>
+		<dependency org="javax.annotation" name="jsr250-api" rev="1.0" conf="default->default(compile)"/>
+		<dependency org="javax.inject" name="javax.inject" rev="1" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.sisu" name="org.eclipse.sisu.inject" rev="0.3.0" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-component-annotations" rev="1.5.5" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-classworlds" rev="2.5.2" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.play" name="sbt-plugin" rev="2.5.0" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="com.typesafe.play" name="sbt-routes-compiler_2.10" rev="2.5.0" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.play" name="twirl-api_2.10" rev="1.1.1" conf="default->default(compile)"/>
+		<dependency org="org.apache.commons" name="commons-lang3" rev="3.4" conf="default->default(compile)"/>
+		<dependency org="commons-io" name="commons-io" rev="2.4" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.play" name="sbt-run-support_2.10" rev="2.5.0" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.play" name="build-link" rev="2.5.0" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.play" name="play-exceptions" rev="2.5.0" conf="default->default(compile)"/>
+		<dependency org="com.typesafe" name="config" rev="1.3.0" conf="default->default(compile)"/>
+		<dependency org="net.contentobjects.jnotify" name="jnotify" rev="0.94-play-1" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-twirl" rev="1.1.1" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="com.typesafe.play" name="twirl-compiler_2.10" rev="1.1.1" conf="default->default(compile)"/>
+		<dependency org="org.scala-lang" name="scala-compiler" rev="2.10.6" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.play" name="twirl-parser_2.10" rev="1.1.1" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-native-packager" rev="1.0.3" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.vafer" name="jdeb" rev="1.3" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-core" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-settings" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-settings-builder" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.codehaus.plexus" name="plexus-interpolation" rev="1.19" conf="default->default(compile)"/>
+		<dependency org="org.sonatype.plexus" name="plexus-sec-dispatcher" rev="1.3" conf="default->default(compile)"/>
+		<dependency org="org.sonatype.plexus" name="plexus-cipher" rev="1.4" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-repository-metadata" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-model-builder" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.apache.maven" name="maven-aether-provider" rev="3.2.2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-api" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-spi" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-util" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.eclipse.aether" name="aether-impl" rev="0.9.0.M2" conf="default->default(compile)"/>
+		<dependency org="org.bouncycastle" name="bcpg-jdk15on" rev="1.51" conf="default->default(compile)"/>
+		<dependency org="org.bouncycastle" name="bcprov-jdk15on" rev="1.51" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-web" rev="1.3.0" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.webjars" name="webjars-locator" rev="0.26" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="webjars-locator-core" rev="0.26" conf="default->default(compile)"/>
+		<dependency org="org.apache.commons" name="commons-compress" rev="1.9" conf="default->default(compile)"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.3.3" conf="default->default(compile)"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-annotations" rev="2.3.0" conf="default->default(compile)"/>
+		<dependency org="com.fasterxml.jackson.core" name="jackson-core" rev="2.3.3" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-js-engine" rev="1.1.3" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="com.typesafe" name="jse_2.10" rev="1.1.2" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-actor_2.10" rev="2.3.11" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-contrib_2.10" rev="2.3.11" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-remote_2.10" rev="2.3.11" conf="default->default(compile)"/>
+		<dependency org="io.netty" name="netty" rev="3.8.0.Final" conf="default->default(compile)"/>
+		<dependency org="com.google.protobuf" name="protobuf-java" rev="2.5.0" conf="default->default(compile)"/>
+		<dependency org="org.uncommons.maths" name="uncommons-maths" rev="1.2.2a" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-cluster_2.10" rev="2.3.11" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.akka" name="akka-persistence-experimental_2.10" rev="2.3.11" conf="default->default(compile)"/>
+		<dependency org="org.iq80.leveldb" name="leveldb" rev="0.5" conf="default->default(compile)"/>
+		<dependency org="org.iq80.leveldb" name="leveldb-api" rev="0.5" conf="default->default(compile)"/>
+		<dependency org="com.google.guava" name="guava" rev="12.0" conf="default->default(compile)"/>
+		<dependency org="com.google.code.findbugs" name="jsr305" rev="1.3.9" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni-all" rev="1.7" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni" rev="1.7" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.hawtjni" name="hawtjni-runtime" rev="1.8" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni-osx" rev="1.5" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni-linux32" rev="1.5" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni-linux64" rev="1.5" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni-win32" rev="1.5" conf="default->default(compile)"/>
+		<dependency org="org.fusesource.leveldbjni" name="leveldbjni-win64" rev="1.5" conf="default->default(compile)"/>
+		<dependency org="io.apigee.trireme" name="trireme-core" rev="0.8.5" conf="default->default(compile)"/>
+		<dependency org="io.apigee" name="rhino" rev="1.7R5pre4" conf="default->default(compile)"/>
+		<dependency org="io.apigee.trireme" name="trireme-node10src" rev="0.8.5" conf="default->default(compile)"/>
+		<dependency org="io.spray" name="spray-json_2.10" rev="1.3.2" conf="default->default(compile)"/>
+		<dependency org="org.slf4j" name="slf4j-simple" rev="1.7.12" conf="default->default(compile)"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.12" conf="default->default(compile)"/>
+		<dependency org="com.typesafe" name="npm_2.10" rev="1.1.1" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="npm" rev="2.11.2" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-less" rev="1.1.0" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.webjars" name="less-node" rev="2.5.0" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="source-map" rev="0.1.40-1" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="amdefine" rev="0.1.0-2" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="mkdirp" rev="0.5.0" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="clean-css" rev="2.2.7" conf="default->default(compile)"/>
+		<dependency org="org.webjars" name="es6-promise-node" rev="2.1.1" conf="default->default(compile)"/>
+		<dependency org="com.typesafe.sbt" name="sbt-coffeescript" rev="1.0.0" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.webjars" name="coffee-script-node" rev="1.7.1" conf="default->default(compile)"/>
+		<dependency org="org.scoverage" name="sbt-scoverage" rev="1.3.5" conf="default->default(compile)" scalaVersion="2.10" sbtVersion="0.13"/>
+		<dependency org="org.scoverage" name="scalac-scoverage-plugin_2.10" rev="1.1.1" conf="default->default(compile)"/>
+	</dependencies>
+</ivy-module>

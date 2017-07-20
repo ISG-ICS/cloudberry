@@ -1,0 +1,14 @@
+[0m[[0mdebug[0m] [0mCopy resource mappings: [0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/ddl,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/ddl)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/request,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/request)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/response,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/response)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/ddl/berry.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/ddl/berry.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/ddl/schema.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/ddl/schema.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/ddl/twitterSchema.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/ddl/twitterSchema.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/request/fullRequest.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/request/fullRequest.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/request/hashtag.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/request/hashtag.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/request/mapTimeCube.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/request/mapTimeCube.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/request/sampleTweets.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/request/sampleTweets.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/response/fullResponse.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/response/fullResponse.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/response/hashtag.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/response/hashtag.json)[0m
+[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/zion/src/main/resources/response/mapTimeCube.json,/Users/yamamuraisao/Documents/cloudberry/zion/target/scala-2.11/classes/response/mapTimeCube.json)[0m

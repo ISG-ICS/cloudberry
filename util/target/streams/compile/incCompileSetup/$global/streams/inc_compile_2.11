@@ -1,0 +1,232 @@
+format version: 5
+output mode:
+1 items
+0 -> single
+output directories:
+1 items
+output dir -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes
+compile options:
+0 items
+javac options:
+4 items
+0 -> -source
+1 -> 1.8
+2 -> -target
+3 -> 1.8
+compiler version:
+1 items
+0 -> 2.11.7
+compile order:
+1 items
+0 -> Mixed
+name hashing:
+1 items
+0 -> true
+products:
+9 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Logging$class.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Logging.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Profile$$anonfun$profile$1.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Profile$.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Profile.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle$$anonfun$1.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle$$anonfun$2.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle$.class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle.class
+binary dependencies:
+9 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> /Library/Java/JavaVirtualMachines/jdk1.8.0_65.jdk/Contents/Home/jre/lib/rt.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> /Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play_2.11/jars/play_2.11-2.5.0.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> /Users/yamamuraisao/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.7.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Library/Java/JavaVirtualMachines/jdk1.8.0_65.jdk/Contents/Home/jre/lib/rt.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play_2.11/jars/play_2.11-2.5.0.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.7.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Library/Java/JavaVirtualMachines/jdk1.8.0_65.jdk/Contents/Home/jre/lib/rt.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play-json_2.11/jars/play-json_2.11-2.5.0.jar
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> /Users/yamamuraisao/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.7.jar
+direct source dependencies:
+0 items
+direct external dependencies:
+0 items
+public inherited source dependencies:
+0 items
+public inherited external dependencies:
+0 items
+member reference internal dependencies:
+1 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala
+member reference external dependencies:
+0 items
+inheritance internal dependencies:
+1 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> /Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala
+inheritance external dependencies:
+0 items
+class names:
+9 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> edu.uci.ics.cloudberry.util.Logging
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> edu.uci.ics.cloudberry.util.Logging$class
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> edu.uci.ics.cloudberry.util.Profile
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> edu.uci.ics.cloudberry.util.Profile$
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> edu.uci.ics.cloudberry.util.Profile$$anonfun$profile$1
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> edu.uci.ics.cloudberry.util.Rectangle
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> edu.uci.ics.cloudberry.util.Rectangle$
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> edu.uci.ics.cloudberry.util.Rectangle$$anonfun$1
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> edu.uci.ics.cloudberry.util.Rectangle$$anonfun$2
+used names:
+106 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> AnyRef
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> Logger
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> Logging
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> api
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> apply
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> cloudberry
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> edu
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> getClass
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> ics
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> log
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> play
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> scala
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> uci
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> util
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> -
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> <byname>
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> <init>
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> Logging
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> Predef
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> Profile
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> R
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> String
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> StringContext
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> System
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> _root_
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> block
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> cloudberry
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> currentTimeMillis
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> edu
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> ics
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> info
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> java
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> lang
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> log
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> result
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> s
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> scala
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> tag
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> tick
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> tock
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> uci
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> util
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> &&
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> <init>
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> ==
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> AnyRef
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Double
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> DoubleReads
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> DoubleWrites
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Format
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> FunctionalCanBuild
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> GenericFormat
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> JsPath
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> JsResult
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Json
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> None
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> OFormat
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> OWrites
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Product
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Reads
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Rectangle
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> ScalaRunTime
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Serializable
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Statics
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> Writes
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> \
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> _toString
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> and
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> api
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> applicative
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> applicativeJsResult
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> apply
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> asInstanceOf
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> cloudberry
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> doubleHash
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> edu
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> eq
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> finalizeHash
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> format
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> functional
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> functionalCanBuildApplicative
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> functionalCanBuildFormats
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> functionalCanBuildOWrites
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> ics
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> invariantFunctorOFormat
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> isInstanceOf
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> json
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> libs
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> mix
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> neLat
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> neLog
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> package
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> play
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> rectangularFormat
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> runtime
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> scala
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> swLat
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> swLog
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> syntax
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> toFunctionalBuilderOps
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> toString
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> typedProductIterator
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> uci
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> unlift
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> util
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> ||
+product stamps:
+9 items
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Logging$class.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Logging.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Profile$$anonfun$profile$1.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Profile$.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Profile.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle$$anonfun$1.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle$$anonfun$2.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle$.class -> lastModified(1499895854000)
+/Users/yamamuraisao/Documents/cloudberry/util/target/scala-2.11/classes/edu/uci/ics/cloudberry/util/Rectangle.class -> lastModified(1499895854000)
+source stamps:
+3 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> hash(620d5833e822d524479e670378450d3176fcd0aa)
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> hash(070867101d90f2c891297cc8a3455de9a3773d7e)
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> hash(f8e2e3775fadc08e1e06264c5fe9d47afc3b37b7)
+binary stamps:
+4 items
+/Library/Java/JavaVirtualMachines/jdk1.8.0_65.jdk/Contents/Home/jre/lib/rt.jar -> lastModified(1444172124000)
+/Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play-json_2.11/jars/play-json_2.11-2.5.0.jar -> lastModified(1457021111000)
+/Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play_2.11/jars/play_2.11-2.5.0.jar -> lastModified(1457021216000)
+/Users/yamamuraisao/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.7.jar -> lastModified(1435004218000)
+class names:
+4 items
+/Library/Java/JavaVirtualMachines/jdk1.8.0_65.jdk/Contents/Home/jre/lib/rt.jar -> java.lang.Object
+/Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play-json_2.11/jars/play-json_2.11-2.5.0.jar -> play.api.libs.json.Json
+/Users/yamamuraisao/.ivy2/cache/com.typesafe.play/play_2.11/jars/play_2.11-2.5.0.jar -> play.api.LoggerLike
+/Users/yamamuraisao/.ivy2/cache/org.scala-lang/scala-library/jars/scala-library-2.11.7.jar -> scala.Product
+internal apis:
+3 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> 
+rO0ABXNyABB4c2J0aS5hcGkuU291cmNlFlpwRASfbtoCAAZJAAdhcGlIYXNoWgAIaGFzTWFjcm9MABhfaW50ZXJuYWxPbmx5X25hbWVIYXNoZXN0ACRMeHNidGkvYXBpL19pbnRlcm5hbE9ubHlfTmFtZUhhc2hlcztMAANhcGl0ABVMeHNidGkvYXBpL1NvdXJjZUFQSTtMAAtjb21waWxhdGlvbnQAF0x4c2J0aS9hcGkvQ29tcGlsYXRpb247WwAEaGFzaHQAAltCeHCPHK7sAHNyACJ4c2J0aS5hcGkuX2ludGVybmFsT25seV9OYW1lSGFzaGVzVNq+mfrU7EwCAAJbAA9pbXBsaWNpdE1lbWJlcnN0ACNbTHhzYnRpL2FwaS9faW50ZXJuYWxPbmx5X05hbWVIYXNoO1sADnJlZ3VsYXJNZW1iZXJzcQB+AAd4cHVyACNbTHhzYnRpLmFwaS5faW50ZXJuYWxPbmx5X05hbWVIYXNoO0lagLbdlov0AgAAeHAAAAAAdXEAfgAJAAAAFnNyACB4c2J0aS5hcGkuX2ludGVybmFsT25seV9OYW1lSGFzaFsO9SJ2OFfPAgACSQAEaGFzaEwABG5hbWV0ABJMamF2YS9sYW5nL1N0cmluZzt4cE8VMIl0AAZub3RpZnlzcQB+AAzeDGP4dAAEd2FpdHNxAH4ADPAGqlp0AA0kYXNJbnN0YW5jZU9mc3EAfgAMmmOrTHQABmVxdWFsc3NxAH4ADAWhLNd0AAxhc0luc3RhbmNlT2ZzcQB+AAzKC5sWdAAMc3luY2hyb25pemVkc3EAfgAMQzqqYHQADSRpc0luc3RhbmNlT2ZzcQB+AAwdPDggdAAJbm90aWZ5QWxsc3EAfgAMGwHfxHQADGlzSW5zdGFuY2VPZnNxAH4ADLZOLCJ0AAI9PXNxAH4ADPHFkcB0AAVjbG9uZXNxAH4ADNWeiUN0AAYkaW5pdCRzcQB+AAzmT8AadAAHTG9nZ2luZ3NxAH4ADHjxq4N0AAh0b1N0cmluZ3NxAH4ADFsFqZp0AAIhPXNxAH4ADApPu4p0AAhnZXRDbGFzc3NxAH4ADHpIFFl0AAJuZXNxAH4ADF6MKz90AAJlcXNxAH4ADDePf8p0AANsb2dzcQB+AAxxhUnWdAACIyNzcQB+AAw0rPO/dAAIZmluYWxpemVzcQB+AAz72K4cdAAIaGFzaENvZGVzcgATeHNidGkuYXBpLlNvdXJjZUFQSblep/kpIzikAgACWwALZGVmaW5pdGlvbnN0ABdbTHhzYnRpL2FwaS9EZWZpbml0aW9uO1sACHBhY2thZ2VzdAAUW0x4c2J0aS9hcGkvUGFja2FnZTt4cHVyABdbTHhzYnRpLmFwaS5EZWZpbml0aW9uO4jJXOe0414OAgAAeHAAAAABc3IAE3hzYnRpLmFwaS5DbGFzc0xpa2WDNByh37CXbAIABEwADmRlZmluaXRpb25UeXBldAAaTHhzYnRpL2FwaS9EZWZpbml0aW9uVHlwZTtbABBzYXZlZEFubm90YXRpb25zdAATW0xqYXZhL2xhbmcvU3RyaW5nO0wACHNlbGZUeXBldAAQTHhzYnRpL2FwaS9MYXp5O0wACXN0cnVjdHVyZXEAfgBDeHIAIXhzYnRpLmFwaS5QYXJhbWV0ZXJpemVkRGVmaW5pdGlvbvkRbrHVUDziAgABWwAOdHlwZVBhcmFtZXRlcnN0ABpbTHhzYnRpL2FwaS9UeXBlUGFyYW1ldGVyO3hyABR4c2J0aS5hcGkuRGVmaW5pdGlvbocqG+hxQuNGAgAETAAGYWNjZXNzdAASTHhzYnRpL2FwaS9BY2Nlc3M7WwALYW5ub3RhdGlvbnN0ABdbTHhzYnRpL2FwaS9Bbm5vdGF0aW9uO0wACW1vZGlmaWVyc3QAFUx4c2J0aS9hcGkvTW9kaWZpZXJzO0wABG5hbWVxAH4ADXhwc3IAEHhzYnRpLmFwaS5QdWJsaWO6WD2ubC1gQgIAAHhyABB4c2J0aS5hcGkuQWNjZXNz3WKa+B1jMUgCAAB4cHVyABdbTHhzYnRpLmFwaS5Bbm5vdGF0aW9uO+uX6xkQ9o1IAgAAeHAAAAAAc3IAE3hzYnRpLmFwaS5Nb2RpZmllcnOX52HcEyZ7swIAAUIABWZsYWdzeHABdAAjZWR1LnVjaS5pY3MuY2xvdWRiZXJyeS51dGlsLkxvZ2dpbmd1cgAaW0x4c2J0aS5hcGkuVHlwZVBhcmFtZXRlcjvZbSYPKJ3ytgIAAHhwAAAAAH5yABh4c2J0aS5hcGkuRGVmaW5pdGlvblR5cGUAAAAAAAAAABIAAHhyAA5qYXZhLmxhbmcuRW51bQAAAAAAAAAAEgAAeHB0AAVUcmFpdHVyABNbTGphdmEubGFuZy5TdHJpbmc7rdJW5+kde0cCAAB4cAAAAABzcgAheHNidGkuYXBpLkFic3RyYWN0TGF6eSRTdHJpY3RMYXp5DWYcaykWKrgCAAFMAAV2YWx1ZXQAEkxqYXZhL2xhbmcvT2JqZWN0O3hwc3IAE3hzYnRpLmFwaS5FbXB0eVR5cGW8/Z5GSTuJJAIAAHhyABR4c2J0aS5hcGkuU2ltcGxlVHlwZXJ4YoghI79AAgAAeHIADnhzYnRpLmFwaS5UeXBlP2rZIRZJqsoCAAB4cHNxAH4AW3NyABN4c2J0aS5hcGkuU3RydWN0dXJlqar5gJNv2AACAANMAAhkZWNsYXJlZHEAfgBDTAAJaW5oZXJpdGVkcQB+AENMAAdwYXJlbnRzcQB+AEN4cQB+AGBzcQB+AFt1cQB+AD4AAAAAc3EAfgBbdXEAfgA+AAAAAHNxAH4AW3VyABFbTHhzYnRpLmFwaS5UeXBlO3T/pVp7+elBAgAAeHAAAAACc3IAFHhzYnRpLmFwaS5Qcm9qZWN0aW9u89KNVOlFpC0CAAJMAAJpZHEAfgANTAAGcHJlZml4dAAWTHhzYnRpL2FwaS9TaW1wbGVUeXBlO3hxAH4AX3QABk9iamVjdHNyABN4c2J0aS5hcGkuU2luZ2xldG9u/Kdf+M9W5EYCAAFMAARwYXRodAAQTHhzYnRpL2FwaS9QYXRoO3hxAH4AX3NyAA54c2J0aS5hcGkuUGF0aJs9XAjOpSeEAgABWwAKY29tcG9uZW50c3QAGltMeHNidGkvYXBpL1BhdGhDb21wb25lbnQ7eHB1cgAaW0x4c2J0aS5hcGkuUGF0aENvbXBvbmVudDtD2gl0LWcWdAIAAHhwAAAAA3NyAAx4c2J0aS5hcGkuSWSYMmyLN1PEQAIAAUwAAmlkcQB+AA14cgAXeHNidGkuYXBpLlBhdGhDb21wb25lbnRfmiJbLoafvAIAAHhwdAAEamF2YXNxAH4AeHQABGxhbmdzcgAOeHNidGkuYXBpLlRoaXPbCe2mzFpAXAIAAHhxAH4AeXNxAH4AbHQAA0FueXNxAH4AcHNxAH4Ac3VxAH4AdgAAAAJzcQB+AHh0AAVzY2FsYXEAfgB/dXIAFFtMeHNidGkuYXBpLlBhY2thZ2U7WxMZN3CnJ6ECAAB4cAAAAAVzcgAReHNidGkuYXBpLlBhY2thZ2V+WY/2rs45WAIAAUwABG5hbWVxAH4ADXhwdAAbZWR1LnVjaS5pY3MuY2xvdWRiZXJyeS51dGlsc3EAfgCJdAAHZWR1LnVjaXNxAH4AiXQAFmVkdS51Y2kuaWNzLmNsb3VkYmVycnlzcQB+AIl0AANlZHVzcQB+AIl0AAtlZHUudWNpLmljc3NyABV4c2J0aS5hcGkuQ29tcGlsYXRpb27t+uDDauigQgIAAkoACXN0YXJ0VGltZVsAB291dHB1dHN0ABpbTHhzYnRpL2FwaS9PdXRwdXRTZXR0aW5nO3hwAAABXTjCWh11cgAaW0x4c2J0aS5hcGkuT3V0cHV0U2V0dGluZzt/asLzp4elQgIAAHhwAAAAAXNyABd4c2J0aS5hcGkuT3V0cHV0U2V0dGluZ3rZmkd0+x17AgACTAAPb3V0cHV0RGlyZWN0b3J5cQB+AA1MAA9zb3VyY2VEaXJlY3RvcnlxAH4ADXhwdABHL1VzZXJzL3lhbWFtdXJhaXNhby9Eb2N1bWVudHMvY2xvdWRiZXJyeS91dGlsL3RhcmdldC9zY2FsYS0yLjExL2NsYXNzZXN0AAEvdXIAAltCrPMX+AYIVOACAAB4cAAAABRiDVgz6CLVJEeeZwN4RQ0xdvzQqg==
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> 
+rO0ABXNyABB4c2J0aS5hcGkuU291cmNlFlpwRASfbtoCAAZJAAdhcGlIYXNoWgAIaGFzTWFjcm9MABhfaW50ZXJuYWxPbmx5X25hbWVIYXNoZXN0ACRMeHNidGkvYXBpL19pbnRlcm5hbE9ubHlfTmFtZUhhc2hlcztMAANhcGl0ABVMeHNidGkvYXBpL1NvdXJjZUFQSTtMAAtjb21waWxhdGlvbnQAF0x4c2J0aS9hcGkvQ29tcGlsYXRpb247WwAEaGFzaHQAAltCeHAebdUkAHNyACJ4c2J0aS5hcGkuX2ludGVybmFsT25seV9OYW1lSGFzaGVzVNq+mfrU7EwCAAJbAA9pbXBsaWNpdE1lbWJlcnN0ACNbTHhzYnRpL2FwaS9faW50ZXJuYWxPbmx5X05hbWVIYXNoO1sADnJlZ3VsYXJNZW1iZXJzcQB+AAd4cHVyACNbTHhzYnRpLmFwaS5faW50ZXJuYWxPbmx5X05hbWVIYXNoO0lagLbdlov0AgAAeHAAAAAAdXEAfgAJAAAAF3NyACB4c2J0aS5hcGkuX2ludGVybmFsT25seV9OYW1lSGFzaFsO9SJ2OFfPAgACSQAEaGFzaEwABG5hbWV0ABJMamF2YS9sYW5nL1N0cmluZzt4cAbLARx0AAZub3RpZnlzcQB+AAw4OADgdAAEd2FpdHNxAH4ADL6Q0H50AA0kYXNJbnN0YW5jZU9mc3EAfgAMaGMUUnQABmVxdWFsc3NxAH4ADDmD/Bt0AAxhc0luc3RhbmNlT2ZzcQB+AAyJOC1bdAAMc3luY2hyb25pemVkc3EAfgAMlyzu3nQADSRpc0luc3RhbmNlT2ZzcQB+AAw3Vi66dAAJbm90aWZ5QWxsc3EAfgAMz/P23nQADGlzSW5zdGFuY2VPZnNxAH4ADF+T50t0AAdQcm9maWxlc3EAfgAMEiFHr3QAB3Byb2ZpbGVzcQB+AAwYovr2dAACPT1zcQB+AAwJLap9dAAFY2xvbmVzcQB+AAz4xL1RdAAGJGluaXQkc3EAfgAMEgwLFHQACHRvU3RyaW5nc3EAfgAMcnzjUnQAAiE9c3EAfgAMAt4+SHQACGdldENsYXNzc3EAfgAMHlKMXnQAAm5lc3EAfgAM5k3+4HQAAmVxc3EAfgAMmDIqyXQAA2xvZ3NxAH4ADIiP40x0AAIjI3NxAH4ADPNGTMR0AAhmaW5hbGl6ZXNxAH4ADCCrh5t0AAhoYXNoQ29kZXNyABN4c2J0aS5hcGkuU291cmNlQVBJuV6n+SkjOKQCAAJbAAtkZWZpbml0aW9uc3QAF1tMeHNidGkvYXBpL0RlZmluaXRpb247WwAIcGFja2FnZXN0ABRbTHhzYnRpL2FwaS9QYWNrYWdlO3hwdXIAF1tMeHNidGkuYXBpLkRlZmluaXRpb247iMlc57TjXg4CAAB4cAAAAAFzcgATeHNidGkuYXBpLkNsYXNzTGlrZYM0HKHfsJdsAgAETAAOZGVmaW5pdGlvblR5cGV0ABpMeHNidGkvYXBpL0RlZmluaXRpb25UeXBlO1sAEHNhdmVkQW5ub3RhdGlvbnN0ABNbTGphdmEvbGFuZy9TdHJpbmc7TAAIc2VsZlR5cGV0ABBMeHNidGkvYXBpL0xhenk7TAAJc3RydWN0dXJlcQB+AEV4cgAheHNidGkuYXBpLlBhcmFtZXRlcml6ZWREZWZpbml0aW9u+RFusdVQPOICAAFbAA50eXBlUGFyYW1ldGVyc3QAGltMeHNidGkvYXBpL1R5cGVQYXJhbWV0ZXI7eHIAFHhzYnRpLmFwaS5EZWZpbml0aW9uhyob6HFC40YCAARMAAZhY2Nlc3N0ABJMeHNidGkvYXBpL0FjY2VzcztbAAthbm5vdGF0aW9uc3QAF1tMeHNidGkvYXBpL0Fubm90YXRpb247TAAJbW9kaWZpZXJzdAAVTHhzYnRpL2FwaS9Nb2RpZmllcnM7TAAEbmFtZXEAfgANeHBzcgAQeHNidGkuYXBpLlB1YmxpY7pYPa5sLWBCAgAAeHIAEHhzYnRpLmFwaS5BY2Nlc3PdYpr4HWMxSAIAAHhwdXIAF1tMeHNidGkuYXBpLkFubm90YXRpb24765frGRD2jUgCAAB4cAAAAABzcgATeHNidGkuYXBpLk1vZGlmaWVyc5fnYdwTJnuzAgABQgAFZmxhZ3N4cAB0ACNlZHUudWNpLmljcy5jbG91ZGJlcnJ5LnV0aWwuUHJvZmlsZXVyABpbTHhzYnRpLmFwaS5UeXBlUGFyYW1ldGVyO9ltJg8onfK2AgAAeHAAAAAAfnIAGHhzYnRpLmFwaS5EZWZpbml0aW9uVHlwZQAAAAAAAAAAEgAAeHIADmphdmEubGFuZy5FbnVtAAAAAAAAAAASAAB4cHQABk1vZHVsZXVyABNbTGphdmEubGFuZy5TdHJpbmc7rdJW5+kde0cCAAB4cAAAAABzcgAheHNidGkuYXBpLkFic3RyYWN0TGF6eSRTdHJpY3RMYXp5DWYcaykWKrgCAAFMAAV2YWx1ZXQAEkxqYXZhL2xhbmcvT2JqZWN0O3hwc3IAE3hzYnRpLmFwaS5FbXB0eVR5cGW8/Z5GSTuJJAIAAHhyABR4c2J0aS5hcGkuU2ltcGxlVHlwZXJ4YoghI79AAgAAeHIADnhzYnRpLmFwaS5UeXBlP2rZIRZJqsoCAAB4cHNxAH4AXXNyABN4c2J0aS5hcGkuU3RydWN0dXJlqar5gJNv2AACAANMAAhkZWNsYXJlZHEAfgBFTAAJaW5oZXJpdGVkcQB+AEVMAAdwYXJlbnRzcQB+AEV4cQB+AGJzcQB+AF11cQB+AEAAAAAAc3EAfgBddXEAfgBAAAAAAHNxAH4AXXVyABFbTHhzYnRpLmFwaS5UeXBlO3T/pVp7+elBAgAAeHAAAAADc3IAFHhzYnRpLmFwaS5Qcm9qZWN0aW9u89KNVOlFpC0CAAJMAAJpZHEAfgANTAAGcHJlZml4dAAWTHhzYnRpL2FwaS9TaW1wbGVUeXBlO3hxAH4AYXQAB0xvZ2dpbmdzcgATeHNidGkuYXBpLlNpbmdsZXRvbvynX/jPVuRGAgABTAAEcGF0aHQAEEx4c2J0aS9hcGkvUGF0aDt4cQB+AGFzcgAOeHNidGkuYXBpLlBhdGibPVwIzqUnhAIAAVsACmNvbXBvbmVudHN0ABpbTHhzYnRpL2FwaS9QYXRoQ29tcG9uZW50O3hwdXIAGltMeHNidGkuYXBpLlBhdGhDb21wb25lbnQ7Q9oJdC1nFnQCAAB4cAAAAAZzcgAMeHNidGkuYXBpLklkmDJsizdTxEACAAFMAAJpZHEAfgANeHIAF3hzYnRpLmFwaS5QYXRoQ29tcG9uZW50X5oiWy6Gn7wCAAB4cHQAA2VkdXNxAH4AenQAA3VjaXNxAH4AenQAA2ljc3NxAH4AenQACmNsb3VkYmVycnlzcQB+AHp0AAR1dGlsc3IADnhzYnRpLmFwaS5UaGlz2wntpsxaQFwCAAB4cQB+AHtzcQB+AG50AAZPYmplY3RzcQB+AHJzcQB+AHV1cQB+AHgAAAADc3EAfgB6dAAEamF2YXNxAH4AenQABGxhbmdxAH4Ah3NxAH4AbnQAA0FueXNxAH4AcnNxAH4AdXVxAH4AeAAAAAJzcQB+AHp0AAVzY2FsYXEAfgCHdXIAFFtMeHNidGkuYXBpLlBhY2thZ2U7WxMZN3CnJ6ECAAB4cAAAAAVzcgAReHNidGkuYXBpLlBhY2thZ2V+WY/2rs45WAIAAUwABG5hbWVxAH4ADXhwdAAbZWR1LnVjaS5pY3MuY2xvdWRiZXJyeS51dGlsc3EAfgCadAAHZWR1LnVjaXNxAH4AmnQAFmVkdS51Y2kuaWNzLmNsb3VkYmVycnlzcQB+AJp0AANlZHVzcQB+AJp0AAtlZHUudWNpLmljc3NyABV4c2J0aS5hcGkuQ29tcGlsYXRpb27t+uDDauigQgIAAkoACXN0YXJ0VGltZVsAB291dHB1dHN0ABpbTHhzYnRpL2FwaS9PdXRwdXRTZXR0aW5nO3hwAAABXTjCWh11cgAaW0x4c2J0aS5hcGkuT3V0cHV0U2V0dGluZzt/asLzp4elQgIAAHhwAAAAAXNyABd4c2J0aS5hcGkuT3V0cHV0U2V0dGluZ3rZmkd0+x17AgACTAAPb3V0cHV0RGlyZWN0b3J5cQB+AA1MAA9zb3VyY2VEaXJlY3RvcnlxAH4ADXhwdABHL1VzZXJzL3lhbWFtdXJhaXNhby9Eb2N1bWVudHMvY2xvdWRiZXJyeS91dGlsL3RhcmdldC9zY2FsYS0yLjExL2NsYXNzZXN0AAEvdXIAAltCrPMX+AYIVOACAAB4cAAAABQHCGcQHZDyyJEpfMijRV3po3c9fg==
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> 
+rO0ABXNyABB4c2J0aS5hcGkuU291cmNlFlpwRASfbtoCAAZJAAdhcGlIYXNoWgAIaGFzTWFjcm9MABhfaW50ZXJuYWxPbmx5X25hbWVIYXNoZXN0ACRMeHNidGkvYXBpL19pbnRlcm5hbE9ubHlfTmFtZUhhc2hlcztMAANhcGl0ABVMeHNidGkvYXBpL1NvdXJjZUFQSTtMAAtjb21waWxhdGlvbnQAF0x4c2J0aS9hcGkvQ29tcGlsYXRpb247WwAEaGFzaHQAAltCeHBBI6lxAHNyACJ4c2J0aS5hcGkuX2ludGVybmFsT25seV9OYW1lSGFzaGVzVNq+mfrU7EwCAAJbAA9pbXBsaWNpdE1lbWJlcnN0ACNbTHhzYnRpL2FwaS9faW50ZXJuYWxPbmx5X05hbWVIYXNoO1sADnJlZ3VsYXJNZW1iZXJzcQB+AAd4cHVyACNbTHhzYnRpLmFwaS5faW50ZXJuYWxPbmx5X05hbWVIYXNoO0lagLbdlov0AgAAeHAAAAABc3IAIHhzYnRpLmFwaS5faW50ZXJuYWxPbmx5X05hbWVIYXNoWw71InY4V88CAAJJAARoYXNoTAAEbmFtZXQAEkxqYXZhL2xhbmcvU3RyaW5nO3hw2AjEPnQAEXJlY3Rhbmd1bGFyRm9ybWF0dXEAfgAJAAAAJnNxAH4AC6pGLqp0AAZub3RpZnlzcQB+AAv1bcvLdAAHdW5hcHBseXNxAH4AC+6Mn4t0AAVzd0xvZ3NxAH4ACx9e57t0AAR3YWl0c3EAfgALOiNtjHQACVJlY3RhbmdsZXNxAH4ACykM4/J0AA5jb3B5JGRlZmF1bHQkMnNxAH4AC3K13al0AA0kYXNJbnN0YW5jZU9mc3EAfgALeBNSb3QADHByb2R1Y3RBcml0eXNxAH4AC+hU2Hl0AAZlcXVhbHNzcQB+AAudKa6kdAAMYXNJbnN0YW5jZU9mc3EAfgALy6X2FHQADHN5bmNocm9uaXplZHNxAH4AC4mOhpt0AA0kaXNJbnN0YW5jZU9mc3EAfgAL+bfyQHQACGNhbkVxdWFsc3EAfgALsma0hXQADmNvcHkkZGVmYXVsdCQ0c3EAfgALsNBx+3QADXByb2R1Y3RQcmVmaXhzcQB+AAvmy65wdAAJbm90aWZ5QWxsc3EAfgALj4WaI3QADGlzSW5zdGFuY2VPZnNxAH4AC84kEOh0AAY8aW5pdD5zcQB+AAvi24B/dAAFYXBwbHlzcQB+AAvsPeM5dAACPT1zcQB+AAvR4GZedAAFY2xvbmVzcQB+AAsyGwRrdAAFbmVMb2dzcQB+AAv2drKqdAAGJGluaXQkc3EAfgAL2I21mXQADmNvcHkkZGVmYXVsdCQzc3EAfgALPHttZ3QABGNvcHlzcQB+AAu4l6I2dAAIdG9TdHJpbmdzcQB+AAuysKIydAACIT1zcQB+AAsvgiAhdAAFbmVMYXRzcQB+AAvK+C+odAAIZ2V0Q2xhc3NzcQB+AAsvyxPHdAAOY29weSRkZWZhdWx0JDFzcQB+AAtxN9aFdAACbmVzcQB+AAsfEUA1dAAFc3dMYXRzcQB+AAs47E68dAACZXFzcQB+AAu/bLYCdAAPcHJvZHVjdEl0ZXJhdG9yc3EAfgALq9iN/HQAAiMjc3EAfgALIoiJd3QACGZpbmFsaXplc3EAfgALsWT3DHQADnByb2R1Y3RFbGVtZW50c3EAfgALUuiSZHQACGhhc2hDb2Rlc3IAE3hzYnRpLmFwaS5Tb3VyY2VBUEm5Xqf5KSM4pAIAAlsAC2RlZmluaXRpb25zdAAXW0x4c2J0aS9hcGkvRGVmaW5pdGlvbjtbAAhwYWNrYWdlc3QAFFtMeHNidGkvYXBpL1BhY2thZ2U7eHB1cgAXW0x4c2J0aS5hcGkuRGVmaW5pdGlvbjuIyVzntONeDgIAAHhwAAAAAnNyABN4c2J0aS5hcGkuQ2xhc3NMaWtlgzQcod+wl2wCAARMAA5kZWZpbml0aW9uVHlwZXQAGkx4c2J0aS9hcGkvRGVmaW5pdGlvblR5cGU7WwAQc2F2ZWRBbm5vdGF0aW9uc3QAE1tMamF2YS9sYW5nL1N0cmluZztMAAhzZWxmVHlwZXQAEEx4c2J0aS9hcGkvTGF6eTtMAAlzdHJ1Y3R1cmVxAH4AZXhyACF4c2J0aS5hcGkuUGFyYW1ldGVyaXplZERlZmluaXRpb275EW6x1VA84gIAAVsADnR5cGVQYXJhbWV0ZXJzdAAaW0x4c2J0aS9hcGkvVHlwZVBhcmFtZXRlcjt4cgAUeHNidGkuYXBpLkRlZmluaXRpb26HKhvocULjRgIABEwABmFjY2Vzc3QAEkx4c2J0aS9hcGkvQWNjZXNzO1sAC2Fubm90YXRpb25zdAAXW0x4c2J0aS9hcGkvQW5ub3RhdGlvbjtMAAltb2RpZmllcnN0ABVMeHNidGkvYXBpL01vZGlmaWVycztMAARuYW1lcQB+AAx4cHNyABB4c2J0aS5hcGkuUHVibGljulg9rmwtYEICAAB4cgAQeHNidGkuYXBpLkFjY2Vzc91imvgdYzFIAgAAeHB1cgAXW0x4c2J0aS5hcGkuQW5ub3RhdGlvbjvrl+sZEPaNSAIAAHhwAAAAAHNyABN4c2J0aS5hcGkuTW9kaWZpZXJzl+dh3BMme7MCAAFCAAVmbGFnc3hwAHQAJWVkdS51Y2kuaWNzLmNsb3VkYmVycnkudXRpbC5SZWN0YW5nbGV1cgAaW0x4c2J0aS5hcGkuVHlwZVBhcmFtZXRlcjvZbSYPKJ3ytgIAAHhwAAAAAH5yABh4c2J0aS5hcGkuRGVmaW5pdGlvblR5cGUAAAAAAAAAABIAAHhyAA5qYXZhLmxhbmcuRW51bQAAAAAAAAAAEgAAeHB0AAhDbGFzc0RlZnVyABNbTGphdmEubGFuZy5TdHJpbmc7rdJW5+kde0cCAAB4cAAAAABzcgAheHNidGkuYXBpLkFic3RyYWN0TGF6eSRTdHJpY3RMYXp5DWYcaykWKrgCAAFMAAV2YWx1ZXQAEkxqYXZhL2xhbmcvT2JqZWN0O3hwc3IAE3hzYnRpLmFwaS5FbXB0eVR5cGW8/Z5GSTuJJAIAAHhyABR4c2J0aS5hcGkuU2ltcGxlVHlwZXJ4YoghI79AAgAAeHIADnhzYnRpLmFwaS5UeXBlP2rZIRZJqsoCAAB4cHNxAH4AfXNyABN4c2J0aS5hcGkuU3RydWN0dXJlqar5gJNv2AACAANMAAhkZWNsYXJlZHEAfgBlTAAJaW5oZXJpdGVkcQB+AGVMAAdwYXJlbnRzcQB+AGV4cQB+AIJzcQB+AH11cQB+AGAAAAAAc3EAfgB9dXEAfgBgAAAAAHNxAH4AfXVyABFbTHhzYnRpLmFwaS5UeXBlO3T/pVp7+elBAgAAeHAAAAAGc3IAFHhzYnRpLmFwaS5Qcm9qZWN0aW9u89KNVOlFpC0CAAJMAAJpZHEAfgAMTAAGcHJlZml4dAAWTHhzYnRpL2FwaS9TaW1wbGVUeXBlO3hxAH4AgXQADFNlcmlhbGl6YWJsZXNyABN4c2J0aS5hcGkuU2luZ2xldG9u/Kdf+M9W5EYCAAFMAARwYXRodAAQTHhzYnRpL2FwaS9QYXRoO3hxAH4AgXNyAA54c2J0aS5hcGkuUGF0aJs9XAjOpSeEAgABWwAKY29tcG9uZW50c3QAGltMeHNidGkvYXBpL1BhdGhDb21wb25lbnQ7eHB1cgAaW0x4c2J0aS5hcGkuUGF0aENvbXBvbmVudDtD2gl0LWcWdAIAAHhwAAAAAnNyAAx4c2J0aS5hcGkuSWSYMmyLN1PEQAIAAUwAAmlkcQB+AAx4cgAXeHNidGkuYXBpLlBhdGhDb21wb25lbnRfmiJbLoafvAIAAHhwdAAFc2NhbGFzcgAOeHNidGkuYXBpLlRoaXPbCe2mzFpAXAIAAHhxAH4Am3NxAH4AjnEAfgCRc3EAfgCSc3EAfgCVdXEAfgCYAAAAA3NxAH4AmnQABGphdmFzcQB+AJp0AAJpb3EAfgCfc3EAfgCOdAAHUHJvZHVjdHEAfgCUc3EAfgCOdAAGRXF1YWxzcQB+AJRzcQB+AI50AAZPYmplY3RzcQB+AJJzcQB+AJV1cQB+AJgAAAADc3EAfgCacQB+AKVzcQB+AJp0AARsYW5ncQB+AJ9zcQB+AI50AANBbnlxAH4AlHNxAH4AYnEAfgBvdXEAfgBwAAAAAHNxAH4AcgB0ACVlZHUudWNpLmljcy5jbG91ZGJlcnJ5LnV0aWwuUmVjdGFuZ2xldXEAfgB1AAAAAH5xAH4Ad3QABk1vZHVsZXVxAH4AewAAAABzcQB+AH1xAH4Ag3NxAH4AfXNxAH4AhXNxAH4AfXVxAH4AYAAAAABzcQB+AH11cQB+AGAAAAAAc3EAfgB9dXEAfgCMAAAABHNxAH4AjnEAfgCRc3EAfgCSc3EAfgCVdXEAfgCYAAAAAnNxAH4AmnEAfgCdcQB+AJ9zcQB+AI5xAH4AkXNxAH4AknNxAH4AlXVxAH4AmAAAAANzcQB+AJpxAH4ApXNxAH4AmnQAAmlvcQB+AJ9zcQB+AI5xAH4ArXNxAH4AknNxAH4AlXVxAH4AmAAAAANzcQB+AJpxAH4ApXNxAH4AmnEAfgCzcQB+AJ9zcQB+AI5xAH4AtXEAfgDIdXIAFFtMeHNidGkuYXBpLlBhY2thZ2U7WxMZN3CnJ6ECAAB4cAAAAAVzcgAReHNidGkuYXBpLlBhY2thZ2V+WY/2rs45WAIAAUwABG5hbWVxAH4ADHhwdAAbZWR1LnVjaS5pY3MuY2xvdWRiZXJyeS51dGlsc3EAfgDcdAAHZWR1LnVjaXNxAH4A3HQAFmVkdS51Y2kuaWNzLmNsb3VkYmVycnlzcQB+ANx0AANlZHVzcQB+ANx0AAtlZHUudWNpLmljc3NyABV4c2J0aS5hcGkuQ29tcGlsYXRpb27t+uDDauigQgIAAkoACXN0YXJ0VGltZVsAB291dHB1dHN0ABpbTHhzYnRpL2FwaS9PdXRwdXRTZXR0aW5nO3hwAAABXTjCWh11cgAaW0x4c2J0aS5hcGkuT3V0cHV0U2V0dGluZzt/asLzp4elQgIAAHhwAAAAAXNyABd4c2J0aS5hcGkuT3V0cHV0U2V0dGluZ3rZmkd0+x17AgACTAAPb3V0cHV0RGlyZWN0b3J5cQB+AAxMAA9zb3VyY2VEaXJlY3RvcnlxAH4ADHhwdABHL1VzZXJzL3lhbWFtdXJhaXNhby9Eb2N1bWVudHMvY2xvdWRiZXJyeS91dGlsL3RhcmdldC9zY2FsYS0yLjExL2NsYXNzZXN0AAEvdXIAAltCrPMX+AYIVOACAAB4cAAAABT44uN3X63Ajh4GJkxf6dR6/Ds3tw==
+external apis:
+0 items
+source infos:
+3 items
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Logging.scala -> 
+AAAAAAAAAAA=
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Profile.scala -> 
+AAAAAAAAAAA=
+/Users/yamamuraisao/Documents/cloudberry/util/src/main/scala/edu/uci/ics/cloudberry/util/Rectangle.scala -> 
+AAAAAAAAAAA=
+compilations:
+1 items
+0 -> rO0ABXNyABV4c2J0aS5hcGkuQ29tcGlsYXRpb27t+uDDauigQgIAAkoACXN0YXJ0VGltZVsAB291dHB1dHN0ABpbTHhzYnRpL2FwaS9PdXRwdXRTZXR0aW5nO3hwAAABXTjCWh11cgAaW0x4c2J0aS5hcGkuT3V0cHV0U2V0dGluZzt/asLzp4elQgIAAHhwAAAAAXNyABd4c2J0aS5hcGkuT3V0cHV0U2V0dGluZ3rZmkd0+x17AgACTAAPb3V0cHV0RGlyZWN0b3J5dAASTGphdmEvbGFuZy9TdHJpbmc7TAAPc291cmNlRGlyZWN0b3J5cQB+AAZ4cHQARy9Vc2Vycy95YW1hbXVyYWlzYW8vRG9jdW1lbnRzL2Nsb3VkYmVycnkvdXRpbC90YXJnZXQvc2NhbGEtMi4xMS9jbGFzc2VzdAABLw==

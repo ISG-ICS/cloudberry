@@ -1,0 +1,26 @@
+{
+  "name": "json-bigint",
+  "version": "0.0.0",
+  "description": "A Browserified version of the json-bigint npm package.",
+  "main": "dist/json-bigint.js",
+  "moduleType": [
+    "es6",
+    "globals"
+  ],
+  "keywords": [
+    "json",
+    "bigint",
+    "bignumber"
+  ],
+  "authors": [
+    "Sam Nelson"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}

@@ -1,27 +1,46 @@
-logs
-project/project
-project/target
-bin
-target
-tmp
-.history
-.sbtserver
-.sbtserver.*
-dist
-/.idea
-/*.iml
-/out
-/.idea_modules
-.classpath
-.project
-/RUNNING_PID
-.settings
-/project/*-shim.sbt
-/activator-sbt-*-shim.sbt
-*.iml
-*.gz
-OutputFolderPromedmail/
-.DS_Store
-.cache-main
-.cache-tests
-.pydevproject
+# Created by .ignore support plugin (hsz.mobi)
+### Java template
+# Compiled class file
+*.class
+
+# Log file
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+### Scala template
+*.class
+*.log
+### PlayFramework template
+# Ignore Play! working directory #
+bin/
+/db
+.eclipse
+/lib/
+/logs/
+/modules
+/project/project
+/project/target
+/target
+tmp/
+test-result
+server.pid
+*.eml
+/dist/
+.cache
+
+.idea/

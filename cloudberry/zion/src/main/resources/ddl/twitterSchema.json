@@ -1,0 +1,95 @@
+[
+  {
+    "dataset": "twitter.ds_tweet",
+    "dimension": [
+      {
+        "field": "create_at",
+        "type": "datetime"
+      },
+      {
+        "field": "id",
+        "type": "number"
+      },
+      {
+        "field": "coordinate",
+        "type": "point"
+      },
+      {
+        "field": "lang",
+        "type": "string"
+      },
+      {
+        "field": "is_retweet",
+        "type": "boolean"
+      },
+      {
+        "field": "hashtag",
+        "type": "bag",
+        "innerType": "string"
+      },
+      {
+        "field": "user_mentions",
+        "type": "bag",
+        "innerType": "number"
+      },
+      {
+        "field": "user.id",
+        "type": "number"
+      },
+      {
+        "field": "geo_tag.stateID",
+        "type": "number"
+      },
+      {
+        "field": "geo_tag.countyID",
+        "type": "number"
+      },
+      {
+        "field": "geo_tag.cityID",
+        "type": "number"
+      },
+      {
+        "field": "geo",
+        "type": "hierarchy",
+        "level": [
+          {
+            "state": "geo_tag.stateID"
+          },
+          {
+            "county": "geo_tag.countyID"
+          },
+          {
+            "city": "geo_tag.cityID"
+          }
+        ],
+        "innerType": "number"
+      }
+    ],
+    "measurement": [
+      {
+        "field": "text",
+        "type": "text"
+      },
+      {
+        "field": "in_reply_to_status",
+        "type": "number"
+      },
+      {
+        "field": "in_reply_to_user",
+        "type": "number"
+      },
+      {
+        "field": "favorite_count",
+        "type": "number"
+      },
+      {
+        "field": "retweet_count",
+        "type": "number"
+      },
+      {
+        "field": "user.status_count",
+        "type": "number"
+      }
+    ]
+  }
+]

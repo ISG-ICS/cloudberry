@@ -1,0 +1,83 @@
+{
+  "dataset": "twitter.ds_tweet",
+  "filter": [
+    {
+      "field": "geo_tag.stateID",
+      "relation": "in",
+      "values": [
+        1,
+        3
+      ]
+    },
+    {
+      "field": "create_at",
+      "relation": "inRange",
+      "values": [
+        "2012",
+        "2016"
+      ]
+    },
+    {
+      "field": "text",
+      "relation": "contains",
+      "values": [
+        "zika",
+        "virus"
+      ]
+    }
+  ],
+  "group": {
+    "by": [
+      {
+        "field": "geo",
+        "apply": {
+          "name": "level",
+          "args": {
+            "level": "state"
+          }
+        },
+        "as": "state"
+      },
+      {
+        "field": "create_at",
+        "apply": {
+          "name": "interval",
+          "args": {
+            "unit": "hour"
+          }
+        },
+        "as": "hour"
+      }
+    ],
+    "aggregate": [
+      {
+        "field": "*",
+        "apply": {
+          "name": "count"
+        },
+        "as": "count"
+      },
+      {
+        "field": "hashTags",
+        "apply": {
+          "name": "topK",
+          "args": {
+            "k": 10
+          }
+        },
+        "as": "top10_hash"
+      },
+      {
+        "field": "lang",
+        "apply": {
+          "name": "topK",
+          "args": {
+            "k": 10
+          }
+        },
+        "as": "top10_lang"
+      }
+    ]
+  }
+}
+

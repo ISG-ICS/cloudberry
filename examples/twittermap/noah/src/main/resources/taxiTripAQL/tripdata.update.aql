@@ -1,0 +1,4 @@
+use dataverse tripdata;
+load dataset tripdata
+using localfs
+(("path"="172.17.0.3:///xiz/taxi.adm"), ("format"="adm"));
