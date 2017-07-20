@@ -51,6 +51,7 @@ If you want to shutdown the docker container later, you can use the following co
 **Step 4**: Compile and run the Cloudberry server.
 
 ```
+~/cloudberry> cd cloudberry
 ~/cloudberry> sbt compile
 ~/cloudberry> sbt "project neo" "run"
 ```
@@ -61,7 +62,7 @@ Wait until the shell prints the messages shown in the following screenshot:
 **Step 5**: Open another terminal window to ingest sample tweets (about 47K) and US population data into AsterixDB.
 
 ```
-~> cd examples/twittermap
+~/cloudberry> cd ../examples/twittermap
 ~/twittermap> ./script/ingestAllTwitterToLocalCluster.sh
 ```
 
