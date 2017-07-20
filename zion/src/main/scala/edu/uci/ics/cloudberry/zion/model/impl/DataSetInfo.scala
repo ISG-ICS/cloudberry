@@ -85,8 +85,9 @@ object DataSetInfo {
   }
 
   implicit val fieldFormat: Format[Field] = new Format[Field] {
+    println("DataSetInfo: fieldFormat")
     override def reads(json: JsValue): JsResult[Field] = {
-      val name = (json \ "name").as[String]
+      val name = ((json \ "name").as[String])
       val isOptional = (json \ "isOptional").as[Boolean]
       DataType.withName((json \ "datatype").as[String]) match {
         case DataType.Number =>
@@ -117,6 +118,7 @@ object DataSetInfo {
     }
 
     override def writes(field: Field): JsValue = {
+      println("DataSetInfo: writes")
       val name = field.name
       val isOptional = field.isOptional
       val dataType = field.dataType.toString
@@ -133,6 +135,10 @@ object DataSetInfo {
           "datatype" -> JsString(dataType),
           "innerType" -> JsString(hierarchy.innerType.toString),
           "levels" -> Json.toJson(hierarchy.levels)))
+        case json: JsonField => JsObject(List(
+          "name" -> JsString(name),
+          "isOptional" -> JsBoolean(isOptional),
+          "datatype" -> JsString(dataType)))
         case basicField: Field => JsObject(List(
           "name" -> JsString(name),
           "isOptional" -> JsBoolean(isOptional),

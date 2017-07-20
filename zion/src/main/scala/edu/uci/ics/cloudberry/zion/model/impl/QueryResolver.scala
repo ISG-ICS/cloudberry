@@ -4,6 +4,7 @@ import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 import scala.collection.mutable
+import scala.util.matching.Regex
 
 /**
   * Performs field resolution for [[UnresolvedQuery]]
@@ -189,10 +190,13 @@ object QueryResolver {
   }
 
   private def resolveField(name: String, fieldMap: Map[String, Field]): Field = {
-    val field = fieldMap.get(name)
+    val field = fieldMap.get(name.split("\\.", 2).head)
     field match {
+      case Some(f) if (f.dataType == DataType.Json && name.contains(".")) =>
+        new JsonField(name, true)
       case Some(f) => f
-      case _ => throw FieldNotFound(name)
+      case _ =>
+        throw FieldNotFound(name)
     }
   }
 }

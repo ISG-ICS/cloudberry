@@ -249,6 +249,7 @@ object AbstractSchema {
     String -> StringRelSet,
     Text -> Set(Relation.contains),
     Bag -> Set(Relation.contains),
+    Json -> (BasicRelSet ++ StringRelSet),
     Hierarchy -> Set()
   )
 

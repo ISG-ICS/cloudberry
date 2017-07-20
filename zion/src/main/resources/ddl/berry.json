@@ -11,10 +11,6 @@
       "isOptional" : false,
       "datatype" : "Number"
     }, {
-      "name" : "coordinate",
-      "isOptional" : false,
-      "datatype" : "Point"
-    }, {
       "name" : "lang",
       "isOptional" : false,
       "datatype" : "String"
@@ -23,31 +19,17 @@
       "isOptional" : false,
       "datatype" : "Boolean"
     }, {
-      "name" : "hashtags",
+      "name" : "hashtag",
       "isOptional" : true,
-      "datatype" : "Bag",
-      "innerType" : "String"
+      "datatype" : "Json"
     }, {
-      "name" : "user_mentions",
-      "isOptional" : true,
-      "datatype" : "Bag",
-      "innerType" : "Number"
-    }, {
-      "name" : "user.id",
+      "name" : "id",
       "isOptional" : false,
       "datatype" : "Number"
     }, {
-      "name" : "geo_tag.stateID",
+      "name" : "geo_tag",
       "isOptional" : false,
-      "datatype" : "Number"
-    }, {
-      "name" : "geo_tag.countyID",
-      "isOptional" : false,
-      "datatype" : "Number"
-    }, {
-      "name" : "geo_tag.cityID",
-      "isOptional" : false,
-      "datatype" : "Number"
+      "datatype" : "Json"
     }],
     "measurement" : [ {
       "name" : "text",
@@ -73,6 +55,10 @@
       "name" : "user",
       "isOptional" : false,
       "datatype" : "Json"
+    }, {
+      "name" : "place",
+      "isOptional" : false,
+      "datatype" : "Json"
     } ],
     "primaryKey" : [ "id" ],
     "timeField" : "create_at"
@@ -88,4 +74,4 @@
     "cardinality" : 47002
   }
 }
-  ]
+]

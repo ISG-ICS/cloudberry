@@ -73,6 +73,8 @@ object QueryValidator {
         validateStringRelation(filter.relation, filter.values)
       case DataType.Text =>
         validateTextRelation(filter.relation, filter.values)
+      case DataType.Json =>
+        validateJsonRelation(filter.relation, filter.values)
       case DataType.Bag =>
       case DataType.Hierarchy =>
         throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
@@ -171,6 +173,15 @@ object QueryValidator {
   def validateTextRelation(relation: Relation, values: Seq[Any]): Unit = {
     requireOrThrow(values.forall(_.isInstanceOf[String]), s"the ${relation} on text type requires string parameters.")
   }
+
+  def validateJsonRelation(relation: Relation, values: Seq[Any]): Unit = {
+    // TODO
+  }
+
+//  def validateJsonRelation(relation: Relation, values: Seq[Any]): Unit = {
+//    import play.api.libs.json.Json
+//    requireOrThrow(values.forall(_.isInstanceOf[DataType.Json]), s"the ${relation} on text type requires Json parameters.")
+//  }
 
 
 }

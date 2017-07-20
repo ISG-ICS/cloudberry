@@ -2,18 +2,19 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
 import java.sql.{Connection, DriverManager}
 
-import org.joda.time._
 import play.api.libs.json._
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.api.libs.ws.{WSClient, WSResponse}
-import edu.uci.ics.cloudberry.util.Logging
-import org.apache.spark.sql.Encoders
+import edu.uci.ics.cloudberry.zion.model.schema.DataType
+import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 
-import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.Json
 import java.io.InputStream
+import java.util.Date
+
+
 
 /**
   * Created by sicongliu on 17/5/19.
@@ -26,56 +27,87 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
   var connection:Connection = _
   Class.forName(driver)
   connection = DriverManager.getConnection(url, username, password)
-  val statement = connection.createStatement
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val stream : InputStream = getClass.getResourceAsStream("/ddl/berry.json")
-  println("STREAM SOLVED")
   val source = scala.io.Source.fromInputStream(stream).getLines.mkString
-  println("SOURCE SOLVED")
   val berry: JsValue = Json.parse(source)
-  println("berry is loaded: "+berry.toString())
-  // upsert berry schema
-
-
 
   def post(query: String): Future[WSResponse] = {
-    println("")
-    println("post")
-    println(query)
     throw new UnsupportedOperationException
   }
 
   def postQuery(query: String): Future[JsValue] = {
-    println("")
-    println("SQLConn: postQuery")
-    println(query)
+    println("\nSQLConn: postQuery: \n" + query)
     if (query.contains("berry.meta")) {
       println("SQL postQuery: Contains berry.meta")
       return Future(berry)
     } else {
-      println("SQL postQuery: Doesn't contain berry.meta")
+      val statement = connection.createStatement
       val result = statement.executeQuery(query)
-      println("result executed")
+      val rsmd = result.getMetaData
+      val columnCount = rsmd.getColumnCount
+      println("SQLConn: columnCount= " + columnCount)
+      var qJsonArray: JsArray = Json.arr()
       while (result.next) {
-        println("result")
-        val host = result.getString("create_at")
-        println("create_at = %s".format(host))
+        var index = 1
+        var rsJson: JsObject = Json.obj()
+        while (index <= columnCount) {
+          val column = rsmd.getColumnLabel(index)
+          val columnLabel = column.toLowerCase()
+
+          val value = result.getObject(column)
+          if (value == null) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> JsNull
+            )
+          } else if (value.isInstanceOf[Integer]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Int]
+            )
+          } else if (value.isInstanceOf[String]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[String]
+            )
+          } else if (value.isInstanceOf[Boolean]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Boolean]
+            )
+          } else if (value.isInstanceOf[Date]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Date].getTime
+            )
+          } else if (value.isInstanceOf[Long]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Long]
+            )
+          } else if (value.isInstanceOf[Double]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Double]
+            )
+          } else if (value.isInstanceOf[Float]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Float]
+            )
+          } else if (value.isInstanceOf[BigDecimal]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[BigDecimal]
+            )
+         } else if (value.isInstanceOf[Array[String]]) {
+            rsJson = rsJson ++ Json.obj(
+              columnLabel -> value.asInstanceOf[Array[String]]
+            )
+          } else {
+            throw new IllegalArgumentException("Unmappable object type: " + value.getClass)
+          }
+          index += 1
+        }
+        qJsonArray = qJsonArray :+ rsJson
       }
-      var jArr = new JsArray()
-      jArr = jArr :+ Json.parse("{1,2,3}")
-      println("jArr: " + jArr.toString())
-      return Future(Json.parse("[1,2,3]"))
+      Future(qJsonArray)
     }
-
-
-//    while (result.next) {
-////      jArr = jArr :+ Json.parse(rr)  // change it into Json, how???
-//    }
   }
 
   def postControl(query: String) = {
-    println("")
-    println("postControl")
     println(query)
     Future(true)
   }
