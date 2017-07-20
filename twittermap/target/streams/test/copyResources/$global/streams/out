@@ -1,5 +1,0 @@
-[0m[[0mdebug[0m] [0mCopy resource mappings: [0m
-[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/twittermap/test/resources/data,/Users/yamamuraisao/Documents/cloudberry/twittermap/target/scala-2.11/test-classes/data)[0m
-[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/twittermap/test/resources/front-end.js,/Users/yamamuraisao/Documents/cloudberry/twittermap/target/scala-2.11/test-classes/front-end.js)[0m
-[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/twittermap/test/resources/README.txt,/Users/yamamuraisao/Documents/cloudberry/twittermap/target/scala-2.11/test-classes/README.txt)[0m
-[0m[[0mdebug[0m] [0m	(/Users/yamamuraisao/Documents/cloudberry/twittermap/test/resources/data/city.sample.json,/Users/yamamuraisao/Documents/cloudberry/twittermap/target/scala-2.11/test-classes/data/city.sample.json)[0m

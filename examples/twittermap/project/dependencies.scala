@@ -47,17 +47,6 @@ object Dependencies {
     "org.wololo" % "jts2geojson" % "0.7.0"
   ) ++ testDeps
 
-  val zionDependencies: Seq[ModuleID] = Seq(
-    "joda-time" % "joda-time" % "2.9.3",
-    "com.typesafe.akka" %% "akka-actor" % "2.4.4",
-    "org.apache.spark" % "spark-core_2.11" % "2.1.0",
-    "org.apache.spark" % "spark-sql_2.11" % "2.1.0",
-    "org.scalikejdbc" %% "scalikejdbc" % "2.5.2",
-    "mysql" % "mysql-connector-java" % "5.1.24",
-    "com.typesafe.play" %% "anorm" % "2.5.1",
-    ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
-    "com.typesafe.play" %% "play-ws" % playVersion
-
   val twittermapDependencies: Seq[ModuleID] = Seq(
     ws, // Play's web services module
     "org.webjars" % "bootstrap" % "3.3.6",

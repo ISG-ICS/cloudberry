@@ -1,1 +1,0 @@
-window.JSONbig = require('json-bigint');
