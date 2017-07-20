@@ -138,6 +138,7 @@ class DataStoreManager(metaDataset: String,
   private def registerNewDataset(sender: ActorRef, registerTable: Register): Unit = {
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
+
     if(!metaData.contains(dataSetName)){
       try{
         dataSetRawSchema.toResolved match {

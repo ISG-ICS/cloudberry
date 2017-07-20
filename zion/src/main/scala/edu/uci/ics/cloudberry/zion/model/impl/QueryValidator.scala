@@ -178,10 +178,5 @@ object QueryValidator {
     // TODO
   }
 
-//  def validateJsonRelation(relation: Relation, values: Seq[Any]): Unit = {
-//    import play.api.libs.json.Json
-//    requireOrThrow(values.forall(_.isInstanceOf[DataType.Json]), s"the ${relation} on text type requires Json parameters.")
-//  }
-
 
 }

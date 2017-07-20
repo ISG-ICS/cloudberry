@@ -4,7 +4,6 @@ import edu.uci.ics.cloudberry.zion.model.datastore.FieldNotFound
 import edu.uci.ics.cloudberry.zion.model.schema._
 
 import scala.collection.mutable
-import scala.util.matching.Regex
 
 /**
   * Performs field resolution for [[UnresolvedQuery]]
