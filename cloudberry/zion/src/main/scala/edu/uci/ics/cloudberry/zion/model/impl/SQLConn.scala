@@ -33,10 +33,19 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
     throw new UnsupportedOperationException
   }
 
+  def toInt(s: String) = {  //TODO: this code is ugly
+    try {
+      s.toInt
+    } catch {
+      case e: Exception => s
+    }
+  }
+
   def postQuery(query: String): Future[JsValue] = {
     println("\nSQLConn: postQuery: \n" + query)
     if (query.contains("berry.meta")) {
       println("SQL postQuery: Contains berry.meta")
+//      Future((Json.parse("[1,2,3]")))
       Future(berry)
     } else {
       val statement = connection.createStatement
@@ -51,20 +60,27 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
         while (index <= columnCount) {
           val column = rsmd.getColumnLabel(index)
           val columnLabel = column.toLowerCase()
-
           val value = result.getObject(column)
           if (value == null) {
             rsJson = rsJson ++ Json.obj(
               columnLabel -> JsNull
             )
           } else if (value.isInstanceOf[Integer]) {
+            println("Inteter: " + value.asInstanceOf[Int])
             rsJson = rsJson ++ Json.obj(
               columnLabel -> value.asInstanceOf[Int]
             )
           } else if (value.isInstanceOf[String]) {
-            rsJson = rsJson ++ Json.obj(
-              columnLabel -> value.asInstanceOf[String]
-            )
+            val t = toInt(value.asInstanceOf[String])
+            if (t.isInstanceOf[Integer]) {
+              rsJson = rsJson ++ Json.obj(
+                columnLabel -> t.asInstanceOf[Int]
+              )
+            } else {
+              rsJson = rsJson ++ Json.obj(
+                columnLabel -> value.asInstanceOf[String]
+              )
+            }
           } else if (value.isInstanceOf[Boolean]) {
             rsJson = rsJson ++ Json.obj(
               columnLabel -> value.asInstanceOf[Boolean]
@@ -100,11 +116,13 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
         }
         qJsonArray = qJsonArray :+ rsJson
       }
+      println("")
+      println("SQLConn: result is: " + qJsonArray.toString())
       Future(qJsonArray)
     }
   }
 
-  def postControl(query: String) = {
+  def postControl(query: String) = {  //
     println(query)
     Future(true)
   }

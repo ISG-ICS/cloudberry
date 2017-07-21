@@ -197,7 +197,6 @@ class SQLGenerator extends IQLGenerator {
     val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)
     val fromStr = s"from ${query.dataset} $sourceVar".trim
     queryBuilder.append(fromStr)
-    println("parseQuery: query is: " + query.toString())
     val resultAfterAppend = parseAppend(query.append, exprMap, queryBuilder)
 
     val resultAfterLookup = parseLookup(query.lookup, resultAfterAppend.exprMap, queryBuilder, false)
@@ -223,10 +222,12 @@ class SQLGenerator extends IQLGenerator {
       val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
       appends.foreach { append =>
         val as = append.as
+        println("parseGroupby: parseAppend(unnest): " + append.as.name + "->" + FieldExpr(s"$appendVar.${as.name}", append.definition).toString())
         producedExprs += append.as.name -> FieldExpr(s"$appendVar.${as.name}", append.definition)
       }
       exprMap.foreach {
         case (field, expr) =>
+          println("parseGroupby: parseAppend(unnest2): " + field + "->" + FieldExpr(s"$appendVar.$field", s"${expr.refExpr}").toString())
           producedExprs += field -> FieldExpr(s"$appendVar.$field", s"${expr.refExpr}")
       }
       val newExprMap = producedExprs.result().toMap
@@ -255,6 +256,7 @@ class SQLGenerator extends IQLGenerator {
         lookup.as.zip(lookup.selectValues).foreach {
           case (as, selectValue) =>
             val expr = s"$lookupExpr.$quote${selectValue.name}$quote"
+            println("parseLookup: " + as.name + "->" + FieldExpr(expr, expr).toString())
             producedExprs += (as.name -> FieldExpr(expr, expr))
         }
         s"""left outer join ${lookup.dataset} $lookupExpr on ${conditions.mkString(" and ")}"""
@@ -341,7 +343,9 @@ class SQLGenerator extends IQLGenerator {
         if (filter.values.size != 2) throw new QueryParsingException(s"relation: ${filter.relation} require two parameters")
         s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
       case Relation.in =>
-        s"""$fieldExpr in ( "${filter.values.mkString("\",\"")}" )"""
+//        if ()
+//        s"""$fieldExpr in ( "${filter.values.mkString("\",\"")}" )"""  //TODO: add a if else for string and int
+        s"""$fieldExpr in ( ${filter.values.mkString(",")} )"""
       case Relation.contains =>
         val sb = new StringBuilder
         val wordsArr = ArrayBuffer[String]()
@@ -407,6 +411,7 @@ class SQLGenerator extends IQLGenerator {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
         val newExpr = s"${quote}hashtag$quote"
+        println("parseGroupby: parseGroupby(unnest): " + unnest.as.name + "->" + FieldExpr(newExpr, newExpr).toString())
         producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
         if (unnest.field.isOptional) {
           unnestTestStrs += s"${expr.refExpr} is not null"
@@ -440,20 +445,26 @@ class SQLGenerator extends IQLGenerator {
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val groupStrs = group.bys.map { by =>
           val fieldExpr = if (by.field.name.contains(".")) {
-            exprMap(by.field.name.split("\\.", 2).head)
+            println("by is: " + by.toString())
+            FieldExpr(by.field.name.split("\\.", 2).head + "->\"$." + by.field.name.split("\\.", 2)(1) + '"', by.field.name)
+//            exprMap(by.field.name.split("\\.", 2).head)  //TODO: test if this change would inform anything
           } else {
             exprMap(by.field.name)
           }
-//          println("parseGroupby: exprMap: " + exprMap.toString())
           val as = by.as.getOrElse(by.field)
+          println()
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
           val newExpr = s"$quote${as.name}$quote"
+          println("parseGroupby: parseGroupby: " + as.name + "->" + FieldExpr(newExpr, groupExpr).toString())
           producedExprs += (as.name -> FieldExpr(newExpr, groupExpr))
 
-          if (newExpr == s"${quote}hashtag${quote}" || newExpr == s"${quote}tag${quote}"){
+          if (newExpr == s"${quote}hashtag${quote}" || newExpr == s"${quote}tag${quote}" || newExpr == s"${quote}hashtags${quote}"){
             s"${quote}hashtag${quote}"
           }
           else if (by.field.dataType == DataType.Json) {
+            println("ParseGroupby: by.field.name: " + by.field.name)
+            println("ParseGroupby: as.name: " + as.name)
+            println("ParseGroupby: newExpr: " + newExpr)
             s"$newExpr"
           }
           else{
@@ -467,10 +478,15 @@ class SQLGenerator extends IQLGenerator {
 
         group.aggregates.foreach { aggr =>
           val fieldExpr = exprMap(aggr.field.name)
+          println("parseGroupby: aggr: " + aggr.toString())
+          println("parseGroupby: fieldExpr: " + fieldExpr.toString())
           val aggrExpr = parseAggregateFunc(aggr, fieldExpr.refExpr)
+          println("parseGroupby: aggrExpr: " + aggrExpr)
           val newExpr = s"$quote${aggr.as.name}$quote"
+          println("parseGroupby: parseGroupby(group): " + aggr.as.name + "->" + FieldExpr(newExpr, aggrExpr).toString())
           producedExprs += aggr.as.name -> FieldExpr(newExpr, aggrExpr)
         }
+        println("parseGroupby: producedExprs : " + producedExprs.toString() )
 
         if (!group.lookups.isEmpty) {
           val producedExprMap = producedExprs.result().toMap
@@ -525,11 +541,13 @@ class SQLGenerator extends IQLGenerator {
             case AllField =>
               producedExprs ++= exprMap
             case field =>
-//              println("SQLGemerator: parseSelect: exprMap: " + exprMap.toString())
-//              println("SQLGemerator: parseSelect: field:" + field.toString())
+              println("SQLGemerator: parseSelect: exprMap: " + exprMap.toString())
+              println("SQLGemerator: parseSelect: field:" + field.toString())
               if (field.name.contains(".")) {
+                println("parseSelect: " + field.name + "->" + FieldExpr(field.name.replace(".", "_"), sourceVar + "." + field.name).toString())
                 producedExprs += field.name -> FieldExpr(field.name.replace(".", "_"), sourceVar + "." + field.name)
               } else {
+                println("parseSelect: " + field.name + "->" + exprMap(field.name).toString())
                 producedExprs += field.name -> exprMap(field.name)  //TODO: += as.name -> exprMap(as.name)
               }
           }
@@ -597,14 +615,14 @@ class SQLGenerator extends IQLGenerator {
             s"${sourceVar}.$quote${aggr.field.name}$quote"
         }
         val newRefExpr = s"$quote${aggr.as.name}$quote"
-
+        println("parseGlobalAggr: " + aggr.as.name + "->" + FieldExpr(newRefExpr, newDefExpr).toString())
         producedExprs += aggr.as.name -> FieldExpr(newRefExpr, newDefExpr)
         val prepend =
           s"""
              |select $funcName($newDefExpr) as $quote${aggr.as.name}$quote from
              |(""".stripMargin
         val append =
-          s""")""".stripMargin
+          s""") ${appendVar}""".stripMargin
         queryBuilder.insert(0, prepend)
         queryBuilder.append(append)
         ParsedResult(Seq.empty, producedExprs.result().toMap)
