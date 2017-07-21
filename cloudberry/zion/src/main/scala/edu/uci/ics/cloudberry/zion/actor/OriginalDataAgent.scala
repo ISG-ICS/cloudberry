@@ -58,8 +58,8 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     case newCount: Cardinality =>
       lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
       context.parent ! NewStats(dbName, newCount.count)
-    case UpdateStats =>
-      collectStats(lastCount.till)
+//    case UpdateStats =>
+//      collectStats(lastCount.till)
   }
 
   private def collectStats(start: DateTime): Unit = {

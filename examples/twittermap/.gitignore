@@ -19,7 +19,6 @@ dist
 /project/*-shim.sbt
 /activator-sbt-*-shim.sbt
 *.iml
-*.gz
 OutputFolderPromedmail/
 .DS_Store
 .cache-main

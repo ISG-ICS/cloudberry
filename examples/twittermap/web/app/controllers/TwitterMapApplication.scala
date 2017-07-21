@@ -31,8 +31,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   val clientLogger = Logger("client")
 
-  val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
-  Await.result(register, 1 minutes)
+//  val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
+//  Await.result(register, 1 minutes)
 
   def index = Action { request =>
     val remoteAddress = request.remoteAddress

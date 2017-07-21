@@ -4,10 +4,7 @@ import java.sql.{Connection, DriverManager}
 
 import play.api.libs.json._
 import play.api.libs.json.Json
-import play.api.libs.json.Json._
 import play.api.libs.ws.{WSClient, WSResponse}
-import edu.uci.ics.cloudberry.zion.model.schema.DataType
-import edu.uci.ics.cloudberry.zion.model.schema.DataType.DataType
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.Json
@@ -40,7 +37,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn{
     println("\nSQLConn: postQuery: \n" + query)
     if (query.contains("berry.meta")) {
       println("SQL postQuery: Contains berry.meta")
-      return Future(berry)
+      Future(berry)
     } else {
       val statement = connection.createStatement
       val result = statement.executeQuery(query)

@@ -12,6 +12,7 @@ object TestQuery {
   val PopulationDataSet = PopulationDataStore.DatasetName
   val literacyDataSet = LiteracyDataStore.DatasetName
   val twitterSchema = TwitterDataStore.TwitterSchema
+  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
   val populationSchema = PopulationDataStore.PopulationSchema
   val literacySchema = LiteracyDataStore.LiteracySchema
   val startTime = "2016-01-01T00:00:00.000Z"
