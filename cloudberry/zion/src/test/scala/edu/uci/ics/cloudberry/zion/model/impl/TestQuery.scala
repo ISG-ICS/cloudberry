@@ -21,24 +21,19 @@ object TestQuery {
 
 
   val createAt = twitterField("create_at").asInstanceOf[TimeField]
-  val hashtags = twitterField("hashtag")  //New: hashtag
+  val hashtags = twitterField("hashtags")
   val text = twitterField("text")
   val lang = twitterField("lang")
 
   val tag = Field.as(hashtags, "tag")
   val hash = Field.as(hashtags, "hashtags")
-//  val geoStateID = twitterField("geo_tag.stateID") //In others
-  val geoStateID = twitterField("geo_tag") //In others
+  val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
-//  val geo = twitterField("geo")  //In others
-  val geo = twitterField("geo_tag")  //In MySQL
-//  val coordinate = twitterField("coordinate") //In others
-  val coordinate = twitterField("id")
-//  val userId = twitterField("user.id")
-  val userId = twitterField("user")  //In MySQL
+  val geo = twitterField("geo")
+  val coordinate = twitterField("coordinate")
+  val userId = twitterField("user.id")
   val all = twitterField("*")
-
 
   val population = populationField("population")
   val stateID = populationField("stateID")
@@ -105,7 +100,6 @@ object TestQuery {
 
   val level = Level("state")
   val byState = ByStatement(geo, Some(level), Some(Field.as(level(geo), "state")))
-  val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geo, "stateID")))  // TODO
   val byGeocell10 = ByStatement(coordinate, Some(GeoCellTenth), Some(Field.as(GeoCellTenth(coordinate), "cell")))
   val byGeocell100 = ByStatement(coordinate, Some(GeoCellHundredth), Some(Field.as(GeoCellHundredth(coordinate), "cell")))
   val byGeocell1000 = ByStatement(coordinate, Some(GeoCellThousandth), Some(Field.as(GeoCellThousandth(coordinate), "cell")))

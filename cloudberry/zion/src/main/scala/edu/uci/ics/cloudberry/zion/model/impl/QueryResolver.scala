@@ -189,11 +189,13 @@ object QueryResolver {
   }
 
   private def resolveField(name: String, fieldMap: Map[String, Field]): Field = {
-    val field = fieldMap.get(name.split("\\.", 2).head)
+    val field = fieldMap.get(name)
     field match {
-      case Some(f) if (f.dataType == DataType.Json && name.contains(".")) => new JsonField(name, false)
       case Some(f) => f
-      case _ => throw FieldNotFound(name)
+      case _ => fieldMap.get(name.split("\\.", 2).head) match {
+          case Some(f) if (f.dataType == DataType.Json && name.contains(".")) => new JsonField(name, false) // name has the format of 'fieldName.subFieldName'
+          case _ => throw FieldNotFound(name)
+      }
     }
   }
 }

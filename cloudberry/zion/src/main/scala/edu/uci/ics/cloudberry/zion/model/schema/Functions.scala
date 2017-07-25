@@ -119,7 +119,7 @@ case class Interval(unit: TimeUnit.Value, x: Int = 1) extends GroupFunc with Sca
       case Week => x * 60 * 60 * 24 * 7
       case Month => x * 60 * 60 * 24 * 30
       case Year => x * 60 * 60 * 24 * 365
-      case Date => x * 60 * 60 * 24
+      case Date => x * 60 * 60 * 24  // MySQL: date function would return dateTime object
     }
   }
 }

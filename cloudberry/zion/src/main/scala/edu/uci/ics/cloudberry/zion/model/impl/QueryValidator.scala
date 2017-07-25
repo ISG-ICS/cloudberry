@@ -5,6 +5,7 @@ import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.Logger
 
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object QueryValidator {
@@ -175,8 +176,14 @@ object QueryValidator {
   }
 
   def validateJsonRelation(relation: Relation, values: Seq[Any]): Unit = {
-    // TODO
+    relation match  {
+      case Relation.inRange =>
+        if (values.size != 2) throw new QueryParsingException(s"the relation: ${relation} require two parameters")
+      case Relation.in =>
+        if (values.length == 0) throw new QueryParsingException(s"the relation: ${relation} require more than one parameters")
+      case Relation.matches | Relation.!= =>
+        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
+    }
   }
-
 
 }

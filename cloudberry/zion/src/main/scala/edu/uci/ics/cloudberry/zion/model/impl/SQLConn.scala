@@ -10,7 +10,7 @@ import play.api.libs.json.Json
 import java.io.InputStream
 import java.util.Date
 
-class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn{
+class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn {
   val driver = "com.mysql.jdbc.Driver"
   val username = "root"
   val password = "2048"
@@ -35,7 +35,6 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
   def postQuery(q: String): Future[JsValue] = {
     var query = q
     if (query.contains("berry.meta")) {
-      println("SQL postQuery: Contains berry.meta")
       Future(berry)
     } else {
       if (query.contains("like")) {
@@ -52,7 +51,7 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
           }
         }
       }
-      println("\nSQLConn: postQuery: \n" + query)
+
       val result = statement.executeQuery(query)
       val rsmd = result.getMetaData
       val columnCount = rsmd.getColumnCount
@@ -97,7 +96,6 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
   }
 
   def postControl(query: String) = {
-    println("\nSQLConn: postControl\n" + query)
     query.split(";").foreach {
       case q => try {statement.executeUpdate(q)} catch {case e: Exception =>}
     }
