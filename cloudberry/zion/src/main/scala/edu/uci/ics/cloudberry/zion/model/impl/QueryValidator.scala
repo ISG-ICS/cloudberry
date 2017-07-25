@@ -83,7 +83,7 @@ object QueryValidator {
   }
 
   def validateUnnest(unnest: UnnestStatement): Unit = {
-    require(unnest.field.isInstanceOf[BagField], "unnest can only apply on Bag type")
+    require(unnest.field.isInstanceOf[BagField] || unnest.field.isInstanceOf[JsonField], "unnest can only apply on Bag type")
   }
 
   def validateLookup(lookup: LookupStatement): Unit = {

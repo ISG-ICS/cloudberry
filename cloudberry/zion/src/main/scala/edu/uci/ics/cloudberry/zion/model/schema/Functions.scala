@@ -119,6 +119,7 @@ case class Interval(unit: TimeUnit.Value, x: Int = 1) extends GroupFunc with Sca
       case Week => x * 60 * 60 * 24 * 7
       case Month => x * 60 * 60 * 24 * 30
       case Year => x * 60 * 60 * 24 * 365
+      case Date => x * 60 * 60 * 24
     }
   }
 }
@@ -132,6 +133,7 @@ object TimeUnit extends Enumeration {
   val Week = Value("week")
   val Month = Value("month")
   val Year = Value("year")
+  val Date = Value("date")
 }
 
 // Cell

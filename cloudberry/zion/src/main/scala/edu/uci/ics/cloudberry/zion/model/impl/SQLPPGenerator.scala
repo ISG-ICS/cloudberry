@@ -111,7 +111,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
   }
 
   protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
-    s"drop dataset ${query.dataset} if exists"
+    s"drop dataset if exists ${query.dataset} "
   }
 
 

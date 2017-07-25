@@ -57,7 +57,7 @@ object Field {
       case DataType.Text => TextField(name, isOptional)
       case DataType.Point => PointField(name, isOptional)
       case DataType.Boolean => PointField(name, isOptional)
-      case DataType.Json => JsonField(name, isOptional)
+      case DataType.Json => JsonField(name, isOptional)   // Json is a special data format in MySQL
       case _ => ???
     }
   }
@@ -103,7 +103,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
 
 }
 
-object TimeField {  // TODO: DateTime format might be different
+object TimeField {
   val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
 }
 

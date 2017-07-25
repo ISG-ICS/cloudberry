@@ -191,7 +191,7 @@ object QueryResolver {
   private def resolveField(name: String, fieldMap: Map[String, Field]): Field = {
     val field = fieldMap.get(name.split("\\.", 2).head)
     field match {
-      case Some(f) if (f.dataType == DataType.Json && name.contains(".")) => new JsonField(name, true)
+      case Some(f) if (f.dataType == DataType.Json && name.contains(".")) => new JsonField(name, false)
       case Some(f) => f
       case _ => throw FieldNotFound(name)
     }

@@ -13,8 +13,6 @@ class JSONParser extends IJSONParser {
   import JSONParser._
 
   override def getDatasets(json: JsValue): Set[String] = {
-    println("")
-    println("JSONParse: getDatasets: " + json.toString())
     val datasets = (json \\ "dataset").filter(_.isInstanceOf[JsString]).map(_.asInstanceOf[JsString].value)
     datasets.toSet
   }

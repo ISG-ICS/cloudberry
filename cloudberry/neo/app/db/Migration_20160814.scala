@@ -13,13 +13,11 @@ private[db] class Migration_20160814() {
   def up(conn: IDataConn)(implicit ec: ExecutionContext): Future[Boolean] = {
     conn.postControl {
       s"""
-         |create dataverse berry if not exists;
-         |create type berry.metaType if not exists as open {
-         | name : string,
-         | stats : { createTime: string}
-         |}
-         |
-         |create dataset $berryMeta(berry.metaType) if not exists primary key name;
+         |CREATE table if not exists `berry.meta` (
+         |  name varchar(255) default null,
+         |  `schema` text default null,
+         |  create_at datetime default null
+         |)
        """.stripMargin
     }
   }

@@ -19,7 +19,11 @@
       "isOptional" : false,
       "datatype" : "Boolean"
     }, {
-      "name" : "hashtag",
+      "name" : "hashtags",
+      "isOptional" : true,
+      "datatype" : "Json"
+    }, {
+      "name" : "user_mentions",
       "isOptional" : true,
       "datatype" : "Json"
     }, {
@@ -64,9 +68,9 @@
     "end" : "2017-05-05T00:00:11.000Z"
   },
   "stats" : {
-    "createTime" : "2017-07-14T18:29:22.261Z",
-    "lastModifyTime" : "2017-07-14T18:29:22.261Z",
-    "lastReadTime" : "2017-07-14T18:29:22.261Z",
+    "createTime" : "2016-07-14T18:29:22.261Z",
+    "lastModifyTime" : "2016-07-14T18:29:22.261Z",
+    "lastReadTime" : "2016-07-14T18:29:22.261Z",
     "cardinality" : 47002
   }
 }
