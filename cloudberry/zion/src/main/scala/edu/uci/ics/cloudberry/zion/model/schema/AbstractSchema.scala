@@ -57,7 +57,7 @@ object Field {
       case DataType.Text => TextField(name, isOptional)
       case DataType.Point => PointField(name, isOptional)
       case DataType.Boolean => PointField(name, isOptional)
-      case DataType.Json => JsonField(name, isOptional)   // Json is a special data format in MySQL
+      case DataType.Json => JsonField(name, isOptional)   // hierachy type is stored as Json in MySQL
       case _ => ???
     }
   }

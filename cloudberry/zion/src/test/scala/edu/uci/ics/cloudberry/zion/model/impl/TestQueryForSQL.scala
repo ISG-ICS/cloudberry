@@ -4,7 +4,7 @@ import edu.uci.ics.cloudberry.zion.model.schema.{GeoCellThousandth, _}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
-object TestQueryForSQL {//TODO: write a trait and two extends, instead of two TestQueryForSQL.scala
+object TestQueryForSQL { //TODO: write a trait and two extends, instead of two TestQueryForSQL.scala
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStoreForSQL.DatasetName
@@ -25,6 +25,7 @@ object TestQueryForSQL {//TODO: write a trait and two extends, instead of two Te
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
   val lang = twitterField("lang")
+
   val tag = Field.as(hashtags, "tag")
   val hash = Field.as(hashtags, "hashtags")
   val geoStateID = JsonField("geo_tag.stateID", true)
@@ -53,37 +54,30 @@ object TestQueryForSQL {//TODO: write a trait and two extends, instead of two Te
   val langMatchFilter = FilterStatement(lang, None, Relation.matches, Seq("en"))
   val langNotMatchFilter = FilterStatement(lang, None, Relation.!=, Seq("en"))
   val langLenFilter = FilterStatement(langLen, None, Relation.>=, Seq(1))
-  println("finished FilterStatement")
 
   val intValues = Seq(1)
   val stringValue = Seq("English")
   val longValues: Seq[Long] = Seq(1644l, 45464l)
   val doubleValues: Seq[Double] = Seq(0.45541, 9.456)
-  println("finished intValues")
 
   val sourceInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2017, 1, 1, 0, 0))
   val sourceStat = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 10000)
   val sourceInfo = DataSetInfo(TwitterDataSet, None, twitterSchema, sourceInterval, sourceStat)
-  println("finished sourceInterval")
 
   val zikaHalfInterval = new org.joda.time.Interval(new DateTime(2015, 1, 1, 0, 0), new DateTime(2016, 6, 1, 0, 0))
   val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
-  println("finished zikaHalfInterval")
 
   val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
   val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), twitterSchema, zikaHalfInterval, zikaStats)
-  println("finished zikaCreateQuery")
 
   val intFilter = FilterStatement(id, None, Relation.==, intValues)
   val stringFilter = FilterStatement(twitterField("lang"), None, Relation.matches, stringValue)
   val longFilter = FilterStatement(id, None, Relation.inRange, longValues)
   val doubleFilter = FilterStatement(id, None, Relation.inRange, doubleValues)
-  println("finished intFilter")
 
   val unnestHashTag = UnnestStatement(hashtags, tag)
   val byTag = ByStatement(tag, None, None)
   val byHashTag = ByStatement(hash, None, None)
-  println("finished unnestHashTag")
 
   val secondInterval = Interval(TimeUnit.Second)
   val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
@@ -100,18 +94,13 @@ object TestQueryForSQL {//TODO: write a trait and two extends, instead of two Te
   val byMonth = ByStatement(createAt, Some(Interval(TimeUnit.Month)), Some(Field.as(monthInterval(createAt), "month")))
   val yearInterval = Interval(TimeUnit.Year)
   val byYear = ByStatement(createAt, Some(Interval(TimeUnit.Year)), Some(Field.as(minuteInterval(createAt), "year")))
-  println("finished ByStatement")
 
   val level = Level("state")
-  println("as: " + Field.as(geoStateID, "state").toString())
   val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
-  println("byGeoState: " + byGeoState)
   val byUser = ByStatement(userId, None, None)
-  println("finished level")
 
   val bin10 = Bin(10)
   val byBin = ByStatement(geoStateID, Some(bin10), Some(Field.as(geo, "state")))
-  println("finished ByStatement: bin10")
 
   val count = Field.as(Count(all), "count")
   val aggrCount = AggregateStatement(all, Count, count)
@@ -121,7 +110,6 @@ object TestQueryForSQL {//TODO: write a trait and two extends, instead of two Te
   val aggrSum = AggregateStatement(id, Sum, Field.as(Sum(id), "sum"))
   val aggrAvg = AggregateStatement(id, Avg, Field.as(Avg(id), "avg"))
   val aggrAvgLangLen = AggregateStatement(langLen, Avg, Field.as(Avg(langLen), "avgLangLen"))
-  println("finished ByStatement: AggregateStatement")
 
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
   val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
@@ -131,11 +119,9 @@ object TestQueryForSQL {//TODO: write a trait and two extends, instead of two Te
   val selectTop10byHashTag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq(hash))
   val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
   val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
-  println("finished ByStatement: SelectStatement")
 
 
   val appendLangLen = AppendStatement(lang, "length(lang)", langLen)
-  println("finished ByStatement: AppendStatement")
 
   val lookupLiteracy = LookupStatement(
     sourceKeys = Seq(geoStateID),
@@ -151,7 +137,6 @@ object TestQueryForSQL {//TODO: write a trait and two extends, instead of two Te
     selectValues = Seq(literacy),
     as = Seq(Field.as(literacy, "literacy")))
 
-  println("finished ByStatement: LookupStatement")
 
   val filterJSON =
     s"""

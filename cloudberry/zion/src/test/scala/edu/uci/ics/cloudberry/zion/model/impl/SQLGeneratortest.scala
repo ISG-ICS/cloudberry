@@ -5,7 +5,7 @@ import org.specs2.mutable.Specification
 
 class SQLGeneratorTest extends Specification {
 
-  import TestQueryForSQL._
+  import TestQuery2._
 
   val parser = new SQLGenerator
 

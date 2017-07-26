@@ -1,7 +1,7 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, SQLConn, SQLGenerator, SparkConn}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, SQLConn}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,10 +15,12 @@ private[db] class Migration_20160814() {
       case sql: SQLConn =>
         conn.postControl {
           s"""
-             |CREATE table if not exists `berry.meta` (
-             |name varchar(255) default null,
-             |`schema` text default null,
-             |create_at datetime default null
+             |create table if not exists`berry.meta` (
+             |name varchar(255) not null,
+             |`schema` json default null,
+             |dataInterval json default null,
+             |stats json default null,
+             |primary key(name)
              |)
              |""".stripMargin
         }

@@ -9,6 +9,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.json.Json
 import java.io.InputStream
 import java.util.Date
+import java.text.SimpleDateFormat
 
 class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn {
   val driver = "com.mysql.jdbc.Driver"
@@ -22,36 +23,12 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
   val source = scala.io.Source.fromInputStream(stream).getLines.mkString
   val berry: JsValue = Json.parse(source)
   val statement = connection.createStatement
-  val berryCheck: String = s"""
-                              |select name, `schema`
-                              |from `berry.meta` t
-                              |order by create_at desc
-                              |limit 2147483647""".stripMargin
 
   def post(query: String): Future[WSResponse] = {
     throw new UnsupportedOperationException
   }
 
-  def postQuery(q: String): Future[JsValue] = {
-    var query = q
-    if (query.contains("berry.meta")) {
-      Future(berry)
-    } else {
-      if (query.contains("like")) {
-        val berryResult = statement.executeQuery(berryCheck)
-        var done = true
-        while (berryResult.next && done) {
-          val key: String = berryResult.getString("schema")
-          if (query.contains(s"like '%${key}%'")) {
-            val name: String = berryResult.getString("name")
-            val regex = s"(and lower\\(t\\.text\\) like '%${key}%'|lower\\(t\\.text\\) like '%${key}%' and )".r
-            query = regex.replaceAllIn(query, "")
-            query = query.replace("twitter_ds_tweet", name)
-            done = false
-          }
-        }
-      }
-
+  def postQuery(query: String): Future[JsValue] = {
       val result = statement.executeQuery(query)
       val rsmd = result.getMetaData
       val columnCount = rsmd.getColumnCount
@@ -61,7 +38,7 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
         var rsJson: JsObject = Json.obj()
         while (index <= columnCount) {
           val column = rsmd.getColumnLabel(index)
-          val columnLabel = column.toLowerCase()
+          val columnLabel = column
           val value = result.getObject(column)
           value match {
             case int: Integer =>
@@ -69,7 +46,8 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
             case boolean: java.lang.Boolean =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean.asInstanceOf[Boolean]))
             case date: Date =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(date.asInstanceOf[Date].getTime))
+              val minuteFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(minuteFormat.format(date.asInstanceOf[Date].getTime)))
             case long: java.lang.Long =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.asInstanceOf[Long]))
             case double: java.lang.Double =>
@@ -82,7 +60,12 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
               try {
                 rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(str.toInt))
               } catch {
-                case e => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
+                case e =>
+                  try {
+                    rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
+                  } catch {
+                    case other => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
+                  }
               }
             case any: AnyRef =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNull)
@@ -91,13 +74,16 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
         }
         qJsonArray = qJsonArray :+ rsJson
       }
-      Future(Json.toJson(qJsonArray))
-    }
+      if (qJsonArray == JsArray() && query.contains("berry.meta")) {
+        Future(berry)
+      } else {
+        Future(Json.toJson(qJsonArray))
+      }
   }
 
   def postControl(query: String) = {
     query.split(";").foreach {
-      case q => try {statement.executeUpdate(q)} catch {case e: Exception =>}
+      case q => statement.executeUpdate(q)
     }
     Future(true)
   }

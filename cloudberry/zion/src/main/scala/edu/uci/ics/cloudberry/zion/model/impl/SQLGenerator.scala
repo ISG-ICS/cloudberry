@@ -2,13 +2,10 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.DateTime
 import play.api.libs.json._
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
-import java.util.Calendar
-import java.text.SimpleDateFormat
 
 class SQLGenerator extends IQLGenerator {
 
@@ -122,20 +119,16 @@ class SQLGenerator extends IQLGenerator {
     val ddl: String = genDDL(create.dataset, sourceSchema)
     val insert =
       s"""
-     |insert into ${quoteCreate}${create.dataset}${quoteCreate} ()
+     |replace into ${quoteCreate}${create.dataset}${quoteCreate} ()
      |(
      |${parseQuery(create.query, schemaMap)}
-     |);
+     |)
       """.stripMargin.replace("T", " ").replace("Z", "")
     val value: String = create.query.filter.last.values.last.toString()
-    val upsert: String = parseUpsert(new UpsertRecord("berry.meta", JsArray(IndexedSeq(JsObject(Seq(
-                                                                                        "name" -> JsString(create.dataset),
-                                                                                        "schema" -> JsString(value)))))))
-    ddl + insert + upsert
+    ddl + insert
   }
 
   protected def genDDL(name: String, schema: Schema): String = {
-    //FIXME this function is wrong for nested types if it contains multiple sub-fields
     def mkNestDDL(names: List[String], typeStr: String): String = {
       names match {
         case List(e) => s"  $e $typeStr"
@@ -169,30 +162,26 @@ class SQLGenerator extends IQLGenerator {
 
   def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
-       |insert into ${quoteCreate}${append.dataset}${quoteCreate} (
+       |replace into ${quoteCreate}${append.dataset}${quoteCreate} (
        |${parseQuery(append.query, schemaMap)}
        |)""".stripMargin.replace("T", " ").replace("Z", "")
   }
 
   def parseUpsert(q: UpsertRecord): String = {
-    val values = new StringBuilder()
-    val name: JsLookupResult = q.records(0) \ "name"
-    val schema: JsLookupResult = q.records(0) \ "schema"
-    name match {
-      case JsDefined(v) => values.append(s"${v.toString}")
+    val x = q.records.value
+    var queryResult = ArrayBuffer.empty[String]
+    x.foreach {
+      record =>
+        val name: String = (record \ "name").as[JsString].value
+        val schema: JsValue = (record \ "schema").as[JsValue]
+        val dataInterval: JsValue = (record \ "dataInterval").as[JsValue]
+        val stats: JsValue = (record \ "stats").as[JsValue]
+        queryResult += (s"('${name}','${schema}','${dataInterval}','${stats}')")
     }
-    schema match {
-      case JsDefined(v) => v match {
-        case s: JsString => values.append(s",${s.toString}")
-        case _ => values.append(s",'${v.toString}'")
-      }
-    }
-    val now = Calendar.getInstance().getTime()
-    val date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(now)
     s"""
-       |insert into ${quoteCreate}${q.dataset}${quoteCreate} values(
-       |${values}, '${date}'
-       |)""".stripMargin
+       |replace into ${quoteCreate}${q.dataset}${quoteCreate} values
+       |${queryResult.mkString(",")}
+       |""".stripMargin
   }
 
   protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
@@ -223,8 +212,12 @@ class SQLGenerator extends IQLGenerator {
     schema.fieldMap.mapValues { f =>
       f.dataType match {
         case _ => {
-          val quoted = f.name.split('.').map(name => s"$quote$name$quote").mkString(".")
-          FieldExpr(s"$sourceVar.$quoted", s"$sourceVar.$quoted")
+          if (f.name.contains(".")) {
+            FieldExpr(s"$sourceVar.${f.name.split("\\.", 2).head + "->\"$." + f.name.split("\\.", 2)(1) + '"'}", s"$sourceVar.${f.name}")
+          } else {
+            val quoted = f.name.split('.').map(name => s"$quote$name$quote").mkString(".")
+            FieldExpr(s"$sourceVar.${f.name}", s"$sourceVar.${f.name}")
+          }
         }
       }
     }
@@ -433,7 +426,6 @@ class SQLGenerator extends IQLGenerator {
           parseFilterRelation(filter, exprMap(filter.field.name).refExpr)
         }
       }
-//      println("paprseFilter: exprMap: " + exprMap.toString())
       val filterStr = (unnestTestStrs ++ filterStrs).mkString("where ", " and ", "")
       appendIfNotEmpty(queryBuilder, filterStr)
       ParsedResult(Seq.empty, exprMap)
@@ -467,7 +459,6 @@ class SQLGenerator extends IQLGenerator {
         func match {
           case interval: Interval =>
             s"${interval.unit}($fieldExpr)"
-//            s"parseGroupByFunc: is interval, name: " + interval.toString() + " unit: " + interval.unit + " scale: " + interval.scale
           case bin: Bin => ???
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
         }
@@ -525,7 +516,7 @@ class SQLGenerator extends IQLGenerator {
           val resultAfterLookup = parseLookup(group.lookups, newExprMap, queryBuilder, true)
           ParsedResult(Seq.empty, resultAfterLookup.exprMap)
         } else {
-          ParsedResult(Seq.empty, producedExprs.result().toMap)   // TODO: should ++ exprMap ?
+          ParsedResult(Seq.empty, producedExprs.result().toMap)
         }
       case None => ParsedResult(Seq(""), exprMap)
     }
@@ -537,7 +528,6 @@ class SQLGenerator extends IQLGenerator {
 
     selectOpt match {
       case Some(select) =>
-//        println("parseSelect: selectOpt: " + selectOpt.toString())
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
 
         val orderStrs = select.orderOn.zip(select.order).map {
@@ -560,7 +550,7 @@ class SQLGenerator extends IQLGenerator {
           appendIfNotEmpty(queryBuilder, limitStr)
         }
 
-        if (select.fields.isEmpty || query.hasUnnest || query.hasGroup) {  // TODO: just appended
+        if (select.fields.isEmpty || query.hasUnnest || query.hasGroup) {
           producedExprs ++= exprMap
         } else {
           select.fields.foreach {
@@ -570,14 +560,14 @@ class SQLGenerator extends IQLGenerator {
               if (field.name.contains(".")) {
                 producedExprs += field.name -> FieldExpr(field.name.replace(".", "_"), sourceVar + "." + field.name)
               } else {
-                producedExprs += field.name -> exprMap(field.name)  //TODO: += as.name -> exprMap(as.name)
+                producedExprs += field.name -> exprMap(field.name)
               }
           }
         }
 
         val newExprMap = producedExprs.result().toMap
         val projectStr = if (select.fields.isEmpty) {
-          if (query.hasUnnest || query.hasGroup) {  //TODO
+          if (query.hasUnnest || query.hasGroup) {
             parseProject(exprMap)
           } else {
             s"select *"
@@ -590,7 +580,7 @@ class SQLGenerator extends IQLGenerator {
 
       case None =>
         val projectStr =
-          if (query.hasUnnest || query.hasGroup) {  //TODO
+          if (query.hasUnnest || query.hasGroup) {
             parseProject(exprMap)
           } else {
             s"select *"

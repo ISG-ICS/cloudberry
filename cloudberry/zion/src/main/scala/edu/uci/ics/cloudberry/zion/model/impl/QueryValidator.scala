@@ -5,7 +5,6 @@ import edu.uci.ics.cloudberry.zion.model.schema.Relation.Relation
 import edu.uci.ics.cloudberry.zion.model.schema._
 import play.api.Logger
 
-import scala.collection.mutable.ArrayBuffer
 import scala.reflect.runtime.universe.{TypeTag, typeOf}
 
 object QueryValidator {

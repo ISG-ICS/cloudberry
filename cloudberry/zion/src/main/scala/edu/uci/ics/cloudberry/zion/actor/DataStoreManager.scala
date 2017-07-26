@@ -100,7 +100,8 @@ class DataStoreManager(metaDataset: String,
         case None =>
           log.warning(s"view $append.dataset does not exist.")
       }
-    case create: CreateView => createView(create)
+    case create: CreateView =>
+      createView(create)
     case drop: DropView => ???
     case askInfo: AskInfoAndViews =>
       sender ! {
