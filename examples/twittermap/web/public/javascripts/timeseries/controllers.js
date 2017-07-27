@@ -19,15 +19,14 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       var result_array = [];
       $scope.currentTweetCount = 0;
       if (result && result[0]) {
-        console.log("result = " + result[0]);
         var granu = Object.keys(result[0])[0];
         angular.forEach(result, function (value, key) {
           key = new Date(value[granu]);
           value = +value.count;
           $scope.currentTweetCount += value;
-          console.log("time: " + key + "; count: " + value);
           result_array.push({'time': key, 'count': value});
         });
+
       }
       return result_array;
     };
@@ -53,7 +52,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       function(newResult) {
         if(newResult) {
           $scope.result = newResult;
-          console.log("newResult: " + newResult);
           $scope.resultArray = $scope.preProcess(newResult);
         } else {
           $scope.result = {};
