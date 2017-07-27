@@ -41,13 +41,14 @@ angular.module('cloudberry.common', [])
   })
   .service('cloudberry', function($http, $timeout, $location, cloudberryConfig) {
     var startDate = config.startDate;
+//    var startDate = "2015-01-20T18:20:09.110Z";
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
     var ws = new WebSocket(cloudberryConfig.ws);
 
     var countRequest = JSON.stringify({
-      dataset: "twitter.ds_tweet",
+      dataset: "twitter_ds_tweet",
       global: {
         globalAggregate: {
           field: "*",
@@ -88,7 +89,7 @@ angular.module('cloudberry.common', [])
       var queryStartDate = new Date(parameters.timeInterval.end);
       queryStartDate.setDate(queryStartDate.getDate() - maxDay);
       queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
-
+//      var queryStartDate = "2016-01-20T18:20:09.110Z"
       return [
         {
           field: "geo_tag." + spatialField,
@@ -98,6 +99,7 @@ angular.module('cloudberry.common', [])
           field: "create_at",
           relation: "inRange",
           values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+//          values: [queryStartDate, parameters.timeInterval.end.toISOString()]
         }, {
           field: "text",
           relation: "contains",
@@ -119,7 +121,7 @@ angular.module('cloudberry.common', [])
           filter: getFilter(parameters, defaultNonSamplingDayRange),
           group: {
             by: [{
-              field: "geo",
+              field: "geo_tag",
               apply: {
                 name: "level",
                 args: {
@@ -148,7 +150,7 @@ angular.module('cloudberry.common', [])
               as: "sentimentScoreCount"
             }],
             lookup: [
-              cloudberryConfig.getPopulationTarget(parameters)
+//              cloudberryConfig.getPopulationTarget(parameters)
             ]
           }
         };
@@ -158,13 +160,13 @@ angular.module('cloudberry.common', [])
           filter: getFilter(parameters, defaultNonSamplingDayRange),
           group: {
             by: [{
-              field: "geo",
-              apply: {
-                name: "level",
-                args: {
-                  level: parameters.geoLevel
-                }
-              },
+              field: "geo_tag" + "." + parameters.geoLevel + "ID", //TODO
+//              apply: {
+//                name: "level",
+//                args: {
+//                  level: parameters.geoLevel
+//                }
+//              },
               as: parameters.geoLevel
             }],
             aggregate: [{
@@ -175,7 +177,7 @@ angular.module('cloudberry.common', [])
               as: "count"
             }],
             lookup: [
-              cloudberryConfig.getPopulationTarget(parameters)
+//              cloudberryConfig.getPopulationTarget(parameters)
             ]
           }
         };
@@ -239,16 +241,17 @@ angular.module('cloudberry.common', [])
 
       totalCount: 0,
       startDate: startDate,
+//      startDate: "2016-01-20T18:20:09.110Z",
       parameters: {
-        dataset: "twitter.ds_tweet",
+        dataset: "twitter_ds_tweet",
         keywords: [],
         timeInterval: {
           start: startDate,
           end: new Date()
         },
-        timeBin : "day",
+        timeBin : "date",
         geoLevel: "state",
-        geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,49,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
+        geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,48,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
       },
 
       queryType: "search",
@@ -295,6 +298,7 @@ angular.module('cloudberry.common', [])
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
+        console.log(result);
         switch (result.key) {
           case "sample":
             cloudberryService.tweetResult = result.value[0];
@@ -315,11 +319,12 @@ angular.module('cloudberry.common', [])
             break;
           default:
             console.error("ws get unknown data: ", result);
-            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
+//            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });
     };
+
 
     return cloudberryService;
   });

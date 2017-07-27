@@ -38,48 +38,48 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
       Future(true)
     }
     try {
-    while (result.next) {
-      var index = 1
-      var rsJson: JsObject = Json.obj()
-      while (index <= columnCount) {
-        val columnLabel = rsmd.getColumnLabel(index)
-        val value = result.getObject(columnLabel)
-        value match {
-          case int: Integer =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.asInstanceOf[Int]))
-          case boolean: java.lang.Boolean =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean.asInstanceOf[Boolean]))
-          case date: Date =>
-            val minuteFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsString(minuteFormat.format(date.asInstanceOf[Date].getTime)))
-          case long: java.lang.Long =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.asInstanceOf[Long]))
-          case double: java.lang.Double =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.asInstanceOf[Double]))
-          case float: java.lang.Float =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
-          case arr: Array[String] =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> Json.toJson(arr.asInstanceOf[Array[String]]))
-          case str: String =>
-            try {
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(str.toInt))
-            } catch {
-              case other => try {
-                rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
+      while (result.next) {
+        var index = 1
+        var rsJson: JsObject = Json.obj()
+        while (index <= columnCount) {
+          val columnLabel = rsmd.getColumnLabel(index)
+          val value = result.getObject(columnLabel)
+          value match {
+            case int: Integer =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.asInstanceOf[Int]))
+            case boolean: java.lang.Boolean =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean.asInstanceOf[Boolean]))
+            case date: Date =>
+              val minuteFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(minuteFormat.format(date.asInstanceOf[Date].getTime)))
+            case long: java.lang.Long =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.asInstanceOf[Long]))
+            case double: java.lang.Double =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.asInstanceOf[Double]))
+            case float: java.lang.Float =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
+            case arr: Array[String] =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> Json.toJson(arr.asInstanceOf[Array[String]]))
+            case str: String =>
+              try {
+                rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(str.toInt))
               } catch {
-                case s => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
+                case other => try {
+                  rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
+                } catch {
+                  case s => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
+                }
               }
-            }
-          case any: AnyRef =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNull)
+            case any: AnyRef =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNull)
+          }
+          index += 1
         }
-        index += 1
+        qJsonArray = qJsonArray :+ rsJson
       }
-      qJsonArray = qJsonArray :+ rsJson
+    } catch {
+      case e => Future(true)
     }
-  } catch {
-    case e => Future(true)
-  }
     if (qJsonArray == JsArray() && query.contains("berry.meta")) {
       Future(berry)
     } else {

@@ -29,6 +29,7 @@ object TestQuery {
   val hashtags = twitterField("hashtags")
   val text = twitterField("text")
   val lang = twitterField("lang")
+
   val tag = Field.as(hashtags, "tag")
   val hash = Field.as(hashtags, "hashtags")
   val userMentions = twitterFieldForSQL("user_mentions")
@@ -38,7 +39,6 @@ object TestQuery {
   val id = twitterField("id")
   val geo = twitterField("geo")
   val geoTag = twitterFieldForSQL("geo_tag")
-
   val coordinate = twitterField("coordinate")
   val userId = twitterField("user.id")
   val userIdForSQL = JsonField("user.id", false)
@@ -120,8 +120,7 @@ object TestQuery {
 
   val bin10 = Bin(10)
   val byBin = ByStatement(geoStateID, Some(bin10), Some(Field.as(bin10(geoStateID), "state")))
-  val sqlByBin = ByStatement(geoStateID, Some(bin10), Some(Field.as(geo, "state")))
-
+  val byBinForSQL = ByStatement(geoStateID, Some(bin10), Some(Field.as(geo, "state")))
 
   val count = Field.as(Count(all), "count")
   val aggrCount = AggregateStatement(all, Count, count)

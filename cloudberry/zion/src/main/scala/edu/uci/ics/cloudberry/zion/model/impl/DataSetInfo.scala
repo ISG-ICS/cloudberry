@@ -39,7 +39,6 @@ object DataSetInfo {
     * @return
     */
   def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): DataSetInfo = {
-    val vali = json.validate[UnresolvedDataSetInfo]
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
         val dataSetInfo = js.get
