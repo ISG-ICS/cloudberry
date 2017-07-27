@@ -39,15 +39,16 @@ object DataSetInfo {
     * @return
     */
   def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): DataSetInfo = {
+    val vali = json.validate[UnresolvedDataSetInfo]
     json.validate[UnresolvedDataSetInfo] match {
       case js: JsSuccess[UnresolvedDataSetInfo] =>
         val dataSetInfo = js.get
         val resolvedQuery = dataSetInfo.createQueryOpt.map(JSONParser.resolve(_, schemaMap))
         val resolvedSchema = dataSetInfo.schema.toResolved
+
         DataSetInfo(dataSetInfo.name, resolvedQuery, resolvedSchema, dataSetInfo.dataInterval, dataSetInfo.stats)
 
       case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
-      case _ => throw JsonRequestException("fail")
     }
   }
 

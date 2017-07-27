@@ -1,17 +1,18 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import java.sql.{Connection, DriverManager}
 
+import play.api.libs.ws.WSResponse
+import play.api.libs.json.Json
 import play.api.libs.json._
-import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.json.Json
+
+import java.sql.{Connection, DriverManager}
 import java.io.InputStream
 import java.util.Date
 import java.text.SimpleDateFormat
 
-class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) extends IDataConn {
+class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   val driver = "com.mysql.jdbc.Driver"
   val username = "root"
   val password = "2048"
@@ -21,64 +22,69 @@ class SQLConn(url: String, wSClient: WSClient)(implicit ec: ExecutionContext) ex
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val stream : InputStream = getClass.getResourceAsStream("/ddl/berry.json")
   val source = scala.io.Source.fromInputStream(stream).getLines.mkString
-  val berry: JsValue = Json.parse(source)
   val statement = connection.createStatement
+  val berry: JsValue = Json.parse(source)
 
   def post(query: String): Future[WSResponse] = {
     throw new UnsupportedOperationException
   }
 
   def postQuery(query: String): Future[JsValue] = {
-      val result = statement.executeQuery(query)
-      val rsmd = result.getMetaData
-      val columnCount = rsmd.getColumnCount
-      var qJsonArray: JsArray = Json.arr()
-      while (result.next) {
-        var index = 1
-        var rsJson: JsObject = Json.obj()
-        while (index <= columnCount) {
-          val column = rsmd.getColumnLabel(index)
-          val columnLabel = column
-          val value = result.getObject(column)
-          value match {
-            case int: Integer =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.asInstanceOf[Int]))
-            case boolean: java.lang.Boolean =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean.asInstanceOf[Boolean]))
-            case date: Date =>
-              val minuteFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(minuteFormat.format(date.asInstanceOf[Date].getTime)))
-            case long: java.lang.Long =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.asInstanceOf[Long]))
-            case double: java.lang.Double =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.asInstanceOf[Double]))
-            case float: java.lang.Float =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
-            case arr: Array[String] =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> Json.toJson(arr.asInstanceOf[Array[String]]))
-            case str: String =>
-              try {
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(str.toInt))
+    val result = statement.executeQuery(query)
+    val rsmd = result.getMetaData
+    val columnCount = rsmd.getColumnCount
+    var qJsonArray: JsArray = Json.arr()
+    if (!result.isBeforeFirst()) {
+      Future(true)
+    }
+    try {
+    while (result.next) {
+      var index = 1
+      var rsJson: JsObject = Json.obj()
+      while (index <= columnCount) {
+        val columnLabel = rsmd.getColumnLabel(index)
+        val value = result.getObject(columnLabel)
+        value match {
+          case int: Integer =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.asInstanceOf[Int]))
+          case boolean: java.lang.Boolean =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean.asInstanceOf[Boolean]))
+          case date: Date =>
+            val minuteFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsString(minuteFormat.format(date.asInstanceOf[Date].getTime)))
+          case long: java.lang.Long =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.asInstanceOf[Long]))
+          case double: java.lang.Double =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.asInstanceOf[Double]))
+          case float: java.lang.Float =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
+          case arr: Array[String] =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> Json.toJson(arr.asInstanceOf[Array[String]]))
+          case str: String =>
+            try {
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(str.toInt))
+            } catch {
+              case other => try {
+                rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
               } catch {
-                case e =>
-                  try {
-                    rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
-                  } catch {
-                    case other => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
-                  }
+                case s => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
               }
-            case any: AnyRef =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNull)
-          }
-          index += 1
+            }
+          case any: AnyRef =>
+            rsJson = rsJson ++ Json.obj(columnLabel -> JsNull)
         }
-        qJsonArray = qJsonArray :+ rsJson
+        index += 1
       }
-      if (qJsonArray == JsArray() && query.contains("berry.meta")) {
-        Future(berry)
-      } else {
-        Future(Json.toJson(qJsonArray))
-      }
+      qJsonArray = qJsonArray :+ rsJson
+    }
+  } catch {
+    case e => Future(true)
+  }
+    if (qJsonArray == JsArray() && query.contains("berry.meta")) {
+      Future(berry)
+    } else {
+      Future(Json.toJson(qJsonArray))
+    }
   }
 
   def postControl(query: String) = {

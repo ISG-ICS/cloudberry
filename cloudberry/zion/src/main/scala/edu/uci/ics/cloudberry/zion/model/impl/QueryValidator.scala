@@ -182,6 +182,8 @@ object QueryValidator {
         if (values.length == 0) throw new QueryParsingException(s"the relation: ${relation} require more than one parameters")
       case Relation.matches | Relation.!= =>
         if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
+      case _ =>
+        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
     }
   }
 

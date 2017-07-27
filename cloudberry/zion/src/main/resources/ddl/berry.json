@@ -2,7 +2,7 @@
   {
     "name" : "twitter_ds_tweet",
     "schema" : {
-      "typeName" : "twitter.typeTweet",
+      "typeName" : "twitter_ds_tweet",
       "dimension" : [ {
         "name" : "create_at",
         "isOptional" : false,

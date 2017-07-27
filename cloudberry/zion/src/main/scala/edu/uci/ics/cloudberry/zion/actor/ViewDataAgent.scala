@@ -21,7 +21,6 @@ class ViewDataAgent(override val dbName: String,
 
   override protected def maintenanceWork: Receive = {
     case append: AppendView =>
-      println("ViewDataAgent: append:" + append.toString())
       //FIXME this assumes the subset view case!!! should ask the MetaData about the necessary schemas
       processUpdate(queryParser.generate(append, Map(append.query.dataset -> schema)))
   }

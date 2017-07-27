@@ -5,13 +5,14 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 object TwitterDataStoreForSQL {
   val DatasetName = "twitter_ds_tweet"
   val TimeFieldName = "create_at"
-  val TwitterSchemaForSQL = new Schema("twitter.typeTweet",
+  val TwitterSchemaForSQL = Schema("twitter_ds_tweet",
                                       Seq(
                                         TimeField("create_at"),
                                         NumberField("id"),
                                         TextField("lang"),
                                         NumberField("is_retweet"),
                                         JsonField("hashtags", true),
+                                        JsonField("user_mentions", true),
                                         JsonField("geo_tag", false)
                                       ),
                                       Seq(

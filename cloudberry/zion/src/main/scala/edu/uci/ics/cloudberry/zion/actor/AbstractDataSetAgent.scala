@@ -52,8 +52,7 @@ abstract class AbstractDataSetAgent(val dbName: String,
   protected def querying: Receive = {
     case query: Query =>
       estimate(query) match {
-        case Some(result) =>
-          sender() ! result
+        case Some(result) => sender() ! result
         case None =>
           //TODO should ask the MetaActor about other required schemas.
           conn.postQuery(queryParser.generate(query, Map(dbName -> schema))) pipeTo sender()
