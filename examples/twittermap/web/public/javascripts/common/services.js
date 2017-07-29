@@ -88,6 +88,7 @@ angular.module('cloudberry.common', [])
       var queryStartDate = new Date(parameters.timeInterval.end);
       queryStartDate.setDate(queryStartDate.getDate() - maxDay);
       queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+
       return [
         {
           field: "geo_tag." + spatialField,
@@ -118,7 +119,7 @@ angular.module('cloudberry.common', [])
           filter: getFilter(parameters, defaultNonSamplingDayRange),
           group: {
             by: [{
-              field: "geo_tag",
+              field: "geo",
               apply: {
                 name: "level",
                 args: {
@@ -147,7 +148,7 @@ angular.module('cloudberry.common', [])
               as: "sentimentScoreCount"
             }],
             lookup: [
-//              cloudberryConfig.getPopulationTarget(parameters)
+              cloudberryConfig.getPopulationTarget(parameters)
             ]
           }
         };
@@ -157,13 +158,13 @@ angular.module('cloudberry.common', [])
           filter: getFilter(parameters, defaultNonSamplingDayRange),
           group: {
             by: [{
-              field: "geo_tag" + "." + parameters.geoLevel + "ID", //TODO
-//              apply: {
-//                name: "level",
-//                args: {
-//                  level: parameters.geoLevel
-//                }
-//              },
+              field: "geo"
+              apply: {
+                name: "level",
+                args: {
+                  level: parameters.geoLevel
+                }
+              },
               as: parameters.geoLevel
             }],
             aggregate: [{
@@ -174,7 +175,7 @@ angular.module('cloudberry.common', [])
               as: "count"
             }],
             lookup: [
-//              cloudberryConfig.getPopulationTarget(parameters)
+              cloudberryConfig.getPopulationTarget(parameters)
             ]
           }
         };
@@ -239,15 +240,15 @@ angular.module('cloudberry.common', [])
       totalCount: 0,
       startDate: startDate,
       parameters: {
-        dataset: "twitter_ds_tweet",
+        dataset: "twitter.ds_tweet",
         keywords: [],
         timeInterval: {
           start: startDate,
           end: new Date()
         },
-        timeBin : "date",
+        timeBin : "day",
         geoLevel: "state",
-        geoIds : [37,51,24,11,10,34,42,9,44,49,35,4,40,6,20,32,8,48,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
+        geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,49,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
       },
 
       queryType: "search",
@@ -294,7 +295,6 @@ angular.module('cloudberry.common', [])
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        console.log(result);
         switch (result.key) {
           case "sample":
             cloudberryService.tweetResult = result.value[0];
@@ -315,12 +315,11 @@ angular.module('cloudberry.common', [])
             break;
           default:
             console.error("ws get unknown data: ", result);
-//            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
+            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });
     };
-
 
     return cloudberryService;
   });
