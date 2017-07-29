@@ -150,7 +150,7 @@ class SQLGenerator extends IQLGenerator {
       case DataType.Boolean => "tinyint"
       case DataType.String => "varchar(255)"
       case DataType.Text => "text"
-      case DataType.Bag => s"{{${fieldType2ADMType(Field("", field.asInstanceOf[BagField].innerType))}}}"
+      case DataType.Bag => ???
       case DataType.Hierarchy => ???
       case DataType.Record => ???
     }
