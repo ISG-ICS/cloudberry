@@ -14,30 +14,27 @@ import java.text.SimpleDateFormat
 
 class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   val driver = "com.mysql.jdbc.Driver"
-  val username = "root"
+  val username = "root"  //TODO: how to config?
   val password = "2048"
   var connection:Connection = _
   Class.forName(driver)
   connection = DriverManager.getConnection(url, username, password)
-  val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
-  val stream : InputStream = getClass.getResourceAsStream("/ddl/berry.json")
+  val stream: InputStream = getClass.getResourceAsStream("/ddl/berry.json")
   val source = scala.io.Source.fromInputStream(stream).getLines.mkString
-  val statement = connection.createStatement
   val berry: JsValue = Json.parse(source)
-
+  val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
+  val statement = connection.createStatement
   def post(query: String): Future[WSResponse] = {
     throw new UnsupportedOperationException
   }
 
   def postQuery(query: String): Future[JsValue] = {
+    println("postQuery: " + query)
     val result = statement.executeQuery(query)
     val rsmd = result.getMetaData
     val columnCount = rsmd.getColumnCount
     var qJsonArray: JsArray = Json.arr()
-    if (!result.isBeforeFirst()) {
-      Future(true)
-    }
-    try {
+    try {  //TODO
       while (result.next) {
         var index = 1
         var rsJson: JsObject = Json.obj()
@@ -64,10 +61,11 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               try {
                 rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(str.toInt))
               } catch {
-                case other => try {
+                case json => try {
                   rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
                 } catch {
-                  case s => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
+                  case string =>
+                    rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str.asInstanceOf[String]))
                 }
               }
             case any: AnyRef =>
@@ -78,19 +76,24 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
         qJsonArray = qJsonArray :+ rsJson
       }
     } catch {
-      case e => Future(true)
+      case e =>
+        Future(defaultQueryResponse)  //TODO: check the return type
     }
     if (qJsonArray == JsArray() && query.contains("berry.meta")) {
-      Future(berry)
+//      Future(Json.toJson(berry))  //TODO: check correctness, default is not usable
+      Future(defaultQueryResponse)
     } else {
+      println("not empty: result is: " + qJsonArray.toString())
       Future(Json.toJson(qJsonArray))
     }
   }
 
   def postControl(query: String) = {
-    query.split(";").foreach {
+    println("postControl: " + query)
+    query.split(";\n").foreach {
       case q => statement.executeUpdate(q)
     }
+    statement.executeUpdate(s"""insert ignore into `berry.meta` values("","{}","{}","{}")""")
     Future(true)
   }
 

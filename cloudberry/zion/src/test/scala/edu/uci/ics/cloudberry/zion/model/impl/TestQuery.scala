@@ -9,7 +9,6 @@ object TestQuery {
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val TwitterDataSet = TwitterDataStore.DatasetName
-  val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
   val TwitterDataSetForSparkSQL = "twitter_ds_tweet"
   val PopulationDataSet = PopulationDataStore.DatasetName
   val literacyDataSet = LiteracyDataStore.DatasetName
@@ -20,9 +19,7 @@ object TestQuery {
   val startTime = "2016-01-01T00:00:00.000Z"
   val endTime = "2016-12-01T00:00:00.000Z"
   val twitterSchemaMap = Map(TwitterDataSet -> twitterSchema)
-  val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
   val allSchemaMap = Map(TwitterDataSet -> twitterSchema, PopulationDataSet -> populationSchema, literacyDataSet -> literacySchema)
-  val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
 
 
   val createAt = twitterField("create_at").asInstanceOf[TimeField]
@@ -32,16 +29,12 @@ object TestQuery {
 
   val tag = Field.as(hashtags, "tag")
   val hash = Field.as(hashtags, "hashtags")
-  val userMentions = twitterFieldForSQL("user_mentions")
   val geoStateID = twitterField("geo_tag.stateID")
-  val geoStateIDForSQL = JsonField("geo_tag.stateID", false)
   val isRetweet = twitterField("is_retweet")
   val id = twitterField("id")
   val geo = twitterField("geo")
-  val geoTag = twitterFieldForSQL("geo_tag")
   val coordinate = twitterField("coordinate")
   val userId = twitterField("user.id")
-  val userIdForSQL = JsonField("user.id", false)
   val all = twitterField("*")
 
   val population = populationField("population")
@@ -59,7 +52,6 @@ object TestQuery {
   val virusFilter = FilterStatement(text, None, Relation.contains, Seq("virus"))
   val textFilter = FilterStatement(text, None, Relation.contains, textValue)
   val stateFilter = FilterStatement(geoStateID, None, Relation.in, stateValue)
-  val stateFilterForSQL = FilterStatement(geoStateIDForSQL, None, Relation.in, stateValue)
   val retweetFilter = FilterStatement(isRetweet, None, Relation.isTrue, Seq.empty)
   val bagFilter = FilterStatement(hashtags, None, Relation.contains, Seq(BagField("tags", DataType.String, false)))
   val pointFilter = FilterStatement(coordinate, None, Relation.inRange, Seq(Seq(0.0, 0.0), Seq(1.0, 1.0)))
@@ -111,8 +103,6 @@ object TestQuery {
 
   val level = Level("state")
   val byState = ByStatement(geo, Some(level), Some(Field.as(level(geo), "state")))
-  val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
-  val byGeoStateForSQL = ByStatement(geoStateIDForSQL, None, Some(Field.as(geoStateIDForSQL, "state")))
   val byGeocell10 = ByStatement(coordinate, Some(GeoCellTenth), Some(Field.as(GeoCellTenth(coordinate), "cell")))
   val byGeocell100 = ByStatement(coordinate, Some(GeoCellHundredth), Some(Field.as(GeoCellHundredth(coordinate), "cell")))
   val byGeocell1000 = ByStatement(coordinate, Some(GeoCellThousandth), Some(Field.as(GeoCellThousandth(coordinate), "cell")))
@@ -120,7 +110,6 @@ object TestQuery {
 
   val bin10 = Bin(10)
   val byBin = ByStatement(geoStateID, Some(bin10), Some(Field.as(bin10(geoStateID), "state")))
-  val byBinForSQL = ByStatement(geoStateID, Some(bin10), Some(Field.as(geo, "state")))
 
   val count = Field.as(Count(all), "count")
   val aggrCount = AggregateStatement(all, Count, count)
@@ -138,8 +127,16 @@ object TestQuery {
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
   )
 
+  val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
+  val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
+  val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
+  val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
+  val groupPopulationSumForSQL = GroupStatement(
+    bys = Seq(byGeoState),
+    aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
+  )
+
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
-  val selectRecentForSQL = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userIdForSQL))
   val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
   val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
@@ -161,13 +158,6 @@ object TestQuery {
     selectValues = Seq(population),
     as = Seq(Field.as(population, "population")))
 
-  val lookupPopulationForSQL = LookupStatement(
-    sourceKeys = Seq(geoStateIDForSQL),
-    dataset = PopulationDataSet,
-    lookupKeys = Seq(stateID),
-    selectValues = Seq(population),
-    as = Seq(Field.as(population, "population")))
-
   val lookupPopulationMultiple = LookupStatement(
     sourceKeys = Seq(geoStateID),
     dataset = PopulationDataSet,
@@ -181,14 +171,6 @@ object TestQuery {
     lookupKeys = Seq(stateID),
     selectValues = Seq(literacy),
     as = Seq(Field.as(literacy, "literacy")))
-
-  val lookupLiteracyForSQL = LookupStatement(
-    sourceKeys = Seq(geoStateIDForSQL),
-    dataset = literacyDataSet,
-    lookupKeys = Seq(stateID),
-    selectValues = Seq(literacy),
-    as = Seq(Field.as(literacy, "literacy")))
-
 
   val lookupPopulationByState = LookupStatement(
     sourceKeys = Seq(Field("state", DataType.Number)),

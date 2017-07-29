@@ -149,7 +149,6 @@ case class FilterStatement(field: Field,
         case DataType.Bag => ???
         case DataType.Hierarchy => ???
         case DataType.Record => ???
-        case DataType.Json => ???
       }
     }
   }

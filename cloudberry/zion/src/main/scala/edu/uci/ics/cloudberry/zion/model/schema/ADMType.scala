@@ -8,13 +8,11 @@ object ADMType extends Enumeration {
   val String = Value("string")
   val Point = Value("point")
   val DateTime = Value("datetime")
-  val Json = Value("json")
 
   val mapToSchema: Map[Type, DataType.DataType] = Map(Boolean -> DataType.Boolean,
                                                       Int64 -> DataType.Number,
                                                       Double -> DataType.Number,
                                                       String -> DataType.String,
                                                       Point -> DataType.Point,
-                                                      DateTime -> DataType.Time,
-                                                      Json -> DataType.Json)
+                                                      DateTime -> DataType.Time)
 }

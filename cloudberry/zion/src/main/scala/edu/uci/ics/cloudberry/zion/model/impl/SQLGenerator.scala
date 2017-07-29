@@ -150,7 +150,6 @@ class SQLGenerator extends IQLGenerator {
       case DataType.Boolean => "tinyint"
       case DataType.String => "varchar(255)"
       case DataType.Text => "text"
-      case DataType.Json => "json"
       case DataType.Bag => s"{{${fieldType2ADMType(Field("", field.asInstanceOf[BagField].innerType))}}}"
       case DataType.Hierarchy => ???
       case DataType.Record => ???
@@ -193,7 +192,7 @@ class SQLGenerator extends IQLGenerator {
   }
 
   protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
-    s"drop table if exists ${query.dataset}"
+    s"drop table if exists $quote${query.dataset}$quote"
   }
 
   def calcResultSchema(query: Query, schema: Schema): Schema = {
@@ -208,13 +207,11 @@ class SQLGenerator extends IQLGenerator {
     val schema = schemaMap(dataset)
     schema.fieldMap.mapValues { f =>
       f.dataType match {
-        case DataType.Json if f.name.contains(".") =>
-            FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.${f.name.split("\\.", 2).head + "->\"$." + f.name.split("\\.", 2)(1) + '"'}")
         case _ if (dataset.equals("berry.meta") && f.name.contains(".")) =>  //TODO: generalize berry.metaType
           FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.${f.name.split("\\.", 2).head + "->\"$." + f.name.split("\\.", 2)(1) + '"'}")
         case _ =>
-            val quoted = f.name.split('.').map(name => s"$quote$name$quote").mkString(".")
-            FieldExpr(s"$sourceVar.$quoted", s"$sourceVar.$quoted")
+//            val quoted = f.name.split('.').map(name => s"$quote$name$quote").mkString(".")
+            FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.$quote${f.name}$quote")
       }
     }
   }
@@ -234,7 +231,7 @@ class SQLGenerator extends IQLGenerator {
 
     val resultAfterFilter = parseFilter(query.filter, resultAfterUnnest.exprMap, unnestTests, queryBuilder)
 
-    val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap, queryBuilder)
+    val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap, unnestTests, queryBuilder)
 
     val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, queryBuilder)
 
@@ -250,16 +247,16 @@ class SQLGenerator extends IQLGenerator {
       val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
       appends.foreach { append =>
         val as = append.as
-        producedExprs += append.as.name -> FieldExpr(s"$appendVar.${as.name}", append.definition)
+        producedExprs += append.as.name -> FieldExpr(s"$sourceVar.$quote${as.name}$quote", append.definition)
       }
       exprMap.foreach {
         case (field, expr) =>
-          producedExprs += field -> FieldExpr(s"$appendVar.$field", s"${expr.refExpr}")
+          producedExprs += field -> FieldExpr(s"${expr.refExpr}", s"$sourceVar.$quote$field$quote")  //TODO: might be wrong
       }
       val newExprMap = producedExprs.result().toMap
       val selectStr = parseProject(newExprMap)
       queryBuilder.insert(0, s"from ($selectStr\n")
-      queryBuilder.append(s") $appendVar")
+      queryBuilder.append(s") $sourceVar")//TODO: might be wrong
       ParsedResult(Seq.empty, newExprMap)
     }
   }
@@ -306,8 +303,6 @@ class SQLGenerator extends IQLGenerator {
         parseStringRelation(filter, fieldExpr)
       case DataType.Text =>
         parseTextRelation(filter, fieldExpr)
-      case DataType.Json =>
-        parseJsonRelation(filter, fieldExpr)
       case DataType.Bag => ???
       case DataType.Hierarchy =>
         throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
@@ -319,7 +314,12 @@ class SQLGenerator extends IQLGenerator {
                                   fieldExpr: String): String = {
     filter.relation match {
       case Relation.inRange => {
-        s"$fieldExpr >= '${filter.values(0)}' and $fieldExpr < '${filter.values(1)}'"
+        filter.field.dataType match{
+          case time: DataType.Time.type =>
+            s"$fieldExpr >= '${filter.values(0).toString.replace("T"," ").replace("Z","")}' and $fieldExpr < '${filter.values(1).toString.replace("T"," ").replace("Z","")}'"
+          case others =>
+            s"$fieldExpr >= '${filter.values(0)}' and $fieldExpr < '${filter.values(1)}'"
+        }
       }
       case _ => {
         s"$fieldExpr ${filter.relation} '${filter.values(0)}'"
@@ -421,8 +421,6 @@ class SQLGenerator extends IQLGenerator {
     } else {
       val filterStrs = filters.map { filter =>
         filter.field.dataType match {
-          case js: DataType.Json.type if (filter.field.name.contains(".")) =>
-            parseFilterRelation(filter, sourceVar + '.' + filter.field.name.replaceFirst("\\.", "->\"\\$.") + '"')
           case _ =>
             parseFilterRelation(filter, exprMap(filter.field.name).refExpr)
         }
@@ -437,6 +435,10 @@ class SQLGenerator extends IQLGenerator {
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
                           exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
+
+    //TODO: hashtags //TODO: quotes
+
+
     val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
     val unnestTestStrs = new ListBuffer[String]
     val unnestStr = unnest.zipWithIndex.map {
@@ -469,16 +471,13 @@ class SQLGenerator extends IQLGenerator {
 
   private def parseGroupby(groupOpt: Option[GroupStatement],
                            exprMap: Map[String, FieldExpr],
+                           unnestTestStrs: Seq[String],
                            queryBuilder: StringBuilder): ParsedResult = {
     groupOpt match {
       case Some(group) =>
         val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
         val groupStrs = group.bys.map { by =>
-          val fieldExpr = if (by.field.name.contains(".")) {
-            FieldExpr(by.field.name.split("\\.", 2).head + "->\"$." + by.field.name.split("\\.", 2)(1) + '"', by.field.name)
-          } else {
-            exprMap(by.field.name)
-          }
+          val fieldExpr = exprMap(by.field.name)
           val as = by.as.getOrElse(by.field)
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
           val newExpr = s"$quote${as.name}$quote"
@@ -491,7 +490,15 @@ class SQLGenerator extends IQLGenerator {
           }
         }
 
-        val groupStr = s"group by ${groupStrs.mkString(",")}"
+        val groupStr = unnestTestStrs.isEmpty match {
+              case true =>
+                s"group by ${groupStrs.mkString(",")}"
+              case false =>
+                val head = s""") ${appendVar} join """
+                val number = (0 to 24).mkString("(select ", " as idx union select ", " as idx) as indexes")
+                val tail = s""" where json_extract(${quote}hashtags${quote}, concat('$jsonVar[', idx, ']')) is not null"""
+                (head + number + tail + s" ) $sourceVar group by ${groupStrs.mkString(",")}").stripMargin
+        }
 
         appendIfNotEmpty(queryBuilder, groupStr)
 
@@ -552,24 +559,38 @@ class SQLGenerator extends IQLGenerator {
           select.fields.foreach {
             case AllField =>
               producedExprs ++= exprMap
-            case field => field.dataType match {
-              case json: DataType.Json.type if (field.name.contains(".")) =>
-                producedExprs += field.name -> FieldExpr(field.name, sourceVar + "." + s"${field.name.split("\\.", 2).head + "->\"$." + field.name.split("\\.", 2)(1) + '"'}")
-              case _ =>
-                producedExprs += field.name -> exprMap(field.name)
-            }
+            case field =>
+              producedExprs += field.name -> exprMap(field.name)
           }
         }
 
         val newExprMap = producedExprs.result().toMap
         val projectStr = if (select.fields.isEmpty) {
           if (query.hasUnnest || query.hasGroup) {
-            parseProject(exprMap)
+            if (query.hasUnnest) {
+              val unnestHead = s"""
+                                  |from(
+                                  |select json_extract(${quote}hashtags${quote}, concat('${jsonVar}[', idx, ']')) as hashtags
+                                  |from(
+                                  |""".stripMargin
+              parseProject(exprMap) + unnestHead + s" select t.`hashtags` as `hashtags`"
+            } else {
+              parseProject(exprMap)
+            }
           } else {
             s"select *"
           }
-        } else {
-          parseProject(newExprMap)
+        } else {  //TODO: clean code
+          if (query.hasUnnest) {
+            val unnestHead = s"""
+                                |from(
+                                |select json_extract(${quote}hashtags${quote}, concat('${jsonVar}[', idx, ']')) as ${quote}hashtags${quote}
+                                |from(
+                                |""".stripMargin
+            parseProject(exprMap) + unnestHead + s" select t.`hashtags` as `hashtags`"
+          } else {
+            parseProject(newExprMap)
+          }
         }
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, newExprMap)

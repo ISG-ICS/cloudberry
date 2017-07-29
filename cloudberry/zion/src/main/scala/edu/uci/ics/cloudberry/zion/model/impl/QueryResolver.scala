@@ -192,10 +192,7 @@ object QueryResolver {
     val field = fieldMap.get(name)
     field match {
       case Some(f) => f
-      case _ => fieldMap.get(name.split("\\.", 2).head) match {
-          case Some(f) if (f.dataType == DataType.Json && name.contains(".")) => new JsonField(name, false) // name has the format of 'fieldName.subFieldName'
-          case _ => throw FieldNotFound(name)
-      }
+      case _ => throw FieldNotFound(name)
     }
   }
 }

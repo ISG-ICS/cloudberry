@@ -108,8 +108,6 @@ object DataSetInfo {
           JsSuccess(StringField(name, isOptional))
         case DataType.Time =>
           JsSuccess(TimeField(name, isOptional))
-        case DataType.Json =>
-          JsSuccess(JsonField(name, isOptional))
         case unknown: DataType.Value => JsError(s"field datatype invalid: $unknown")
       }
     }
@@ -131,10 +129,6 @@ object DataSetInfo {
           "datatype" -> JsString(dataType),
           "innerType" -> JsString(hierarchy.innerType.toString),
           "levels" -> Json.toJson(hierarchy.levels)))
-        case json: JsonField => JsObject(List(
-          "name" -> JsString(name),
-          "isOptional" -> JsBoolean(isOptional),
-          "datatype" -> JsString(dataType)))
         case basicField: Field => JsObject(List(
           "name" -> JsString(name),
           "isOptional" -> JsBoolean(isOptional),

@@ -26,7 +26,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
           $scope.currentTweetCount += value;
           result_array.push({'time': key, 'count': value});
         });
-
       }
       return result_array;
     };

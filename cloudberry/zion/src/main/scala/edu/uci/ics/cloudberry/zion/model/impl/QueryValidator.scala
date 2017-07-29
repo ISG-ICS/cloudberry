@@ -73,8 +73,6 @@ object QueryValidator {
         validateStringRelation(filter.relation, filter.values)
       case DataType.Text =>
         validateTextRelation(filter.relation, filter.values)
-      case DataType.Json =>
-        validateJsonRelation(filter.relation, filter.values)
       case DataType.Bag =>
       case DataType.Hierarchy =>
         throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
@@ -83,7 +81,7 @@ object QueryValidator {
   }
 
   def validateUnnest(unnest: UnnestStatement): Unit = {
-    require(unnest.field.isInstanceOf[BagField] || unnest.field.isInstanceOf[JsonField], "unnest can only apply on Bag type")
+    require(unnest.field.isInstanceOf[BagField], "unnest can only apply on Bag type")
   }
 
   def validateLookup(lookup: LookupStatement): Unit = {

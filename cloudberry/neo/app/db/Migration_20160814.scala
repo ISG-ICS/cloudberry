@@ -1,7 +1,7 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, SQLConn}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, SQLConn, AsterixSQLPPConn}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -15,6 +15,7 @@ private[db] class Migration_20160814() {
       case sql: SQLConn =>
         conn.postControl {
           s"""
+             |drop table if exists  `berry.meta`;
              |create table if not exists `berry.meta` (
              |`name` varchar(255) not null,
              |`schema` json default null,
@@ -24,7 +25,7 @@ private[db] class Migration_20160814() {
              |)
              |""".stripMargin
         }
-      case _ =>
+      case sqlpp: AsterixSQLPPConn =>
         conn.postControl {
           s"""
              |create dataverse berry if not exists;

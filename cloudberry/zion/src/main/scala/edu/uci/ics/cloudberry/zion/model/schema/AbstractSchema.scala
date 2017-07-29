@@ -16,7 +16,6 @@ object DataType extends Enumeration {
   val Bag = Value("Bag")
   val Hierarchy = Value("Hierarchy")
   val Record = Value("Record")
-  val Json = Value("Json")
 }
 
 object Relation extends Enumeration {
@@ -57,7 +56,6 @@ object Field {
       case DataType.Text => TextField(name, isOptional)
       case DataType.Point => PointField(name, isOptional)
       case DataType.Boolean => PointField(name, isOptional)
-      case DataType.Json => JsonField(name, isOptional)   // hierachy type is stored as Json in MySQL
       case _ => ???
     }
   }
@@ -76,7 +74,6 @@ object Field {
       case DataType.Text => TextField(name, field.isOptional)
       case DataType.Point => PointField(name, field.isOptional)
       case DataType.Boolean => PointField(name, field.isOptional)
-      case DataType.Json => JsonField(name, field.isOptional)
       case DataType.Hierarchy =>
         val hierarchyField = field.asInstanceOf[HierarchyField]
         HierarchyField(name, hierarchyField.innerType, hierarchyField.levels, hierarchyField.isOptional)
@@ -131,11 +128,6 @@ case class BooleanField(override val name: String, override val isOptional: Bool
 
 }
 
-case class JsonField(override val name: String, override val isOptional: Boolean = false)
-  extends Field {
-  override val dataType = DataType.Json
-
-}
 
 trait NestedField extends Field {
   val innerType: DataType
@@ -249,7 +241,6 @@ object AbstractSchema {
     String -> StringRelSet,
     Text -> Set(Relation.contains),
     Bag -> Set(Relation.contains),
-    Json -> (BasicRelSet ++ StringRelSet),
     Hierarchy -> Set()
   )
 
