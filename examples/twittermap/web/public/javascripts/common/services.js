@@ -48,7 +48,7 @@ angular.module('cloudberry.common', [])
 
     var countRequest = JSON.stringify({
       dataset: "twitter.ds_tweet",
-      global:
+      global: {
         globalAggregate: {
           field: "*",
           apply: {
@@ -91,7 +91,7 @@ angular.module('cloudberry.common', [])
 
       return [
         {
-          field: "geo." + spatialField,
+          field: "geo_tag." + spatialField,
           relation: "in",
           values: parameters.geoIds
         }, {
@@ -158,7 +158,7 @@ angular.module('cloudberry.common', [])
           filter: getFilter(parameters, defaultNonSamplingDayRange),
           group: {
             by: [{
-              field: "geo"
+              field: "geo",
               apply: {
                 name: "level",
                 args: {
