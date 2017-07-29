@@ -171,6 +171,7 @@ object TestQuery {
     selectValues = Seq(literacy),
     as = Seq(Field.as(literacy, "literacy")))
 
+
   val lookupPopulationByState = LookupStatement(
     sourceKeys = Seq(Field("state", DataType.Number)),
     dataset = PopulationDataSet,
