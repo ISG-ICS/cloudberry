@@ -128,7 +128,6 @@ case class BooleanField(override val name: String, override val isOptional: Bool
 
 }
 
-
 trait NestedField extends Field {
   val innerType: DataType
 }

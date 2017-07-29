@@ -172,17 +172,5 @@ object QueryValidator {
     requireOrThrow(values.forall(_.isInstanceOf[String]), s"the ${relation} on text type requires string parameters.")
   }
 
-  def validateJsonRelation(relation: Relation, values: Seq[Any]): Unit = {
-    relation match  {
-      case Relation.inRange =>
-        if (values.size != 2) throw new QueryParsingException(s"the relation: ${relation} require two parameters")
-      case Relation.in =>
-        if (values.length == 0) throw new QueryParsingException(s"the relation: ${relation} require more than one parameters")
-      case Relation.matches | Relation.!= =>
-        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
-      case _ =>
-        if (values.size != 1) throw new QueryParsingException(s"relation: $relation require one parameter")
-    }
-  }
 
 }

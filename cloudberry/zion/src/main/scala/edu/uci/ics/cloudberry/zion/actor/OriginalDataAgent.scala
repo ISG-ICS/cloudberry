@@ -45,24 +45,20 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     */
   override protected def estimate(query: Query): Option[JsValue] = {
     if (estimable(query)) {
-      println("estimate: " + Query.toString())
       val second = new Duration(lastCount.till, DateTime.now).getStandardSeconds
       val count = lastCount.count + second * lastCount.ratePerSecond
       val tag = query.globalAggr.get.aggregate.as
       Some(JsArray(Seq(Json.obj(tag.name -> JsNumber(count.toLong)))))
     } else {
-      println("estimate: None" + Query.toString())
       None
     }
   }
 
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
-      println("maitanance: ODA: " + newCount.toString())
       lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
       context.parent ! NewStats(dbName, newCount.count)
     case UpdateStats =>
-      println("maitanance: ODA: " + UpdateStats.toString())
       collectStats(lastCount.till)
   }
 
@@ -76,7 +72,6 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     val filter = FilterStatement(temporalSchema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
     val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
-    println("ODA: collectStats: postQuery")
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporalSchema)))
       .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
       .pipeTo(self)

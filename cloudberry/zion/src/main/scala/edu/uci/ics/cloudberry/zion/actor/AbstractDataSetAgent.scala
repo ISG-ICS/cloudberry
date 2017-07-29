@@ -56,7 +56,6 @@ abstract class AbstractDataSetAgent(val dbName: String,
         case None =>
           //TODO should ask the MetaActor about other required schemas.
           conn.postQuery(queryParser.generate(query, Map(dbName -> schema))) pipeTo sender()
-        //          conn.postQuery(queryParser.generate(query, Map(dbName -> schema))) pipeTo sender()
       }
   }
 

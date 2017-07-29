@@ -4,7 +4,6 @@ import edu.uci.ics.cloudberry.zion.model.schema.{GeoCellThousandth, _}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.Json
 
-
 object TestQuery {
 
   DateTimeZone.setDefault(DateTimeZone.UTC)
@@ -13,7 +12,6 @@ object TestQuery {
   val PopulationDataSet = PopulationDataStore.DatasetName
   val literacyDataSet = LiteracyDataStore.DatasetName
   val twitterSchema = TwitterDataStore.TwitterSchema
-  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
   val populationSchema = PopulationDataStore.PopulationSchema
   val literacySchema = LiteracyDataStore.LiteracySchema
   val startTime = "2016-01-01T00:00:00.000Z"
@@ -72,7 +70,6 @@ object TestQuery {
   val zikaStats = Stats(zikaHalfInterval.getStart, zikaHalfInterval.getEnd, zikaHalfInterval.getEnd, 50)
 
   val zikaCreateQuery = Query(TwitterDataSet, filter = Seq(zikaFilter))
-  val zikaCreateQueryForSQL = Query(TwitterDataSetForSQL, filter = Seq(zikaFilter))
   val zikaHalfYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), twitterSchema, zikaHalfInterval, zikaStats)
 
   val intFilter = FilterStatement(id, None, Relation.==, intValues)
@@ -89,7 +86,7 @@ object TestQuery {
   val bySecond = ByStatement(createAt, Some(secondInterval), Some(Field.as(secondInterval(createAt), "sec")))
   val minuteInterval = Interval(TimeUnit.Minute)
   val byMinute = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "min")))
-  val byMinuteForSparkSql, byMinuteForSql = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "minute")))
+  val byMinuteForSparkSql = ByStatement(createAt, Some(Interval(TimeUnit.Minute)), Some(Field.as(minuteInterval(createAt), "minute")))
   val hourInterval = Interval(TimeUnit.Hour)
   val byHour = ByStatement(createAt, Some(Interval(TimeUnit.Hour)), Some(Field.as(hourInterval(createAt), "hour")))
   val dayInterval = Interval(TimeUnit.Day)
@@ -128,9 +125,11 @@ object TestQuery {
   )
 
   val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
+  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
   val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
   val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
   val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
+  val zikaCreateQueryForSQL = Query(TwitterDataSetForSQL, filter = Seq(zikaFilter))
   val groupPopulationSumForSQL = GroupStatement(
     bys = Seq(byGeoState),
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
