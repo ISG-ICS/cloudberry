@@ -47,8 +47,8 @@ angular.module('cloudberry.common', [])
     var ws = new WebSocket(cloudberryConfig.ws);
 
     var countRequest = JSON.stringify({
-      dataset: "twitter_ds_tweet",
-      global: {
+      dataset: "twitter.ds_tweet",
+      global:
         globalAggregate: {
           field: "*",
           apply: {
@@ -91,7 +91,7 @@ angular.module('cloudberry.common', [])
 
       return [
         {
-          field: "geo_tag." + spatialField,
+          field: "geo." + spatialField,
           relation: "in",
           values: parameters.geoIds
         }, {
