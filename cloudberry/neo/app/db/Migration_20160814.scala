@@ -15,12 +15,12 @@ private[db] class Migration_20160814() {
       case sql: SQLConn =>
         conn.postControl {
           s"""
-             |drop table if exists  `berry.meta`;
              |create table if not exists `berry.meta` (
              |`name` varchar(255) not null,
-             |`schema` json default null,
-             |`dataInterval` json default null,
-             |`stats` json default null,
+             |`schema` json not null,
+             |`dataInterval` json not null,
+             |`stats` json not null,
+             |`stats.createTime` varchar(255) not null,
              |primary key(`name`)
              |)
              |""".stripMargin

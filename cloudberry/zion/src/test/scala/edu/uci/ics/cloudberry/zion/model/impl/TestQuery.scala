@@ -124,16 +124,6 @@ object TestQuery {
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
   )
 
-  val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
-  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
-  val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
-  val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
-  val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
-  val zikaCreateQueryForSQL = Query(TwitterDataSetForSQL, filter = Seq(zikaFilter))
-  val groupPopulationSumForSQL = GroupStatement(
-    bys = Seq(byGeoState),
-    aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
-  )
 
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
   val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
@@ -1056,14 +1046,24 @@ object TestQuery {
        |}
     """.stripMargin)
 
+  val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
+  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
+  val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
+  val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
+  val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
+  val zikaCreateQueryForSQL = Query(TwitterDataSetForSQL, filter = Seq(zikaFilter))
+  val groupPopulationSumForSQL = GroupStatement(
+    bys = Seq(byGeoState),
+    aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
+  )
+
+  def twitterFieldForSQL(field: String): Field = twitterSchemaForSQL.fieldMap(field)
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 
   def unifyNewLine(string: String): String = string.replaceAll("\\r?\\n", "\n")
 
   def twitterField(field: String): Field = twitterSchema.fieldMap(field)
-
-  def twitterFieldForSQL(field: String): Field = twitterSchemaForSQL.fieldMap(field)
 
   def populationField(field: String): Field = populationSchema.fieldMap(field)
 

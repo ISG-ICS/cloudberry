@@ -8,8 +8,8 @@ object TwitterDataStoreForSQL {
   val TwitterSchemaForSQL = Schema("twitter_ds_tweet",
                                       Seq(
                                         TimeField("create_at"),
-                                        TextField("hashtags"),
-                                        TextField("user_mentions"),
+                                        BagField("hashtags", DataType.String, true),
+                                        BagField("user_mentions", DataType.Number, true),
                                         TextField("lang"),
                                         NumberField("id"),
                                         NumberField("is_retweet"),

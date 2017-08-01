@@ -21,16 +21,14 @@
         "datatype" : "Boolean"
       }, {
         "name" : "hashtags",
-        "isOptional" : true,
-        "datatype" : "Json"
+        "innerType": "String",
+        "isOptional": true,
+        "datatype" : "Bag"
       }, {
         "name" : "user_mentions",
-        "isOptional" : true,
-        "datatype" : "Json"
-      }, {
-        "name" : "geo_tag",
-        "isOptional" : false,
-        "datatype" : "Json"
+        "innerType": "String",
+        "isOptional": true,
+        "datatype" : "Bag"
       }],
       "measurement" : [ {
         "name" : "text",
@@ -53,13 +51,93 @@
         "isOptional" : false,
         "datatype" : "Number"
       }, {
-        "name" : "user",
+        "name" : "user.lang",
         "isOptional" : false,
-        "datatype" : "Json"
+        "datatype" : "String"
       }, {
-        "name" : "place",
+        "name" : "user.id",
         "isOptional" : false,
-        "datatype" : "Json"
+        "datatype" : "Number"
+      }, {
+        "name" : "user.name",
+        "isOptional" : false,
+        "datatype" : "String"
+      }, {
+        "name" : "user.screen_name",
+        "isOptional" : false,
+        "datatype" : "String"
+      }, {
+        "name" : "user.location",
+        "isOptional" : false,
+        "datatype" : "String"
+      }, {
+        "name" : "user.create_at",
+        "isOptional" : false,
+        "datatype" : "Time"
+      }, {
+        "name" : "user.description",
+        "isOptional" : false,
+        "datatype" : "Text"
+      }, {
+        "name" : "user.friends_count",
+        "isOptional" : false,
+        "datatype" : "Number"
+      }, {
+        "name" : "user.statues_count",
+        "isOptional" : false,
+        "datatype" : "Number"
+      }, {
+        "name" : "place.bounding_box",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "place.country",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "place.country_code",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "place.full_name",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "place.name",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "place.id",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "place.type",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "geo_tag.stateID",
+        "isOptional" : true,
+        "datatype" : "Number"
+      }, {
+        "name" : "geo_tag.countyID",
+        "isOptional" : true,
+        "datatype" : "Number"
+      }, {
+        "name" : "geo_tag.cityID",
+        "isOptional" : true,
+        "datatype" : "Number"
+      }, {
+        "name" : "geo_tag.stateName",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "geo_tag.countyName",
+        "isOptional" : true,
+        "datatype" : "String"
+      }, {
+        "name" : "geo_tag.cityName",
+        "isOptional" : true,
+        "datatype" : "String"
       } ],
       "primaryKey" : [ "id" ],
       "timeField" : "create_at"

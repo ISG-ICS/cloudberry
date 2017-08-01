@@ -32,7 +32,7 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select day(t.`create_at`) as `day`,count(*) as `count`
+        """|select date(t.`create_at`) as `day`,count(*) as `count`
            |from `twitter_ds_tweet` t
            |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
            |group by `day`
@@ -202,7 +202,7 @@ class SQLGeneratorTest extends Specification {
         """|select max(`count`) as `max` from
            |(select t.`hashtags` as `hashtags`,count(*) as `count`
            |from(
-           |select json_extract(`hashtags`, concat('$[', idx, ']')) as hashtags
+           |select json_extract(`hashtags`, concat('$[', idx, ']')) as `hashtags`
            |from(
            | select t.`hashtags` as `hashtags`
            |from `twitter_ds_tweet` t
@@ -345,7 +345,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select `hashtags` as `tag`,count(*) as `count`
           |from(
-          |select json_extract(`hashtags`, concat('$[', idx, ']')) as hashtags
+          |select json_extract(`hashtags`, concat('$[', idx, ']')) as `hashtags`
           |from(
           | select t.`hashtags` as `hashtags`
           |from `twitter_ds_tweet` t
@@ -450,7 +450,7 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select day(t.`create_at`) as `day`,count(*) as `count`
+          |select date(t.`create_at`) as `day`,count(*) as `count`
           |from `twitter_ds_tweet` t
           |group by `day`
           | """.stripMargin.trim)
