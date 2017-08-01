@@ -332,8 +332,10 @@ class SQLGenerator extends IQLGenerator {
         val values = filter.values.map(_.asInstanceOf[String])
         s"""$fieldExpr!="${values(0)}""""
       }
-      case Relation.contains => ???
-
+      case Relation.contains => {
+        val values = filter.values.map(_.asInstanceOf[String])
+        s"lower($fieldExpr) ${fullTextContains} '%${values(0)}%'"
+      }
     }
   }
 
