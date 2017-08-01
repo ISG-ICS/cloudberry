@@ -124,7 +124,6 @@ object TestQuery {
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
   )
 
-
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
   val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
