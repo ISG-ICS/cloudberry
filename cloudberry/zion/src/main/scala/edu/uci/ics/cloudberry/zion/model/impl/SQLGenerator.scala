@@ -341,12 +341,12 @@ class SQLGenerator extends IQLGenerator {
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
     val wordsArr = ArrayBuffer[String]()
-    filter.values.foreach(w => wordsArr += "%" + w + "%")
+    filter.values.foreach(w => wordsArr += w.toString)
     val sb = new StringBuilder
     for (i <- 0 until (wordsArr.length - 1)){
-      sb.append(s"lower($fieldExpr) ${fullTextContains} '${wordsArr(i)}' and ")
+      sb.append(s"match($fieldExpr) against ('${wordsArr(i)}' in boolean mode) and ") //"like" syntax in mysql
     }
-    sb.append(s"lower($fieldExpr) ${fullTextContains} '${wordsArr(wordsArr.length - 1)}'")
+    sb.append(s"match($fieldExpr) against ('${wordsArr(wordsArr.length - 1)}' in boolean mode)")
     sb.toString()
   }
 

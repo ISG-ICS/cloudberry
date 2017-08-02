@@ -61,7 +61,7 @@ class SQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """|select hour(t.`create_at`) as `hour`,count(*) as `count`
            |from `twitter_ds_tweet` t
-           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
            |group by `hour`
            |""".stripMargin.trim)
     }
@@ -91,7 +91,7 @@ class SQLGeneratorTest extends Specification {
            |from(
            | select t.`hashtags` as `hashtags`
            |from `twitter_ds_tweet` t
-           |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+           |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
            |) ta join (select 0 as idx union select 1 as idx union select 2 as idx union select 3 as idx union select 4 as idx union select 5 as idx union select 6 as idx union select 7 as idx union select 8 as idx union select 9 as idx union select 10 as idx union select 11 as idx union select 12 as idx union select 13 as idx union select 14 as idx union select 15 as idx union select 16 as idx union select 17 as idx union select 18 as idx union select 19 as idx union select 20 as idx union select 21 as idx union select 22 as idx union select 23 as idx union select 24 as idx) as indexes where json_extract(`hashtags`, concat('$[', idx, ']')) is not null ) t group by `hashtags`
            |order by count(*) desc
            |limit 10""".stripMargin.trim)
@@ -206,7 +206,7 @@ class SQLGeneratorTest extends Specification {
            |from(
            | select t.`hashtags` as `hashtags`
            |from `twitter_ds_tweet` t
-           |where t.`hashtags` is not null and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+           |where t.`hashtags` is not null and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
            |) ta join (select 0 as idx union select 1 as idx union select 2 as idx union select 3 as idx union select 4 as idx union select 5 as idx union select 6 as idx union select 7 as idx union select 8 as idx union select 9 as idx union select 10 as idx union select 11 as idx union select 12 as idx union select 13 as idx union select 14 as idx union select 15 as idx union select 16 as idx union select 17 as idx union select 18 as idx union select 19 as idx union select 20 as idx union select 21 as idx union select 22 as idx union select 23 as idx union select 24 as idx) as indexes where json_extract(`hashtags`, concat('$[', idx, ']')) is not null ) t group by `hashtags`
            |order by count(*) desc
            |limit 10) t""".stripMargin.trim)
@@ -232,7 +232,7 @@ class SQLGeneratorTest extends Specification {
         """select t.`geo_tag.stateID` as `state`,sum(l0.`population`) as `sum`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `state`""".stripMargin.trim
       )
     }
@@ -288,7 +288,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select hour(t.`create_at`) as `hour`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `hour`
           |""".stripMargin.trim)
     }
@@ -317,7 +317,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select hour(t.`create_at`) as `hour`,t.`geo_tag.stateID` as `state`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
           |group by `hour`,`state`
           | """.stripMargin.trim)
     }
@@ -330,7 +330,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user.id` as `user.id`
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
           |order by t.`create_at` desc
           |limit 100
           | """.stripMargin.trim)
@@ -349,7 +349,7 @@ class SQLGeneratorTest extends Specification {
           |from(
           | select t.`hashtags` as `hashtags`
           |from `twitter_ds_tweet` t
-          |where t.`hashtags` is not null and lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%' and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+          |where t.`hashtags` is not null and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
           |) ta join (select 0 as idx union select 1 as idx union select 2 as idx union select 3 as idx union select 4 as idx union select 5 as idx union select 6 as idx union select 7 as idx union select 8 as idx union select 9 as idx union select 10 as idx union select 11 as idx union select 12 as idx union select 13 as idx union select 14 as idx union select 15 as idx union select 16 as idx union select 17 as idx union select 18 as idx union select 19 as idx union select 20 as idx union select 21 as idx union select 22 as idx union select 23 as idx union select 24 as idx) as indexes where json_extract(`hashtags`, concat('$[', idx, ']')) is not null ) t group by `hashtags`
           |order by count(*) desc
           |limit 10
@@ -427,7 +427,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select *
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |limit 10
           | """.stripMargin.trim)
     }
@@ -496,7 +496,7 @@ class SQLGeneratorTest extends Specification {
           |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |""".stripMargin.trim
       )
     }
@@ -516,7 +516,7 @@ class SQLGeneratorTest extends Specification {
           |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,l0.`population` as `population`,l0.`stateID` as `stateID`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |""".stripMargin.trim
       )
     }
@@ -544,7 +544,7 @@ class SQLGeneratorTest extends Specification {
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
           |left outer join `twitter.US_literacy` l1 on l1.`stateID` = t.`geo_tag.stateID`
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |""".stripMargin.trim
       )
     }
@@ -567,7 +567,7 @@ class SQLGeneratorTest extends Specification {
           |from (
           |select t.`geo_tag.stateID` as `state`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`""".stripMargin.trim
@@ -591,7 +591,7 @@ class SQLGeneratorTest extends Specification {
           |from (
           |select t.`geo_tag.stateID` as `state`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
@@ -619,7 +619,7 @@ class SQLGeneratorTest extends Specification {
           |select t.`geo_tag.stateID` as `state`,min(l0.`population`) as `min`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_literacy` ll0 on ll0.`stateID` = tt.`state`
@@ -643,7 +643,7 @@ class SQLGeneratorTest extends Specification {
           |from (
           |select t.`geo_tag.stateID` as `state`
           |from `twitter_ds_tweet` t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`) t
@@ -668,7 +668,7 @@ class SQLGeneratorTest extends Specification {
           |select t.`geo_tag.stateID` as `state`,avg(t.`lang_len`) as `avgLangLen`
           |from (select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,length(lang) as `lang_len`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
           |from `twitter_ds_tweet` t) t
-          |where lower(t.`text`) like '%zika%' and lower(t.`text`) like '%virus%'
+          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`

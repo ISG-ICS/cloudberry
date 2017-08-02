@@ -1,15 +1,12 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.schema.TimeField
-import play.api.libs.ws.WSResponse
+import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.libs.json.{Json, _}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.Breaks.{break, breakable}
 import java.sql.{Connection, DriverManager}
-import java.io.InputStream
 import java.util.Date
-
 import java.text.SimpleDateFormat
 
 
@@ -21,9 +18,6 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   val passwd = param("passwd")
   Class.forName(driver)
   val connection: Connection = DriverManager.getConnection(urlConn, user, passwd)
-  val stream: InputStream = getClass.getResourceAsStream("/ddl/berry.json")
-  val source = scala.io.Source.fromInputStream(stream).getLines.mkString
-  val berry: JsValue = Json.parse(source)
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val statement = connection.createStatement
 
@@ -65,8 +59,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
             try {
               rsJson = rsJson ++ Json.obj(columnLabel -> Json.parse(str))
             } catch {
-              case string =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
+              case _ => rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
             }
           case _ => breakable {
             break
@@ -76,11 +69,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
       }
       qJsonArray = qJsonArray :+ rsJson
     }
-    if (qJsonArray == JsArray() && query.contains("berry.meta")) {
-      Future(berry)
-    } else {
-      Future(Json.toJson(qJsonArray))
-    }
+    Future(Json.toJson(qJsonArray))
   }
 
   def postControl(query: String) = {
