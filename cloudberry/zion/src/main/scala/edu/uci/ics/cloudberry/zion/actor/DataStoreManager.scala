@@ -259,6 +259,8 @@ class DataStoreManager(metaDataset: String,
     val fixEndFilter = FilterStatement(schema.timeField, None, Relation.<, Seq(TimeField.TimeFormat.print(now)))
     val newCreateQuery = create.query.copy(filter = fixEndFilter +: create.query.filter)
     val queryString = managerParser.generate(create.copy(query = newCreateQuery), Map(create.query.dataset -> sourceInfo.schema))
+    println()
+    println("DSM: postControl")
     conn.postControl(queryString) onSuccess {
       case true =>
         collectStats(create.dataset, resultSchema) onComplete {
@@ -291,6 +293,8 @@ class DataStoreManager(metaDataset: String,
     val cardinalityQuery = Query(dataset, globalAggr = Some(GlobalAggregateStatement(AggregateStatement(schema.fieldMap("*"), Count, Field.as(Min(timeField), "count")))))
     val parser = queryGenFactory()
     import TimeField.TimeFormat
+    println()
+    println("DSA: 3 postQuerys, min, max, count")
     for {
       minTime <- conn.postQuery(parser.generate(minTimeQuery, Map(dataset -> schema))).map(r => (r \\ "min").head.as[String])
       maxTime <- conn.postQuery(parser.generate(maxTimeQuery, Map(dataset -> schema))).map(r => (r \\ "max").head.as[String])

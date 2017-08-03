@@ -78,6 +78,8 @@ class SQLGenerator extends IQLGenerator {
   }
 
   def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
+    println()
+    println("query is : " + query.toString)
     val result = query match {
       case q: Query => parseQuery(q, schemaMap)
       case q: CreateView => parseCreate(q, schemaMap)

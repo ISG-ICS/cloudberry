@@ -14,9 +14,9 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   val driver = "com.mysql.jdbc.Driver"
   val urlConn: String = url.split("\\?")(0)
   val param: Map[String, String] = url.split("\\?")(1).split("&").map(t => (t.split("=")(0) -> t.split("=")(1))).toMap
-  val user = param("user")
+  val user = param("user")  //TODO: GET USER & PASSWD, FUNCTION
   val passwd = param("passwd")
-  Class.forName(driver)
+  Class.forName(driver) //TODO: remove?
   val connection: Connection = DriverManager.getConnection(urlConn, user, passwd)
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val statement = connection.createStatement
@@ -26,6 +26,9 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   def postQuery(query: String): Future[JsValue] = {
+    println()
+    println("postQuery: ")
+    println(query)
     val result = statement.executeQuery(query)
     val resultMetadata = result.getMetaData
     val columnCount = resultMetadata.getColumnCount
@@ -73,6 +76,9 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   def postControl(query: String) = {
+    println()
+    println("postControl")
+    println(query)
     query.split(";\n").foreach {
       case q => statement.executeUpdate(q)
     }

@@ -72,6 +72,8 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     val filter = FilterStatement(temporalSchema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
     val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
+    println()
+    println("ODA: postQuery")
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporalSchema)))
       .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
       .pipeTo(self)
