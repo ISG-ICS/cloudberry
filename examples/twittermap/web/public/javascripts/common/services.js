@@ -244,6 +244,7 @@ angular.module('cloudberry.common', [])
         keywords: [],
         timeInterval: {
           start: startDate,
+          end: new Date()
         },
         timeBin : "day",
         geoLevel: "state",
