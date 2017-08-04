@@ -41,7 +41,6 @@ angular.module('cloudberry.common', [])
   })
   .service('cloudberry', function($http, $timeout, $location, cloudberryConfig) {
     var startDate = config.startDate;
-    var endDate = config.endDate;
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
@@ -245,7 +244,6 @@ angular.module('cloudberry.common', [])
         keywords: [],
         timeInterval: {
           start: startDate,
-          end: endDate ?  endDate : new Date()
         },
         timeBin : "day",
         geoLevel: "state",
