@@ -27,29 +27,16 @@ class SQLGenerator extends IQLGenerator {
     */
   case class ParsedResult(strs: Seq[String], exprMap: Map[String, FieldExpr])
 
-
   protected val sourceVar: String = "t"
-
-  protected val jsonVar: String = "$"
-
   protected val appendVar: String = "ta"
-
   protected val unnestVar: String = "unnest"
-
   protected val lookupVar: String = "l"
-
   protected val groupVar: String = "*"
-
   protected val groupedLookupVar: String = "ll"
-
   protected val groupedLookupSourceVar: String = "tt"
-
   protected val globalAggrVar: String = "*"
 
-
   protected val quote = "`"
-
-  val round: String = "round"
 
   val hour: String = "hour"
   val second: String = "second"
@@ -58,6 +45,7 @@ class SQLGenerator extends IQLGenerator {
   val month: String = "month"
   val year: String = "year"
 
+  val round: String = "round"
   val stringContains: String = "like"
   val fullTextMatch = Seq("match", "against")
   val truncate: String = "truncate"

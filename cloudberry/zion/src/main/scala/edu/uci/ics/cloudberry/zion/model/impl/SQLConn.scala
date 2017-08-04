@@ -10,9 +10,6 @@ import scala.util.control.Breaks.{break, breakable}
 import java.sql.{Connection, DriverManager}
 import java.util.Date
 
-import scala.collection.mutable.ListBuffer
-
-
 
 class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   val urlConn = getUrlParam("url", url)
