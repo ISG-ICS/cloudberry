@@ -74,8 +74,6 @@ abstract class AbstractUpdatableDataSetAgent(override val dbName: String,
 
   protected def processUpdate(statement: String): Unit = {
     val curSender = sender()
-    println()
-    println("ADSA: postControl")
     conn.postControl(statement).map { result =>
       curSender ! result
       self ! DoneUpdate

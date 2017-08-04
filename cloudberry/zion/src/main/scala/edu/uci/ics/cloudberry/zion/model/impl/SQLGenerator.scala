@@ -2,6 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
+import org.joda.time.DateTime
 import play.api.libs.json._
 
 import scala.collection.mutable
@@ -57,8 +58,11 @@ class SQLGenerator extends IQLGenerator {
   val month: String = "month"
   val year: String = "year"
 
-  val fullTextContains: String = "like"
-  val contains: String = "contains"
+  val stringContains: String = "like"
+  val fullTextMatch = Seq("match", "against")
+  val truncate: String = "truncate"
+  val geoAsText: String = "st_astext"
+  val pointGetCoord = Seq("st_x", "st_y")
 
   val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "count",
@@ -67,6 +71,16 @@ class SQLGenerator extends IQLGenerator {
     Avg -> "avg",
     Sum -> "sum"
   )
+
+  protected def timeUnitFuncMap(unit: TimeUnit.Value): String = unit match {
+    case TimeUnit.Second => "second"
+    case TimeUnit.Minute => "minute"
+    case TimeUnit.Hour => "hour"
+    case TimeUnit.Day => "date"
+    case TimeUnit.Month => "month"
+    case TimeUnit.Year => "year"
+    case _ => throw new QueryParsingException(s"No implementation is provided for timeunit function ${unit.toString}")
+  }
 
   protected def getAggregateStr(aggregate: AggregateFunc): String = {
     aggregateFuncMap.get(aggregate) match {
@@ -78,8 +92,6 @@ class SQLGenerator extends IQLGenerator {
   }
 
   def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
-    println()
-    println("query is : " + query.toString)
     val result = query match {
       case q: Query => parseQuery(q, schemaMap)
       case q: CreateView => parseCreate(q, schemaMap)
@@ -118,7 +130,7 @@ class SQLGenerator extends IQLGenerator {
     val ddl: String = genDDL(create.dataset, sourceSchema)
     val insert =
       s"""
-     |replace into $quote${create.dataset}$quote ()
+     |replace into $quote${create.dataset}$quote
      |(
      |${parseQuery(create.query, schemaMap)}
      |)
@@ -134,7 +146,7 @@ class SQLGenerator extends IQLGenerator {
     }
 
     val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
-      f => mkNestDDL(f.name, fieldType2ADMType(f) + (if (f.isOptional) " default null" else " not null"))
+      f => mkNestDDL(f.name, fieldType2MySQLType(f) + (if (f.isOptional) " default null" else " not null"))
     }
     s"""
        |create table if not exists $quote${name}$quote (
@@ -143,15 +155,15 @@ class SQLGenerator extends IQLGenerator {
       """.stripMargin
   }
 
-  protected def fieldType2ADMType(field: Field): String = {
+  protected def fieldType2MySQLType(field: Field): String = {
     field.dataType match {
-      case DataType.Number => "double"
+      case DataType.Number => "bigint"
       case DataType.Time => "datetime"
       case DataType.Point => "point"
       case DataType.Boolean => "tinyint"
       case DataType.String => "varchar(255)"
       case DataType.Text => "text"
-      case DataType.Bag => "text"
+      case DataType.Bag => ???
       case DataType.Hierarchy => ???
       case DataType.Record => ???
     }
@@ -164,7 +176,14 @@ class SQLGenerator extends IQLGenerator {
        |)""".stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord): String = {  //TODO: generalize?
+  def parseUpsert(q: UpsertRecord): String = {
+    q.dataset match {
+      case "berry.meta" => parseUpsertMeta(q)
+      case _ => ???  //TODO: general upsert
+    }
+  }
+
+  def parseUpsertMeta(q: UpsertRecord): String = {
     val records = q.records.value
     var queryResult = ArrayBuffer.empty[String]
     records.foreach {
@@ -227,7 +246,7 @@ class SQLGenerator extends IQLGenerator {
 
     val resultAfterFilter = parseFilter(query.filter, resultAfterUnnest.exprMap, unnestTests, queryBuilder)
 
-    val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap, unnestTests, queryBuilder)
+    val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap, queryBuilder)
 
     val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, queryBuilder)
 
@@ -307,8 +326,8 @@ class SQLGenerator extends IQLGenerator {
     filter.relation match {
       case Relation.inRange => {
         filter.field.dataType match{
-          case time: DataType.Time.type =>  //TODO: a new dateTime format for SQL?
-            s"$fieldExpr >= '${filter.values(0).toString.replace("T"," ").replace("Z","")}' and $fieldExpr < '${filter.values(1).toString.replace("T"," ").replace("Z","")}'"
+          case time: DataType.Time.type =>
+            s"$fieldExpr >= '${TimeField.TimeFormatForSQL.print(new DateTime(filter.values(0).toString))}' and $fieldExpr < '${TimeField.TimeFormatForSQL.print(new DateTime(filter.values(1).toString))}'"
           case others =>
             s"$fieldExpr >= '${filter.values(0)}' and $fieldExpr < '${filter.values(1)}'"
         }
@@ -316,7 +335,7 @@ class SQLGenerator extends IQLGenerator {
       case _ => {
         filter.field.dataType match {
           case time: DataType.Time.type =>
-            s"$fieldExpr ${filter.relation} '${filter.values(0).toString.replace("T"," ").replace("Z","")}'"
+            s"$fieldExpr ${filter.relation} '${TimeField.TimeFormatForSQL.print(new DateTime(filter.values(0).toString))}'"
           case _ =>
             s"$fieldExpr ${filter.relation} '${filter.values(0)}'"
         }
@@ -336,7 +355,7 @@ class SQLGenerator extends IQLGenerator {
       }
       case Relation.contains => {
         val values = filter.values.map(_.asInstanceOf[String])
-        s"lower($fieldExpr) ${fullTextContains} '%${values(0)}%'"
+        s"lower($fieldExpr) ${stringContains} '%${values(0)}%'"
       }
     }
   }
@@ -344,11 +363,8 @@ class SQLGenerator extends IQLGenerator {
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
     val wordsArr = ArrayBuffer[String]()
     filter.values.foreach(w => wordsArr += w.toString)
-    val sb = new StringBuilder
-    for (i <- 0 until (wordsArr.length - 1)){
-      sb.append(s"match($fieldExpr) against ('${wordsArr(i)}' in boolean mode) and ") //"like" syntax in mysql
-    }
-    sb.append(s"match($fieldExpr) against ('${wordsArr(wordsArr.length - 1)}' in boolean mode)")
+    val sb = new StringBuilder(s"${fullTextMatch(0)}($fieldExpr) ${fullTextMatch(1)} ('")
+    sb.append(wordsArr.mkString("+"," +","") + s"' in boolean mode)")
     sb.toString()
   }
 
@@ -403,37 +419,24 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  protected def parseGeoCell(scale: Double, fieldExpr: String, dataType: DataType.Value): String = ???
+  protected def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
+    s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
+  }
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
-                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
-    val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr]
-    val unnestTestStrs = new ListBuffer[String]
-    val unnestStr = unnest.zipWithIndex.map {
-      case (unnest, id) =>
-        val expr = exprMap(unnest.field.name)
-        val newExpr = s"${quote}hashtags$quote"
-        producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
-        if (unnest.field.isOptional) {
-          unnestTestStrs += s"${expr.refExpr} is not null"
-        }
-        s"" //literal view is not allowed in MySQL
-    }.mkString("\n")
-    appendIfNotEmpty(queryBuilder, unnestStr)
-
-    ParsedResult(unnestTestStrs.toSeq, (producedExprs ++= exprMap).result().toMap)
+                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = { //TODO: unnest
+    ParsedResult((new ListBuffer[String]), exprMap)
   }
 
   protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String = {
     groupBy.funcOpt match {
       case Some(func) =>
         func match {
-          case interval: Interval =>
-            interval.unit match {
-              case TimeUnit.Day => s"date($fieldExpr)"
-              case _ => s"${interval.unit}($fieldExpr)"
-            }
-          case bin: Bin => ???
+          case interval: Interval => s"${timeUnitFuncMap(interval.unit)}($fieldExpr)"
+          case GeoCellTenth => parseGeoCell(1, fieldExpr, groupBy.field.dataType)
+          case GeoCellHundredth => parseGeoCell(2, fieldExpr, groupBy.field.dataType)
+          case GeoCellThousandth => parseGeoCell(3, fieldExpr, groupBy.field.dataType)
+          case bin: Bin => s"$round($fieldExpr/${bin.scale})*${bin.scale}"
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
         }
       case None => fieldExpr
@@ -442,7 +445,6 @@ class SQLGenerator extends IQLGenerator {
 
   private def parseGroupby(groupOpt: Option[GroupStatement],
                            exprMap: Map[String, FieldExpr],
-                           unnestTestStrs: Seq[String],
                            queryBuilder: StringBuilder): ParsedResult = {
     groupOpt match {
       case Some(group) =>
@@ -453,23 +455,10 @@ class SQLGenerator extends IQLGenerator {
           val groupExpr = parseGroupByFunc(by, fieldExpr.refExpr)
           val newExpr = s"$quote${as.name}$quote"
           producedExprs += (as.name -> FieldExpr(newExpr, groupExpr))
-
-          if (newExpr == s"${quote}hashtag${quote}" || newExpr == s"${quote}tag${quote}" || newExpr == s"${quote}hashtags${quote}"){
-            s"${quote}hashtags${quote}"
-          } else {
-            s"$newExpr"
-          }
+          s"$newExpr"
         }
 
-        val groupStr = unnestTestStrs.isEmpty match {
-              case true =>
-                s"group by ${groupStrs.mkString(",")}"
-              case false =>
-                val head = s""") ${appendVar} join """
-                val number = (0 to 24).mkString("(select ", " as idx union select ", " as idx) as indexes")
-                val tail = s""" where json_extract(${quote}hashtags${quote}, concat('$jsonVar[', idx, ']')) is not null"""
-                (head + number + tail + s" ) $sourceVar group by ${groupStrs.mkString(",")}").stripMargin
-        }
+        val groupStr = s"group by ${groupStrs.mkString(",")}"
 
         appendIfNotEmpty(queryBuilder, groupStr)
 
@@ -493,6 +482,7 @@ class SQLGenerator extends IQLGenerator {
         } else {
           ParsedResult(Seq.empty, producedExprs.result().toMap)
         }
+
       case None => ParsedResult(Seq(""), exprMap)
     }
   }
@@ -536,24 +526,15 @@ class SQLGenerator extends IQLGenerator {
         }
 
         val newExprMap = producedExprs.result().toMap
-        val projectStr =
-          if (query.hasUnnest) {
-            val unnestHead =
-              s"""
-              |from(
-              |select json_extract(${quote}hashtags${quote}, concat('${jsonVar}[', idx, ']')) as ${quote}hashtags${quote}
-              |from(
-              |""".stripMargin
-            parseProject(exprMap) + unnestHead + s" select t.`hashtags` as `hashtags`"
-          } else if (select.fields.isEmpty) {
-            if (query.hasGroup) {
-              parseProject(exprMap)
-            } else {
-              s"select *"
-            }
+        val projectStr = if (select.fields.isEmpty) {
+          if (query.hasUnnest || query.hasGroup) {
+            parseProject(exprMap)
           } else {
-            parseProject(newExprMap)
+            s"select *"
           }
+        } else {
+          parseProject(exprMap)
+        }
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, newExprMap)
 
@@ -575,11 +556,7 @@ class SQLGenerator extends IQLGenerator {
     }.map {
       case (field, expr) =>
         if (s"${expr.defExpr}" == s"$quote$second$quote" || s"${expr.defExpr}" == s"$quote$minute$quote" || s"${expr.defExpr}" == s"$quote$hour$quote" || s"${expr.defExpr}" == s"$quote$day$quote" || s"${expr.defExpr}" == s"$quote$month$quote" || s"${expr.defExpr}" == s"$quote$year$quote"){
-          if ( s"${expr.defExpr}" == s"$quote$day$quote" ) {
-            s"date($sourceVar.${quote}create_at${quote}) as ${quote}date${quote}"
-          } else {
-            s"${expr.defExpr}($sourceVar.${quote}create_at${quote}) as ${expr.defExpr}"
-          }
+          s"${expr.defExpr}($sourceVar.${quote}create_at${quote}) as ${expr.defExpr}"
         } else {
           s"${expr.defExpr} as $quote$field$quote"
         }

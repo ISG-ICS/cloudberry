@@ -24,8 +24,6 @@ class JSONParser extends IJSONParser {
     * Finally, calls [[QueryValidator]] to validate the correctness of this query.
     */
   override def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
-    println()
-    println("JP: json:"  + json.toString())
     val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
     val query = (json \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
@@ -34,10 +32,7 @@ class JSONParser extends IJSONParser {
       }
       case None => json.validate[UnresolvedQuery] match {
         case js: JsSuccess[UnresolvedQuery] => Seq(js.get)
-        case e: JsError =>
-          println("")
-          println("error!!!!!!!!!!!!!")
-          throw JsonRequestException(JsError.toJson(e).toString())
+        case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
       }
     }
     val resolvedQuery = query.map(resolve(_, schemaMap))

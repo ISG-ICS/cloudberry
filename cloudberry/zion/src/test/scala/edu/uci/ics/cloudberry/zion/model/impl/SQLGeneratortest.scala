@@ -38,6 +38,7 @@ class SQLGeneratorTest extends Specification {
            |group by `day`
            |""".stripMargin.trim)
     }
+
     //3
     "translate a simple query group by month" in {
       val filter = Seq(timeFilter)
@@ -61,7 +62,7 @@ class SQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """|select hour(t.`create_at`) as `hour`,count(*) as `count`
            |from `twitter_ds_tweet` t
-           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('+zika +virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
            |group by `hour`
            |""".stripMargin.trim)
     }
@@ -78,23 +79,9 @@ class SQLGeneratorTest extends Specification {
            |""".stripMargin.trim)
     }
 
-    //6
+    //6 //TODO: parseUnnest
     "translate a simple unnest query" in {
-      val filter = Seq(timeFilter, textFilter, stateFilter)
-      val group = GroupStatement(Seq(byHashTag), Seq(aggrCount))
-      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10byHashTag))
-      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """|select t.`hashtags` as `hashtags`,count(*) as `count`
-           |from(
-           |select json_extract(`hashtags`, concat('$[', idx, ']')) as `hashtags`
-           |from(
-           | select t.`hashtags` as `hashtags`
-           |from `twitter_ds_tweet` t
-           |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-           |) ta join (select 0 as idx union select 1 as idx union select 2 as idx union select 3 as idx union select 4 as idx union select 5 as idx union select 6 as idx union select 7 as idx union select 8 as idx union select 9 as idx union select 10 as idx union select 11 as idx union select 12 as idx union select 13 as idx union select 14 as idx union select 15 as idx union select 16 as idx union select 17 as idx union select 18 as idx union select 19 as idx union select 20 as idx union select 21 as idx union select 22 as idx union select 23 as idx union select 24 as idx) as indexes where json_extract(`hashtags`, concat('$[', idx, ']')) is not null ) t group by `hashtags`
-           |order by count(*) desc
-           |limit 10""".stripMargin.trim)
+      ok
     }
 
     //7
@@ -107,6 +94,7 @@ class SQLGeneratorTest extends Specification {
           |(select *
           |from `twitter_ds_tweet` t) t""".stripMargin)
     }
+
     //8
     "translate get min field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMin)
@@ -117,6 +105,7 @@ class SQLGeneratorTest extends Specification {
           |(select *
           |from `twitter_ds_tweet` t) t""".stripMargin)
     }
+
     //9
     "translate get max field value query without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrMax)
@@ -127,6 +116,7 @@ class SQLGeneratorTest extends Specification {
           |(select *
           |from `twitter_ds_tweet` t) t""".stripMargin)
     }
+
     //10
     "translate a count cardinality query with filter without group by" in {
       val filter = Seq(timeFilter)
@@ -139,6 +129,7 @@ class SQLGeneratorTest extends Specification {
           |from `twitter_ds_tweet` t
           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000') t""".stripMargin)
     }
+
     //11
     "translate a min cardinality query with filter without group by" in {
       val filter = Seq(timeFilter)
@@ -151,6 +142,7 @@ class SQLGeneratorTest extends Specification {
           |from `twitter_ds_tweet` t
           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000') t""".stripMargin)
     }
+
     //12
     "translate a count cardinality query with select" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
@@ -175,7 +167,6 @@ class SQLGeneratorTest extends Specification {
           |group by `minute`""".stripMargin.trim)
     }
 
-
     //14
     "translate a simple filter by time and group by time query max id" in {
       val filter = Seq(timeFilter)
@@ -190,26 +181,9 @@ class SQLGeneratorTest extends Specification {
           |group by `hour`""".stripMargin.trim)
     }
 
-    //15
+    //15 //TODO: parseUnnest
     "translate a max cardinality query with unnest with group by with select" in {
-
-      val filter = Seq(textFilter, timeFilter, stateFilter)
-      val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
-      val group = GroupStatement(Seq(byHashTag), Seq(aggrCount))
-      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
-      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """|select max(`count`) as `max` from
-           |(select t.`hashtags` as `hashtags`,count(*) as `count`
-           |from(
-           |select json_extract(`hashtags`, concat('$[', idx, ']')) as `hashtags`
-           |from(
-           | select t.`hashtags` as `hashtags`
-           |from `twitter_ds_tweet` t
-           |where t.`hashtags` is not null and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-           |) ta join (select 0 as idx union select 1 as idx union select 2 as idx union select 3 as idx union select 4 as idx union select 5 as idx union select 6 as idx union select 7 as idx union select 8 as idx union select 9 as idx union select 10 as idx union select 11 as idx union select 12 as idx union select 13 as idx union select 14 as idx union select 15 as idx union select 16 as idx union select 17 as idx union select 18 as idx union select 19 as idx union select 20 as idx union select 21 as idx union select 22 as idx union select 23 as idx union select 24 as idx) as indexes where json_extract(`hashtags`, concat('$[', idx, ']')) is not null ) t group by `hashtags`
-           |order by count(*) desc
-           |limit 10) t""".stripMargin.trim)
+      ok
     }
 
     //16
@@ -232,7 +206,7 @@ class SQLGeneratorTest extends Specification {
         """select t.`geo_tag.stateID` as `state`,sum(l0.`population`) as `sum`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`""".stripMargin.trim
       )
     }
@@ -265,6 +239,7 @@ class SQLGeneratorTest extends Specification {
           |group by `hour`
           |""".stripMargin.trim)
     }
+
     //19
     "translate a simple filter with string matches" in {
       val filter = Seq(langMatchFilter)
@@ -278,6 +253,7 @@ class SQLGeneratorTest extends Specification {
           |where t.`lang`="en"
           |group by `hour`""".stripMargin.trim)
     }
+
     //20
     "translate a text contain filter and group by time query" in {
       val filter = Seq(textFilter)
@@ -288,10 +264,11 @@ class SQLGeneratorTest extends Specification {
         """
           |select hour(t.`create_at`) as `hour`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `hour`
           |""".stripMargin.trim)
     }
+
     //21
     "translate a geo id set filter group by time query" in {
       val filter = Seq(stateFilter)
@@ -307,7 +284,7 @@ class SQLGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
-    //    22
+    //22
     "translate a text contain + time + geo id set filter and group by time + spatial cube" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val group = GroupStatement(Seq(byHour, byGeoState), Seq(aggrCount))
@@ -317,45 +294,32 @@ class SQLGeneratorTest extends Specification {
         """
           |select hour(t.`create_at`) as `hour`,t.`geo_tag.stateID` as `state`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+          |where match(t.`text`) against ('+zika +virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
           |group by `hour`,`state`
           | """.stripMargin.trim)
     }
-    //    23
+
+    //23
     "translate a text contain + time + geo id set filter and sample tweets" in {
       val filter = Seq(textFilter, timeFilter, stateFilter)
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, None, Some(selectRecent))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user.id` as `user.id`
+          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+          |where match(t.`text`) against ('+zika +virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
           |order by t.`create_at` desc
           |limit 100
           | """.stripMargin.trim)
     }
-    //24
+
+    //24 //TODO: parseUnnest
     "translate a text contain + time + geo id set filter and group by hashtags" in {
-      val filter = Seq(textFilter, timeFilter, stateFilter)
-      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select `hashtags` as `tag`,count(*) as `count`
-          |from(
-          |select json_extract(`hashtags`, concat('$[', idx, ']')) as `hashtags`
-          |from(
-          | select t.`hashtags` as `hashtags`
-          |from `twitter_ds_tweet` t
-          |where t.`hashtags` is not null and match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-          |) ta join (select 0 as idx union select 1 as idx union select 2 as idx union select 3 as idx union select 4 as idx union select 5 as idx union select 6 as idx union select 7 as idx union select 8 as idx union select 9 as idx union select 10 as idx union select 11 as idx union select 12 as idx union select 13 as idx union select 14 as idx union select 15 as idx union select 16 as idx union select 17 as idx union select 18 as idx union select 19 as idx union select 20 as idx union select 21 as idx union select 22 as idx union select 23 as idx union select 24 as idx) as indexes where json_extract(`hashtags`, concat('$[', idx, ']')) is not null ) t group by `hashtags`
-          |order by count(*) desc
-          |limit 10
-          | """.stripMargin.trim)
+      ok
     }
-    //    25
+
+    //25
     "translate a simple filter by time and group by time query min id" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrMin))
@@ -369,7 +333,8 @@ class SQLGeneratorTest extends Specification {
           |group by `hour`
           | """.stripMargin.trim)
     }
-    //    26
+
+    //26
     "translate a simple filter by time and group by time query sum id" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrSum))
@@ -383,7 +348,8 @@ class SQLGeneratorTest extends Specification {
           |group by `hour`
           |  """.stripMargin.trim)
     }
-    //    27
+
+    //27
     "translate a simple filter by time and group by time query avg id" in {
       val filter = Seq(timeFilter)
       val group = GroupStatement(Seq(byHour), Seq(aggrAvg))
@@ -397,28 +363,79 @@ class SQLGeneratorTest extends Specification {
           |group by `hour`
           | """.stripMargin.trim)
     }
-    // 28
+
+    //28
     "translate a text contain filter and group by geocell 10th" in {
-      ok
-    }
-    //29
-    "translate a text contain filter and group by geocell 100th" in {
-      ok
-    }
-    //30
-    "translate a text contain filter and group by geocell 1000th" in {
-      ok
-    }
-    //31
-    "translate a text contain filter and group by bin" in {
-      ok
-    }
-    //32
-    "translate a group by geocell without filter" in {
-      ok
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select st_astext(Point(truncate(st_x(t.`coordinate`),1),truncate(st_y(t.`coordinate`),1)))  as `cell`,count(*) as `count`
+          |from `twitter_ds_tweet` t
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |group by `cell`
+        """.stripMargin.trim)
     }
 
-    //    33
+    //29
+    "translate a text contain filter and group by geocell 100th" in {
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select st_astext(Point(truncate(st_x(t.`coordinate`),2),truncate(st_y(t.`coordinate`),2)))  as `cell`,count(*) as `count`
+          |from `twitter_ds_tweet` t
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |group by `cell`
+        """.stripMargin.trim)
+    }
+
+    //30
+    "translate a text contain filter and group by geocell 1000th" in {
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select st_astext(Point(truncate(st_x(t.`coordinate`),3),truncate(st_y(t.`coordinate`),3)))  as `cell`,count(*) as `count`
+          |from `twitter_ds_tweet` t
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |group by `cell`
+        """.stripMargin.trim)
+    }
+
+    //31
+    "translate a text contain filter and group by bin" in {
+      val filter = Seq(textFilter)
+      val group = GroupStatement(Seq(byBin), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select round(t.`geo_tag.stateID`/10)*10 as `state`,count(*) as `count`
+          |from `twitter_ds_tweet` t
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |group by `state`""".stripMargin.trim)
+    }
+
+    //32
+    "translate a group by geocell without filter" in {
+      val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+      val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select st_astext(Point(truncate(st_x(t.`coordinate`),3),truncate(st_y(t.`coordinate`),3)))  as `cell`,count(*) as `count`
+          |from `twitter_ds_tweet` t
+          |group by `cell`""".stripMargin.trim)
+    }
+
+    //33
     "translate a text contain filter and select 10" in {
       val filter = Seq(textFilter)
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, None, Some(selectTop10))
@@ -427,11 +444,12 @@ class SQLGeneratorTest extends Specification {
         """
           |select *
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |limit 10
           | """.stripMargin.trim)
     }
-    //    34
+
+    //34
     "translate group by second" in {
       val group = GroupStatement(Seq(bySecond), Seq(aggrCount))
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
@@ -443,6 +461,7 @@ class SQLGeneratorTest extends Specification {
           |group by `sec`
           | """.stripMargin.trim)
     }
+
     //35
     "translate group by day" in {
       val group = GroupStatement(Seq(byDay), Seq(aggrCount))
@@ -468,6 +487,7 @@ class SQLGeneratorTest extends Specification {
           |group by `month`
           | """.stripMargin.trim)
     }
+
     //37
     "translate group by year" in {
       val group = GroupStatement(Seq(byYear), Seq(aggrCount))
@@ -493,13 +513,13 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
+          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
-          |""".stripMargin.trim
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)""".stripMargin.trim
       )
     }
+
     //39
     "parseLookup should be able to handle multiple fields in the lookup statement" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -513,13 +533,14 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,l0.`population` as `population`,l0.`stateID` as `stateID`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
+          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,l0.`population` as `population`,l0.`stateID` as `stateID`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |""".stripMargin.trim
       )
     }
+
     //40
     "translate lookup multiple tables with one join key on each" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -540,18 +561,20 @@ class SQLGeneratorTest extends Specification {
         literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,l1.`literacy` as `literacy`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
+          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,l1.`literacy` as `literacy`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
           |left outer join `twitter.US_literacy` l1 on l1.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |""".stripMargin.trim
       )
     }
-    //41
+
+    //41 //TODO: parseUnnest
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
+
     //42
     "translate lookup inside group by state and count" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -567,12 +590,14 @@ class SQLGeneratorTest extends Specification {
           |from (
           |select t.`geo_tag.stateID` as `state`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`
           |) tt
-          |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`""".stripMargin.trim
+          |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
+          |""".stripMargin.trim
       )
     }
+
     //43
     "translate multiple lookups inside group by state and count" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -591,7 +616,7 @@ class SQLGeneratorTest extends Specification {
           |from (
           |select t.`geo_tag.stateID` as `state`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
@@ -599,6 +624,7 @@ class SQLGeneratorTest extends Specification {
           |""".stripMargin.trim
       )
     }
+
     //44
     "translate multiple lookups inside/outside group by state and aggregate population" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -619,13 +645,14 @@ class SQLGeneratorTest extends Specification {
           |select t.`geo_tag.stateID` as `state`,min(l0.`population`) as `min`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_literacy` ll0 on ll0.`stateID` = tt.`state`
           |""".stripMargin.trim
       )
     }
+
     //45
     "translate lookup inside group by state with global aggregate" in {
       val populationDataSet = PopulationDataStore.DatasetName
@@ -643,12 +670,11 @@ class SQLGeneratorTest extends Specification {
           |from (
           |select t.`geo_tag.stateID` as `state`
           |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`) t
-          |""".
-          stripMargin.trim
+          |""".stripMargin.trim
       )
     }
 
@@ -666,9 +692,9 @@ class SQLGeneratorTest extends Specification {
           |select tt.`state` as `state`,tt.`avgLangLen` as `avgLangLen`,ll0.`population` as `population`
           |from (
           |select t.`geo_tag.stateID` as `state`,avg(t.`lang_len`) as `avgLangLen`
-          |from (select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,length(lang) as `lang_len`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`user_mentions` as `user_mentions`,t.`place.type` as `place.type`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`,t.`hashtags` as `hashtags`
+          |from (select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,length(lang) as `lang_len`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
           |from `twitter_ds_tweet` t) t
-          |where match(t.`text`) against ('zika' in boolean mode) and match(t.`text`) against ('virus' in boolean mode)
+          |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`
           |) tt
           |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
@@ -680,7 +706,7 @@ class SQLGeneratorTest extends Specification {
 
   "SQLGenerator calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
-      val schema = parser.calcResultSchema(zikaCreateQuery, TwitterDataStoreForSQL.TwitterSchemaForSQL)
+      val schema = parser.calcResultSchema(zikaCreateQueryForSQL, TwitterDataStoreForSQL.TwitterSchemaForSQL)
       schema must_== TwitterDataStoreForSQL.TwitterSchemaForSQL
     }
     "return the aggregated schema for aggregation queries" in {
@@ -688,6 +714,53 @@ class SQLGeneratorTest extends Specification {
     }
   }
 
+  "SQLGenerator createView" should {
+    "generate the ddl for the twitter dataset" in {
+      val ddl = parser.generate(CreateView("zika", zikaCreateQueryForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      removeEmptyLine(ddl) must_== unifyNewLine(
+        """
+          |create table if not exists `zika` (
+          |  `place.full_name` varchar(255) default null,
+          |  `place.bounding_box` varchar(255) default null,
+          |  `place.country_code` varchar(255) default null,
+          |  `user.friends_count` bigint not null,
+          |  `user.description` text not null,
+          |  `favorite_count` bigint not null,
+          |  `geo_tag.countyID` bigint default null,
+          |  `user.location` varchar(255) not null,
+          |  `place.type` varchar(255) default null,
+          |  `geo_tag.cityName` varchar(255) default null,
+          |  `user.id` bigint not null,
+          |  `geo_tag.stateName` varchar(255) default null,
+          |  `geo_tag.cityID` bigint default null,
+          |  `is_retweet` bigint not null,
+          |  `text` text not null,
+          |  `user.screen_name` varchar(255) not null,
+          |  `retweet_count` bigint not null,
+          |  `place.country` varchar(255) default null,
+          |  `in_reply_to_user` bigint not null,
+          |  `user.statues_count` varchar(255) not null,
+          |  `id` bigint not null,
+          |  `coordinate` point default null,
+          |  `place.id` varchar(255) default null,
+          |  `in_reply_to_status` bigint not null,
+          |  `geo_tag.stateID` bigint default null,
+          |  `create_at` datetime not null,
+          |  `user.create_at` datetime not null,
+          |  `place.name` varchar(255) default null,
+          |  `lang` varchar(255) not null,
+          |  `user.lang` varchar(255) not null,
+          |  `user.name` varchar(255) not null,
+          |  `geo_tag.countyName` varchar(255) default null, primary key (`id`)
+          |);
+          |replace into `zika`
+          |(
+          |select *
+          |from `twitter_ds_tweet` t
+          |where match(t.`text`) against ('+zika' in boolean mode)
+          |)""".stripMargin.trim)
+    }
+  }
 
   "SQLGenerator deleteRecord" should {
     "generate the delete query " in {
