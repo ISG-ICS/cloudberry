@@ -20,7 +20,7 @@ private[db] class Migration_20160814() {
              |`schema` json not null,
              |`dataInterval` json not null,
              |`stats` json not null,
-             |`stats.createTime` varchar(255) not null,
+             |`stats.createTime` datetime not null,
              |primary key(`name`)
              |)
              |""".stripMargin
