@@ -252,14 +252,15 @@ class SQLGenerator extends IQLGenerator {
         val as = append.as
         producedExprs += append.as.name -> FieldExpr(s"$sourceVar.$quote${as.name}$quote", append.definition)
       }
+      producedExprs += s"$groupVar" -> FieldExpr(s"$groupVar", s"$sourceVar.$quote$groupVar$quote")
+      val selectStr = parseProject(producedExprs.result().toMap)
+      queryBuilder.insert(0, s"from ($selectStr\n")
+      queryBuilder.append(s") $sourceVar")
       exprMap.foreach {
         case (field, expr) =>
           producedExprs += field -> FieldExpr(s"${expr.refExpr}", s"$sourceVar.$quote$field$quote")
       }
       val newExprMap = producedExprs.result().toMap
-      val selectStr = parseProject(newExprMap)
-      queryBuilder.insert(0, s"from ($selectStr\n")
-      queryBuilder.append(s") $sourceVar")
       ParsedResult(Seq.empty, newExprMap)
     }
   }
@@ -507,7 +508,7 @@ class SQLGenerator extends IQLGenerator {
         } else {
           select.fields.foreach {
             case AllField =>
-              producedExprs ++= exprMap
+              producedExprs += s"$groupVar" -> exprMap(groupVar)
             case field =>
               producedExprs += field.name -> exprMap(field.name)
           }
@@ -539,9 +540,7 @@ class SQLGenerator extends IQLGenerator {
   }
 
   private def parseProject(exprMap: Map[String, FieldExpr]): String = {
-    exprMap.filter {
-      case (field, expr) => field != "*" && expr.refExpr != sourceVar
-    }.map {
+    exprMap.map {
       case (field, expr) =>
         s"${expr.defExpr} as $quote$field$quote"
     }.mkString("select ", ",", "")

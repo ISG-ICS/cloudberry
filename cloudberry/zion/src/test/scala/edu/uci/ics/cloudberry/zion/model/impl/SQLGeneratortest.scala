@@ -513,7 +513,7 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
+          |select t.`*` as `*`,l0.`population` as `population`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
           |where match(t.`text`) against ('+zika +virus' in boolean mode)""".stripMargin.trim
@@ -533,7 +533,7 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,l0.`population` as `population`,l0.`stateID` as `stateID`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
+          |select t.`*` as `*`,l0.`population` as `population`,l0.`stateID` as `stateID`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
           |where match(t.`text`) against ('+zika +virus' in boolean mode)
@@ -561,7 +561,7 @@ class SQLGeneratorTest extends Specification {
         literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,l0.`population` as `population`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,l1.`literacy` as `literacy`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
+          |select t.`*` as `*`,l0.`population` as `population`,l1.`literacy` as `literacy`
           |from `twitter_ds_tweet` t
           |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
           |left outer join `twitter.US_literacy` l1 on l1.`stateID` = t.`geo_tag.stateID`
@@ -692,7 +692,7 @@ class SQLGeneratorTest extends Specification {
           |select tt.`state` as `state`,tt.`avgLangLen` as `avgLangLen`,ll0.`population` as `population`
           |from (
           |select t.`geo_tag.stateID` as `state`,avg(t.`lang_len`) as `avgLangLen`
-          |from (select t.`place.full_name` as `place.full_name`,t.`place.bounding_box` as `place.bounding_box`,t.`place.country_code` as `place.country_code`,t.`user.friends_count` as `user.friends_count`,length(lang) as `lang_len`,t.`user.description` as `user.description`,t.`favorite_count` as `favorite_count`,t.`geo_tag.countyID` as `geo_tag.countyID`,t.`user.location` as `user.location`,t.`place.type` as `place.type`,t.`geo_tag.cityName` as `geo_tag.cityName`,t.`user.id` as `user.id`,t.`geo_tag.stateName` as `geo_tag.stateName`,t.`geo_tag.cityID` as `geo_tag.cityID`,t.`is_retweet` as `is_retweet`,t.`text` as `text`,t.`user.screen_name` as `user.screen_name`,t.`retweet_count` as `retweet_count`,t.`place.country` as `place.country`,t.`in_reply_to_user` as `in_reply_to_user`,t.`user.statues_count` as `user.statues_count`,t.`id` as `id`,t.`coordinate` as `coordinate`,t.`place.id` as `place.id`,t.`in_reply_to_status` as `in_reply_to_status`,t.`geo_tag.stateID` as `geo_tag.stateID`,t.`create_at` as `create_at`,t.`user.create_at` as `user.create_at`,t.`place.name` as `place.name`,t.`lang` as `lang`,t.`user.lang` as `user.lang`,t.`user.name` as `user.name`,t.`geo_tag.countyName` as `geo_tag.countyName`
+          |from (select length(lang) as `lang_len`,t.`*` as `*`
           |from `twitter_ds_tweet` t) t
           |where match(t.`text`) against ('+zika +virus' in boolean mode)
           |group by `state`
