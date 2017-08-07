@@ -34,7 +34,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     case _ => postGeneralQuery(query)
   }
 
-  def postGeneralQuery(query: String): Future[JsValue] = {
+  private def postGeneralQuery(query: String): Future[JsValue] = {
     val result = statement.executeQuery(query)
     val resultMetadata = result.getMetaData
     val columnCount = resultMetadata.getColumnCount
@@ -42,41 +42,41 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     while (result.next) {
       var columnId = 1
       var rsJson: JsObject = Json.obj()
-      while (columnId <= columnCount) {
-        val columnLabel = resultMetadata.getColumnLabel(columnId)
-        val value = result.getObject(columnLabel)
-        breakable {
+      breakable {
+        while (columnId <= columnCount) {
+          val columnLabel = resultMetadata.getColumnLabel(columnId)
+          val value = result.getObject(columnLabel)
           if (value == null) {
             break
           }
-        }
-        value match {
-          case int: Integer =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.toInt))
-          case boolean: java.lang.Boolean =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean))
-          case date: Date =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(date.getTime)))
-          case long: java.lang.Long =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.toLong))
-          case double: java.lang.Double =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.toDouble))
-          case float: java.lang.Float =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
-          case str: String =>
-            rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
-          case _ => breakable {
-            break
+          value match {
+            case int: Integer =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.toInt))
+            case boolean: java.lang.Boolean =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean))
+            case date: Date =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(date.getTime)))
+            case long: java.lang.Long =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.toLong))
+            case double: java.lang.Double =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.toDouble))
+            case float: java.lang.Float =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
+            case str: String =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
+            case _ => breakable {
+              break
+            }
           }
+          columnId += 1
         }
-        columnId += 1
       }
       qJsonArray = qJsonArray :+ rsJson
     }
     Future(Json.toJson(qJsonArray))
   }
 
-  def postBerryQuery(query: String): Future[JsValue] = {
+  private def postBerryQuery(query: String): Future[JsValue] = {
     val result = statement.executeQuery(query)
     var qJsonArray: JsArray = Json.arr()
     while (result.next) {

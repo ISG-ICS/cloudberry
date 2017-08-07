@@ -521,7 +521,7 @@ class SQLGenerator extends IQLGenerator {
             s"select *"
           }
         } else {
-          parseProject(exprMap)
+          parseProject(producedExprs.result().toMap)
         }
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, newExprMap)
@@ -543,11 +543,7 @@ class SQLGenerator extends IQLGenerator {
       case (field, expr) => field != "*" && expr.refExpr != sourceVar
     }.map {
       case (field, expr) =>
-        if (s"${expr.defExpr}" == s"$quote$second$quote" || s"${expr.defExpr}" == s"$quote$minute$quote" || s"${expr.defExpr}" == s"$quote$hour$quote" || s"${expr.defExpr}" == s"$quote$day$quote" || s"${expr.defExpr}" == s"$quote$month$quote" || s"${expr.defExpr}" == s"$quote$year$quote"){
-          s"${expr.defExpr}($sourceVar.${quote}create_at${quote}) as ${expr.defExpr}"
-        } else {
-          s"${expr.defExpr} as $quote$field$quote"
-        }
+        s"${expr.defExpr} as $quote$field$quote"
     }.mkString("select ", ",", "")
   }
 
