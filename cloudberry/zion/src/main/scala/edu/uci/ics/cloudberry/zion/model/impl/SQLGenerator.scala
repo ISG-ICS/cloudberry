@@ -183,7 +183,7 @@ class SQLGenerator extends IQLGenerator {
         val schema: JsValue = (record \ "schema").as[JsValue]
         val dataInterval: JsValue = (record \ "dataInterval").as[JsValue]
         val stats: JsValue = (record \ "stats").as[JsValue]
-        var createTime: String = TimeField.TimeFormatForSQL.print(new DateTime((record \ "stats" \ "createTime").as[String]))
+        val createTime: String = TimeField.TimeFormatForSQL.print(new DateTime((record \ "stats" \ "createTime").as[String]))
         queryResult += (s"('${name}','${schema}','${dataInterval}','${stats}','${createTime}')")
     }
     s"""

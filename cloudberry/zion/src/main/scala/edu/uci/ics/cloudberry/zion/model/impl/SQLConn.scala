@@ -44,10 +44,8 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
         while (columnId <= columnCount) {
           val columnLabel = resultMetadata.getColumnLabel(columnId)
           val value = result.getObject(columnLabel)
-          if (value == null) {
-            break
-          }
           value match {
+            case null => break
             case int: Integer =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.toInt))
             case boolean: java.lang.Boolean =>
