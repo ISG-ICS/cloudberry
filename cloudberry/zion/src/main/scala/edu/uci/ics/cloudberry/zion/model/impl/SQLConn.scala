@@ -12,17 +12,15 @@ import java.util.Date
 
 
 class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
-  val urlConn = getUrlParam("url", url)
-  val user = getUrlParam("user", url)
-  val passwd = getUrlParam("passwd", url)
+  val (urlConn, user, passwd) = parseMySQLParam(url)
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val connection: Connection = DriverManager.getConnection(urlConn, user, passwd)
   val statement = connection.createStatement
 
-  def getUrlParam(param: String, url: String): String = {
+  private def parseMySQLParam(url: String) = {
     val paramMap: Map[String, String] = url.split("\\?")(1).split("&")
-      .map(t => (t.split("=")(0) -> t.split("=")(1))).toMap + ("url" -> url.split("\\?")(0))
-    paramMap(param)
+      .map(t => (t.split("=")(0) -> t.split("=")(1))).toMap
+    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"))
   }
 
   def post(query: String): Future[WSResponse] = {

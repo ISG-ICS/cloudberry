@@ -48,8 +48,11 @@ class SQLGenerator extends IQLGenerator {
   val round: String = "round"
   val stringContains: String = "like"
   val fullTextMatch = Seq("match", "against")
+  //a number truncated to a certain number of decimal places.
   val truncate: String = "truncate"
+  //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
   val geoAsText: String = "st_astext"
+  //X/Y-coordinate value for the Point object.
   val pointGetCoord = Seq("st_x", "st_y")
 
   val aggregateFuncMap: Map[AggregateFunc, String] = Map(
