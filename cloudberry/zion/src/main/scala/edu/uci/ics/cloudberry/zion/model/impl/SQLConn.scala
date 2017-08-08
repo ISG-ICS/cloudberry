@@ -37,39 +37,33 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     val resultMetadata = result.getMetaData
     val columnCount = resultMetadata.getColumnCount
     var qJsonArray: JsArray = Json.arr()
-    breakable {
-      result.next match {
-        case true =>
-          var columnId = 1
-          var rsJson: JsObject = Json.obj()
-          breakable {
-            (columnId <= columnCount) match {
-              case true => columnId += 1
-              case _ => break
-            }
-            val columnLabel = resultMetadata.getColumnLabel(columnId)
-            val value = result.getObject(columnLabel)
-            value match {
-              case int: Integer =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.toInt))
-              case boolean: java.lang.Boolean =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean))
-              case date: Date =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(date.getTime)))
-              case long: java.lang.Long =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.toLong))
-              case double: java.lang.Double =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.toDouble))
-              case float: java.lang.Float =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
-              case str: String =>
-                rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
-              case null => break
-              case _ => break
-            }
+    while (result.next) {
+      var columnId = 0
+      var rsJson: JsObject = Json.obj()
+      breakable {
+        for (columnId <- 1 to columnCount) {
+          val columnLabel = resultMetadata.getColumnLabel(columnId)
+          val value = result.getObject(columnLabel)
+          value match {
+            case int: Integer =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(int.toInt))
+            case boolean: java.lang.Boolean =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean))
+            case date: Date =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(date.getTime)))
+            case long: java.lang.Long =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.toLong))
+            case double: java.lang.Double =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.toDouble))
+            case float: java.lang.Float =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
+            case str: String =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
+            case null => break
+            case _ => break
           }
-          qJsonArray = qJsonArray :+ rsJson
-        case _ => break
+        }
+        qJsonArray = qJsonArray :+ rsJson
       }
     }
     Future(Json.toJson(qJsonArray))
