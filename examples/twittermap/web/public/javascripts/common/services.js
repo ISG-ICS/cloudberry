@@ -90,12 +90,8 @@ angular.module('cloudberry.common', [])
       queryStartDate.setDate(queryStartDate.getDate() - maxDay);
       queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
 
-      return [
+      var filter = [
         {
-          field: "geo_tag." + spatialField,
-          relation: "in",
-          values: parameters.geoIds
-        }, {
           field: "create_at",
           relation: "inRange",
           values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
@@ -105,6 +101,16 @@ angular.module('cloudberry.common', [])
           values: keywords
         }
       ];
+      if (parameters.geoIds.length <= 2000){
+        filter.push(
+          {
+            field: "geo_tag." + spatialField,
+            relation: "in",
+            values: parameters.geoIds
+          }
+        );
+      }
+      return filter;
     }
 
     function byGeoRequest(parameters) {
