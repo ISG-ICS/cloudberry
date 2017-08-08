@@ -59,7 +59,6 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
             case str: String =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
-            case null => break
             case _ => break
           }
         }
