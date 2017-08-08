@@ -31,7 +31,7 @@ class SQLGenerator extends IQLGenerator {
   protected val appendVar: String = "ta"
   protected val unnestVar: String = "unnest"
   protected val lookupVar: String = "l"
-  protected val groupVar: String = "*"
+  protected val allFieldVar: String = "*"
   protected val groupedLookupVar: String = "ll"
   protected val groupedLookupSourceVar: String = "tt"
   protected val globalAggrVar: String = "*"
@@ -48,7 +48,7 @@ class SQLGenerator extends IQLGenerator {
   val round: String = "round"
   val stringContains: String = "like"
   val fullTextMatch = Seq("match", "against")
-  //a number truncated to a certain number of decimal places.
+  //a number truncated to a certain number of decimal places
   val truncate: String = "truncate"
   //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
   val geoAsText: String = "st_astext"
@@ -146,6 +146,10 @@ class SQLGenerator extends IQLGenerator {
       """.stripMargin
   }
 
+  /**
+    * Convert middleware datatype to MySQL datatype
+    * @param field
+    */
   protected def fieldType2MySQLType(field: Field): String = {
     field.dataType match {
       case DataType.Number => "bigint"
@@ -169,7 +173,7 @@ class SQLGenerator extends IQLGenerator {
 
   def parseUpsert(q: UpsertRecord): String = {
     q.dataset match {
-      case "berry.meta" => parseUpsertMeta(q)
+      case metaName => parseUpsertMeta(q)
       case _ => ???  //TODO: general upsert
     }
   }
@@ -255,7 +259,7 @@ class SQLGenerator extends IQLGenerator {
         val as = append.as
         producedExprs += append.as.name -> FieldExpr(s"$sourceVar.$quote${as.name}$quote", append.definition)
       }
-      producedExprs += s"$groupVar" -> FieldExpr(s"$groupVar", s"$sourceVar.$quote$groupVar$quote")
+      producedExprs += s"$allFieldVar" -> FieldExpr(s"$allFieldVar", s"$sourceVar.$quote$allFieldVar$quote")
       val selectStr = parseProject(producedExprs.result().toMap)
       queryBuilder.insert(0, s"from ($selectStr\n")
       queryBuilder.append(s") $sourceVar")
@@ -381,7 +385,7 @@ class SQLGenerator extends IQLGenerator {
                                    fieldExpr: String): String = {
     def aggFuncExpr(aggFunc: String): String = {
       if (aggr.field.name.equals("*")) {
-        s"$aggFunc($groupVar)"
+        s"$aggFunc($allFieldVar)"
       } else {
         s"$aggFunc($fieldExpr)"
       }
@@ -411,12 +415,10 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  protected def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
-    s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
-  }
-
+  //TODO: unnest
   private def parseUnnest(unnest: Seq[UnnestStatement],
-                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = { //TODO: unnest
+                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
+    //return the empty result & exprMap for next step's process.
     ParsedResult((new ListBuffer[String]), exprMap)
   }
 
@@ -511,7 +513,7 @@ class SQLGenerator extends IQLGenerator {
         } else {
           select.fields.foreach {
             case AllField =>
-              producedExprs += s"$groupVar" -> exprMap(groupVar)
+              producedExprs += s"$allFieldVar" -> exprMap(allFieldVar)
             case field =>
               producedExprs += field.name -> exprMap(field.name)
           }
@@ -581,6 +583,19 @@ class SQLGenerator extends IQLGenerator {
       case None =>
         ParsedResult(Seq.empty, exprMap)
     }
+  }
+
+  /**
+    * Process POINT type of MySQL:
+    * ST_ASTEXT: return POINT field as text to avoid messy code. https://dev.mysql.com/doc/refman/5.7/en/gis-format-conversion-functions.html
+    * ST_X, ST_Y: get X/Y-coordinate of Point. https://dev.mysql.com/doc/refman/5.6/en/gis-point-property-functions.html
+    * truncate: a number truncated to a certain number of decimal places, mainly used in groupBy. http://www.w3resource.com/mysql/mathematical-functions/mysql-truncate-function.php
+    * @param scale
+    * @param fieldExpr
+    * @param dataType
+    */
+  protected def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
+    s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
   }
 
   /**

@@ -4,23 +4,24 @@ import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
 import edu.uci.ics.cloudberry.zion.model.schema.TimeField
 import play.api.libs.ws.WSResponse
 import play.api.libs.json.{Json, _}
+import play.Logger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.Breaks.{break, breakable}
-import java.sql.{Connection, DriverManager}
-import java.util.Date
+import java.sql.{Connection, DriverManager, _}
+import java.lang._
 
 
 class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
-  val (urlConn, user, passwd) = parseMySQLParam(url)
+  val (urlConn, user, passwd, metaName) = parseMySQLParam(url)
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val connection: Connection = DriverManager.getConnection(urlConn, user, passwd)
   val statement = connection.createStatement
 
   private def parseMySQLParam(url: String) = {
     val paramMap: Map[String, String] = url.split("\\?")(1).split("&")
-      .map(t => (t.split("=")(0) -> t.split("=")(1))).toMap
-    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"))
+      .map(param => (param.split("=")(0) -> param.split("=")(1))).toMap
+    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"), paramMap("metaName"))
   }
 
   def post(query: String): Future[WSResponse] = {
@@ -28,7 +29,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   def postQuery(query: String): Future[JsValue] = query match {
-    case berry if query.contains("`berry.meta`") => postBerryQuery(query)
+    case berry if query.contains(metaName) => postBerryQuery(query)
     case _ => postGeneralQuery(query)
   }
 
@@ -51,15 +52,29 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               rsJson = rsJson ++ Json.obj(columnLabel -> JsBoolean(boolean))
             case date: Date =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(date.getTime)))
-            case long: java.lang.Long =>
+            case time: Time =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(time.getTime)))
+            case timestamp: Timestamp =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(timestamp.getTime)))
+            case long: Long =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(long.toLong))
-            case double: java.lang.Double =>
+            case double: Double =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(double.toDouble))
-            case float: java.lang.Float =>
+            case float: Float =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(float.asInstanceOf[BigDecimal]))
+            case short: Short =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(short.toInt))
+            case decimal: BigDecimal =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(decimal))
             case str: String =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(str))
-            case _ => break
+            case blob: Blob => //large data
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(blob.toString))
+            case byte: Byte =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> byte.toByte)
+            case _ =>
+              Logger.warn(s"type of value $value is not detectd")
+              break
           }
         }
         qJsonArray = qJsonArray :+ rsJson

@@ -394,7 +394,7 @@ class SQLGeneratorTest extends Specification {
         """.stripMargin.trim)
     }
 
-    //30
+    //30  //TODO: return array instead of text. e.g., return [1,2] instead of "POINT(1,2)"
     "translate a text contain filter and group by geocell 1000th" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
