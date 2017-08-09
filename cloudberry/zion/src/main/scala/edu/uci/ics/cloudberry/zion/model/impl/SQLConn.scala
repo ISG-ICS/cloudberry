@@ -13,7 +13,7 @@ import java.lang._
 
 
 class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
-  val (urlConn, user, passwd, metaName) = parseMySQLParam(url)
+  val (urlConn, user, passwd) = parseMySQLParam(url)
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val connection: Connection = DriverManager.getConnection(urlConn, user, passwd)
   val statement = connection.createStatement
@@ -21,7 +21,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   private def parseMySQLParam(url: String) = {
     val paramMap: Map[String, String] = url.split("\\?")(1).split("&")
       .map(param => (param.split("=")(0) -> param.split("=")(1))).toMap
-    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"), paramMap("metaName"))
+    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"))
   }
 
   def post(query: String): Future[WSResponse] = {
@@ -29,7 +29,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   def postQuery(query: String): Future[JsValue] = query match {
-    case berry if query.contains(metaName) => postBerryQuery(query)
+    case berry if query.contains(SQLConn.metaName) => postBerryQuery(query)
     case _ => postGeneralQuery(query)
   }
 
@@ -108,4 +108,8 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     Future(true)
   }
 
+}
+
+object SQLConn {
+  val metaName = "berry.meta"
 }

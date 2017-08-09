@@ -38,13 +38,6 @@ class SQLGenerator extends IQLGenerator {
 
   protected val quote = "`"
 
-  val hour: String = "hour"
-  val second: String = "second"
-  val minute: String = "minute"
-  val day: String = "date"
-  val month: String = "month"
-  val year: String = "year"
-
   val round: String = "round"
   val stringContains: String = "like"
   val fullTextMatch = Seq("match", "against")
@@ -172,9 +165,9 @@ class SQLGenerator extends IQLGenerator {
   }
 
   def parseUpsert(q: UpsertRecord): String = {
-    q.dataset match {
-      case metaName => parseUpsertMeta(q)
-      case _ => ???  //TODO: general upsert
+    q.dataset.equals(SQLConn.metaName) match {
+      case true => parseUpsertMeta(q)
+      case _ => ??? //TODO: general upsert
     }
   }
 
@@ -371,11 +364,7 @@ class SQLGenerator extends IQLGenerator {
         if (filter.values.size != 2) throw new QueryParsingException(s"relation: ${filter.relation} require two parameters")
         s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
       case Relation.in =>
-        if (!filter.values.isEmpty) {
-          s"$fieldExpr in ( ${filter.values.mkString(",")} )"
-        } else {
-          s"true"
-        }
+        s"$fieldExpr in ( ${filter.values.mkString(",")} )"
       case _ =>
         s"$fieldExpr ${filter.relation} ${filter.values(0)}"
     }
@@ -394,8 +383,7 @@ class SQLGenerator extends IQLGenerator {
     aggr.func match {
       case topK: TopK => ???
       case DistinctCount => ???
-      case _ =>
-        aggFuncExpr(getAggregateStr(aggr.func))
+      case _ => aggFuncExpr(getAggregateStr(aggr.func))
     }
   }
 
@@ -404,10 +392,7 @@ class SQLGenerator extends IQLGenerator {
       ParsedResult(Seq.empty, exprMap)
     } else {
       val filterStrs = filters.map { filter =>
-        filter.field.dataType match {
-          case _ =>
-            parseFilterRelation(filter, exprMap(filter.field.name).refExpr)
-        }
+        parseFilterRelation(filter, exprMap(filter.field.name).refExpr)
       }
       val filterStr = (unnestTestStrs ++ filterStrs).mkString("where ", " and ", "")
       appendIfNotEmpty(queryBuilder, filterStr)
