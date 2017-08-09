@@ -38,17 +38,17 @@ class SQLGenerator extends IQLGenerator {
 
   protected val quote = "`"
 
-  val round: String = "round"
-  val stringContains: String = "like"
-  val fullTextMatch = Seq("match", "against")
+  protected val round: String = "round"
+  protected val stringContains: String = "like"
+  protected val fullTextMatch = Seq("match", "against")
   //a number truncated to a certain number of decimal places
-  val truncate: String = "truncate"
+  protected val truncate: String = "truncate"
   //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
-  val geoAsText: String = "st_astext"
+  protected val geoAsText: String = "st_astext"
   //X/Y-coordinate value for the Point object.
-  val pointGetCoord = Seq("st_x", "st_y")
+  protected val pointGetCoord = Seq("st_x", "st_y")
 
-  val aggregateFuncMap: Map[AggregateFunc, String] = Map(
+  protected val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "count",
     Max -> "max",
     Min -> "min",
@@ -88,27 +88,8 @@ class SQLGenerator extends IQLGenerator {
     s"$result"
   }
 
-  def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
-    val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
-    val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
-
-    schemaMap.filter{ case(name, schema) =>
-      schema.isInstanceOf[Schema]
-    }.foreach{ case(name, schema) =>
-      temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
-    }
-
-    schemaMap.filter{ case(name, schema) =>
-      schema.isInstanceOf[LookupSchema]
-    }.foreach{ case(name, schema) =>
-      lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
-    }
-
-    (temporalSchemaMap.toMap, lookupSchemaMap.toMap)
-  }
-
   def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
-    val (temporalSchemaMap, lookupSchemaMap) = splitSchemaMap(schemaMap)
+    val (temporalSchemaMap, lookupSchemaMap) = GeneratorUtil.splitSchemaMap(schemaMap)
     val sourceSchema = temporalSchemaMap(create.query.dataset)
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(create.dataset, sourceSchema)

@@ -16,7 +16,7 @@ class AQLGenerator extends IQLGenerator {
     * @return AQL Query
     **/
   override def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
-    val (temporalSchemaMap, lookupSchemaMap) = AsterixQueryGenerator.splitSchemaMap(schemaMap)
+    val (temporalSchemaMap, lookupSchemaMap) = GeneratorUtil.splitSchemaMap(schemaMap)
     query match {
       case q: Query =>
         validateQuery(q)
