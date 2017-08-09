@@ -118,14 +118,14 @@ class DataStoreManager(metaDataset: String,
       flushMetaData()
 
     case newStats: NewStats =>
-      if(metaData.contains(newStats.dbName)) {
+      if (metaData.contains(newStats.dbName)) {
         val originInfo = metaData.get(newStats.dbName).head
         val updatedCardinality = originInfo.stats.cardinality + newStats.additionalCount
         val updatedStats = originInfo.stats.copy(cardinality = updatedCardinality)
         val updatedInfo = originInfo.copy(stats = updatedStats)
         metaData.put(newStats.dbName, updatedInfo)
         flushMetaData()
-      } else{
+      } else {
         log.error("Database not existed in meta table: " + newStats.dbName)
       }
 
@@ -139,8 +139,8 @@ class DataStoreManager(metaDataset: String,
     val dataSetName = registerTable.dataset
     val dataSetRawSchema = registerTable.schema
 
-    if(!metaData.contains(dataSetName)){
-      try{
+    if (!metaData.contains(dataSetName)) {
+      try {
         dataSetRawSchema.toResolved match {
           case schema: Schema =>
             collectStats(dataSetName, schema) onComplete {
@@ -161,10 +161,9 @@ class DataStoreManager(metaDataset: String,
             val currentDateTime = new DateTime()
             val fakeStats = Stats(currentDateTime, currentDateTime, currentDateTime, 1000)
             val fakeStartDate = new DateTime(1970, 1, 1, 0, 0, 0, 0)
-            val fakeEndDate = new DateTime(Long.MaxValue)
+            val fakeEndDate = new DateTime(2048, 1, 1, 0, 0, 0, 0)
             val fakeInterval = new Interval(fakeStartDate, fakeEndDate)
             val registerDataSetInfo = DataSetInfo(dataSetName, None, lookupSchema, fakeInterval, fakeStats)
-
             metaData.put(dataSetName, registerDataSetInfo)
             flushMetaData()
             sender ! DataManagerResponse(true, "Register Finished: lookup dataset " + dataSetName + " has successfully registered.\n")
@@ -176,7 +175,7 @@ class DataStoreManager(metaDataset: String,
         case NonFatal(e) => sender ! DataManagerResponse(false, "Register Denied. " + e.getMessage)
       }
 
-    } else{
+    } else {
       sender ! DataManagerResponse(false, "Register Denied: dataset " + dataSetName + " already existed.\n")
     }
   }
@@ -184,31 +183,31 @@ class DataStoreManager(metaDataset: String,
   private def deregisterDataSet(sender: ActorRef, dropTable: Deregister): Unit = {
     val dropTableName = dropTable.dataset
 
-    if(metaData.contains(dropTableName)){
+    if (metaData.contains(dropTableName)) {
 
       metaData.remove(dropTableName)
-      context.child("data-" + dropTableName).foreach( child => child ! PoisonPill)
+      context.child("data-" + dropTableName).foreach(child => child ! PoisonPill)
       val metaRecordFilter = FilterStatement(DataSetInfo.MetaSchema.fieldMap("name"), None, Relation.matches, Seq(dropTableName))
       metaActor ! DeleteRecord(metaDataset, Seq(metaRecordFilter))
 
-      metaData.filter{ case(name, info) =>
-        info.createQueryOpt.exists( query => query.dataset == dropTableName)
-      }.foreach { case(name, info) =>
+      metaData.filter { case (name, info) =>
+        info.createQueryOpt.exists(query => query.dataset == dropTableName)
+      }.foreach { case (name, info) =>
         metaActor ! DropView(name)
-        context.child("data-" + name).foreach( child => child ! PoisonPill)
+        context.child("data-" + name).foreach(child => child ! PoisonPill)
       }
 
       // Before retrieve subset of metaData using .filter or .filterNot, etc.,
       // Use .toMap method to change metaData into immutable map
       // Otherwise when metaData is clear, no information will be retained.
-      val newMetaData = metaData.toMap.filterNot{ case(name, info) =>
+      val newMetaData = metaData.toMap.filterNot { case (name, info) =>
         info.createQueryOpt.exists(q => q.dataset == dropTableName)
       }
       metaData.clear()
       metaData ++= newMetaData
 
       sender ! DataManagerResponse(true, "Deregister Finished: dataset " + dropTableName + " has successfully removed.\n")
-    } else{
+    } else {
       sender ! DataManagerResponse(false, "Deregister Denied: dataset " + dropTableName + " does not exist in database.\n")
     }
   }
@@ -350,16 +349,16 @@ object DataStoreManager {
 
   case class Register(dataset: String, schema: UnresolvedSchema)
 
-  object Register{
+  object Register {
     implicit val registerReader: Reads[Register] = {
       (__ \ "dataset").read[String] and
-      (__ \ "schema").read[UnresolvedSchema]
+        (__ \ "schema").read[UnresolvedSchema]
     }.apply(Register.apply _)
   }
 
   case class Deregister(dataset: String)
 
-  object Deregister{
+  object Deregister {
     implicit val deregisterReader: Reads[Deregister] =
       (__ \ "dataset").read[String].map { dataset => Deregister(dataset) }
   }
@@ -375,4 +374,5 @@ object DataStoreManager {
   case class AppendViewAutomatic(dataset: String)
 
   case object ListAllDataset
+
 }
