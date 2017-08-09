@@ -103,7 +103,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     * @return query string
     **/
   def generate(query: IQuery, schemaMap: Map[String, AbstractSchema]): String = {
-    val (temporalSchemaMap, lookupSchemaMap) = AsterixQueryGenerator.splitSchemaMap(schemaMap)
+    val (temporalSchemaMap, lookupSchemaMap) = GeneratorUtil.splitSchemaMap(schemaMap)
     val result = query match {
       case q: Query =>
         parseQuery(q, temporalSchemaMap)
@@ -303,26 +303,5 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case DataType.Hierarchy => ??? // should be skipped
       case DataType.Record => ???
     }
-  }
-}
-
-object AsterixQueryGenerator {
-  def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
-    val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
-    val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()
-
-    schemaMap.filter{ case(name, schema) =>
-      schema.isInstanceOf[Schema]
-    }.foreach{ case(name, schema) =>
-      temporalSchemaMap.put(name, schema.asInstanceOf[Schema])
-    }
-
-    schemaMap.filter{ case(name, schema) =>
-      schema.isInstanceOf[LookupSchema]
-    }.foreach{ case(name, schema) =>
-      lookupSchemaMap.put(name, schema.asInstanceOf[LookupSchema])
-    }
-
-    (temporalSchemaMap.toMap, lookupSchemaMap.toMap)
   }
 }
