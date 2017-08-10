@@ -113,24 +113,25 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val mockQueryParser = mock[IQLGenerator]
       val mockConn = mock[IDataConn]
 
+      val additionalCount = 111
+      val updateCountResponse = Json.obj("count" -> JsNumber(additionalCount))
+
       val updateCountAQL = "update"
       when(mockQueryParser.generate(any, any))
-        .thenReturn(updateCountAQL)
+        .thenReturn(updateCountAQL).thenReturn(updateCountAQL)
       when(mockConn.postQuery(updateCountAQL))
-        .thenReturn(Future(countResponse))
+        .thenReturn(Future(countResponse)).thenReturn(Future(updateCountResponse))
 
-      val additionalCount = 111
       val dateNow = new DateTime()
-      val cardinality = new Cardinality(initialMaxTime, dateNow, additionalCount)
+      val cardinality = Cardinality(initialMaxTime, dateNow, additionalCount)
 
       val agent = TestActorRef(OriginalDataAgent.props(dataSetInfo, mockQueryParser, mockConn, Config.Default), parent.ref, "child")
       parent.expectMsg(NewStats(dataSetInfo.name, initialCount))
 
-      sender.send(agent, cardinality)
-      parent.expectMsg(NewStats(dataSetInfo.name, additionalCount))
-
+      parent.expectNoMsg()
       sender.send(agent, UpdateStats)
-      parent.expectMsg(NewStats(dataSetInfo.name, initialCount))
+
+      parent.expectMsg(NewStats(dataSetInfo.name, additionalCount))
 
       ok
     }
