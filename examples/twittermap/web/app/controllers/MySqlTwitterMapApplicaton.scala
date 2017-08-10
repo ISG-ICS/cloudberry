@@ -12,7 +12,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 
 @Singleton
-class MySqlTwitterMapApplicaton @Inject()(val wsClient: WSClient,
+class MySqlTwitterMapApplication @Inject()(val wsClient: WSClient,
                                       val config: Configuration,
                                       val environment: Environment) extends Controller {
 
