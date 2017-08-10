@@ -3,7 +3,7 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
-import model.Migration_20170428
+import model.{Migration_20170428, MySqlMigration_20170810}
 import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
@@ -32,23 +32,34 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   val clientLogger = Logger("client")
 
-  val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
-  Await.result(register, 1 minutes)
 
   def index = Action { request =>
+    val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
+    Await.result(register, 1 minutes)
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, false))
+    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, false, false))
   }
 
   def drugmap = Action {
     request =>
+      val register = Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
+      Await.result(register, 1 minutes)
       val startDateDrugMap = "2017-05-01T00:00:00.000"
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), true))
+      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), true, false))
+  }
+
+  def mysqlTwittermap = Action { request =>
+    val register = MySqlMigration_20170810.migration.up(wsClient, cloudberryRegisterURL)
+    Await.result(register, 1 minutes)
+    val remoteAddress = request.remoteAddress
+    val userAgent = request.headers.get("user-agent").getOrElse("unknown")
+    clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
+    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, false, true))
   }
 
   def tweet(id: String) = Action.async {
