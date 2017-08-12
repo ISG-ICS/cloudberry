@@ -8,7 +8,6 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
         var cacheSize = 0;
         var insertedTreeIDs = new Set();
         var cacheThreshold = cloudberryConfig.cacheThreshold; //hard limit
-        console.log("cacheThreshold " + cacheThreshold);
         var targetDeleteCount = 0;
         var deletedPolygonCount = 0;
         var preFetchDistance = 25; //25 miles
