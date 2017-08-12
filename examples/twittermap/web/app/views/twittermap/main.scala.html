@@ -1,4 +1,4 @@
-@(title: String, ws: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], isDrugMap: Boolean)(body: Html)
+@(title: String, ws: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], isDrugMap: Boolean, isMySQL: Boolean)(body: Html)
 
 @import play.api.libs.json.Json
 
@@ -57,6 +57,9 @@
 
   @if(isDrugMap) {
     <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
+  }
+  @if(isMySQL) {
+    <script src='@routes.Assets.versioned("javascripts/common/services-mysql.js")'></script>
   } else {
     <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
   }
