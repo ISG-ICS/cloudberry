@@ -20,7 +20,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
 
   import OriginalDataAgent._
 
-  val lastCount: Cardinality = new Cardinality(
+  val lastCount: Cardinality = Cardinality(
     dataSetInfo.dataInterval.getStart,
     dataSetInfo.dataInterval.getEnd,
     dataSetInfo.stats.cardinality
@@ -56,7 +56,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
 
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
-      lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count)
+      lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count, newCount.ratePerSecond)
       context.parent ! NewStats(dbName, newCount.count)
     case UpdateStats =>
       collectStats(lastCount.till)
@@ -73,8 +73,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))
     val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporalSchema)))
-      .map(r => new Cardinality(start, now, (r \\ "count").head.as[Long]))
-      .pipeTo(self)
+      .map(r => Cardinality(start, now, (r \\ "count").head.as[Long])) pipeTo self
   }
 
   //TODO extend the logic of using stats to solve more queries
@@ -97,14 +96,22 @@ object OriginalDataAgent {
 
   case class NewStats(dbName: String, additionalCount: Long)
 
-  class Cardinality(var from: DateTime, var till: DateTime, var count: Long) {
-    def reset(from: DateTime, till: DateTime, count: Long): Unit = {
+  class Cardinality(var from: DateTime, var till: DateTime, var count: Long, var ratePerSecond: Int) {
+    def reset(from: DateTime, till: DateTime, count: Long, rate: Int): Unit = {
       this.from = from
       this.till = till
       this.count = count
+      this.ratePerSecond = rate
     }
 
-    def ratePerSecond: Double = count.toDouble / new Duration(from, till).getStandardSeconds
+    override def toString: String = s"Cardinality $count in [$from -- $till), rate: $ratePerSecond"
+  }
+
+  object Cardinality {
+    def apply(from: DateTime, till: DateTime, count: Long): Cardinality = {
+      val ratePerSecond = (count / new Duration(from, till).getStandardSeconds).toInt
+      new Cardinality(from, till, count, ratePerSecond)
+    }
   }
 
   def props(dataSetInfo: DataSetInfo, queryParser: IQLGenerator, conn: IDataConn, config: Config)

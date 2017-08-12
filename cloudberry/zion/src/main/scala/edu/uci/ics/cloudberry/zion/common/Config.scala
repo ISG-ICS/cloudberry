@@ -10,6 +10,8 @@ class Config(config: Configuration) {
 
   val AsterixURL = config.getString("asterixdb.url").getOrElse("testing")
 
+  val MySqlURL = config.getString("mysqldb.url").getOrElse("testing")
+
   val AsterixLang = config.getString("asterixdb.lang").getOrElse("sqlpp").toLowerCase
 
   val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)

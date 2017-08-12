@@ -1045,6 +1045,18 @@ object TestQuery {
        |}
     """.stripMargin)
 
+  val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
+  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
+  val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
+  val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
+  val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
+  val zikaCreateQueryForSQL = Query(TwitterDataSetForSQL, filter = Seq(zikaFilter))
+  val groupPopulationSumForSQL = GroupStatement(
+    bys = Seq(byGeoState),
+    aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
+  )
+
+  def twitterFieldForSQL(field: String): Field = twitterSchemaForSQL.fieldMap(field)
 
   def removeEmptyLine(string: String): String = string.split("\\r?\\n").filterNot(_.trim.isEmpty).mkString("\n")
 
