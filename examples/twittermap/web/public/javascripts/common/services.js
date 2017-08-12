@@ -9,6 +9,7 @@ angular.module('cloudberry.common', [])
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
+      cacheThreshold: config.cacheThreshold,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":

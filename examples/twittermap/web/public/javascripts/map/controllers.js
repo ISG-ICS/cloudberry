@@ -98,14 +98,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
     function resetGeoIds(bounds, polygons, idTag) {
       cloudberry.parameters.geoIds = [];
-      polygons.features.forEach(function(polygon){
-        if (bounds._southWest.lat <= polygon.properties.centerLat &&
-          polygon.properties.centerLat <= bounds._northEast.lat &&
-          bounds._southWest.lng <= polygon.properties.centerLog &&
-          polygon.properties.centerLog <= bounds._northEast.lng) {
-          cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
+        if (polygons != undefined) {
+            polygons.features.forEach(function (polygon) {
+                if (bounds._southWest.lat <= polygon.properties.centerLat &&
+                    polygon.properties.centerLat <= bounds._northEast.lat &&
+                    bounds._southWest.lng <= polygon.properties.centerLog &&
+                    polygon.properties.centerLog <= bounds._northEast.lng) {
+                    cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
+                }
+            });
         }
-      });
     }
 
     function resetGeoInfo(level) {
@@ -264,7 +266,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             if($scope.polygons.countyUpperPolygons){
               $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
             }
-            $scope.map.addLayer($scope.polygons.statePolygons);
+            if ($scope.polygons.statePolygons) {
+                $scope.map.addLayer($scope.polygons.statePolygons);
+            }
           }
         }
       });
@@ -363,29 +367,55 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
       var bounds = $scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
-        Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
-            $scope.geojsonData.city = data;
-            
-            if($scope.polygons.cityPolygons) {
-                $scope.map.removeLayer($scope.polygons.cityPolygons);
-            }
-            $scope.polygons.cityPolygons = L.geoJson(data, {
-                style: $scope.styles.cityStyle,
-                onEachFeature: onEachFeature
-            });
-            //set center and boundary done by Cache
-            if (!$scope.status.init) {
-                resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
-                cloudberry.parameters.geoLevel = 'city';
-                cloudberry.queryType = 'zoom';
-                cloudberry.query(cloudberry.parameters, cloudberry.queryType);
-            }
-            resetGeoInfo("city");
-            $scope.map.addLayer($scope.polygons.cityPolygons);
-        })
 
+        // Caching feature only works when the given threshold is greater than zero.
+        if (cloudberryConfig.cacheThreshold > 0) {
+            Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
+                $scope.geojsonData.city = data;
+
+                if($scope.polygons.cityPolygons) {
+                    $scope.map.removeLayer($scope.polygons.cityPolygons);
+                }
+                $scope.polygons.cityPolygons = L.geoJson(data, {
+                    style: $scope.styles.cityStyle,
+                    onEachFeature: onEachFeature
+                });
+                //set center and boundary done by Cache
+                if (!$scope.status.init) {
+                    resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
+                    cloudberry.parameters.geoLevel = 'city';
+                    cloudberry.queryType = 'zoom';
+                    cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+                }
+                resetGeoInfo("city");
+                $scope.map.addLayer($scope.polygons.cityPolygons);
+            });
+        } else {
+            // No caching used here.
+            $http.get(rteBounds)
+                .success(function (data) {
+                    $scope.geojsonData.city = data;
+                    if ($scope.polygons.cityPolygons) {
+                        $scope.map.removeLayer($scope.polygons.cityPolygons);
+                    }
+                    $scope.polygons.cityPolygons = L.geoJson(data, {
+                        style: $scope.styles.cityStyle,
+                        onEachFeature: onEachFeature
+                    });
+                    setCenterAndBoundry($scope.geojsonData.city.features);
+                    resetGeoInfo("city");
+                    if (!$scope.status.init) {
+                        cloudberry.queryType = 'zoom';
+                        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+                    }
+                    $scope.map.addLayer($scope.polygons.cityPolygons);
+                })
+                .error(function (data) {
+                    console.error("Load city data failure");
+                });
+        }
     }
-                  
+
 
     /**
      * Update map based on a set of spatial query result cells
