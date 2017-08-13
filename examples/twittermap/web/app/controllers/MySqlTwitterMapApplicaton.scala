@@ -24,6 +24,7 @@ class MySqlTwitterMapApplication @Inject()(val wsClient: WSClient,
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
   val endDate : Option[String] = config.getString("endDate")
+  val cacheThreshold : Option[String] = config.getString("cacheThreshold")
 
   val clientLogger = Logger("client")
 
@@ -34,7 +35,7 @@ class MySqlTwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, false, true))
+    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, false, true))
   }
 
 }
