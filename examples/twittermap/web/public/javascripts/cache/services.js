@@ -1,13 +1,13 @@
 /*Cache module stores user requested city polygons.When Users requests these same city polygon area again we have it in cache
  and provide it to the user without sending http request.*/
 angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
-    .service('Cache', function ($window, $http, $compile) {
+    .service('Cache', function ($window, $http, $compile, cloudberryConfig) {
 
         var cachedCityPolygonTree = rbush();
         var cachedRegion;
         var cacheSize = 0;
         var insertedTreeIDs = new Set();
-        var cacheThreshold = 2000;//hard limit
+        var cacheThreshold = cloudberryConfig.cacheThreshold; //hard limit
         var targetDeleteCount = 0;
         var deletedPolygonCount = 0;
         var preFetchDistance = 25; //25 miles
