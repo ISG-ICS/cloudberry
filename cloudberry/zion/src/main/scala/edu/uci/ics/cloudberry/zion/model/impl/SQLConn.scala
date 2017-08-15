@@ -21,7 +21,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   private def parseMySQLParam(url: String) = {
     val paramMap: Map[String, String] = url.split("\\?")(1).split("&")
       .map(param => (param.split("=")(0) -> param.split("=")(1))).toMap
-    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"))
+    (url.split("\\?")(0), paramMap("user"), paramMap.get("passwd").getOrElse(""))
   }
 
   def post(query: String): Future[WSResponse] = {
