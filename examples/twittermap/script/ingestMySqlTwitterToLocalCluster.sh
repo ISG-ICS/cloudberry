@@ -1,13 +1,22 @@
 <?php
 
 echo "Connecting to MySql container ... \n";
-$PORT = $argv[1];
-$DBNAME = $argv[2];
-$con = new \PDO('mysql:host=172.17.0.1;port='.$PORT.';', 'root', '');
+$retries = 10;
+while ($retries > 0)
+{
+    try {
+        $con = new \PDO('mysql:host=172.17.0.1;port=6603;', 'root', '');
+        echo "Connected to mysql-container!\n";
+        $retries = 0;
+    } catch (PDOException $e) {
+        $retries--;
+        sleep(5);
+    }
+}
 
 echo "Creating Database ... \n";
-$con->query("create database if not exists `$DBNAME`;");
-$con->query("use `$DBNAME`;");
+$con->query("create database if not exists `sql`;");
+$con->query("use `sql`;");
 
 echo "Creating Table twitter_ds_tweet... \n";
 $create_twitter_ds_tweet = "CREATE TABLE IF NOT EXISTS `twitter_ds_tweet` (
@@ -25,7 +34,7 @@ $create_twitter_ds_tweet = "CREATE TABLE IF NOT EXISTS `twitter_ds_tweet` (
   `geo_tag.stateName` varchar(255) DEFAULT NULL,
   `geo_tag.cityID` double DEFAULT NULL,
   `is_retweet` double NOT NULL,
-  `text` text CHARACTER SET latin1 NOT NULL,
+  `text` text NOT NULL,
   `user.screen_name` varchar(255) NOT NULL,
   `retweet_count` bigint(20) NOT NULL,
   `place.country` varchar(255) DEFAULT NULL,
@@ -83,14 +92,12 @@ if($handle) {
         $create_at = '"'.$row['create_at'].'"';
         $id = $row['id'];
         $text = '"'.str_replace('"','\"',$row['text']).'"';
-
         $in_reply_to_status = $row['in_reply_to_status'];
         $in_reply_to_user = $row['in_reply_to_user'];
         $favorite_count = $row['favorite_count'];
         $retweet_count = $row['retweet_count'];
         $lang = '"'.$row['lang'].'"';
         $is_retweet = $row['is_retweet'];
-
         $user_id = $row['user']['id'];
         $user_name = '"'.str_replace('"','\"',$row['user']['name']).'"';
         $user_lang = '"'.$row['user']['lang'].'"';
@@ -100,7 +107,6 @@ if($handle) {
         $user_description = '"'.str_replace('"','\"',$row['user']['description']).'"';
         $user_friends_count = ($row['user']['friends_count']);
         $user_statues_count = ($row['user']['statues_count']);
-
         $place_country = '"'.$row['place']['country'].'"';
         $place_country_code = '"'.$row['place']['country_code'].'"';
         $place_full_name = '"'.$row['place']['full_name'].'"';
@@ -108,7 +114,6 @@ if($handle) {
         $place_name = '"'.$row['place']['name'].'"';
         $place_type = '"'.$row['place']['place_type'].'"';
         $place_bounding_box = '"'.$row['place']['bounding_box'].'"';
-
         $geo_stateName = '"'.$row['geo_tag']['stateName'].'"';
         $geo_countyName = '"'.$row['geo_tag']['countyName'].'"';
         $geo_cityName = '"'.$row['geo_tag']['cityName'].'"';
