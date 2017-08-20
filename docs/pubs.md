@@ -6,7 +6,7 @@ subtitle:
 
 ## Papers
 * **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey.
-[[PDF(full version)](../img/query-slicing-long.pdf)]
+[[PDF (Long version)](../img/query-slicing-long.pdf)]
 * **Supporting Visualizations on Large Twitter Datasets Using Cloudberry**,
 Shengjie Xu.
 [[PDF](../img/Supporting-Visualizations-on-Large-Twitter-Datasets-Using-Cloudberry.pdf)]
