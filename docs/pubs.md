@@ -5,6 +5,8 @@ subtitle:
 ---
 
 ## Papers
+* **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey.
+[[PDF(full version)](../img/query-slicing-long.pdf)]
 * **Supporting Visualizations on Large Twitter Datasets Using Cloudberry**,
 Shengjie Xu.
 [[PDF](../img/Supporting-Visualizations-on-Large-Twitter-Datasets-Using-Cloudberry.pdf)]
@@ -20,4 +22,3 @@ Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, ACM GIS 20
 * (9/2016) Prof. Li gave a talk about Cloudberry at [APWeb](http://ada.suda.edu.cn/apweb2016), Suzhou, China. [[PPT](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/09/cloudberry-apweb-201609.pptx)].
 * (8/2016) Prof. Li attended the [MHSRS](https://mhsrs.amedd.army.mil/SitePages/Home.aspx) symposium to show Cloudberry. [[Poster](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/08/2016-Army-MHSRS-Workshop-Poster.pdf)]
 * (7/2016) Prof. Li gave talks about Cloudberry at Salesforce and Huawei.[[PPT](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/08/asterixdb-cloudberry-chenli-201607.pptx)]
-
