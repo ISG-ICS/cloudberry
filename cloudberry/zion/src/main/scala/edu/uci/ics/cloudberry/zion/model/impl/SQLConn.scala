@@ -13,16 +13,8 @@ import java.lang._
 
 
 class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
-  val (urlConn, user, passwd) = parseMySQLParam(url)
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
-  val connection: Connection = DriverManager.getConnection(urlConn, user, passwd)
-  val statement = connection.createStatement
-
-  private def parseMySQLParam(url: String) = {
-    val paramMap: Map[String, String] = url.split("\\?")(1).split("&")
-      .map(param => (param.split("=")(0) -> param.split("=")(1))).toMap
-    (url.split("\\?")(0), paramMap("user"), paramMap("passwd"))
-  }
+  val connection: Connection = DriverManager.getConnection(url)
 
   def post(query: String): Future[WSResponse] = {
     throw new UnsupportedOperationException
@@ -34,6 +26,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   private def postGeneralQuery(query: String): Future[JsValue] = {
+    val statement = connection.createStatement
     val result = statement.executeQuery(query)
     val resultMetadata = result.getMetaData
     val columnCount = resultMetadata.getColumnCount
@@ -84,6 +77,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   private def postBerryQuery(query: String): Future[JsValue] = {
+    val statement = connection.createStatement
     val result = statement.executeQuery(query)
     var qJsonArray: JsArray = Json.arr()
     while (result.next) {
@@ -102,6 +96,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   def postControl(query: String) = {
+    val statement = connection.createStatement
     query.split(";\n").foreach {
       case q => statement.executeUpdate(q)
     }
