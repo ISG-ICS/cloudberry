@@ -28,6 +28,7 @@ $create_twitter_ds_tweet = "CREATE TABLE IF NOT EXISTS `twitter_ds_tweet` (
   `favorite_count` bigint(20) NOT NULL,
   `geo_tag.countyID` bigint(20) DEFAULT NULL,
   `user.location` varchar(255) NOT NULL,
+  `user_mentions` varchar(255) DEFAULT NULL,
   `place.type` varchar(255) DEFAULT NULL,
   `geo_tag.cityName` varchar(255) DEFAULT NULL,
   `user.id` double NOT NULL,
@@ -52,6 +53,7 @@ $create_twitter_ds_tweet = "CREATE TABLE IF NOT EXISTS `twitter_ds_tweet` (
   `user.lang` varchar(255) NOT NULL,
   `user.name` varchar(255) NOT NULL,
   `geo_tag.countyName` varchar(255) DEFAULT NULL,
+  `hashtags` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `create_at` (`create_at`),
   FULLTEXT KEY `idx` (`text`)
@@ -117,14 +119,25 @@ if($handle) {
         $geo_stateName = '"'.$row['geo_tag']['stateName'].'"';
         $geo_countyName = '"'.$row['geo_tag']['countyName'].'"';
         $geo_cityName = '"'.$row['geo_tag']['cityName'].'"';
+        
+        $arr = $row['hashtags'];
+        if ($arr == null) {$hashtags = 'null';} else {
+            $hashtags = "'".implode(", ",$arr)."'";
+        }
+        $arr = $row['user_mentions'];
+        if ($arr == null) {$user_mentions = 'null';} else {
+            $user_mentions = "'".implode(", ",$arr)."'";
+        }
 
         $query = "REPLACE INTO `twitter_ds_tweet`(
+                  user_mentions, hashtags,
                   coordinate, `place.bounding_box`,
                   create_at, id, text, in_reply_to_status, in_reply_to_user, favorite_count, retweet_count, lang, is_retweet,
                  `user.lang`, `user.id`, `user.name`, `user.screen_name`, `user.location`, `user.create_at`,`user.description`, `user.friends_count`, `user.statues_count`,
                  `place.country`, `place.country_code`, `place.full_name`, `place.name`, `place.id`, `place.type`,
                  `geo_tag.stateID`, `geo_tag.stateName`, `geo_tag.countyID`, `geo_tag.countyName`, `geo_tag.cityID`, `geo_tag.cityName`)
              VALUES(
+                 $user_mentions, $hashtags,
                  $coordinate, $place_bounding_box, $create_at, $id, $text, $in_reply_to_status, $in_reply_to_user, $favorite_count, $retweet_count, $lang, $is_retweet,
                  $user_lang, $user_id, $user_name, $user_screen_name, $user_location, $user_create_at, $user_description, $user_friends_count, $user_statues_count,
                  $place_country, $place_country_code, $place_full_name, $place_name, $place_id, $place_type,

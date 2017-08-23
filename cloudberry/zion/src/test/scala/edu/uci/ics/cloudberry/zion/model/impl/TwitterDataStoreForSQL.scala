@@ -40,7 +40,9 @@ object TwitterDataStoreForSQL {
                                         NumberField("in_reply_to_status"),
                                         NumberField("in_reply_to_user"),
                                         NumberField("favorite_count"),
-                                        NumberField("retweet_count")
+                                        NumberField("retweet_count"),
+                                        BagField("hashtags", DataType.String, true),
+                                        BagField("user_mentions", DataType.Number, true)
                                       ),
                                       Seq(NumberField("id")),
                                       TimeField(TimeFieldName))
