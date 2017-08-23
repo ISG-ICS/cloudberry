@@ -235,7 +235,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select hour(t.`create_at`) as `hour`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where t.`lang`!="en"
+          |where t.`lang`!='en'
           |group by `hour`
           |""".stripMargin.trim)
     }
@@ -250,7 +250,7 @@ class SQLGeneratorTest extends Specification {
         """
           |select hour(t.`create_at`) as `hour`,count(*) as `count`
           |from `twitter_ds_tweet` t
-          |where t.`lang`="en"
+          |where t.`lang`='en'
           |group by `hour`""".stripMargin.trim)
     }
 
@@ -728,6 +728,7 @@ class SQLGeneratorTest extends Specification {
           |  `favorite_count` bigint not null,
           |  `geo_tag.countyID` bigint default null,
           |  `user.location` varchar(255) not null,
+          |  `user_mentions` varchar(255) default null,
           |  `place.type` varchar(255) default null,
           |  `geo_tag.cityName` varchar(255) default null,
           |  `user.id` bigint not null,
@@ -751,7 +752,8 @@ class SQLGeneratorTest extends Specification {
           |  `lang` varchar(255) not null,
           |  `user.lang` varchar(255) not null,
           |  `user.name` varchar(255) not null,
-          |  `geo_tag.countyName` varchar(255) default null, primary key (`id`)
+          |  `geo_tag.countyName` varchar(255) default null,
+          |  `hashtags` varchar(255) default null, primary key (`id`)
           |);
           |replace into `zika`
           |(
