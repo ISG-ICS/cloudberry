@@ -25,7 +25,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     case _ => postGeneralQuery(query)
   }
 
-  private def postGeneralQuery(query: String): Future[JsValue] = {
+  protected def postGeneralQuery(query: String): Future[JsValue] = {
     val statement = connection.createStatement
     val result = statement.executeQuery(query)
     val resultMetadata = result.getMetaData
@@ -76,7 +76,7 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     Future(Json.toJson(qJsonArray))
   }
 
-  private def postBerryQuery(query: String): Future[JsValue] = {
+  protected def postBerryQuery(query: String): Future[JsValue] = {
     val statement = connection.createStatement
     val result = statement.executeQuery(query)
     var qJsonArray: JsArray = Json.arr()
@@ -87,9 +87,9 @@ class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
       val stats = result.getObject("stats")
       val dataInterval = result.getObject("dataInterval")
       rsJson = rsJson ++ Json.obj("name" -> JsString(name.asInstanceOf[String]))
-      rsJson = rsJson ++ Json.obj("schema" -> Json.parse(schema.asInstanceOf[String]))
-      rsJson = rsJson ++ Json.obj("stats" -> Json.parse(stats.asInstanceOf[String]))
-      rsJson = rsJson ++ Json.obj("dataInterval" -> Json.parse(dataInterval.asInstanceOf[String]))
+      rsJson = rsJson ++ Json.obj("schema" -> Json.parse(schema.toString))
+      rsJson = rsJson ++ Json.obj("stats" -> Json.parse(stats.toString))
+      rsJson = rsJson ++ Json.obj("dataInterval" -> Json.parse(dataInterval.toString))
       qJsonArray = qJsonArray :+ rsJson
     }
     Future(Json.toJson(qJsonArray))

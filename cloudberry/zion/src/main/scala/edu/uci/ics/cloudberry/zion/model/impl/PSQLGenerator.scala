@@ -8,16 +8,12 @@ import play.api.libs.json._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class SQLGenerator extends SQLQueryGenerator {
+class PSQLGenerator extends SQLQueryGenerator {
 
-  protected val quote = '`'
-  protected val truncate: String = "truncate"
-  protected val fullTextMatch = Seq("match", "against")
-
-  //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
-  private val geoAsText: String = "st_astext"
-  //X/Y-coordinate value for the Point object in MySQL.
-  private val pointGetCoord = Seq("st_x", "st_y")
+  protected val quote = '"'
+  //trunc(): truncate a number to a particular decimal places, mainly used in groupBy.
+  protected val truncate: String = "trunc"
+  protected val fullTextMatch: Seq[String] = Seq("@@", "to_tsquery")
 
   protected def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
     val (temporalSchemaMap, lookupSchemaMap) = GeneratorUtil.splitSchemaMap(schemaMap)
@@ -25,28 +21,31 @@ class SQLGenerator extends SQLQueryGenerator {
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(create.dataset, sourceSchema)
     val insert =
-      s"""
-     |replace into $quote${create.dataset}$quote
-     |(
-     |${parseQuery(create.query, schemaMap)}
-     |)
-      """.stripMargin
+        s"""
+       |insert into $quote${create.dataset}$quote
+       |(
+       |${parseQuery(create.query, schemaMap)}
+       |) on conflict do nothing
+        """.stripMargin
     ddl + insert
   }
 
   /**
-    * Convert middleware datatype to MySQL datatype
+    * Convert middleware datatype to PostgreSQL datatype
     * @param field
     */
   protected def fieldType2SQLType(field: Field): String = {
     field.dataType match {
       case DataType.Number => "bigint"
-      case DataType.Time => "datetime"
+      case DataType.Time => "timestamp"
       case DataType.Point => "point"
-      case DataType.Boolean => "tinyint"
+      case DataType.Boolean => "smallint"
       case DataType.String => "varchar(255)"
       case DataType.Text => "text"
-      case DataType.Bag => "varchar(255)"
+      case DataType.Bag => field.asInstanceOf[BagField].innerType match {
+        case DataType.String => "varchar[]"
+        case DataType.Number => "bigint[]"
+      }
       case DataType.Hierarchy => ???
       case DataType.Record => ???
     }
@@ -65,35 +64,39 @@ class SQLGenerator extends SQLQueryGenerator {
         queryResult += (s"('${name}','${schema}','${dataInterval}','${stats}','${createTime}')")
     }
     s"""
-       |replace into $quote${q.dataset}$quote (${quote}name${quote}, ${quote}schema${quote}, ${quote}dataInterval${quote}, ${quote}stats${quote}, ${quote}stats.createTime${quote}) values
-       |${queryResult.mkString(",")}
+       |insert into $quote${q.dataset}$quote (${quote}name${quote}, ${quote}schema${quote}, ${quote}dataInterval${quote}, ${quote}stats${quote}, ${quote}stats.createTime${quote}) values
+       |${queryResult.mkString(",")} on conflict(${quote}name${quote}) do update set ${quote}dataInterval${quote}=EXCLUDED.${quote}dataInterval${quote}
        |""".stripMargin
   }
 
   protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr] = {
     val schema = schemaMap(dataset)
-    schema.fieldMap.mapValues {
-      f => FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.$quote${f.name}$quote")
+    schema.fieldMap.mapValues { f =>
+      f match {
+        case AllField =>
+          FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.${f.name}")
+        case _ =>
+          FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.$quote${f.name}$quote")
+      }
     }
   }
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
     val wordsArr = ArrayBuffer[String]()
     filter.values.foreach(w => wordsArr += w.toString)
-    val sb = new StringBuilder(s"${fullTextMatch(0)}($fieldExpr) ${fullTextMatch(1)} ('")
-    sb.append(wordsArr.mkString("+"," +","") + s"' in boolean mode)")
+    val sb = new StringBuilder(s"$fieldExpr ${fullTextMatch(0)} ${fullTextMatch(1)}(")
+    sb.append(wordsArr.mkString("'"," & ","')"))
     sb.toString()
   }
 
-  //TODO: unnest function not supported in MySQL, here is treated as string.
   protected def parseUnnest(unnest: Seq[UnnestStatement],
-                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
+                  exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
     val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr] ++= exprMap
     val unnestTestStrs = new ListBuffer[String]
     unnest.zipWithIndex.map {
       case (unnest, id) =>
         val expr = exprMap(unnest.field.name)
-        val newExpr = s"${quote}${unnest.field.name}${quote}"
+        val newExpr = s"$unnestVar(${sourceVar}.${quote}${unnest.field.name}${quote})"
         producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
         if (unnest.field.isOptional) {
           unnestTestStrs += s"${expr.refExpr} is not null"
@@ -106,7 +109,11 @@ class SQLGenerator extends SQLQueryGenerator {
     groupBy.funcOpt match {
       case Some(func) =>
         func match {
-          case interval: Interval => s"${timeUnitFuncMap(interval.unit)}($fieldExpr)"
+          case interval: Interval =>
+            interval.unit match {
+              case TimeUnit.Day => s"${timeUnitFuncMap(interval.unit)}($fieldExpr)"
+              case _ => s"extract(${interval.unit} from $fieldExpr)"
+            }
           case GeoCellTenth => parseGeoCell(1, fieldExpr, groupBy.field.dataType)
           case GeoCellHundredth => parseGeoCell(2, fieldExpr, groupBy.field.dataType)
           case GeoCellThousandth => parseGeoCell(3, fieldExpr, groupBy.field.dataType)
@@ -119,20 +126,18 @@ class SQLGenerator extends SQLQueryGenerator {
 
 
   /**
-    * Process POINT type of MySQL:
-    * ST_ASTEXT: return POINT field as text to avoid messy code. https://dev.mysql.com/doc/refman/5.7/en/gis-format-conversion-functions.html
-    * ST_X, ST_Y: get X/Y-coordinate of Point. https://dev.mysql.com/doc/refman/5.6/en/gis-point-property-functions.html
-    * truncate: a number truncated to a certain number of decimal places, mainly used in groupBy. http://www.w3resource.com/mysql/mathematical-functions/mysql-truncate-function.php
+    * Process POINT type of PostgreSQL:
+    * trunc(): truncate a number to a particular decimal places, mainly used in groupBy. http://w3resource.com/PostgreSQL/trunc-function.php
     * @param scale
     * @param fieldExpr
     * @param dataType
     */
   def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
-    s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
+    s"($truncate($fieldExpr[0]::decimal,$scale),$truncate($fieldExpr[1]::decimal,$scale))"
   }
 
 }
 
-object SQLGenerator extends IQLGeneratorFactory {
-  override def apply(): IQLGenerator = new SQLGenerator()
+object PSQLGenerator extends IQLGeneratorFactory {
+  override def apply(): IQLGenerator = new PSQLGenerator()
 }

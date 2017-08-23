@@ -4,11 +4,11 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.Specification
 
 
-class SQLGeneratorTest extends Specification {
+class PSQLGeneratorTest extends Specification {
 
   import TestQuery._
 
-  val parser = new SQLGenerator
+  val parser = new PSQLGenerator
 
   "SQLGenerator generate" should {
     //1
@@ -18,10 +18,10 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select hour(t.`create_at`) as `hour`,count(*) as `count`
-           |from `twitter_ds_tweet` t
-           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-           |group by `hour`
+        """|select extract(hour from t."create_at") as "hour",count(*) as "count"
+           |from "twitter_ds_tweet" t
+           |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+           |group by "hour"
            |""".stripMargin.trim)
     }
 
@@ -32,10 +32,10 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select date(t.`create_at`) as `day`,count(*) as `count`
-           |from `twitter_ds_tweet` t
-           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-           |group by `day`
+        """|select date(t."create_at") as "day",count(*) as "count"
+           |from "twitter_ds_tweet" t
+           |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+           |group by "day"
            |""".stripMargin.trim)
     }
 
@@ -46,10 +46,10 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select month(t.`create_at`) as `month`,count(*) as `count`
-           |from `twitter_ds_tweet` t
-           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-           |group by `month`
+        """|select extract(month from t."create_at") as "month",count(*) as "count"
+           |from "twitter_ds_tweet" t
+           |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+           |group by "month"
            |""".stripMargin.trim)
     }
 
@@ -60,10 +60,10 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select hour(t.`create_at`) as `hour`,count(*) as `count`
-           |from `twitter_ds_tweet` t
-           |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('+zika +virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-           |group by `hour`
+        """|select extract(hour from t."create_at") as "hour",count(*) as "count"
+           |from "twitter_ds_tweet" t
+           |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000' and t."text" @@ to_tsquery('zika & virus') and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+           |group by "hour"
            |""".stripMargin.trim)
     }
 
@@ -73,15 +73,25 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """|select *
-           |from `twitter_ds_tweet` t
-           |order by t.`create_at` desc
+           |from "twitter_ds_tweet" t
+           |order by t."create_at" desc
            |limit 100
            |""".stripMargin.trim)
     }
 
-    //6 //TODO: parseUnnest
+    //6
     "translate a simple unnest query" in {
-      ok
+      val filter = Seq(timeFilter, textFilter, stateFilter)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10byHashTag))
+      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """|select unnest(t."hashtags") as "tag",count(*) as "count"
+           |from "twitter_ds_tweet" t
+           |where t."hashtags" is not null and t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000' and t."text" @@ to_tsquery('zika & virus') and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+           |group by "tag"
+           |order by count(*) desc
+           |limit 10""".stripMargin.trim)
     }
 
     //7
@@ -90,9 +100,9 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSetForSQL, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select count(*) as `count` from
+        """select count(*) as "count" from
           |(select *
-          |from `twitter_ds_tweet` t) t""".stripMargin)
+          |from "twitter_ds_tweet" t) t""".stripMargin)
     }
 
     //8
@@ -101,9 +111,9 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSetForSQL, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select min(t.`id`) as `min` from
+        """select min(t."id") as "min" from
           |(select *
-          |from `twitter_ds_tweet` t) t""".stripMargin)
+          |from "twitter_ds_tweet" t) t""".stripMargin)
     }
 
     //9
@@ -112,9 +122,9 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSetForSQL, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select max(t.`id`) as `max` from
+        """select max(t."id") as "max" from
           |(select *
-          |from `twitter_ds_tweet` t) t""".stripMargin)
+          |from "twitter_ds_tweet" t) t""".stripMargin)
     }
 
     //10
@@ -124,10 +134,10 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSetForSQL, filter = filter, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select count(*) as `count` from
+        """select count(*) as "count" from
           |(select *
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000') t""".stripMargin)
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000') t""".stripMargin)
     }
 
     //11
@@ -137,10 +147,10 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSetForSQL, filter = filter, globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select min(t.`id`) as `min` from
+        """select min(t."id") as "min" from
           |(select *
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000') t""".stripMargin)
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000') t""".stripMargin)
     }
 
     //12
@@ -149,9 +159,9 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(dataset = TwitterDataSetForSQL, select = Some(selectTop10), globalAggr = Some(globalAggr))
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select count(*) as `count` from
+        """select count(*) as "count" from
           |(select *
-          |from `twitter_ds_tweet` t
+          |from "twitter_ds_tweet" t
           |limit 10) t""".stripMargin.trim)
     }
 
@@ -162,9 +172,9 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select minute(t.`create_at`) as `minute`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |group by `minute`""".stripMargin.trim)
+          |select extract(minute from t."create_at") as "minute",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |group by "minute"""".stripMargin.trim)
     }
 
     //14
@@ -175,22 +185,33 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,max(t.`id`) as `max`
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-          |group by `hour`""".stripMargin.trim)
+          |select extract(hour from t."create_at") as "hour",max(t."id") as "max"
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+          |group by "hour"""".stripMargin.trim)
     }
 
-    //15 //TODO: parseUnnest
+    //15
     "translate a max cardinality query with unnest with group by with select" in {
-      ok
+      val filter = Seq(textFilter, timeFilter, stateFilter)
+      val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
+      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """|select max("count") as "max" from
+           |(select unnest(t."hashtags") as "tag",count(*) as "count"
+           |from "twitter_ds_tweet" t
+           |where t."hashtags" is not null and t."text" @@ to_tsquery('zika & virus') and t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000' and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+           |group by "tag"
+           |order by count(*) desc
+           |limit 10) t""".stripMargin.trim)
     }
 
     //16
     "translate group by query having lookup with one join key" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
-
       val selectValues = Seq(population)
       val group = Some(groupPopulationSumForSQL)
       val lookup = LookupStatement(
@@ -203,11 +224,11 @@ class SQLGeneratorTest extends Specification {
       val query = new Query(TwitterDataSetForSQL, Seq.empty, Seq(lookup), filter, Seq.empty, group)
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
-        """select t.`geo_tag.stateID` as `state`,sum(l0.`population`) as `sum`
-          |from `twitter_ds_tweet` t
-          |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`""".stripMargin.trim
+        """select t."geo_tag.stateID" as "state",sum(l0."population") as "sum"
+          |from "twitter_ds_tweet" t
+          |left outer join "twitter.US_population" l0 on l0."stateID" = t."geo_tag.stateID"
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"""".stripMargin.trim
       )
     }
 
@@ -219,10 +240,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-          |group by `hour`""".stripMargin.trim)
+          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+          |group by "hour"""".stripMargin.trim)
     }
 
     //18
@@ -233,10 +254,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where t.`lang`!='en'
-          |group by `hour`
+          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."lang"!='en'
+          |group by "hour"
           |""".stripMargin.trim)
     }
 
@@ -248,10 +269,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where t.`lang`='en'
-          |group by `hour`""".stripMargin.trim)
+          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."lang"='en'
+          |group by "hour"""".stripMargin.trim)
     }
 
     //20
@@ -262,10 +283,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `hour`
+          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "hour"
           |""".stripMargin.trim)
     }
 
@@ -277,10 +298,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-          |group by `hour`
+          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+          |group by "hour"
           | """.stripMargin.trim)
     }
 
@@ -292,10 +313,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,t.`geo_tag.stateID` as `state`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-          |group by `hour`,`state`
+          |select extract(hour from t."create_at") as "hour",t."geo_tag.stateID" as "state",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus') and t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000' and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+          |group by "hour","state"
           | """.stripMargin.trim)
     }
 
@@ -306,17 +327,29 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user.id` as `user.id`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
-          |order by t.`create_at` desc
+          |select t."create_at" as "create_at",t."id" as "id",t."user.id" as "user.id"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus') and t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000' and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+          |order by t."create_at" desc
           |limit 100
           | """.stripMargin.trim)
     }
 
-    //24 //TODO: parseUnnest
+    //24
     "translate a text contain + time + geo id set filter and group by hashtags" in {
-      ok
+      val filter = Seq(textFilter, timeFilter, stateFilter)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
+      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select unnest(t."hashtags") as "tag",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."hashtags" is not null and t."text" @@ to_tsquery('zika & virus') and t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000' and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
+          |group by "tag"
+          |order by count(*) desc
+          |limit 10
+          | """.stripMargin.trim)
     }
 
     //25
@@ -327,10 +360,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,min(t.`id`) as `min`
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-          |group by `hour`
+          |select extract(hour from t."create_at") as "hour",min(t."id") as "min"
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+          |group by "hour"
           | """.stripMargin.trim)
     }
 
@@ -342,10 +375,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,sum(t.`id`) as `sum`
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-          |group by `hour`
+          |select extract(hour from t."create_at") as "hour",sum(t."id") as "sum"
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+          |group by "hour"
           |  """.stripMargin.trim)
     }
 
@@ -357,10 +390,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select hour(t.`create_at`) as `hour`,avg(t.`id`) as `avg`
-          |from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
-          |group by `hour`
+          |select extract(hour from t."create_at") as "hour",avg(t."id") as "avg"
+          |from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
+          |group by "hour"
           | """.stripMargin.trim)
     }
 
@@ -372,10 +405,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select st_astext(Point(truncate(st_x(t.`coordinate`),1),truncate(st_y(t.`coordinate`),1)))  as `cell`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `cell`
+          |select (trunc(t."coordinate"[0]::decimal,1),trunc(t."coordinate"[1]::decimal,1)) as "cell",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "cell"
         """.stripMargin.trim)
     }
 
@@ -387,14 +420,14 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select st_astext(Point(truncate(st_x(t.`coordinate`),2),truncate(st_y(t.`coordinate`),2)))  as `cell`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `cell`
+          |select (trunc(t."coordinate"[0]::decimal,2),trunc(t."coordinate"[1]::decimal,2)) as "cell",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "cell"
         """.stripMargin.trim)
     }
 
-    //30  //TODO: return array instead of text. e.g., return [1,2] instead of "POINT(1,2)"
+    //30
     "translate a text contain filter and group by geocell 1000th" in {
       val filter = Seq(textFilter)
       val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
@@ -402,10 +435,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select st_astext(Point(truncate(st_x(t.`coordinate`),3),truncate(st_y(t.`coordinate`),3)))  as `cell`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `cell`
+          |select (trunc(t."coordinate"[0]::decimal,3),trunc(t."coordinate"[1]::decimal,3)) as "cell",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "cell"
         """.stripMargin.trim)
     }
 
@@ -417,10 +450,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select round(t.`geo_tag.stateID`/10)*10 as `state`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`""".stripMargin.trim)
+          |select round(t."geo_tag.stateID"/10)*10 as "state",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"""".stripMargin.trim)
     }
 
     //32
@@ -430,9 +463,9 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select st_astext(Point(truncate(st_x(t.`coordinate`),3),truncate(st_y(t.`coordinate`),3)))  as `cell`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |group by `cell`""".stripMargin.trim)
+          |select (trunc(t."coordinate"[0]::decimal,3),trunc(t."coordinate"[1]::decimal,3)) as "cell",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |group by "cell"""".stripMargin.trim)
     }
 
     //33
@@ -443,8 +476,8 @@ class SQLGeneratorTest extends Specification {
       removeEmptyLine(result) must_== unifyNewLine(
         """
           |select *
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
           |limit 10
           | """.stripMargin.trim)
     }
@@ -456,9 +489,9 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select second(t.`create_at`) as `sec`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |group by `sec`
+          |select extract(second from t."create_at") as "sec",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |group by "sec"
           | """.stripMargin.trim)
     }
 
@@ -469,9 +502,9 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select date(t.`create_at`) as `day`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |group by `day`
+          |select date(t."create_at") as "day",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |group by "day"
           | """.stripMargin.trim)
     }
 
@@ -482,9 +515,9 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select month(t.`create_at`) as `month`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |group by `month`
+          |select extract(month from t."create_at") as "month",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |group by "month"
           | """.stripMargin.trim)
     }
 
@@ -495,9 +528,9 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select year(t.`create_at`) as `year`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |group by `year`
+          |select extract(year from t."create_at") as "year",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |group by "year"
           | """.stripMargin.trim)
     }
 
@@ -513,10 +546,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`*` as `*`,l0.`population` as `population`
-          |from `twitter_ds_tweet` t
-          |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)""".stripMargin.trim
+          |select t.* as "*",l0."population" as "population"
+          |from "twitter_ds_tweet" t
+          |left outer join "twitter.US_population" l0 on l0."stateID" = t."geo_tag.stateID"
+          |where t."text" @@ to_tsquery('zika & virus')""".stripMargin.trim
       )
     }
 
@@ -533,10 +566,10 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`*` as `*`,l0.`population` as `population`,l0.`stateID` as `stateID`
-          |from `twitter_ds_tweet` t
-          |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |select t.* as "*",l0."population" as "population",l0."stateID" as "stateID"
+          |from "twitter_ds_tweet" t
+          |left outer join "twitter.US_population" l0 on l0."stateID" = t."geo_tag.stateID"
+          |where t."text" @@ to_tsquery('zika & virus')
           |""".stripMargin.trim
       )
     }
@@ -561,16 +594,16 @@ class SQLGeneratorTest extends Specification {
         literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select t.`*` as `*`,l0.`population` as `population`,l1.`literacy` as `literacy`
-          |from `twitter_ds_tweet` t
-          |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |left outer join `twitter.US_literacy` l1 on l1.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
+          |select t.* as "*",l0."population" as "population",l1."literacy" as "literacy"
+          |from "twitter_ds_tweet" t
+          |left outer join "twitter.US_population" l0 on l0."stateID" = t."geo_tag.stateID"
+          |left outer join "twitter.US_literacy" l1 on l1."stateID" = t."geo_tag.stateID"
+          |where t."text" @@ to_tsquery('zika & virus')
           |""".stripMargin.trim
       )
     }
 
-    //41 //TODO: parseUnnest
+    //41
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
@@ -586,14 +619,14 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select tt.`state` as `state`,tt.`count` as `count`,ll0.`population` as `population`
+          |select tt."state" as "state",tt."count" as "count",ll0."population" as "population"
           |from (
-          |select t.`geo_tag.stateID` as `state`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`
+          |select t."geo_tag.stateID" as "state",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"
           |) tt
-          |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
+          |left outer join "twitter.US_population" ll0 on ll0."stateID" = tt."state"
           |""".stripMargin.trim
       )
     }
@@ -612,15 +645,15 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema, literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select tt.`state` as `state`,tt.`count` as `count`,ll0.`population` as `population`,ll1.`literacy` as `literacy`
+          |select tt."state" as "state",tt."count" as "count",ll0."population" as "population",ll1."literacy" as "literacy"
           |from (
-          |select t.`geo_tag.stateID` as `state`,count(*) as `count`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`
+          |select t."geo_tag.stateID" as "state",count(*) as "count"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"
           |) tt
-          |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
-          |left outer join `twitter.US_literacy` ll1 on ll1.`stateID` = tt.`state`
+          |left outer join "twitter.US_population" ll0 on ll0."stateID" = tt."state"
+          |left outer join "twitter.US_literacy" ll1 on ll1."stateID" = tt."state"
           |""".stripMargin.trim
       )
     }
@@ -640,15 +673,15 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema, literacyDataSet -> literacySchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select tt.`state` as `state`,tt.`min` as `min`,ll0.`literacy` as `literacy`
+          |select tt."state" as "state",tt."min" as "min",ll0."literacy" as "literacy"
           |from (
-          |select t.`geo_tag.stateID` as `state`,min(l0.`population`) as `min`
-          |from `twitter_ds_tweet` t
-          |left outer join `twitter.US_population` l0 on l0.`stateID` = t.`geo_tag.stateID`
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`
+          |select t."geo_tag.stateID" as "state",min(l0."population") as "min"
+          |from "twitter_ds_tweet" t
+          |left outer join "twitter.US_population" l0 on l0."stateID" = t."geo_tag.stateID"
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"
           |) tt
-          |left outer join `twitter.US_literacy` ll0 on ll0.`stateID` = tt.`state`
+          |left outer join "twitter.US_literacy" ll0 on ll0."stateID" = tt."state"
           |""".stripMargin.trim
       )
     }
@@ -665,15 +698,15 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select min(t.`population`) as `min` from
-          |(select tt.`state` as `state`,ll0.`population` as `population`
+          |select min(t."population") as "min" from
+          |(select tt."state" as "state",ll0."population" as "population"
           |from (
-          |select t.`geo_tag.stateID` as `state`
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`
+          |select t."geo_tag.stateID" as "state"
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"
           |) tt
-          |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`) t
+          |left outer join "twitter.US_population" ll0 on ll0."stateID" = tt."state") t
           |""".stripMargin.trim
       )
     }
@@ -689,15 +722,15 @@ class SQLGeneratorTest extends Specification {
       val result = parser.generate(query, schemaMap = Map(TwitterDataSetForSQL -> twitterSchemaForSQL, populationDataSet -> populationSchema))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select tt.`state` as `state`,tt.`avgLangLen` as `avgLangLen`,ll0.`population` as `population`
+          |select tt."state" as "state",tt."avgLangLen" as "avgLangLen",ll0."population" as "population"
           |from (
-          |select t.`geo_tag.stateID` as `state`,avg(t.`lang_len`) as `avgLangLen`
-          |from (select length(lang) as `lang_len`,t.`*` as `*`
-          |from `twitter_ds_tweet` t) t
-          |where match(t.`text`) against ('+zika +virus' in boolean mode)
-          |group by `state`
+          |select t."geo_tag.stateID" as "state",avg(t."lang_len") as "avgLangLen"
+          |from (select length(lang) as "lang_len",t.* as "*"
+          |from "twitter_ds_tweet" t) t
+          |where t."text" @@ to_tsquery('zika & virus')
+          |group by "state"
           |) tt
-          |left outer join `twitter.US_population` ll0 on ll0.`stateID` = tt.`state`
+          |left outer join "twitter.US_population" ll0 on ll0."stateID" = tt."state"
           |""".stripMargin.trim
       )
     }
@@ -719,46 +752,46 @@ class SQLGeneratorTest extends Specification {
       val ddl = parser.generate(CreateView("zika", zikaCreateQueryForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
       removeEmptyLine(ddl) must_== unifyNewLine(
         """
-          |create table if not exists `zika` (
-          |  `place.full_name` varchar(255) default null,
-          |  `place.bounding_box` varchar(255) default null,
-          |  `place.country_code` varchar(255) default null,
-          |  `user.friends_count` bigint not null,
-          |  `user.description` text not null,
-          |  `favorite_count` bigint not null,
-          |  `geo_tag.countyID` bigint default null,
-          |  `user.location` varchar(255) not null,
-          |  `place.type` varchar(255) default null,
-          |  `geo_tag.cityName` varchar(255) default null,
-          |  `user.id` bigint not null,
-          |  `geo_tag.stateName` varchar(255) default null,
-          |  `geo_tag.cityID` bigint default null,
-          |  `is_retweet` bigint not null,
-          |  `text` text not null,
-          |  `user.screen_name` varchar(255) not null,
-          |  `retweet_count` bigint not null,
-          |  `place.country` varchar(255) default null,
-          |  `in_reply_to_user` bigint not null,
-          |  `user.statues_count` varchar(255) not null,
-          |  `id` bigint not null,
-          |  `coordinate` point default null,
-          |  `place.id` varchar(255) default null,
-          |  `in_reply_to_status` bigint not null,
-          |  `geo_tag.stateID` bigint default null,
-          |  `create_at` datetime not null,
-          |  `user.create_at` datetime not null,
-          |  `place.name` varchar(255) default null,
-          |  `lang` varchar(255) not null,
-          |  `user.lang` varchar(255) not null,
-          |  `user.name` varchar(255) not null,
-          |  `geo_tag.countyName` varchar(255) default null, primary key (`id`)
+          |create table if not exists "zika" (
+          |  "place.full_name" varchar(255) default null,
+          |  "place.bounding_box" varchar(255) default null,
+          |  "place.country_code" varchar(255) default null,
+          |  "user.friends_count" bigint not null,
+          |  "user.description" text not null,
+          |  "favorite_count" bigint not null,
+          |  "geo_tag.countyID" bigint default null,
+          |  "user.location" varchar(255) not null,
+          |  "place.type" varchar(255) default null,
+          |  "geo_tag.cityName" varchar(255) default null,
+          |  "user.id" bigint not null,
+          |  "geo_tag.stateName" varchar(255) default null,
+          |  "geo_tag.cityID" bigint default null,
+          |  "is_retweet" bigint not null,
+          |  "text" text not null,
+          |  "user.screen_name" varchar(255) not null,
+          |  "retweet_count" bigint not null,
+          |  "place.country" varchar(255) default null,
+          |  "in_reply_to_user" bigint not null,
+          |  "user.statues_count" varchar(255) not null,
+          |  "id" bigint not null,
+          |  "coordinate" point default null,
+          |  "place.id" varchar(255) default null,
+          |  "in_reply_to_status" bigint not null,
+          |  "geo_tag.stateID" bigint default null,
+          |  "create_at" timestamp not null,
+          |  "user.create_at" timestamp not null,
+          |  "place.name" varchar(255) default null,
+          |  "lang" varchar(255) not null,
+          |  "user.lang" varchar(255) not null,
+          |  "user.name" varchar(255) not null,
+          |  "geo_tag.countyName" varchar(255) default null, primary key ("id")
           |);
-          |replace into `zika`
+          |insert into "zika"
           |(
           |select *
-          |from `twitter_ds_tweet` t
-          |where match(t.`text`) against ('+zika' in boolean mode)
-          |)""".stripMargin.trim)
+          |from "twitter_ds_tweet" t
+          |where t."text" @@ to_tsquery('zika')
+          |) on conflict do nothing""".stripMargin.trim)
     }
   }
 
@@ -767,8 +800,8 @@ class SQLGeneratorTest extends Specification {
       val sql = parser.generate(DeleteRecord(TwitterDataSetForSQL, Seq(timeFilter)), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
-          |delete from `twitter_ds_tweet` t
-          |where t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000'
+          |delete from "twitter_ds_tweet" t
+          |where t."create_at" >= '2016-01-01 00:00:00.000' and t."create_at" < '2016-12-01 00:00:00.000'
           |""".stripMargin.trim)
     }
   }
@@ -778,7 +811,7 @@ class SQLGeneratorTest extends Specification {
       val sql = parser.generate(DropView(TwitterDataSetForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
-          |drop table if exists `twitter_ds_tweet`
+          |drop table if exists "twitter_ds_tweet"
           |""".stripMargin.trim)
     }
   }

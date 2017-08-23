@@ -40,6 +40,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     config.AsterixLang match {
       case "sparksql" => (new SparkConn(url = "local[4]"), SparkSQLGenerator)
       case "sql" => (new SQLConn(config.MySqlURL), SQLGenerator)
+      case "psql" => (new PSQLConn(config.MySqlURL), PSQLGenerator)
       case "aql" => (new AsterixAQLConn(config.AsterixURL, wsClient), AQLGenerator)
       case "sqlpp" => (new AsterixSQLPPConn(config.AsterixURL, wsClient), SQLPPGenerator)
       case _ => throw new IllegalArgumentException(s"unknown asterixdb.lang option:${config.AsterixLang}")
