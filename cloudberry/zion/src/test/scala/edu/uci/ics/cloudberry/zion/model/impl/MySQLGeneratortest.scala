@@ -4,13 +4,13 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.Specification
 
 
-class SQLGeneratorTest extends Specification {
+class MySQLGeneratorTest extends Specification {
 
   import TestQuery._
 
-  val parser = new SQLGenerator
+  val parser = new MySQLGenerator
 
-  "SQLGenerator generate" should {
+  "MySQLGenerator generate" should {
     //1
     "translate a simple query group by hour" in {
       val filter = Seq(timeFilter)
@@ -570,7 +570,7 @@ class SQLGeneratorTest extends Specification {
       )
     }
 
-    //41 //TODO: parseUnnest
+    //41
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }
@@ -704,19 +704,19 @@ class SQLGeneratorTest extends Specification {
 
   }
 
-  "SQLGenerator calcResultSchema" should {
+  "MySQLGenerator calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
-      val schema = parser.calcResultSchema(zikaCreateQueryForSQL, TwitterDataStoreForSQL.TwitterSchemaForSQL)
-      schema must_== TwitterDataStoreForSQL.TwitterSchemaForSQL
+      val schema = parser.calcResultSchema(zikaCreateQueryForSQL, TwitterDataStoreForMySQL.TwitterSchemaForSQL)
+      schema must_== TwitterDataStoreForMySQL.TwitterSchemaForSQL
     }
     "return the aggregated schema for aggregation queries" in {
       ok
     }
   }
 
-  "SQLGenerator createView" should {
+  "MySQLGenerator createView" should {
     "generate the ddl for the twitter dataset" in {
-      val ddl = parser.generate(CreateView("zika", zikaCreateQueryForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      val ddl = parser.generate(CreateView("zika", zikaCreateQueryForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForMySQL.TwitterSchemaForSQL))
       removeEmptyLine(ddl) must_== unifyNewLine(
         """
           |create table if not exists `zika` (
@@ -762,9 +762,9 @@ class SQLGeneratorTest extends Specification {
     }
   }
 
-  "SQLGenerator deleteRecord" should {
+  "MySQLGenerator deleteRecord" should {
     "generate the delete query " in {
-      val sql = parser.generate(DeleteRecord(TwitterDataSetForSQL, Seq(timeFilter)), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      val sql = parser.generate(DeleteRecord(TwitterDataSetForSQL, Seq(timeFilter)), Map(TwitterDataSetForSQL -> TwitterDataStoreForMySQL.TwitterSchemaForSQL))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
           |delete from `twitter_ds_tweet` t
@@ -773,9 +773,9 @@ class SQLGeneratorTest extends Specification {
     }
   }
 
-  "SQLGenerator dropView" should {
+  "MySQLGenerator dropView" should {
     "generate the drop view query" in {
-      val sql = parser.generate(DropView(TwitterDataSetForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      val sql = parser.generate(DropView(TwitterDataSetForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForMySQL.TwitterSchemaForSQL))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
           |drop table if exists `twitter_ds_tweet`

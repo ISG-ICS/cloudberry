@@ -4,13 +4,13 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.mutable.Specification
 
 
-class PSQLGeneratorTest extends Specification {
+class PostgreSQLGeneratorTest extends Specification {
 
   import TestQuery._
 
-  val parser = new PSQLGenerator
+  val parser = new PostgreSQLGenerator
 
-  "SQLGenerator generate" should {
+  "PostgreSQLGenerator generate" should {
     //1
     "translate a simple query group by hour" in {
       val filter = Seq(timeFilter)
@@ -737,19 +737,19 @@ class PSQLGeneratorTest extends Specification {
 
   }
 
-  "SQLGenerator calcResultSchema" should {
+  "PostgreSQLGenerator calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
-      val schema = parser.calcResultSchema(zikaCreateQueryForSQL, TwitterDataStoreForSQL.TwitterSchemaForSQL)
-      schema must_== TwitterDataStoreForSQL.TwitterSchemaForSQL
+      val schema = parser.calcResultSchema(zikaCreateQueryForSQL, TwitterDataStoreForPostgreSQL.TwitterSchemaForSQL)
+      schema must_== TwitterDataStoreForPostgreSQL.TwitterSchemaForSQL
     }
     "return the aggregated schema for aggregation queries" in {
       ok
     }
   }
 
-  "SQLGenerator createView" should {
+  "PostgreSQLGenerator createView" should {
     "generate the ddl for the twitter dataset" in {
-      val ddl = parser.generate(CreateView("zika", zikaCreateQueryForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      val ddl = parser.generate(CreateView("zika", zikaCreateQueryForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForPostgreSQL.TwitterSchemaForSQL))
       removeEmptyLine(ddl) must_== unifyNewLine(
         """
           |create table if not exists "zika" (
@@ -761,6 +761,7 @@ class PSQLGeneratorTest extends Specification {
           |  "favorite_count" bigint not null,
           |  "geo_tag.countyID" bigint default null,
           |  "user.location" varchar(255) not null,
+          |  "user_mentions" bigint[] default null,
           |  "place.type" varchar(255) default null,
           |  "geo_tag.cityName" varchar(255) default null,
           |  "user.id" bigint not null,
@@ -784,7 +785,8 @@ class PSQLGeneratorTest extends Specification {
           |  "lang" varchar(255) not null,
           |  "user.lang" varchar(255) not null,
           |  "user.name" varchar(255) not null,
-          |  "geo_tag.countyName" varchar(255) default null, primary key ("id")
+          |  "geo_tag.countyName" varchar(255) default null,
+          |  "hashtags" varchar[] default null, primary key ("id")
           |);
           |insert into "zika"
           |(
@@ -795,9 +797,9 @@ class PSQLGeneratorTest extends Specification {
     }
   }
 
-  "SQLGenerator deleteRecord" should {
+  "PostgreSQLGenerator deleteRecord" should {
     "generate the delete query " in {
-      val sql = parser.generate(DeleteRecord(TwitterDataSetForSQL, Seq(timeFilter)), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      val sql = parser.generate(DeleteRecord(TwitterDataSetForSQL, Seq(timeFilter)), Map(TwitterDataSetForSQL -> TwitterDataStoreForPostgreSQL.TwitterSchemaForSQL))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
           |delete from "twitter_ds_tweet" t
@@ -806,9 +808,9 @@ class PSQLGeneratorTest extends Specification {
     }
   }
 
-  "SQLGenerator dropView" should {
+  "PostgreSQLGenerator dropView" should {
     "generate the drop view query" in {
-      val sql = parser.generate(DropView(TwitterDataSetForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForSQL.TwitterSchemaForSQL))
+      val sql = parser.generate(DropView(TwitterDataSetForSQL), Map(TwitterDataSetForSQL -> TwitterDataStoreForPostgreSQL.TwitterSchemaForSQL))
       removeEmptyLine(sql) must_== unifyNewLine(
         """
           |drop table if exists "twitter_ds_tweet"

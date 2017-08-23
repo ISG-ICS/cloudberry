@@ -8,7 +8,7 @@ import play.api.libs.json._
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class PSQLGenerator extends SQLQueryGenerator {
+class PostgreSQLGenerator extends SQLGenerator {
 
   protected val quote = '"'
   //trunc(): truncate a number to a particular decimal places, mainly used in groupBy.
@@ -138,6 +138,6 @@ class PSQLGenerator extends SQLQueryGenerator {
 
 }
 
-object PSQLGenerator extends IQLGeneratorFactory {
-  override def apply(): IQLGenerator = new PSQLGenerator()
+object PostgreSQLGenerator extends IQLGeneratorFactory {
+  override def apply(): IQLGenerator = new PostgreSQLGenerator()
 }

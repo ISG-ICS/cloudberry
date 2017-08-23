@@ -1045,8 +1045,8 @@ object TestQuery {
        |}
     """.stripMargin)
 
-  val TwitterDataSetForSQL = TwitterDataStoreForSQL.DatasetName
-  val twitterSchemaForSQL = TwitterDataStoreForSQL.TwitterSchemaForSQL
+  val TwitterDataSetForSQL = TwitterDataStoreForMySQL.DatasetName
+  val twitterSchemaForSQL = TwitterDataStoreForMySQL.TwitterSchemaForSQL
   val twitterSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
   val allSchemaMapForSQL = Map(TwitterDataSetForSQL -> twitterSchemaForSQL)
   val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))

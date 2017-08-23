@@ -12,7 +12,7 @@ import java.sql.{Connection, DriverManager, _}
 import java.lang._
 
 
-class SQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
+class MySQLConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   val defaultQueryResponse = Json.toJson(Seq(Seq.empty[JsValue]))
   val connection: Connection = DriverManager.getConnection(url)
 
