@@ -79,9 +79,19 @@ class SQLGeneratorTest extends Specification {
            |""".stripMargin.trim)
     }
 
-    //6 //TODO: parseUnnest
+    //6 //unnest is treated as varchar
     "translate a simple unnest query" in {
-      ok
+      val filter = Seq(timeFilter, textFilter, stateFilter)
+      val group = GroupStatement(Seq(byHashTag), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10byHashTag))
+      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """|select t.`hashtags` as `hashtags`,count(*) as `count`
+           |from `twitter_ds_tweet` t
+           |where t.`hashtags` is not null and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and match(t.`text`) against ('+zika +virus' in boolean mode) and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+           |group by `hashtags`
+           |order by count(*) desc
+           |limit 10""".stripMargin.trim)
     }
 
     //7
@@ -181,9 +191,21 @@ class SQLGeneratorTest extends Specification {
           |group by `hour`""".stripMargin.trim)
     }
 
-    //15 //TODO: parseUnnest
+    //15 //unnest is treated as varchar
     "translate a max cardinality query with unnest with group by with select" in {
-      ok
+      val filter = Seq(textFilter, timeFilter, stateFilter)
+      val globalAggr = GlobalAggregateStatement(aggrMaxGroupBy)
+      val group = GroupStatement(Seq(byHashTag), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag), Some(globalAggr))
+      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """|select max(`count`) as `max` from
+           |(select t.`hashtags` as `hashtags`,count(*) as `count`
+           |from `twitter_ds_tweet` t
+           |where t.`hashtags` is not null and match(t.`text`) against ('+zika +virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+           |group by `hashtags`
+           |order by count(*) desc
+           |limit 10) t""".stripMargin.trim)
     }
 
     //16
@@ -314,9 +336,21 @@ class SQLGeneratorTest extends Specification {
           | """.stripMargin.trim)
     }
 
-    //24 //TODO: parseUnnest
+    //24 //unnest is treated as varchar
     "translate a text contain + time + geo id set filter and group by hashtags" in {
-      ok
+      val filter = Seq(textFilter, timeFilter, stateFilter)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val query = new Query(TwitterDataSetForSparkSQL, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
+      val result = parser.generate(query, Map(TwitterDataSetForSparkSQL -> twitterSchema))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select `hashtags` as `tag`,count(*) as `count`
+          |from `twitter_ds_tweet` t
+          |where t.`hashtags` is not null and match(t.`text`) against ('+zika +virus' in boolean mode) and t.`create_at` >= '2016-01-01 00:00:00.000' and t.`create_at` < '2016-12-01 00:00:00.000' and t.`geo_tag.stateID` in ( 37,51,24,11,10,34,42,9,44 )
+          |group by `tag`
+          |order by count(*) desc
+          |limit 10
+          | """.stripMargin.trim)
     }
 
     //25
@@ -570,7 +604,7 @@ class SQLGeneratorTest extends Specification {
       )
     }
 
-    //41 //TODO: parseUnnest
+    //41
     "translate a text contain + time + geo id set filter and group day and state and aggregate topK hashtags" in {
       ok
     }

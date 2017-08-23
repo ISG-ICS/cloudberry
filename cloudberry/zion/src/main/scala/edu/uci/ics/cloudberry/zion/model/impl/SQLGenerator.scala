@@ -132,7 +132,7 @@ class SQLGenerator extends IQLGenerator {
       case DataType.Boolean => "tinyint"
       case DataType.String => "varchar(255)"
       case DataType.Text => "text"
-      case DataType.Bag => ???
+      case DataType.Bag => "varchar(255)" //unnest function is not supported in mysql
       case DataType.Hierarchy => ???
       case DataType.Record => ???
     }
@@ -317,11 +317,11 @@ class SQLGenerator extends IQLGenerator {
     filter.relation match {
       case Relation.matches => {
         val values = filter.values.map(_.asInstanceOf[String])
-        s"""$fieldExpr="${values(0)}""""
+        s"""$fieldExpr='${values(0)}'"""
       }
       case Relation.!= => {
         val values = filter.values.map(_.asInstanceOf[String])
-        s"""$fieldExpr!="${values(0)}""""
+        s"""$fieldExpr!='${values(0)}'"""
       }
       case Relation.contains => {
         val values = filter.values.map(_.asInstanceOf[String])
@@ -381,11 +381,21 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  //TODO: unnest
+  //TODO: unnest function not supported in MySQL, here is treated as string.
   private def parseUnnest(unnest: Seq[UnnestStatement],
                           exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
-    //return the empty result & exprMap for next step's process.
-    ParsedResult((new ListBuffer[String]), exprMap)
+    val producedExprs = mutable.LinkedHashMap.newBuilder[String, FieldExpr] ++= exprMap
+    val unnestTestStrs = new ListBuffer[String]
+    unnest.zipWithIndex.map {
+      case (unnest, id) =>
+        val expr = exprMap(unnest.field.name)
+        val newExpr = s"${quote}${unnest.field.name}${quote}"
+        producedExprs += (unnest.as.name -> FieldExpr(newExpr, newExpr))
+        if (unnest.field.isOptional) {
+            unnestTestStrs += s"${expr.refExpr} is not null"
+        }
+    }
+    ParsedResult(unnestTestStrs, (producedExprs.result().toMap))
   }
 
   protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String = {
