@@ -45,53 +45,51 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       },
       styles: {
         initStyle: {
-          weight: 2,
+          weight: 1.5,
           fillOpacity: 0.5,
           color: 'white'
         },
         stateStyle: {
           fillColor: '#f7f7f7',
-          weight: 2,
+          weight: 1.5,
           opacity: 1,
-          color: '#92c5de',
-          dashArray: '3',
-          fillOpacity: 0.2
+          color: '#92d1e1',
+          fillOpacity: 0.5
         },
         stateUpperStyle: {
           fillColor: '#f7f7f7',
-          weight: 3,
+          weight: 1.5,
           opacity: 1,
-          color: '#ffc125',
-          fillOpacity: 0.2
+          color: '#92d1e1',
+          fillOpacity: 0.5
         },
         countyStyle: {
           fillColor: '#f7f7f7',
-          weight: 1,
+          weight: 1.5,
           opacity: 1,
-          color: '#92c5de',
-          fillOpacity: 0.2
+          color: '#92d1e1',
+          fillOpacity: 0.5
         },
         countyUpperStyle: {
           fillColor: '#f7f7f7',
-          weight: 2,
+          weight: 1.5,
           opacity: 1,
-          color: '#ffc125',
-          fillOpacity: 0.2
+          color: '#92d1e1',
+          fillOpacity: 0.5
         },
         cityStyle: {
           fillColor: '#f7f7f7',
-          weight: 1,
+          weight: 1.5,
           opacity: 1,
-          color: '#92c5de',
-          fillOpacity: 0.2
+          color: '#92d1e1',
+          fillOpacity: 0.5
         },
         hoverStyle: {
           weight: 5,
           color: '#666',
-          dashArray: '',
-          fillOpacity: 0.7
+          fillOpacity: 0.5
         },
-        colors: [ '#ffffff', '#92c5de', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
+        colors: [ '#ffffff', '#92d1e1', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       }
     });
@@ -164,15 +162,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         var style;
         if (!$scope.status.init)
           style = {
-            weight: 2,
+            weight: 1.5,
             fillOpacity: 0.5,
-            color: 'white'
+            color: '#92d1e1'
           };
         else
           style = {
-            weight: 1,
-            fillOpacity: 0.2,
-            color: '#92c5de'
+            weight: 1.5,
+            fillOpacity: 0.5,
+            color: '#92d1e1'
           };
         if (leafletEvent)
           leafletEvent.target.setStyle(style);
@@ -218,7 +216,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         if ($scope.map) {
           $scope.status.zoomLevel = $scope.map.getZoom();
           $scope.bounds = $scope.map.getBounds();
-          if($scope.status.zoomLevel > 7) {
+          if($scope.status.zoomLevel > 9) {
             resetGeoInfo("city");
             if ($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -477,19 +475,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         if (!feature.properties.count || feature.properties.count === 0){
           return {
             fillColor: '#f7f7f7',
-            weight: 2,
+            weight: 1.5,
             opacity: 1,
-            color: '#92c5de',
-            dashArray: '3',
-            fillOpacity: 0.2
+            color: '#92d1e1',
+            fillOpacity: 0.5
           };
         } else {
           return {
             fillColor: getColor(feature.properties.count),
-            weight: 2,
+            weight: 1.5,
             opacity: 1,
-            color: 'white',
-            dashArray: '3',
+            color: '#92d1e1',
             fillOpacity: 0.5
           };
         }
