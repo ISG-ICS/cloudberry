@@ -96,7 +96,6 @@ class BerryClient(val jsonParser: JSONParser,
         val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
         futureResult.foreach { r =>
           curSender ! request.postTransform.transform(r)
-          curSender ! BerryClient.Done
         }
       } else {
         val targetMillis = runOption.sliceMills
@@ -121,7 +120,7 @@ class BerryClient(val jsonParser: JSONParser,
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) {
-        queryGroup.curSender ! BerryClient.Done // notifying the client the processing is done
+        queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
         suggestViews(queryGroup)
         context.become(receive, discardOld = true)
       } else {
