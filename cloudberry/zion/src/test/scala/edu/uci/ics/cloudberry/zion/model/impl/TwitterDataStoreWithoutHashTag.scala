@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.schema._
 
-object TwitterDataStoreForMySQL {
+object TwitterDataStoreWithoutHashTag {
   val DatasetName = "twitter_ds_tweet"
   val TimeFieldName = "create_at"
   val TwitterSchemaForSQL = Schema("twitter_ds_tweet",
