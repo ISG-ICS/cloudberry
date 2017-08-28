@@ -3,12 +3,10 @@ package edu.uci.ics.cloudberry.zion.model.impl
 import edu.uci.ics.cloudberry.zion.model.datastore.{IQLGenerator, IQLGeneratorFactory, QueryParsingException}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
-import play.api.libs.json._
 
 import scala.collection.mutable
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-class SQLGenerator extends IQLGenerator {
+abstract class SQLGenerator extends IQLGenerator {
 
   /**
     * represent the expression for a [[Field]]
@@ -36,17 +34,14 @@ class SQLGenerator extends IQLGenerator {
   protected val groupedLookupSourceVar: String = "tt"
   protected val globalAggrVar: String = "*"
 
-  protected val quote = "`"
+  protected val quote: Char
 
   protected val round: String = "round"
   protected val stringContains: String = "like"
-  protected val fullTextMatch = Seq("match", "against")
   //a number truncated to a certain number of decimal places
-  protected val truncate: String = "truncate"
-  //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
-  protected val geoAsText: String = "st_astext"
-  //X/Y-coordinate value for the Point object.
-  protected val pointGetCoord = Seq("st_x", "st_y")
+  protected val truncate: String
+  protected val fullTextMatch: Seq[String]
+
 
   protected val aggregateFuncMap: Map[AggregateFunc, String] = Map(
     Count -> "count",
@@ -88,20 +83,7 @@ class SQLGenerator extends IQLGenerator {
     s"$result"
   }
 
-  def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String = {
-    val (temporalSchemaMap, lookupSchemaMap) = GeneratorUtil.splitSchemaMap(schemaMap)
-    val sourceSchema = temporalSchemaMap(create.query.dataset)
-    val resultSchema = calcResultSchema(create.query, sourceSchema)
-    val ddl: String = genDDL(create.dataset, sourceSchema)
-    val insert =
-      s"""
-     |replace into $quote${create.dataset}$quote
-     |(
-     |${parseQuery(create.query, schemaMap)}
-     |)
-      """.stripMargin
-    ddl + insert
-  }
+  protected def parseCreate(create: CreateView, schemaMap: Map[String, AbstractSchema]): String
 
   protected def genDDL(name: String, schema: Schema): String = {
     def mkNestDDL(names: String, typeStr: String): String = {
@@ -111,64 +93,36 @@ class SQLGenerator extends IQLGenerator {
     }
 
     val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
-      f => mkNestDDL(f.name, fieldType2MySQLType(f) + (if (f.isOptional) " default null" else " not null"))
+      f => mkNestDDL(f.name, fieldType2SQLType(f) + (if (f.isOptional) " default null" else " not null"))
     }
     s"""
        |create table if not exists $quote${name}$quote (
-       |${fields.mkString(",\n")}, primary key (${schema.primaryKey.map(key => key.name).mkString("`","`,`","`")})
+       |${fields.mkString(",\n")}, primary key (${schema.primaryKey.map(key => key.name).mkString(s"$quote",s"$quote,$quote",s"$quote")})
        |);
       """.stripMargin
   }
 
   /**
-    * Convert middleware datatype to MySQL datatype
+    * Convert middleware datatype to SqlDB datatype
     * @param field
     */
-  protected def fieldType2MySQLType(field: Field): String = {
-    field.dataType match {
-      case DataType.Number => "bigint"
-      case DataType.Time => "datetime"
-      case DataType.Point => "point"
-      case DataType.Boolean => "tinyint"
-      case DataType.String => "varchar(255)"
-      case DataType.Text => "text"
-      case DataType.Bag => ???
-      case DataType.Hierarchy => ???
-      case DataType.Record => ???
-    }
-  }
+  protected def fieldType2SQLType(field: Field): String
 
-  def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String = {
+  protected def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String = {
     s"""
-       |replace into $quote${append.dataset}$quote (
+       |insert into $quote${append.dataset}$quote (
        |${parseQuery(append.query, schemaMap)}
        |)""".stripMargin
   }
 
-  def parseUpsert(q: UpsertRecord): String = {
+  protected def parseUpsert(q: UpsertRecord): String = {
     q.dataset.equals(SQLConn.metaName) match {
       case true => parseUpsertMeta(q)
       case _ => ??? //TODO: general upsert
     }
   }
 
-  def parseUpsertMeta(q: UpsertRecord): String = {
-    val records = q.records.value
-    var queryResult = ArrayBuffer.empty[String]
-    records.foreach {
-      record =>
-        val name: String = (record \ "name").as[JsString].value
-        val schema: JsValue = (record \ "schema").as[JsValue]
-        val dataInterval: JsValue = (record \ "dataInterval").as[JsValue]
-        val stats: JsValue = (record \ "stats").as[JsValue]
-        val createTime: String = TimeField.TimeFormatForSQL.print(new DateTime((record \ "stats" \ "createTime").as[String]))
-        queryResult += (s"('${name}','${schema}','${dataInterval}','${stats}','${createTime}')")
-    }
-    s"""
-       |replace into $quote${q.dataset}$quote (`name`, `schema`, `dataInterval`, `stats`, `stats.createTime`) values
-       |${queryResult.mkString(",")}
-       |""".stripMargin
-  }
+  protected def parseUpsertMeta(q: UpsertRecord): String
 
   protected def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
     if (delete.filters.isEmpty) {
@@ -193,17 +147,13 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr] = {
-    val schema = schemaMap(dataset)
-    schema.fieldMap.mapValues { f =>
-      FieldExpr(s"$sourceVar.$quote${f.name}$quote", s"$sourceVar.$quote${f.name}$quote")
-    }
-  }
+  protected def initExprMap(dataset: String, schemaMap: Map[String, AbstractSchema]): Map[String, FieldExpr]
 
   protected def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
     val queryBuilder = new mutable.StringBuilder()
 
     val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)
+
     val fromStr = s"from $quote${query.dataset}$quote $sourceVar".trim
     queryBuilder.append(fromStr)
     val resultAfterAppend = parseAppend(query.append, exprMap, queryBuilder)
@@ -224,7 +174,7 @@ class SQLGenerator extends IQLGenerator {
     queryBuilder.toString
   }
 
-  private def parseAppend(appends: Seq[AppendStatement], exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
+  protected def parseAppend(appends: Seq[AppendStatement], exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
     if (appends.isEmpty) {
       ParsedResult(Seq.empty, exprMap)
     } else {
@@ -233,7 +183,7 @@ class SQLGenerator extends IQLGenerator {
         val as = append.as
         producedExprs += append.as.name -> FieldExpr(s"$sourceVar.$quote${as.name}$quote", append.definition)
       }
-      producedExprs += s"$allFieldVar" -> FieldExpr(s"$allFieldVar", s"$sourceVar.$quote$allFieldVar$quote")
+      producedExprs += allFieldVar -> exprMap(allFieldVar)
       val selectStr = parseProject(producedExprs.result().toMap)
       queryBuilder.insert(0, s"from ($selectStr\n")
       queryBuilder.append(s") $sourceVar")
@@ -246,7 +196,7 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  private def parseLookup(lookups: Seq[LookupStatement],
+  protected def parseLookup(lookups: Seq[LookupStatement],
                           exprMap: Map[String, FieldExpr],
                           queryBuilder: StringBuilder,
                           inGroup: Boolean): ParsedResult = {
@@ -269,7 +219,6 @@ class SQLGenerator extends IQLGenerator {
         s"""left outer join $quote${lookup.dataset}$quote $lookupExpr on ${conditions.mkString(" and ")}"""
     }.mkString("\n")
     appendIfNotEmpty(queryBuilder, lookupStr)
-
     ParsedResult(Seq.empty, (producedExprs).result().toMap)
   }
 
@@ -317,11 +266,11 @@ class SQLGenerator extends IQLGenerator {
     filter.relation match {
       case Relation.matches => {
         val values = filter.values.map(_.asInstanceOf[String])
-        s"""$fieldExpr="${values(0)}""""
+        s"""$fieldExpr='${values(0)}'"""
       }
       case Relation.!= => {
         val values = filter.values.map(_.asInstanceOf[String])
-        s"""$fieldExpr!="${values(0)}""""
+        s"""$fieldExpr!='${values(0)}'"""
       }
       case Relation.contains => {
         val values = filter.values.map(_.asInstanceOf[String])
@@ -330,13 +279,7 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
-    val wordsArr = ArrayBuffer[String]()
-    filter.values.foreach(w => wordsArr += w.toString)
-    val sb = new StringBuilder(s"${fullTextMatch(0)}($fieldExpr) ${fullTextMatch(1)} ('")
-    sb.append(wordsArr.mkString("+"," +","") + s"' in boolean mode)")
-    sb.toString()
-  }
+  protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String
 
   protected def parseNumberRelation(filter: FilterStatement,
                                     fieldExpr: String): String = {
@@ -368,7 +311,7 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  private def parseFilter(filters: Seq[FilterStatement], exprMap: Map[String, FieldExpr], unnestTestStrs: Seq[String], queryBuilder: StringBuilder): ParsedResult = {
+  protected def parseFilter(filters: Seq[FilterStatement], exprMap: Map[String, FieldExpr], unnestTestStrs: Seq[String], queryBuilder: StringBuilder): ParsedResult = {
     if (filters.isEmpty && unnestTestStrs.isEmpty) {
       ParsedResult(Seq.empty, exprMap)
     } else {
@@ -381,29 +324,11 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  //TODO: unnest
-  private def parseUnnest(unnest: Seq[UnnestStatement],
-                          exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult = {
-    //return the empty result & exprMap for next step's process.
-    ParsedResult((new ListBuffer[String]), exprMap)
-  }
+  protected def parseUnnest(unnest: Seq[UnnestStatement], exprMap: Map[String, FieldExpr], queryBuilder: StringBuilder): ParsedResult
 
-  protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String = {
-    groupBy.funcOpt match {
-      case Some(func) =>
-        func match {
-          case interval: Interval => s"${timeUnitFuncMap(interval.unit)}($fieldExpr)"
-          case GeoCellTenth => parseGeoCell(1, fieldExpr, groupBy.field.dataType)
-          case GeoCellHundredth => parseGeoCell(2, fieldExpr, groupBy.field.dataType)
-          case GeoCellThousandth => parseGeoCell(3, fieldExpr, groupBy.field.dataType)
-          case bin: Bin => s"$round($fieldExpr/${bin.scale})*${bin.scale}"
-          case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
-        }
-      case None => fieldExpr
-    }
-  }
+  protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String
 
-  private def parseGroupby(groupOpt: Option[GroupStatement],
+  protected def parseGroupby(groupOpt: Option[GroupStatement],
                            exprMap: Map[String, FieldExpr],
                            queryBuilder: StringBuilder): ParsedResult = {
     groupOpt match {
@@ -447,7 +372,7 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  private def parseSelect(selectOpt: Option[SelectStatement],
+  protected def parseSelect(selectOpt: Option[SelectStatement],
                           exprMap: Map[String, FieldExpr], query: Query,
                           queryBuilder: StringBuilder): ParsedResult = {
     selectOpt match {
@@ -478,10 +403,7 @@ class SQLGenerator extends IQLGenerator {
           producedExprs ++= exprMap
         } else {
           select.fields.foreach {
-            case AllField =>
-              producedExprs += s"$allFieldVar" -> exprMap(allFieldVar)
-            case field =>
-              producedExprs += field.name -> exprMap(field.name)
+            field => producedExprs += field.name -> exprMap(field.name)
           }
         }
 
@@ -510,14 +432,13 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  private def parseProject(exprMap: Map[String, FieldExpr]): String = {
+  protected def parseProject(exprMap: Map[String, FieldExpr]): String = {
     exprMap.map {
-      case (field, expr) =>
-        s"${expr.defExpr} as $quote$field$quote"
+      case (field, expr) => s"${expr.defExpr} as $quote${field}$quote"
     }.mkString("select ", ",", "")
   }
 
-  private def parseGlobalAggr(globalAggrOpt: Option[GlobalAggregateStatement],
+  protected def parseGlobalAggr(globalAggrOpt: Option[GlobalAggregateStatement],
                               exprMap: Map[String, FieldExpr],
                               queryBuilder: StringBuilder): ParsedResult = {
     globalAggrOpt match {
@@ -551,18 +472,7 @@ class SQLGenerator extends IQLGenerator {
     }
   }
 
-  /**
-    * Process POINT type of MySQL:
-    * ST_ASTEXT: return POINT field as text to avoid messy code. https://dev.mysql.com/doc/refman/5.7/en/gis-format-conversion-functions.html
-    * ST_X, ST_Y: get X/Y-coordinate of Point. https://dev.mysql.com/doc/refman/5.6/en/gis-point-property-functions.html
-    * truncate: a number truncated to a certain number of decimal places, mainly used in groupBy. http://www.w3resource.com/mysql/mathematical-functions/mysql-truncate-function.php
-    * @param scale
-    * @param fieldExpr
-    * @param dataType
-    */
-  protected def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
-    s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
-  }
+  protected def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String
 
   /**
     * Append a new line and queryStr to the queryBuilder if queryStr is not empty.
@@ -578,8 +488,4 @@ class SQLGenerator extends IQLGenerator {
       queryBuilder.append(queryStr)
     }
   }
-}
-
-object SQLGenerator extends IQLGeneratorFactory {
-  override def apply(): IQLGenerator = new SQLGenerator()
 }

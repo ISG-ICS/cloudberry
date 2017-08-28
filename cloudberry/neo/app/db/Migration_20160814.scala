@@ -1,7 +1,7 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, SQLConn, AsterixSQLPPConn}
+import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, MySQLConn, PostgreSQLConn, AsterixSQLPPConn}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -12,7 +12,20 @@ private[db] class Migration_20160814() {
   //TODO it supposes to automatically register the dataset from AsterixDB
   def up(conn: IDataConn)(implicit ec: ExecutionContext): Future[Boolean] = {
     conn match {
-      case sql: SQLConn =>
+      case psql: PostgreSQLConn =>
+        conn.postControl{
+          s"""
+             |create table if not exists "berry.meta" (
+             |"name" varchar(255) not null,
+             |"schema" json not null,
+             |"dataInterval" json not null,
+             |"stats" json not null,
+             |"stats.createTime" time not null,
+             |primary key("name")
+             |);
+           """.stripMargin
+        }
+      case sql: MySQLConn =>
         conn.postControl {
           s"""
              |create table if not exists `berry.meta` (
