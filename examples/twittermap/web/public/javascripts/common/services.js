@@ -308,9 +308,13 @@ angular.module('cloudberry.common', [])
             cloudberryService.tweetResult = result.value[0];
             break;
           case "batch":
-            cloudberryService.timeResult = result.value[0];
-            cloudberryService.mapResult = result.value[1];
-            cloudberryService.hashTagResult = result.value[2];
+            if(angular.isArray(result.value)) {
+              cloudberryService.timeResult = result.value[0];
+              cloudberryService.mapResult = result.value[1];
+              cloudberryService.hashTagResult = result.value[2];
+            } else { // this is the {key: "done"} message
+              console.log("receive :", result.value);
+            }
             break;
           case "totalCount":
             cloudberryService.totalCount = result.value[0][0].count;
