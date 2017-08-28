@@ -1,15 +1,15 @@
 /*
- * Module to cache the result data. Common services module communicates with
+ * Module to cache map result data. Common services module communicates with
  * middleware and updates resultcache module.
  */
 'use strict';
-angular.module('cloudberry.resultcache', ['cloudberry.common'])
-  .service('ResultCache', function () {
+angular.module('cloudberry.mapresultcache', ['cloudberry.common'])
+  .service('MapResultCache', function () {
 
     // The key-value store that stores mapResults
     var store = new HashMap();
     // To check if keyword in query changed
-    var currentKeyword = [""];
+    var currentKeywords = [""];
     // To check if time range in query changed
     var date = new Date();
     date.setDate(date.getDate() - 1);
@@ -33,10 +33,10 @@ angular.module('cloudberry.resultcache', ['cloudberry.common'])
       // otherwise in range (0, geoIds.length)
       var geoIdsNotInCache = [];
 
-      if(keywords.toString() != currentKeyword.toString() ||
+      if(keywords.toString() != currentKeywords.toString() ||
                 !angular.equals(currentTimeRange, timeInterval)) {
         store.clear();
-        currentKeyword = keywords.slice();
+        currentKeywords = keywords.slice();
         currentTimeRange.start = timeInterval.start;
         currentTimeRange.end = timeInterval.end;
       }
@@ -74,7 +74,7 @@ angular.module('cloudberry.resultcache', ['cloudberry.common'])
         store.set(prefix[geoLevel] + mapResult[i][geoLevel], mapResult[i]);
         geoIdSet.delete(mapResult[i][geoLevel]);
       }
-      // Make other results null
+      // Mark other results as checked: these are geoIds with no results
       geoIdSet.forEach(function(value)  {
         store.set(prefix[geoLevel] + value, INVALID_VALUE);
       });
