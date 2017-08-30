@@ -30,13 +30,15 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val endDate : Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
-  val sqlDB: String = config.getString("sqlDB").getOrElse("false")
 
   val clientLogger = Logger("client")
 
+  import TwitterMapApplication.DBType
+  val sqlDB: DBType.Value = DBType.withName(config.getString("sqlDB").getOrElse("Default"))
+
   val register = sqlDB match {
-    case "mysql" => MySqlMigration_20170810.migration.up(wsClient, cloudberryRegisterURL)
-    case "postgresql" => PostgreSqlMigration_20172829.migration.up(wsClient, cloudberryRegisterURL)
+    case DBType.MySQL => MySqlMigration_20170810.migration.up(wsClient, cloudberryRegisterURL)
+    case DBType.PostgreSQL => PostgreSqlMigration_20172829.migration.up(wsClient, cloudberryRegisterURL)
     case _ => Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
   }
   Await.result(register, 1 minutes)
@@ -173,5 +175,8 @@ object TwitterMapApplication {
     }
   }
 
+  object DBType extends Enumeration {
+    val MySQL, PostgreSQL, Default = Value
+  }
 
 }
