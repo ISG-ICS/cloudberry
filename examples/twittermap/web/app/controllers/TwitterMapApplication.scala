@@ -3,7 +3,7 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
-import model.{Migration_20170428, MySqlMigration_20170810}
+import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
 import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
@@ -30,13 +30,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val endDate : Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
-  val isMySql: Boolean = config.getBoolean("isMySql").getOrElse(false)
+  val sqlDB: String = config.getString("sqlDB").getOrElse("false")
 
   val clientLogger = Logger("client")
 
-  val register = isMySql match {
-    case false => Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
-    case true => MySqlMigration_20170810.migration.up(wsClient, cloudberryRegisterURL)
+  val register = sqlDB match {
+    case "mysql" => MySqlMigration_20170810.migration.up(wsClient, cloudberryRegisterURL)
+    case "postgresql" => PostgreSqlMigration_20172829.migration.up(wsClient, cloudberryRegisterURL)
+    case _ => Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
   }
   Await.result(register, 1 minutes)
 
@@ -44,7 +45,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, false, isMySql))
+    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, false, sqlDB))
   }
 
   def drugmap = Action {
@@ -53,7 +54,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, true, false))
+      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, true, sqlDB))
   }
 
   def tweet(id: String) = Action.async {
