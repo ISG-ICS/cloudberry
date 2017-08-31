@@ -1,11 +1,12 @@
 <?php
 
 echo "Connecting to PostgreSQL container ... \n";
+$host = $argv[1];
 $retries = 10;
 while ($retries > 0)
 {
     try {
-        $con = new \PDO('pgsql:port=5555;host=172.17.0.1;user=postgres;password=pwd;');
+        $con = new \PDO('pgsql:port=5555;host='.$host.';user=postgres;password=pwd;');
         echo "Connected to postgres-container!\n";
         $retries = 0;
     } catch (PDOException $e) {

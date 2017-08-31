@@ -1,11 +1,12 @@
 <?php
 
 echo "Connecting to MySql container ... \n";
+$host = $argv[1];
 $retries = 10;
 while ($retries > 0)
 {
     try {
-        $con = new \PDO('mysql:host=172.17.0.1;port=6603;', 'root', '');
+        $con = new \PDO('mysql:host='.$host.';port=6603;', 'root', '');
         echo "Connected to mysql-container!\n";
         $retries = 0;
     } catch (PDOException $e) {

@@ -28,7 +28,9 @@ docker run -p 6603:3306 -d --name mysql-container \
 echo "Ingesting sample tweets ..."
 unzip -o ./script/mysqlSample.json.zip -d ./script/
 
+host=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}' mysql-container)
+
 docker run -it --rm --name mysql-sample-tweet \
-    --link mysql-container -v "$PWD":/usr/src/myapp \
+    --link mysql-container:mysql-container -v "$PWD":/usr/src/myapp \
     -w /usr/src/myapp spittet/php-mysql \
-    php ./script/ingestMySqlTwitterToLocalCluster.sh
+    php ./script/ingestMySqlTwitterToLocalCluster.sh $host

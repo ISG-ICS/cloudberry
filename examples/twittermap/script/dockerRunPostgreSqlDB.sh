@@ -28,7 +28,9 @@ docker run --name postgres-container \
 echo "Ingesting sample tweets ..."
 unzip -o ./script/mysqlSample.json.zip -d ./script/
 
+host=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}' postgres-container)
+
 docker run -it --rm --name postgres-sample-tweet \
     --link postgres-container:postgres-container -v "$PWD":/usr/src/myapp \
     -w /usr/src/myapp spittet/php-postgresql \
-    php ./script/ingestPostgreSqlTwitterToLocalCluster.sh
+    php ./script/ingestPostgreSqlTwitterToLocalCluster.sh $host
