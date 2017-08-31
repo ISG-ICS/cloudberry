@@ -168,6 +168,33 @@ angular.module('cloudberry.common', [])
       };
     }
 
+    function byHashTagRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultNonSamplingDayRange),
+        unnest: [{
+          hashtags: "tag"
+        }],
+        group: {
+          by: [{
+            field: "tag"
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        },
+        select: {
+          order: ["-count"],
+          limit: 50,
+          offset: 0
+        }
+      };
+    }
+
     var cloudberryService = {
 
       totalCount: 0,
@@ -188,6 +215,7 @@ angular.module('cloudberry.common', [])
 
       mapResult: [],
       timeResult: [],
+      hashTagResult: [],
       errorMessage: null,
 
       query: function(parameters, queryType) {
@@ -208,7 +236,7 @@ angular.module('cloudberry.common', [])
         }));
 
         var batchJson = (JSON.stringify({
-          batch: [byTimeRequest(parameters), byGeoRequest(parameters)],
+          batch: [byTimeRequest(parameters), byGeoRequest(parameters), byHashTagRequest(parameters)],
           option: {
             sliceMillis: 2000
           },
@@ -235,6 +263,7 @@ angular.module('cloudberry.common', [])
             if(angular.isArray(result.value)) {
               cloudberryService.timeResult = result.value[0];
               cloudberryService.mapResult = result.value[1];
+              cloudberryService.hashTagResult = result.value[2];
             } else { // this is the {key: "done"} message
               console.log("receive :", result.value);
             }
