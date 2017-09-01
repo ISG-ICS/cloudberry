@@ -58,7 +58,7 @@ EOT;
 $con->query($create) or die("Fail to create table!");
 echo "Created table twitter_ds_tweet! \n";
 
-$handle = @fopen("./script/mysqlSample.json", "r");
+$handle = @fopen("./script/sample.json", "r");
 
 # set unlimited maximum amount of memory available to PHP
 ini_set('memory_limit','-1');

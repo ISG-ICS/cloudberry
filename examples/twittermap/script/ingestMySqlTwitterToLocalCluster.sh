@@ -60,7 +60,7 @@ $create_twitter_ds_tweet = "CREATE TABLE IF NOT EXISTS `twitter_ds_tweet` (
 
 $con->query($create_twitter_ds_tweet);
 
-$handle = @fopen("./script/mysqlSample.json", "r");
+$handle = @fopen("./script/sample.json", "r");
 
 # set unlimited maximum amount of memory available to PHP
 ini_set('memory_limit','-1');

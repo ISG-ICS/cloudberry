@@ -26,7 +26,7 @@ docker run --name postgres-container \
     -d -p 5555:5432 postgres
 
 echo "Ingesting sample tweets ..."
-unzip -o ./script/mysqlSample.json.zip -d ./script/
+unzip -o ./script/sample.json.zip -d ./script/
 
 host=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}' postgres-container)
 

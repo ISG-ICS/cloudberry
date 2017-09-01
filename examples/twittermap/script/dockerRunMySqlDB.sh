@@ -26,7 +26,7 @@ docker run -p 6603:3306 -d --name mysql-container \
     mysql:latest
 
 echo "Ingesting sample tweets ..."
-unzip -o ./script/mysqlSample.json.zip -d ./script/
+unzip -o ./script/sample.json.zip -d ./script/
 
 host=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.Gateway}}{{end}}' mysql-container)
 

@@ -1,4 +1,21 @@
 #!/usr/bin/env python
+#===============================================================================
+#
+#          FILE: reconstructAdmSampleTweetToJson.sh
+#
+#         USAGE: ./reconstructAdmSampleTweetToJson.sh
+#
+#   DESCRIPTION: Reconstruct the adm format sample tweets to json format
+#
+#       OPTIONS:
+#  REQUIREMENTS: ---
+#          BUGS: ---
+#         NOTES: ---
+#        AUTHOR: Haohan Zhang (), hh1680651@gmail.com
+#  ORGANIZATION: ics.uci.edu
+#       CREATED: 08/31/2017 20:49:01 PM PDT
+#      REVISION:  ---
+#===============================================================================
 
 import re
 import gzip
@@ -45,6 +62,6 @@ for index in range(len(f)):
 	    	f[index] = sen
 	        break
 
-text_file = open("./script/mysqlSample.json", "w")
+text_file = open("./script/sample.json", "w")
 text_file.write(''.join(f))
 text_file.close()
