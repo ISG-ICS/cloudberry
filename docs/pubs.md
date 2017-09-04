@@ -6,16 +6,21 @@ subtitle:
 
 ## Papers
 * **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey.
-[[PDF (Long version)](../img/query-slicing-long.pdf)]
+[[PDF (Long version)](../img/query-slicing-long.pdf)][[Video](https://youtu.be/gztxneqSIDE)]
+* **Caching Geospatial Objects in Web Browsers**, Taewoo Kim, Vidhyasagar Thirumaraiselvan, Jianfeng Jia, Chen Li, ACM SIGSPATIAL 2017
+* **Visual Analytics Ecology for Complex System Testing**,
+Simon Su, Michael Barton, Michael An, Vincent Perry, Chen Li, Jianfeng Jia, Brian Panneton, Visualization in Practice 2017 at IEEE VIS 2017.
+* **Twitter Coverage of Climate Change and Health before and after the 2016 US Presidential Election**, Suellen Hopfer, Miryha Runnerstrom, Jianfeng Jia, Taewoo Kim, Chen Li, American Public Health Association 2017.
 * **Supporting Visualizations on Large Twitter Datasets Using Cloudberry**,
 Shengjie Xu.
 [[PDF](../img/Supporting-Visualizations-on-Large-Twitter-Datasets-Using-Cloudberry.pdf)]
 * **Towards Interactive Analytics and Visualization on One Billion Tweets**,
-Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, ACM GIS 2016.
+Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, ACM SIGSPATIAL 2016.
 [[PDF](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/11/Cloudberry-ACM-GIS2016.pdf)]
 [[Video](https://www.youtube.com/watch?v=XwlRm0jcsU4)]
 
 ## Talks
+* (8/2017) Prof. Chen Li gave talks at Huawei, Google, Teradata, and ARL about Cloudberry.
 * (6/5/2017) Prof. Chen Li gave a [talk](https://docs.google.com/presentation/d/1PSfPgPIv5uXKCCMRokmwkOX_HTK59X_2yQ8eR-Vmk9s/edit?usp=sharing) at UC Riverside.
 * (5/19/2017) ISG [Seminar](https://docs.google.com/presentation/d/1MhUG--KTY77d_JuZ7bpEiHdjLGoPixEGhNELz0xhYIE/edit?usp=sharing) by Chen Li, Jianfeng Jia, and Zuozhi Wang.
 * (3/2017) Prof. Li gave a talk about Cloudberry at UCI. [[PPT](../img/Cloudberry20170324.pptx)]
