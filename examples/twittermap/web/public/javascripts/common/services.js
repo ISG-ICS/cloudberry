@@ -289,7 +289,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
         var batchWithGeoRequest = (JSON.stringify({
           batch: [byTimeRequest(parameters), byGeoRequest(parameters, parameters.geoIds),
-              byHashTagRequest(parameters)],
+            byHashTagRequest(parameters)],
           option: {
             sliceMillis: 2000
           },
@@ -314,8 +314,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }));
 
         geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberryService.parameters.keywords,
-                  cloudberryService.parameters.timeInterval,
-                  cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel);
+          cloudberryService.parameters.timeInterval,
+          cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel);
 
         // batchJson with only the new geoIds for partial map result cache hit case
         var batchJsonWithPartialGeoRequest = (JSON.stringify({
