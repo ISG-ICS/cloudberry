@@ -35,8 +35,8 @@ subtitle:
 
 
 ## Acknowledgement
-This work has been supported by NIH award 1U01HG008488-01, by NSF CNS award 1305430,
-and by the Army Research Laboratory under Cooperative Agreement Number W911NF-16-2-0110.
+This work has been supported by NIH award 1U01HG008488-01, NSF CNS award 1305430,
+and the Army Research Laboratory under Cooperative Agreement Number W911NF-16-2-0110.
 
 [avatar-chen]: https://docs.google.com/drawings/d/1PIQwRDWhX66nWYO1hAGn7DA3T5KnARz5S-FKeiJzHvs/pub?w=200&h=200
 {: height="200px" width="200px"}
