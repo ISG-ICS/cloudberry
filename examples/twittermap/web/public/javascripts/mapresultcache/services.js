@@ -27,7 +27,7 @@ angular.module('cloudberry.mapresultcache', ['cloudberry.common'])
 
     // Check keyword, time range and the cache store
     // Return the geoIds not in store
-    this.returnGeoIdsNotInCache = function (keywords, timeInterval, geoIds, geoLevel) {
+    this.getGeoIdsNotInCache = function (keywords, timeInterval, geoIds, geoLevel) {
       // Length of geoIdsNotInCache is 0 in case of complete cache hit,
       // same length as geoIds in case of complete cache miss,
       // otherwise in range (0, geoIds.length)
