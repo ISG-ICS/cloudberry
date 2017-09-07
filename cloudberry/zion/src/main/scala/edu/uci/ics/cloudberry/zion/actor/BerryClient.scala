@@ -1,7 +1,10 @@
 package edu.uci.ics.cloudberry.zion.actor
 
+import akka.NotUsed
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.ask
+import akka.stream.{Materializer, OverflowStrategy, ThrottleMode}
+import akka.stream.scaladsl.{Sink, Source}
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
@@ -12,6 +15,7 @@ import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 import play.api.libs.json._
 
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
@@ -27,10 +31,17 @@ class BerryClient(val jsonParser: JSONParser,
                   val dataManager: ActorRef,
                   val planner: QueryPlanner,
                   val config: Config,
-                  val out: Option[ActorRef]
-                 )(implicit ec: ExecutionContext) extends Actor with Stash with ActorLogging {
+                  val out: ActorRef
+                 )(implicit val ec: ExecutionContext,
+                   implicit val materializer: Materializer) extends Actor with Stash with ActorLogging {
+
 
   import BerryClient._
+
+  private val throttler :ActorRef = Source.actorRef(1000, OverflowStrategy.dropNew)
+    .throttle(1,  FiniteDuration(1, concurrent.duration.SECONDS), 10, ThrottleMode.shaping)
+    .to(Sink.actorRef(out, NotUsed.getInstance()))
+    .run()
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
   private val minTimeGap = config.MinTimeGap
