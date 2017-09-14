@@ -47,8 +47,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
     var ws = new WebSocket(cloudberryConfig.ws);
-    // The getGeoIdsNotInCache() method in mapresultcache returns the geoIds
-    // not in cache for the current request; used to query middleware
+    // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
+    // not in the cache for the current query.
     var geoIdsNotInCache = [];
 
     var countRequest = JSON.stringify({
@@ -287,6 +287,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }
         }));
 
+        // Default request - time series, map result, and hash tag
         var batchWithGeoRequest = (JSON.stringify({
           batch: [byTimeRequest(parameters), byGeoRequest(parameters, parameters.geoIds),
             byHashTagRequest(parameters)],
@@ -300,7 +301,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }
         }));
 
-        // Used to get timeResult and hashtagResult for complete cache hit case
+        // Batch request without map result - used when the complete map result cache hit case
         var batchWithoutGeoRequest = (JSON.stringify({
           batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
           option: {
@@ -317,7 +318,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           cloudberryService.parameters.timeInterval,
           cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel);
 
-        // batchJson with only the new geoIds for partial map result cache hit case
+        // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
         var batchJsonWithPartialGeoRequest = (JSON.stringify({
           batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
             byHashTagRequest(parameters)],
@@ -331,12 +332,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }
         }));
 
-        // Complete map result cache miss
+        // Complete map result cache miss case
         if (geoIdsNotInCache.length === cloudberryService.parameters.geoIds.length) {
           ws.send(sampleJson);
           ws.send(batchWithGeoRequest);
         }
-        // Complete map result cache hit
+        // Complete map result cache hit case - exclude map result request
         else if(geoIdsNotInCache.length === 0)  {
           cloudberryService.mapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
             cloudberryService.parameters.geoLevel);
@@ -344,7 +345,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           ws.send(sampleJson);
           ws.send(batchWithoutGeoRequest);
         }
-        // Partial map result cache hit
+        // Partial map result cache hit case
         else  {
           ws.send(sampleJson);
           ws.send(batchJsonWithPartialGeoRequest);
@@ -367,7 +368,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               cloudberryService.mapResult = result.value[1];
               cloudberryService.hashTagResult = result.value[2];
             }
-            // When the query is executed completely
+            // When the query is executed completely, we update the map result cache.
             else  if(result.value['key'] === "done")  {
               MapResultCache.putValues(cloudberryService.parameters.geoIds,
                 cloudberryService.parameters.geoLevel, cloudberryService.mapResult);
@@ -388,6 +389,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               cloudberryService.mapResult = cloudberryService.mapResult.concat(result.value[1]);
               cloudberryService.hashTagResult = result.value[2];
             }
+            // When the query is executed completely, we update the map result cache.
             else if(result.value['key'] === "done") {
               MapResultCache.putValues(geoIdsNotInCache, cloudberryService.parameters.geoLevel,
                 cloudberryService.mapResult);
