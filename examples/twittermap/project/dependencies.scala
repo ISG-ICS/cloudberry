@@ -57,6 +57,8 @@ object Dependencies {
     "org.webjars" % "angular-leaflet-directive" % "0.8.2",
     "org.webjars.bower" % "json-bigint" % "0.0.0",
     "org.webjars.bower" % "bootstrap-toggle" % "2.2.2",
+    // mapresultcache module
+    "org.webjars.bower" % "hashmap" % "2.0.5",
     // timeseries module
     "org.webjars.bower" % "crossfilter" % "1.3.11",
     "org.webjars.bower" % "dc.js" % "1.7.5",
