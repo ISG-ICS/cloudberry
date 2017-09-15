@@ -81,6 +81,7 @@ object Migration_20170428 {
       |          {"level":"city","field":"geo_tag.cityID"}]}
       |    ],
       |    "measurement":[
+      |      {"name":"place.bounding_box","isOptional":false,"datatype":"String"},
       |      {"name":"text","isOptional":false,"datatype":"Text"},
       |      {"name":"in_reply_to_status","isOptional":false,"datatype":"Number"},
       |      {"name":"in_reply_to_user","isOptional":false,"datatype":"Number"},
