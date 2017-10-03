@@ -738,7 +738,7 @@ class SQLPPGeneratorTest extends Specification {
           |  create_at : datetime,
           |  lang : string,
           |  hashtags : {{string}}?
-          |}
+          |};
           |drop dataset zika if exists;
           |create dataset zika(twitter.typeTweet) primary key id //with filter on 'create_at'
           |insert into zika (
