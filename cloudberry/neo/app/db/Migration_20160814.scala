@@ -45,7 +45,7 @@ private[db] class Migration_20160814() {
              |create type berry.metaType if not exists as open {
              | name : string,
              | stats : { createTime: string}
-             |}
+             |};
              |
              |create dataset $berryMeta(berry.metaType) if not exists primary key name;
        """.stripMargin
