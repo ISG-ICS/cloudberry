@@ -287,7 +287,7 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     s"""
        |create type ${schema.getTypeName} if not exists as open {
        |${fields.mkString(",\n")}
-       |}
+       |};
     """.stripMargin
   }
 

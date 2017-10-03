@@ -3,7 +3,7 @@ create type typeStatePopulation if not exists as open{
     name:string,
     population:int64,
     stateID:int64
-}
+};
 create dataset dsStatePopulation(typeStatePopulation) if not exists primary key stateID;
 create index stateIDIndex if not exists on dsStatePopulation(stateID) type btree;
 -- you need to change '172.17.0.3' to the ip address of the host
@@ -22,7 +22,7 @@ create type typeCountyPopulation if not exists as open{
     countyID:int64,
     stateName:string,
     stateID:int64
-}
+};
 create dataset dsCountyPopulation(typeCountyPopulation) if not exists primary key countyID;
 create index countyIDIndex if not exists on dsCountyPopulation(countyID) type btree;
 -- you need to change '172.17.0.3' to the ip address of the host
@@ -44,7 +44,7 @@ create type typeCityPopulation if not exists as open{
     countyID:int64,
     stateName:string,
     stateID:int64
-}
+};
 create dataset dsCityPopulation(typeCityPopulation) if not exists primary key cityID;
 create index cityIDIndex if not exists on dsCityPopulation(cityID) type btree;
 -- you need to change '172.17.0.3' to the ip address of the host
