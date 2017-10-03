@@ -16,7 +16,7 @@ object GaussianModel {
     } else if (optimalValueZ > 0) {
       Rw
     } else {
-      val z = Erf.erfInv(optimalValueZ)
+      val z = 0 //Erf.erfInv(optimalValueZ)
       val g = Math.sqrt(2) * stdDev * z + W
       val rx = (g- a0) / a1
       Math.min(Rw, Math.max(0, (Math.sqrt(2) * stdDev * z + W - a0) / a1))

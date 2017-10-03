@@ -29,12 +29,12 @@ class Reporter(initialLimit: FiniteDuration, out: ActorRef)(implicit val ec: Exe
         context.become(hungry(DateTime.now()), discardOld = false)
       } else {
         val result = queue.dequeue()
-        out ! Json.toJson(result)
+        out ! Json.toJson(result.content)
       }
     }
     case Fin => {
       if (queue.nonEmpty) {
-        out ! Json.toJson(queue.dequeueAll(_ => true).last)
+        out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
       }
       self ! PoisonPill // TODO to simplify the logic, one reporter is working for a specific query.
     }
@@ -46,7 +46,7 @@ class Reporter(initialLimit: FiniteDuration, out: ActorRef)(implicit val ec: Exe
     case UpdateInterval(l) =>
       limit = l
     case r: PartialResult =>
-      out ! Json.toJson(r)
+      out ! Json.toJson(r.content)
       val delay = new TInterval(since, DateTime.now())
       log.warning(s"delayed ${delay.toDurationMillis / 1000.0} seconds ")
       timer = context.system.scheduler.schedule(limit, limit, self, TimeToReport)

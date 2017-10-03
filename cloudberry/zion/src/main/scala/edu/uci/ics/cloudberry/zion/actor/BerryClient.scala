@@ -2,13 +2,11 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.ask
-import akka.stream.Materializer
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfo
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
-import org.joda.time.DateTime
 import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,8 +15,6 @@ import scala.concurrent.{ExecutionContext, Future}
   * A reactive client which will continuously feed the result back to user
   * One user should only attach to one ReactiveClient
   *
-  * TODO: a better design should be a reception actor that directs the slicing query and the entire query to different
-  * workers(actors).
   * TODO: merge the multiple times AskViewsInfos
   */
 class BerryClient(val jsonParser: JSONParser,
@@ -26,26 +22,23 @@ class BerryClient(val jsonParser: JSONParser,
                   val planner: QueryPlanner,
                   val config: Config,
                   val out: ActorRef
-                 )(implicit val ec: ExecutionContext,
-                   implicit val materializer: Materializer) extends Actor with Stash with ActorLogging {
-
+                 )(implicit val ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
   import BerryClient._
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
-  private val restSolver : ActorRef = context.actorOf(Props(new RESTSolver(dataManager, planner, out)))
-  private val streamSolver : ActorRef = context.actorOf(Props(new StreamingSolver(dataManager, planner, config, out)))
+  //One RESTFul solver is enough to solve the RESTFul request.
+  private val restfulSolver: ActorRef = context.actorOf(Props(new RESTSolver(dataManager, planner, out)))
 
   override def receive: Receive = {
     case json: JsValue =>
-      handleNewRequest(json, NoTransform)
+      handleRequest(json, NoTransform)
     case (json: JsValue, transform: IPostTransform) =>
-      handleNewRequest(json, transform)
+      handleRequest(json, transform)
   }
 
-  private def handleNewRequest(json: JsValue, transform: IPostTransform): Unit = {
-    val key = DateTime.now()
+  private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
     val datasets = jsonParser.getDatasets(json).toSeq
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
@@ -60,11 +53,19 @@ class BerryClient(val jsonParser: JSONParser,
       }.toMap
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
       if (runOption.sliceMills <= 0) {
-        restSolver ! (queries, transform)
+//        restfulSolver ! (queries, transform)
       } else {
         val targetMillis = runOption.sliceMills
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
-        streamSolver ! StreamingSolver.SlicingRequest(targetMillis, queries, mapInfos, transform)
+        //Each streaming request need a specific actor to handle the request.
+        //TODO Ultimately, clients can run multiple streaming request simultaneously.
+        //     They can also cancel or reset a specific request.
+        //     Right now, we are just allow one streaming request at once, the later one will stop the previous running request.
+        val child = context.child("stream").getOrElse(
+          context.actorOf(Props(new StreamingSolver(dataManager, planner, config, out)), "stream")
+        )
+        child ! StreamingSolver.Cancel // Cancel ongoing slicing work if any
+        child ! StreamingSolver.SlicingRequest(targetMillis, queries, mapInfos, transform)
       }
     }
   }

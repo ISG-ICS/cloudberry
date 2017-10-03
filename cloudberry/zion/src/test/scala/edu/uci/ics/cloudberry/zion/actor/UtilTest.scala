@@ -44,4 +44,6 @@ class UtilTest extends Specification with Mockito {
       mockFoo.foo("foo") must_== "foo2"
     }
   }
+
+
 }

@@ -19,7 +19,7 @@ import scala.concurrent.ExecutionContext
 
 class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with Mockito {
 
-  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(2))
+  implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(4))
 
   import org.mockito.Mockito._
   import scala.concurrent.duration._
@@ -163,7 +163,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
     query.groups.get.bys(0).as
 
   "Client" should {
-    "slice the query into small pieces and return the merged result incrementally" in {
+    "slice the query into mini-queries and return the merged result incrementally" in {
 
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
@@ -178,7 +178,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         }
       })
 
-      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
 
       sender.send(client, makeOptionJsonObj(hourCountJSON))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
@@ -234,7 +234,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         }
       })
 
-      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
       sender.send(client, makeOptionJsonObj(JsObject(Seq("batch" -> JsArray(Seq(hourCountJSON, dayCountJSON))))))
 
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
@@ -293,7 +293,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       val createView = CreateView("zika", zikaCreateQuery)
       when(mockPlanner.suggestNewView(any, any, any)).thenReturn(Seq(createView))
 
-      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
 
       val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
       sender.send(client, makeOptionJsonObj(hourCountJSON))
@@ -338,7 +338,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         }
       })
 
-      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
 
       val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
 
@@ -367,13 +367,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       //send a new request
       sender.send(client, makeOptionJsonObj(hourCountJSON2))
-      Thread.sleep(250)
-      dataManager.reply(getRet(2))
-
-      sender.expectNoMsg()
       val askInfo2 = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo2.who must_== (hourCountJSON2 \ "dataset").as[String]
       dataManager.reply(Some(TestQuery.sourceInfo))
+
+      Thread.sleep(150)
+      dataManager.reply(getRet(2))
+      sender.expectNoMsg()
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
@@ -384,51 +384,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       dataManager.reply(getRet(1))
       sender.expectMsg(JsArray(Seq(getRet(1))))
-      ok
-    }
-    "don't even start slice if the request is updated before info response gets back" in {
-      val sender = new TestProbe(system)
-      val dataManager = new TestProbe(system)
-      val mockParser = new JSONParser
-      val mockPlanner = mock[QueryPlanner]
-      when(mockPlanner.calculateMergeFunc(any, any)).thenReturn(QueryPlanner.Unioner)
-      //Return the input query
-      when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
-        override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
-          val query = invocation.getArguments().head.asInstanceOf[Query]
-          (Seq(query), Unioner)
-        }
-      })
-
-      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
-
-      val (query, _) = mockParser.parse(hourCountJSON, twitterSchemaMap)
-
-      sender.send(client, makeOptionJsonObj(hourCountJSON))
-      val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
-      askInfo.who must_== query.head.dataset
-
-      //new query comes before the worker even started
-      sender.send(client, makeOptionJsonObj(hourCountJSON2))
-
-      dataManager.reply(Some(TestQuery.sourceInfo))
-
-      sender.expectNoMsg(1 seconds)
-
-      val askInfo2 = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
-      askInfo2.who must_== (hourCountJSON2 \ "dataset").as[String]
-      dataManager.reply(Some(TestQuery.sourceInfo))
-
-      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
-      dataManager.reply(Seq(TestQuery.sourceInfo))
-      val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
-      interval1.getEnd must_== endTime2
-      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
-
-      dataManager.reply(getRet(1))
-      sender.expectMsg(JsArray(Seq(getRet(1))))
-
       ok
     }
   }
