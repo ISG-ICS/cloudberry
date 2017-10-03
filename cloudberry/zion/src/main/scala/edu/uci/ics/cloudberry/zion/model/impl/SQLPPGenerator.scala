@@ -81,7 +81,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
       s"""
          |insert into ${create.dataset} (
          |${parseQuery(create.query, schemaMap)}
-         |)""".stripMargin
+         |)""".stripMarginsq
     ddl + createDataSet + insert
   }
 
