@@ -75,7 +75,7 @@ class SQLPPGenerator extends AsterixQueryGenerator {
     val createDataSet =
       s"""
          |drop dataset ${create.dataset} if exists;
-         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")} //with filter on '${resultSchema.timeField.name}'
+         |create dataset ${create.dataset}(${resultSchema.typeName}) primary key ${resultSchema.primaryKey.map(_.name).mkString(",")}; //with filter on '${resultSchema.timeField.name}'
          |""".stripMargin
     val insert =
       s"""
