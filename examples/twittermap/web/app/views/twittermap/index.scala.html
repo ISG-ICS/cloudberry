@@ -1,6 +1,6 @@
 
 @import controllers.TwitterMapApplication.DBType
-@(title: String, ws: String, startDate: String, endDate:Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value) @main(title, ws, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, isDrugMap, sqlDB){
+@(title: String, ws: String, startDate: String, endDate:Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], querySliceMills: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value) @main(title, ws, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, isDrugMap, sqlDB){
 <div xmlns="http://www.w3.org/1999/html" ng-controller="AppCtrl">
 
   <div class="map-group">

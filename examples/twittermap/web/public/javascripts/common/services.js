@@ -10,6 +10,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
       cacheThreshold: config.cacheThreshold,
+      querySlicingMills: config.querySlicingMills,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
@@ -288,30 +289,46 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }));
 
         // Default request - time series, map result, and hash tag
-        var batchWithGeoRequest = (JSON.stringify({
+        var batchWithGeoRequest = cloudberryConfig.querySlicingMills > 0 ? (JSON.stringify({
           batch: [byTimeRequest(parameters), byGeoRequest(parameters, parameters.geoIds),
             byHashTagRequest(parameters)],
           option: {
-            sliceMillis: 2000
+            sliceMillis: cloudberryConfig.querySlicingMills
           },
           transform: {
             wrap: {
               key: "batchWithGeoRequest"
             }
           }
+        })) :
+            (JSON.stringify({
+            batch: [byTimeRequest(parameters), byGeoRequest(parameters, parameters.geoIds),
+                byHashTagRequest(parameters)],
+            transform: {
+                wrap: {
+                    key: "batchWithGeoRequest"
+                }
+            }
         }));
 
         // Batch request without map result - used when the complete map result cache hit case
-        var batchWithoutGeoRequest = (JSON.stringify({
+        var batchWithoutGeoRequest = cloudberryConfig.querySlicingMills > 0 ? (JSON.stringify({
           batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
           option: {
-            sliceMillis: 2000
+            sliceMillis: cloudberryConfig.querySlicingMills
           },
           transform: {
             wrap: {
               key: "batchWithoutGeoRequest"
             }
           }
+        })) : (JSON.stringify({
+            batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+            transform: {
+                wrap: {
+                    key: "batchWithoutGeoRequest"
+                }
+            }
         }));
 
         geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberryService.parameters.keywords,
@@ -319,17 +336,25 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel);
 
         // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
-        var batchJsonWithPartialGeoRequest = (JSON.stringify({
+        var batchJsonWithPartialGeoRequest = cloudberryConfig.querySlicingMills > 0 ? (JSON.stringify({
           batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
             byHashTagRequest(parameters)],
           option: {
-            sliceMillis: 2000
+            sliceMillis: cloudberryConfig.querySlicingMills
           },
           transform: {
             wrap: {
               key: "batchWithPartialGeoRequest"
             }
           }
+        })) : (JSON.stringify({
+            batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
+                byHashTagRequest(parameters)],
+            transform: {
+                wrap: {
+                    key: "batchWithPartialGeoRequest"
+                }
+            }
         }));
 
         // Complete map result cache miss case
