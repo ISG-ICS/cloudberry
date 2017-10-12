@@ -3,8 +3,11 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
+import actor.TwitterMapPigeon
+import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
+import akka.stream.{Materializer, OverflowStrategy}
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
-import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.ws.WSClient
@@ -17,7 +20,10 @@ import scala.concurrent.duration._
 @Singleton
 class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       val config: Configuration,
-                                      val environment: Environment) extends Controller {
+                                      val environment: Environment)
+                                     (implicit val materializer: Materializer) extends Controller {
+
+  val system: ActorSystem = ActorSystem.create("TwitterMap")
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
@@ -58,6 +64,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
       Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
+  }
+
+  def ws = WebSocket.accept[JsValue, JsValue] { request =>
+    TwitterMapApplication.actorRef(system, { out =>
+      TwitterMapPigeon.props(out)
+    })
   }
 
   def tweet(id: String) = Action.async {
@@ -174,6 +186,35 @@ object TwitterMapApplication {
         thisIndex
       }
     }
+  }
+
+  //TODO write doc
+  def actorRef[In, Out](system: ActorSystem, props: ActorRef => Props, bufferSize: Int = 16, overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew)
+                       (implicit mat: Materializer): Flow[In, Out, _] = {
+
+    val (outActor, publisher) = Source.actorRef[Out](bufferSize, overflowStrategy)
+      .toMat(Sink.asPublisher(false))(Keep.both).run()
+
+    Flow.fromSinkAndSource(
+      Sink.actorRef(system.actorOf(Props(new Actor {
+        val flowActor = context.watch(context.actorOf(props(outActor), "flowActor"))
+
+        def receive = {
+          case Status.Success(_) | Status.Failure(_) => flowActor ! PoisonPill
+          case Terminated =>
+            println("Child terminated, stopping")
+            context.stop(self)
+          case other => flowActor ! other
+        }
+
+        override def supervisorStrategy = OneForOneStrategy() {
+          case _ =>
+            println("Stopping actor due to exception")
+            SupervisorStrategy.Stop
+        }
+      })), Status.Success(())),
+      Source.fromPublisher(publisher)
+    )
   }
 
   object DBType extends Enumeration {
