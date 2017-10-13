@@ -28,6 +28,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
+  val twitterMapWS: String = config.getString("twitterMap.ws").getOrElse("ws://localhost:9001/ws")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -37,6 +38,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
+  val maxFrameLength: Int = config.getInt("maxFrameLength").getOrElse(8 * 1024 * 1024)
 
   val clientLogger = Logger("client")
 
@@ -54,7 +56,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB))
+    Ok(views.html.twittermap.index("TwitterMap", twitterMapWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB))
   }
 
   def drugmap = Action {
@@ -63,12 +65,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
+      Ok(views.html.twittermap.index("DrugMap", twitterMapWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     TwitterMapApplication.actorRef(system, { out =>
-      TwitterMapPigeon.props(out)
+      TwitterMapPigeon.props(wsClient, cloudberryWS, out, maxFrameLength)
     })
   }
 
@@ -188,7 +190,13 @@ object TwitterMapApplication {
     }
   }
 
-  //TODO write doc
+  /**
+    * Copy and revised based on [[play.api.libs.streams.ActorFlow.actorRef()]]
+    * The difference is that instead of using implicit '''ActorRefFactory''' to instantiate actors,
+    * we use the '''ActorSystem''' parameter that passed to the method.
+    * The reason is that we don't want the implicit '''ActorRefFactory''' here because it has been used in CloudBerry and
+    * TwitterMap application should have an independent ActorSystem.
+    */
   def actorRef[In, Out](system: ActorSystem, props: ActorRef => Props, bufferSize: Int = 16, overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew)
                        (implicit mat: Materializer): Flow[In, Out, _] = {
 
