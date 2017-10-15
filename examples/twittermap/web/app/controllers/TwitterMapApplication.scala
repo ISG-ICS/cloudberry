@@ -38,7 +38,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
-  val maxFrameLength: Int = config.getInt("maxFrameLength").getOrElse(8 * 1024 * 1024)
 
   val clientLogger = Logger("client")
 
@@ -70,7 +69,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     TwitterMapApplication.actorRef(system, { out =>
-      TwitterMapPigeon.props(wsClient, cloudberryWS, out, maxFrameLength)
+      TwitterMapPigeon.props(cloudberryWS, out)
     })
   }
 
