@@ -4,7 +4,7 @@ import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
 import actor.TwitterMapPigeon
-import akka.actor.{Actor, ActorRef, ActorSystem, OneForOneStrategy, PoisonPill, Props, Status, SupervisorStrategy, Terminated}
+import akka.actor._
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
 import akka.stream.{Materializer, OverflowStrategy}
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}

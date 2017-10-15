@@ -11,15 +11,15 @@ import play.api.libs.json.{JsValue, Json}
 
 @WebSocket
 class TwitterMapClientSocket(out: ActorRef) {
-  private var session: Session = _
+  private var sessionOpt: Option[Session] = None
   private val latch = new CountDownLatch(1)
   private val clientLogger = Logger("client")
 
   @OnWebSocketConnect
   def onConnect(session: Session): Unit = {
     clientLogger.info("Connected to cloudberry websocket server.")
-    this.session = session
-    this.latch.countDown()
+    sessionOpt = Some(session)
+    latch.countDown()
   }
 
   @OnWebSocketMessage
@@ -31,11 +31,13 @@ class TwitterMapClientSocket(out: ActorRef) {
 
   def sendMessage(str: String): Unit = {
     try {
-      session.getRemote.sendString(str)
+      sessionOpt.get.getRemote.sendString(str)
     }
     catch {
+      case e: NoSuchElementException =>
+        clientLogger.error("session is not initialized: " + e.getMessage)
       case e: IOException =>
-        clientLogger.error(e.getCause.getMessage)
+        clientLogger.error(e.getStackTrace.toString)
     }
   }
 
