@@ -5,7 +5,7 @@ import java.util.concurrent.CountDownLatch
 
 import akka.actor.ActorRef
 import org.eclipse.jetty.websocket.api.Session
-import org.eclipse.jetty.websocket.api.annotations.{OnWebSocketConnect, OnWebSocketMessage, WebSocket}
+import org.eclipse.jetty.websocket.api.annotations._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
@@ -27,6 +27,16 @@ class TwitterMapClientSocket(out: ActorRef) {
   def onText(session: Session, message: String): Unit = {
     clientLogger.info("Cloudberry response:" + message)
     out ! renderResponse(message)
+  }
+
+  @OnWebSocketClose
+  def onClose(session: Session, status: Int, reason: String): Unit = {
+    clientLogger.info("connection closed.")
+  }
+
+  @OnWebSocketError
+  def onError(session: Session, cause: Throwable): Unit = {
+    clientLogger.error("Websocket to cloudberry error: " + cause.getStackTrace.toString)
   }
 
   def sendMessage(str: String): Unit = {
