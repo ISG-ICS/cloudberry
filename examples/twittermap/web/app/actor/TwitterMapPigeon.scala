@@ -4,36 +4,45 @@ import java.net.URI
 
 import akka.actor._
 import akka.stream.Materializer
-import org.eclipse.jetty.websocket.client.{ClientUpgradeRequest, WebSocketClient}
+import org.eclipse.jetty.websocket.client.WebSocketClient
 import play.api.libs.json.JsValue
 import socket.TwitterMapClientSocket
 
 import scala.concurrent.ExecutionContext
 
+/**
+  * A routing actor that servers for rendering user request into cloudberry request
+  *  and transfer cloudberry request/response through websocket connection.
+  *
+  * @param cloudberryWS Websocket url of cloudberry
+  * @param out ActorRef in akka flow representing frontend client
+  * @param ec implicit execution context
+  * @param materializer implicit materializer
+  */
 class TwitterMapPigeon (val cloudberryWS: String,
                         val out: ActorRef)
                        (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
-  val twitterMapWebSocketClient: WebSocketClient = new WebSocketClient
-  val twitterMapClientSocket: TwitterMapClientSocket = new TwitterMapClientSocket(out)
+  val client: WebSocketClient = new WebSocketClient
+  val socket: TwitterMapClientSocket = new TwitterMapClientSocket(out)
 
   override def preStart(): Unit = {
     super.preStart
-    twitterMapWebSocketClient.start()
-    twitterMapWebSocketClient.connect(twitterMapClientSocket, new URI(cloudberryWS), new ClientUpgradeRequest)
-    twitterMapClientSocket.getLatch.await()
+    client.start()
+    client.connect(socket, new URI(cloudberryWS))
+    socket.getLatch.await()
   }
 
   override def postStop(): Unit = {
     super.postStop
-    twitterMapWebSocketClient.stop()
+    client.stop()
   }
 
   override def receive: Receive = {
     case body: JsValue =>
       //TODO validate input json format
       //TODO render json request
-      twitterMapClientSocket.sendMessage(body.toString())
+      socket.sendMessage(body.toString())
   }
 }
 
