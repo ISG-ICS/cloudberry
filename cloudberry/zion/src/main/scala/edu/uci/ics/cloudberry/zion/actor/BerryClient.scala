@@ -94,10 +94,10 @@ class BerryClient(val jsonParser: JSONParser,
       val (queries, runOption) = jsonParser.parse(request.json, schemaMap)
       if (runOption.sliceMills <= 0) {
         val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
-        futureResult.foreach { r =>
+        futureResult.map(result => (queries, result)).foreach { case (qs,r) =>
           curSender ! request.postTransform.transform(r)
+          qs.foreach(suggestViews)
         }
-        queries.foreach(suggestViews)
       } else {
         val targetMillis = runOption.sliceMills
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
