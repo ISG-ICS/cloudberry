@@ -97,6 +97,7 @@ class BerryClient(val jsonParser: JSONParser,
         futureResult.foreach { r =>
           curSender ! request.postTransform.transform(r)
         }
+        queries.foreach(suggestViews)
       } else {
         val targetMillis = runOption.sliceMills
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
@@ -119,9 +120,9 @@ class BerryClient(val jsonParser: JSONParser,
 
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
-      if (nextInterval.toDurationMillis == 0) {
+      if (nextInterval.toDurationMillis <= 0) {
         queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
-        suggestViews(queryGroup)
+        queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         context.become(receive, discardOld = true)
       } else {
         issueQueryGroup(nextInterval, queryGroup)
@@ -137,14 +138,12 @@ class BerryClient(val jsonParser: JSONParser,
       context.become(receive, discardOld = true)
   }
 
-  private def suggestViews(queryGroup: QueryGroup): Unit = {
-    for (queryInfo <- queryGroup.queries) {
-      dataManager ? AskInfoAndViews(queryInfo.query.dataset) map {
-        case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
-          val infos = seq.map(_.asInstanceOf[DataSetInfo])
-          val newViews = planner.suggestNewView(queryInfo.query, infos.head, infos.tail)
-          newViews.foreach(dataManager ! _)
-      }
+  private def suggestViews(query: Query): Unit = {
+    dataManager ? AskInfoAndViews(query.dataset) map {
+      case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
+        val infos = seq.map(_.asInstanceOf[DataSetInfo])
+        val newViews = planner.suggestNewView(query, infos.head, infos.tail)
+        newViews.foreach(dataManager ! _)
     }
   }
 
