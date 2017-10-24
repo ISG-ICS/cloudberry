@@ -190,7 +190,7 @@ angular.module('cloudberry.common', [])
       timeResult: [],
       errorMessage: null,
 
-      query: function(parameters, queryType) {
+      query: function(parameters) {
         var sampleJson = (JSON.stringify({
           dataset: parameters.dataset,
           filter: getFilter(parameters, defaultSamplingDayRange),
