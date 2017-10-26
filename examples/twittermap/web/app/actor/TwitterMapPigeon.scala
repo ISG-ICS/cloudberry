@@ -6,7 +6,7 @@ import akka.actor._
 import akka.stream.Materializer
 import org.eclipse.jetty.websocket.client.WebSocketClient
 import play.api.libs.json.JsValue
-import socket.TwitterMapClientSocket
+import socket.TwitterMapServerToCloudBerrySocket
 
 import scala.concurrent.ExecutionContext
 
@@ -24,13 +24,12 @@ class TwitterMapPigeon (val cloudberryWS: String,
                        (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   val client: WebSocketClient = new WebSocketClient
-  val socket: TwitterMapClientSocket = new TwitterMapClientSocket(out)
+  val socket: TwitterMapServerToCloudBerrySocket = new TwitterMapServerToCloudBerrySocket(out)
 
   override def preStart(): Unit = {
     super.preStart
     client.start()
     client.connect(socket, new URI(cloudberryWS))
-    socket.getLatch.await()
   }
 
   override def postStop(): Unit = {
@@ -38,6 +37,9 @@ class TwitterMapPigeon (val cloudberryWS: String,
     client.stop()
   }
 
+  /**
+    * Handles Websocket sending from frontend to twitterMap Server
+    */
   override def receive: Receive = {
     case body: JsValue =>
       //TODO validate input json format

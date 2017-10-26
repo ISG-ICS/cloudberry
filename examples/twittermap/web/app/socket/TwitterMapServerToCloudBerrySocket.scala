@@ -1,7 +1,6 @@
 package socket
 
 import java.io.IOException
-import java.util.concurrent.CountDownLatch
 
 import akka.actor.ActorRef
 import org.eclipse.jetty.websocket.api.Session
@@ -10,22 +9,22 @@ import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
 @WebSocket
-class TwitterMapClientSocket(out: ActorRef) {
-  private var sessionOpt: Option[Session] = None
-  private val latch = new CountDownLatch(1)
+class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
+  private var session: Session = null
   private val clientLogger = Logger("client")
 
   @OnWebSocketConnect
   def onConnect(session: Session): Unit = {
     clientLogger.info("Connected to cloudberry websocket server.")
-    sessionOpt = Some(session)
-    latch.countDown()
+    this.session = session
   }
 
+  /**
+    * Handles Websocket received from Cloudberry
+    */
   @OnWebSocketMessage
   @throws[IOException]
   def onText(session: Session, message: String): Unit = {
-    clientLogger.info("Cloudberry response:" + message)
     out ! renderResponse(message)
   }
 
@@ -41,17 +40,13 @@ class TwitterMapClientSocket(out: ActorRef) {
 
   def sendMessage(str: String): Unit = {
     try {
-      sessionOpt.get.getRemote.sendString(str)
+      session.getRemote.sendString(str)
     }
     catch {
-      case e: NoSuchElementException =>
-        clientLogger.error("session is not initialized: " + e.getMessage)
       case e: IOException =>
         clientLogger.error(e.getStackTrace.toString)
     }
   }
-
-  def getLatch: CountDownLatch = latch
 
   private def renderResponse(response: String): JsValue = {
     //Logic of rendering cloudberry response goes here

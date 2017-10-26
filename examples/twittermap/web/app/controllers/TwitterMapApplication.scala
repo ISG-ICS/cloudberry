@@ -5,11 +5,11 @@ import javax.inject.{Inject, Singleton}
 
 import actor.TwitterMapPigeon
 import akka.actor._
-import akka.stream.scaladsl.{Flow, Keep, Sink, Source}
-import akka.stream.{Materializer, OverflowStrategy}
+import akka.stream.Materializer
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
+import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
@@ -21,14 +21,12 @@ import scala.concurrent.duration._
 class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       val config: Configuration,
                                       val environment: Environment)
-                                     (implicit val materializer: Materializer) extends Controller {
-
-  val system: ActorSystem = ActorSystem.create("TwitterMap")
+                                     (implicit val materializer: Materializer,
+                                      implicit val system: ActorSystem) extends Controller {
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
-  val twitterMapWS: String = config.getString("twitterMap.ws").getOrElse("ws://localhost:9001/ws")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -55,7 +53,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", twitterMapWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB))
+    Ok(views.html.twittermap.index("TwitterMap", startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB))
   }
 
   def drugmap = Action {
@@ -64,13 +62,13 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", twitterMapWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
+      Ok(views.html.twittermap.index("DrugMap", startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
-    TwitterMapApplication.actorRef(system, { out =>
+    ActorFlow.actorRef { out =>
       TwitterMapPigeon.props(cloudberryWS, out)
-    })
+    }
   }
 
   def tweet(id: String) = Action.async {
@@ -187,41 +185,6 @@ object TwitterMapApplication {
         thisIndex
       }
     }
-  }
-
-  /**
-    * Copy and revised based on [[play.api.libs.streams.ActorFlow.actorRef()]]
-    * The difference is that instead of using implicit '''ActorRefFactory''' to instantiate actors,
-    * we use the '''ActorSystem''' parameter that passed to the method.
-    * The reason is that we don't want the implicit '''ActorRefFactory''' here because it has been used in CloudBerry and
-    * TwitterMap application should have an independent ActorSystem.
-    */
-  def actorRef[In, Out](system: ActorSystem, props: ActorRef => Props, bufferSize: Int = 16, overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew)
-                       (implicit mat: Materializer): Flow[In, Out, _] = {
-
-    val (outActor, publisher) = Source.actorRef[Out](bufferSize, overflowStrategy)
-      .toMat(Sink.asPublisher(false))(Keep.both).run()
-
-    Flow.fromSinkAndSource(
-      Sink.actorRef(system.actorOf(Props(new Actor {
-        val flowActor = context.watch(context.actorOf(props(outActor), "flowActor"))
-
-        def receive = {
-          case Status.Success(_) | Status.Failure(_) => flowActor ! PoisonPill
-          case Terminated =>
-            println("Child terminated, stopping")
-            context.stop(self)
-          case other => flowActor ! other
-        }
-
-        override def supervisorStrategy = OneForOneStrategy() {
-          case _ =>
-            println("Stopping actor due to exception")
-            SupervisorStrategy.Stop
-        }
-      })), Status.Success(())),
-      Source.fromPublisher(publisher)
-    )
   }
 
   object DBType extends Enumeration {
