@@ -263,14 +263,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,49,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
       },
 
-      queryType: "search",
-
       mapResult: [],
       timeResult: [],
       hashTagResult: [],
       errorMessage: null,
 
-      query: function(parameters, queryType) {
+      query: function(parameters) {
 
         var sampleJson = (JSON.stringify({
           dataset: parameters.dataset,

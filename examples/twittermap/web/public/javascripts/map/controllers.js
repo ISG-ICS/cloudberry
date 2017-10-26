@@ -232,8 +232,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           } else if ($scope.status.zoomLevel > 5) {
             resetGeoInfo("county");
             if (!$scope.status.init) {
-              cloudberry.queryType = 'zoom';
-              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+              cloudberry.query(cloudberry.parameters);
             }
             if($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -249,8 +248,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           } else if ($scope.status.zoomLevel <= 5) {
             resetGeoInfo("state");
             if (!$scope.status.init) {
-              cloudberry.queryType = 'zoom';
-              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+              cloudberry.query(cloudberry.parameters);
             }
             if($scope.polygons.countyPolygons) {
               $scope.map.removeLayer($scope.polygons.countyPolygons);
@@ -289,11 +287,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
         if ($scope.status.logicLevel === 'city') {
           loadCityJsonByBound(onEachFeature);
+        } else {
+          resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
+          cloudberry.parameters.geoLevel = $scope.status.logicLevel;
+          cloudberry.query(cloudberry.parameters);
         }
-        resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
-        cloudberry.parameters.geoLevel = $scope.status.logicLevel;
-        cloudberry.queryType = 'drag';
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       });
 
     }
@@ -382,8 +380,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 if (!$scope.status.init) {
                     resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
                     cloudberry.parameters.geoLevel = 'city';
-                    cloudberry.queryType = 'zoom';
-                    cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+                    cloudberry.query(cloudberry.parameters);
                 }
                 resetGeoInfo("city");
                 $scope.map.addLayer($scope.polygons.cityPolygons);
@@ -403,8 +400,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                     setCenterAndBoundry($scope.geojsonData.city.features);
                     resetGeoInfo("city");
                     if (!$scope.status.init) {
-                        cloudberry.queryType = 'zoom';
-                        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+                        cloudberry.query(cloudberry.parameters);
                     }
                     $scope.map.addLayer($scope.polygons.cityPolygons);
                 })
