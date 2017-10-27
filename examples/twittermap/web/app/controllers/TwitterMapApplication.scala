@@ -13,6 +13,7 @@ import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
+import websocket.WebSocketFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -37,6 +38,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
 
+  val webSocketFactory = new WebSocketFactory()
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
@@ -67,7 +69,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(cloudberryWS, out)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out)
     }
   }
 

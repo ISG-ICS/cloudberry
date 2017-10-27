@@ -7,7 +7,7 @@ import akka.stream.Materializer
 import org.eclipse.jetty.websocket.client.WebSocketClient
 import play.api.Logger
 import play.api.libs.json.JsValue
-import socket.TwitterMapServerToCloudBerrySocket
+import websocket.{TwitterMapServerToCloudBerrySocket, WebSocketFactory}
 
 import scala.concurrent.ExecutionContext
 
@@ -20,12 +20,13 @@ import scala.concurrent.ExecutionContext
   * @param ec implicit execution context
   * @param materializer implicit materializer
   */
-class TwitterMapPigeon (val cloudberryWS: String,
+class TwitterMapPigeon (val factory: WebSocketFactory,
+                        val cloudberryWS: String,
                         val out: ActorRef)
                        (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
-  val client: WebSocketClient = new WebSocketClient
-  val socket: TwitterMapServerToCloudBerrySocket = new TwitterMapServerToCloudBerrySocket(out)
+  private val client: WebSocketClient = factory.newClient()
+  private val socket: TwitterMapServerToCloudBerrySocket = factory.newSocket(out)
   private val clientLogger = Logger("client")
 
   override def preStart(): Unit = {
@@ -57,6 +58,6 @@ class TwitterMapPigeon (val cloudberryWS: String,
 }
 
 object TwitterMapPigeon {
-  def props(cloudberryWS: String, out: ActorRef)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(cloudberryWS, out))
+  def props(factory: WebSocketFactory, cloudberryWS: String, out: ActorRef)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWS, out))
 }
