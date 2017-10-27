@@ -62,7 +62,7 @@ angular.module('cloudberry.mapresultcache', ['cloudberry.common'])
 
             for (var i = 0; i < geoIds.length; i++) {
                 var value = store.get(prefix[geoLevel] + geoIds[i]);
-                if (value !== INVALID_VALUE) {
+                if (value !==  undefined && value !== INVALID_VALUE) {
                     resultArray.push(value);
                 }
             }
