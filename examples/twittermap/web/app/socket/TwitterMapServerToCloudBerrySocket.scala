@@ -10,7 +10,7 @@ import play.api.libs.json.{JsValue, Json}
 
 @WebSocket
 class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
-  private var session: Session = null
+  private var session: Session = _
   private val clientLogger = Logger("client")
 
   @OnWebSocketConnect

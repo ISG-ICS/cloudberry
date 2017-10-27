@@ -5,6 +5,7 @@ import java.net.URI
 import akka.actor._
 import akka.stream.Materializer
 import org.eclipse.jetty.websocket.client.WebSocketClient
+import play.api.Logger
 import play.api.libs.json.JsValue
 import socket.TwitterMapServerToCloudBerrySocket
 
@@ -25,6 +26,7 @@ class TwitterMapPigeon (val cloudberryWS: String,
 
   val client: WebSocketClient = new WebSocketClient
   val socket: TwitterMapServerToCloudBerrySocket = new TwitterMapServerToCloudBerrySocket(out)
+  private val clientLogger = Logger("client")
 
   override def preStart(): Unit = {
     super.preStart
@@ -41,11 +43,17 @@ class TwitterMapPigeon (val cloudberryWS: String,
     * Handles Websocket sending from frontend to twitterMap Server
     */
   override def receive: Receive = {
-    case body: JsValue =>
-      //TODO validate input json format
-      //TODO render json request
-      socket.sendMessage(body.toString())
+    case frontEndRequest: JsValue =>
+      clientLogger.info("request from frontend: " + frontEndRequest.toString)
+      val cloudBerryRequest = renderRequest(frontEndRequest)
+      clientLogger.info("request to cloudberry: " + cloudBerryRequest.toString)
+      socket.sendMessage(cloudBerryRequest.toString)
+    case e =>
+      log.error("Unknown type of request " + e.toString)
   }
+
+  //Logic of rendering cloudberry request goes here
+  private def renderRequest(frontEndRequest: JsValue): JsValue = frontEndRequest
 }
 
 object TwitterMapPigeon {
