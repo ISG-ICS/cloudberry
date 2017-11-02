@@ -5,9 +5,9 @@ subtitle:
 ---
 
 ## Papers
-* **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey.
+* **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey, IEEE BigData 2017
 [[PDF (Long version)](../img/query-slicing-long.pdf)][[Video](https://youtu.be/gztxneqSIDE)]
-* **Caching Geospatial Objects in Web Browsers **, Taewoo Kim, Vidhyasagar Thirumaraiselvan, Jianfeng Jia, Chen Li, ACM SIGSPATIAL 2017 (Demo Paper).
+* **Caching Geospatial Objects in Web Browsers**, Taewoo Kim, Vidhyasagar Thirumaraiselvan, Jianfeng Jia, Chen Li, ACM SIGSPATIAL 2017 (Demo Paper)[[PDF](../img/Caching_Geospatial_Objects_In_Web_Browsers.pdf)].
 * **Visual Analytics Ecology for Complex System Testing**,
 Simon Su, Michael Barton, Michael An, Vincent Perry, Chen Li, Jianfeng Jia, Brian Panneton, Visualization in Practice 2017 at IEEE VIS 2017.
 * **Twitter Coverage of Climate Change and Health before and after the 2016 US Presidential Election**, Suellen Hopfer, Miryha Runnerstrom, Jianfeng Jia, Taewoo Kim, Chen Li, American Public Health Association 2017.
@@ -27,3 +27,7 @@ Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, ACM SIGSPA
 * (9/2016) Prof. Li gave a talk about Cloudberry at [APWeb](http://ada.suda.edu.cn/apweb2016), Suzhou, China. [[PPT](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/09/cloudberry-apweb-201609.pptx)].
 * (8/2016) Prof. Li attended the [MHSRS](https://mhsrs.amedd.army.mil/SitePages/Home.aspx) symposium to show Cloudberry. [[Poster](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/08/2016-Army-MHSRS-Workshop-Poster.pdf)]
 * (7/2016) Prof. Li gave talks about Cloudberry at Salesforce and Huawei.[[PPT](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/08/asterixdb-cloudberry-chenli-201607.pptx)]
+
+
+## Articles
+* **Analyzing and Visualizing 1 Billion Tweets Using Cloudberry**, 2017 ICS Annual Report, pp.4 [[PDF](http://www.ics.uci.edu/about/annualreport/2017/UCI_2017_Year_In_Review_Final-Web.pdf)]
