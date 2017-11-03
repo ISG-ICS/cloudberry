@@ -261,7 +261,7 @@ angular.module('cloudberry.common', [])
       hashTagResult: [],
       errorMessage: null,
 
-      query: function(parameters, queryType) {
+      query: function(parameters) {
         var sampleJson = (JSON.stringify({
           dataset: parameters.dataset,
           filter: getFilter(parameters, defaultSamplingDayRange),

@@ -4,8 +4,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
         cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
         // skip the empty query for now.
-        cloudberry.queryType = 'search';
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+        cloudberry.query(cloudberry.parameters);
       } else {
         cloudberry.parameters.keywords = [];
       }

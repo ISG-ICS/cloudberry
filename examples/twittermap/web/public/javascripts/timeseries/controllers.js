@@ -121,8 +121,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var requestFunc = function(min, max) {
               cloudberry.parameters.timeInterval.start = min;
               cloudberry.parameters.timeInterval.end = max;
-              cloudberry.queryType = 'time';
-              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+              cloudberry.query(cloudberry.parameters);
             };
 
             timeBrush.on('brushend', function (e) {
