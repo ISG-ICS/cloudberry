@@ -350,7 +350,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       maptype: 1,
 
       query: function(parameters) {
-      
+
+          console.log("service：maptype is "+ parameters.maptype);
+
         this.maptype = parameters.maptype;
 
         var sampleJson = (JSON.stringify({
