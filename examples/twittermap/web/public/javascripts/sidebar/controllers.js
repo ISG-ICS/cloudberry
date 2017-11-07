@@ -58,8 +58,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     .controller('choosemap', function ($scope, $window, cloudberry, $rootScope) {
 
         $scope.result = null;
-
-        //chanki
         $scope.maptype = 'countmap';
 
         var icon1 = document.getElementById('img1');
@@ -75,7 +73,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
         icon2.addEventListener("click", function () {
 
-            //Interface with teyuc
             $rootScope.maptype = 'heatmap';
             $rootScope.$emit("maptypeChange", $scope.maptype);
 
