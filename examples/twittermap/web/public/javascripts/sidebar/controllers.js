@@ -53,4 +53,43 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       restrict: 'E',
       controller: 'TweetCtrl'
     };
-  });
+  })
+
+    .controller('choosemap', function ($scope, $window, cloudberry, $rootScope) {
+
+        $scope.result = null;
+        $scope.maptype = 'countmap';
+
+        var icon1 = document.getElementById('img1');
+        var icon2 = document.getElementById('img2');
+        var icon3 = document.getElementById('img3');
+
+        icon1.addEventListener("click", function () {
+
+            $rootScope.maptype = 'countmap';
+            $rootScope.$emit("maptypeChange", $scope.maptype);
+
+        });
+
+        icon2.addEventListener("click", function () {
+
+            $rootScope.maptype = 'heatmap';
+            $rootScope.$emit("maptypeChange", $scope.maptype);
+
+        });
+
+        icon3.addEventListener("click", function () {
+
+            $rootScope.maptype = 'pointmap';
+            $rootScope.$emit("maptypeChange", $scope.maptype);
+
+        });
+
+    })
+
+    .directive('mapchoose', function () {
+        return {
+            restrict: 'E',
+            controller: 'choosemap'
+        };
+    });
