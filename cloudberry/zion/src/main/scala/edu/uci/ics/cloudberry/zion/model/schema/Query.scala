@@ -15,12 +15,13 @@ trait IWriteQuery extends IQuery {
 
 }
 
+// limit constrains that the maximum number of results that can be returned is 2^31 ~ 2.1 billion
 case class QueryExeOption(sliceMills: Int,
                           continueSeconds: Int,
                           limit: Int)
 
 object QueryExeOption {
-  val NoSliceNoContinue = QueryExeOption(-1, -1, -1)
+  val NoSliceNoContinue = QueryExeOption(-1, -1, Int.MaxValue)
   val TagSliceMillis = "sliceMillis"
   val TagContinueSeconds = "continueSeconds"
   val TagLimit = "limit"

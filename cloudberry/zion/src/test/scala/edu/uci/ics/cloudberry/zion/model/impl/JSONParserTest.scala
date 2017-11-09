@@ -189,7 +189,7 @@ class JSONParserTest extends Specification {
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.sliceMills must_== millis
       option.continueSeconds must be_<=(0)
-      option.limit must be_<=(0)
+      option.limit must_== Int.MaxValue
     }
     "parse continue option" in {
       val seconds = 4321
@@ -197,7 +197,7 @@ class JSONParserTest extends Specification {
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== seconds
       option.sliceMills must be_<=(0)
-      option.limit must be_<=(0)
+      option.limit must_== Int.MaxValue
     }
     "parse result limit option" in {
       val limit = 1000
