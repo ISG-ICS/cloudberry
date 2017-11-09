@@ -263,7 +263,8 @@ object JSONParser {
 
   implicit val exeOptionReads: Reads[QueryExeOption] = (
     (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
-      (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1))
+      (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1)) and
+      (__ \ QueryExeOption.TagLimit).readNullable[Int].map(_.getOrElse(-1))
     ) (QueryExeOption.apply _)
 
 
