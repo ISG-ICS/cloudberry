@@ -1,5 +1,5 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) { // use $rootScope to share information between servcies and controllers
   
     // map change notification
     $rootScope.$on('maptypeChange', function (event, data) {

@@ -41,7 +41,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     };
   })
-  .service('cloudberry', function($rootScope, $timeout, cloudberryConfig, MapResultCache) {
+  .service('cloudberry', function($rootScope, $timeout, cloudberryConfig, MapResultCache) { // use $rootScope to share information between servcies and controllers
     var startDate = config.startDate;
     var endDate = config.endDate;
     var defaultNonSamplingDayRange = 1500;
