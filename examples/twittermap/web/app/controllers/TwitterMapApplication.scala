@@ -3,13 +3,17 @@ package controllers
 import java.io.{File, FileInputStream}
 import javax.inject.{Inject, Singleton}
 
+import actor.TwitterMapPigeon
+import akka.actor._
+import akka.stream.Materializer
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
-import org.joda.time.DateTime
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
+import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
+import websocket.WebSocketFactory
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -17,7 +21,9 @@ import scala.concurrent.duration._
 @Singleton
 class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       val config: Configuration,
-                                      val environment: Environment) extends Controller {
+                                      val environment: Environment)
+                                     (implicit val materializer: Materializer,
+                                      implicit val system: ActorSystem) extends Controller {
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
@@ -32,6 +38,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
 
+  val webSocketFactory = new WebSocketFactory()
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
@@ -48,7 +55,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", cloudberryWS, startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB))
+    Ok(views.html.twittermap.index("TwitterMap", startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB))
   }
 
   def drugmap = Action {
@@ -57,7 +64,13 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", cloudberryWS, startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
+      Ok(views.html.twittermap.index("DrugMap", startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB))
+  }
+
+  def ws = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef { out =>
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out)
+    }
   }
 
   def tweet(id: String) = Action.async {
