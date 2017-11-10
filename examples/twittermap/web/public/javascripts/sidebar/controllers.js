@@ -58,7 +58,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     .controller('choosemap', function ($scope, $window, cloudberry, $rootScope) {
 
         $scope.result = null;
-        $rootScope.maptype = 'countmap';
+        cloudberry.parameters.maptype = 'countmap';
 
         var icon1 = document.getElementById('img1');
         var icon2 = document.getElementById('img2');
@@ -66,27 +66,27 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
         icon1.addEventListener("click", function () {
 
-            if ($rootScope.maptype !== 'countmap') {
-                $rootScope.maptype = 'countmap';
-                $rootScope.$emit("maptypeChange", $rootScope.maptype);
+            if (cloudberry.parameters.maptype !== 'countmap') {
+                cloudberry.parameters.maptype = 'countmap';
+                $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
             }
 
         });
 
         icon2.addEventListener("click", function () {
 
-            if ($rootScope.maptype !== 'heatmap') {
-                $rootScope.maptype = 'heatmap';
-                $rootScope.$emit("maptypeChange", $rootScope.maptype);
+            if (cloudberry.parameters.maptype !== 'heatmap') {
+                cloudberry.parameters.maptype = 'heatmap';
+                $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
             }
 
         });
 
         icon3.addEventListener("click", function () {
 
-            if ($rootScope.maptype !== 'pointmap') {
-                $rootScope.maptype = 'pointmap';
-                $rootScope.$emit("maptypeChange", $rootScope.maptype);
+            if (cloudberry.parameters.maptype !== 'pointmap') {
+                cloudberry.parameters.maptype = 'pointmap';
+                $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
             }
 
         });

@@ -41,7 +41,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     };
   })
-  .service('cloudberry', function($rootScope, $timeout, cloudberryConfig, MapResultCache) { // use $rootScope to share information between servcies and controllers
+  .service('cloudberry', function($timeout, cloudberryConfig, MapResultCache) {
     var startDate = config.startDate;
     var endDate = config.endDate;
     var defaultNonSamplingDayRange = 1500;
@@ -272,7 +272,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       query: function(parameters) {
 
         // generate query based on map type
-        switch ($rootScope.maptype) {
+        switch (parameters.maptype) {
           case 'countmap':
             var sampleJson = (JSON.stringify({
               dataset: parameters.dataset,

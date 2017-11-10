@@ -1,9 +1,9 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) { // use $rootScope to share information between servcies and controllers
+  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) { // use $rootScope event to get maptypeChange notification
   
     // map change notification
     $rootScope.$on('maptypeChange', function (event, data) {
-      switch ($rootScope.maptype) {
+      switch (cloudberry.parameters.maptype) {
         case 'countmap':
           break;
           
@@ -717,7 +717,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       },
 
       function(newResult, oldValue) {
-        switch ($rootScope.maptype) {
+        switch (cloudberry.parameters.maptype) {
           case 'countmap':
             if (newResult['mapResult'] !== oldValue['mapResult']) {
               $scope.result = newResult['mapResult'];
