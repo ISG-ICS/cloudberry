@@ -125,9 +125,6 @@ class BerryClient(val jsonParser: JSONParser,
         val returnedResult =
           if (mergedResults.head.value.size > targetLimits) Seq(JsArray(mergedResults.head.value.take(targetLimits)))
           else mergedResults
-
-        println(returnedResult.toString())
-
         queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(returnedResult))
         queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
