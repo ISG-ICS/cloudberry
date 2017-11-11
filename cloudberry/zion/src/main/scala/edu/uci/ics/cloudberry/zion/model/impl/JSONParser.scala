@@ -25,12 +25,6 @@ class JSONParser extends IJSONParser {
     */
   override def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
     val (processedJson, option) = extractQueryExeOption(json)
-
-
-    println(processedJson.toString())
-    println(option.toString)
-
-
     val query = (processedJson \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
         case js: JsSuccess[Seq[UnresolvedQuery]] => js.get

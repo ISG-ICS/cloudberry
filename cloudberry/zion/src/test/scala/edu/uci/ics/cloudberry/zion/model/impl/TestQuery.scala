@@ -130,6 +130,7 @@ object TestQuery {
   val selectTop10Tag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq.empty)
   val selectTop100 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 100, 0, Seq.empty)
   val selectTop10byHashTag = SelectStatement(Seq(count), Seq(SortOrder.DSC), 10, 0, Seq(hash))
+  val selectTagWithoutLimit = SelectStatement(Seq(count), Seq(SortOrder.DSC), Int.MaxValue, 0, Seq.empty)
   val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
   val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
 
