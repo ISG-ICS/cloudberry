@@ -52,6 +52,7 @@ object Dependencies {
     "org.webjars" % "bootstrap" % "3.3.6",
     "org.webjars" % "flot" % "0.8.0",
     "org.webjars" % "angularjs" % "1.5.0",
+    "org.eclipse.jetty.websocket" % "websocket-client" % "9.4.7.v20170914",
     // map module
     "org.webjars" % "leaflet" % "0.7.7",
     "org.webjars" % "angular-leaflet-directive" % "0.8.2",
