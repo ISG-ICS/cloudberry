@@ -121,6 +121,8 @@ class BerryClient(val jsonParser: JSONParser,
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
 
+      //TODO change here
+
       if (nextInterval.toDurationMillis <= 0 || mergedResults.size >= targetLimits) {
         val returnedResult = if (mergedResults.size > targetLimits) mergedResults.take(targetLimits) else mergedResults
         queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(returnedResult))

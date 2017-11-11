@@ -181,11 +181,11 @@ class JSONParserTest extends Specification {
   "JSONParser" should {
     "parse query without option" in {
       val (_, option) = parser.parse(hourCountJSON, twitterSchemaMap)
-      option must_== QueryExeOption.NoSliceNoContinue
+      option must_== QueryExeOption.DefaultOption
     }
     "parse slicing option" in {
       val millis = 1234
-      val optionJson = Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(millis))
+      val optionJson = Json.obj(JsonRequestOption.TagSliceMillis -> JsNumber(millis))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.sliceMills must_== millis
       option.continueSeconds must be_<=(0)
@@ -193,31 +193,22 @@ class JSONParserTest extends Specification {
     }
     "parse continue option" in {
       val seconds = 4321
-      val optionJson = Json.obj(QueryExeOption.TagContinueSeconds -> JsNumber(4321))
+      val optionJson = Json.obj(JsonRequestOption.TagContinueSeconds -> JsNumber(4321))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== seconds
       option.sliceMills must be_<=(0)
       option.limit must_== Int.MaxValue
     }
-    "parse result limit option" in {
-      val limit = 1000
-      val optionJson = Json.obj(QueryExeOption.TagLimit -> JsNumber(1000))
-      val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option.sliceMills must be_<=(0)
-      option.continueSeconds must be_<=(0)
-      option.limit must_== limit
-    }
-    "parse slicing and continue and limit option" in {
+    "parse slicing and continue option" in {
 
       val optionJson = Json.obj(
-        QueryExeOption.TagSliceMillis -> JsNumber(1234),
-        QueryExeOption.TagContinueSeconds -> JsNumber(4321),
-        QueryExeOption.TagLimit -> JsNumber(1000)
+        JsonRequestOption.TagSliceMillis -> JsNumber(1234),
+        JsonRequestOption.TagContinueSeconds -> JsNumber(4321)
       )
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== 4321
       option.sliceMills must_== 1234
-      option.limit must_== 1000
+      option.limit must_== Int.MaxValue
     }
     "parse estimable query if estimable field appears" in {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(true)), twitterSchemaMap)
@@ -239,7 +230,7 @@ class JSONParserTest extends Specification {
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
-      option must_== QueryExeOption.NoSliceNoContinue
+      option must_== QueryExeOption.DefaultOption
     }
     "parse a batch of queries contains different estimable settings" in {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(
@@ -249,13 +240,12 @@ class JSONParserTest extends Specification {
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, groups = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
       query.last must_== Query(TwitterDataSet, Seq.empty, groups = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
-      option must_== QueryExeOption.NoSliceNoContinue
+      option must_== QueryExeOption.DefaultOption
     }
     "parse a batch of queries with option" in {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(hourCountJSON, groupByBinJSON)))
       val optionJson = Json.obj(
-        QueryExeOption.TagSliceMillis -> JsNumber(1234),
-        QueryExeOption.TagLimit -> JsNumber(1000)
+        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
       )
       val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
       query.size must_== 2
@@ -263,7 +253,7 @@ class JSONParserTest extends Specification {
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
       option.sliceMills must_== 1234
       option.continueSeconds must be_<=(0)
-      option.limit must_== 1000
+      option.limit must_== Int.MaxValue
     }
   }
 

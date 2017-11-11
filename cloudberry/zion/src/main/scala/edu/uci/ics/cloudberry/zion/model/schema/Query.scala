@@ -15,16 +15,21 @@ trait IWriteQuery extends IQuery {
 
 }
 
-// limit constrains that the maximum number of results that can be returned is 2^31 ~ 2.1 billion
+case class JsonRequestOption(sliceMills: Int,
+                             continueSeconds: Int)
+
+object JsonRequestOption {
+  val NoSliceNoContinue = JsonRequestOption(-1, -1)
+  val TagSliceMillis = "sliceMillis"
+  val TagContinueSeconds = "continueSeconds"
+}
+
 case class QueryExeOption(sliceMills: Int,
                           continueSeconds: Int,
                           limit: Int)
 
 object QueryExeOption {
-  val NoSliceNoContinue = QueryExeOption(-1, -1, Int.MaxValue)
-  val TagSliceMillis = "sliceMillis"
-  val TagContinueSeconds = "continueSeconds"
-  val TagLimit = "limit"
+  val DefaultOption = QueryExeOption(-1, -1, Int.MaxValue)
 }
 
 case class Query(dataset: String,

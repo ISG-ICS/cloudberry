@@ -7,7 +7,7 @@ import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.{IMerger, Unioner}
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption, Field, TimeField}
+import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -154,7 +154,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
 
   def makeOptionJsonObj(json: JsValue): JsObject = {
-    json.asInstanceOf[JsObject] + ("option" -> Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(50)))
+    json.asInstanceOf[JsObject] + ("option" -> Json.obj(JsonRequestOption.TagSliceMillis -> JsNumber(50)))
   }
 
   def getRet(i: Int) = JsArray(Seq(JsObject(Seq("hour" -> JsNumber(i), "count" -> JsNumber(i)))))

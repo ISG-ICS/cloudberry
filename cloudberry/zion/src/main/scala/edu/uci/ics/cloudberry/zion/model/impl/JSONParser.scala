@@ -24,13 +24,19 @@ class JSONParser extends IJSONParser {
     * Finally, calls [[QueryValidator]] to validate the correctness of this query.
     */
   override def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
-    val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
-    val query = (json \ "batch").toOption match {
+    val (processedJson, option) = extractQueryExeOption(json)
+
+
+    println(processedJson.toString())
+    println(option.toString)
+
+
+    val query = (processedJson \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
         case js: JsSuccess[Seq[UnresolvedQuery]] => js.get
         case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
       }
-      case None => json.validate[UnresolvedQuery] match {
+      case None => processedJson.validate[UnresolvedQuery] match {
         case js: JsSuccess[UnresolvedQuery] => Seq(js.get)
         case e: JsError => throw JsonRequestException(JsError.toJson(e).toString())
       }
@@ -56,6 +62,41 @@ object JSONParser {
     resolved
   }
 
+  /**
+    * Parses json request and extract [[QueryExeOption]], then removes all option-related field from requests.
+    *
+    * @param json
+    * @return
+    */
+  def extractQueryExeOption(json: JsValue): (JsValue, QueryExeOption) = {
+    val option = (json \ "option").toOption.map(_.as[JsonRequestOption]).getOrElse(JsonRequestOption.NoSliceNoContinue)
+    option match {
+      case JsonRequestOption.NoSliceNoContinue =>
+        (json, QueryExeOption.DefaultOption)
+      case _ =>
+        (json \ "batch").toOption match {
+          case Some(_) if (json \\ "limit").isEmpty || ((json \\ "limit").nonEmpty && (json \\ "aggregate").nonEmpty) =>
+            // enable batch requests with timeline and TopK hashtag requests
+            // TODO disable when front end change
+            (json, QueryExeOption(option.sliceMills, option.continueSeconds, Int.MaxValue))
+          case Some(_) =>
+            throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
+          case None if (json \\ "limit").isEmpty =>
+            (json, QueryExeOption(option.sliceMills, option.continueSeconds, Int.MaxValue))
+          // reassign limit value if something other than "limit" in select statement
+          case None if (json \\ "order").nonEmpty || (json \\ "offset").nonEmpty =>
+            val limit = (json \ "select" \ "limit").as[Int]
+            val updatedSelectJson = (json \ "select").as[JsObject] ++ Json.obj("limit" -> Int.MaxValue)
+            val updatedJson = json.as[JsObject] ++ Json.obj("select" -> updatedSelectJson)
+            (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, limit))
+          // remove select statement if only "limit" field found
+          case None =>
+            val limit = (json \ "select" \ "limit").as[Int]
+            val updatedJson = json.as[JsObject] - "select"
+            (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, limit))
+        }
+    }
+  }
 
   implicit val seqAnyValue: Format[Seq[Any]] = new Format[Seq[Any]] {
     override def reads(json: JsValue): JsResult[Seq[Any]] = {
@@ -261,11 +302,10 @@ object JSONParser {
       (JsPath \ "values").format[Seq[Any]]
     ) (UnresolvedFilterStatement.apply, unlift(UnresolvedFilterStatement.unapply))
 
-  implicit val exeOptionReads: Reads[QueryExeOption] = (
-    (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
-      (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1)) and
-      (__ \ QueryExeOption.TagLimit).readNullable[Int].map(_.getOrElse(Int.MaxValue))
-    ) (QueryExeOption.apply _)
+  implicit val exeOptionReads: Reads[JsonRequestOption] = (
+    (__ \ JsonRequestOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
+      (__ \ JsonRequestOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1))
+    ) (JsonRequestOption.apply _)
 
 
   // TODO find better name for 'global'
