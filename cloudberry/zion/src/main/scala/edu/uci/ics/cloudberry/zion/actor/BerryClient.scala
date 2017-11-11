@@ -121,10 +121,13 @@ class BerryClient(val jsonParser: JSONParser,
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
 
-      //TODO change here
+      if (nextInterval.toDurationMillis <= 0 || hasEnoughResults(mergedResults, targetLimits)) {
+        val returnedResult =
+          if (mergedResults.head.value.size > targetLimits) Seq(JsArray(mergedResults.head.value.take(targetLimits)))
+          else mergedResults
 
-      if (nextInterval.toDurationMillis <= 0 || mergedResults.size >= targetLimits) {
-        val returnedResult = if (mergedResults.size > targetLimits) mergedResults.take(targetLimits) else mergedResults
+        println(returnedResult.toString())
+
         queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(returnedResult))
         queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -183,6 +186,10 @@ class BerryClient(val jsonParser: JSONParser,
     val newDuration = Math.max(minTimeGap.toMillis, (interval.toDurationMillis * targetTimeSpend / timeSpend.toDouble).toLong)
     val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
     new TInterval(startTime, interval.getStartMillis)
+  }
+
+  private def hasEnoughResults(results: Seq[JsArray], targetLimit: Int): Boolean = {
+    results.nonEmpty && results.head.value.size >= targetLimit
   }
 
   protected def solveAQuery(query: Query): Future[JsValue] = {
