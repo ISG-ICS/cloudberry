@@ -43,4 +43,5 @@ server.pid
 /dist/
 .cache
 
+.DS_Store
 .idea/
