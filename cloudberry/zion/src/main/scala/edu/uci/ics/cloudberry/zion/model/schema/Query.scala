@@ -15,21 +15,16 @@ trait IWriteQuery extends IQuery {
 
 }
 
-case class JsonRequestOption(sliceMills: Int,
-                             continueSeconds: Int)
-
-object JsonRequestOption {
-  val NoSliceNoContinue = JsonRequestOption(-1, -1)
-  val TagSliceMillis = "sliceMillis"
-  val TagContinueSeconds = "continueSeconds"
-}
-
 case class QueryExeOption(sliceMills: Int,
                           continueSeconds: Int,
                           limit: Int)
 
 object QueryExeOption {
-  val DefaultOption = QueryExeOption(-1, -1, Int.MaxValue)
+  val NoSliceNoContinue = QueryExeOption(-1, -1, Int.MaxValue)
+  val TagSliceMillis = "sliceMillis"
+  val TagContinueSeconds = "continueSeconds"
+  //TODO limit tag should be in the query
+  val TagLimit = "limit"
 }
 
 case class Query(dataset: String,

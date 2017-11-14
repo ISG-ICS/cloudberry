@@ -30,7 +30,7 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
-      when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.DefaultOption))
+      when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(TwitterDataSet))
 
       val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
@@ -72,7 +72,7 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
-      when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.DefaultOption))
+      when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(sourceInfo.name))
 
 

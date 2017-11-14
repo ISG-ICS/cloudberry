@@ -181,11 +181,11 @@ class JSONParserTest extends Specification {
   "JSONParser" should {
     "parse query without option" in {
       val (_, option) = parser.parse(hourCountJSON, twitterSchemaMap)
-      option must_== QueryExeOption.DefaultOption
+      option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse slicing option" in {
       val millis = 1234
-      val optionJson = Json.obj(JsonRequestOption.TagSliceMillis -> JsNumber(millis))
+      val optionJson = Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(millis))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.sliceMills must_== millis
       option.continueSeconds must be_<=(0)
@@ -193,7 +193,7 @@ class JSONParserTest extends Specification {
     }
     "parse continue option" in {
       val seconds = 4321
-      val optionJson = Json.obj(JsonRequestOption.TagContinueSeconds -> JsNumber(4321))
+      val optionJson = Json.obj(QueryExeOption.TagContinueSeconds -> JsNumber(4321))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== seconds
       option.sliceMills must be_<=(0)
@@ -201,8 +201,8 @@ class JSONParserTest extends Specification {
     }
     "parse slicing and continue option" in {
       val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234),
-        JsonRequestOption.TagContinueSeconds -> JsNumber(4321)
+        QueryExeOption.TagSliceMillis -> JsNumber(1234),
+        QueryExeOption.TagContinueSeconds -> JsNumber(4321)
       )
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== 4321
@@ -229,7 +229,7 @@ class JSONParserTest extends Specification {
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
-      option must_== QueryExeOption.DefaultOption
+      option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse a batch of queries contains different estimable settings" in {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(
@@ -239,12 +239,12 @@ class JSONParserTest extends Specification {
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, groups = Some(GroupStatement(Seq(byHour), Seq(aggrCount))), isEstimable = true)
       query.last must_== Query(TwitterDataSet, Seq.empty, groups = Some(GroupStatement(Seq(byBin), Seq(aggrCount))), isEstimable = false)
-      option must_== QueryExeOption.DefaultOption
+      option must_== QueryExeOption.NoSliceNoContinue
     }
     "parse a batch of queries with option" in {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(hourCountJSON, groupByBinJSON)))
       val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
+        QueryExeOption.TagSliceMillis -> JsNumber(1234)
       )
       val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
       query.size must_== 2
@@ -253,89 +253,6 @@ class JSONParserTest extends Specification {
       option.sliceMills must_== 1234
       option.continueSeconds must be_<=(0)
       option.limit must_== Int.MaxValue
-    }
-  }
-
-  "JSONParser" should {
-    "parse limit with limit and without option" in {
-      val filter = Seq(stateFilter, timeFilter, textFilter)
-      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-
-      val (actualQuery, option) = parser.parse(topKHashTagJSON, twitterSchemaMap)
-      option must_== QueryExeOption.DefaultOption
-      actualQuery.size must_== 1
-      actualQuery.head must_== expectQuery
-      ok
-    }
-    "parse single request without limit and with option" in {
-      val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
-      )
-      val (actualQuery, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(1234, -1, Int.MaxValue)
-      actualQuery.size must_== 1
-      actualQuery.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
-      ok
-    }
-    "parse single request with only limit field in select statement and with option" in {
-      val selectJson = Json.obj(
-        "limit" -> JsNumber(1000)
-      )
-      val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
-      )
-      val (actualQuery, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("select" -> selectJson) + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(1234, -1, 1000)
-      actualQuery.size must_== 1
-      actualQuery.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
-      ok
-    }
-    "parse single request with full select statement and with option" in {
-      val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
-      )
-      val filter = Seq(stateFilter, timeFilter, textFilter)
-      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTagWithoutLimit))
-
-      val (actualQuery, option) = parser.parse(topKHashTagJSON.as[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(1234, -1, 10)
-      actualQuery.size must_== 1
-      actualQuery.head must_== expectQuery
-      ok
-    }
-    "parse batch requests with option and with limit and with aggregate" in {
-      val batchQueryJson = Json.obj("batch" -> JsArray(Seq(hourCountJSON, topKHashTagJSON)))
-      val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
-      )
-      val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
-
-      val filter = Seq(stateFilter, timeFilter, textFilter)
-      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
-      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTop10Tag))
-      query.size must_== 2
-      query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
-      query.last must_== expectQuery
-      option must_== QueryExeOption(1234, -1, Int.MaxValue)
-      ok
-    }
-    "parse batch requests with option and with limit and without aggregate" in {
-      val batchQueryJson = Json.obj("batch" -> JsArray(Seq(simpleLookupFilterJSON, multiFieldLookupFilterJSON)))
-      val optionJson = Json.obj(
-        JsonRequestOption.TagSliceMillis -> JsNumber(1234)
-      )
-      try {
-        val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
-        throw new IllegalStateException("should not be here")
-      } catch {
-        case e:JsonRequestException =>
-          e.msg must_== "Batch Requests cannot contain \"limit\" field"
-        case _ =>
-          throw new IllegalStateException("should not be here")
-      }
-      ok
     }
   }
 

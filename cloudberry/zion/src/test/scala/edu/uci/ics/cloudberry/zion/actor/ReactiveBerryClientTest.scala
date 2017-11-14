@@ -7,6 +7,7 @@ import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.{IMerger, Unioner}
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
+import edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.invocation.InvocationOnMock
@@ -154,7 +155,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
 
   def makeOptionJsonObj(json: JsValue): JsObject = {
-    json.asInstanceOf[JsObject] + ("option" -> Json.obj(JsonRequestOption.TagSliceMillis -> JsNumber(50)))
+    json.asInstanceOf[JsObject] + ("option" -> Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(50)))
   }
 
   def getRet(i: Int) = JsArray(Seq(JsObject(Seq("hour" -> JsNumber(i), "count" -> JsNumber(i)))))
@@ -447,10 +448,11 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
 
-      val selectJson = Json.obj(
-        "limit" -> JsNumber(2)
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(50),
+        QueryExeOption.TagLimit -> JsNumber(2)
       )
-      sender.send(client, makeOptionJsonObj(hourCountJSON.as[JsObject] + ("select" -> selectJson)))
+      sender.send(client, hourCountJSON.as[JsObject] + ("option" -> optionJson))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== "twitter.ds_tweet"
       dataManager.reply(Some(TestQuery.sourceInfo))
