@@ -89,7 +89,7 @@ class StreamingSolver(val dataManager: ActorRef,
       val nextInterval = calculateNext(targetInterval, curInterval, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) { //finished slicing
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(BerryClient.Done)) // notifying the client the processing is done
-        suggestViews(queryGroup)
+        queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         unstashAll() // in case there are new queries
         context.become(receive, discardOld = true)
       } else {
@@ -105,27 +105,6 @@ class StreamingSolver(val dataManager: ActorRef,
       log.error("askslice resceive cancel")
       unstashAll()
       context.become(receive, discardOld = true)
-  }
-
-  private def suggestViews(queryGroup: QueryGroup): Unit = {
-    val futureCreateViews = Future.traverse(queryGroup.queries) {
-      queryInfo: MiniQuery =>
-        dataManager ? AskInfoAndViews(queryInfo.query.dataset) map {
-          case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) => {
-            val infos = seq.map(_.asInstanceOf[DataSetInfo])
-            planner.suggestNewView(queryInfo.query, infos.head, infos.tail)
-          }
-          case _ => Seq.empty[CreateView]
-        }
-    }
-
-    futureCreateViews onComplete {
-      case Success(createViews) =>
-        createViews.foreach(seq => seq.foreach(dataManager ! _))
-      case Failure(fails) =>
-        log.error(fails, "check info fails")
-    }
-
   }
 
   private def issueQueryGroup(interval: TInterval, queryGroup: QueryGroup): Unit = {

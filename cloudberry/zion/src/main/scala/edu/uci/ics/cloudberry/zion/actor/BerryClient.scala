@@ -54,6 +54,7 @@ class BerryClient(val jsonParser: JSONParser,
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
       if (runOption.sliceMills <= 0) {
 //        restfulSolver ! (queries, transform)
+        // suggestView
       } else {
         val targetMillis = runOption.sliceMills
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap

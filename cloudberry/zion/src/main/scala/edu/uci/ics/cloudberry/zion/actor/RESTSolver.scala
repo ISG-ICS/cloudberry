@@ -24,8 +24,9 @@ class RESTSolver(val dataManager: ActorRef,
   override def receive: Actor.Receive = {
     case (queries: Seq[Query], transform: IPostTransform) =>
       val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
-      futureResult.foreach { r =>
+      futureResult.map(result => (queries, result)).foreach { case (qs, r) =>
         out ! transform.transform(r)
+        qs.foreach(suggestViews)
       }
   }
 

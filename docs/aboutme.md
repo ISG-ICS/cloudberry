@@ -27,7 +27,7 @@ subtitle:
 * [Xi Zhang](https://github.com/xizzzz)
 * [Hao Chen](https://github.com/haochen07)
 * [Vignesh Sankar](https://github.com/vignesh-sankar)
-* [Shengjie Xu](https://github.com/HotLemonJuice)
+* [Shengjie Xu](https://github.com/ShengjieXu)
 * [Liangju Chu](https://github.com/liangjuc)
 * [Sicong Liu](https://github.com/lsclovecode)
 * [Vidhyasagar Thirumaraiselvan](https://github.com/vidhya567)

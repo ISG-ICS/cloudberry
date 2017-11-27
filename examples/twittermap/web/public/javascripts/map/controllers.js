@@ -1,5 +1,23 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) { // use $rootScope event to get maptypeChange notification
+  
+    // map change notification
+    $rootScope.$on('maptypeChange', function (event, data) {
+      switch (cloudberry.parameters.maptype) {
+        case 'countmap':
+          break;
+          
+        case 'heatmap':
+          break;
+          
+        case 'pointmap':
+          break;
+          
+        default:
+          // unrecognized map type
+          break;
+      }
+    });
 
     // add an alert bar of IE
     if (L.Browser.ie) {
@@ -232,8 +250,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           } else if ($scope.status.zoomLevel > 5) {
             resetGeoInfo("county");
             if (!$scope.status.init) {
-              cloudberry.queryType = 'zoom';
-              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+              cloudberry.query(cloudberry.parameters);
             }
             if($scope.polygons.statePolygons) {
               $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -249,8 +266,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           } else if ($scope.status.zoomLevel <= 5) {
             resetGeoInfo("state");
             if (!$scope.status.init) {
-              cloudberry.queryType = 'zoom';
-              cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+              cloudberry.query(cloudberry.parameters);
             }
             if($scope.polygons.countyPolygons) {
               $scope.map.removeLayer($scope.polygons.countyPolygons);
@@ -289,11 +305,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
         if ($scope.status.logicLevel === 'city') {
           loadCityJsonByBound(onEachFeature);
+        } else {
+          resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
+          cloudberry.parameters.geoLevel = $scope.status.logicLevel;
+          cloudberry.query(cloudberry.parameters);
         }
-        resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
-        cloudberry.parameters.geoLevel = $scope.status.logicLevel;
-        cloudberry.queryType = 'drag';
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       });
 
     }
@@ -382,8 +398,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 if (!$scope.status.init) {
                     resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
                     cloudberry.parameters.geoLevel = 'city';
-                    cloudberry.queryType = 'zoom';
-                    cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+                    cloudberry.query(cloudberry.parameters);
                 }
                 resetGeoInfo("city");
                 $scope.map.addLayer($scope.polygons.cityPolygons);
@@ -403,8 +418,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                     setCenterAndBoundry($scope.geojsonData.city.features);
                     resetGeoInfo("city");
                     if (!$scope.status.init) {
-                        cloudberry.queryType = 'zoom';
-                        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+                        cloudberry.query(cloudberry.parameters);
                     }
                     $scope.map.addLayer($scope.polygons.cityPolygons);
                 })
@@ -419,7 +433,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
      * Update map based on a set of spatial query result cells
      * @param    result  =>  mapPlotData, an array of coordinate and weight objects
      */
-    function drawMap(result) {
+    function drawCountMap(result) {
 
       var colors = $scope.styles.colors;
       var sentimentColors = $scope.styles.sentimentColors;
@@ -683,6 +697,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
+    
+    // function for drawing heatmap
+    function drawHeatMap(result) {
+    }
+    
+    // function for drawing pointmap
+    function drawPointMap(result) {
+    }
 
     $scope.$watchCollection(
       function() {
@@ -695,30 +717,44 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       },
 
       function(newResult, oldValue) {
-        if (newResult['mapResult'] !== oldValue['mapResult']) {
-          $scope.result = newResult['mapResult'];
-          if (Object.keys($scope.result).length !== 0) {
-            $scope.status.init = false;
-            drawMap($scope.result);
-          } else {
-            drawMap($scope.result);
-          }
-        }
-        if (newResult['totalCount'] !== oldValue['totalCount']) {
-          $scope.totalCount = newResult['totalCount'];
-        }
-        if(newResult['doNormalization'] !== oldValue['doNormalization']) {
-          $scope.doNormalization = newResult['doNormalization'];
-          drawMap($scope.result);
-        }
-        if(newResult['doSentiment'] !== oldValue['doSentiment']) {
-          $scope.doSentiment = newResult['doSentiment'];
-          if($scope.doSentiment) {
-            $scope.infoPromp = "Score";  // change the info promp
-          } else {
-            $scope.infoPromp = config.mapLegend;
-          }
-          drawMap($scope.result);
+        switch (cloudberry.parameters.maptype) {
+          case 'countmap':
+            if (newResult['mapResult'] !== oldValue['mapResult']) {
+              $scope.result = newResult['mapResult'];
+              if (Object.keys($scope.result).length !== 0) {
+                $scope.status.init = false;
+                drawCountMap($scope.result);
+              } else {
+                drawCountMap($scope.result);
+              }
+            }
+            if (newResult['totalCount'] !== oldValue['totalCount']) {
+              $scope.totalCount = newResult['totalCount'];
+            }
+            if(newResult['doNormalization'] !== oldValue['doNormalization']) {
+              $scope.doNormalization = newResult['doNormalization'];
+              drawCountMap($scope.result);
+            }
+            if(newResult['doSentiment'] !== oldValue['doSentiment']) {
+              $scope.doSentiment = newResult['doSentiment'];
+              if($scope.doSentiment) {
+                $scope.infoPromp = "Score";  // change the info promp
+              } else {
+                $scope.infoPromp = config.mapLegend;
+              }
+              drawCountMap($scope.result);
+            }
+            break;
+            
+          case 'heatmap':
+            break;
+            
+          case 'pointmap':
+            break;
+            
+          default:
+            // unrecognized map type
+            break;
         }
       }
     );
