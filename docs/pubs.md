@@ -5,17 +5,16 @@ subtitle:
 ---
 
 ## Papers
-* **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey, IEEE BigData 2017
-[[PDF (Long version)](../img/query-slicing-long.pdf)][[Video](https://youtu.be/gztxneqSIDE)]
-* **Caching Geospatial Objects in Web Browsers**, Taewoo Kim, Vidhyasagar Thirumaraiselvan, Jianfeng Jia, Chen Li, ACM SIGSPATIAL 2017 (Demo Paper)[[PDF](../img/Caching_Geospatial_Objects_In_Web_Browsers.pdf)].
+* **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey, [IEEE BigData 2017](http://cci.drexel.edu/bigdata/bigdata2017/index.html) [[PDF (Long version)](../img/query-slicing-long.pdf)][[Video](https://youtu.be/gztxneqSIDE)]
+* **Caching Geospatial Objects in Web Browsers**, Taewoo Kim, Vidhyasagar Thirumaraiselvan, Jianfeng Jia, Chen Li, [ACM SIGSPATIAL 2017](http://sigspatial2017.sigspatial.org) (Demo Paper)[[PDF](../img/Caching_Geospatial_Objects_In_Web_Browsers.pdf)].
 * **Visual Analytics Ecology for Complex System Testing**,
-Simon Su, Michael Barton, Michael An, Vincent Perry, Chen Li, Jianfeng Jia, Brian Panneton, Visualization in Practice 2017 at IEEE VIS 2017.
-* **Twitter Coverage of Climate Change and Health before and after the 2016 US Presidential Election**, Suellen Hopfer, Miryha Runnerstrom, Jianfeng Jia, Taewoo Kim, Chen Li, American Public Health Association 2017.
+Simon Su, Michael Barton, Michael An, Vincent Perry, Chen Li, Jianfeng Jia, Brian Panneton, Visualization in Practice 2017 at [IEEE VIS 2017](http://ieeevis.org/year/2017/welcome).
+* **Twitter Coverage of Climate Change and Health before and after the 2016 US Presidential Election**, Suellen Hopfer, Miryha Runnerstrom, Jianfeng Jia, Taewoo Kim, Chen Li, [American Public Health Association 2017](https://apha.confex.com/apha/2017/meetingapp.cgi).
 * **Supporting Visualizations on Large Twitter Datasets Using Cloudberry**,
 Shengjie Xu.
 [[PDF](../img/Supporting-Visualizations-on-Large-Twitter-Datasets-Using-Cloudberry.pdf)]
 * **Towards Interactive Analytics and Visualization on One Billion Tweets**,
-Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, ACM SIGSPATIAL 2016 (Demo Paper).
+Jianfeng Jia, Chen Li, Xi Zhang, Chen Li, Michael J. Carey, Simon Su, [ACM SIGSPATIAL 2016](http://sigspatial2016.sigspatial.org) (Demo Paper).
 [[PDF](https://chenli.ics.uci.edu//wp-content/uploads/chenli/2016/11/Cloudberry-ACM-GIS2016.pdf)]
 [[Video](https://www.youtube.com/watch?v=XwlRm0jcsU4)]
 
