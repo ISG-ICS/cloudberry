@@ -1,16 +1,15 @@
 package edu.uci.ics.cloudberry.zion.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, PoisonPill, Props, Stash}
-import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfoAndViews
-import edu.uci.ics.cloudberry.zion.actor.StreamingSolver._
+import edu.uci.ics.cloudberry.zion.actor.ProgressiveSolver._
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.IPostTransform
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
+import edu.uci.ics.cloudberry.zion.model.slicing.Drum
 import org.joda.time.DateTime
 import play.api.libs.json.JsArray
 
@@ -27,21 +26,20 @@ import scala.util.{Failure, Success}
   * @param config
   * @param out
   */
-class StreamingSolver(val dataManager: ActorRef,
-                      val planner: QueryPlanner,
-                      val config: Config,
-                      val out: ActorRef
+class ProgressiveSolver(val dataManager: ActorRef,
+                        val planner: QueryPlanner,
+                        val config: Config,
+                        val out: ActorRef
                      )(implicit val ec: ExecutionContext) extends Actor with Stash with IQuerySolver with ActorLogging {
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
-  private val minTimeGap = config.MinTimeGap
 
   private var ts: Long = 0
 
   override def receive: Receive = {
     case request: SlicingRequest =>
       ts = DateTime.now().getMillis
-      val reporter: ActorRef = context.actorOf(Props(new Reporter(FiniteDuration(request.targetMillis, "ms"), out)))
+      val reporter: ActorRef = context.actorOf(Props(new Reporter(FiniteDuration(request.intervalMS, "ms"), out)))
       val queryInfos = request.queries.map { query =>
         val info = request.infos(query.dataset)
         if (!info.schema.isInstanceOf[Schema]) {
@@ -57,12 +55,13 @@ class StreamingSolver(val dataManager: ActorRef,
       val max = queryInfos.map(_.queryBound.getEndMillis).max
       val boundary = new TInterval(min, max)
 
-      val initialDuration = config.FirstQueryTimeGap.toMillis
+      val initialDuration = config.FirstQueryTimeGap
       val interval = calculateFirst(boundary, initialDuration)
       val queryGroup = QueryGroup(ts, queryInfos, request.postTransform)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
-      context.become(askSlice(reporter, request.targetMillis, interval, boundary, queryGroup, initResult, askTime = DateTime.now), discardOld = true)
+      val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 1, initialDuration.toHours.toInt)
+      context.become(askSlice(reporter, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
     case _ : MiniQueryResult =>
       // do nothing
       log.debug(s"receive: obsolete query result")
@@ -72,12 +71,15 @@ class StreamingSolver(val dataManager: ActorRef,
   }
 
   private def askSlice(reporter: ActorRef,
-                       targetInterval: Long,
+                       paceMS: Long,
+                       timeLimitMS: Long,
                        curInterval: TInterval,
+                       estimator: Drum,
+                       estimateMS: Long,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
                        accumulateResults: Seq[JsArray],
-                       askTime: DateTime): Receive = {
+                       issuedTimestamp: DateTime): Receive = {
     case result: MiniQueryResult if result.key == ts =>
       val mergedResults = queryGroup.queries.zipWithIndex.map {
         case (q, idx) =>
@@ -85,8 +87,11 @@ class StreamingSolver(val dataManager: ActorRef,
       }
       reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(JsArray(mergedResults)))
 
-      val timeSpend = DateTime.now.getMillis - askTime.getMillis
-      val nextInterval = calculateNext(targetInterval, curInterval, timeSpend, boundary)
+      val timeSpend = DateTime.now.getMillis - issuedTimestamp.getMillis
+      val diff = Math.max(0, timeLimitMS - timeSpend)
+      val nextLimit =  paceMS + diff
+
+      val (nextInterval, nextEstimateMS) = calculateNext(estimator, nextLimit, curInterval, estimateMS, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) { //finished slicing
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(BerryClient.Done)) // notifying the client the processing is done
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -94,13 +99,13 @@ class StreamingSolver(val dataManager: ActorRef,
         context.become(receive, discardOld = true)
       } else {
         issueQueryGroup(nextInterval, queryGroup)
-        context.become(askSlice(reporter, targetInterval, nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(reporter, paceMS, nextLimit, nextInterval, estimator, estimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case result: MiniQueryResult =>
       log.debug(s"old result: $result")
     case _: SlicingRequest =>
       stash()
-    case StreamingSolver.Cancel =>
+    case ProgressiveSolver.Cancel =>
       reporter ! PoisonPill
       log.error("askslice resceive cancel")
       unstashAll()
@@ -128,24 +133,26 @@ class StreamingSolver(val dataManager: ActorRef,
     }
   }
 
-  private def calculateFirst(entireInterval: TInterval, gap: Long): TInterval = {
-    val startTime = Math.max(entireInterval.getEndMillis - gap, entireInterval.getStartMillis)
+  private def calculateFirst(entireInterval: TInterval, duration: FiniteDuration): TInterval = {
+    val startTime = Math.max(entireInterval.getEndMillis - duration.toMillis, entireInterval.getStartMillis)
     new TInterval(startTime, entireInterval.getEndMillis)
   }
 
-  private def calculateNext(targetTimeSpend: Long, interval: TInterval, timeSpend: Long, boundary: TInterval): TInterval = {
-    val newDuration = Math.max(minTimeGap.toMillis, (interval.toDurationMillis * targetTimeSpend / timeSpend.toDouble).toLong)
-    val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
-    new TInterval(startTime, interval.getStartMillis)
+  private def calculateNext(drum: Drum, timeLimit: Long, lastInterval: TInterval, lastEstimateMS: Long,  lastActualMS: Long, boundary: TInterval): (TInterval, Long) = {
+    drum.learn(lastInterval.toDuration.getStandardHours.toInt, lastEstimateMS.toInt, lastActualMS.toInt)
+    val estimate = drum.estimate(timeLimit.toInt)
+
+    val startTime = Math.max(boundary.getStartMillis, lastInterval.getEnd.minusHours(estimate.range).getMillis)
+    (new TInterval(startTime, lastInterval.getStartMillis), estimate.estimateMS.toLong)
   }
 
 }
 
-object StreamingSolver {
+object ProgressiveSolver {
 
   case object Cancel
 
-  case class SlicingRequest(targetMillis: Long, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
+  case class SlicingRequest(intervalMS: Long, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
 
   private case class MiniQueryResult(key: Long, queryGroup: QueryGroup, jsons: Seq[JsArray])
 
