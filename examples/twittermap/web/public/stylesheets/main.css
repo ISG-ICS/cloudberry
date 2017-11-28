@@ -172,3 +172,54 @@ time-series {
 .search-keyword-btn-group{
   margin-left: 36%;
 }
+
+.tweet {
+  padding: 8px 8px 4px 8px;
+  font-size: 12px; }
+
+.tweet-top {
+  display: -ms-flexbox;
+  display: flex; }
+
+.tweet-user-photo {
+  -ms-flex-negative: 0;
+  flex-shrink: 0;
+  background-size: 32px 32px;
+  background-repeat: no-repeat;
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  background: #e2e2e2; }
+
+.tweet-user-photo img {
+  display: none; }
+
+.tweet-body {
+  padding-left: 8px;
+  line-height: 1.2;
+  padding-bottom: 6px; }
+
+.tweet-body .name {
+  font-weight: bold;
+  color: #3b94d9;
+  cursor: pointer; }
+
+.tweet-body .name:hover {
+  color: #9266CC; }
+
+.tweet-body .time {
+  color: #a7a7a7;
+  font-size: 11px; }
+
+.tweet-body .user-info {
+  margin-bottom: 2px; }
+
+.tweet-media img {
+  width: 100%; }
+
+.tweet-link {
+  text-decoration: none;
+  color: #3b94d9; }
+
+.tweet-link:hover {
+  text-decoration: underline; }

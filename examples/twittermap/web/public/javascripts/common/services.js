@@ -47,6 +47,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
+    var defaultPointmapLimit = 1000000;
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
@@ -360,6 +361,28 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
 
           case 'pointmap':
+
+            var pointsJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+              select: {
+                order: ["-create_at"],
+                limit: defaultPointmapLimit,
+                offset: 0,
+                field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+              },
+              transform: {
+                wrap: {
+                  key: "points"
+                }
+              }
+            }));
+
+            var curTime = new Date();
+            timeCounter = curTime;
+            console.log("Query sent at " + curTime.getHours() + ":" + curTime.getMinutes() + ":" + curTime.getSeconds());
+            ws.send(pointsJson);
+
             break;
           
           default:
@@ -402,6 +425,20 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "batchHeatMapRequest":
             break;
           case "batchPointMapRequest":
+            break;
+          case "points":
+            if(angular.isArray(result.value)) {
+              cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+              cloudberryService.pointsResult = result.value[0];
+              var curTime = new Date();
+              var startTime = timeCounter.getTime();
+              var endTime = curTime.getTime();
+              console.log(result.value[0]);
+              console.log("Query received at " + curTime.getHours() + ":" + curTime.getMinutes() + ":" + curTime.getSeconds());
+              console.log("Total time used for this query: " + ((endTime - startTime) / 1000.0).toFixed(2) + " s.");
+            } else { // this is the {key: "done"} message
+              console.log("receive :", result.value);
+            }
             break;
           case "totalCount":
             cloudberryService.totalCount = result.value[0][0].count;

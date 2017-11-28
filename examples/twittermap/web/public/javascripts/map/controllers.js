@@ -1,6 +1,8 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
   .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) { // use $rootScope event to get maptypeChange notification
-  
+
+    cloudberry.parameters.maptype = 'countmap';
+
     // map change notification
     $rootScope.$on('maptypeChange', function (event, data) {
       switch (cloudberry.parameters.maptype) {
@@ -11,6 +13,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           break;
           
         case 'pointmap':
+          setInfoControlPointMap();
+          cloudberry.query(cloudberry.parameters, cloudberry.queryType);
           break;
           
         default:
@@ -160,12 +164,23 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       });
 
       //Adjust Map to be County or State
-      setInfoControl();
-
+      switch (cloudberry.parameters.maptype) {
+        case 'countmap':
+          setInfoControlCountMap();
+          break;
+        case 'heatmap':
+          setInfoControlHeatMap();
+          break;
+        case 'pointmap':
+          setInfoControlPointMap();
+          break;
+        default:
+          break;
+      }
     };
 
 
-    function setInfoControl() {
+    function setInfoControlCountMap() {
       // Interaction function
       function highlightFeature(leafletEvent) {
         var layer = leafletEvent.target;
@@ -312,6 +327,209 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
       });
 
+    }
+
+    function setInfoControlHeatMap() {
+
+    }
+
+    function setInfoControlPointMap() {
+      //change the style of the polygons
+      $scope.styles = {
+        initStyle: {
+          weight: 0.5,
+          fillOpacity: 0,
+          color: 'white'
+        },
+        stateStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        stateUpperStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        countyStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        countyUpperStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        cityStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        hoverStyle: {
+          weight: 0.7,
+          color: '#666',
+          fillOpacity: 0
+        },
+        colors: [ '#ffffff', '#92d1e1', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
+        sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
+      };
+
+      //remove previous countmap layers
+      if ($scope.polygons.statePolygons) {
+        $scope.map.removeLayer($scope.polygons.statePolygons);
+      }
+      if ($scope.polygons.countyPolygons) {
+        $scope.map.removeLayer($scope.polygons.countyPolygons);
+      }
+      if ($scope.polygons.cityPolygons) {
+        $scope.map.removeLayer($scope.polygons.cityPolygons);
+      }
+      if ($scope.polygons.stateUpperPolygons) {
+        $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+      }
+      if ($scope.polygons.countyUpperPolygons) {
+        $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
+      }
+
+      function zoomToFeature(leafletEvent) {
+          if (leafletEvent)
+              $scope.map.fitBounds(leafletEvent.target.getBounds());
+      }
+
+      function onEachFeature(feature, layer) {
+        layer.on({
+          click: zoomToFeature
+        });
+      }
+
+      // add info control
+      /*var info = L.control();
+
+      info.onAdd = function () {
+        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+        this._div.style.margin = '20% 0 0 0';
+        this._div.innerHTML = [
+            '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
+            '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+            '<br/>',
+            '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
+        ].join('');
+        $compile(this._div)($scope);
+        return this._div;
+      };
+
+      info.options = {
+        position: 'topleft'
+      };
+      $scope.controls.custom.push(info);
+*/
+      loadGeoJsonFiles(onEachFeature);
+
+      if ($scope.zoomfunction) {
+        $scope.zoomfunction()
+      }
+
+      $scope.zoomfunction = $scope.$on("leafletDirectiveMap.zoomend", function () {
+        if ($scope.map) {
+          $scope.status.zoomLevel = $scope.map.getZoom();
+          $scope.bounds = $scope.map.getBounds();
+          if ($scope.status.zoomLevel > 9) {
+            resetGeoInfo("city");
+            if ($scope.polygons.statePolygons) {
+              $scope.map.removeLayer($scope.polygons.statePolygons);
+            }
+            if ($scope.polygons.countyPolygons) {
+              $scope.map.removeLayer($scope.polygons.countyPolygons);
+            }
+            if ($scope.polygons.stateUpperPolygons) {
+              $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+            }
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+            loadCityJsonByBound(onEachFeature);
+          } else if ($scope.status.zoomLevel > 5) {
+            resetGeoInfo("county");
+            if ($scope.polygons.statePolygons) {
+              $scope.map.removeLayer($scope.polygons.statePolygons);
+            }
+            if ($scope.polygons.cityPolygons) {
+              $scope.map.removeLayer($scope.polygons.cityPolygons);
+            }
+            if ($scope.polygons.countyUpperPolygons) {
+              $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
+            }
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          } else if ($scope.status.zoomLevel <= 5) {
+            resetGeoInfo("state");
+            if ($scope.polygons.countyPolygons) {
+              $scope.map.removeLayer($scope.polygons.countyPolygons);
+            }
+            if ($scope.polygons.cityPolygons) {
+              $scope.map.removeLayer($scope.polygons.cityPolygons);
+            }
+            if ($scope.polygons.stateUpperPolygons) {
+              $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+            }
+            if ($scope.polygons.countyUpperPolygons) {
+              $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
+            }
+            if ($scope.polygons.statePolygons) {
+              $scope.map.addLayer($scope.polygons.statePolygons);
+            }
+          }
+        }
+
+        //For rescaling the MouseOverPoint judgement.
+        $scope.currentBounds = $scope.map.getBounds();
+        $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
+        $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
+
+        console.log("Zoom...");
+        console.log("current Bounds = ([" + $scope.currentBounds.getWest().toFixed(6)
+            + "," + $scope.currentBounds.getNorth().toFixed(6) + "] , ["
+            + $scope.currentBounds.getEast().toFixed(6) + ","
+            + $scope.currentBounds.getSouth().toFixed(6) + "])");
+        console.log("current Scale_x = " + $scope.scale_x);
+        console.log("current Scale_y = " + $scope.scale_y);
+      });
+
+      if ($scope.dragfunction) {
+        $scope.dragfunction()
+      }
+      $scope.dragfunction = $scope.$on("leafletDirectiveMap.dragend", function () {
+        if (!$scope.status.init) {
+          $scope.bounds = $scope.map.getBounds();
+          var geoData;
+          if ($scope.status.logicLevel === 'state') {
+            geoData = $scope.geojsonData.state;
+          } else if ($scope.status.logicLevel === 'county') {
+            geoData = $scope.geojsonData.county;
+          } else if ($scope.status.logicLevel === 'city') {
+            geoData = $scope.geojsonData.city;
+          } else {
+            console.error("Error: Illegal value of logicLevel, set to default: state");
+            $scope.status.logicLevel = 'state';
+            geoData = $scope.geojsonData.state;
+          }
+        }
+        if ($scope.status.logicLevel === 'city') {
+            loadCityJsonByBound(onEachFeature, false);
+        }
+        resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
+      });
+
+      $scope.mouseOverPointI = 0;
     }
 
     function setCenterAndBoundry(features) {
@@ -704,12 +922,278 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     
     // function for drawing pointmap
     function drawPointMap(result) {
+      //For randomize coordinates by bounding_box
+      var gseed;
+
+      function CustomRandom() {
+        var x = Math.sin(gseed++) * 10000;
+        return x - Math.floor(x);
+      }
+
+      function randomNorm(mean, stdev) {
+        return mean + (((CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom()) - 3) / 3) * stdev;
+      }
+
+      function rangeRandom(seed, minV, maxV){
+        gseed = seed;
+        var ret = randomNorm((minV + maxV) / 2, (maxV - minV) / 16);
+        return ret;
+      }
+
+
+      //To Redraw the points layer
+      if (!$scope.pointsLayer) {
+        $scope.pointsLayer = new L.TileLayer.MaskCanvas({
+          opacity: 0.8,
+          radius: 80,
+          useAbsoluteRadius: true,
+          color: "#00aced",
+          noMask: true,
+          lineColor: '#1dcaff'
+        });
+
+        $scope.map.addLayer($scope.pointsLayer);
+
+        //Define a new event of the map called 'mouseintent'
+        $scope.map.on('mousemove', onMapMouseMove);
+
+        var timer = null;
+
+        function onMapMouseMove(e) {
+          //console.log("Mouse is moving to location " + e.latlng);
+          //Start timer for 300ms
+          var duration = 300;
+
+          if (timer !== null) {
+            clearTimeout(timer);
+            timer = null;
+          }
+
+          timer = setTimeout(L.Util.bind(function() {
+            this.fire('mouseintent', {
+              latlng : e.latlng,
+              layer : e.layer
+            });
+            timer = null;
+          }, this), duration);
+        }
+
+        $scope.currentBounds = null;
+        $scope.scale_x = 0;
+        $scope.scale_y = 0;
+
+        //To generate Tweet Popup content from Twitter API (oembed.json?) response JSON
+        function translateOembedTweet(tweetJSON) {
+
+          console.log(JSON.stringify(tweetJSON));
+
+          //var userPhotoLink = tweetJSON.user.name;
+          /*var userPhotoUrl = "";
+          try {
+            userPhotoUrl= tweetJSON.user.profile_image_url;
+            console.log("userPhotoUrl = " + userPhotoUrl);
+          }
+          catch (e){
+            console.log("user.profile_image_url missing in this Tweet.:");
+          }*/
+
+          var userName = "";
+          try {
+            userName = tweetJSON.author_name;
+            console.log("userName = " + userName);
+          }
+          catch (e){
+            console.log("author_name missing in this Tweet.:" + e.message);
+          }
+
+          var userLink = "";
+          try {
+            userLink = tweetJSON.author_url;
+            console.log("userLink = " + userLink);
+          }
+          catch (e) {
+            console.log("author_url missing in this Tweet.:" + e.message);
+          }
+
+          /*var tweetTime = "";
+          try {
+            var created_at = new Date(tweetJSON.created_at);
+            tweetTime = created_at.toTimeString() + "\\t" + created_at.toDateString();
+            console.log("tweetTime = " + tweetTime);
+          }
+          catch (e){
+            console.log("created_at missing in this Tweet.:" + e.message);
+          }*/
+
+          var tweetLink = "";
+          try {
+            tweetLink = tweetJSON.url;
+            console.log("tweetLink = " + tweetLink);
+          }
+          catch (e){
+            console.log("url missing in this Tweet.:" + e.message);
+          }
+
+          var tweetText = "";
+          try {
+            var tweetHtml = new DOMParser().parseFromString(tweetJSON.html, 'text/html');
+            tweetText = tweetHtml.getElementsByTagName('p')[0].innerHTML;
+            console.log("tweetText = " + tweetText);
+          }
+          catch (e){
+            console.log("html missing in this Tweet.:" + e.message);
+          }
+
+          /*
+          var userPhotoLink = "baiqiushi";
+          var userPhotoUrl = "https://pbs.twimg.com/profile_images/524736183406841856/QgZ1k_Gq_bigger.jpeg";
+          var userName = "Williams White";
+          var tweetTime = "10:33 PM - 18 Dec 2010";
+          var tweetText = "Yahoo! This message is from a boy who has just cross the firewall from Tang Dinasty!";
+          */
+          var tweetTemplate = "\n"
+            + "<div class=\"tweet\">\n "
+            + "  <div class=\"tweet-body\">"
+            + "    <div class=\"user-info\"> "
+            + "      <span class=\"name\"> "
+            + "        <a href=\""
+            + userLink
+            + "        \"> "
+            + "@"
+            + userName
+            + "        </a>"
+            + "      </span> "
+            + "    </div>\n	"
+            + "    <div class=\"tweet-text\">"
+            + tweetText
+            + "\n &nbsp;&nbsp;<a href=\""
+            + tweetLink
+            + "      \"> "
+            + "[more]..."
+            + "      </a>"
+            + "    </div>\n	 "
+            + "  </div>\n	"
+            + "</div>\n";
+
+          return tweetTemplate;
+        }
+
+        $scope.map.on('mouseintent', onMapMouseIntent);
+
+        $scope.currentMarker = null;
+
+        $scope.points = [];
+        $scope.pointIDs = [];
+
+        function onMapMouseIntent(e) {
+          console.log("[*] Mouse intents over " + e.latlng);
+
+          //make sure the scale metrics are updated
+          if ($scope.currentBounds == null || $scope.scale_x == 0 || $scope.scale_y == 0) {
+            $scope.currentBounds = $scope.map.getBounds();
+            $scope.scale_x = Math.abs($scope.currentBounds.getEast()
+              - $scope.currentBounds.getWest());
+            $scope.scale_y = Math.abs($scope.currentBounds.getNorth()
+              - $scope.currentBounds.getSouth());
+          }
+
+          //if mouse intent changed, remove current marker
+          // if($scope.previousMouseIntent == null ||
+          //   $scope.previousMouseIntent.latlng.lat != e.latlng ||
+          //   $scope.previousMouseIntent.latlng.lng != e.lng) {
+          //   $scope.previousMouseIntent = e;
+          //   if (!$scope.mouseIntentPopup && $scope.currentMarker != null) {
+          //     $scope.map.removeLayer($scope.currentMarker);
+          //   }
+          // }
+
+          var startTime = new Date().getTime();
+
+          var i = isMouseOverAPoint(e.latlng.lat, e.latlng.lng);
+
+          var endTime = new Date().getTime();
+          console.log("Running Time : "
+              + ((endTime - startTime) / 1000.0).toFixed(2) + " seconds.");
+
+          //if mouse over a new point
+          if (i >= 0 && $scope.mouseOverPointI != i) {
+            $scope.mouseOverPointI = i;
+            console.log("[o] Mouse over A New Point [" + $scope.points[i][0] + ","
+              + $scope.points[i][1] + "] TwitterID = " + $scope.pointIDs[i]);
+
+            //Show the Popup Tweet!
+            //(1) If previous Marker is not null, destroy it.
+            if ($scope.currentMarker != null) {
+              //Destroy last marker.
+              $scope.map.removeLayer($scope.currentMarker);
+            }
+
+            //(2) Create a new Marker to highlight the point.
+            $scope.currentMarker = L.circleMarker(e.latlng, {
+              radius : 6,
+              color : '#ffffff',
+              weight : 1.5,
+              fillColor : '#0084b4',
+              fillOpacity : 1.0
+            }).addTo($scope.map);
+
+            var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + $scope.pointIDs[i];
+            $http.jsonp(url).success(function (data) {
+              var tweetContent = translateOembedTweet(data);
+              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+              $scope.popUpTweet.setContent(tweetContent);
+              //$scope.popUpTweet.openOn($scope.currentMarker);
+              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+            }).
+            error(function() {
+              console.log("The tweet with that ID has been deleted by the author.");
+              var tweetContent = "Sorry! It seems the tweet with that ID has been deleted by the author.@_@";
+              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+              $scope.popUpTweet.setContent(tweetContent);
+              //$scope.popUpTweet.openOn($scope.currentMarker);
+              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+            });
+          }
+        }
+
+        function isMouseOverAPoint(x, y) {
+          for (var i = 0; i < $scope.points.length; i += 1) {
+            //console.log("points[i][0].toFixed(6) = " + $scope.points[i][0].toFixed(6) + ", x.toFixed(6) = " + x.toFixed(6));
+            //console.log("points[i][1].toFixed(6) = " + $scope.points[i][1].toFixed(6) + ", y.toFixed(6) = " + y.toFixed(6));
+            var dist_x = Math.abs(($scope.points[i][0] - x) / $scope.scale_x);
+            var dist_y = Math.abs(($scope.points[i][1] - y) / $scope.scale_y);
+            //console.log("curcor [" + x + "," + y + "] to Points[" + i + "][" + $scope.points[i][0] + "," + $scope.points[i][1] + "] === [" + dist_x + "," + dist_y + "]");
+            if (dist_x <= 0.01 && dist_y <= 0.01) {
+              return i;
+            }
+          }
+          return -1;
+        }
+      }
+
+      //Update the points data
+      if (result.length > 0){
+        $scope.points = [];
+        $scope.pointIDs = [];
+        for (var i = 0; i < result.length; i++) {
+          if (result[i].hasOwnProperty('coordinate')){
+            $scope.points.push([result[i].coordinate[1], result[i].coordinate[0]]);
+          }
+          else {
+            $scope.points.push([rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]);
+          }
+          $scope.pointIDs.push(result[i].id);
+        }
+        console.log("The pointsLayer data updated: Number of ponts = " + $scope.points.length);
+        $scope.pointsLayer.setData($scope.points);
+      }
     }
 
     $scope.$watchCollection(
       function() {
         return {
           'mapResult': cloudberry.mapResult,
+          'pointsResult': cloudberry.pointsResult,
           'totalCount': cloudberry.totalCount,
           'doNormalization': $('#toggle-normalize').prop('checked'),
           'doSentiment': $('#toggle-sentiment').prop('checked')
@@ -750,6 +1234,18 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             break;
             
           case 'pointmap':
+            if (newResult['pointsResult'] !== oldValue['pointsResult']) {
+                $scope.result = newResult['pointsResult'];
+                if (Object.keys($scope.result).length !== 0) {
+                    $scope.status.init = false;
+                    drawPointMap($scope.result);
+                } else {
+                    drawPointMap($scope.result);
+                }
+            }
+            if (newResult['totalCount'] !== oldValue['totalCount']) {
+                $scope.totalCount = newResult['totalCount'];
+            }
             break;
             
           default:
