@@ -39,7 +39,7 @@ class BerryClient(val jsonParser: JSONParser,
 
   private case class QueryGroup(ts: DateTime, curSender: ActorRef, queries: Seq[QueryInfo], postTransform: IPostTransform)
 
-  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, targetLimits: Int, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
+  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, targetLimits: Option[Int], queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
 
   private case class PartialResult(queryGroup: QueryGroup, jsons: Seq[JsArray])
 
@@ -108,7 +108,7 @@ class BerryClient(val jsonParser: JSONParser,
   }
 
   private def askSlice(targetInvertal: Long,
-                       targetLimits: Int,
+                       targetLimits: Option[Int],
                        curInterval: TInterval,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
@@ -123,7 +123,7 @@ class BerryClient(val jsonParser: JSONParser,
 
       if (nextInterval.toDurationMillis <= 0 || hasEnoughResults(mergedResults, targetLimits)) {
         val returnedResult =
-          if (mergedResults.head.value.size > targetLimits) Seq(JsArray(mergedResults.head.value.take(targetLimits)))
+          if (targetLimits.nonEmpty && mergedResults.head.value.size > targetLimits.get) Seq(JsArray(mergedResults.head.value.take(targetLimits.get)))
           else mergedResults
         queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(returnedResult))
         queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
@@ -185,8 +185,8 @@ class BerryClient(val jsonParser: JSONParser,
     new TInterval(startTime, interval.getStartMillis)
   }
 
-  private def hasEnoughResults(results: Seq[JsArray], targetLimit: Int): Boolean = {
-    results.nonEmpty && results.head.value.size >= targetLimit
+  private def hasEnoughResults(results: Seq[JsArray], targetLimit: Option[Int]): Boolean = {
+    targetLimit.nonEmpty && results.nonEmpty && results.head.value.size >= targetLimit.get
   }
 
   protected def solveAQuery(query: Query): Future[JsValue] = {

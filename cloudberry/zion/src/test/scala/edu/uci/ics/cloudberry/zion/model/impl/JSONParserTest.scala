@@ -189,7 +189,7 @@ class JSONParserTest extends Specification {
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.sliceMills must_== millis
       option.continueSeconds must be_<=(0)
-      option.limit must_== Int.MaxValue
+      option.limit must_== None
     }
     "parse continue option" in {
       val seconds = 4321
@@ -197,7 +197,7 @@ class JSONParserTest extends Specification {
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== seconds
       option.sliceMills must be_<=(0)
-      option.limit must_== Int.MaxValue
+      option.limit must_== None
     }
     "parse slicing and continue option" in {
       val optionJson = Json.obj(
@@ -207,7 +207,7 @@ class JSONParserTest extends Specification {
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
       option.continueSeconds must_== 4321
       option.sliceMills must_== 1234
-      option.limit must_== Int.MaxValue
+      option.limit must_== None
     }
     "parse estimable query if estimable field appears" in {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(true)), twitterSchemaMap)
@@ -252,7 +252,7 @@ class JSONParserTest extends Specification {
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
       option.sliceMills must_== 1234
       option.continueSeconds must be_<=(0)
-      option.limit must_== Int.MaxValue
+      option.limit must_== None
     }
   }
 
