@@ -53,10 +53,10 @@ class BerryClient(val jsonParser: JSONParser,
       }.toMap
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
       if (runOption.sliceMills <= 0) {
-//        restfulSolver ! (queries, transform)
-        // suggestView
+        restfulSolver ! (queries, transform)
       } else {
-        val targetMillis = runOption.sliceMills
+        val paceMS = runOption.sliceMills
+        val targetLimits = runOption.limit
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
         //Each streaming request need a specific actor to handle the request.
         //TODO Ultimately, clients can run multiple streaming request simultaneously.
@@ -66,7 +66,7 @@ class BerryClient(val jsonParser: JSONParser,
           context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), "stream")
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
-        child ! ProgressiveSolver.SlicingRequest(targetMillis, queries, mapInfos, transform)
+        child ! ProgressiveSolver.SlicingRequest(paceMS, targetLimits, queries, mapInfos, transform)
       }
     }
   }

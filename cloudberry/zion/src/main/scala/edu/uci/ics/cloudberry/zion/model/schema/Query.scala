@@ -16,12 +16,15 @@ trait IWriteQuery extends IQuery {
 }
 
 case class QueryExeOption(sliceMills: Int,
-                          continueSeconds: Int)
+                          continueSeconds: Int,
+                          limit: Int)
 
 object QueryExeOption {
-  val NoSliceNoContinue = QueryExeOption(-1, -1)
+  val NoSliceNoContinue = QueryExeOption(-1, -1, Int.MaxValue)
   val TagSliceMillis = "sliceMillis"
   val TagContinueSeconds = "continueSeconds"
+  //TODO limit tag should be in the query
+  val TagLimit = "limit"
 }
 
 case class Query(dataset: String,

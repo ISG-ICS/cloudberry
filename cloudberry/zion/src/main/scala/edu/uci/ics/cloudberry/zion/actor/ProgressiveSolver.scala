@@ -21,6 +21,7 @@ import scala.util.{Failure, Success}
   * The Streaming Actor slices one query to a sequence of mini-queries and responds with a stream of partial results.
   * If it receives multiple queries, the later queries will be stashed until the existing slicing is over.
   * If it receives a Cancel message, the current slicing will be stopped.
+  *
   * @param dataManager
   * @param planner
   * @param config
@@ -30,7 +31,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
                         val planner: QueryPlanner,
                         val config: Config,
                         val out: ActorRef
-                     )(implicit val ec: ExecutionContext) extends Actor with Stash with IQuerySolver with ActorLogging {
+                       )(implicit val ec: ExecutionContext) extends Actor with Stash with IQuerySolver with ActorLogging {
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
@@ -62,7 +63,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       issueQueryGroup(interval, queryGroup)
       val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 1, initialDuration.toHours.toInt)
       context.become(askSlice(reporter, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
-    case _ : MiniQueryResult =>
+    case _: MiniQueryResult =>
       // do nothing
       log.debug(s"receive: obsolete query result")
     case Cancel =>
@@ -89,7 +90,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
       val timeSpend = DateTime.now.getMillis - issuedTimestamp.getMillis
       val diff = Math.max(0, timeLimitMS - timeSpend)
-      val nextLimit =  paceMS + diff
+      val nextLimit = paceMS + diff
 
       val (nextInterval, nextEstimateMS) = calculateNext(estimator, nextLimit, curInterval, estimateMS, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) { //finished slicing
@@ -152,7 +153,7 @@ object ProgressiveSolver {
 
   case object Cancel
 
-  case class SlicingRequest(intervalMS: Long, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
+  case class SlicingRequest(intervalMS: Long, targetLimit: Int, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
 
   private case class MiniQueryResult(key: Long, queryGroup: QueryGroup, jsons: Seq[JsArray])
 
