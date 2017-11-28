@@ -378,9 +378,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
-            var curTime = new Date();
-            timeCounter = curTime;
-            console.log("Query sent at " + curTime.getHours() + ":" + curTime.getMinutes() + ":" + curTime.getSeconds());
             ws.send(pointsJson);
 
             break;
@@ -430,14 +427,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             if(angular.isArray(result.value)) {
               cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
               cloudberryService.pointsResult = result.value[0];
-              var curTime = new Date();
-              var startTime = timeCounter.getTime();
-              var endTime = curTime.getTime();
-              console.log(result.value[0]);
-              console.log("Query received at " + curTime.getHours() + ":" + curTime.getMinutes() + ":" + curTime.getSeconds());
-              console.log("Total time used for this query: " + ((endTime - startTime) / 1000.0).toFixed(2) + " s.");
-            } else { // this is the {key: "done"} message
-              console.log("receive :", result.value);
+            } else {
+              // this is the {key: "done"} message
             }
             break;
           case "totalCount":
