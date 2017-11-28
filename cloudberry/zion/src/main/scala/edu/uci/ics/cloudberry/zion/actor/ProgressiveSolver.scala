@@ -76,7 +76,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
                        timeLimitMS: Long,
                        curInterval: TInterval,
                        estimator: Drum,
-                       estimateMS: Long,
+                       curEstimateMS: Long,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
                        accumulateResults: Seq[JsArray],
@@ -92,7 +92,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val diff = Math.max(0, timeLimitMS - timeSpend)
       val nextLimit = paceMS + diff
 
-      val (nextInterval, nextEstimateMS) = calculateNext(estimator, nextLimit, curInterval, estimateMS, timeSpend, boundary)
+      val (nextInterval, nextEstimateMS) = calculateNext(estimator, nextLimit, curInterval, curEstimateMS, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) { //finished slicing
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(BerryClient.Done)) // notifying the client the processing is done
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -100,7 +100,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         context.become(receive, discardOld = true)
       } else {
         issueQueryGroup(nextInterval, queryGroup)
-        context.become(askSlice(reporter, paceMS, nextLimit, nextInterval, estimator, estimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(reporter, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case result: MiniQueryResult =>
       log.debug(s"old result: $result")
