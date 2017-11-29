@@ -13,6 +13,7 @@ class Drum(totalRange: Int, alpha: Double, minRange: Int) {
     stats += MiniQueryStats(range, estimateMS, actualMS)
   }
 
+
   def estimate(limit: Int): RangeTime = {
     val history = stats.result()
     if (history.size < 1) {
@@ -23,17 +24,17 @@ class Drum(totalRange: Int, alpha: Double, minRange: Int) {
     val lastTime = history.last.actualMS
     val linearEstimate = lastRange * limit / lastTime
 
-    val closeRange = Math.max(minRange, Math.min(linearEstimate.toInt, lastRange * 2))
+    val closeRange = validateRange(linearEstimate, minRange, lastRange)
     if (history.size < 3) { // too few observations
-      return RangeTime(closeRange, Int.MaxValue)
+      return RangeTime(closeRange.toInt, Int.MaxValue)
     }
 
-    val variance = calcVariance(history)
-    val stdDev = Math.sqrt(variance)
     val coeff = trainLinearModel(history)
+    val variance = calcVariance(history, coeff)
+    val stdDev = Math.sqrt(variance)
 
     val rawRange = getOptimalRx(totalRange, limit, stdDev, alpha, coeff.a0, coeff.a1)
-    val validRange = validateRange(minRange, rawRange, lastRange)
+    val validRange = validateRange(rawRange, minRange, lastRange)
 
     val estimateTime = validRange * coeff.a1 + coeff.a0
     RangeTime(validRange.toInt, estimateTime.toInt)
@@ -42,6 +43,7 @@ class Drum(totalRange: Int, alpha: Double, minRange: Int) {
 }
 
 object Drum {
+
   def getOptimalRx(totalRange: Double, limit: Double, stdDev: Double, alpha: Double, a0: Double, a1: Double): Double = {
     val R = totalRange
     val Rw = (limit - a0) / a1
@@ -52,13 +54,14 @@ object Drum {
       Rw
     } else {
       val z = Erf.erfInv(optimalValueZ)
-      val g = Math.sqrt(2) * stdDev * z + limit
-      val rx = (g - a0) / a1
       Math.min(Rw, Math.max(0, (Math.sqrt(2) * stdDev * z + limit - a0) / a1))
     }
   }
 
-  def calcVariance(history: Seq[MiniQueryStats]): Double = {
+  def calcVariance(history: Seq[MiniQueryStats], coeff: Coeff): Double = {
+    if (history.size <= 3) {
+      return history.map(s => Math.pow(s.range * coeff.a1 + coeff.a0 - s.actualMS, 2)).sum / history.size
+    }
     val valid = history.filterNot(h => h.estimateMS == Int.MaxValue)
     valid.map(h => (h.estimateMS - h.actualMS) * (h.estimateMS - h.actualMS)).sum.toDouble / valid.size
   }
