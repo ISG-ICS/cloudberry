@@ -59,22 +59,22 @@ object JSONParser {
 
   def parseLimit(json: JsValue, option: QueryExeOption): (JsValue, QueryExeOption) = {
     if (option.sliceMills <= 0) { // non-slicing query
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+    }
+    if ((json \ "batch").toOption.isEmpty && (json \\ "limit").isEmpty) { // single slicing query without limit
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+    }
+    if ((json \ "batch").toOption.isEmpty && (json \\ "limit").nonEmpty) { // single slicing query with limit
+      val limit = (json \ "select" \ "limit").as[Int]
+      val updatedSelectJson = (json \ "select").as[JsObject] ++ Json.obj("limit" -> Int.MaxValue)
+      val updatedJson = json.as[JsObject] ++ Json.obj("select" -> updatedSelectJson)
+      return (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit)))
+    }
+    if ((json \\ "limit").isEmpty || ((json \\ "limit").nonEmpty && (json \\ "aggregate").nonEmpty)) {
       (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
-    } else if (option.sliceMills > 0 && (json \ "batch").toOption.isEmpty) { // single slicing query
-      if ((json \\ "limit").isEmpty) {
-        (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
-      } else {
-        val limit = (json \ "select" \ "limit").as[Int]
-        val updatedSelectJson = (json \ "select").as[JsObject] ++ Json.obj("limit" -> Int.MaxValue)
-        val updatedJson = json.as[JsObject] ++ Json.obj("select" -> updatedSelectJson)
-        (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit)))
-      }
-    } else {  // batch slicing query
-      if ((json \\ "limit").isEmpty || ((json \\ "limit").nonEmpty && (json \\ "aggregate").nonEmpty)) {
-        (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
-      } else {
-        throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
-      }
+    } else {
+      // TODO send error messages to user
+      throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
     }
   }
 

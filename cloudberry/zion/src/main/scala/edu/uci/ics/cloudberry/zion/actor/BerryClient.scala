@@ -6,6 +6,7 @@ import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
 import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
@@ -102,7 +103,12 @@ class BerryClient(val jsonParser: JSONParser,
         val targetMillis = runOption.sliceMills
         val targetLimits = runOption.limit
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
-        self ! Initial(key, curSender, targetMillis, targetLimits, queries, mapInfos, request.postTransform)
+        if (targetLimits.nonEmpty && queries.size > 1) {
+          // TODO send error messages to user
+          throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
+        } else {
+          self ! Initial(key, curSender, targetMillis, targetLimits, queries, mapInfos, request.postTransform)
+        }
       }
     }
   }
@@ -122,9 +128,8 @@ class BerryClient(val jsonParser: JSONParser,
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
 
       if (nextInterval.toDurationMillis <= 0 || hasEnoughResults(mergedResults, targetLimits)) {
-        val returnedResult =
-          if (targetLimits.nonEmpty && mergedResults.head.value.size > targetLimits.get) Seq(JsArray(mergedResults.head.value.take(targetLimits.get)))
-          else mergedResults
+        val limitResultOpt = targetLimits.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
+        val returnedResult = limitResultOpt.getOrElse(mergedResults)
         queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(returnedResult))
         queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
