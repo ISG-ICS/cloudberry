@@ -214,6 +214,36 @@ class JSONParserTest extends Specification {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject], twitterSchemaMap)
       queries.forall(q => !q.isEstimable) must beTrue
     }
+    "parse limit in single query" in {
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(1234)
+      )
+      val filter = Seq(stateFilter, timeFilter, textFilter)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTagWithoutLimit))
+
+      val (actualQuery, option) = parser.parse(topKHashTagJSON.as[JsObject] + ("option" -> optionJson), twitterSchemaMap)
+      option must_== QueryExeOption(1234, -1, Some(10))
+      actualQuery.size must_== 1
+      actualQuery.head must_== expectQuery
+      ok
+    }
+    "throw exception if limits in batch query" in {
+      val batchQueryJson = Json.obj("batch" -> JsArray(Seq(simpleLookupFilterJSON, multiFieldLookupFilterJSON)))
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(1234)
+      )
+      try {
+        val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
+        throw new IllegalStateException("should not be here")
+      } catch {
+        case e:JsonRequestException =>
+          e.msg must_== "Batch Requests cannot contain \"limit\" field"
+        case _ =>
+          throw new IllegalStateException("should not be here")
+      }
+      ok
+    }
   }
 
   "JSONParser" should {
