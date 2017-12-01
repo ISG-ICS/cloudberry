@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfo
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, JsonRequestException, NoTransform}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import play.api.libs.json._
 
@@ -56,8 +56,13 @@ class BerryClient(val jsonParser: JSONParser,
         restfulSolver ! (queries, transform)
       } else {
         val paceMS = runOption.sliceMills
-        val targetLimits = runOption.limit
+        val resultSizeLimit = runOption.limit
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
+
+        if (resultSizeLimit.nonEmpty && queries.size > 1) {
+          // TODO send error messages to user
+          throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
+        }
         //Each streaming request need a specific actor to handle the request.
         //TODO Ultimately, clients can run multiple streaming request simultaneously.
         //     They can also cancel or reset a specific request.
@@ -66,7 +71,7 @@ class BerryClient(val jsonParser: JSONParser,
           context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), "stream")
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
-        child ! ProgressiveSolver.SlicingRequest(paceMS, targetLimits, queries, mapInfos, transform)
+        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
       }
     }
   }
