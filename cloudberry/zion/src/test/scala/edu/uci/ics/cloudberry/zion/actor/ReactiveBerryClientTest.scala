@@ -312,7 +312,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       while (intervalx.getStartMillis > startTime.getMillis) {
         qx = dataManager.receiveOne(5 second).asInstanceOf[Query]
-        println(qx)
         intervalx = qx.getTimeInterval(TimeField("create_at")).get
         dataManager.reply(getRet(0))
         response ++= getRet(0)
@@ -363,7 +362,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.reply(Seq(TestQuery.sourceInfo))
       val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
       val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
-      println(interval2)
       interval2.getEnd must_== interval1.getStart
       interval2.getStartMillis must be_>=(startTime.getMillis)
 

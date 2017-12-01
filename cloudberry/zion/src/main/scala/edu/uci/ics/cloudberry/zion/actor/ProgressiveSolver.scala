@@ -149,8 +149,9 @@ class ProgressiveSolver(val dataManager: ActorRef,
     drum.learn(lastInterval.toDuration.getStandardHours.toInt, lastEstimateMS.toInt, lastActualMS.toInt)
     val estimate = drum.estimate(timeLimit.toInt)
 
-    val startTime = Math.max(boundary.getStartMillis, lastInterval.getEnd.minusHours(estimate.range).getMillis)
-    (new TInterval(startTime, lastInterval.getStartMillis), estimate.estimateMS.toLong)
+    val startTime = Math.max(boundary.getStartMillis, lastInterval.getStart.minusHours(estimate.range).getMillis)
+    val interval = new TInterval(startTime, lastInterval.getStartMillis)
+    (interval, estimate.estimateMS.toLong)
   }
 
   private def hasEnoughResults(results: Seq[JsArray], resultLimitOpt: Option[Int]): Boolean = {

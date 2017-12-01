@@ -2,7 +2,6 @@ package edu.uci.ics.cloudberry.zion.actor
 
 import java.util.concurrent.Executors
 
-import akka.testkit.TestProbe
 import org.specs2.mutable.SpecificationLike
 
 import scala.concurrent.ExecutionContext

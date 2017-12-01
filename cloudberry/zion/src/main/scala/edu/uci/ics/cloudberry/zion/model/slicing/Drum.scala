@@ -21,7 +21,7 @@ class Drum(totalRange: Int, alpha: Double, minRange: Int) {
     }
 
     val lastRange = history.last.range
-    val lastTime = history.last.actualMS
+    val lastTime = history.last.actualMS + Double.MinPositiveValue
     val linearEstimate = lastRange * limit / lastTime
 
     val closeRange = validateRange(linearEstimate, minRange, lastRange)
@@ -86,8 +86,8 @@ object Drum {
     Coeff(ret(0), ret(1))
   }
 
-  def validateRange(range: Double, minRange: Double, lastRange: Double): Double = {
-    Math.max(minRange, Math.min(range.toInt, lastRange * 2))
+  def validateRange(range: Double, minRange: Double, lastRange: Double): Int= {
+    Math.ceil(Math.max(minRange, Math.min(range.toInt, lastRange * 2))).toInt
   }
 
   case class MiniQueryStats(range: Int, estimateMS: Int, actualMS: Int)
