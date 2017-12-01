@@ -17,7 +17,7 @@ class Reporter(initialLimit: FiniteDuration, out: ActorRef)(implicit val ec: Exe
   private val queue: mutable.Queue[PartialResult] = new mutable.Queue[PartialResult]()
 
   private var limit: FiniteDuration = initialLimit
-  private var timer = context.system.scheduler.schedule(limit, limit, self, TimeToReport)
+  private var timer = context.system.scheduler.schedule(0 seconds, limit, self, TimeToReport)
 
   override def receive: Actor.Receive = {
     case UpdateInterval(l) =>
@@ -32,9 +32,11 @@ class Reporter(initialLimit: FiniteDuration, out: ActorRef)(implicit val ec: Exe
         out ! Json.toJson(result.content)
       }
     }
-    case Fin => {
+    case fin : Fin => {
       if (queue.nonEmpty) {
         out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        //TODO remove this special DONE message
+        out ! fin.lastMsg // notifying the client the processing is done
       }
       self ! PoisonPill // TODO to simplify the logic, one reporter is working for a specific query.
     }
@@ -67,7 +69,7 @@ object Reporter {
 
   case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
 
-  case object Fin
+  case class Fin(lastMsg: JsValue)
 
   implicit val partialResultWriter: Writes[PartialResult] = Json.writes[PartialResult]
 

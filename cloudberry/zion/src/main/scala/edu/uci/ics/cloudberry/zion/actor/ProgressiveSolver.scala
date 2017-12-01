@@ -94,7 +94,8 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
       val (nextInterval, nextEstimateMS) = calculateNext(estimator, nextLimit, curInterval, curEstimateMS, timeSpend, boundary)
       if (nextInterval.toDurationMillis == 0) { //finished slicing
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(BerryClient.Done)) // notifying the client the processing is done
+        //reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 1, queryGroup.postTransform.transform(BerryClient.Done)) // notifying the client the processing is done
+        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         unstashAll() // in case there are new queries
         context.become(receive, discardOld = true)
@@ -139,7 +140,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
     new TInterval(startTime, entireInterval.getEndMillis)
   }
 
-  private def calculateNext(drum: Drum, timeLimit: Long, lastInterval: TInterval, lastEstimateMS: Long,  lastActualMS: Long, boundary: TInterval): (TInterval, Long) = {
+  private def calculateNext(drum: Drum, timeLimit: Long, lastInterval: TInterval, lastEstimateMS: Long, lastActualMS: Long, boundary: TInterval): (TInterval, Long) = {
     drum.learn(lastInterval.toDuration.getStandardHours.toInt, lastEstimateMS.toInt, lastActualMS.toInt)
     val estimate = drum.estimate(timeLimit.toInt)
 
