@@ -8,6 +8,7 @@ import edu.uci.ics.cloudberry.zion.actor.TestkitExample
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import java.util.concurrent.Executors
 
+import edu.uci.ics.cloudberry.zion.model.datastore.IPostTransform
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
 import play.api.mvc.{Headers, RequestHeader}
@@ -82,7 +83,9 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
       val frontEnd = new TestProbe(system)
       val clientProps = Props(new Actor {
         override def receive: Receive = {
-          case request: Request =>
+          case request: JsValue =>
+            frontEnd.ref ! Json.obj("sender" -> self.path.name)
+          case (request: JsValue, transform : IPostTransform) =>
             frontEnd.ref ! Json.obj("sender" -> self.path.name)
           case _ =>
             throw new IllegalArgumentException("Message type sent to berry is not correct.")
