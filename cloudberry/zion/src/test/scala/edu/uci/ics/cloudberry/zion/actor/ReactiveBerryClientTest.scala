@@ -448,11 +448,16 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
       val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
 
-      val optionJson = Json.obj(
-        QueryExeOption.TagSliceMillis -> JsNumber(50),
-        QueryExeOption.TagLimit -> JsNumber(2)
+      val selectJson = Json.obj(
+        "order" -> Seq(JsString("-count")),
+        "limit" -> JsNumber(2),
+        "offset" -> JsNumber(0)
       )
-      sender.send(client, hourCountJSON.as[JsObject] + ("option" -> optionJson))
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(50)
+      )
+
+      sender.send(client, hourCountJSON.as[JsObject] + ("option" -> optionJson) + ("select" -> selectJson))
       val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
       askInfo.who must_== "twitter.ds_tweet"
       dataManager.reply(Some(TestQuery.sourceInfo))
