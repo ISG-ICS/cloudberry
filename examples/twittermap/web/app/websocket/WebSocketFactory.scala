@@ -7,6 +7,7 @@ class WebSocketFactory {
 
   def newClient(): WebSocketClient = {
     val socket = new WebSocketClient()
+    //TODO Should be configurable in later PR.
     socket.setMaxTextMessageBufferSize(5*1024*1024)
     socket
   }

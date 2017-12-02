@@ -366,7 +366,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     }
 
     function setInfoControlHeatMap() {
-
+      //TODO For HeatMap use later.
     }
 
     function cleanPointMap() {
@@ -551,7 +551,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
         }
 
-        //For rescaling the MouseOverPoint judgement.
+        //For rescaling the metric of distance between points and mouse cursor.
         $scope.currentBounds = $scope.map.getBounds();
         $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
         $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
@@ -981,6 +981,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
 
       //For randomize coordinates by bounding_box
+      //TODO Should be reused by HeatMap in HeatMap PR.
       var gseed;
 
       function CustomRandom() {
@@ -1011,13 +1012,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
         $scope.map.addLayer($scope.pointsLayer);
 
-        //Define a new event of the map called 'mouseintent'
+        //Create a new event called 'mouseintent' by listening to 'mousemove'.
         $scope.map.on('mousemove', onMapMouseMove);
-
         var timer = null;
-
+        //If user hang the mouse cursor for 300ms, fire a 'mouseintent' event.
         function onMapMouseMove(e) {
-          //Start timer for 300ms
           var duration = 300;
           if (timer !== null) {
             clearTimeout(timer);
@@ -1150,11 +1149,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
         function isMouseOverAPoint(x, y) {
           for (var i = 0; i < $scope.points.length; i += 1) {
-            //console.log("points[i][0].toFixed(6) = " + $scope.points[i][0].toFixed(6) + ", x.toFixed(6) = " + x.toFixed(6));
-            //console.log("points[i][1].toFixed(6) = " + $scope.points[i][1].toFixed(6) + ", y.toFixed(6) = " + y.toFixed(6));
             var dist_x = Math.abs(($scope.points[i][0] - x) / $scope.scale_x);
             var dist_y = Math.abs(($scope.points[i][1] - y) / $scope.scale_y);
-            //console.log("curcor [" + x + "," + y + "] to Points[" + i + "][" + $scope.points[i][0] + "," + $scope.points[i][1] + "] === [" + dist_x + "," + dist_y + "]");
             if (dist_x <= 0.01 && dist_y <= 0.01) {
               return i;
             }
