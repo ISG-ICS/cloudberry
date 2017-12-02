@@ -97,14 +97,19 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(JsArray(returnedResult)))
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, queryGroup.postTransform.transform(JsArray(returnedResult)))
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         unstashAll() // in case there are new queries
         context.become(receive, discardOld = true)
       } else {
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, curInterval.getEndMillis, 0.1, queryGroup.postTransform.transform(JsArray(mergedResults)))
+        val progress = if (resultSizeLimitOpt.isDefined) {
+          mergedResults.size / resultSizeLimitOpt.get.toDouble
+        } else {
+          curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
+        }
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, queryGroup.postTransform.transform(JsArray(mergedResults)))
         issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(reporter, resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
@@ -114,7 +119,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       stash()
     case ProgressiveSolver.Cancel =>
       reporter ! PoisonPill
-      log.error("askslice resceive cancel")
+      log.debug("askslice resceive cancel")
       unstashAll()
       context.become(receive, discardOld = true)
   }
