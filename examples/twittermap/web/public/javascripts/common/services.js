@@ -363,70 +363,54 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
           case 'pointmap':
 
-            function byPointsTimeRequest(parameters) {
-              return {
-                dataset: parameters.dataset,
-                filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
-                group: {
-                  by: [{
-                    field: "create_at",
-                    apply: {
-                      name: "interval",
-                      args: {
-                        unit: parameters.timeBin
-                      }
-                    },
-                    as: parameters.timeBin
-                  }],
-                  aggregate: [{
-                    field: "*",
-                    apply: {
-                      name: "count"
-                    },
-                    as: "count"
-                  }]
-                }
-              };
-            }
-
-            function byPointsRequest(parameters) {
-              return {
-                dataset: parameters.dataset,
-                filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
-                select: {
-                  order: ["-create_at"],
-                  limit: defaultPointmapLimit,
-                  offset: 0,
-                  field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
-                },
-                transform: {
-                  wrap: {
-                    key: "points"
-                  }
-                }
-              };
-            }
-
-            var batchPointMapRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byPointsTimeRequest(parameters), byPointsRequest(parameters)],
-              option: {
-                sliceMillis: cloudberryConfig.querySliceMills
+            var pointsJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+              select: {
+                order: ["-create_at"],
+                limit: defaultPointmapLimit,
+                offset: 0,
+                field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
               },
               transform: {
                 wrap: {
-                  key: "batchPointMapRequest"
-                }
-              }
-            })) : (JSON.stringify({
-              batch: [byPointsTimeRequest(parameters), byPointsRequest(parameters)],
-              transform: {
-                wrap: {
-                  key: "batchPointMapRequest"
+                  key: "points"
                 }
               }
             }));
 
-            ws.send(batchPointMapRequest);
+            // for the time histogram
+            var pointsTimeJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+              group: {
+                by: [{
+                  field: "create_at",
+                  apply: {
+                    name: "interval",
+                    args: {
+                      unit: parameters.timeBin
+                    }
+                  },
+                  as: parameters.timeBin
+                }],
+                aggregate: [{
+                  field: "*",
+                  apply: {
+                    name: "count"
+                  },
+                  as: "count"
+                }]
+              },
+              transform: {
+                wrap: {
+                  key: "pointsTime"
+                }
+              }
+            }));
+
+            ws.send(pointsJson);
+            ws.send(pointsTimeJson);
             break;
           
           default:
@@ -469,9 +453,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "batchHeatMapRequest":
             break;
           case "batchPointMapRequest":
+            break;
+          case "points":
+            if(angular.isArray(result.value)) {
+              cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+              cloudberryService.pointsResult = result.value[0];
+            }
+            break;
+          case "pointsTime":
             if(angular.isArray(result.value)) {
               cloudberryService.timeResult = result.value[0];
-              cloudberryService.pointsResult = result.value[1];
             }
             break;
           case "totalCount":
