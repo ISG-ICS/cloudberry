@@ -47,7 +47,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
-    var defaultPointmapLimit = 1000000;
+    var defaultPointmapSamplingDayRange = 30;
+    var defaultPointmapLimit = 500*1000;
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
@@ -362,24 +363,70 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
           case 'pointmap':
 
-            var pointsJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              select: {
-                order: ["-create_at"],
-                limit: defaultPointmapLimit,
-                offset: 0,
-                field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+            function byPointsTimeRequest(parameters) {
+              return {
+                dataset: parameters.dataset,
+                filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+                group: {
+                  by: [{
+                    field: "create_at",
+                    apply: {
+                      name: "interval",
+                      args: {
+                        unit: parameters.timeBin
+                      }
+                    },
+                    as: parameters.timeBin
+                  }],
+                  aggregate: [{
+                    field: "*",
+                    apply: {
+                      name: "count"
+                    },
+                    as: "count"
+                  }]
+                }
+              };
+            }
+
+            function byPointsRequest(parameters) {
+              return {
+                dataset: parameters.dataset,
+                filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+                select: {
+                  order: ["-create_at"],
+                  limit: defaultPointmapLimit,
+                  offset: 0,
+                  field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+                },
+                transform: {
+                  wrap: {
+                    key: "points"
+                  }
+                }
+              };
+            }
+
+            var batchPointMapRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
+              batch: [byPointsTimeRequest(parameters), byPointsRequest(parameters)],
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
               },
               transform: {
                 wrap: {
-                  key: "points"
+                  key: "batchPointMapRequest"
+                }
+              }
+            })) : (JSON.stringify({
+              batch: [byPointsTimeRequest(parameters), byPointsRequest(parameters)],
+              transform: {
+                wrap: {
+                  key: "batchPointMapRequest"
                 }
               }
             }));
 
-            ws.send(pointsJson);
-
+            ws.send(batchPointMapRequest);
             break;
           
           default:
@@ -422,13 +469,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "batchHeatMapRequest":
             break;
           case "batchPointMapRequest":
-            break;
-          case "points":
             if(angular.isArray(result.value)) {
-              cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
-              cloudberryService.pointsResult = result.value[0];
-            } else {
-              // this is the {key: "done"} message
+              cloudberryService.timeResult = result.value[0];
+              cloudberryService.pointsResult = result.value[1];
             }
             break;
           case "totalCount":

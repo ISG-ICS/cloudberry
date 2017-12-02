@@ -172,7 +172,7 @@ time-series {
 .search-keyword-btn-group{
   margin-left: 36%;
 }
-
+/*For the popup box of tweets in points map*/
 .tweet {
   padding: 8px 8px 4px 8px;
   font-size: 12px; }
