@@ -48,7 +48,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
     var defaultPointmapSamplingDayRange = 30;
-    var defaultPointmapLimit = 500*1000;
+    var defaultPointmapLimit = 25*1000;
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
@@ -382,7 +382,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // for the time histogram
             var pointsTimeJson = (JSON.stringify({
               dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
               group: {
                 by: [{
                   field: "create_at",

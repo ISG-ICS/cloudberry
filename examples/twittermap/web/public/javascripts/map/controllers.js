@@ -1003,11 +1003,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if (!$scope.pointsLayer) {
         $scope.pointsLayer = new L.TileLayer.MaskCanvas({
           opacity: 0.8,
-          radius: 80,
-          useAbsoluteRadius: true,
-          color: "#00aced",
+          radius: 2,//80,
+          useAbsoluteRadius: false,//true,
+          color: '#17c6fc',//'#0084b4'
           noMask: true,
-          lineColor: '#1dcaff'
+          lineColor: '#0d3e99'//'#00aced'
         });
 
         $scope.map.addLayer($scope.pointsLayer);
@@ -1125,9 +1125,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             //(2) Create a new Marker to highlight the point.
             $scope.currentMarker = L.circleMarker(e.latlng, {
               radius : 6,
-              color : '#ffffff',
+              color : '#0d3e99',
               weight : 1.5,
-              fillColor : '#0084b4',
+              fillColor : '#b8e3ff',
               fillOpacity : 1.0
             }).addTo($scope.map);
             //(3) Send request to twitter.com for the oembed json tweet content.
@@ -1172,6 +1172,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
           $scope.pointIDs.push(result[i].id);
         }
+        $scope.pointsLayer.setData($scope.points);
+      }
+      else {
+        $scope.points = [];
+        $scope.pointIDs = [];
         $scope.pointsLayer.setData($scope.points);
       }
     }
