@@ -11,7 +11,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.slicing.Drum
 import org.joda.time.DateTime
-import play.api.libs.json.JsArray
+import play.api.libs.json.{JsArray, JsNumber}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,11 +36,12 @@ class ProgressiveSolver(val dataManager: ActorRef,
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
   private var ts: Long = 0
+  private val reporter: ActorRef = context.actorOf(Props(new Reporter(out)))
 
   override def receive: Receive = {
     case request: SlicingRequest =>
       ts = DateTime.now().getMillis
-      val reporter: ActorRef = context.actorOf(Props(new Reporter(FiniteDuration(request.intervalMS, "ms"), out)))
+      reporter ! Reporter.Reset(FiniteDuration(request.intervalMS, "ms"))
       val queryInfos = request.queries.map { query =>
         val info = request.infos(query.dataset)
         if (!info.schema.isInstanceOf[Schema]) {
@@ -62,7 +63,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
       val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 1, initialDuration.toHours.toInt)
-      context.become(askSlice(reporter, request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
+      context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
     case _: MiniQueryResult =>
       // do nothing
       log.debug(s"receive: obsolete query result")
@@ -71,8 +72,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       log.debug(s"receive: cancel")
   }
 
-  private def askSlice(reporter: ActorRef,
-                       resultSizeLimitOpt: Option[Int],
+  private def askSlice(resultSizeLimitOpt: Option[Int],
                        paceMS: Long,
                        timeLimitMS: Long,
                        curInterval: TInterval,
@@ -111,14 +111,14 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, queryGroup.postTransform.transform(JsArray(mergedResults)))
         issueQueryGroup(nextInterval, queryGroup)
-        context.become(askSlice(reporter, resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case result: MiniQueryResult =>
       log.debug(s"old result: $result")
     case _: SlicingRequest =>
       stash()
     case ProgressiveSolver.Cancel =>
-      reporter ! PoisonPill
+      reporter ! Reporter.Fin(JsNumber(0))
       log.debug("askslice resceive cancel")
       unstashAll()
       context.become(receive, discardOld = true)
