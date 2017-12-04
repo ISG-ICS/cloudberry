@@ -402,6 +402,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   as: "count"
                 }]
               },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
+              },
               transform: {
                 wrap: {
                   key: "pointsTime"
