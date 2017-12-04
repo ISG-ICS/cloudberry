@@ -1167,7 +1167,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if (result[i].hasOwnProperty('coordinate')){
             $scope.points.push([result[i].coordinate[1], result[i].coordinate[0]]);
           }
-          else {
+          else if (result[i].hasOwnProperty('place.bounding_box')){
             $scope.points.push([rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]);
           }
           $scope.pointIDs.push(result[i].id);
