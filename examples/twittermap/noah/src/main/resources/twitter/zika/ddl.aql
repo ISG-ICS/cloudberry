@@ -6,6 +6,7 @@ create type typeUser if not exists as open {
     id: int64,
     name: string,
     screen_name : string,
+    profile_image_url : string,
     lang : string,
     location: string,
     create_at: date,
