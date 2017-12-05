@@ -58,7 +58,7 @@ using compaction policy prefix (("max-mergable-component-size"="134217728"),("ma
 with filter on create_at;
 
 //"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
-create index text_idx if not exists on ds_tweet("text") type keyword;
+create index text_idx if not exists on ds_tweet("text") type fulltext;
 
 create feed MessageFeed using localfs(
 ("path"="nc1:///data/Mar31-2016-us.adm"),
