@@ -6,6 +6,7 @@ create type typeUser if not exists as open {
     id: int64,
     name: string,
     screen_name : string,
+    profile_image_url : string,
     lang : string,
     location: string,
     create_at: date,
@@ -57,12 +58,7 @@ using compaction policy prefix (("max-mergable-component-size"="134217728"),("ma
 with filter on create_at;
 
 //"using" "compaction" "policy" CompactionPolicy ( Configuration )? )?
-create index text_idx if not exists on ds_tweet("text") type keyword;
-create index location_idx if not exists on ds_tweet(coordinate) type rtree;
-create index time_idx if not exists on ds_tweet(create_at) type btree;
-create index state_idx if not exists on ds_tweet(geo_tag.stateID) type btree;
-create index county_idx if not exists on ds_tweet(geo_tag.countyID) type btree;
-create index city_idx if not exists on ds_tweet(geo_tag.cityID) type btree;
+create index text_idx if not exists on ds_tweet("text") type fulltext;
 
 create feed MessageFeed using localfs(
 ("path"="nc1:///data/Mar31-2016-us.adm"),
