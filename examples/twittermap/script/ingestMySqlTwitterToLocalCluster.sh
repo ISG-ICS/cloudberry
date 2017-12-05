@@ -52,7 +52,6 @@ $create_twitter_ds_tweet = "CREATE TABLE IF NOT EXISTS `twitter_ds_tweet` (
   `lang` varchar(255) NOT NULL,
   `user.lang` varchar(255) NOT NULL,
   `user.name` varchar(255) NOT NULL,
-  `user.profile_image_url` varchar(255) NOT NULL,
   `geo_tag.countyName` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `create_at` (`create_at`),
@@ -104,7 +103,6 @@ if($handle) {
         $user_name = '"'.str_replace('"','\"',$row['user']['name']).'"';
         $user_lang = '"'.$row['user']['lang'].'"';
         $user_screen_name = '"'.str_replace('"','\"',$row['user']['screen_name']).'"';
-        $user_profile_image_url = '"'.str_replace('"','\"',$row['user']['profile_image_url']).'"';
         $user_location = '"'.($row['user']['location']).'"';
         $user_create_at = '"'.($row['user']['create_at']).'"';
         $user_description = '"'.str_replace('"','\"',$row['user']['description']).'"';
@@ -124,14 +122,12 @@ if($handle) {
         $query = "REPLACE INTO `twitter_ds_tweet`(
                   coordinate, `place.bounding_box`,
                   create_at, id, text, in_reply_to_status, in_reply_to_user, favorite_count, retweet_count, lang, is_retweet,
-                 `user.lang`, `user.id`, `user.name`, `user.screen_name`, `user.profile_image_url`, `user.location`, `user.create_at`,
-                 `user.description`, `user.friends_count`, `user.statues_count`,
+                 `user.lang`, `user.id`, `user.name`, `user.screen_name`, `user.location`, `user.create_at`,`user.description`, `user.friends_count`, `user.statues_count`,
                  `place.country`, `place.country_code`, `place.full_name`, `place.name`, `place.id`, `place.type`,
                  `geo_tag.stateID`, `geo_tag.stateName`, `geo_tag.countyID`, `geo_tag.countyName`, `geo_tag.cityID`, `geo_tag.cityName`)
              VALUES(
                  $coordinate, $place_bounding_box, $create_at, $id, $text, $in_reply_to_status, $in_reply_to_user, $favorite_count, $retweet_count, $lang, $is_retweet,
-                 $user_lang, $user_id, $user_name, $user_screen_name, $user_profile_image_url, $user_location, $user_create_at,
-                 $user_description, $user_friends_count, $user_statues_count,
+                 $user_lang, $user_id, $user_name, $user_screen_name, $user_location, $user_create_at, $user_description, $user_friends_count, $user_statues_count,
                  $place_country, $place_country_code, $place_full_name, $place_name, $place_id, $place_type,
                  $geo_stateID, $geo_stateName, $geo_countyID, $geo_countyName, $geo_cityID, $geo_cityName
                  )";
