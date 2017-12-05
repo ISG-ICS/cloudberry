@@ -5,6 +5,7 @@ public class User {
     public static final String ID = "id";
     public static final String NAME = "name";
     public static final String SCREEN_NAME = "screen_name";
+    public static final String PROFILE_IMAGE_URL = "profile_image_url";
     public static final String LANG = "lang";
     public static final String LOCATION = "location";
     public static final String CREATE_AT = "create_at";
@@ -20,6 +21,7 @@ public class User {
         ADM.keyValueToSbWithComma(sb, ID, ADM.mkADMConstructor("int64", String.valueOf(user.getId())));
         ADM.keyValueToSbWithComma(sb, NAME, ADM.mkQuote(user.getName()));
         ADM.keyValueToSbWithComma(sb, SCREEN_NAME, ADM.mkQuote(user.getScreenName()));
+        ADM.keyValueToSbWithComma(sb, PROFILE_IMAGE_URL, ADM.mkQuote(user.getProfileImageURL()));
         ADM.keyValueToSbWithComma(sb, LANG, ADM.mkQuote(user.getLang()));
         ADM.keyValueToSbWithComma(sb, LOCATION, ADM.mkQuote(user.getLocation()));
         ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkDateConstructor(user.getCreatedAt()));
