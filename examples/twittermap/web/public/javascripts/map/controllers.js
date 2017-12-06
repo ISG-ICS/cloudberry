@@ -184,10 +184,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           break;
       }
     };
-
-    function cleanCountMap() {
-
-      //remove CountMap layers
+    
+    function removePolygonLayers() {
       if ($scope.polygons.statePolygons) {
         $scope.map.removeLayer($scope.polygons.statePolygons);
       }
@@ -203,6 +201,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.polygons.countyUpperPolygons) {
         $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
       }
+    }
+
+    function cleanCountMap() {
+
+      removePolygonLayers();
 
       function removeMapControl(name){
         var ctrlClass = $("."+name);
@@ -436,21 +439,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       };
       
-      if ($scope.polygons.statePolygons) {
-        $scope.map.removeLayer($scope.polygons.statePolygons);
-      }
-      if ($scope.polygons.countyPolygons) {
-        $scope.map.removeLayer($scope.polygons.countyPolygons);
-      }
-      if ($scope.polygons.cityPolygons) {
-        $scope.map.removeLayer($scope.polygons.cityPolygons);
-      }
-      if ($scope.polygons.stateUpperPolygons) {
-        $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
-      }
-      if ($scope.polygons.countyUpperPolygons) {
-        $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
-      }
+      removePolygonLayers();
     }
 
     function setInfoControlPointMap() {
