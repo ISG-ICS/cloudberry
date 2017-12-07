@@ -10,7 +10,8 @@ private[model] class Migration_20170428() {
   import Migration_20170428._
 
   def up(wsClient: WSClient, cloudberryURL: String)(implicit ec: ExecutionContext): Future[Boolean] = {
-    Future.traverse(Seq(TwitterDrugMapDDL, TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
+//    Future.traverse(Seq(TwitterDrugMapDDL, TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
+    Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
       wsClient.url(cloudberryURL).withHeaders("Content-Type" -> "application/json").post(jsonStr).map { response =>
         if (response.status % 100 == 2) {
           true
