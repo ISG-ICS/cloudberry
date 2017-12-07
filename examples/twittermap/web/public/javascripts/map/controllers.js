@@ -289,6 +289,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
       loadGeoJsonFiles(onEachFeature);
       if ($scope.status.logicLevel === "city"){
+        $scope.addCityLayerRequest = true;
         loadCityJsonByBound(onEachFeature);
       }
 
