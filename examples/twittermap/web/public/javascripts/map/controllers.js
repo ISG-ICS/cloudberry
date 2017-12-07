@@ -48,8 +48,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
     $scope.addCityLayerRequest = false;
-    var checkArray=[];
-    var test = 0;
 
     // map setting
     angular.extend($scope, {
