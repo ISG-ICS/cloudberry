@@ -1,5 +1,5 @@
 @import controllers.TwitterMapApplication.DBType
-@(title: String, ws: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], querySliceMills: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value)(body: Html)
+@(title: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], querySliceMills: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value)(body: Html)
 
 @import play.api.libs.json.Json
 
@@ -22,7 +22,6 @@
 
   <script>
     var config= {
-      wsURL:"@ws",
       sentimentEnabled: @sentimentEnabled,
       sentimentUDF: "@sentimentUDF",
       startDate: new Date("@startDate"),
@@ -70,6 +69,8 @@
   <script src='@routes.Assets.versioned("javascripts/cache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/mapresultcache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/QuadTree.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/L.TileLayer.MaskCanvas.js")'></script>
 
   @if(isDrugMap) {
     <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>

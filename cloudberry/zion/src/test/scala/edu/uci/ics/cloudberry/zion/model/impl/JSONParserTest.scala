@@ -187,24 +187,21 @@ class JSONParserTest extends Specification {
       val millis = 1234
       val optionJson = Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(millis))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option.sliceMills must_== millis
-      option.continueSeconds must be_<=(0)
+      option must_== QueryExeOption(millis, -1, None)
     }
     "parse continue option" in {
       val seconds = 4321
       val optionJson = Json.obj(QueryExeOption.TagContinueSeconds -> JsNumber(4321))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option.continueSeconds must_== seconds
-      option.sliceMills must be_<=(0)
+      option must_== QueryExeOption(-1, seconds, None)
     }
-    "parse continue and slicing option" in {
-
+    "parse slicing and continue option" in {
       val optionJson = Json.obj(
         QueryExeOption.TagSliceMillis -> JsNumber(1234),
-        QueryExeOption.TagContinueSeconds -> JsNumber(4321))
+        QueryExeOption.TagContinueSeconds -> JsNumber(4321)
+      )
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option.continueSeconds must_== 4321
-      option.sliceMills must_== 1234
+      option must_== QueryExeOption(1234, 4321, None)
     }
     "parse estimable query if estimable field appears" in {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(true)), twitterSchemaMap)
@@ -216,6 +213,36 @@ class JSONParserTest extends Specification {
     "parse estimable to false by default" in {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject], twitterSchemaMap)
       queries.forall(q => !q.isEstimable) must beTrue
+    }
+    "parse limit in single query" in {
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(1234)
+      )
+      val filter = Seq(stateFilter, timeFilter, textFilter)
+      val group = GroupStatement(Seq(byTag), Seq(aggrCount))
+      val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTagWithoutLimit))
+
+      val (actualQuery, option) = parser.parse(topKHashTagJSON.as[JsObject] + ("option" -> optionJson), twitterSchemaMap)
+      option must_== QueryExeOption(1234, -1, Some(10))
+      actualQuery.size must_== 1
+      actualQuery.head must_== expectQuery
+      ok
+    }
+    "throw exception if limits in batch query" in {
+      val batchQueryJson = Json.obj("batch" -> JsArray(Seq(simpleLookupFilterJSON, multiFieldLookupFilterJSON)))
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(1234)
+      )
+      try {
+        val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
+        throw new IllegalStateException("should not be here")
+      } catch {
+        case e:JsonRequestException =>
+          e.msg must_== "Batch Requests cannot contain \"limit\" field"
+        case _ =>
+          throw new IllegalStateException("should not be here")
+      }
+      ok
     }
   }
 
@@ -240,15 +267,16 @@ class JSONParserTest extends Specification {
     }
     "parse a batch of queries with option" in {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(hourCountJSON, groupByBinJSON)))
-      val optionJson = Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(1234))
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(1234)
+      )
       val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
-      option.sliceMills must_== 1234
+      option must_== QueryExeOption(1234, -1, None)
     }
   }
-
 
   "JSONParser getDatasets" should {
     "parse a single dataset" in {

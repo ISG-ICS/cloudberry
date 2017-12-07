@@ -23,8 +23,9 @@ class JSONParser extends IJSONParser {
     * Then, calls [[QueryResolver]] to resolve it into a [[Query]], which has all fields resolved typed.
     * Finally, calls [[QueryValidator]] to validate the correctness of this query.
     */
-  override def parse(json: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
-    val option = (json \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
+  override def parse(originJson: JsValue, schemaMap: Map[String, AbstractSchema]): (Seq[Query], QueryExeOption) = {
+    val originOption = (originJson \ "option").toOption.map(_.as[QueryExeOption]).getOrElse(QueryExeOption.NoSliceNoContinue)
+    val (json, option) = parseLimit(originJson, originOption)
     val query = (json \ "batch").toOption match {
       case Some(groupRequest) => groupRequest.validate[Seq[UnresolvedQuery]] match {
         case js: JsSuccess[Seq[UnresolvedQuery]] => js.get
@@ -56,6 +57,26 @@ object JSONParser {
     resolved
   }
 
+  def parseLimit(json: JsValue, option: QueryExeOption): (JsValue, QueryExeOption) = {
+    if (option.sliceMills <= 0) { // non-slicing query
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+    }
+    if ((json \ "batch").toOption.isEmpty && (json \\ "limit").isEmpty) { // single slicing query without limit
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+    }
+    if ((json \ "batch").toOption.isEmpty && (json \\ "limit").nonEmpty) { // single slicing query with limit
+      val limit = (json \ "select" \ "limit").as[Int]
+      val updatedSelectJson = (json \ "select").as[JsObject] ++ Json.obj("limit" -> Int.MaxValue)
+      val updatedJson = json.as[JsObject] ++ Json.obj("select" -> updatedSelectJson)
+      return (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit)))
+    }
+    if ((json \\ "limit").isEmpty || ((json \\ "limit").nonEmpty && (json \\ "aggregate").nonEmpty)) {
+      (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+    } else {
+      // TODO send error messages to user
+      throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
+    }
+  }
 
   implicit val seqAnyValue: Format[Seq[Any]] = new Format[Seq[Any]] {
     override def reads(json: JsValue): JsResult[Seq[Any]] = {
@@ -263,7 +284,9 @@ object JSONParser {
 
   implicit val exeOptionReads: Reads[QueryExeOption] = (
     (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
-      (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1))
+      (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1)) and
+      // this "limit" value will be discarded, real limit value is parsed from request
+      (__ \ QueryExeOption.TagLimit).readNullable[Int]
     ) (QueryExeOption.apply _)
 
 

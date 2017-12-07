@@ -7,7 +7,8 @@ import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.{IMerger, Unioner}
 import edu.uci.ics.cloudberry.zion.model.impl.{JSONParser, QueryPlanner, TestQuery}
-import edu.uci.ics.cloudberry.zion.model.schema.{CreateView, Query, QueryExeOption, Field, TimeField}
+import edu.uci.ics.cloudberry.zion.model.schema
+import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
@@ -429,6 +430,67 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.reply(getRet(1))
       sender.expectMsg(JsArray(Seq(getRet(1))))
 
+      ok
+    }
+    "stop when the number of returning results reached the limit" in {
+      val sender = new TestProbe(system)
+      val dataManager = new TestProbe(system)
+      val parser = new JSONParser
+      val mockPlanner = mock[QueryPlanner]
+      when(mockPlanner.calculateMergeFunc(any, any)).thenReturn(QueryPlanner.Unioner)
+      //Return the input query
+      when(mockPlanner.makePlan(any, any, any)).thenAnswer(new Answer[(Seq[Query], IMerger)] {
+        override def answer(invocation: InvocationOnMock): (Seq[Query], IMerger) = {
+          val query = invocation.getArguments().head.asInstanceOf[Query]
+          (Seq(query), Unioner)
+        }
+      })
+
+      val client = system.actorOf(BerryClient.props(parser, dataManager.ref, mockPlanner, Config.Default))
+
+      val selectJson = Json.obj(
+        "order" -> Seq(JsString("-count")),
+        "limit" -> JsNumber(2),
+        "offset" -> JsNumber(0)
+      )
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(50)
+      )
+
+      sender.send(client, hourCountJSON.as[JsObject] + ("option" -> optionJson) + ("select" -> selectJson))
+      val askInfo = dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfo]
+      askInfo.who must_== "twitter.ds_tweet"
+      dataManager.reply(Some(TestQuery.sourceInfo))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+
+      val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
+      interval1.getEnd must_== endTime
+      interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
+
+      dataManager.reply(getRet(1))
+      sender.expectMsg(JsArray(Seq(getRet(1))))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+      val slicedQ2 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
+      val interval2 = slicedQ2.getTimeInterval(TimeField("create_at")).get
+      interval2.getEnd must_== interval1.getStart
+      interval2.getStartMillis must be_>=(startTime.getMillis)
+
+      dataManager.reply(JsArray(Seq(
+        Json.obj("hour" -> 2, "count" -> 2),
+        Json.obj("hour" -> 3, "count" -> 3),
+        Json.obj("hour" -> 4, "count" -> 4)
+      )))
+      sender.expectMsg(JsArray(Seq(getRet(1) ++ getRet(2))))
+
+      dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
+      dataManager.reply(Seq(TestQuery.sourceInfo))
+      dataManager.expectNoMsg()
+      sender.expectMsg(BerryClient.Done)
       ok
     }
   }

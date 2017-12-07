@@ -6,6 +6,7 @@ import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.TInterval
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
 import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner.IMerger
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
@@ -39,7 +40,7 @@ class BerryClient(val jsonParser: JSONParser,
 
   private case class QueryGroup(ts: DateTime, curSender: ActorRef, queries: Seq[QueryInfo], postTransform: IPostTransform)
 
-  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
+  private case class Initial(ts: DateTime, sender: ActorRef, targetMillis: Long, targetLimits: Option[Int], queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
 
   private case class PartialResult(queryGroup: QueryGroup, jsons: Seq[JsArray])
 
@@ -73,7 +74,7 @@ class BerryClient(val jsonParser: JSONParser,
       val queryGroup = QueryGroup(initial.ts, initial.sender, queryInfos, initial.postTransform)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
-      context.become(askSlice(initial.targetMillis, interval, boundary, queryGroup, initResult, askTime = DateTime.now), discardOld = true)
+      context.become(askSlice(initial.targetMillis, initial.targetLimits, interval, boundary, queryGroup, initResult, askTime = DateTime.now), discardOld = true)
   }
 
   private def handleNewRequest(request: Request, curSender: ActorRef): Unit = {
@@ -100,13 +101,20 @@ class BerryClient(val jsonParser: JSONParser,
         }
       } else {
         val targetMillis = runOption.sliceMills
+        val targetLimits = runOption.limit
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
-        self ! Initial(key, curSender, targetMillis, queries, mapInfos, request.postTransform)
+        if (targetLimits.nonEmpty && queries.size > 1) {
+          // TODO send error messages to user
+          throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
+        } else {
+          self ! Initial(key, curSender, targetMillis, targetLimits, queries, mapInfos, request.postTransform)
+        }
       }
     }
   }
 
   private def askSlice(targetInvertal: Long,
+                       targetLimits: Option[Int],
                        curInterval: TInterval,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
@@ -116,17 +124,20 @@ class BerryClient(val jsonParser: JSONParser,
       val mergedResults = queryGroup.queries.zipWithIndex.map { case (q, idx) =>
         q.merger(Seq(accumulateResults(idx), result.jsons(idx)))
       }
-      queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(mergedResults))
-
       val timeSpend = DateTime.now.getMillis - askTime.getMillis
       val nextInterval = calculateNext(targetInvertal, curInterval, timeSpend, boundary)
-      if (nextInterval.toDurationMillis <= 0) {
+
+      if (nextInterval.toDurationMillis <= 0 || hasEnoughResults(mergedResults, targetLimits)) {
+        val limitResultOpt = targetLimits.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
+        val returnedResult = limitResultOpt.getOrElse(mergedResults)
+        queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(returnedResult))
         queryGroup.curSender ! queryGroup.postTransform.transform(BerryClient.Done) // notifying the client the processing is done
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         context.become(receive, discardOld = true)
       } else {
+        queryGroup.curSender ! queryGroup.postTransform.transform(JsArray(mergedResults))
         issueQueryGroup(nextInterval, queryGroup)
-        context.become(askSlice(targetInvertal, nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(targetInvertal, targetLimits, nextInterval, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case json: JsValue =>
       stash()
@@ -177,6 +188,10 @@ class BerryClient(val jsonParser: JSONParser,
     val newDuration = Math.max(minTimeGap.toMillis, (interval.toDurationMillis * targetTimeSpend / timeSpend.toDouble).toLong)
     val startTime = Math.max(boundary.getStartMillis, interval.getStartMillis - newDuration)
     new TInterval(startTime, interval.getStartMillis)
+  }
+
+  private def hasEnoughResults(results: Seq[JsArray], targetLimit: Option[Int]): Boolean = {
+    targetLimit.nonEmpty && results.nonEmpty && results.head.value.size >= targetLimit.get
   }
 
   protected def solveAQuery(query: Query): Future[JsValue] = {
