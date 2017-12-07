@@ -39,6 +39,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val querySliceMills: Option[String] = config.getString("querySliceMills")
 
   val webSocketFactory = new WebSocketFactory()
+  val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
@@ -69,7 +70,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, maxTextMessageSize)
     }
   }
 
