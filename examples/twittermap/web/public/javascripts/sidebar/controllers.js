@@ -68,6 +68,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
             if (cloudberry.parameters.maptype !== 'countmap') {
                 cloudberry.parameters.maptype = 'countmap';
+                icon1.src = "/assets/images/aggregation_map.png";
+                icon2.src = "/assets/images/heat_map_no_border.png";
+                icon3.src = "/assets/images/point_map_no_border.png";
                 $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
             }
 
@@ -77,6 +80,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
             if (cloudberry.parameters.maptype !== 'heatmap') {
                 cloudberry.parameters.maptype = 'heatmap';
+                icon1.src = "/assets/images/aggregation_map_no_border.png";
+                icon2.src = "/assets/images/heat_map.png";
+                icon3.src = "/assets/images/point_map_no_border.png";
                 $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
             }
 
@@ -86,6 +92,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
             if (cloudberry.parameters.maptype !== 'pointmap') {
                 cloudberry.parameters.maptype = 'pointmap';
+                icon1.src = "/assets/images/aggregation_map_no_border.png";
+                icon2.src = "/assets/images/heat_map_no_border.png";
+                icon3.src = "/assets/images/point_map.png";
                 $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
             }
 
