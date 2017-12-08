@@ -71,7 +71,7 @@ When it runs, there will be one `RUNNING_PID` file generated that includes the P
 You can run the *TwitterMap* application in the same way by following command:
 ```
 > cd examples/twittermap
-> sbt "project neo" "clean" "dist"
+> sbt "project web" "clean" "dist"
 ```
 , and run the server on a different port `9001`: 
 ```
