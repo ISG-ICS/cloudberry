@@ -49,3 +49,33 @@ You can run the following command in a separate command line window.
 > sbt "project web" "run 9001"
 ```
 You should see the TwitterMap demo on [http://localhost:9001](http://localhost:9001)
+
+## Deploy Cloudberry
+Use `sbt dist` to make a Cloudberry package as follows:
+```
+> sbt "project neo" "clean" "dist"
+```
+
+There should be one zip file called `neo-1.0-SNAPSHOT.zip` generated under `cloudberry/neo/target/universal/`. 
+
+You can copy the file to where you want to run the Cloudberry, unzip it, and run the instance in the background as follows:
+```
+> cd neo-1.0-SNAPSHOT
+> bin/neo -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=/full/path/to/production.conf  &
+```
+
+The `application.secret` value should be the same with the one in the application.conf during `sbt dist`. You can find more in Play! framework [documentation page](https://www.playframework.com/documentation/2.6.x/Deploying)
+
+When it runs, there will be one `RUNNING_PID` file generated that includes the PID of the instance. You can kill the corresponding process to stop the instance. 
+
+You can run the *TwitterMap* application in the same way by following command:
+```
+> cd examples/twittermap
+> sbt "project web" "clean" "dist"
+```
+, and run the server on a different port `9001`: 
+```
+> cd web-1.0-SNAPSHOT
+> bin/web -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=/full/path/to/production.conf -Dhttp.port=9001 &
+```
+
