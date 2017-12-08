@@ -355,9 +355,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
               ws.send(sampleJson);
               ws.send(batchWithPartialGeoRequest);
-
-              console.log(new Date().getTime() + "\t" + parameters.keywords);
-
             }
             break;
             
@@ -416,6 +413,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             }));
 
             ws.send(pointsJson);
+            console.time("sample response time");
+
             ws.send(pointsTimeJson);
             break;
           
@@ -446,13 +445,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
               cloudberryService.timeResult = result.value[0];
-
-              var resultSize = 0;
-              for (var i = 0; i < result.value[0].length; i++) {
-                resultSize += result.value[0][i].count;
-              }
-              console.log(new Date().getTime() + "\t" + resultSize);
-
               cloudberryService.mapResult = result.value[1].concat(cloudberryService.partialMapResult);
               cloudberryService.hashTagResult = result.value[2];
             }
@@ -471,6 +463,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             if(angular.isArray(result.value)) {
               cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
               cloudberryService.pointsResult = result.value[0];
+
+              console.timeEnd("sample response time");
             }
             break;
           case "pointsTime":
