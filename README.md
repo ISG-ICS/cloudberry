@@ -49,3 +49,20 @@ You can run the following command in a separate command line window.
 > sbt "project web" "run 9001"
 ```
 You should see the TwitterMap demo on [http://localhost:9001](http://localhost:9001)
+
+## Deploy Cloudberry
+Use *sbt assembly* to make a compiled package as follows:
+```
+> sbt "project neo" "clean" "dist"
+```
+
+There should be one zip file called `neo-1.0-SNAPSHOT.zip` generated under `cloudberry/neo/target/universal/`. 
+
+You can copy the file to where you want to run the Cloudberry, unzip it, and run the instance in the background as follows:
+```
+> cd neo-1.0-SNAPSHOT
+> bin/neo -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=../production.conf &
+```
+
+When it runs, there will be one `RUNNING_PID` file generated that includes the PID of the instance. You can kill the corresponding process to stop the instance. 
+
