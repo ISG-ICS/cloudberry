@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import akka.stream.Materializer
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
+import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
 import play.api.libs.json._
 import play.api.Logger
 import play.api.mvc.RequestHeader
@@ -54,11 +55,11 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
   }
 
   private def handleNonStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    nonStreamingBerryClient ! Request(requestBody, transform)
+    nonStreamingBerryClient ! (requestBody, transform)
   }
 
   private def handleStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    streamingBerryClient ! Request(requestBody, transform)
+    streamingBerryClient ! (requestBody, transform)
   }
 
 }
