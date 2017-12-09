@@ -64,11 +64,11 @@ You can copy the file to where you want to run the Cloudberry, unzip it, and run
 > bin/neo -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=/full/path/to/production.conf  &
 ```
 
-The `application.secret` value should be the same with the one in the application.conf during `sbt dist`. You can find more in Play! framework [documentation page](https://www.playframework.com/documentation/2.6.x/Deploying)
+The `application.secret` value should be the same as the one in the application.conf when you run the `sbt dist` command. You can find more in the Play! framework [documentation page](https://www.playframework.com/documentation/2.6.x/Deploying)
 
 When it runs, there will be one `RUNNING_PID` file generated that includes the PID of the instance. You can kill the corresponding process to stop the instance. 
 
-You can run the *TwitterMap* application in the same way by following command:
+You can run the *TwitterMap* application in the same way by running the following command:
 ```
 > cd examples/twittermap
 > sbt "project web" "clean" "dist"
