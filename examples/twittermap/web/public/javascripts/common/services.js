@@ -1,7 +1,11 @@
 angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
   .factory('cloudberryConfig', function(){
     return {
-      ws: "ws://" + location.host + "/ws",
+
+      // 4-layer config: "ws://" + location.host + "/ws",
+      // 3-layer config: "ws://localhost:9000/ws"
+      ws: "ws://localhost:9000/ws",
+        
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
@@ -413,6 +417,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             }));
 
             ws.send(pointsJson);
+            console.time("sample response time");
+
             ws.send(pointsTimeJson);
             break;
           
@@ -461,6 +467,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             if(angular.isArray(result.value)) {
               cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
               cloudberryService.pointsResult = result.value[0];
+
+              console.timeEnd("sample response time");
             }
             break;
           case "pointsTime":
