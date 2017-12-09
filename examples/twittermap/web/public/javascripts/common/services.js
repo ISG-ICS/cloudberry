@@ -1,7 +1,11 @@
 angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
   .factory('cloudberryConfig', function(){
     return {
-      ws: "ws://" + location.host + "/ws",
+
+      // 4-layer config: "ws://" + location.host + "/ws",
+      // 3-layer config: "ws://localhost:9000/ws"
+      ws: "ws://localhost:9000/ws",
+        
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
