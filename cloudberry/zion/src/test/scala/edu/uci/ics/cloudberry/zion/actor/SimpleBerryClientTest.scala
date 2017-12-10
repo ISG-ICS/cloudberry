@@ -33,7 +33,7 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
       when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(TwitterDataSet))
 
-      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
       sender.send(client, jsonRequest)
 
       dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
@@ -76,7 +76,7 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(sourceInfo.name))
 
 
-      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default))
+      val client = system.actorOf(BerryClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
       sender.send(client, jsonRequest)
       dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
       dataManager.reply(None)
