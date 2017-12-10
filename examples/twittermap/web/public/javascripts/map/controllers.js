@@ -692,6 +692,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                     cloudberry.query(cloudberry.parameters);
                 }
 
+                $scope.status.logicLevel = 'city';
+
                 if(typeof $scope.polygons.cityPolygons === 'undefined'){
                     $scope.geojsonData.city = data;
                     $scope.polygons.cityPolygons = L.geoJson(data, {
