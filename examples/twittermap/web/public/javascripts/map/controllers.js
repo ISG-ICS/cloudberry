@@ -686,8 +686,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
 
                 //set center and boundary done by Cache
-                resetGeoInfo("city");
-
                 if (!$scope.status.init) {
                     resetGeoIds($scope.bounds, data, 'cityID');
                     cloudberry.parameters.geoLevel = 'city';
