@@ -47,6 +47,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doNormalization = false;
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
+    $scope.compareCityIdArray = [];
 
     // map setting
     angular.extend($scope, {
@@ -694,6 +695,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
                 $scope.status.logicLevel = 'city';
 
+                // initialize the $scope.geojsonData.city and $scope.compareCityIdArray when first time zoom in
                 if(typeof $scope.polygons.cityPolygons === 'undefined'){
                     $scope.geojsonData.city = data;
                     $scope.polygons.cityPolygons = L.geoJson(data, {
@@ -701,25 +703,25 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                       onEachFeature: onEachFeature
                   });
 
+                    for (i=0; i<$scope.geojsonData.city.features.length; i++){
+                        $scope.compareCityIdArray.push($scope.geojsonData.city.features[i].properties.cityID);
+                    }
+
                 }else{
 
-                // incrementally add polygons after user zoom in
-
+                    // compare the new region info on the map with stored polygons info, store the difference in diffData
                     var diffData = [];
+                    var checkArray = new Set($scope.compareCityIdArray);
 
-                    // finding out the new incoming cities which are not stored in geojsonData.city yet
-                    for(i =0; i < data.features.length; i++){
-                        var overlap = false;
+                    for (i = 0; i < data.features.length; i++){
+                        if(!checkArray.has(data.features[i].properties.cityID)){
+                              diffData.push(data.features[i]);
+                        }
+                    }
 
-                        for(j =0; j < $scope.geojsonData.city.features.length; j++){
-                            if (data.features[i].properties.cityID === $scope.geojsonData.city.features[j].properties.cityID){
-                                overlap = true;
-                                break;
-                            }
-                        }
-                        if (overlap === false){
-                            diffData.push(data.features[i]);
-                        }
+                    // store the new cityIds into $scope.compareCityIdArray
+                    for (i = 0; i < diffData.length; i++){
+                        $scope.compareCityIdArray.push(diffData[i].properties.cityID);
                     }
 
                     // store the new polygons into geojsonData
@@ -731,7 +733,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                     }
                 }
 
-                // To add the city level map when zoom in from county level
+                // To add the city level map only when it doesn't exit
                 if(!$scope.map.hasLayer($scope.polygons.cityPolygons)){
                     $scope.map.addLayer($scope.polygons.cityPolygons);
                 }
