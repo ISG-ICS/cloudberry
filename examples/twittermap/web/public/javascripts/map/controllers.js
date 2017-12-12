@@ -47,7 +47,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doNormalization = false;
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
-    $scope.compareCityIdArray = [];
+    $scope.cityIdSet = new Set();
 
     // map setting
     angular.extend($scope, {
@@ -695,41 +695,28 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
                 $scope.status.logicLevel = 'city';
 
-                // initialize the $scope.geojsonData.city and $scope.compareCityIdArray when first time zoom in
+                // initializes the $scope.geojsonData.city and $scope.cityIdSet when first time zoom in
                 if(typeof $scope.polygons.cityPolygons === 'undefined'){
                     $scope.geojsonData.city = data;
                     $scope.polygons.cityPolygons = L.geoJson(data, {
                       style: $scope.styles.cityStyle,
                       onEachFeature: onEachFeature
-                  });
+                    });
 
-                    for (i=0; i<$scope.geojsonData.city.features.length; i++){
-                        $scope.compareCityIdArray.push($scope.geojsonData.city.features[i].properties.cityID);
+                    for (i = 0; i < $scope.geojsonData.city.features.length; i++) {
+                        $scope.cityIdSet.add($scope.geojsonData.city.features[i].properties.cityID);
                     }
+                } else {
+                    // compares the current region's cityIds with previously stored cityIds
+                    // stores the new delta cities' ID and polygon info
+                    // add the new polygons as GeoJson objects incrementally on the layer
 
-                }else{
-
-                    // compare the new region info on the map with stored polygons info, store the difference in diffData
-                    var diffData = [];
-                    var checkArray = new Set($scope.compareCityIdArray);
-
-                    for (i = 0; i < data.features.length; i++){
-                        if(!checkArray.has(data.features[i].properties.cityID)){
-                              diffData.push(data.features[i]);
+                    for (i = 0; i < data.features.length; i++) {
+                        if (!$scope.cityIdSet.has(data.features[i].properties.cityID)) {
+                            $scope.geojsonData.city.features.push(data.features[i]);
+                            $scope.cityIdSet.add(data.features[i].properties.cityID);
+                            $scope.polygons.cityPolygons.addData(data.features[i]);
                         }
-                    }
-
-                    // store the new cityIds into $scope.compareCityIdArray
-                    for (i = 0; i < diffData.length; i++){
-                        $scope.compareCityIdArray.push(diffData[i].properties.cityID);
-                    }
-
-                    // store the new polygons into geojsonData
-                    $scope.geojsonData.city.features = $scope.geojsonData.city.features.concat(diffData);
-
-                    // add city polygons as GeoJson objects to current layer incrementally
-                    for (i=0; i<diffData.length; i++){
-                        $scope.polygons.cityPolygons.addData(diffData[i]);
                     }
                 }
 
