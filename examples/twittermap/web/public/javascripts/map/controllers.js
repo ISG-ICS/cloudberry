@@ -11,16 +11,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           setInfoControlCountMap();
           cloudberry.query(cloudberry.parameters, cloudberry.queryType);
           break;
-          
+
         case 'heatmap':
           break;
-          
+
         case 'pointmap':
           cleanCountMap();
           setInfoControlPointMap();
           cloudberry.query(cloudberry.parameters, cloudberry.queryType);
           break;
-          
+
         default:
           // unrecognized map type
           break;
@@ -47,6 +47,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doNormalization = false;
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
+    $scope.cityIdSet = new Set();
 
     // map setting
     angular.extend($scope, {
@@ -166,7 +167,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       button.addEventListener ("click", function() {
         $scope.map.setView([$scope.lat, $scope.lng], 4);
       });
-      
+
       resetGeoInfo("state");
 
       //Adjust Map to be County or State
@@ -184,7 +185,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           break;
       }
     };
-    
+
     function removePolygonLayers() {
       if ($scope.polygons.statePolygons) {
         $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -438,7 +439,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         colors: [ '#ffffff', '#92d1e1', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       };
-      
+
       removePolygonLayers();
     }
 
@@ -683,23 +684,46 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         // Caching feature only works when the given threshold is greater than zero.
         if (cloudberryConfig.cacheThreshold > 0) {
             Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
-                $scope.geojsonData.city = data;
 
-                if($scope.polygons.cityPolygons) {
-                    $scope.map.removeLayer($scope.polygons.cityPolygons);
-                }
-                $scope.polygons.cityPolygons = L.geoJson(data, {
-                    style: $scope.styles.cityStyle,
-                    onEachFeature: onEachFeature
-                });
+
                 //set center and boundary done by Cache
                 if (!$scope.status.init) {
-                    resetGeoIds($scope.bounds, $scope.geojsonData.city, 'cityID');
+                    resetGeoIds($scope.bounds, data, 'cityID');
                     cloudberry.parameters.geoLevel = 'city';
                     cloudberry.query(cloudberry.parameters);
                 }
-                resetGeoInfo("city");
-                $scope.map.addLayer($scope.polygons.cityPolygons);
+
+                $scope.status.logicLevel = 'city';
+
+                // initializes the $scope.geojsonData.city and $scope.cityIdSet when first time zoom in
+                if(typeof $scope.polygons.cityPolygons === 'undefined'){
+                    $scope.geojsonData.city = data;
+                    $scope.polygons.cityPolygons = L.geoJson(data, {
+                      style: $scope.styles.cityStyle,
+                      onEachFeature: onEachFeature
+                    });
+
+                    for (i = 0; i < $scope.geojsonData.city.features.length; i++) {
+                        $scope.cityIdSet.add($scope.geojsonData.city.features[i].properties.cityID);
+                    }
+                } else {
+                    // compares the current region's cityIds with previously stored cityIds
+                    // stores the new delta cities' ID and polygon info
+                    // add the new polygons as GeoJson objects incrementally on the layer
+
+                    for (i = 0; i < data.features.length; i++) {
+                        if (!$scope.cityIdSet.has(data.features[i].properties.cityID)) {
+                            $scope.geojsonData.city.features.push(data.features[i]);
+                            $scope.cityIdSet.add(data.features[i].properties.cityID);
+                            $scope.polygons.cityPolygons.addData(data.features[i]);
+                        }
+                    }
+                }
+
+                // To add the city level map only when it doesn't exit
+                if(!$scope.map.hasLayer($scope.polygons.cityPolygons)){
+                    $scope.map.addLayer($scope.polygons.cityPolygons);
+                }
             });
         } else {
             // No caching used here.
@@ -995,11 +1019,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         addMapControl('sentiment', 'topleft', initSentiment, initSentimentToggle);
 
     }
-    
+
     // function for drawing heatmap
     function drawHeatMap(result) {
     }
-    
+
     // function for drawing pointmap
     function drawPointMap(result) {
 
@@ -1248,10 +1272,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
               drawCountMap($scope.result);
             }
             break;
-            
+
           case 'heatmap':
             break;
-            
+
           case 'pointmap':
             if (newResult['pointsResult'] !== oldValue['pointsResult']) {
                 $scope.result = newResult['pointsResult'];
@@ -1266,7 +1290,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 $scope.totalCount = newResult['totalCount'];
             }
             break;
-            
+
           default:
             // unrecognized map type
             break;
