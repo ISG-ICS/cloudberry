@@ -273,7 +273,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
       query: function(parameters) {
       
-        if (ws.readyState !== ws.OPEN || parameters.keywords == null || parameters.keywords.length == 0)
+        if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
 
         // generate query based on map type
@@ -482,7 +482,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           default:
             console.log("ws get unknown data: ", result);
-            //cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });

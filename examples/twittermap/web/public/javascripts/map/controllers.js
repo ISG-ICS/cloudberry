@@ -346,20 +346,23 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       function resetHighlight(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
           var style;
-          if (!$scope.status.init)
+          if (!$scope.status.init){
             style = {
               weight: 1.5,
               fillOpacity: 0.5,
               color: '#92d1e1'
             };
-          else
+          }
+          else {
             style = {
               weight: 1.5,
               fillOpacity: 0.5,
               color: '#92d1e1'
             };
-          if (leafletEvent)
+          }
+          if (leafletEvent){
             leafletEvent.target.setStyle(style);
+          }
         }
       }
 
@@ -639,7 +642,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     }
     // load geoJson
     function loadGeoJsonFiles(onEachFeature) {
-      if ($scope.polygons.statePolygons == null){
+      if (typeof($scope.polygons.statePolygons) === "undefined" || $scope.polygons.statePolygons == null){
         $http.get("assets/data/state.json")
         .success(function(data) {
           $scope.geojsonData.state = data;
@@ -657,7 +660,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           console.error("Load state data failure");
         });
       }
-      if ($scope.polygons.countyPolygons == null){
+      if (typeof($scope.polygons.countyPolygons) === "undefined" || $scope.polygons.countyPolygons == null){
         $http.get("assets/data/county.json")
         .success(function(data) {
           $scope.geojsonData.county = data;
