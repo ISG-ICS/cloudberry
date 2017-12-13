@@ -272,6 +272,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       errorMessage: null,
 
       query: function(parameters) {
+      
+        if (ws.readyState !== ws.OPEN || parameters.keywords == null || parameters.keywords.length == 0)
+          return;
 
         // generate query based on map type
         switch (parameters.maptype) {
@@ -478,7 +481,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "done":
             break;
           default:
-            console.error("ws get unknown data: ", result);
+            console.log("ws get unknown data: ", result);
             cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
