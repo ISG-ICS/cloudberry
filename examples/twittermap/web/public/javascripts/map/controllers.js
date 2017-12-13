@@ -402,9 +402,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
       loadGeoJsonFiles(onEachFeature);
 
+      // remove original zoomfunction associated with zoom event
       if ($scope.zoomfunction) {
         $scope.zoomfunction()
       }
+      // add new zoomfunction
       $scope.zoomfunction = $scope.$on("leafletDirectiveMap.zoomend", function() {
         if ($scope.map) {
           $scope.status.zoomLevel = $scope.map.getZoom();
@@ -462,9 +464,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
       });
 
+      // remove original dragfunction associated with drag event
       if ($scope.dragfunction) {
         $scope.dragfunction()
       }
+      // add new dragfunction
       $scope.dragfunction = $scope.$on("leafletDirectiveMap.dragend", function() {
         if (!$scope.status.init) {
           $scope.bounds = $scope.map.getBounds();
