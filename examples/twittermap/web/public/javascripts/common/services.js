@@ -482,7 +482,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           default:
             console.log("ws get unknown data: ", result);
-            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
+            //cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
             break;
         }
       });
