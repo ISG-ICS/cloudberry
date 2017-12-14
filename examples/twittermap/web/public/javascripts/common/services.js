@@ -47,7 +47,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
-    var defaultPointmapSamplingDayRange = 30;
+    var defaultPointmapSamplingDayRange = 7;
     var defaultPointmapLimit = 25*1000;
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
@@ -108,7 +108,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      if (geoIds.length <= 2000){
+      if (geoIds.length <= 2000 && parameters.maptype === 'countmap'){
         filter.push(
           {
             field: "geo_tag." + spatialField,
@@ -272,6 +272,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       errorMessage: null,
 
       query: function(parameters) {
+      
+        if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
+          return;
 
         // generate query based on map type
         switch (parameters.maptype) {
@@ -478,8 +481,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "done":
             break;
           default:
-            console.error("ws get unknown data: ", result);
-            cloudberryService.errorMessage = "ws get unknown data: " + result.toString();
+            console.log("ws get unknown data: ", result);
             break;
         }
       });
