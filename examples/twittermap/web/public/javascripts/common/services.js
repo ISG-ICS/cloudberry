@@ -108,7 +108,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      if (typeof(geoIds) !== "undefined" && geoIds != null && geoIds.length <= 2000){
+      if (geoIds.length <= 2000 && parameters.maptype === 'countmap'){
         filter.push(
           {
             field: "geo_tag." + spatialField,
@@ -368,7 +368,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             var pointsJson = (JSON.stringify({
               dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultPointmapSamplingDayRange),
+              filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
               select: {
                 order: ["-create_at"],
                 limit: defaultPointmapLimit,
