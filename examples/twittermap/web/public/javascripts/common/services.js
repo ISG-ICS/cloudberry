@@ -47,7 +47,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
-    var defaultPointmapSamplingDayRange = 30;
+    var defaultPointmapSamplingDayRange = 7;
     var defaultPointmapLimit = 25*1000;
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
@@ -108,7 +108,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      if (geoIds.length <= 2000){
+      if (geoIds.length <= 2000 && parameters.maptype === 'countmap'){
         filter.push(
           {
             field: "geo_tag." + spatialField,
