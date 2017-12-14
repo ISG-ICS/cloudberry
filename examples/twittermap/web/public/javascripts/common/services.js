@@ -108,7 +108,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      if (geoIds.length <= 2000 && parameters.maptype === 'countmap'){
+      if (typeof(geoIds) !== "undefined" && geoIds != null && geoIds.length <= 2000){
         filter.push(
           {
             field: "geo_tag." + spatialField,
@@ -271,7 +271,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       hashTagResult: [],
       errorMessage: null,
 
-      query: function(parameters) {
+      query: function(parameters, getPoints=true) {
       
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
@@ -368,7 +368,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             var pointsJson = (JSON.stringify({
               dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+              filter: getFilter(parameters, defaultPointmapSamplingDayRange),
               select: {
                 order: ["-create_at"],
                 limit: defaultPointmapLimit,
@@ -414,8 +414,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             }));
-
-            ws.send(pointsJson);
+            
+            if (getPoints){
+              ws.send(pointsJson);
+            }
             ws.send(pointsTimeJson);
             break;
           
