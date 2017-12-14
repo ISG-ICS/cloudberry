@@ -271,7 +271,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       hashTagResult: [],
       errorMessage: null,
 
-      query: function(parameters) {
+      query: function(parameters, getPoints=true) {
       
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
@@ -414,8 +414,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             }));
-
-            ws.send(pointsJson);
+            
+            if (getPoints){
+              ws.send(pointsJson);
+            }
             ws.send(pointsTimeJson);
             break;
           
