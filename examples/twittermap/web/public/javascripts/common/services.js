@@ -108,7 +108,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      if (geoIds.length <= 2000 && parameters.maptype === 'countmap'){
+      if (geoIds.length <= 2000){
         filter.push(
           {
             field: "geo_tag." + spatialField,
