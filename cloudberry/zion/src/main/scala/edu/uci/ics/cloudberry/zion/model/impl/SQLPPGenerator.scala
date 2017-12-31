@@ -377,6 +377,10 @@ class SQLPPGenerator extends AsterixQueryGenerator {
         s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
       case Relation.in =>
         s"$fieldExpr in [ ${filter.values.mkString(",")} ]"
+      case Relation.isNull =>
+        s"$fieldExpr is unknown"
+      case Relation.isNotNull =>
+        s"$fieldExpr is not unknown"
       case _ =>
         s"$fieldExpr ${filter.relation} ${filter.values(0)}"
     }

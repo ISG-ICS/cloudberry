@@ -251,6 +251,12 @@ abstract class SQLGenerator extends IQLGenerator {
             s"$fieldExpr >= '${filter.values(0)}' and $fieldExpr < '${filter.values(1)}'"
         }
       }
+      case Relation.isNull => {
+        s"$fieldExpr is null"
+      }
+      case Relation.isNotNull => {
+        s"$fieldExpr is not null"
+      }
       case _ => {
         filter.field.dataType match {
           case time: DataType.Time.type =>
@@ -276,6 +282,12 @@ abstract class SQLGenerator extends IQLGenerator {
         val values = filter.values.map(_.asInstanceOf[String])
         s"lower($fieldExpr) ${stringContains} '%${values(0)}%'"
       }
+      case Relation.isNull => {
+        s"$fieldExpr is null"
+      }
+      case Relation.isNotNull => {
+        s"$fieldExpr is not null"
+      }
     }
   }
 
@@ -289,6 +301,10 @@ abstract class SQLGenerator extends IQLGenerator {
         s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
       case Relation.in =>
         s"$fieldExpr in ( ${filter.values.mkString(",")} )"
+      case Relation.isNull =>
+        s"$fieldExpr is null"
+      case Relation.isNotNull =>
+        s"$fieldExpr is not null"
       case _ =>
         s"$fieldExpr ${filter.relation} ${filter.values(0)}"
     }

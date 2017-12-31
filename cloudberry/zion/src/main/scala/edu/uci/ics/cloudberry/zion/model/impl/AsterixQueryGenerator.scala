@@ -183,6 +183,12 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
       case Relation.inRange => {
         s"$fieldExpr >= ${typeImpl.datetime}('${filter.values(0)}') and $fieldExpr < ${typeImpl.datetime}('${filter.values(1)}')"
       }
+      case Relation.isNull => {
+        s"$fieldExpr is unknown"
+      }
+      case Relation.isNotNull => {
+        s"$fieldExpr is not unknown"
+      }
       case _ => {
         s"$fieldExpr ${filter.relation} ${typeImpl.datetime}('${filter.values(0)}')"
       }
@@ -200,6 +206,12 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
            |  ${typeImpl.createPoint}(${values(1)(0)},${values(1)(1)})))
            |""".stripMargin
       }
+      case Relation.isNull => {
+        s"$fieldExpr is unknown"
+      }
+      case Relation.isNotNull => {
+        s"$fieldExpr is not unknown"
+      }
     }
   }
 
@@ -214,15 +226,29 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
         s"""$fieldExpr!="${values(0)}""""
       }
       case Relation.contains => ???
-
+      case Relation.isNull => {
+        s"$fieldExpr is unknown"
+      }
+      case Relation.isNotNull => {
+        s"$fieldExpr is not unknown"
+      }
     }
-
   }
 
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
-    val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
-    s"${typeImpl.fullTextContains}($fieldExpr, $words, {'mode':'all'})"
+    filter.relation match {
+      case Relation.isNull => {
+        s"$fieldExpr is unknown"
+      }
+      case Relation.isNotNull => {
+        s"$fieldExpr is not unknown"
+      }
+      case _ => {
+        val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
+        s"${typeImpl.fullTextContains}($fieldExpr, $words, {'mode':'all'})"
+      }
+    }
   }
 
 
