@@ -130,9 +130,6 @@ object QueryValidator {
   }
 
   def validateNumberRelation(relation: Relation, values: Seq[Any]): Unit = {
-    if (relation == Relation.isNull || relation == Relation.isNotNull) {
-      return
-    }
     requireOrThrow(values.forall(isAnyNumber), s"values contain non compatible data type for relation: $relation.")
 
     relation match {
@@ -145,9 +142,6 @@ object QueryValidator {
   }
 
   def validateStringRelation(relation: Relation, values: Seq[Any]): Unit = {
-    if (relation == Relation.isNull || relation == Relation.isNotNull) {
-      return
-    }
     requireOrThrow(values.forall(_.isInstanceOf[String]), s"values contain non compatible data type for relation: $relation.")
 
     relation match {
@@ -160,9 +154,6 @@ object QueryValidator {
 
 
   def validateTimeRelation(relation: Relation, values: Seq[Any]): Unit = {
-    if (relation == Relation.isNull || relation == Relation.isNotNull) {
-      return
-    }
     //required string format : http://www.joda.org/joda-time/apidocs/org/joda/time/format/DateTimeFormat.html
     try {
       if (!values.forall(_.isInstanceOf[String])) {
@@ -187,9 +178,6 @@ object QueryValidator {
   }
 
   def validatePointRelation(relation: Relation, values: Seq[Any]): Unit = {
-    if (relation == Relation.isNull || relation == Relation.isNotNull) {
-      return
-    }
     if (!values.forall(_.isInstanceOf[Seq[_]]) || values.size != 2
       || !values.map(_.asInstanceOf[Seq[_]]).forall(ary => ary.size == 2 && ary.forall(isAnyNumber))) {
       throw new QueryParsingException(s"the ${relation} on point type requires a pair of value pairs.")
@@ -200,9 +188,6 @@ object QueryValidator {
   }
 
   def validateTextRelation(relation: Relation, values: Seq[Any]): Unit = {
-    if (relation == Relation.isNull || relation == Relation.isNotNull) {
-      return
-    }
     requireOrThrow(values.forall(_.isInstanceOf[String]), s"the ${relation} on text type requires string parameters.")
   }
 
