@@ -223,20 +223,42 @@ abstract class SQLGenerator extends IQLGenerator {
   }
 
   protected def parseFilterRelation(filter: FilterStatement, fieldExpr: String): String = {
-    filter.field.dataType match {
-      case DataType.Number =>
-        parseNumberRelation(filter, fieldExpr)
-      case DataType.Time =>
-        parseTimeRelation(filter, fieldExpr)
-      case DataType.Boolean => ???
-      case DataType.String =>
-        parseStringRelation(filter, fieldExpr)
-      case DataType.Text =>
-        parseTextRelation(filter, fieldExpr)
-      case DataType.Bag => ???
-      case DataType.Hierarchy =>
-        throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
-      case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
+    filter.relation match {
+      case Relation.isNull => {
+        filter.field.dataType match {
+          case DataType.Bag => ???
+          case DataType.Hierarchy =>
+            throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+          case _ =>
+            s"$fieldExpr is null"
+        }
+      }
+      case Relation.isNotNull => {
+        filter.field.dataType match {
+          case DataType.Bag => ???
+          case DataType.Hierarchy =>
+            throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+          case _ =>
+            s"$fieldExpr is not null"
+        }
+      }
+      case _ => {
+        filter.field.dataType match {
+          case DataType.Number =>
+            parseNumberRelation(filter, fieldExpr)
+          case DataType.Time =>
+            parseTimeRelation(filter, fieldExpr)
+          case DataType.Boolean => ???
+          case DataType.String =>
+            parseStringRelation(filter, fieldExpr)
+          case DataType.Text =>
+            parseTextRelation(filter, fieldExpr)
+          case DataType.Bag => ???
+          case DataType.Hierarchy =>
+            throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+          case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
+        }
+      }
     }
   }
 
@@ -250,12 +272,6 @@ abstract class SQLGenerator extends IQLGenerator {
           case others =>
             s"$fieldExpr >= '${filter.values(0)}' and $fieldExpr < '${filter.values(1)}'"
         }
-      }
-      case Relation.isNull => {
-        s"$fieldExpr is null"
-      }
-      case Relation.isNotNull => {
-        s"$fieldExpr is not null"
       }
       case _ => {
         filter.field.dataType match {
@@ -282,12 +298,6 @@ abstract class SQLGenerator extends IQLGenerator {
         val values = filter.values.map(_.asInstanceOf[String])
         s"lower($fieldExpr) ${stringContains} '%${values(0)}%'"
       }
-      case Relation.isNull => {
-        s"$fieldExpr is null"
-      }
-      case Relation.isNotNull => {
-        s"$fieldExpr is not null"
-      }
     }
   }
 
@@ -301,10 +311,6 @@ abstract class SQLGenerator extends IQLGenerator {
         s"$fieldExpr >= ${filter.values(0)} and $fieldExpr < ${filter.values(1)}"
       case Relation.in =>
         s"$fieldExpr in ( ${filter.values.mkString(",")} )"
-      case Relation.isNull =>
-        s"$fieldExpr is null"
-      case Relation.isNotNull =>
-        s"$fieldExpr is not null"
       case _ =>
         s"$fieldExpr ${filter.relation} ${filter.values(0)}"
     }

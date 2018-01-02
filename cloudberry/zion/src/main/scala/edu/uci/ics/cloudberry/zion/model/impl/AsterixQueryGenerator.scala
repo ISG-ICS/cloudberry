@@ -155,21 +155,45 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
 
   //TODO possibly using /*+ skip-index */ hint if the relation selectivity is not high enough
   protected def parseFilterRelation(filter: FilterStatement, fieldExpr: String): String = {
-    filter.field.dataType match {
-      case DataType.Number =>
-        parseNumberRelation(filter, fieldExpr)
-      case DataType.Time =>
-        parseTimeRelation(filter, fieldExpr)
-      case DataType.Point =>
-        parsePointRelation(filter, fieldExpr)
-      case DataType.Boolean => ???
-      case DataType.String => parseStringRelation(filter, fieldExpr)
-      case DataType.Text =>
-        parseTextRelation(filter, fieldExpr)
-      case DataType.Bag => ???
-      case DataType.Hierarchy =>
-        throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
-      case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
+    filter.relation match {
+      case Relation.isNull => {
+        filter.field.dataType match {
+          case DataType.Bag => ???
+          case DataType.Hierarchy =>
+            throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+          case _ =>
+            s"$fieldExpr is unknown"
+        }
+      }
+      case Relation.isNotNull => {
+        filter.field.dataType match {
+          case DataType.Bag => ???
+          case DataType.Hierarchy =>
+            throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+          case _ =>
+            s"$fieldExpr is not unknown"
+        }
+      }
+      case _ => {
+        filter.field.dataType match {
+          case DataType.Number =>
+            parseNumberRelation(filter, fieldExpr)
+          case DataType.Time =>
+            parseTimeRelation(filter, fieldExpr)
+          case DataType.Point =>
+            parsePointRelation(filter, fieldExpr)
+          case DataType.Boolean => ???
+          case DataType.String => parseStringRelation(filter, fieldExpr)
+          case DataType.Text =>
+            parseTextRelation(filter, fieldExpr)
+          case DataType.Bag => ???
+          case DataType.Hierarchy =>
+            throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+          case _ => throw new QueryParsingException(s"unknown datatype: ${
+            filter.field.dataType
+          }")
+        }
+      }
     }
   }
 
@@ -182,12 +206,6 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
     filter.relation match {
       case Relation.inRange => {
         s"$fieldExpr >= ${typeImpl.datetime}('${filter.values(0)}') and $fieldExpr < ${typeImpl.datetime}('${filter.values(1)}')"
-      }
-      case Relation.isNull => {
-        s"$fieldExpr is unknown"
-      }
-      case Relation.isNotNull => {
-        s"$fieldExpr is not unknown"
       }
       case _ => {
         s"$fieldExpr ${filter.relation} ${typeImpl.datetime}('${filter.values(0)}')"
@@ -206,12 +224,6 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
            |  ${typeImpl.createPoint}(${values(1)(0)},${values(1)(1)})))
            |""".stripMargin
       }
-      case Relation.isNull => {
-        s"$fieldExpr is unknown"
-      }
-      case Relation.isNotNull => {
-        s"$fieldExpr is not unknown"
-      }
     }
   }
 
@@ -226,29 +238,13 @@ abstract class AsterixQueryGenerator extends IQLGenerator {
         s"""$fieldExpr!="${values(0)}""""
       }
       case Relation.contains => ???
-      case Relation.isNull => {
-        s"$fieldExpr is unknown"
-      }
-      case Relation.isNotNull => {
-        s"$fieldExpr is not unknown"
-      }
     }
   }
 
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
-    filter.relation match {
-      case Relation.isNull => {
-        s"$fieldExpr is unknown"
-      }
-      case Relation.isNotNull => {
-        s"$fieldExpr is not unknown"
-      }
-      case _ => {
-        val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
-        s"${typeImpl.fullTextContains}($fieldExpr, $words, {'mode':'all'})"
-      }
-    }
+    val words = filter.values.map(w => s"'${w.asInstanceOf[String].trim}'").mkString("[", ",", "]")
+    s"${typeImpl.fullTextContains}($fieldExpr, $words, {'mode':'all'})"
   }
 
 

@@ -78,20 +78,11 @@ class MySQLGenerator extends SQLGenerator {
   }
 
   protected def parseTextRelation(filter: FilterStatement, fieldExpr: String): String = {
-    filter.relation match {
-      case Relation.isNull =>
-        s"$fieldExpr is null"
-      case Relation.isNotNull =>
-        s"$fieldExpr is not null"
-      case _ => {
-        val wordsArr = ArrayBuffer[String]()
-        filter.values.foreach(w => wordsArr += w.toString)
-        val sb = new StringBuilder(s"${fullTextMatch(0)}($fieldExpr) ${fullTextMatch(1)} ('")
-        sb.append(wordsArr.mkString("+"," +","") + s"' in boolean mode)")
-        sb.toString()
-      }
-    }
-
+    val wordsArr = ArrayBuffer[String]()
+    filter.values.foreach(w => wordsArr += w.toString)
+    val sb = new StringBuilder(s"${fullTextMatch(0)}($fieldExpr) ${fullTextMatch(1)} ('")
+    sb.append(wordsArr.mkString("+"," +","") + s"' in boolean mode)")
+    sb.toString()
   }
 
   //TODO: unnest
