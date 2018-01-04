@@ -81,6 +81,11 @@ class JSONParserTest extends Specification {
         Some(GroupStatement(Seq(byUser), Seq(aggrCount))), None)
       checkQueryOnly(booleanFilterJSON, twitterSchemaMap, expectQuery)
     }
+    "parse isNull filter request" in {
+      val expectQuery = new Query(TwitterDataSet, Seq.empty, Seq.empty, Seq(isNullFilter), Seq.empty,
+        Some(GroupStatement(Seq(byUser), Seq(aggrCount))), None)
+      checkQueryOnly(isNullFilterJSON, twitterSchemaMap, expectQuery)
+    }
     "parse a count cardinality without group by" in {
       val globalAggr = GlobalAggregateStatement(aggrCount)
       val expectQuery = new Query(dataset = TwitterDataSet, globalAggr = Some(globalAggr))

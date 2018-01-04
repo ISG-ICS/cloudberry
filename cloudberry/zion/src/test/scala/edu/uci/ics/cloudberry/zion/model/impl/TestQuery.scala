@@ -294,6 +294,17 @@ object TestQuery {
        | ]
      """.stripMargin
 
+  val filterIsNullJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "text",
+       |    "relation": "isNull",
+       |    "values": []
+       |  }
+       | ]
+     """.stripMargin
+
   val filterBagValueJSON =
     s"""
        |"filter": [
@@ -606,6 +617,30 @@ object TestQuery {
        |{
        | "dataset": "twitter.ds_tweet",
        | $filterBooleanJSON,
+       | "group": {
+       |    "by": [
+       |      {
+       |        "field": "user.id"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field" : "*",
+       |        "apply" : {
+       |          "name": "count"
+       |        },
+       |        "as" : "count"
+       |      }
+       |    ]
+       |  }
+       |}
+     """.stripMargin)
+
+  val isNullFilterJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterIsNullJSON,
        | "group": {
        |    "by": [
        |      {
