@@ -60,23 +60,28 @@ object QueryValidator {
     requireOrThrow(AbstractSchema.Type2Relations(filter.field.dataType).contains(filter.relation),
       s"field ${filter.field.name} of type ${filter.field.dataType} can not apply to relation: ${filter.relation}."
     )
-
-    filter.field.dataType match {
-      case DataType.Number =>
-        validateNumberRelation(filter.relation, filter.values)
-      case DataType.Time =>
-        validateTimeRelation(filter.relation, filter.values)
-      case DataType.Point =>
-        validatePointRelation(filter.relation, filter.values)
-      case DataType.Boolean =>
-      case DataType.String =>
-        validateStringRelation(filter.relation, filter.values)
-      case DataType.Text =>
-        validateTextRelation(filter.relation, filter.values)
-      case DataType.Bag =>
-      case DataType.Hierarchy =>
-        throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
-      case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
+    if ((filter.relation == Relation.isNull || filter.relation == Relation.isNotNull) &&
+      filter.field.dataType != DataType.Bag && filter.field.dataType != DataType.Hierarchy) {
+      return
+    }
+    else {
+      filter.field.dataType match {
+        case DataType.Number =>
+          validateNumberRelation(filter.relation, filter.values)
+        case DataType.Time =>
+          validateTimeRelation(filter.relation, filter.values)
+        case DataType.Point =>
+          validatePointRelation(filter.relation, filter.values)
+        case DataType.Boolean =>
+        case DataType.String =>
+          validateStringRelation(filter.relation, filter.values)
+        case DataType.Text =>
+          validateTextRelation(filter.relation, filter.values)
+        case DataType.Bag =>
+        case DataType.Hierarchy =>
+          throw new QueryParsingException("the Hierarchy type doesn't support any relations.")
+        case _ => throw new QueryParsingException(s"unknown datatype: ${filter.field.dataType}")
+      }
     }
   }
 
