@@ -67,8 +67,8 @@ class BerryClient(val jsonParser: JSONParser,
         //TODO Ultimately, clients can run multiple streaming request simultaneously.
         //     They can also cancel or reset a specific request.
         //     Right now, we are just allow one streaming request at once, the later one will stop the previous running request.
-        val child = context.child(transform.category).getOrElse(
-          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), transform.category)
+        val child = context.child("stream").getOrElse(
+          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), "stream")
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
         child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)

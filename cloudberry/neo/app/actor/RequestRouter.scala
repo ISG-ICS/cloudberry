@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import akka.stream.Materializer
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{ICategoricalTransform, IPostTransform, NoTransform}
 import play.api.libs.json._
 import play.api.Logger
 import play.api.mvc.RequestHeader
@@ -57,7 +57,7 @@ object RequestRouter {
   def props(berryClientProp: Props, config: Config, requestHeader: RequestHeader)
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config, requestHeader))
 
-  case class WrapTransform(id: String, category: String) extends IPostTransform {
+  case class WrapTransform(id: String, category: String) extends ICategoricalTransform{
     override def transform(jsonBody: JsValue): JsValue = {
       Json.obj("id" -> id, "category" -> category, "value" -> jsonBody)
     }

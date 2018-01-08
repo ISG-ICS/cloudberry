@@ -4,12 +4,14 @@ import play.api.libs.json.JsValue
 
 
 trait IPostTransform {
-  def category: String
   def transform(jsValue: JsValue): JsValue
 }
 
+trait ICategoricalTransform extends IPostTransform{
+  def category: String
+}
+
 case object NoTransform extends IPostTransform {
-  override def category: String = "default"
   override def transform(jsValue: JsValue): JsValue = jsValue
 }
 
