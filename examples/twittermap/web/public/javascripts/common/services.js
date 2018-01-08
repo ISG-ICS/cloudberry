@@ -67,7 +67,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       estimable : true,
       transform: {
         wrap: {
-          key: "totalCount"
+          id: "totalCount",
+          category: "totalCount"
         }
       }
     });
@@ -290,7 +291,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform: {
                 wrap: {
-                  key: "sample"
+                  id: "sample",
+                  category: "sample"
                 }
               }
             }));
@@ -303,14 +305,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform: {
                 wrap: {
-                  key: "batchWithoutGeoRequest"
+                  id: "batchWithoutGeoRequest",
+                  category: "batchWithoutGeoRequest"
                 }
               }
             })) : (JSON.stringify({
                 batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
-                        key: "batchWithoutGeoRequest"
+                        id: "batchWithoutGeoRequest",
+                        category: "batchWithoutGeoRequest"
                     }
                 }
             }));
@@ -330,7 +334,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform: {
                 wrap: {
-                  key: "batchWithPartialGeoRequest"
+                  id: "batchWithPartialGeoRequest",
+                  category: "batchWithPartialGeoRequest"
                 }
               }
             })) : (JSON.stringify({
@@ -338,7 +343,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                     byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
-                        key: "batchWithPartialGeoRequest"
+                        id: "batchWithPartialGeoRequest",
+                        category: "batchWithPartialGeoRequest"
                     }
                 }
             }));
@@ -377,7 +383,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform: {
                 wrap: {
-                  key: "points"
+                  id: "points",
+                  category: "points"
                 }
               }
             }));
@@ -410,7 +417,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform: {
                 wrap: {
-                  key: "pointsTime"
+                  id: "pointsTime",
+                  category: "pointsTime"
                 }
               }
             }));
@@ -430,7 +438,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       $timeout(function() {
         var result = JSONbig.parse(event.data);
 
-        switch (result.key) {
+        switch (result.category) {
 
           case "sample":
             cloudberryService.tweetResult = result.value[0];

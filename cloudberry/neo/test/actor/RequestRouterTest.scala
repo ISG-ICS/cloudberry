@@ -41,7 +41,8 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
           |  },
           |  "transform":{
           |    "wrap":{
-          |      "key": "sample"
+          |      "id": "sample_test",
+          |      "category": "sample"
           |    }
           |  }
           |}
@@ -73,7 +74,8 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
           |  },
           |  "transform":{
           |    "wrap":{
-          |      "key": "batch"
+          |      "id": "batch_test",
+          |      "category": "batch"
           |    }
           |  }
           |}
