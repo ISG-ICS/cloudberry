@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfo
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, JsonRequestException, NoTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{ICategoricalTransform, IPostTransform, JsonRequestException, NoTransform}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import play.api.libs.json._
 
@@ -63,12 +63,14 @@ class BerryClient(val jsonParser: JSONParser,
           // TODO send error messages to user
           throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
         }
-        //Each streaming request need a specific actor to handle the request.
-        //TODO Ultimately, clients can run multiple streaming request simultaneously.
-        //     They can also cancel or reset a specific request.
-        //     Right now, we are just allow one streaming request at once, the later one will stop the previous running request.
-        val child = context.child("stream").getOrElse(
-          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), "stream")
+        //Right now, we create one stream actor for one 'category' query indicated by 'transform'->'wrap'->'category'.
+        //TODO Clients can also cancel or reset a specific request.
+        var streamActorName = "default"
+        if (transform.isInstanceOf[ICategoricalTransform]) {
+          streamActorName = transform.asInstanceOf[ICategoricalTransform].category
+        }
+        val child = context.child(streamActorName).getOrElse(
+          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), streamActorName)
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
         child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
