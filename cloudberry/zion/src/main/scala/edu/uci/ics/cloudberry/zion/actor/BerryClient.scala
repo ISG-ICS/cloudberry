@@ -65,12 +65,12 @@ class BerryClient(val jsonParser: JSONParser,
         }
         //Right now, we create one stream actor for one 'category' query indicated by 'transform'->'wrap'->'category'.
         //TODO Clients can also cancel or reset a specific request.
-        var streamActorName = "default"
-        if (transform.isInstanceOf[ICategoricalTransform]) {
-          streamActorName = transform.asInstanceOf[ICategoricalTransform].category
+        val actorName = transform match{
+          case categorical: ICategoricalTransform => categorical.category
+          case _ => "default"
         }
-        val child = context.child(streamActorName).getOrElse(
-          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), streamActorName)
+        val child = context.child(actorName).getOrElse(
+          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), actorName)
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
         child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
