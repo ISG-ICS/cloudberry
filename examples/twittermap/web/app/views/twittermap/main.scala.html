@@ -1,5 +1,5 @@
 @import controllers.TwitterMapApplication.DBType
-@(title: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], querySliceMills: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value)(body: Html)
+@(title: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], querySliceMills: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value, pointmapSamplingDayRange: String, pointmapSamplingLimit: String)(body: Html)
 
 @import play.api.libs.json.Json
 
@@ -47,9 +47,10 @@
       querySliceMills: @querySliceMills,
       } else {
       // The default query slicing milliseconds value
-      querySliceMills: new String("2000")
+      querySliceMills: new String("2000"),
       }
-
+      pointmapSamplingDayRange: @pointmapSamplingDayRange,
+      pointmapSamplingLimit: @pointmapSamplingLimit
     }
   </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
