@@ -47,8 +47,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
-    var defaultPointmapSamplingDayRange = 7;
-    var defaultPointmapLimit = 25*1000;
+    var defaultPointmapSamplingDayRange = parseInt(config.pointmapSamplingDayRange);
+    var defaultPointmapLimit = parseInt(config.pointmapSamplingLimit);
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
