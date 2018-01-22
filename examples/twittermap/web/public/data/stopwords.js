@@ -1,4 +1,6 @@
 function external_stop_words() {
+    //Stop words obtained from http://www.lextek.com/manuals/onix/stopwords1.html
+
     var stop_words = new Array(
         'a',
         'about',

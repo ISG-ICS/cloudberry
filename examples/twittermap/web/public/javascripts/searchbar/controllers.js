@@ -2,64 +2,52 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
-        cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
-        // skip the empty query for now.
+        //cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
 
           //stopword filtering feature
           String.prototype.removeStopWords = function() {
               var x;
-              var y;
+              var i;
               var word;
-              var stop_word;
-              var regex_str;
-              var regex;
+
               var cleansed_string = this.valueOf();
               var stop_words = external_stop_words();
 
-              // Split out all the individual words in the phrase
-              var words = cleansed_string.match(/[^\s]+|\s+[^\s+]$/g);
+              //Split out all the individual words in the phrase
+              var words = cleansed_string.split(" ");
 
-              // Review all the words
-              for(x=0; x < words.length; x++) {
-                  // For each word, check all the stop words
-                  for(y=0; y < stop_words.length; y++) {
-                      // Get the current word
-                      word = words[x].replace(/\s+|[^a-z]+/ig, "");   // Trim the word and remove non-alpha
+              //Build a hashmap from stopwords
+              var Hstop_words = new HashMap();
+              Hstop_words.clear();
+              for(i=0;i<stop_words.length;i++)
+              {
+                  Hstop_words.set(stop_words[i],i);
+              }
 
-                      // Get the stop word
-                      stop_word = stop_words[y];
+              //Review each token
+              for(x=0; x<words.length; x++){
+                  word = words[x];
 
-                      // If the word matches the stop word, remove it from the keywords
-                      if(word.toLowerCase() === stop_word) {
-                          // Build the regex
-                          regex_str = "^\\s*"+stop_word+"\\s*$";      // Only word
-                          regex_str += "|^\\s*"+stop_word+"\\s+";     // First word
-                          regex_str += "|\\s+"+stop_word+"\\s*$";     // Last word
-                          regex_str += "|\\s+"+stop_word+"\\s+";      // Word somewhere in the middle
-                          regex = new RegExp(regex_str, "ig");
-
-                          // Remove the word from the keywords
-                          cleansed_string = cleansed_string.replace(regex, " ");
-                      }
+                  //If matches, remove it from the keywords
+                  if(Hstop_words.has(word.toLowerCase()))
+                  {
+                      // Remove the word from the keywords
+                      cleansed_string = cleansed_string.replace(word, "");
                   }
               }
               return cleansed_string.replace(/^\s+|\s+$/g, "");
           };
 
           var rawData = $scope.keyword;
+          var newData = rawData.removeStopWords();
 
-          var myData = rawData.removeStopWords();
+          if (newData.valueOf() === "" || null) {
 
-          if (myData.valueOf() === "" || null) {
-
-              alert("Invalid input! Please enter again.");
-
+              alert("Your query contains stopwords. Please re-enter your query.");
           }
           else {
-
-              cloudberry.parameters.keywords = myData;
+              cloudberry.parameters.keywords = newData;
               cloudberry.query(cloudberry.parameters);
-
           }
 
       } else {
