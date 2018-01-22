@@ -1,21 +1,21 @@
 package actor
 
+import java.util.concurrent.Executors
+
 import akka.actor._
 import akka.stream.{ActorMaterializer, Materializer}
 import akka.testkit.TestProbe
-import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.actor.TestkitExample
-import edu.uci.ics.cloudberry.zion.actor.BerryClient._
-import java.util.concurrent.Executors
-
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.IPostTransform
+import org.mockito.Mockito._
+import org.specs2.mock.Mockito
 import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
 import play.api.mvc.{Headers, RequestHeader}
-import org.mockito.Mockito._
-import org.specs2.mock.Mockito
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class RequestRouterTest extends TestkitExample with SpecificationLike with Mockito {
 
@@ -23,7 +23,7 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
   implicit val materializer: Materializer = ActorMaterializer()
 
   "RequestRouter" should {
-    "forward request and differentiate streaming and non-streaming requests" in {
+    "forward request" in {
 
       val nonStreamingRequest = Json.parse(
         """
@@ -41,7 +41,8 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
           |  },
           |  "transform":{
           |    "wrap":{
-          |      "key": "sample"
+          |      "id": "sample_test",
+          |      "category": "sample"
           |    }
           |  }
           |}
@@ -73,7 +74,8 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
           |  },
           |  "transform":{
           |    "wrap":{
-          |      "key": "batch"
+          |      "id": "batch_test",
+          |      "category": "batch"
           |    }
           |  }
           |}
@@ -100,16 +102,11 @@ class RequestRouterTest extends TestkitExample with SpecificationLike with Mocki
       val router = system.actorOf(RequestRouter.props(clientProps, Config.Default, mockHeader))
 
       frontEnd.send(router, nonStreamingRequest)
-      frontEnd.expectMsg(Json.obj(
-        "sender" -> "nonStreamingClient"
-      ))
+      val msg1 = frontEnd.receiveOne(1 seconds)
 
       frontEnd.send(router, streamingRequest)
-      frontEnd.expectMsg(Json.obj(
-        "sender" -> "streamingClient"
-      ))
-
-      ok
+      val msg2 = frontEnd.receiveOne(1 seconds)
+      msg1 must_== msg2
     }
   }
 }

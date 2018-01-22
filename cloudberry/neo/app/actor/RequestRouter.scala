@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, Props}
 import akka.stream.Materializer
 import edu.uci.ics.cloudberry.zion.actor.BerryClient._
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{ICategoricalTransform, IPostTransform, NoTransform}
 import play.api.libs.json._
 import play.api.Logger
 import play.api.mvc.RequestHeader
@@ -16,8 +16,7 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
 
   import RequestRouter._
 
-  val streamingBerryClient = context.actorOf(berryClientProp, streamingClientName)
-  val nonStreamingBerryClient = context.actorOf(berryClientProp, nonStreamingClientName)
+  val berry = context.actorOf(berryClientProp)
   val clientLogger = Logger("client")
 
   override def receive: Receive = {
@@ -28,10 +27,7 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
 
       val transformer = parseTransform(requestBody)
       val berryRequestBody = getBerryRequest(requestBody)
-      (berryRequestBody \\ "sliceMillis").isEmpty match {
-        case true => handleNonStreamingBody(berryRequestBody, transformer)
-        case false => handleStreamingBody(berryRequestBody, transformer)
-      }
+      berry ! (berryRequestBody, transformer)
     case e =>
       log.error("Unknown type of request: " + e)
   }
@@ -40,7 +36,7 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
     (requestBody \ "transform").asOpt[JsValue] match {
       case Some(t) =>
         (t \ "wrap").asOpt[JsValue] match {
-          case Some(w) => WrapTransform((w \"key").as[String])
+          case Some(w) => WrapTransform((w \"id").as[String], (w \"category").as[String])
           case None => NoTransform
         }
       case None => NoTransform
@@ -54,26 +50,16 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
     }
   }
 
-  private def handleNonStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    nonStreamingBerryClient ! (requestBody, transform)
-  }
-
-  private def handleStreamingBody(requestBody: JsValue, transform: IPostTransform): Unit = {
-    streamingBerryClient ! (requestBody, transform)
-  }
-
 }
 
 object RequestRouter {
-  val streamingClientName = "streamingClient"
-  val nonStreamingClientName = "nonStreamingClient"
 
   def props(berryClientProp: Props, config: Config, requestHeader: RequestHeader)
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config, requestHeader))
 
-  case class WrapTransform(key: String) extends IPostTransform {
+  case class WrapTransform(id: String, category: String) extends ICategoricalTransform{
     override def transform(jsonBody: JsValue): JsValue = {
-      Json.obj("key" -> key, "value" -> jsonBody)
+      Json.obj("id" -> id, "category" -> category, "value" -> jsonBody)
     }
   }
 

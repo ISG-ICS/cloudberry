@@ -20,6 +20,8 @@ object DataType extends Enumeration {
 
 object Relation extends Enumeration {
   type Relation = Value
+  val isNull = Value("isNull")
+  val isNotNull = Value("isNotNull")
   val == = Value("=")
   val != = Value("!=")
   val <= = Value("<=")
@@ -230,16 +232,16 @@ object AbstractSchema {
   import DataType._
   import Relation.Relation
 
-  val BasicRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.<=, Relation.>=, Relation.>, Relation.<)
-  val StringRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.in, Relation.contains, Relation.startsWith, Relation.endsWith, Relation.matches, Relation.~=)
+  val BasicRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.<=, Relation.>=, Relation.>, Relation.<, Relation.isNull, Relation.isNotNull)
+  val StringRelSet: Set[Relation] = Set(Relation.==, Relation.!=, Relation.in, Relation.contains, Relation.startsWith, Relation.endsWith, Relation.matches, Relation.~=, Relation.isNull, Relation.isNotNull)
 
   val Type2Relations: Map[DataType, Set[Relation]] = Map(
     Number -> (BasicRelSet + Relation.in + Relation.inRange),
     Time -> (BasicRelSet + Relation.inRange),
-    Boolean -> Set(Relation.isTrue, Relation.isFalse),
-    Point -> Set(Relation.inRange),
+    Boolean -> Set(Relation.isTrue, Relation.isFalse, Relation.isNull, Relation.isNotNull),
+    Point -> Set(Relation.inRange, Relation.isNull, Relation.isNotNull),
     String -> StringRelSet,
-    Text -> Set(Relation.contains),
+    Text -> Set(Relation.contains, Relation.isNull, Relation.isNotNull),
     Bag -> Set(Relation.contains),
     Hierarchy -> Set()
   )

@@ -785,4 +785,34 @@ class SQLPPGeneratorTest extends Specification {
     }
   }
 
+  "translate a simple filter with is null" in {
+    val filter = Seq(isNullFilter)
+    val select = Option(selectRecent)
+    val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, None, select)
+    val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
+    removeEmptyLine(result) must_== unifyNewLine(
+      """
+        |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
+        |from twitter.ds_tweet t
+        |where t.`text` is unknown
+        |order by t.`create_at` desc
+        |limit 100
+        |offset 0; """.stripMargin.trim)
+  }
+
+  "translate a simple filter with is not null" in {
+    val filter = Seq(isNotNullFilter)
+    val select = Option(selectRecent)
+    val query = new Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq.empty, None, select)
+    val result = parser.generate(query, Map(TwitterDataSet -> twitterSchema))
+    removeEmptyLine(result) must_== unifyNewLine(
+      """
+        |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user`.`id` as `user.id`
+        |from twitter.ds_tweet t
+        |where t.`text` is not unknown
+        |order by t.`create_at` desc
+        |limit 100
+        |offset 0; """.stripMargin.trim)
+  }
+
 }

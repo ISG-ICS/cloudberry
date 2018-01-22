@@ -56,6 +56,8 @@ object TestQuery {
   val langMatchFilter = FilterStatement(lang, None, Relation.matches, Seq("en"))
   val langNotMatchFilter = FilterStatement(lang, None, Relation.!=, Seq("en"))
   val langLenFilter = FilterStatement(langLen, None, Relation.>=, Seq(1))
+  val isNullFilter = FilterStatement(text, None, Relation.isNull, Seq.empty)
+  val isNotNullFilter = FilterStatement(text, None, Relation.isNotNull, Seq.empty)
 
   val intValues = Seq(1)
   val stringValue = Seq("English")
@@ -124,6 +126,7 @@ object TestQuery {
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
   )
 
+  val selectSimple = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt, id, userId))
   val selectRecent = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq(createAt, id, userId))
   val selectCreateTime = SelectStatement(Seq(createAt), Seq.empty, 0, 0, Seq(createAt))
   val selectTop10 = SelectStatement(Seq.empty, Seq(SortOrder.DSC), 10, 0, Seq.empty)
@@ -286,6 +289,17 @@ object TestQuery {
        |  {
        |    "field": "is_retweet",
        |    "relation": "true",
+       |    "values": []
+       |  }
+       | ]
+     """.stripMargin
+
+  val filterIsNullJSON =
+    s"""
+       |"filter": [
+       |  {
+       |    "field": "text",
+       |    "relation": "isNull",
        |    "values": []
        |  }
        | ]
@@ -603,6 +617,30 @@ object TestQuery {
        |{
        | "dataset": "twitter.ds_tweet",
        | $filterBooleanJSON,
+       | "group": {
+       |    "by": [
+       |      {
+       |        "field": "user.id"
+       |      }
+       |    ],
+       |    "aggregate": [
+       |      {
+       |        "field" : "*",
+       |        "apply" : {
+       |          "name": "count"
+       |        },
+       |        "as" : "count"
+       |      }
+       |    ]
+       |  }
+       |}
+     """.stripMargin)
+
+  val isNullFilterJSON = Json.parse(
+    s"""
+       |{
+       | "dataset": "twitter.ds_tweet",
+       | $filterIsNullJSON,
        | "group": {
        |    "by": [
        |      {
