@@ -702,6 +702,34 @@ class MySQLGeneratorTest extends Specification {
       )
     }
 
+    //47
+    "translate a simple filter with is null" in {
+      val filter = Seq(isNullFilter)
+      val select = Option(selectSimple)
+      val query = new Query(twitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, None, select)
+      val result = parser.generate(query, Map(twitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user.id` as `user.id`
+          |from `twitter_ds_tweet` t
+          |where t.`text` is null
+          |""".stripMargin.trim)
+    }
+
+    //48
+    "translate a simple filter with is not null" in {
+      val filter = Seq(isNotNullFilter)
+      val select = Option(selectSimple)
+      val query = new Query(twitterDataSetForSQL, Seq.empty, Seq.empty, filter, Seq.empty, None, select)
+      val result = parser.generate(query, Map(twitterDataSetForSQL -> twitterSchemaForSQL))
+      removeEmptyLine(result) must_== unifyNewLine(
+        """
+          |select t.`create_at` as `create_at`,t.`id` as `id`,t.`user.id` as `user.id`
+          |from `twitter_ds_tweet` t
+          |where t.`text` is not null
+          |""".stripMargin.trim)
+    }
+
   }
 
   "MySQLGenerator calcResultSchema" should {
