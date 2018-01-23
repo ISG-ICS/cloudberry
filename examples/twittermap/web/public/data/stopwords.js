@@ -433,5 +433,13 @@ function external_stop_words() {
         'z'
     );
 
-    return stop_words;
+    //Build a hashmap from stopwords
+    var Hstop_words = new HashMap();
+    Hstop_words.clear();
+    for(var i=0;i<stop_words.length;i++)
+    {
+        Hstop_words.set(stop_words[i],i);
+    }
+
+    return Hstop_words;
 }

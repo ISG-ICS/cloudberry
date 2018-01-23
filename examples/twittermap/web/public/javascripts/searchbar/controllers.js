@@ -2,27 +2,16 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
-        //cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
 
           //stopword filtering feature
           String.prototype.removeStopWords = function() {
               var x;
-              var i;
               var word;
-
               var cleansed_string = this.valueOf();
-              var stop_words = external_stop_words();
+              var Hstop_words = external_stop_words();
 
               //Split out all the individual words in the phrase
               var words = cleansed_string.split(" ");
-
-              //Build a hashmap from stopwords
-              var Hstop_words = new HashMap();
-              Hstop_words.clear();
-              for(i=0;i<stop_words.length;i++)
-              {
-                  Hstop_words.set(stop_words[i],i);
-              }
 
               //Review each token
               for(x=0; x<words.length; x++){
