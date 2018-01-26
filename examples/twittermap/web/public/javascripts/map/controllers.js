@@ -210,28 +210,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
     }
 
-    /*
-    function cleanCountMap() {
-
-      function removeMapControl(name){
-        var ctrlClass = $("."+name);
-        if (ctrlClass) {
-          ctrlClass.remove();
-        }
-      }
-
-      // remove CountMap controls
-      removeMapControl('legend');
-      removeMapControl('normalize');
-      removeMapControl('sentiment');
-
-    }
-    */
-
-    function setInfoControlHeatMap() {
-      //TODO For HeatMap use later.
-    }
-
     function setCenterAndBoundry(features) {
 
       for(var id in features){
@@ -372,78 +350,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 });
         }
     }
-
-    // function for drawing heatmap
-    function drawHeatMap(result) {
-    }
-
-    /*
-    $scope.$watchCollection(
-      function() {
-        return {
-          'mapResult': cloudberry.mapResult,
-          'pointsResult': cloudberry.pointsResult,
-          'totalCount': cloudberry.totalCount,
-          'doNormalization': $('#toggle-normalize').prop('checked'),
-          'doSentiment': $('#toggle-sentiment').prop('checked')
-        };
-      },
-
-      function(newResult, oldValue) {
-        switch (cloudberry.parameters.maptype) {
-          case 'countmap':
-            if (newResult['mapResult'] !== oldValue['mapResult']) {
-              $scope.result = newResult['mapResult'];
-              if (Object.keys($scope.result).length !== 0) {
-                $scope.status.init = false;
-                drawCountMap($scope.result);
-              } else {
-                drawCountMap($scope.result);
-              }
-            }
-            if (newResult['totalCount'] !== oldValue['totalCount']) {
-              $scope.totalCount = newResult['totalCount'];
-            }
-            if(newResult['doNormalization'] !== oldValue['doNormalization']) {
-              $scope.doNormalization = newResult['doNormalization'];
-              drawCountMap($scope.result);
-            }
-            if(newResult['doSentiment'] !== oldValue['doSentiment']) {
-              $scope.doSentiment = newResult['doSentiment'];
-              if($scope.doSentiment) {
-                $scope.infoPromp = "Score";  // change the info promp
-              } else {
-                $scope.infoPromp = config.mapLegend;
-              }
-              drawCountMap($scope.result);
-            }
-            break;
-
-          case 'heatmap':
-            break;
-
-          case 'pointmap':
-            if (newResult['pointsResult'] !== oldValue['pointsResult']) {
-                $scope.result = newResult['pointsResult'];
-                if (Object.keys($scope.result).length !== 0) {
-                    $scope.status.init = false;
-                    drawPointMap($scope.result);
-                } else {
-                    drawPointMap($scope.result);
-                }
-            }
-            if (newResult['totalCount'] !== oldValue['totalCount']) {
-                $scope.totalCount = newResult['totalCount'];
-            }
-            break;
-
-          default:
-            // unrecognized map type
-            break;
-        }
-      }
-    );
-    */
   })
   .directive("map", function () {
     return {
@@ -455,7 +361,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       },
       controller: 'MapCtrl',
       template:[
-        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet><div ng-controller="countMapCtrl"></div><div ng-controller="pointMapCtrl"></div>'
+        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet><div ng-controller="countMapCtrl"></div><div ng-controller="pointMapCtrl"></div><div ng-controller="heatMapCtrl"></div>'
       ].join('')
     };
   })
@@ -1443,6 +1349,55 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
               drawPointMap($scope.result);
             }
           }
+          if (newResult['totalCount'] !== oldValue['totalCount']) {
+            $scope.totalCount = newResult['totalCount'];
+          }
+        }
+      }
+    );
+  })
+  .controller('heatMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+    $rootScope.$on('maptypeChange', function (event, data) {
+      if (cloudberry.parameters.maptype == 'heatmap') {
+        $scope.resetPolygonLayers();
+        //setInfoControlHeatMap();
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+      }
+      else {
+        cleanHeatMap();
+      }
+    })
+    
+    function setHeatMapStyle() {
+    }
+    
+    function cleanHeatMap() {
+    }
+    
+    function setInfoControlHeatMap() {
+      //TODO For HeatMap use later.
+    }
+    
+    function drawHeatMap(result) {
+    }
+    
+    // initialize
+    setHeatMapStyle();
+    setInfoControlHeatMap();
+    
+    $scope.$watchCollection(
+      function() {
+        return {
+          'mapResult': cloudberry.mapResult,
+          //'pointsResult': cloudberry.pointsResult,
+          'totalCount': cloudberry.totalCount,
+          'doNormalization': $('#toggle-normalize').prop('checked'),
+          'doSentiment': $('#toggle-sentiment').prop('checked')
+        };
+      },
+
+      function(newResult, oldValue) {
+        if (cloudberry.parameters.maptype == 'heatmap'){
           if (newResult['totalCount'] !== oldValue['totalCount']) {
             $scope.totalCount = newResult['totalCount'];
           }
