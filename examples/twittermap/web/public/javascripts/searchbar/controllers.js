@@ -5,22 +5,18 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
           //Split out all the individual words in the phrase
-          cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
-          console.log("1.The keywords are " + cloudberry.parameters.keywords);
+          var keywords = $scope.keyword.trim().split(/\s+/);
           var newKeywords = new Array();
 
-          //stopword filtering feature
-              //Review each token
-              for(var x=0; x<cloudberry.parameters.keywords.length; x++){
+          //add stopword filtering feature and review each token
+              for(var x=0; x<keywords.length; x++){
                   //If matches, remove it from the keywords
-                  if(!stopwordsMap.has(cloudberry.parameters.keywords[x].toLowerCase()))
+                  if(!stopwordsMap.has(keywords[x].toLowerCase()))
                   {
                       //create the final keyword.
-                      newKeywords.push(cloudberry.parameters.keywords[x]);
+                      newKeywords.push(keywords[x]);
                   }
               }
-
-          console.log("2.After remove: " + newKeywords);
 
           if (newKeywords.length === 0) {
               //all the words are stopwords.
@@ -31,7 +27,6 @@ angular.module('cloudberry.util', ['cloudberry.common'])
               cloudberry.parameters.keywords = newKeywords;
               cloudberry.query(cloudberry.parameters);
           }
-
       } else {
         cloudberry.parameters.keywords = [];
       }

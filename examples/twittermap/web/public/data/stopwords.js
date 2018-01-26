@@ -1,7 +1,7 @@
 function buildStopwordsMap() {
     //Stop words obtained from http://www.lextek.com/manuals/onix/stopwords1.html
 
-    var stop_words = new Array(
+    var stopwords = new Array(
         'a',
         'about',
         'above',
@@ -434,11 +434,11 @@ function buildStopwordsMap() {
     );
 
     //Build a hashmap from stopwords
-    var Hstop_words = new HashMap();
-    for(var i=0;i<stop_words.length;i++)
+    var hStopwords = new HashMap();
+    for(var i=0;i<stopwords.length;i++)
     {
-        Hstop_words.set(stop_words[i],1);
+        hStopwords.set(stopwords[i],1);
     }
 
-    return Hstop_words;
+    return hStopwords;
 }
