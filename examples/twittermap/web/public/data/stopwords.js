@@ -1,4 +1,4 @@
-function external_stop_words() {
+function buildStopwordsMap() {
     //Stop words obtained from http://www.lextek.com/manuals/onix/stopwords1.html
 
     var stop_words = new Array(
@@ -435,10 +435,9 @@ function external_stop_words() {
 
     //Build a hashmap from stopwords
     var Hstop_words = new HashMap();
-    Hstop_words.clear();
     for(var i=0;i<stop_words.length;i++)
     {
-        Hstop_words.set(stop_words[i],i);
+        Hstop_words.set(stop_words[i],1);
     }
 
     return Hstop_words;

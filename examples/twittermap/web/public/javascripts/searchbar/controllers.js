@@ -1,41 +1,34 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
+      var stopwordsMap = buildStopwordsMap();
+
     $scope.search = function() {
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
+          //Split out all the individual words in the phrase
+          cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
+          console.log("1.The keywords are " + cloudberry.parameters.keywords);
+          var newKeywords = new Array();
 
           //stopword filtering feature
-          String.prototype.removeStopWords = function() {
-              var x;
-              var word;
-              var cleansed_string = this.valueOf();
-              var Hstop_words = external_stop_words();
-
-              //Split out all the individual words in the phrase
-              var words = cleansed_string.split(" ");
-
               //Review each token
-              for(x=0; x<words.length; x++){
-                  word = words[x];
-
+              for(var x=0; x<cloudberry.parameters.keywords.length; x++){
                   //If matches, remove it from the keywords
-                  if(Hstop_words.has(word.toLowerCase()))
+                  if(!stopwordsMap.has(cloudberry.parameters.keywords[x].toLowerCase()))
                   {
-                      // Remove the word from the keywords
-                      cleansed_string = cleansed_string.replace(word, "");
+                      //create the final keyword.
+                      newKeywords.push(cloudberry.parameters.keywords[x]);
                   }
               }
-              return cleansed_string.replace(/^\s+|\s+$/g, "");
-          };
 
-          var rawData = $scope.keyword;
-          var newData = rawData.removeStopWords();
+          console.log("2.After remove: " + newKeywords);
 
-          if (newData.valueOf() === "" || null) {
-
-              alert("Your query contains stopwords. Please re-enter your query.");
+          if (newKeywords.length === 0) {
+              //all the words are stopwords.
+              cloudberry.parameters.keywords = [];
+              alert("Your query only contains stopwords. Please re-enter your query.");
           }
           else {
-              cloudberry.parameters.keywords = newData;
+              cloudberry.parameters.keywords = newKeywords;
               cloudberry.query(cloudberry.parameters);
           }
 
