@@ -1,14 +1,37 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
-    $scope.search = function() {
-      if ($scope.keyword && $scope.keyword.trim().length > 0) {
-        cloudberry.parameters.keywords = $scope.keyword.trim().split(/\s+/);
-        // skip the empty query for now.
-        cloudberry.query(cloudberry.parameters);
-      } else {
-        cloudberry.parameters.keywords = [];
-      }
-    };
+      var stopwordsMap = buildStopwordsMap();
+
+      $scope.search = function() {
+          if ($scope.keyword && $scope.keyword.trim().length > 0) {
+              //Splits out all individual words in the query keyword.
+              var keywords = $scope.keyword.trim().split(/\s+/);
+              var newKeywords = new Array();
+
+              //Adds the stopword filtering feature and checks each token.
+              for(var x=0; x<keywords.length; x++){
+                  //If matches, remove it from the keywords
+                  if(!stopwordsMap.has(keywords[x].toLowerCase()))
+                  {
+                      //creates the final keyword.
+                      newKeywords.push(keywords[x]);
+                  }
+              }
+
+              if (newKeywords.length === 0) {
+                  //All the words are stopwords.
+                  cloudberry.parameters.keywords = [];
+                  alert("Your query only contains stopwords. Please re-enter your query.");
+              }
+              else {
+                  cloudberry.parameters.keywords = newKeywords;
+                  cloudberry.query(cloudberry.parameters);
+              }
+          }
+          else {
+              cloudberry.parameters.keywords = [];
+          }
+      };
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
     $scope.updateSearchBox = function (keyword) {
       $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');
