@@ -193,7 +193,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     };
     
     $scope.resetPolygonLayers = function resetPolygonLayers() {
-      console.log($scope.styles);
       if ($scope.polygons.statePolygons) {
         $scope.polygons.statePolygons.setStyle($scope.styles.stateStyle);
       }
@@ -473,8 +472,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
   .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     $rootScope.$on('maptypeChange', function (event, data) {
       if (cloudberry.parameters.maptype == 'countmap') {
+        setCountMapStyle();
         $scope.resetPolygonLayers();
-        //setInfoControlCountMap();
+        setInfoControlCountMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
       else {
@@ -551,6 +551,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     }
     
     function setInfoControlCountMap() {
+    
       // Interaction function
       function highlightFeature(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
@@ -890,8 +891,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     }
     
     // initialize
-    setCountMapStyle();
-    setInfoControlCountMap();
+    if (cloudberry.parameters.maptype == 'countmap'){
+      setCountMapStyle();
+      $scope.resetPolygonLayers();
+      setInfoControlCountMap();
+    }
     
     $scope.$watchCollection(
       function() {
@@ -938,8 +942,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
   .controller('pointMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     $rootScope.$on('maptypeChange', function (event, data) {
       if (cloudberry.parameters.maptype == 'pointmap') {
+        setPointMapStyle();
         $scope.resetPolygonLayers();
-        //setInfoControlPointMap();
+        setInfoControlPointMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
       else {
@@ -1238,8 +1243,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     }
     
     // initialize
-    setPointMapStyle();
-    setInfoControlPointMap();
+    if (cloudberry.parameters.maptype == 'pointmap'){
+      setPointMapStyle();
+      $scope.resetPolygonLayers();
+      setInfoControlPointMap();
+    }
     
     $scope.$watchCollection(
       function() {
