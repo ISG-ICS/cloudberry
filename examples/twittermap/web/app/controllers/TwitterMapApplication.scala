@@ -28,8 +28,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
-  val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
-  val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
@@ -37,6 +35,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
+
+  val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
+  val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
+
   val pointmapSamplingDayRange: String = config.getString("pointmap.samplingDayRange").getOrElse("30")
   val pointmapSamplingLimit: String = config.getString("pointmap.samplingLimit").getOrElse("5000")
 
@@ -57,7 +59,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB, pointmapSamplingDayRange, pointmapSamplingDayRange))
+    Ok(views.html.twittermap.index("TwitterMap", this, false))
   }
 
   def drugmap = Action {
@@ -66,7 +68,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB, pointmapSamplingDayRange, pointmapSamplingDayRange))
+      Ok(views.html.twittermap.index("DrugMap", this, true))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
