@@ -8,7 +8,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
       var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
       div.innerHTML = [
-        '<a hreTweetf="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
+        '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
         '<strong>Warning! </strong> TwitterMap currently doesn\'t support IE.'
       ].join('');
       div.style.position = 'absolute';
