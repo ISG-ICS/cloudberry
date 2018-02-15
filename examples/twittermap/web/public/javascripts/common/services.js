@@ -381,6 +381,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 offset: 0,
                 field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
               },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
+              },
               transform: {
                 wrap: {
                   id: "points",

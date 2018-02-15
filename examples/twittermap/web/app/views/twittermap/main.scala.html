@@ -1,5 +1,5 @@
 @import controllers.TwitterMapApplication.DBType
-@(title: String, startDate: String, endDate: Option[String], sentimentEnabled: Boolean, sentimentUDF: String, removeSearchBar: Boolean, predefinedKeywords: Seq[String], cacheThreshold: Option[String], querySliceMills: Option[String], isDrugMap: Boolean, sqlDB: DBType.Value, pointmapSamplingDayRange: String, pointmapSamplingLimit: String)(body: Html)
+@(title: String, TMAobject: TwitterMapApplication, isDrugMap: Boolean)(body: Html)
 
 @import play.api.libs.json.Json
 
@@ -22,35 +22,35 @@
 
   <script>
     var config= {
-      sentimentEnabled: @sentimentEnabled,
-      sentimentUDF: "@sentimentUDF",
-      startDate: new Date("@startDate"),
-      @if(endDate.isDefined) {
-        endDate: new Date("@endDate.get"),
+      sentimentEnabled: @TMAobject.sentimentEnabled,
+      sentimentUDF: "@TMAobject.sentimentUDF",
+      startDate: new Date("@TMAobject.startDate"),
+      @if(TMAobject.endDate.isDefined) {
+      endDate: new Date("@TMAobject.endDate.get"),
       }
       @if(isDrugMap) {
-        mapLegend: "$",
-        sumText : "dollars",
+      mapLegend: "$",
+      sumText : "dollars",
       } else {
-        mapLegend: "Count:",
-        sumText : "tweets",
+      mapLegend: "Count:",
+      sumText : "tweets",
       }
-      removeSearchBar: @removeSearchBar,
-      predefinedKeywords: @Html(Json.stringify(Json.toJson(predefinedKeywords))),
-      @if(cacheThreshold.isDefined) {
-        cacheThreshold: @cacheThreshold,
+      removeSearchBar: @TMAobject.removeSearchBar,
+      predefinedKeywords: @Html(Json.stringify(Json.toJson(TMAobject.predefinedKeywords))),
+      @if(TMAobject.cacheThreshold.isDefined) {
+      cacheThreshold: @TMAobject.cacheThreshold,
       } else {
-        // The default caching threshold value
-        cacheThreshold: new String("30000"),
+      // The default caching threshold value
+      cacheThreshold: new String("30000"),
       }
-      @if(querySliceMills.isDefined) {
-      querySliceMills: @querySliceMills,
+      @if(TMAobject.querySliceMills.isDefined) {
+      querySliceMills: @TMAobject.querySliceMills,
       } else {
       // The default query slicing milliseconds value
       querySliceMills: new String("2000"),
       }
-      pointmapSamplingDayRange: @pointmapSamplingDayRange,
-      pointmapSamplingLimit: @pointmapSamplingLimit
+      pointmapSamplingDayRange: @TMAobject.pointmapSamplingDayRange,
+      pointmapSamplingLimit: @TMAobject.pointmapSamplingLimit
     }
   </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
@@ -76,7 +76,7 @@
   @if(isDrugMap) {
     <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
   }
-  @sqlDB match {
+  @TMAobject.sqlDB match {
     case DBType.MySQL => {
       <script src='@routes.Assets.versioned("javascripts/common/services-mysql.js")'></script>
     }
