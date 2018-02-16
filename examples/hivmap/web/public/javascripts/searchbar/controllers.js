@@ -42,7 +42,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       $scope.updateSearchBox(keyword);
     };
     //Default keyword is hiv and search
-    $scope.keyword = "happy";
+    $scope.keyword = "hiv";
   })
   .directive('searchBar', function (cloudberryConfig) {
     if(cloudberryConfig.removeSearchBar) {

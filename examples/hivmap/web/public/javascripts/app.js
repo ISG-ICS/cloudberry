@@ -5,7 +5,7 @@ app.controller("AppCtrl", function ($scope, cloudberry, $rootScope) {
   //When websocket is ready, send the initial default query.
   $rootScope.$on('ws-ready', function (event, data) {
     cloudberry.parameters.maptype = 'countmap';
-    cloudberry.parameters.keywords = ['happy'];
+    cloudberry.parameters.keywords = ['hiv'];
     cloudberry.query(cloudberry.parameters);
     console.log('Initial query sent.');
   });
