@@ -57,7 +57,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB, pointmapSamplingDayRange, pointmapSamplingDayRange))
+    Ok(views.html.twittermap.index("TwitterMap", this, false))
   }
 
   def drugmap = Action {
@@ -66,7 +66,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB, pointmapSamplingDayRange, pointmapSamplingDayRange))
+      Ok(views.html.twittermap.index("DrugMap", this, true))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
