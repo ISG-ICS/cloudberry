@@ -7,9 +7,10 @@ angular.module('cloudberry.map')
         setInfoControlCountMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else {
+      else if ($scope.oldMapType == 'countmap'){
         cleanCountMap();
       }
+      $scope.oldMapType = cloudberry.parameters.maptype;
     })
     
     function setCountMapStyle() {
@@ -148,7 +149,8 @@ angular.module('cloudberry.map')
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
-      $scope.resetZoomAndDragFunction(onEachFeature);
+      $scope.resetZoomFunction(onEachFeature);
+      $scope.resetDragFunction(onEachFeature);
     }
     
     /**
@@ -421,6 +423,7 @@ angular.module('cloudberry.map')
     }
     
     // initialize
+    $scope.oldMapType = cloudberry.parameters.maptype;
     if (cloudberry.parameters.maptype == 'countmap'){
       setCountMapStyle();
       $scope.resetPolygonLayers();
@@ -430,8 +433,7 @@ angular.module('cloudberry.map')
     $scope.$watchCollection(
       function() {
         return {
-          'mapResult': cloudberry.mapResult,
-          'totalCount': cloudberry.totalCount,
+          'countmapMapResult': cloudberry.countmapMapResult,
           'doNormalization': $('#toggle-normalize').prop('checked'),
           'doSentiment': $('#toggle-sentiment').prop('checked')
         };
@@ -439,17 +441,14 @@ angular.module('cloudberry.map')
 
       function(newResult, oldValue) {
         if (cloudberry.parameters.maptype == 'countmap'){
-          if (newResult['mapResult'] !== oldValue['mapResult']) {
-            $scope.result = newResult['mapResult'];
+          if (newResult['countmapMapResult'] !== oldValue['countmapMapResult']) {
+            $scope.result = newResult['countmapMapResult'];
             if (Object.keys($scope.result).length !== 0) {
               $scope.status.init = false;
               drawCountMap($scope.result);
             } else {
               drawCountMap($scope.result);
             }
-          }
-          if (newResult['totalCount'] !== oldValue['totalCount']) {
-            $scope.totalCount = newResult['totalCount'];
           }
           if(newResult['doNormalization'] !== oldValue['doNormalization']) {
             $scope.doNormalization = newResult['doNormalization'];

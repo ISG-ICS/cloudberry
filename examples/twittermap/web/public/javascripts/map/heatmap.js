@@ -28,22 +28,13 @@ angular.module('cloudberry.map')
     setHeatMapStyle();
     setInfoControlHeatMap();
     
-    $scope.$watchCollection(
+    $scope.$watch(
       function() {
-        return {
-          'mapResult': cloudberry.mapResult,
-          //'pointsResult': cloudberry.pointsResult,
-          'totalCount': cloudberry.totalCount,
-          'doNormalization': $('#toggle-normalize').prop('checked'),
-          'doSentiment': $('#toggle-sentiment').prop('checked')
-        };
+        return cloudberry.heatmapMapResult;
       },
 
-      function(newResult, oldValue) {
+      function(newResult) {
         if (cloudberry.parameters.maptype == 'heatmap'){
-          if (newResult['totalCount'] !== oldValue['totalCount']) {
-            $scope.totalCount = newResult['totalCount'];
-          }
         }
       }
     );

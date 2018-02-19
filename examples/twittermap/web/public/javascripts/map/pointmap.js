@@ -7,9 +7,10 @@ angular.module('cloudberry.map')
         setInfoControlPointMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else {
+      else if ($scope.oldMapType == 'pointmap'){
         cleanPointMap();
       }
+      $scope.oldMapType = cloudberry.parameters.maptype;
     })
     
     function setPointMapStyle() {
@@ -77,6 +78,13 @@ angular.module('cloudberry.map')
         $scope.currentMarker = null;
       }
     }
+    
+    function zoomPostProcess() {
+      //For rescaling the metric of distance between points and mouse cursor.
+      $scope.currentBounds = $scope.map.getBounds();
+      $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
+      $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
+    }
 
     function setInfoControlPointMap() {
 
@@ -88,7 +96,8 @@ angular.module('cloudberry.map')
 
       $scope.loadGeoJsonFiles(onEachFeature);
       
-      $scope.resetZoomAndDragFunction(onEachFeature);
+      $scope.resetZoomFunction(onEachFeature, zoomPostProcess);
+      $scope.resetDragFunction(onEachFeature);
 
       $scope.mouseOverPointI = 0;
     }
@@ -303,33 +312,26 @@ angular.module('cloudberry.map')
     }
     
     // initialize
+    $scope.oldMapType = cloudberry.parameters.maptype;
     if (cloudberry.parameters.maptype == 'pointmap'){
       setPointMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlPointMap();
     }
     
-    $scope.$watchCollection(
+    $scope.$watch(
       function() {
-        return {
-          'pointsResult': cloudberry.pointsResult,
-          'totalCount': cloudberry.totalCount,
-        };
+        return cloudberry.pointmapMapResult;
       },
 
-      function(newResult, oldValue) {
+      function(newResult) {
         if (cloudberry.parameters.maptype == 'pointmap'){
-          if (newResult['pointsResult'] !== oldValue['pointsResult']) {
-            $scope.result = newResult['pointsResult'];
-            if (Object.keys($scope.result).length !== 0) {
-              $scope.status.init = false;
-              drawPointMap($scope.result);
-            } else {
-              drawPointMap($scope.result);
-            }
-          }
-          if (newResult['totalCount'] !== oldValue['totalCount']) {
-            $scope.totalCount = newResult['totalCount'];
+          $scope.result = newResult;
+          if (Object.keys($scope.result).length !== 0) {
+            $scope.status.init = false;
+            drawPointMap($scope.result);
+          } else {
+            drawPointMap($scope.result);
           }
         }
       }

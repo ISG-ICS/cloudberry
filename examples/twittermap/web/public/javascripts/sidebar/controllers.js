@@ -3,7 +3,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     $scope.result = null;
     $scope.$watch(
       function () {
-        return cloudberry.hashTagResult;
+        return cloudberry.commonHashTagResult;
       },
       function (newResult) {
         $scope.result = newResult;
@@ -40,7 +40,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
     $scope.$watch(
       function () {
-        return cloudberry.tweetResult;
+        return cloudberry.commonTweetResult;
       },
       function (newResult) {
         $scope.results = newResult;

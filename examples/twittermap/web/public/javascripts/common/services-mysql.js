@@ -170,7 +170,7 @@ angular.module('cloudberry.common', [])
 
     var cloudberryService = {
 
-      totalCount: 0,
+      commonTotalCount: 0,
       startDate: startDate,
       parameters: {
         dataset: "twitter_ds_tweet",
@@ -186,8 +186,8 @@ angular.module('cloudberry.common', [])
 
       queryType: "search",
 
-      mapResult: [],
-      timeResult: [],
+      countmapMapResult: [],
+      commonTimeResult: [],
       errorMessage: null,
 
       query: function(parameters) {
@@ -229,18 +229,18 @@ angular.module('cloudberry.common', [])
         var result = JSONbig.parse(event.data);
         switch (result.key) {
           case "sample":
-            cloudberryService.tweetResult = result.value[0];
+            cloudberryService.commonTweetResult = result.value[0];
             break;
           case "batch":
             if(angular.isArray(result.value)) {
-              cloudberryService.timeResult = result.value[0];
-              cloudberryService.mapResult = result.value[1];
+              cloudberryService.commonTimeResult = result.value[0];
+              cloudberryService.countmapMapResult = result.value[1];
             } else { // this is the {key: "done"} message
               console.log("receive :", result.value);
             }
             break;
           case "totalCount":
-            cloudberryService.totalCount = result.value[0][0].count;
+            cloudberryService.commonTotalCount = result.value[0][0].count;
             break;
           case "error":
             console.error(result);

@@ -315,7 +315,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         $scope.map.fitBounds(leafletEvent.target.getBounds());
     }
     
-    $scope.resetZoomAndDragFunction = function resetZoomAndDragFunction(onEachFeature){
+    $scope.resetZoomFunction = function resetZoomFunction(onEachFeature, postProcess = function(){}){
       // remove original zoomfunction associated with zoom event
       if ($scope.zoomfunction) {
         $scope.zoomfunction()
@@ -377,12 +377,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
         }
         
-        //For rescaling the metric of distance between points and mouse cursor.
-        $scope.currentBounds = $scope.map.getBounds();
-        $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
-        $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
+        postProcess();
       });
+    }
 
+    $scope.resetDragFunction = function resetDragFunction(onEachFeature){
       // remove original dragfunction associated with drag event
       if ($scope.dragfunction) {
         $scope.dragfunction()
