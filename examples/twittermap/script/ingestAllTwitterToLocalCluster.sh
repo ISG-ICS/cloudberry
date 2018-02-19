@@ -17,8 +17,8 @@
 #      REVISION:  ---
 #===============================================================================
 
-host=${1:-'http://localhost:19002/aql'}
-nc=${2:-"nc1"}
+host=${1:-'http://localhost:19002/query/service'}
+nc=${2:-"asterix_nc1"}
 echo "Ingesting sample tweets..."
 ./script/ingestTwitterToLocalCluster.sh $host $nc
 
