@@ -1,5 +1,8 @@
 angular.module('cloudberry.map')
   .controller('pointMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+    // map type change handler
+    // initialize the map (styles, zoom/drag handler, etc) when switch to this map
+    // clear the map when switch to other map
     $rootScope.$on('maptypeChange', function (event, data) {
       if (cloudberry.parameters.maptype == 'pointmap') {
         setPointMapStyle();
@@ -13,6 +16,7 @@ angular.module('cloudberry.map')
       $scope.oldMapType = cloudberry.parameters.maptype;
     })
     
+    // set map styles for pointmap
     function setPointMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -65,6 +69,7 @@ angular.module('cloudberry.map')
       });
     }
     
+    // clear pointmap specific data
     function cleanPointMap() {
       $scope.points = [];
       $scope.pointIDs = [];
@@ -79,6 +84,7 @@ angular.module('cloudberry.map')
       }
     }
     
+    // additional operations required by pointmap for zoom event
     function zoomPostProcess() {
       //For rescaling the metric of distance between points and mouse cursor.
       $scope.currentBounds = $scope.map.getBounds();
@@ -86,6 +92,7 @@ angular.module('cloudberry.map')
       $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
     }
 
+    // initialize pointmap
     function setInfoControlPointMap() {
 
       function onEachFeature(feature, layer) {
@@ -311,7 +318,7 @@ angular.module('cloudberry.map')
       }
     }
     
-    // initialize
+    // initialize if the default map type is pointmap
     $scope.oldMapType = cloudberry.parameters.maptype;
     if (cloudberry.parameters.maptype == 'pointmap'){
       setPointMapStyle();
@@ -319,6 +326,7 @@ angular.module('cloudberry.map')
       setInfoControlPointMap();
     }
     
+    // monitor the pointmap related variables, update the pointmap if necessary
     $scope.$watch(
       function() {
         return cloudberry.pointmapMapResult;

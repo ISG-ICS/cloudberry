@@ -39,6 +39,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val querySliceMills: Option[String] = config.getString("querySliceMills")
   val pointmapSamplingDayRange: String = config.getString("pointmap.samplingDayRange").getOrElse("30")
   val pointmapSamplingLimit: String = config.getString("pointmap.samplingLimit").getOrElse("5000")
+  val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
 
   val webSocketFactory = new WebSocketFactory()
   val clientLogger = Logger("client")

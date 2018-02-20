@@ -1,7 +1,7 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
   .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) { // use $rootScope event to get maptypeChange notification
 
-    cloudberry.parameters.maptype = 'countmap';
+    cloudberry.parameters.maptype = config.defaultMapType;
 
     // add an alert bar of IE
     if (L.Browser.ie) {
@@ -25,7 +25,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.infoPromp = config.mapLegend;
     $scope.cityIdSet = new Set();
 
-    // map setting
+    // setting default map styles, zoom level, etc.
     angular.extend($scope, {
       tiles: {
         name: 'Mapbox',
@@ -97,10 +97,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
     });
     
+    // set map styles
     $scope.setStyles = function setStyles(styles) {
       $scope.styles = styles;
     }
 
+    // find the geoIds of the polygons that are within a given bounding box
     $scope.resetGeoIds = function resetGeoIds(bounds, polygons, idTag) {
       cloudberry.parameters.geoIds = [];
         if (polygons != undefined) {
@@ -115,6 +117,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
     }
 
+    // reset the geo level (state, county, city)
     $scope.resetGeoInfo = function resetGeoInfo(level) {
       $scope.status.logicLevel = level;
       cloudberry.parameters.geoLevel = level;
@@ -123,7 +126,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     }
 
 
-    // initialize
+    // initialize the leaflet map
     $scope.init = function() {
       leafletData.getMap().then(function(map) {
         $scope.map = map;
@@ -151,6 +154,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       $scope.resetGeoInfo("state");
     };
     
+    // redraw the polygons with the new map styles
     $scope.resetPolygonLayers = function resetPolygonLayers() {
       if ($scope.polygons.statePolygons) {
         $scope.polygons.statePolygons.setStyle($scope.styles.stateStyle);
@@ -169,6 +173,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
     }
 
+    // update the center and the boundary of the visible area of the map
     function setCenterAndBoundry(features) {
 
       for(var id in features){
@@ -197,7 +202,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         features[id].properties["centerLat"] = (maxLat + minLat) / 2;
       }
     }
-    // load geoJson
+    
+    // load geoJson to get state and county polygons
     $scope.loadGeoJsonFiles = function loadGeoJsonFiles(onEachFeature) {
       if (typeof($scope.polygons.statePolygons) === "undefined" || $scope.polygons.statePolygons == null){
         $http.get("assets/data/state.json")
@@ -236,6 +242,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
     }
 
+    // load geoJson to get city polygons
     $scope.loadCityJsonByBound = function loadCityJsonByBound(onEachFeature){
 
       var bounds = $scope.map.getBounds();
@@ -310,11 +317,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
     }
     
+    // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent)
         $scope.map.fitBounds(leafletEvent.target.getBounds());
     }
     
+    // register the zoom event handler
+    // use postProcess function if additional operations are required
     $scope.resetZoomFunction = function resetZoomFunction(onEachFeature, postProcess = function(){}){
       // remove original zoomfunction associated with zoom event
       if ($scope.zoomfunction) {
@@ -381,6 +391,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       });
     }
 
+    // register the drag event handler
     $scope.resetDragFunction = function resetDragFunction(onEachFeature){
       // remove original dragfunction associated with drag event
       if ($scope.dragfunction) {

@@ -1,5 +1,8 @@
 angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+    // map type change handler
+    // initialize the map (styles, zoom/drag handler, etc) when switch to this map
+    // clear the map when switch to other map
     $rootScope.$on('maptypeChange', function (event, data) {
       if (cloudberry.parameters.maptype == 'countmap') {
         setCountMapStyle();
@@ -13,6 +16,7 @@ angular.module('cloudberry.map')
       $scope.oldMapType = cloudberry.parameters.maptype;
     })
     
+    // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -65,6 +69,7 @@ angular.module('cloudberry.map')
       });
     }
     
+    // clear countmap specific data
     function cleanCountMap() {
 
       function removeMapControl(name){
@@ -81,6 +86,7 @@ angular.module('cloudberry.map')
 
     }
     
+    // initialize countmap
     function setInfoControlCountMap() {
     
       // Interaction function
@@ -422,7 +428,7 @@ angular.module('cloudberry.map')
 
     }
     
-    // initialize
+    // initialize if the default map type is countmap
     $scope.oldMapType = cloudberry.parameters.maptype;
     if (cloudberry.parameters.maptype == 'countmap'){
       setCountMapStyle();
@@ -430,6 +436,7 @@ angular.module('cloudberry.map')
       setInfoControlCountMap();
     }
     
+    // monitor the countmap related variables, update the pointmap if necessary
     $scope.$watchCollection(
       function() {
         return {

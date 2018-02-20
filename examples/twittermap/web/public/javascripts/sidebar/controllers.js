@@ -55,14 +55,37 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     };
   })
 
-    .controller('choosemap', function ($scope, $window, cloudberry, $rootScope) {
+    .controller('choosemap', function ($scope, $window, cloudberry, $rootScope, cloudberryConfig) {
 
         $scope.result = null;
-        cloudberry.parameters.maptype = 'countmap';
+        cloudberry.parameters.maptype = config.defaultMapType;
 
         var icon1 = document.getElementById('img1');
         var icon2 = document.getElementById('img2');
         var icon3 = document.getElementById('img3');
+        
+        switch (cloudberry.parameters.maptype){
+          case "countmap":
+            icon1.src = "/assets/images/aggregation_map.png";
+            icon2.src = "/assets/images/heat_map_no_border.png";
+            icon3.src = "/assets/images/point_map_no_border.png";
+            break;
+            
+          case "heatmap":
+            icon1.src = "/assets/images/aggregation_map_no_border.png";
+            icon2.src = "/assets/images/heat_map.png";
+            icon3.src = "/assets/images/point_map_no_border.png";
+            break;
+            
+          case "pointmap":
+            icon1.src = "/assets/images/aggregation_map_no_border.png";
+            icon2.src = "/assets/images/heat_map_no_border.png";
+            icon3.src = "/assets/images/point_map.png";
+            break;
+            
+          default:
+            break;
+        }
 
         icon1.addEventListener("click", function () {
 
