@@ -67,7 +67,8 @@ public class FileFeedDriver {
                 generator = new Random();
                 multipleClients = true;
             } else {
-                adapterUrls = new String[]{adapterUrl};
+                adapterUrls = new String[1];
+                adapterUrls[0] = adapterUrl;
             }
             clients = new FeedSocketAdapterClient[adapterUrls.length];
 
