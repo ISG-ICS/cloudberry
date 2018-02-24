@@ -54,9 +54,6 @@ public class FileFeedDriver {
         Random generator = null;
         boolean multipleClients = false;
         long startTime = System.currentTimeMillis();
-        long elapsedTime = 0;
-        long elapsedMinuteTime = 0;
-        double ingestionSpeed = 0;
 
         try {
             parser.parseArgument(args);
@@ -76,7 +73,7 @@ public class FileFeedDriver {
 
             for (int i = 0; i < clients.length; i++) {
                 clients[i] = new FeedSocketAdapterClient(adapterUrls[i], port,
-                        batchSize, waitMillSecPerRecord, maxCount, i);
+                        batchSize, waitMillSecPerRecord, maxCount);
                 clients[i].initialize();
             }
 
@@ -95,11 +92,7 @@ public class FileFeedDriver {
                 clients[socketIndex].ingest(nextRecord);
                 ingestionCount++;
                 if (ingestionCount % 100000 == 0) {
-                    elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
-                    elapsedMinuteTime = elapsedTime / 60;
-                    ingestionSpeed = (double) ingestionCount / elapsedTime;
-                    System.err.println(">>> # of ingested records: " + ingestionCount + " Elapsed (s) : " +
-                            elapsedTime + " (m) : " + elapsedMinuteTime + " record/sec : " + ingestionSpeed);
+                    printStats(startTime, ingestionCount);
                 }
             }
         } catch (CmdLineException e) {
@@ -110,22 +103,27 @@ public class FileFeedDriver {
             System.err.println(e.getMessage());
             System.err.println("usage [option] filePath, write filePath as - to read from stdin");
             parser.printUsage(System.err);
-        } catch(IOException e) {
+        } catch (IOException e) {
             System.err.println(e.getMessage());
         } finally {
             try {
+                for (int i = 0; i < clients.length; i++) {
+                    clients[i].finalize();
+                }
                 br.close();
-                elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
-                elapsedMinuteTime = elapsedTime / 60;
-                ingestionSpeed = (double) ingestionCount / elapsedTime;
-                System.err.println(">>> Total # of ingested records: " + ingestionCount + " Elapsed (s) : " +
-                        elapsedTime + " (m) : " + elapsedMinuteTime + " record/sec : " + ingestionSpeed);
+                printStats(startTime, ingestionCount);
+                System.err.println(">>> An ingestion process is done.");
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            for (int i = 0; i < clients.length; i++) {
-                clients[i].finalize();
-            }
         }
+    }
+
+    private void printStats(long startTime, long ingestionCount) {
+        long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;;
+        long elapsedMinuteTime = elapsedTime / 60;
+        double ingestionSpeed = (double) ingestionCount / elapsedTime;
+        System.err.println(">>> # of ingested records: " + ingestionCount + " Elapsed (s) : " +
+                elapsedTime + " (m) : " + elapsedMinuteTime + " record/sec : " + ingestionSpeed);
     }
 }

@@ -16,28 +16,24 @@ public class FeedSocketAdapterClient {
     protected int maxCount;
 
     protected Socket socket;
-    protected int socketNumber;
 
-    public FeedSocketAdapterClient(String adapterUrl, int port, int batchSize,
-                                   int waitMillSecPerRecord, int maxCount, int socketNumber) {
+    public FeedSocketAdapterClient(String adapterUrl, int port, int batchSize, int waitMillSecPerRecord, int maxCount) {
         this.adapterUrl = adapterUrl;
         this.port = port;
         this.maxCount = maxCount;
         this.waitMillSecond = waitMillSecPerRecord;
         this.batchSize = batchSize;
-        this.socketNumber = socketNumber;
     }
 
     public void initialize() throws IOException {
         socket = new Socket(adapterUrl, port);
-        out = socket.getOutputStream();
     }
 
     public void finalize() {
         try {
             out.close();
             socket.close();
-            System.err.println("Socket " + socketNumber + " - # of total ingested records: " + recordCount);
+            System.err.println("Socket " + adapterUrl + ":" + port + " - # of total ingested records: " + recordCount);
         } catch (IOException e) {
             System.err.println("Problem in closing socket against host " + adapterUrl + " on the port " + port);
             e.printStackTrace();
@@ -47,7 +43,7 @@ public class FeedSocketAdapterClient {
     public void ingest(String record) throws IOException{
         recordCount++;
         if (recordCount % 10000 == 0) {
-            System.err.println("Socket " + socketNumber + " - # of ingested records: " + recordCount);
+            System.err.println("Socket " + adapterUrl + ":" + port + " - # of ingested records: " + recordCount);
         }
         byte[] b = record.replaceAll("\\s+", " ").getBytes();
         try {
