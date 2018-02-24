@@ -35,7 +35,7 @@ public class TwitterFeedStreamDriver {
                 int waitMillSecPerRecord = config.getWaitMillSecPerRecord();
                 int maxCount = config.getMaxCount();
                 socketAdapterClient = new FeedSocketAdapterClient(adapterUrl, port,
-                        batchSize, waitMillSecPerRecord, maxCount);
+                        batchSize, waitMillSecPerRecord, maxCount, 0);
                 socketAdapterClient.initialize();
             }
         } else {
