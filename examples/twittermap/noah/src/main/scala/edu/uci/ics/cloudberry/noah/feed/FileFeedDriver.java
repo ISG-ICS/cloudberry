@@ -13,13 +13,13 @@ public class FileFeedDriver {
     @Option(required = true,
             name = "-u",
             aliases = "--url",
-            usage = "url or IP(s) of the feed adapter")
+            usage = "URL(s) or IP(s) of the feed adapter - put a comma between two URLs or IPs to separate them")
     private String adapterUrl;
 
     @Option(required = true,
             name = "-p",
             aliases = "--port",
-            usage = "port of the feed socket")
+            usage = "port of the feed socket(s)")
     private int port;
 
     @Option(name = "-w",
