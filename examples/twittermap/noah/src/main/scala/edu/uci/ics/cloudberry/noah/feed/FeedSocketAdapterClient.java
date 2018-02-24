@@ -27,6 +27,7 @@ public class FeedSocketAdapterClient {
 
     public void initialize() throws IOException {
         socket = new Socket(adapterUrl, port);
+        out = socket.getOutputStream();
     }
 
     public void finalize() {
