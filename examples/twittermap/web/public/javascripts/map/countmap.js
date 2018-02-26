@@ -10,10 +10,9 @@ angular.module('cloudberry.map')
         setInfoControlCountMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else if ($scope.oldMapType == 'countmap'){
+      else if (data[0] == 'countmap'){
         cleanCountMap();
       }
-      $scope.oldMapType = cloudberry.parameters.maptype;
     })
     
     // set map styles for countmap
@@ -429,7 +428,6 @@ angular.module('cloudberry.map')
     }
     
     // initialize if the default map type is countmap
-    $scope.oldMapType = cloudberry.parameters.maptype;
     if (cloudberry.parameters.maptype == 'countmap'){
       setCountMapStyle();
       $scope.resetPolygonLayers();

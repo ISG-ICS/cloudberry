@@ -90,11 +90,12 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         icon1.addEventListener("click", function () {
 
             if (cloudberry.parameters.maptype !== 'countmap') {
+                var premaptype = cloudberry.parameters.maptype;
                 cloudberry.parameters.maptype = 'countmap';
                 icon1.src = "/assets/images/aggregation_map.png";
                 icon2.src = "/assets/images/heat_map_no_border.png";
                 icon3.src = "/assets/images/point_map_no_border.png";
-                $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
+                $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
             }
 
         });
@@ -102,11 +103,12 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         icon2.addEventListener("click", function () {
 
             if (cloudberry.parameters.maptype !== 'heatmap') {
+                var premaptype = cloudberry.parameters.maptype;
                 cloudberry.parameters.maptype = 'heatmap';
                 icon1.src = "/assets/images/aggregation_map_no_border.png";
                 icon2.src = "/assets/images/heat_map.png";
                 icon3.src = "/assets/images/point_map_no_border.png";
-                $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
+                $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
             }
 
         });
@@ -114,11 +116,12 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         icon3.addEventListener("click", function () {
 
             if (cloudberry.parameters.maptype !== 'pointmap') {
+                var premaptype = cloudberry.parameters.maptype;
                 cloudberry.parameters.maptype = 'pointmap';
                 icon1.src = "/assets/images/aggregation_map_no_border.png";
                 icon2.src = "/assets/images/heat_map_no_border.png";
                 icon3.src = "/assets/images/point_map.png";
-                $rootScope.$emit("maptypeChange", cloudberry.parameters.maptype);
+                $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
             }
 
         });

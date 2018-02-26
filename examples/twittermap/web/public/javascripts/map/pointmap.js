@@ -10,10 +10,9 @@ angular.module('cloudberry.map')
         setInfoControlPointMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else if ($scope.oldMapType == 'pointmap'){
+      else if (data[0] == 'pointmap'){
         cleanPointMap();
       }
-      $scope.oldMapType = cloudberry.parameters.maptype;
     })
     
     // set map styles for pointmap
@@ -73,7 +72,6 @@ angular.module('cloudberry.map')
     function cleanPointMap() {
       $scope.points = [];
       $scope.pointIDs = [];
-      //$scope.map.off('mousemove', $scope.onMapMouseMove);
       if($scope.pointsLayer != null) {
         $scope.map.removeLayer($scope.pointsLayer);
         $scope.pointsLayer = null;
@@ -319,7 +317,6 @@ angular.module('cloudberry.map')
     }
     
     // initialize if the default map type is pointmap
-    $scope.oldMapType = cloudberry.parameters.maptype;
     if (cloudberry.parameters.maptype == 'pointmap'){
       setPointMapStyle();
       $scope.resetPolygonLayers();

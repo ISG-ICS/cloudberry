@@ -3,7 +3,6 @@ angular.module('cloudberry.map')
     $rootScope.$on('maptypeChange', function (event, data) {
       if (cloudberry.parameters.maptype == 'heatmap') {
         $scope.resetPolygonLayers();
-        //setInfoControlHeatMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
       else {
