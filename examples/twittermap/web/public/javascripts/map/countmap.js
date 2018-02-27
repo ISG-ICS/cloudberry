@@ -89,6 +89,7 @@ angular.module('cloudberry.map')
     function setInfoControlCountMap() {
     
       // Interaction function
+      // highlight a polygon when the mouse is pointing at it
       function highlightFeature(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
           var layer = leafletEvent.target;
@@ -100,6 +101,7 @@ angular.module('cloudberry.map')
         }
       }
 
+      // remove the highlight interaction function for the polygons
       function resetHighlight(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
           var style;
@@ -123,6 +125,10 @@ angular.module('cloudberry.map')
         }
       }
 
+      // add feature to each polygon
+      // highlight a polygon when mouseover
+      // remove the highlight when mouseout
+      // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
         layer.on({
           mouseover: highlightFeature,

@@ -82,7 +82,8 @@ angular.module('cloudberry.map')
       }
     }
     
-    // additional operations required by pointmap for zoom event
+    // additional operations required by pinmap for zoom event
+    // update the map boundary and x/y axis scale
     function zoomPostProcess() {
       //For rescaling the metric of distance between points and mouse cursor.
       $scope.currentBounds = $scope.map.getBounds();
@@ -93,6 +94,8 @@ angular.module('cloudberry.map')
     // initialize pointmap
     function setInfoControlPointMap() {
 
+      // add feature to each polygon
+      // when a user click on a polygon, the map will zoom in to fit that polygon in the view
       function onEachFeature(feature, layer) {
         layer.on({
           click: $scope.zoomToFeature

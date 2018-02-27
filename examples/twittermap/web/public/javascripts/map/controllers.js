@@ -326,11 +326,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     // register the zoom event handler
     // use postProcess function if additional operations are required
     $scope.resetZoomFunction = function resetZoomFunction(onEachFeature, postProcess = function(){}){
-      // remove original zoomfunction associated with zoom event
+      // disassociate original zoomfunction with zoom event
       if ($scope.zoomfunction) {
         $scope.zoomfunction()
       }
-      // add new zoomfunction
+      // associate zoomfunction with leaflet zoom event
+      // update logical map level, boundary, and visible polygons
       $scope.zoomfunction = $scope.$on("leafletDirectiveMap.zoomend", function() {
         if ($scope.map) {
           $scope.status.zoomLevel = $scope.map.getZoom();
@@ -393,11 +394,12 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
     // register the drag event handler
     $scope.resetDragFunction = function resetDragFunction(onEachFeature){
-      // remove original dragfunction associated with drag event
+      // disassociate original dragfunction with drag event
       if ($scope.dragfunction) {
         $scope.dragfunction()
       }
-      // add new dragfunction
+      // associate dragfunction with leaflet drag event
+      // update boundary and reset visible polygons
       $scope.dragfunction = $scope.$on("leafletDirectiveMap.dragend", function() {
         if (!$scope.status.init) {
           $scope.bounds = $scope.map.getBounds();
