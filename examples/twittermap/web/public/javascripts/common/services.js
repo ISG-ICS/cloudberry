@@ -268,7 +268,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
       countmapMapResult: [],
       countmapPartialMapResult: [],
-      commonTimeResult: [],
+      commonTimeSeriesResult: [],
       commonHashTagResult: [],
       errorMessage: null,
 
@@ -449,14 +449,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.commonHashTagResult = result.value[1];
             }
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
               cloudberryService.commonHashTagResult = result.value[2];
             }
@@ -479,7 +479,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "pointsTime":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
             }
             break;
           case "totalCount":

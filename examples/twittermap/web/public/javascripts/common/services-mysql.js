@@ -187,7 +187,7 @@ angular.module('cloudberry.common', [])
       queryType: "search",
 
       countmapMapResult: [],
-      commonTimeResult: [],
+      commonTimeSeriesResult: [],
       errorMessage: null,
 
       query: function(parameters) {
@@ -233,7 +233,7 @@ angular.module('cloudberry.common', [])
             break;
           case "batch":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.countmapMapResult = result.value[1];
             } else { // this is the {key: "done"} message
               console.log("receive :", result.value);

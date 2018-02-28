@@ -46,7 +46,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
     $scope.$watch(
       function() {
-        return cloudberry.commonTimeResult;
+        return cloudberry.commonTimeSeriesResult;
       },
 
       function(newResult) {

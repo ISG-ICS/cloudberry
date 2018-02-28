@@ -214,7 +214,7 @@ angular.module('cloudberry.common', [])
       queryType: "search",
 
       countmapMapResult: [],
-      commonTimeResult: [],
+      commonTimeSeriesResult: [],
       commonHashTagResult: [],
       errorMessage: null,
 
@@ -261,7 +261,7 @@ angular.module('cloudberry.common', [])
             break;
           case "batch":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.countmapMapResult = result.value[1];
               cloudberryService.commonHashTagResult = result.value[2];
             } else { // this is the {key: "done"} message

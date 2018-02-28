@@ -257,7 +257,7 @@ angular.module('cloudberry.common', [])
       queryType: "search",
 
       countmapMapResult: [],
-      commonTimeResult: [],
+      commonTimeSeriesResult: [],
       commonHashTagResult: [],
       errorMessage: null,
 
@@ -303,7 +303,7 @@ angular.module('cloudberry.common', [])
             cloudberryService.commonTweetResult = result.value[0];
             break;
           case "batch":
-            cloudberryService.commonTimeResult = result.value[0];
+            cloudberryService.commonTimeSeriesResult = result.value[0];
             cloudberryService.countmapMapResult = result.value[1];
             cloudberryService.commonHashTagResult = result.value[2];
             break;
