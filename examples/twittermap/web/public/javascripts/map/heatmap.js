@@ -1,15 +1,5 @@
 angular.module('cloudberry.map')
   .controller('heatMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
-    $rootScope.$on('maptypeChange', function (event, data) {
-      if (cloudberry.parameters.maptype == 'heatmap') {
-        $scope.resetPolygonLayers();
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
-      }
-      else {
-        cleanHeatMap();
-      }
-    })
-    
     function setHeatMapStyle() {
     }
     
@@ -26,6 +16,16 @@ angular.module('cloudberry.map')
     // initialize
     setHeatMapStyle();
     setInfoControlHeatMap();
+    
+    $rootScope.$on('maptypeChange', function (event, data) {
+      if (cloudberry.parameters.maptype == 'heatmap') {
+        $scope.resetPolygonLayers();
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+      }
+      else {
+        cleanHeatMap();
+      }
+    })
     
     $scope.$watch(
       function() {

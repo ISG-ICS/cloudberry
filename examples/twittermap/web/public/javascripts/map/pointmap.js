@@ -1,20 +1,5 @@
 angular.module('cloudberry.map')
   .controller('pointMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
-    // map type change handler
-    // initialize the map (styles, zoom/drag handler, etc) when switch to this map
-    // clear the map when switch to other map
-    $rootScope.$on('maptypeChange', function (event, data) {
-      if (cloudberry.parameters.maptype == 'pointmap') {
-        setPointMapStyle();
-        $scope.resetPolygonLayers();
-        setInfoControlPointMap();
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
-      }
-      else if (data[0] == 'pointmap'){
-        cleanPointMap();
-      }
-    })
-    
     // set map styles for pointmap
     function setPointMapStyle() {
       $scope.setStyles({
@@ -325,6 +310,21 @@ angular.module('cloudberry.map')
       $scope.resetPolygonLayers();
       setInfoControlPointMap();
     }
+    
+    // map type change handler
+    // initialize the map (styles, zoom/drag handler, etc) when switch to this map
+    // clear the map when switch to other map
+    $rootScope.$on('maptypeChange', function (event, data) {
+      if (cloudberry.parameters.maptype == 'pointmap') {
+        setPointMapStyle();
+        $scope.resetPolygonLayers();
+        setInfoControlPointMap();
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+      }
+      else if (data[0] == 'pointmap'){
+        cleanPointMap();
+      }
+    })
     
     // monitor the pointmap related variables, update the pointmap if necessary
     $scope.$watch(
