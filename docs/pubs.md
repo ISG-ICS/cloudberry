@@ -5,7 +5,7 @@ subtitle:
 ---
 
 ## Papers
-* **Supporting Interactive Analytics and Visualization on Large Data**, Jianfeng Jia, Ph.D. Dissertation[[PDF](../img/jianfeng-thesis.pdf)], University of California, Irvine, 2017
+* **Supporting Interactive Analytics and Visualization on Large Data**, Jianfeng Jia, Ph.D. Dissertation[[PDF](../img/jianfeng-thesis.pdf)][[PPT]](https://docs.google.com/presentation/d/1KWJRS0GFFAmHtVGktWrZ3KJbhg2SOWzT7v1h44Noh3E/edit?usp=sharing), University of California, Irvine, 2017
 * **Drum: A Rhythmic Approach to Interactive Analytics on Large Data**, Jianfeng Jia, Chen Li, Michael J. Carey, [IEEE BigData 2017](http://cci.drexel.edu/bigdata/bigdata2017/index.html) [[PDF](../img/cloudberry-drum-query-slicing-camera-ready.pdf)][[PPT](../img/cloudberry-drum-slides-ieee-bigdata.pptx)][[Long version](../img/cloudberry-drum-query-slicing-long.pdf)][[Video](https://youtu.be/gztxneqSIDE)]
 * **Caching Geospatial Objects in Web Browsers**, Taewoo Kim, Vidhyasagar Thirumaraiselvan, Jianfeng Jia, Chen Li, [ACM SIGSPATIAL 2017](http://sigspatial2017.sigspatial.org) (Demo Paper)[[PDF](../img/Caching_Geospatial_Objects_In_Web_Browsers.pdf)].
 * **Visual Analytics Ecology for Complex System Testing**,
