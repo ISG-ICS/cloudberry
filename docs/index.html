@@ -1,23 +1,21 @@
 ---
 layout: page
 title: Cloudberry
-subtitle: <b>Fast Analytics on Big Data</b>
+subtitle: <b>Big Data Visualization</b>
 bigimg: /img/twittermap_big_screen.jpg
 ---
 
 <section class="intro">
     <div>
-        Cloudberry is a general-purpose system composed of distributed middleware on top of
-        a big data management system, <a href="http://asterixdb.apache.org">Apache AsterixDB</a>, to support efficient
-        real-time analytics and visualization on very large data sets.
+        Cloudberry is a general-purpose middleware system to support visualization on large amounts of data. 
         <br>
         <h3>Key Features</h3>
         <ul>
-            <li>Semi-structured data model</li>
-            <li>Indexing support for spatial, temporal, and textual attributes</li>
-            <li>Sub-second response for expensive OLAP queries</li>
-            <li>Real-time analytics on fast data</li>
-            <li>Feed adapters for ingesting continuous data</li>
+            <li>Sub-second response time to visualize big data</li>
+            <li>Supporting various visualization interfaces such as choropleth maps, heatmap, and pin maps;</li>
+            <li>Connectors to different data management systems (such as Apache AsterixDB, MySQL, Postgres)</li>
+            <li>Real time visualization on "now data";</li>
+            <li>Restful API for different frontends.</li>
         </ul>
     </div>
 
@@ -28,12 +26,13 @@ bigimg: /img/twittermap_big_screen.jpg
         <div>
 
             <h3 id="architecture">Architecture</h3>
-            <img src="{{site.url}}/img/architecture.png" width="100%"/>
+            <img src="{{site.url}}/img/architecture.png" width="80%"/>
         </div>
         <div>
-            <h3 id="example-use-case">Demo: TwitterMap</h3>
-            <a href="http://cloudberry.ics.uci.edu/demos/twittermap/"><img src="{{site.url}}/img/twitter-map.png" width="100%"/></a>
-          This live prototype supports interactive analytics and visualization on more than one billion tweets with new data continuously being ingested.
-          Check out this <a href="https://www.youtube.com/watch?v=XwlRm0jcsU4">video</a>.
+            <h3 id="example-use-case">Prototype: TwitterMap</h3>
+          This live prototype supports interactive analytics and visualization on more than one billion tweets with new data continuously being ingested. Check this <a href="https://www.youtube.com/watch?v=XwlRm0jcsU4">video</a>.<br>
+            <a href="http://cloudberry.ics.uci.edu/apps/twittermap"><img src="{{site.url}}/img/twitter-map.png" width="80%"/></a><br>
+
+
         </div>
 </section>
