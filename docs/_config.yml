@@ -28,7 +28,7 @@ description: Cloudberry is a general-purpose system composed of distributed midd
 navbar-links:
   Home : ""
   Demo :
-    - TwitterMap: "http://cloudberry.ics.uci.edu/demos/twittermap/"
+    - TwitterMap: "http://cloudberry.ics.uci.edu/apps/twittermap"
   Resources:
     - Quick Start: "quick-start"
     - Documentation: "documentation"
