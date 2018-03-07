@@ -11,6 +11,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
+      tweetDBresult: null,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
@@ -41,7 +42,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     };
   })
-  .service('cloudberry', function($timeout, cloudberryConfig, MapResultCache) {
+  .service('cloudberry', function($timeout, $rootScope, cloudberryConfig, MapResultCache) {
     var startDate = config.startDate;
     var endDate = config.endDate;
     var defaultNonSamplingDayRange = 1500;
@@ -434,6 +435,36 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // unrecognized map type
             break;
         }
+      },
+
+      querypin: function(pinid){
+
+          var setpinfilter = [{
+              field: "id",
+              relation: "in",
+              values: pinid
+          }];
+
+          var pinDBresult = (JSON.stringify({
+              dataset:"twitter.ds_tweet",
+              filter: setpinfilter,
+              select:{
+                  order: ["-create_at"],
+                  limit: defaultSamplingSize,
+                  offset: 0,
+                  field: ["text","user.id","create_at","user.name","user.profile_image_url"]
+              },
+              transform:{
+                  wrap:{
+                      id:"pinDBtweet",
+                      category:"pinDBtweet"
+                  }
+              }
+          }));
+          //changes the id's type from string to int64.
+          pinDBresult = pinDBresult.replace(/"(\d+)"/,'[$1]');
+
+          ws.send(pinDBresult);
       }
     };
 
@@ -484,6 +515,11 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "totalCount":
             cloudberryService.commonTotalCount = result.value[0][0].count;
+            break;
+          case "pinDBtweet":
+            cloudberryConfig.tweetDBresult = result.value[0][0];
+            console.log("rootScope send the query " + cloudberryConfig.tweetDBresult);
+            $rootScope.$emit("TweetData",cloudberryConfig.tweetDBresult);
             break;
           case "error":
             console.error(result);

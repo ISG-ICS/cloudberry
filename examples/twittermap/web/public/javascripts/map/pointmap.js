@@ -158,7 +158,7 @@ angular.module('cloudberry.map')
         $scope.scale_x = 0;
         $scope.scale_y = 0;
 
-        //To generate Tweet Popup content from Twitter API (oembed.json?) response JSON
+        /*//To generate Tweet Popup content from Twitter API (oembed.json?) response JSON
         function translateOembedTweet(tweetJSON) {
           var userName = "";
           try {
@@ -218,6 +218,70 @@ angular.module('cloudberry.map')
             + "</div>\n";
 
           return tweetTemplate;
+        }*/
+
+        function translateTweetdatatoShow(tweetJSON) {
+            var userName = "";
+            try {
+                userName = tweetJSON['user.name'];
+            }
+            catch (e){
+                console.log("author_name missing in this Tweet. :" + e.message);
+            }
+
+            /*var userPhotoUrl = "";
+            try {
+                userPhotoUrl= tweetJSON['user.profile_image_url'];
+                console.log("userPhotoUrl = " + userPhotoUrl);
+            }
+            catch (e){
+                console.log("user.profile_image_url missing in this Tweet.:");
+            }*/
+
+            var tweetText = "";
+            try {
+                tweetText = tweetJSON.text;
+            }
+            catch (e){
+                console.log("Text missing in this Tweet. :" + e.message);
+            }
+            if (tweetText === "" || null || undefined)
+            {
+                tweetText = "Fail to get Tweets data."
+            }
+
+            var tweetTime = "";
+            try {
+                var created_at = new Date(tweetJSON['create_at']);
+                tweetTime = created_at.toTimeString() + "\\t" + created_at.toDateString();
+                console.log("tweetTime = " + tweetTime);
+
+            }
+            catch (e){
+                console.log("Time missing in this Tweet. :" + e.message);
+            }
+
+            var tweetTemplate = "\n"
+                + "<div class=\"tweet\">\n "
+                + "  <div class=\"tweet-body\">"
+                + "    <div class=\"user-info\"> "
+                + "      <span class=\"name\"> "
+                + userName
+                + "      </span> "
+                //+ "      <img src=\""
+                //+ userPhotoUrl
+                //+ "\" style=\"width: 32px; display: inline;\">\n"
+                + "    </div>\n	"
+                + "    <span class=\"tweet-time\">"
+                + tweetTime
+                + "    </span>\n	 "
+                + "    <span class=\"tweet-text\">"
+                + tweetText
+                + "    </span>\n	 "
+                + "  </div>\n	"
+                + "</div>\n";
+
+            return tweetTemplate;
         }
 
         $scope.map.on('mouseintent', onMapMouseIntent);
@@ -253,7 +317,8 @@ angular.module('cloudberry.map')
               fillColor : '#b8e3ff',
               fillOpacity : 1.0
             }).addTo($scope.map);
-            //(3) Send request to twitter.com for the oembed json tweet content.
+
+            /*//(3) Send request to twitter.com for the oembed json tweet content.
             var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + $scope.pointIDs[i];
             $http.jsonp(url).success(function (data) {
               var tweetContent = translateOembedTweet(data);
@@ -266,7 +331,21 @@ angular.module('cloudberry.map')
               $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
               $scope.popUpTweet.setContent(tweetContent);
               $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+            });*/
+
+            //send the query to cloudberry.
+            var passID = "" + $scope.pointIDs[i];
+            cloudberry.querypin(passID);
+
+            //receives the result.
+            $rootScope.$on("TweetData",function (event, args){
+                //cloudberryConfig.tweetDBResult is a json object
+                var tweetContent = translateTweetdatatoShow(cloudberryConfig.tweetDBresult);
+                $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+                $scope.popUpTweet.setContent(tweetContent);
+                $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
             });
+
           }
         }
 
