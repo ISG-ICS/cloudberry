@@ -425,6 +425,24 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
       });
     }
+    
+    //For randomize coordinates by bounding_box
+    var gseed;
+
+    function CustomRandom() {
+      var x = Math.sin(gseed++) * 10000;
+      return x - Math.floor(x);
+    }
+
+    function randomNorm(mean, stdev) {
+      return mean + (((CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom()) - 3) / 3) * stdev;
+    }
+
+    $scope.rangeRandom = function rangeRandom(seed, minV, maxV){
+      gseed = seed;
+      var ret = randomNorm((minV + maxV) / 2, (maxV - minV) / 16);
+      return ret;
+    }
   })
   .directive("map", function () {
     return {

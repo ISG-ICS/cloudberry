@@ -1,28 +1,119 @@
 angular.module('cloudberry.map')
   .controller('heatMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     function setHeatMapStyle() {
+      $scope.setStyles({
+        initStyle: {
+          weight: 0.5,
+          fillOpacity: 0,
+          color: 'white'
+        },
+        stateStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        stateUpperStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        countyStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        countyUpperStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        cityStyle: {
+          fillColor: '#f7f7f7',
+          weight: 0.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0
+        },
+        hoverStyle: {
+          weight: 0.7,
+          color: '#666',
+          fillOpacity: 0
+        },
+        colors: [ '#ffffff', '#92d1e1', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
+        sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
+      });
     }
     
     function cleanHeatMap() {
+      if ($scope.heatLayer){
+        $scope.map.removeLayer($scope.heatLayer);
+        $scope.heatLayer = null;
+      }
     }
     
     function setInfoControlHeatMap() {
-      //TODO For HeatMap use later.
+      function onEachFeature(feature, layer) {
+        layer.on({
+          click: $scope.zoomToFeature
+        });
+      }
+
+      $scope.loadGeoJsonFiles(onEachFeature);
+      
+      $scope.resetZoomFunction(onEachFeature);
+      $scope.resetDragFunction(onEachFeature);
+
+      if (!$scope.heat){
+        $scope.heat = L.heatLayer([]);
+      }
     }
     
     function drawHeatMap(result) {
+      function setHeatPoints(points) {
+        $scope.heat.setLatLngs(points);
+        $scope.heat.redraw();
+      }
+      
+      if (!$scope.heatLayer){
+        $scope.heatLayer = $scope.heat;
+        $scope.map.addLayer($scope.heatLayer);
+      }
+        
+      var points = [];
+      for (var i = 0; i < result.length; i++) {
+        if (result[i].hasOwnProperty('coordinate')){
+          points.push([result[i].coordinate[1], result[i].coordinate[0]]);
+        }
+        else {
+          points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]);
+        }
+      }
+      setHeatPoints(points);
     }
     
     // initialize
-    setHeatMapStyle();
-    setInfoControlHeatMap();
+    if (cloudberry.parameters.maptype == 'heatmap'){
+      setHeatMapStyle();
+      $scope.resetPolygonLayers();
+      setInfoControlHeatMap();
+    }
     
     $rootScope.$on('maptypeChange', function (event, data) {
       if (cloudberry.parameters.maptype == 'heatmap') {
+        setHeatMapStyle();
         $scope.resetPolygonLayers();
+        setInfoControlHeatMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else {
+      else if (data[0] == 'heatmap'){
         cleanHeatMap();
       }
     })
@@ -34,6 +125,13 @@ angular.module('cloudberry.map')
 
       function(newResult) {
         if (cloudberry.parameters.maptype == 'heatmap'){
+          $scope.result = newResult;
+          if (Object.keys($scope.result).length !== 0) {
+            $scope.status.init = false;
+            drawHeatMap($scope.result);
+          } else {
+            drawHeatMap($scope.result);
+          }
         }
       }
     );

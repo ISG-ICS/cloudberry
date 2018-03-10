@@ -37,6 +37,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
+  val heatmapSamplingDayRange: String = config.getString("heatmap.samplingDayRange").getOrElse("30")
+  val heatmapSamplingLimit: String = config.getString("heatmap.samplingLimit").getOrElse("5000")
   val pointmapSamplingDayRange: String = config.getString("pointmap.samplingDayRange").getOrElse("30")
   val pointmapSamplingLimit: String = config.getString("pointmap.samplingLimit").getOrElse("5000")
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")

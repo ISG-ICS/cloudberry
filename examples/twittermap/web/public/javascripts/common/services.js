@@ -47,6 +47,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
+    var defaultHeatmapSamplingDayRange = parseInt(config.heatmapSamplingDayRange);
+    var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
     var defaultPointmapSamplingDayRange = parseInt(config.pointmapSamplingDayRange);
     var defaultPointmapLimit = parseInt(config.pointmapSamplingLimit);
     var ws = new WebSocket(cloudberryConfig.ws);
@@ -368,6 +370,62 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
             
           case 'heatmap':
+            var heatJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultHeatmapSamplingDayRange, parameters.geoIds),
+              select: {
+                order: ["-create_at"],
+                limit: defaultHeatmapLimit,
+                offset: 0,
+                field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+              },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
+              },
+              transform: {
+                wrap: {
+                  id: "heat",
+                  category: "heat"
+                }
+              }
+            }));
+
+            // for the time histogram
+            var heatTimeJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+              group: {
+                by: [{
+                  field: "create_at",
+                  apply: {
+                    name: "interval",
+                    args: {
+                      unit: parameters.timeBin
+                    }
+                  },
+                  as: parameters.timeBin
+                }],
+                aggregate: [{
+                  field: "*",
+                  apply: {
+                    name: "count"
+                  },
+                  as: "count"
+                }]
+              },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
+              },
+              transform: {
+                wrap: {
+                  id: "heatTime",
+                  category: "heatTime"
+                }
+              }
+            }));
+
+            ws.send(heatJson);
+            ws.send(heatTimeJson);
             break;
 
           case 'pointmap':
@@ -470,6 +528,17 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "batchHeatMapRequest":
             break;
           case "batchPointMapRequest":
+            break;
+          case "heat":
+            if(angular.isArray(result.value)) {
+              cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+              cloudberryService.heatmapMapResult = result.value[0];
+            }
+            break;
+          case "heatTime":
+            if(angular.isArray(result.value)) {
+              cloudberryService.commonTimeSeriesResult = result.value[0];
+            }
             break;
           case "points":
             if(angular.isArray(result.value)) {
