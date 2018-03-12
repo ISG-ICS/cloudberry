@@ -204,17 +204,17 @@ angular.module('cloudberry.map')
                 + "<div class=\"tweet\">\n "
                 + "  <div class=\"tweet-body\">"
                 + "    <div class=\"user-info\"> "
-                + "      <span class=\"name\"> "
-                + userName
-                + "      </span> "
                 + "      <img src=\""
                 + userPhotoUrl
                 + "\" style=\"width: 32px; display: inline;\">\n"
+                + "      <span class=\"name\" style='color: #0e90d2; font-weight: bold'> "
+                + userName
+                + "      </span> "
                 + "    </div>\n	"
-                + "    <span class=\"tweet-time\">"
+                + "    <span class=\"tweet-time\" style='color: lightgrey'>"
                 + tweetTime
                 + "    </span>\n	 "
-                + "    <span class=\"tweet-text\">"
+                + "    <span class=\"tweet-text\" style='color: #0f0f0f'>"
                 + tweetText
                 + "    </span>\n	 "
                 + "  </div>\n	"
