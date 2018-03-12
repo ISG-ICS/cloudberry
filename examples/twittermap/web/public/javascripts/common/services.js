@@ -445,6 +445,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               values: pinid
           }];
 
+          //sql
           var pinDBresult = (JSON.stringify({
               dataset:"twitter.ds_tweet",
               filter: setpinfilter,
@@ -461,6 +462,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   }
               }
           }));
+
+
           //changes the id's type from string to int64.
           pinDBresult = pinDBresult.replace(/"(\d+)"/,'[$1]');
 
@@ -518,7 +521,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "pinDBtweet":
             cloudberryConfig.tweetDBresult = result.value[0][0];
-            console.log("rootScope send the query " + cloudberryConfig.tweetDBresult);
             $rootScope.$emit("TweetData",cloudberryConfig.tweetDBresult);
             break;
           case "error":

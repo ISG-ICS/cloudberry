@@ -158,68 +158,7 @@ angular.module('cloudberry.map')
         $scope.scale_x = 0;
         $scope.scale_y = 0;
 
-        /*//To generate Tweet Popup content from Twitter API (oembed.json?) response JSON
-        function translateOembedTweet(tweetJSON) {
-          var userName = "";
-          try {
-            userName = tweetJSON.author_name;
-          }
-          catch (e){
-            console.log("author_name missing in this Tweet.:" + e.message);
-          }
-
-          var userLink = "";
-          try {
-            userLink = tweetJSON.author_url;
-          }
-          catch (e) {
-            console.log("author_url missing in this Tweet.:" + e.message);
-          }
-
-          var tweetLink = "";
-          try {
-            tweetLink = tweetJSON.url;
-          }
-          catch (e){
-            console.log("url missing in this Tweet.:" + e.message);
-          }
-
-          var tweetText = "";
-          try {
-            var tweetHtml = new DOMParser().parseFromString(tweetJSON.html, 'text/html');
-            tweetText = tweetHtml.getElementsByTagName('p')[0].innerHTML;
-          }
-          catch (e){
-            console.log("html missing in this Tweet.:" + e.message);
-          }
-
-          var tweetTemplate = "\n"
-            + "<div class=\"tweet\">\n "
-            + "  <div class=\"tweet-body\">"
-            + "    <div class=\"user-info\"> "
-            + "      <span class=\"name\"> "
-            + "        <a href=\""
-            + userLink
-            + "        \"> "
-            + "@"
-            + userName
-            + "        </a>"
-            + "      </span> "
-            + "    </div>\n	"
-            + "    <div class=\"tweet-text\">"
-            + tweetText
-            + "\n &nbsp;&nbsp;<a href=\""
-            + tweetLink
-            + "      \"> "
-            + "[more]..."
-            + "      </a>"
-            + "    </div>\n	 "
-            + "  </div>\n	"
-            + "</div>\n";
-
-          return tweetTemplate;
-        }*/
-
+        //shows each point's info in Front-end.
         function translateTweetdatatoShow(tweetJSON) {
             var userName = "";
             try {
@@ -229,14 +168,14 @@ angular.module('cloudberry.map')
                 console.log("author_name missing in this Tweet. :" + e.message);
             }
 
-            /*var userPhotoUrl = "";
+            var userPhotoUrl = "";
             try {
                 userPhotoUrl= tweetJSON['user.profile_image_url'];
                 console.log("userPhotoUrl = " + userPhotoUrl);
             }
             catch (e){
                 console.log("user.profile_image_url missing in this Tweet.:");
-            }*/
+            }
 
             var tweetText = "";
             try {
@@ -268,9 +207,9 @@ angular.module('cloudberry.map')
                 + "      <span class=\"name\"> "
                 + userName
                 + "      </span> "
-                //+ "      <img src=\""
-                //+ userPhotoUrl
-                //+ "\" style=\"width: 32px; display: inline;\">\n"
+                + "      <img src=\""
+                + userPhotoUrl
+                + "\" style=\"width: 32px; display: inline;\">\n"
                 + "    </div>\n	"
                 + "    <span class=\"tweet-time\">"
                 + tweetTime
@@ -318,21 +257,6 @@ angular.module('cloudberry.map')
               fillOpacity : 1.0
             }).addTo($scope.map);
 
-            /*//(3) Send request to twitter.com for the oembed json tweet content.
-            var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + $scope.pointIDs[i];
-            $http.jsonp(url).success(function (data) {
-              var tweetContent = translateOembedTweet(data);
-              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-              $scope.popUpTweet.setContent(tweetContent);
-              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-            }).
-            error(function() {
-              var tweetContent = "Sorry! It seems the tweet with that ID has been deleted by the author.@_@";
-              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-              $scope.popUpTweet.setContent(tweetContent);
-              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-            });*/
-
             //send the query to cloudberry.
             var passID = "" + $scope.pointIDs[i];
             cloudberry.querypin(passID);
@@ -345,7 +269,6 @@ angular.module('cloudberry.map')
                 $scope.popUpTweet.setContent(tweetContent);
                 $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
             });
-
           }
         }
 
