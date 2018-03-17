@@ -11,7 +11,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
-      tweetDBresult: null,
+      pinMapOneTweetResult: null,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
@@ -437,7 +437,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }
       },
 
-      querypin: function(pinid){
+      pinMapOneTweetQuery: function(pinid){
 
           var setpinfilter = [{
               field: "id",
@@ -446,7 +446,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }];
 
           //sql
-          var pinDBresult = (JSON.stringify({
+          var pinDBquery = (JSON.stringify({
               dataset:"twitter.ds_tweet",
               filter: setpinfilter,
               select:{
@@ -457,17 +457,17 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform:{
                   wrap:{
-                      id:"pinDBtweet",
-                      category:"pinDBtweet"
+                      id:"pinMapOneTweetResult",
+                      category:"pinMapOneTweetResult"
                   }
               }
           }));
 
 
           //changes the id's type from string to int64.
-          pinDBresult = pinDBresult.replace(/"(\d+)"/,'[$1]');
+          pinDBquery = pinDBquery.replace(/"(\d+)"/,'[$1]');
 
-          ws.send(pinDBresult);
+          ws.send(pinDBquery);
       }
     };
 
@@ -519,9 +519,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "totalCount":
             cloudberryService.commonTotalCount = result.value[0][0].count;
             break;
-          case "pinDBtweet":
-            cloudberryConfig.tweetDBresult = result.value[0][0];
-            $rootScope.$emit("TweetData",cloudberryConfig.tweetDBresult);
+          case "pinMapOneTweetResult":
+            cloudberryConfig.pinMapOneTweetResult = result.value[0][0];
+            $rootScope.$emit("TweetData",cloudberryConfig.pinMapOneTweetResult);
             break;
           case "error":
             console.error(result);

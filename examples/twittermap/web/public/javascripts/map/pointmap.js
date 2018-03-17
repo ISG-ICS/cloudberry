@@ -259,12 +259,12 @@ angular.module('cloudberry.map')
 
             //send the query to cloudberry.
             var passID = "" + $scope.pointIDs[i];
-            cloudberry.querypin(passID);
+            cloudberry.pinMapOneTweetQuery(passID);
 
             //receives the result.
             $rootScope.$on("TweetData",function (event, args){
-                //cloudberryConfig.tweetDBResult is a json object
-                var tweetContent = translateTweetdatatoShow(cloudberryConfig.tweetDBresult);
+                //cloudberryConfig.pinMapOneTweetResult is a json object
+                var tweetContent = translateTweetdatatoShow(cloudberryConfig.pinMapOneTweetResult);
                 $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
                 $scope.popUpTweet.setContent(tweetContent);
                 $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
