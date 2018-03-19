@@ -1,8 +1,4 @@
 package edu.uci.ics.cloudberry.noah.adm;
-
-import com.fasterxml.jackson.databind.JsonNode;
-import org.apache.commons.lang3.StringEscapeUtils;
-
 public class User {
 
     public static final String ID = "id";
@@ -34,27 +30,6 @@ public class User {
         ADM.keyValueToSbWithComma(userSB, FOLLOWERS_COUNT, String.valueOf(user.getFollowersCount()));
         ADM.keyValueToSbWithComma(userSB, FRIENDS_COUNT, String.valueOf(user.getFriendsCount()));
         ADM.keyValueToSb(userSB, STATUS_COUNT, String.valueOf(user.getStatusesCount()));
-        userSB.append("}");
-
-        return userSB.toString();
-    }
-    public static String toADM(JsonNode rootNode) {
-        userSB.delete(0,userSB.length());
-        userSB.append("{");
-        JsonNode userNode = rootNode.path("user");
-        if(!userNode.isNull()) {
-            ADM.keyValueToSbWithComma(userSB, User.ID, ADM.mkADMConstructor("int64", String.valueOf(userNode.path("id").asLong())));
-            ADM.keyValueToSbWithComma(userSB, User.NAME, ADM.mkQuote(userNode.path("name").asText()));
-            ADM.keyValueToSbWithComma(userSB, User.SCREEN_NAME, ADM.mkQuoteOnly(userNode.path("screen_name").asText()));
-            ADM.keyValueToSbWithComma(userSB, User.PROFILE_IMAGE_URL, ADM.mkQuoteOnly(userNode.path("profile_image_url").asText()));
-            ADM.keyValueToSbWithComma(userSB, User.LANG, ADM.mkQuoteOnly(userNode.path("lang").asText()));
-            ADM.keyValueToSbWithComma(userSB, User.LOCATION, ADM.mkQuote(userNode.path("location").asText()));
-            ADM.keyValueToSbWithComma(userSB, User.CREATE_AT, ADM.mkDateStringFromTweet(userNode.path("created_at").asText()));
-            ADM.keyValueToSbWithComma(userSB, User.DESCRIPTION, ADM.mkQuote(StringEscapeUtils.unescapeHtml4(userNode.path("description").asText())));
-            ADM.keyValueToSbWithComma(userSB, User.FOLLOWERS_COUNT, String.valueOf(userNode.path("followers_count").asInt()));
-            ADM.keyValueToSbWithComma(userSB, User.FRIENDS_COUNT, String.valueOf(userNode.path("friends_count").asInt()));
-            ADM.keyValueToSb(userSB, User.STATUS_COUNT, String.valueOf(userNode.path("statuses_count").asInt()));
-        }
         userSB.append("}");
 
         return userSB.toString();
