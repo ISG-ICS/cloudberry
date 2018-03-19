@@ -261,14 +261,16 @@ angular.module('cloudberry.map')
             var passID = "" + $scope.pointIDs[i];
             cloudberry.pinMapOneTweetQuery(passID);
 
-            //receives the result.
-            $rootScope.$on("TweetData",function (event, args){
-                //cloudberryConfig.pinMapOneTweetResult is a json object
-                var tweetContent = translateTweetdatatoShow(cloudberryConfig.pinMapOneTweetResult);
-                $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-                $scope.popUpTweet.setContent(tweetContent);
-                $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-            });
+            //receives the result and update content of tweet.
+              var tweetContent = translateTweetdatatoShow(cloudberryConfig.pinMapOneTweetResult);
+
+              $scope.$watch(function () {
+                  tweetContent = translateTweetdatatoShow(cloudberryConfig.pinMapOneTweetResult);
+              });
+
+              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+              $scope.popUpTweet.setContent(tweetContent);
+              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
           }
         }
 
@@ -326,7 +328,7 @@ angular.module('cloudberry.map')
       else if (data[0] == 'pointmap'){
         cleanPointMap();
       }
-    })
+    });
     
     // monitor the pointmap related variables, update the pointmap if necessary
     $scope.$watch(

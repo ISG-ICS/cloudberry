@@ -42,7 +42,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     };
   })
-  .service('cloudberry', function($timeout, $rootScope, cloudberryConfig, MapResultCache) {
+  .service('cloudberry', function($timeout, cloudberryConfig, MapResultCache) {
     var startDate = config.startDate;
     var endDate = config.endDate;
     var defaultNonSamplingDayRange = 1500;
@@ -521,7 +521,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "pinMapOneTweetResult":
             cloudberryConfig.pinMapOneTweetResult = result.value[0][0];
-            $rootScope.$emit("TweetData",cloudberryConfig.pinMapOneTweetResult);
             break;
           case "error":
             console.error(result);
