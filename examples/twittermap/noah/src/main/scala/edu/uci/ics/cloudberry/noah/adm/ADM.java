@@ -16,22 +16,29 @@ public class ADM {
     public static final SimpleDateFormat ADMDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     public static final SimpleDateFormat ADMTimeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
 
+    public static StringBuilder sbConstructor=new StringBuilder();
     public static String mkADMConstructor(String constructor, String content) {
-        return constructor + "(\"" + content + "\")";
+        sbConstructor.delete(0,sbConstructor.length());
+        sbConstructor.append(constructor).append("(\"").append(content).append("\")");
+        return sbConstructor.toString();
     }
 
     public static String mkInt64Constructor(long value) {
         return mkADMConstructor("int64", String.valueOf(value));
     }
+
     public static String mkInt8Constructor(String value) {
         return mkADMConstructor("int8", value);
     }
+
     public static String mkInt32Constructor(String value) {
         return mkADMConstructor("int32", value);
     }
+
     public static String mkFloatConstructor(String value) {
         return mkADMConstructor("float", (Float.toString(Float.parseFloat(value))) + "f");
     }
+
     public static String mkDateConstructor(Date jdate) {
         return "date(\"" + ADMDateFormat.format(jdate) + "\")";
     }
@@ -39,8 +46,26 @@ public class ADM {
     public static String mkDateTimeConstructor(Date jdate) {
         return "datetime(\"" + ADMDateFormat.format(jdate) + "T" + ADMTimeFormat.format(jdate) + "\")";
     }
+    public static StringBuilder sbDateTime=new StringBuilder();
+    public static String mkDateTimeStringFromTweet(String srcDateTimeString) {
+        if(srcDateTimeString.equals(""))
+            return null;
+        sbDateTime.delete(0,sbDateTime.length());
+        sbDateTime.append("parse_datetime(\"").append(srcDateTimeString).append("\",\"W MMM DD hh:mm:ss z YYYY\")");
+        return sbDateTime.toString();
+    }
 
-    public static Rectangle coordinates2Rectangle(GeoLocation[][] boundingBoxCoordinates){
+    public static StringBuilder sbDate = new StringBuilder();
+
+    public static String mkDateStringFromTweet(String srcDateTimeString) {
+        if (srcDateTimeString.equals(""))
+            return null;
+        sbDate.delete(0, sbDate.length());
+        sbDate.append("parse_date(\"").append(srcDateTimeString).append("\",\"W MMM DD hh:mm:ss z YYYY\")");
+        return sbDate.toString();
+    }
+
+    public static Rectangle coordinates2Rectangle(GeoLocation[][] boundingBoxCoordinates) {
         if (boundingBoxCoordinates.length != 1 || boundingBoxCoordinates[0].length != 4) {
             throw new IllegalArgumentException("unknown boundingBoxCoordinates");
         }
@@ -64,7 +89,7 @@ public class ADM {
                 boundingBoxCoordinates[0][3].getLatitude()));
 
         // AsterixDB is unhappy with this kind of point "rectangular"
-        if (swLog == neLog && swLat == neLat){
+        if (swLog == neLog && swLat == neLat) {
             swLog = neLog - 0.0000001;
             swLat = neLat - 0.0000001;
         }
@@ -74,19 +99,19 @@ public class ADM {
         }
         return new Rectangle(swLog, swLat, neLog, neLat);
     }
-
+    public static StringBuilder sbRectangleConstructor=new StringBuilder();
     public static String mkRectangleConstructor(GeoLocation[][] boundingBoxCoordinates)
             throws IllegalArgumentException {
-        StringBuilder sb = new StringBuilder("rectangle");
-
+        sbRectangleConstructor.delete(0,sbRectangleConstructor.length());
+        sbRectangleConstructor.append("rectangle");
         Rectangle rectangle = coordinates2Rectangle(boundingBoxCoordinates);
-        sb.append("(\"").append(rectangle.swLog()).append(',')
+        sbRectangleConstructor.append("(\"").append(rectangle.swLog()).append(',')
                 .append(rectangle.swLat())
                 .append(' ')
                 .append(rectangle.neLog()).append(',')
                 .append(rectangle.neLat())
                 .append("\")");
-        return sb.toString();
+        return sbRectangleConstructor.toString();
     }
 
     public static void keyValueToSb(StringBuilder sb, String key, String val) {
@@ -97,43 +122,51 @@ public class ADM {
         keyValueToSb(sb, key, val);
         sb.append(",");
     }
-
+    public static StringBuilder sbPoint=new StringBuilder();
     public static String mkPoint(GeoLocation geoLocation) {
-        return "point(\"" + geoLocation.getLongitude() + "," + geoLocation.getLatitude() + "\")";
+        sbPoint.delete(0,sbPoint.length());
+        sbPoint.append("point(\"" ).append(geoLocation.getLongitude()).append(",").append(geoLocation.getLatitude()).append("\")");
+        return  sbPoint.toString();
     }
 
     public static String mkPoint(String lng, String lat) {
         return "point(\"" + lng + "," + lat + "\")";
     }
+    public static StringBuilder sbStringSetHash=new StringBuilder();
     public static String mkStringSet(HashtagEntity[] hashtagEntities) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{{");
+        sbStringSetHash.delete(0,sbStringSetHash.length());
+        sbStringSetHash.append("{{");
         for (int i = 0; i < hashtagEntities.length; i++) {
             if (i > 0) {
-                sb.append(',');
+                sbStringSetHash.append(',');
             }
-            sb.append(mkQuote(hashtagEntities[i].getText()));
+            sbStringSetHash.append(mkQuote(hashtagEntities[i].getText()));
         }
-        sb.append("}}");
-        return sb.toString();
+        sbStringSetHash.append("}}");
+        return sbStringSetHash.toString();
     }
-
+    public static StringBuilder sbStringSetUserMention=new StringBuilder();
     public static String mkStringSet(UserMentionEntity[] userMentionEntities) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{{");
+        sbStringSetUserMention.delete(0,sbStringSetUserMention.length());
+        sbStringSetUserMention.append("{{");
         for (int i = 0; i < userMentionEntities.length; i++) {
             if (i > 0) {
-                sb.append(',');
+                sbStringSetUserMention.append(',');
             }
-            sb.append(userMentionEntities[i].getId());
+            sbStringSetUserMention.append(userMentionEntities[i].getId());
         }
-        sb.append("}}");
-        return sb.toString();
+        sbStringSetUserMention.append("}}");
+        return sbStringSetUserMention.toString();
     }
-
+    public static StringBuilder sbQuote=new StringBuilder();
     public static String mkQuote(String str) {
-        StringBuilder sb = new StringBuilder();
-        sb.append('"').append(StringEscapeUtils.escapeJava(str)).append('"');
-        return sb.toString();
+        sbQuote.delete(0,sbQuote.length());
+        sbQuote.append('"').append(StringEscapeUtils.escapeJava(str)).append('"');
+        return sbQuote.toString();
+    }
+    public static String mkQuoteOnly(String str){
+        sbQuote.delete(0,sbQuote.length());
+        sbQuote.append('"').append(str).append('"');
+        return sbQuote.toString();
     }
 }
