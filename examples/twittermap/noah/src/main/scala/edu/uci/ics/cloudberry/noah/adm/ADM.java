@@ -46,24 +46,8 @@ public class ADM {
     public static String mkDateTimeConstructor(Date jdate) {
         return "datetime(\"" + ADMDateFormat.format(jdate) + "T" + ADMTimeFormat.format(jdate) + "\")";
     }
-    public static StringBuilder sbDateTime=new StringBuilder();
-    public static String mkDateTimeStringFromTweet(String srcDateTimeString) {
-        if(srcDateTimeString.equals(""))
-            return null;
-        sbDateTime.delete(0,sbDateTime.length());
-        sbDateTime.append("parse_datetime(\"").append(srcDateTimeString).append("\",\"W MMM DD hh:mm:ss z YYYY\")");
-        return sbDateTime.toString();
-    }
 
     public static StringBuilder sbDate = new StringBuilder();
-
-    public static String mkDateStringFromTweet(String srcDateTimeString) {
-        if (srcDateTimeString.equals(""))
-            return null;
-        sbDate.delete(0, sbDate.length());
-        sbDate.append("parse_date(\"").append(srcDateTimeString).append("\",\"W MMM DD hh:mm:ss z YYYY\")");
-        return sbDate.toString();
-    }
 
     public static Rectangle coordinates2Rectangle(GeoLocation[][] boundingBoxCoordinates) {
         if (boundingBoxCoordinates.length != 1 || boundingBoxCoordinates[0].length != 4) {
@@ -162,11 +146,6 @@ public class ADM {
     public static String mkQuote(String str) {
         sbQuote.delete(0,sbQuote.length());
         sbQuote.append('"').append(StringEscapeUtils.escapeJava(str)).append('"');
-        return sbQuote.toString();
-    }
-    public static String mkQuoteOnly(String str){
-        sbQuote.delete(0,sbQuote.length());
-        sbQuote.append('"').append(str).append('"');
         return sbQuote.toString();
     }
 }
