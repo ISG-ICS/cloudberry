@@ -41,19 +41,4 @@ public class Place {
         placeSB.append("}");
         return placeSB.toString();
     }
-    public static String toADM(twitter4j.Place place) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-        ADM.keyValueToSbWithComma(sb, COUNTRY, ADM.mkQuote(place.getCountry()));
-        ADM.keyValueToSbWithComma(sb, COUNTRY_CODE, ADM.mkQuote(place.getCountryCode()));
-        ADM.keyValueToSbWithComma(sb, FULL_NAME, ADM.mkQuote(place.getFullName()));
-        ADM.keyValueToSbWithComma(sb, ID, ADM.mkQuote(String.valueOf(place.getId())));
-        ADM.keyValueToSbWithComma(sb, NAME, ADM.mkQuote(place.getName()));
-        ADM.keyValueToSbWithComma(sb, PLACE_TYPE, ADM.mkQuote(place.getPlaceType()));
-        ADM.keyValueToSb(sb, BOUNDING_BOX, ADM.mkRectangleConstructor(place.getBoundingBoxCoordinates()));
-        sb.append("}");
-        return sb.toString();
-    }
-
-
 }

@@ -3,8 +3,6 @@ package edu.uci.ics.cloudberry.noah.adm;
 import edu.uci.ics.cloudberry.util.Rectangle;
 import org.apache.commons.lang3.StringEscapeUtils;
 import twitter4j.GeoLocation;
-import twitter4j.HashtagEntity;
-import twitter4j.UserMentionEntity;
 
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -99,21 +97,6 @@ public class ADM {
         }
         return new Rectangle(swLog, swLat, neLog, neLat);
     }
-    public static StringBuilder sbRectangleConstructor=new StringBuilder();
-    public static String mkRectangleConstructor(GeoLocation[][] boundingBoxCoordinates)
-            throws IllegalArgumentException {
-        sbRectangleConstructor.delete(0,sbRectangleConstructor.length());
-        sbRectangleConstructor.append("rectangle");
-        Rectangle rectangle = coordinates2Rectangle(boundingBoxCoordinates);
-        sbRectangleConstructor.append("(\"").append(rectangle.swLog()).append(',')
-                .append(rectangle.swLat())
-                .append(' ')
-                .append(rectangle.neLog()).append(',')
-                .append(rectangle.neLat())
-                .append("\")");
-        return sbRectangleConstructor.toString();
-    }
-
     public static void keyValueToSb(StringBuilder sb, String key, String val) {
         sb.append(mkQuote(key)).append(":").append(val.replaceAll("\\s+", " "));
     }
@@ -131,32 +114,6 @@ public class ADM {
 
     public static String mkPoint(String lng, String lat) {
         return "point(\"" + lng + "," + lat + "\")";
-    }
-    public static StringBuilder sbStringSetHash=new StringBuilder();
-    public static String mkStringSet(HashtagEntity[] hashtagEntities) {
-        sbStringSetHash.delete(0,sbStringSetHash.length());
-        sbStringSetHash.append("{{");
-        for (int i = 0; i < hashtagEntities.length; i++) {
-            if (i > 0) {
-                sbStringSetHash.append(',');
-            }
-            sbStringSetHash.append(mkQuote(hashtagEntities[i].getText()));
-        }
-        sbStringSetHash.append("}}");
-        return sbStringSetHash.toString();
-    }
-    public static StringBuilder sbStringSetUserMention=new StringBuilder();
-    public static String mkStringSet(UserMentionEntity[] userMentionEntities) {
-        sbStringSetUserMention.delete(0,sbStringSetUserMention.length());
-        sbStringSetUserMention.append("{{");
-        for (int i = 0; i < userMentionEntities.length; i++) {
-            if (i > 0) {
-                sbStringSetUserMention.append(',');
-            }
-            sbStringSetUserMention.append(userMentionEntities[i].getId());
-        }
-        sbStringSetUserMention.append("}}");
-        return sbStringSetUserMention.toString();
     }
     public static StringBuilder sbQuote=new StringBuilder();
     public static String mkQuote(String str) {
