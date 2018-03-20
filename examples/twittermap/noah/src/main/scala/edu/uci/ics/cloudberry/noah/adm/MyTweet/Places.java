@@ -20,22 +20,28 @@ public class Places {
     public String getId() {
         return id;
     }
-    public String getUrl(){
+
+    public String getUrl() {
         return url;
     }
-    public String getPlace_type(){
+
+    public String getPlace_type() {
         return place_type;
     }
-    public String getName(){
+
+    public String getName() {
         return name;
     }
-    public String getFull_name(){
+
+    public String getFull_name() {
         return full_name;
     }
-    public String getCountry_code(){
+
+    public String getCountry_code() {
         return country_code;
     }
-    public String getCountry(){
+
+    public String getCountry() {
         return country;
     }
 
@@ -85,6 +91,6 @@ public class Places {
 
     @Override
     public String toString() {
-        return String.format("{\"country\":\"%s\",\"country_code\":\"%s\",\"full_name\":\"%s\",\"id\":\"%s\",\"name\":\"%s\",\"place_type\":\"%s\",\"bounding_box\":%s",getCountry(),getCountry_code(),getFull_name(),getId(),getName(),getPlace_type(),getBounding_box().toString());
+        return String.format("{\"country\":\"%s\",\"country_code\":\"%s\",\"full_name\":\"%s\",\"id\":\"%s\",\"name\":\"%s\",\"place_type\":\"%s\",\"bounding_box\":%s", getCountry(), getCountry_code(), getFull_name(), getId(), getName(), getPlace_type(), getBounding_box().toString());
     }
 }

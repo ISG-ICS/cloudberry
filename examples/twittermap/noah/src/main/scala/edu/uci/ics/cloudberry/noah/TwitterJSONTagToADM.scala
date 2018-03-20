@@ -49,7 +49,7 @@ object TwitterJSONTagToADM {
   def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = {
     try {
       val admJacksonJson = Tweet.toADM(ln, usGeoGnosis, true)
-      if(admJacksonJson.length>0) println(admJacksonJson)
+//      if(admJacksonJson.length>0) println(admJacksonJson)
     }
     catch {
       case e: Throwable => {

@@ -17,32 +17,11 @@ public class User {
     public static final String FRIENDS_COUNT = "friends_count";
     public static final String STATUS_COUNT = "statues_count";
 
-    public static StringBuilder userSB=new StringBuilder();
-    //
-    public static String toADM(twitter4j.User user) {
-
-        userSB.delete(0,userSB.length());
-        userSB.append("{");
-        ADM.keyValueToSbWithComma(userSB, ID, ADM.mkADMConstructor("int64", String.valueOf(user.getId())));
-        ADM.keyValueToSbWithComma(userSB, NAME, ADM.mkQuote(user.getName()));
-        ADM.keyValueToSbWithComma(userSB, SCREEN_NAME, ADM.mkQuote(user.getScreenName()));
-        ADM.keyValueToSbWithComma(userSB, PROFILE_IMAGE_URL, ADM.mkQuote(user.getProfileImageURL()));
-        ADM.keyValueToSbWithComma(userSB, LANG, ADM.mkQuote(user.getLang()));
-        ADM.keyValueToSbWithComma(userSB, LOCATION, ADM.mkQuote(user.getLocation()));
-        ADM.keyValueToSbWithComma(userSB, CREATE_AT, ADM.mkDateConstructor(user.getCreatedAt()));
-        ADM.keyValueToSbWithComma(userSB, DESCRIPTION, ADM.mkQuote(user.getDescription()));
-        ADM.keyValueToSbWithComma(userSB, FOLLOWERS_COUNT, String.valueOf(user.getFollowersCount()));
-        ADM.keyValueToSbWithComma(userSB, FRIENDS_COUNT, String.valueOf(user.getFriendsCount()));
-        ADM.keyValueToSb(userSB, STATUS_COUNT, String.valueOf(user.getStatusesCount()));
-        userSB.append("}");
-
-        return userSB.toString();
-    }
     public static String toADM(JsonNode rootNode) {
-        userSB.delete(0,userSB.length());
+        StringBuilder userSB = new StringBuilder();
         userSB.append("{");
         JsonNode userNode = rootNode.path("user");
-        if(!userNode.isNull()) {
+        if (!userNode.isNull()) {
             ADM.keyValueToSbWithComma(userSB, User.ID, ADM.mkADMConstructor("int64", String.valueOf(userNode.path("id").asLong())));
             ADM.keyValueToSbWithComma(userSB, User.NAME, ADM.mkQuote(userNode.path("name").asText()));
             ADM.keyValueToSbWithComma(userSB, User.SCREEN_NAME, ADM.mkQuoteOnly(userNode.path("screen_name").asText()));
@@ -56,7 +35,6 @@ public class User {
             ADM.keyValueToSb(userSB, User.STATUS_COUNT, String.valueOf(userNode.path("statuses_count").asInt()));
         }
         userSB.append("}");
-
         return userSB.toString();
     }
 }
