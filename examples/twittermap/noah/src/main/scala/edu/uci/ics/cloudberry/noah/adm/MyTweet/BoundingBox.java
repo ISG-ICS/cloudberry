@@ -1,7 +1,10 @@
 package edu.uci.ics.cloudberry.noah.adm.MyTweet;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 public class BoundingBox {
     private Double[][][] coordinates;
+    @JsonIgnoreProperties(ignoreUnknown = true)
     private String type;
     //
 

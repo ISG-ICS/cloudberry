@@ -22,8 +22,8 @@ public class MyTweet {
     @JsonIgnoreProperties(ignoreUnknown = true)
     private String in_reply_to_screen_name;
     private User user;//
-    private Coordinates coordinates;//
-    private Places place;//
+    private Coordinate coordinate;//
+    private MyPlace place;//
     @JsonIgnoreProperties(ignoreUnknown = true)
     private long quoted_status_id;
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -133,8 +133,8 @@ public class MyTweet {
         return in_reply_to_status_id;
     }
 
-    public Coordinates getCoordinates() {
-        return coordinates;
+    public Coordinate getCoordinates() {
+        return coordinate;
     }
 
     public long getIn_reply_to_user_id() {
@@ -169,8 +169,8 @@ public class MyTweet {
         return user;
     }
 
-    public void setCoordinates(Coordinates coordinates) {
-        this.coordinates = coordinates;
+    public void setCoordinates(Coordinate coordinates) {
+        this.coordinate = coordinates;
     }
 
     public void setCreated_at(String created_at) {
@@ -181,7 +181,7 @@ public class MyTweet {
         return quoted_status_id;
     }
 
-    public Places getPlace() {
+    public MyPlace getPlace() {
         return place;
     }
 
@@ -229,7 +229,7 @@ public class MyTweet {
         this.truncated = truncated;
     }
 
-    public void setPlace(Places place) {
+    public void setPlace(MyPlace place) {
         this.place = place;
     }
 
