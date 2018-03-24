@@ -160,6 +160,14 @@ angular.module('cloudberry.map')
 
         //shows each point's info in Front-end.
         function translateTweetdatatoShow(tweetJSON) {
+            var tweetid = "";
+            try {
+                tweetid = tweetJSON['id'];
+            }
+            catch (e){
+                console.log("tweetid missing in this Tweet. :" + e.message);
+            }
+
             var userName = "";
             try {
                 userName = tweetJSON['user.name'];
@@ -170,8 +178,7 @@ angular.module('cloudberry.map')
 
             var userPhotoUrl = "";
             try {
-                userPhotoUrl= tweetJSON['user.profile_image_url'];
-                console.log("userPhotoUrl = " + userPhotoUrl);
+                userPhotoUrl = tweetJSON['user.profile_image_url'];
             }
             catch (e){
                 console.log("user.profile_image_url missing in this Tweet.:");
@@ -184,41 +191,60 @@ angular.module('cloudberry.map')
             catch (e){
                 console.log("Text missing in this Tweet. :" + e.message);
             }
-            if (tweetText === "" || null || undefined)
-            {
-                tweetText = "Fail to get Tweets data."
-            }
 
             var tweetTime = "";
             try {
                 var created_at = new Date(tweetJSON['create_at']);
-                tweetTime = created_at.toTimeString() + "\\t" + created_at.toDateString();
-                console.log("tweetTime = " + tweetTime);
-
+                tweetTime = created_at.toDateString();
             }
             catch (e){
                 console.log("Time missing in this Tweet. :" + e.message);
             }
 
-            var tweetTemplate = "\n"
-                + "<div class=\"tweet\">\n "
-                + "  <div class=\"tweet-body\">"
-                + "    <div class=\"user-info\"> "
-                + "      <img src=\""
-                + userPhotoUrl
-                + "\" style=\"width: 32px; display: inline;\">\n"
-                + "      <span class=\"name\" style='color: #0e90d2; font-weight: bold'> "
-                + userName
-                + "      </span> "
-                + "    </div>\n	"
-                + "    <span class=\"tweet-time\" style='color: lightgrey'>"
-                + tweetTime
-                + "    </span>\n	 "
-                + "    <span class=\"tweet-text\" style='color: #0f0f0f'>"
-                + tweetText
-                + "    </span>\n	 "
-                + "  </div>\n	"
+            var tweetLink = "";
+            try {
+                tweetLink = "https://twitter.com/" + userName + "/status/" + tweetid;
+            }
+            catch (e){
+                console.log("tweetLink missing in this Tweet.:" + e.message);
+            }
+
+            var tweetTemplate;
+
+            //handles exceptions:
+            if(tweetText == "" || null || undefined){
+                tweetTemplate = "\n"
+                + "<div>"
+                + "Fail to get Tweets data."
                 + "</div>\n";
+            }
+            else {
+                //presents all the information.
+                tweetTemplate = "\n"
+                    + "<div class=\"tweet\">\n "
+                    + "  <div class=\"tweet-body\">"
+                    + "    <div class=\"user-info\"> "
+                    + "      <img src=\""
+                    + userPhotoUrl
+                    + "\" onerror=\" this.src='/assets/images/default_pinicon.jpg'\" style=\"width: 32px; display: inline; \">\n"
+                    + "      <span class=\"name\" style='color: #0e90d2; font-weight: bold'> "
+                    + userName
+                    + "      </span> "
+                    + "    </div>\n	"
+                    + "    <span class=\"tweet-time\" style='color: darkgray'>"
+                    + tweetTime
+                    + "    <br></span>\n	 "
+                    + "    <span class=\"tweet-text\" style='color: #0f0f0f'>"
+                    + tweetText
+                    + "    </span><br>\n	 "
+                    + "\n <a href=\""
+                    + tweetLink
+                    + "\"> "
+                    + tweetLink
+                    + "</a>"
+                    + "  </div>\n	"
+                    + "</div>\n";
+            }
 
             return tweetTemplate;
         }
@@ -261,16 +287,16 @@ angular.module('cloudberry.map')
             var passID = "" + $scope.pointIDs[i];
             cloudberry.pinMapOneTweetQuery(passID);
 
-            //receives the result and update content of tweet.
-              var tweetContent = translateTweetdatatoShow(cloudberryConfig.pinMapOneTweetResult);
-
+            //monitors and receives the result with updating content of each pin tweet.
               $scope.$watch(function () {
-                  tweetContent = translateTweetdatatoShow(cloudberryConfig.pinMapOneTweetResult);
+                  return cloudberryConfig.pinMapOneTweetResult;
+              }, function (newVal) {
+                  var tweetContent = translateTweetdatatoShow(newVal);
+                  $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+                  $scope.popUpTweet.setContent(tweetContent);
+                  $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
               });
 
-              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-              $scope.popUpTweet.setContent(tweetContent);
-              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
           }
         }
 

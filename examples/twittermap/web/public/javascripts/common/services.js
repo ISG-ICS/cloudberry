@@ -453,7 +453,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   order: ["-create_at"],
                   limit: defaultSamplingSize,
                   offset: 0,
-                  field: ["text","user.id","create_at","user.name","user.profile_image_url"]
+                  field: ["id","text","user.id","create_at","user.name","user.profile_image_url"]
               },
               transform:{
                   wrap:{
@@ -462,7 +462,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   }
               }
           }));
-
 
           //changes the id's type from string to int64.
           pinDBquery = pinDBquery.replace(/"(\d+)"/,'[$1]');
