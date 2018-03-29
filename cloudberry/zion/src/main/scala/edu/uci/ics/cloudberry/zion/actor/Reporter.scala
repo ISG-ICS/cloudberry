@@ -27,8 +27,10 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
         timer.cancel()
         context.become(hungry(DateTime.now()), discardOld = false)
       } else {
-        val result = queue.dequeue()
-        out ! Json.toJson(result.content)
+        //val result = queue.dequeue()
+        //out ! Json.toJson(result.content)
+        var result = queue.dequeueAll(_ => true)
+        out ! Json.toJson(result.last.content)
       }
     }
     case any =>
