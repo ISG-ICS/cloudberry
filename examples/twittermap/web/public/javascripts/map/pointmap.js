@@ -287,18 +287,17 @@ angular.module('cloudberry.map')
             var passID = "" + $scope.pointIDs[i];
             cloudberry.pinMapOneTweetQuery(passID);
 
-            //monitors and receives the result with updating content of each pin tweet.
-              $scope.$watch(function () {
-                  return cloudberryConfig.pinMapOneTweetResult;
-              }, function (newVal) {
-                  var tweetContent = translateTweetdatatoShow(newVal);
-                  $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-                  $scope.popUpTweet.setContent(tweetContent);
-                  $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-              });
-
           }
         }
+          //monitors and receives the result with updating content of each pin tweet.
+          $scope.$watch(function () {
+              return cloudberryConfig.pinMapOneTweetResult;
+          }, function (newVal) {
+              var tweetContent = translateTweetdatatoShow(newVal);
+              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+              $scope.popUpTweet.setContent(tweetContent);
+              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+          });
 
         function isMouseOverAPoint(x, y) {
           for (var i = 0; i < $scope.points.length; i += 1) {
