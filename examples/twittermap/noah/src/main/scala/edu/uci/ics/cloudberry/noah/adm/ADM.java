@@ -50,7 +50,7 @@ public class ADM {
         if (srcDateTimeString.equals(""))
             return null;
         StringBuilder sbDate=new StringBuilder();
-        sbDate.append("parse_date(\"").append(srcDateTimeString).append("\",\"W MMM DD hh:mm:ss z YYYY\")");
+        sbDate.append("get_date_from_datetime(parse_datetime(\"").append(srcDateTimeString).append("\",\"W MMM DD hh:mm:ss z YYYY\"))");
         return sbDate.toString();
     }
 
