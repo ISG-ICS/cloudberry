@@ -59,9 +59,10 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
 
       sender.expectMsg(JsArray(Seq(JsArray(Seq(Json.obj("a" -> 4), Json.obj("b" -> 8))))))
 
-      dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
-      dataManager.reply(Seq(sourceInfo))
-      dataManager.expectMsg(create)
+      //Disabled this suggest views in RESTSolver.
+      //dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
+      //dataManager.reply(Seq(sourceInfo))
+      //dataManager.expectMsg(create)
       ok
     }
     "send the NoSuchData msg if the request is on a unknown dataset" in {
