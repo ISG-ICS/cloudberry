@@ -27,6 +27,7 @@ class RESTSolver(val dataManager: ActorRef,
       futureResult.map(result => (queries, result)).foreach { case (qs, r) =>
         out ! transform.transform(r)
         //Disabled this suggest views to avoid competing resources in DB with ongoing ProgressiveSolver.
+        //TODO Once we have view management mechanism, could use a common service to request a view creation.
         //qs.foreach(suggestViews)
       }
   }
