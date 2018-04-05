@@ -5,10 +5,10 @@ import org.eclipse.jetty.websocket.client.WebSocketClient
 
 class WebSocketFactory {
 
-  def newClient(): WebSocketClient = {
+  def newClient(maxTextMessageSize: Int): WebSocketClient = {
     val socket = new WebSocketClient()
-    //TODO Should be configurable in later PR.
-    socket.setMaxTextMessageBufferSize(5*1024*1024)
+    socket.setMaxTextMessageBufferSize(maxTextMessageSize)
+    socket.getPolicy.setMaxTextMessageSize(maxTextMessageSize)
     socket
   }
 
