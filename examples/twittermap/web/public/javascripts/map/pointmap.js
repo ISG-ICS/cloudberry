@@ -52,7 +52,7 @@ angular.module('cloudberry.map')
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       });
     }
-    
+
     // clear pointmap specific data
     function cleanPointMap() {
       $scope.points = [];
@@ -66,7 +66,7 @@ angular.module('cloudberry.map')
         $scope.currentMarker = null;
       }
     }
-    
+
     // additional operations required by pinmap for zoom event
     // update the map boundary and x/y axis scale
     function zoomPostProcess() {
@@ -88,13 +88,13 @@ angular.module('cloudberry.map')
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
-      
+
       $scope.resetZoomFunction(onEachFeature, zoomPostProcess);
       $scope.resetDragFunction(onEachFeature);
 
       $scope.mouseOverPointI = 0;
     }
-    
+
     // function for drawing pointmap
     function drawPointMap(result) {
 
@@ -123,7 +123,7 @@ angular.module('cloudberry.map')
 
       //To initialize the points layer
       if (!$scope.pointsLayer) {
-       
+
         $scope.pointsLayer = new L.TileLayer.MaskCanvas({
           opacity: 0.8,
           radius: 1.2,//80,
@@ -162,7 +162,7 @@ angular.module('cloudberry.map')
         function translateTweetdatatoShow(tweetJSON) {
             var tweetid = "";
             try {
-                tweetid = tweetJSON['id'];
+                tweetid = tweetJSON["id"];
             }
             catch (e){
                 console.log("tweetid missing in this Tweet. :" + e.message);
@@ -170,7 +170,7 @@ angular.module('cloudberry.map')
 
             var userName = "";
             try {
-                userName = tweetJSON['user.name'];
+                userName = tweetJSON["user.name"];
             }
             catch (e){
                 console.log("author_name missing in this Tweet. :" + e.message);
@@ -178,7 +178,7 @@ angular.module('cloudberry.map')
 
             var userPhotoUrl = "";
             try {
-                userPhotoUrl = tweetJSON['user.profile_image_url'];
+                userPhotoUrl = tweetJSON["user.profile_image_url"];
             }
             catch (e){
                 console.log("user.profile_image_url missing in this Tweet.:");
@@ -194,7 +194,7 @@ angular.module('cloudberry.map')
 
             var tweetTime = "";
             try {
-                var created_at = new Date(tweetJSON['create_at']);
+                var created_at = new Date(tweetJSON["create_at"]);
                 tweetTime = created_at.toDateString();
             }
             catch (e){
@@ -285,19 +285,25 @@ angular.module('cloudberry.map')
 
             //send the query to cloudberry.
             var passID = "" + $scope.pointIDs[i];
-            cloudberry.pinMapOneTweetQuery(passID);
 
+            cloudberry.pinMapOneTweetQuery(passID);
           }
         }
-          //monitors and receives the result with updating content of each pin tweet.
-          $scope.$watch(function () {
-              return cloudberryConfig.pinMapOneTweetResult;
-          }, function (newVal) {
-              var tweetContent = translateTweetdatatoShow(newVal);
-              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-              $scope.popUpTweet.setContent(tweetContent);
-              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-          });
+        //monitors and receives the result with updating content of each pin tweet.
+        $scope.$watch(function () {
+           return cloudberryConfig.pinMapOneTweetResult;
+        }, function (newVal) {
+           var tweetContent = translateTweetdatatoShow(newVal);
+           $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+           $scope.popUpTweet.setContent(tweetContent);
+           if($scope.currentMarker === null)
+           {
+               //pass
+           }
+           else {
+               $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+           }
+        });
 
         function isMouseOverAPoint(x, y) {
           for (var i = 0; i < $scope.points.length; i += 1) {
@@ -332,14 +338,14 @@ angular.module('cloudberry.map')
         $scope.pointsLayer.setData($scope.points);
       }
     }
-    
+
     // initialize if the default map type is pointmap
     if (cloudberry.parameters.maptype == 'pointmap'){
       setPointMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlPointMap();
     }
-    
+
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
@@ -353,8 +359,8 @@ angular.module('cloudberry.map')
       else if (data[0] == 'pointmap'){
         cleanPointMap();
       }
-    });
-    
+    })
+
     // monitor the pointmap related variables, update the pointmap if necessary
     $scope.$watch(
       function() {

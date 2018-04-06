@@ -464,7 +464,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }));
 
           //changes the id's type from string to int64.
-          pinDBquery = pinDBquery.replace(/"(\d+)"/,'[$1]');
+          pinDBquery = pinDBquery.replace(/"(\d+)"/,"[$1]");
 
           ws.send(pinDBquery);
       }
