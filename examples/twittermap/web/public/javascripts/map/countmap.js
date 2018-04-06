@@ -438,7 +438,7 @@ angular.module('cloudberry.map')
       else if (data[0] == 'countmap'){
         cleanCountMap();
       }
-    });
+    })
     
     // monitor the countmap related variables, update the pointmap if necessary
     $scope.$watchCollection(
