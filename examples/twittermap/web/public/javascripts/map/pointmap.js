@@ -107,11 +107,11 @@ angular.module('cloudberry.map')
        
         $scope.pointsLayer = new L.TileLayer.MaskCanvas({
           opacity: 0.8,
-          radius: 2,//80,
+          radius: 1.2,//80,
           useAbsoluteRadius: false,//true,
-          color: '#17c6fc',//'#0084b4'
+          color: '#00aced',//'#0084b4'
           noMask: true,
-          lineColor: '#0d3e99'//'#00aced'
+          lineColor: '#00aced'//'#00aced'
         });
 
         $scope.map.addLayer($scope.pointsLayer);
@@ -230,7 +230,7 @@ angular.module('cloudberry.map')
             $scope.currentMarker = L.circleMarker(e.latlng, {
               radius : 6,
               color : '#0d3e99',
-              weight : 1.5,
+              weight : 3,
               fillColor : '#b8e3ff',
               fillOpacity : 1.0
             }).addTo($scope.map);
