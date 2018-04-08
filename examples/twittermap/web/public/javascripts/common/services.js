@@ -384,8 +384,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform: {
                 wrap: {
-                  id: "heat",
-                  category: "heat"
+                  id: "heatMapResult",
+                  category: "heatMapResult"
                 }
               }
             }));
@@ -529,7 +529,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "batchPointMapRequest":
             break;
-          case "heat":
+          case "heatMapResult":
             if(angular.isArray(result.value)) {
               cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
               cloudberryService.heatmapMapResult = result.value[0];

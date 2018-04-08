@@ -426,20 +426,24 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       });
     }
     
-    //For randomize coordinates by bounding_box
-    var gseed;
+    // For randomize coordinates by bounding_box
+    var randomizationSeed;
 
+    // javascript does not provide API for setting seed for its random function, so we need to implement it ourselves.
     function CustomRandom() {
-      var x = Math.sin(gseed++) * 10000;
+      var x = Math.sin(randomizationSeed++) * 10000;
       return x - Math.floor(x);
     }
 
+    // return a random number with normal distribution
     function randomNorm(mean, stdev) {
       return mean + (((CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom()) - 3) / 3) * stdev;
     }
 
+    // randomize a pin coordinate for a tweet according to the bounding box (normally distributed within the bounding box) when the actual coordinate is not availalble.
+    // by using the tweet id as the seed, the same tweet will always be randomized to the same coordinate.
     $scope.rangeRandom = function rangeRandom(seed, minV, maxV){
-      gseed = seed;
+      randomizationSeed = seed;
       var ret = randomNorm((minV + maxV) / 2, (maxV - minV) / 16);
       return ret;
     }

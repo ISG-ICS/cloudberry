@@ -53,9 +53,9 @@ angular.module('cloudberry.map')
     }
     
     function cleanHeatMap() {
-      if ($scope.heatLayer){
-        $scope.map.removeLayer($scope.heatLayer);
-        $scope.heatLayer = null;
+      if ($scope.heatMapLayer){
+        $scope.map.removeLayer($scope.heatMapLayer);
+        $scope.heatMapLayer = null;
       }
     }
     
@@ -77,14 +77,14 @@ angular.module('cloudberry.map')
     }
     
     function drawHeatMap(result) {
-      function setHeatPoints(points) {
+      function setHeatMapPoints(points) {
         $scope.heat.setLatLngs(points);
         $scope.heat.redraw();
       }
       
-      if (!$scope.heatLayer){
-        $scope.heatLayer = $scope.heat;
-        $scope.map.addLayer($scope.heatLayer);
+      if (!$scope.heatMapLayer){
+        $scope.heatMapLayer = $scope.heat;
+        $scope.map.addLayer($scope.heatMapLayer);
       }
         
       var points = [];
@@ -96,7 +96,7 @@ angular.module('cloudberry.map')
           points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]);
         }
       }
-      setHeatPoints(points);
+      setHeatMapPoints(points);
     }
     
     // initialize
@@ -113,7 +113,7 @@ angular.module('cloudberry.map')
         setInfoControlHeatMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else if (data[0] == 'heatmap'){
+      else if (data[0] === 'heatmap'){
         cleanHeatMap();
       }
     })
