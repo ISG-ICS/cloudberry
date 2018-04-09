@@ -3,16 +3,16 @@
 #
 #          FILE: berryGuard.sh
 #
-#         USAGE: [Run once] 
-#                  ./berryGuard.sh
+#         USAGE: ./berryGuard.sh [*DB host:port] [CB host:port] [TM host:port]
 #                [Run as deamon] 
-#                  crontab -e
-#                  add oneline to the file:
-#                  0 * * * * /path/to/berryGuard.sh [*DB host:port] [CB host:port] [TM host:port]
-#                  #This means very hour run it once.
-#                  :wq
+#                  !NOTE: crontab or nohup will not work properly because,
+#                         when being called by another backgroud command,
+#                         the 'wscat' command -w will not work at all.
+#                  Please use 'screen' command to run it as daemon:
+#                  $ screen
+#                  $ ./berryGuard.sh |& tee -a berryGuard.log
 #
-#   DESCRIPTION: Touch AsterixDB, Cloudberry and Twittermap one by one
+#   DESCRIPTION: Touch AsterixDB, Cloudberry and Twittermap each once every hour
 #                to see whether they are alive, if any of them is not
 #                responding properly, send an e-mail to administrators.
 #
@@ -107,6 +107,10 @@ touchTwittermap()
 	fi
 }
 
-touchAsterixDB
-touchCloudberry
-touchTwittermap
+while true
+do
+    touchAsterixDB
+    touchCloudberry
+    touchTwittermap
+    sleep 3600 # every hour
+done
