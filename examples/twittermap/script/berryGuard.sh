@@ -49,7 +49,7 @@ adminEmails=("baiqiushi@gmail.com")
 sendEmail() 
 { 
 	echo "Sending e-mail to administrators..."
-	local emailTimeStamp=`date`
+	local emailTimeStamp=$(date)
 	local emailSubject=$1
 	local emailContent=$2
 	echo "Time: " ${emailTimeStamp}
