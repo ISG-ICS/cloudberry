@@ -8,7 +8,7 @@
 #                [Run as deamon] 
 #                  crontab -e
 #                  add oneline to the file:
-#                  0 * * * * ./path/to/berryGuard.sh [*DB host:port] [CB host:port] [TM host:port]
+#                  0 * * * * /path/to/berryGuard.sh [*DB host:port] [CB host:port] [TM host:port]
 #                  #This means very hour run it once.
 #                  :wq
 #
