@@ -14,8 +14,6 @@ public class ADM {
     public static final SimpleDateFormat ADMTimeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
     //
     public static final SimpleDateFormat srcDateTimeFmt=new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
-    public static final SimpleDateFormat dstDateFmt=new SimpleDateFormat("yyyy-MM-dd");
-    public static final SimpleDateFormat dstTimeFmt=new SimpleDateFormat("HH:mm:ss.SSS");
     //
     public static String mkADMConstructor(String constructor, String content) {
         StringBuilder sbConstructor = new StringBuilder();
@@ -47,7 +45,7 @@ public class ADM {
         try {
             Date dt = new java.util.Date(srcDateTimeFmt.parse(srcDateTimeString).getTime());
             StringBuilder sbDateTime = new StringBuilder();
-            sbDateTime.append("datetime(\"").append(dstDateFmt.format(dt)).append("T").append(dstTimeFmt.format(dt)).append("\")");
+            sbDateTime.append("datetime(\"").append(ADMDateFormat.format(dt)).append("T").append(ADMTimeFormat.format(dt)).append("\")");
             return sbDateTime.toString();
         } catch (Exception ex) {
             return null;
@@ -58,7 +56,7 @@ public class ADM {
         try {
             Date dt = new java.util.Date(srcDateTimeFmt.parse(srcDateTimeString).getTime());
             StringBuilder sbDateTime = new StringBuilder();
-            sbDateTime.append("date(\"").append(dstDateFmt.format(dt)).append("\")");
+            sbDateTime.append("date(\"").append(ADMTimeFormat.format(dt)).append("\")");
             return sbDateTime.toString();
         } catch (Exception ex) {
             return null;
