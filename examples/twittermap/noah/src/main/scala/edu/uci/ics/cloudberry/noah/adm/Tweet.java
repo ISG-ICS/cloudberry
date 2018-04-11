@@ -47,9 +47,8 @@ public class Tweet {
         ADM.keyValueToSbWithComma(admSB, IS_RETWEET, String.valueOf(rootNode.path("retweeted").asBoolean()));
     }
 
-
     public static String getHashtags(JsonNode hashtagNode) {
-        StringBuilder sbHashtag=new StringBuilder();
+        StringBuilder sbHashtag = new StringBuilder();
         sbHashtag.append("{{");
         int i = 0;
         Iterator<JsonNode> elements = hashtagNode.elements();
@@ -74,7 +73,7 @@ public class Tweet {
     }
 
     public static String getUserMentions(JsonNode userMentionsNode) {
-        StringBuilder sbUserMentions=new StringBuilder();
+        StringBuilder sbUserMentions = new StringBuilder();
         sbUserMentions.append("{{");
         int i = 0;
         Iterator<JsonNode> elements = userMentionsNode.elements();
@@ -97,8 +96,8 @@ public class Tweet {
         }
     }
 
-    public static void appendGeoCoordinate(JsonNode rootNode, StringBuilder admSB, MyPlace places,Coordinate coordinate) {
-        StringBuilder sbGeoCoordinate=new StringBuilder();
+    public static void appendGeoCoordinate(JsonNode rootNode, StringBuilder admSB, MyPlace places, Coordinate coordinate) {
+        StringBuilder sbGeoCoordinate = new StringBuilder();
         if (!coordinate.getcLat().equals("")) {
             sbGeoCoordinate.append("point(\"").append(coordinate.getcLong()).append(",").append(coordinate.getcLat()).append("\")");
             ADM.keyValueToSbWithComma(admSB, GEO_COORDINATE, sbGeoCoordinate.toString());
@@ -108,7 +107,7 @@ public class Tweet {
         }
     }
 
-    public static void appendGeoTag(USGeoGnosis gnosis, boolean requireGeoField, StringBuilder admSB, MyPlace places,Coordinate coordinate) throws UnknownPlaceException {
+    public static void appendGeoTag(USGeoGnosis gnosis, boolean requireGeoField, StringBuilder admSB, MyPlace places, Coordinate coordinate) throws UnknownPlaceException {
         try {
             String geoTags = geoTag(gnosis, true, places, coordinate);
             if (geoTags != null) {
@@ -122,7 +121,8 @@ public class Tweet {
     public static void appendUser(JsonNode rootNode, StringBuilder admSB) {
         ADM.keyValueToSb(admSB, USER, User.toADM(rootNode));
     }
-    public static boolean readPlaces(JsonNode placeNode,MyPlace place){
+
+    public static boolean readPlaces(JsonNode placeNode, MyPlace place) {
         place.setCountry(placeNode.path("country").asText());
         place.setId(placeNode.path("id").asText());
         place.setName(placeNode.path("name").asText());
@@ -131,43 +131,43 @@ public class Tweet {
         place.setPlace_type(placeNode.path("place_type").asText());
         try {
             //
-            if(placeNode.path("bounding_box").path("coordinates").elements().hasNext()){
-                String coordStr=placeNode.path("bounding_box").path("coordinates").elements().next().toString();
-                String[] lats_longs=coordStr.split("\\[\\[|\\]\\]|\\],\\[|,");
+            if (placeNode.path("bounding_box").path("coordinates").elements().hasNext()) {
+                String coordStr = placeNode.path("bounding_box").path("coordinates").elements().next().toString();
+                String[] lats_longs = coordStr.split("\\[\\[|\\]\\]|\\],\\[|,");
                 if (lats_longs.length == 9) {
                     place.setaLong(Double.parseDouble(lats_longs[2]));
                     place.setaLat(Double.parseDouble(lats_longs[1]));
                     place.setbLong(Double.parseDouble(lats_longs[6]));
                     place.setbLat(Double.parseDouble(lats_longs[5]));
                     return true;
-                }
-                else{
+                } else {
                     return false;
                 }
-            }else
-            {
+            } else {
                 return false;
             }
             //
-        }catch (Exception ex){
+        } catch (Exception ex) {
             return false;
         }
     }
+
     //
-    public  static boolean readCoordinate(JsonNode coordNode,Coordinate coordinate){
-        String[] lat_long=coordNode.path("coordinates").toString().split("\\[|\\]|,");
-        if(lat_long.length==3) {
+    public static boolean readCoordinate(JsonNode coordNode, Coordinate coordinate) {
+        String[] lat_long = coordNode.path("coordinates").toString().split("\\[|\\]|,");
+        if (lat_long.length == 3) {
             coordinate.setcLat(lat_long[2]);
             coordinate.setcLong(lat_long[1]);
             return true;
         }
         return false;
     }
+
     public static String toADM(String ln, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException, IOException {
         StringBuilder admSB = new StringBuilder();
         ObjectMapper objectMapper = new ObjectMapper().setSerializationInclusion(JsonInclude.Include.NON_NULL);
         MyPlace place = new MyPlace();//field: tweet->place
-        Coordinate coordinate=new Coordinate();
+        Coordinate coordinate = new Coordinate();
         admSB.append("{");
         try {
             JsonNode rootNode = objectMapper.readTree(ln);
@@ -175,13 +175,13 @@ public class Tweet {
             appendTweetPlainFields(rootNode, admSB);
             appendHashtags(rootNode, admSB);
             appendUserMentsions(rootNode, admSB);
-            if (!rootNode.path("place").isNull()&&readPlaces(rootNode.path("place"),place)) {
+            if (!rootNode.path("place").isNull() && readPlaces(rootNode.path("place"), place)) {
                 ADM.keyValueToSbWithComma(admSB, PLACE, place.toADM());
             }
-            if (!rootNode.path("coordinates").isNull()&&readCoordinate(rootNode.path("coordinates"),coordinate)) {
-                appendGeoCoordinate(rootNode, admSB, place,coordinate);
+            if (!rootNode.path("coordinates").isNull() && readCoordinate(rootNode.path("coordinates"), coordinate)) {
+                appendGeoCoordinate(rootNode, admSB, place, coordinate);
             }
-            appendGeoTag(gnosis, true, admSB,place, coordinate);
+            appendGeoTag(gnosis, true, admSB, place, coordinate);
             appendUser(rootNode, admSB);
             admSB.append("}");
         } catch (Exception ex) {
@@ -195,7 +195,7 @@ public class Tweet {
         if (textMatchPlace(sbGeoTag, gnosis, place)) {
             return sbGeoTag.toString();
         }
-        sbGeoTag.delete(0,sbGeoTag.length());
+        sbGeoTag.delete(0, sbGeoTag.length());
         if (exactPointLookup(sbGeoTag, gnosis, coordinate)) {
             return sbGeoTag.toString();
         }
@@ -248,7 +248,7 @@ public class Tweet {
                     return false;
                 }
                 cityName = place.getFull_name().substring(index + 1).trim();
-                info = gnosis.tagNeighborhood(cityName,new Rectangle(place.getaLat(),place.getaLat(),place.getbLat(),place.getbLat()));
+                info = gnosis.tagNeighborhood(cityName, new Rectangle(place.getaLat(), place.getaLat(), place.getbLat(), place.getbLat()));
                 break;
             case "poi": // a point
                 double longitude = (place.getaLong());

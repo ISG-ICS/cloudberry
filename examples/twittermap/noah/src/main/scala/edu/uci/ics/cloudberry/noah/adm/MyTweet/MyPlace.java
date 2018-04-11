@@ -28,8 +28,8 @@ public class MyPlace {
     public static String NAME = "name";
     public static String PLACE_TYPE = "place_type";
     public static String BOUNDING_BOX = "bounding_box";
-    //
 
+    //
     public Double getaLong() {
         return aLong;
     }
@@ -132,26 +132,26 @@ public class MyPlace {
     }
 
     public String toADM() {
-        StringBuilder placeSB=new StringBuilder();
+        StringBuilder placeSB = new StringBuilder();
         placeSB.append("{");
-        ADM.keyValueToSbWithComma(placeSB, COUNTRY, "\""+ StringEscapeUtils.escapeJava(country)+"\"");
-        ADM.keyValueToSbWithComma(placeSB, COUNTRY_CODE,"\""+country_code+"\"");
-        ADM.keyValueToSbWithComma(placeSB, FULL_NAME, "\""+StringEscapeUtils.escapeJava(full_name)+"\"");
-        ADM.keyValueToSbWithComma(placeSB, ID, "\""+id+"\"");
-        ADM.keyValueToSbWithComma(placeSB, NAME, "\""+ name+"\"");
-        ADM.keyValueToSbWithComma(placeSB, PLACE_TYPE,"\""+place_type+"\"");
-        if(!aLat.isNaN()){
-                placeSB.append("\"").append(BOUNDING_BOX).append("\":rectangle(\"");
-                if (aLat.equals(bLat) && aLong.equals(bLong)) {
-                    placeSB.append(aLat - 0.0000001).append(',');
-                    placeSB.append(aLong- 0.0000001).append(' ');
-                }else{
-                    placeSB.append(aLat).append(',');
-                    placeSB.append(aLong).append(' ');
-                }
-                placeSB.append(bLat).append(',');
-                placeSB.append(bLong);
-                placeSB.append("\")");
+        ADM.keyValueToSbWithComma(placeSB, COUNTRY, "\"" + StringEscapeUtils.escapeJava(country) + "\"");
+        ADM.keyValueToSbWithComma(placeSB, COUNTRY_CODE, "\"" + country_code + "\"");
+        ADM.keyValueToSbWithComma(placeSB, FULL_NAME, "\"" + StringEscapeUtils.escapeJava(full_name) + "\"");
+        ADM.keyValueToSbWithComma(placeSB, ID, "\"" + id + "\"");
+        ADM.keyValueToSbWithComma(placeSB, NAME, "\"" + name + "\"");
+        ADM.keyValueToSbWithComma(placeSB, PLACE_TYPE, "\"" + place_type + "\"");
+        if (!aLat.isNaN()) {
+            placeSB.append("\"").append(BOUNDING_BOX).append("\":rectangle(\"");
+            if (aLat.equals(bLat) && aLong.equals(bLong)) {
+                placeSB.append(aLat - 0.0000001).append(',');
+                placeSB.append(aLong - 0.0000001).append(' ');
+            } else {
+                placeSB.append(aLat).append(',');
+                placeSB.append(aLong).append(' ');
+            }
+            placeSB.append(bLat).append(',');
+            placeSB.append(bLong);
+            placeSB.append("\")");
         }
         placeSB.append("}");
         return placeSB.toString();
