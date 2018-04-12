@@ -7,9 +7,8 @@ import org.eclipse.jetty.websocket.api.Session
 import org.eclipse.jetty.websocket.api.annotations._
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
-//TODO Should be configurable in later PR.
-// 5,242,880 = 5 MB
-@WebSocket(maxTextMessageSize = 5242880)
+
+@WebSocket
 class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
   private var session: Session = _
   private val clientLogger = Logger("client")

@@ -2,20 +2,21 @@
 layout: page
 ---
 
-## 1. Setup TwitterMap Using Cloudberry and AsterixDB
+## Setup TwitterMap
 
-This page includes instructions on how to use Cloudberry and AsterixDB to setup a small instance of the
+This page includes instructions on how to use Cloudberry and AsterixDB to setup a small instance of 
 [TwitterMap](http://cloudberry.ics.uci.edu/demos/twittermap/) on a local machine.
 The following diagram illustrates its architecture: ![architecture][architecture]
 
 System requirements:
-
  - Linux or Mac
  - At least 4GB memory
 
-**Step 1**: Follow the instructions on this [`page`](http://www.scala-sbt.org/release/docs/Setup.html) to install `sbt`.
+## 0. Setup the environment:
 
-**Step 2**: Clone the Cloudberry codebase from github.
+**Step 0.1**: Follow these [instructions](http://www.scala-sbt.org/release/docs/Setup.html) to install `sbt`.
+
+**Step 0.2**: Clone the Cloudberry codebase from github.
 
 ```
 ~> git clone https://github.com/ISG-ICS/cloudberry.git
@@ -23,32 +24,77 @@ System requirements:
 
 Suppose the repostory is cloned to the folder `~/cloudberry`.
 
-**Step 3**: Use the following steps to start a Docker container that has a pre-built AsterixDB cluster.
+## 1. Setup AsterixDB
 
-   1. Install [Docker](https://www.docker.com/products/docker) (version at least 1.10) on the local machine;
-   2. Run the following commands:
-
+**Step 1.1**: Create a directory named `asterixdb` in your home directory and move to that directory:
 ```
-~> cd cloudberry/
-~/cloudberry> ./script/dockerRunAsterixDB.sh
-```
-The second command will download and run a prebuilt AsterixDB docker container from [here](https://hub.docker.com/r/jianfeng/asterixdb/). This step may take 5-10 minutes or even longer, depending on your network speed.
-After it finishes, you should see the messages as shown in the following screenshot:
-![docker][docker]
-
-After you have installed the docker container for the first time, you can restart it using the following command in case the docker is shutdown:
-
-```
-~> docker start cc nc1
+$ mkdir asterixdb
+$ cd asterixdb
 ```
 
-If you want to shutdown the docker container later, you can use the following command:
+**Step 1.2**: Download `asterix-server-0.9.3-SNAPSHOT-binary-assembly.zip` from this [link](http://cloudberry.ics.uci.edu/img/asterix-server-0.9.3-SNAPSHOT-binary-assembly.zip):
 
 ```
-~> docker stop cc nc1
+$ wget http://cloudberry.ics.uci.edu/img/asterix-server-0.9.3-SNAPSHOT-binary-assembly.zip
 ```
 
-**Step 4**: Compile and run the Cloudberry server.
+**Step 1.3**: Uncompress the file:
+```
+$ unzip asterix-server-0.9.3-SNAPSHOT-binary-assembly.zip
+```
+
+**Step 1.4**: Move to `opt/local/bin` directory.
+```
+$ cd opt/local/bin
+```
+
+**Step 1.5**: Execute `start-sample-cluster.sh` to start the sample instance. Wait until you see "INFO: Cluster started and is ACTIVE." message.
+```
+$ ./start-sample-cluster.sh
+CLUSTERDIR=/home/x/asterixdb/opt/local
+INSTALLDIR=/home/x/asterixdb
+LOGSDIR=/home/x/asterixdb/opt/local/logs
+
+INFO: Starting sample cluster...
+INFO: Waiting up to 30 seconds for cluster 127.0.0.1:19002 to be available.
+INFO: Cluster started and is ACTIVE.
+```
+
+
+**Step 1.6**: Execute `jps` to check one instance of "CCDriver" and two instances of "NCService" and "NCDriver" are running:
+```
+$ jps
+59264 NCService
+59280 NCDriver
+59265 CCDriver
+59446 Jps
+59263 NCService
+59279 NCDriver
+```
+
+**Step 1.7**: Open the AsterixDB Web interface at [http://localhost:19001](http://localhost:19001) and issue the following queries to see the AsterixDB instance is running.
+
+```
+select * from Metadata.`Dataverse`;
+Results:
+{ "Dataverse": { "DataverseName": "Default", "DataFormat": "org.apache.asterix.runtime.formats.NonTaggedDataFormat", "Timestamp": "Wed Mar 07 16:13:37 PST 2018", "PendingOp": 0 } }
+{ "Dataverse": { "DataverseName": "Metadata", "DataFormat": "org.apache.asterix.runtime.formats.NonTaggedDataFormat", "Timestamp": "Wed Mar 07 16:13:37 PST 2018", "PendingOp": 0 } }
+```
+
+Note: You need to execute the following command to stop AsterixDB on `asterixdb/opt/local/bin` before you shutdown the system.
+```
+$ ./stop-sample-cluster.sh
+```
+
+Next time when you want to start/stop your AsterixDB instance, use the following command.
+```
+$ ~/asterixdb/opt/local/bin/start-sample-cluster.sh
+$ ~/asterixdb/opt/local/bin/stop-sample-cluster.sh
+```
+
+## 2. Setup Cloudberry and TwitterMap:
+
+**Step 2.1**: Compile and run the Cloudberry server.
 
 ```
 ~/cloudberry> cd cloudberry
@@ -59,7 +105,7 @@ If you want to shutdown the docker container later, you can use the following co
 Wait until the shell prints the messages shown in the following screenshot:
 ![neo][neo]
 
-**Step 5**: Open another terminal window to ingest sample tweets (about 47K) and US population data into AsterixDB.
+**Step 2.2**: Open another terminal window to ingest sample tweets (about 47K) and US population data into AsterixDB.
 
 ```
 ~/cloudberry> cd ../examples/twittermap
@@ -70,7 +116,7 @@ When it finishes you should see the messages as shown in the following screensho
 ![ingestion][ingestion]
 
 
-**Step 6**: Start the TwitterMap Web server (in port 9001) by running the following command in another shell:
+**Step 2.3**: Start the TwitterMap Web server (in port 9001) by running the following command in another shell:
 
 ```
 ~/twittermap> sbt "project web" "run 9001"
@@ -80,95 +126,76 @@ Wait until the shell prints the messages shown in the following screenshot:
 ![twittermap][twittermap]
 
 
-**Step 7**: Open a browser to access [http://localhost:9001](http://localhost:9001) to see the TwitterMap frontend.  The first time you open the page, it could take up to several minutes (depending on your machine's speed) to show the following Web page:
+**Step 2.4**: Open a browser to access [http://localhost:9001](http://localhost:9001) to see the TwitterMap frontend.  The first time you open the page, it could take up to several minutes (depending on your machine's speed) to show the following Web page:
 ![web][web]
 
 
 **Congratulations!** You have successfully set up TwitterMap using Cloudberry and AsterixDB!
 
-## Setup your own AsterixDB cluster
-
-The instructions above assume that we use an AsterixDB instance in a Docker container. If you want to setup your AsterixDB cluster, please use the following steps.
-
-**Step 8**: Follow the instructions on the [AsterixDB Installation Guide](https://ci.apache.org/projects/asterixdb/index.html) to install an AsterixDB cluster.  Select your preferred installation option.
-
-**Step 9**: Ingest twitter data to AsterixDB
-
-You need to give the RESTFul API link of the AsterixDB cluster and one of its NC names to the ingestion script as following:
-
-```bash
-~/twittermap> ./script/ingestAllTwitterToLocalCluster.sh http://YourAsterixDBServerIP:19002/aql ONE_OF_NC_NAMES
-```
-
-**Step 10**: Change the Cloudberry middleware configuration to connect to this new AsterixDB cluster.
-You can modify the AsterixDB hostname in the configuration file `cloudberry/neo/conf/application.conf` by changing the `asterixdb.url` value.
-
-```properties
-asterixdb.url = "http://YourAsterixDBHostName:19002/query/service"
-```
-
-## 2. Under the Hood
+## 3. Under the Hood
 
 Next we explain the details of the TwitterMap.
 
-### 2.1 Create a Dataset in AsterixDB
+**Step 3.1** Create a Dataset in AsterixDB
 
-In Step 9, we ran a script called `examples/twittermap/script/ingestAllTwitterToLocalCluster.sh` to create data sets in AsterixDB and ingest data into them.
+In Step 2.2, we ran a script called `examples/twittermap/script/ingestAllTwitterToLocalCluster.sh` to create data sets in AsterixDB and ingest data into them.
 The following are the executed DDL statements.
 
 
 ```
-create dataverse twitter if not exists;
-use dataverse twitter
-create type typeUser if not exists as open {
-    id: int64,
-    name: string,
-    screen_name : string,
-    lang : string,
-    location: string,
-    create_at: date,
-    description: string,
-    followers_count: int32,
-    friends_count: int32,
-    statues_count: int64
-}
-create type typePlace if not exists as open{
-    country : string,
-    country_code : string,
-    full_name : string,
-    id : string,
-    name : string,
-    place_type : string,
-    bounding_box : rectangle
-}
-create type typeGeoTag if not exists as open {
-    stateID: int32,
-    stateName: string,
-    countyID: int32,
-    countyName: string,
-    cityID: int32?,
-    cityName: string?
-}
-create type typeTweet if not exists as open{
-    create_at : datetime,
-    id: int64,
-    "text": string,
-    in_reply_to_status : int64,
-    in_reply_to_user : int64,
-    favorite_count : int64,
-    coordinate: point?,
-    retweet_count : int64,
-    lang : string,
-    is_retweet: boolean,
-    hashtags : {{ string }} ?,
-    user_mentions : {{ int64 }} ? ,
-    user : typeUser,
-    place : typePlace?,
-    geo_tag: typeGeoTag
-}
-create dataset ds_tweet(typeTweet) if not exists primary key id
-using compaction policy prefix (("max-mergable-component-size"="134217728"),("max-tolerance-component-count"="10")) with filter on create_at ;
-create index text_idx if not exists on ds_tweet("text") type fulltext;
+create dataverse twitter if not exists; 
+use twitter; 
+create type typeUser if not exists as open { 
+    id: int64, 
+    name: string, 
+    screen_name : string, 
+    profile_image_url : string?, 
+    lang : string, 
+    location: string, 
+    create_at: date, 
+    description: string, 
+    followers_count: int32, 
+    friends_count: int32, 
+    statues_count: int64 
+};
+create type typePlace if not exists as open{ 
+    country : string, 
+    country_code : string, 
+    full_name : string, 
+    id : string, 
+    name : string, 
+    place_type : string, 
+    bounding_box : rectangle 
+}; 
+create type typeGeoTag if not exists as open { 
+    stateID: int32, 
+    stateName: string, 
+    countyID: int32, 
+    countyName: string, 
+    cityID: int32?, 
+    cityName: string? 
+}; 
+create type typeTweet if not exists as open{ 
+    create_at : datetime, 
+    id: int64, 
+    text: string, 
+    in_reply_to_status : int64, 
+    in_reply_to_user : int64, 
+    favorite_count : int64, 
+    coordinate: point?, 
+    retweet_count : int64, 
+    lang : string, 
+    is_retweet: boolean, 
+    hashtags : {{ string }} ?, 
+    user_mentions : {{ int64 }} ? , 
+    user : typeUser, 
+    place : typePlace?, 
+    geo_tag: typeGeoTag 
+}; 
+create dataset ds_tweet(typeTweet) if not exists primary key id 
+with filter on create_at with {"merge-policy":{"name":"prefix","parameters":{"max-mergable-component-size":134217728, "max-tolerance-component-count":5}}}; 
+
+create index text_idx if not exists on ds_tweet(text) type fulltext; 
 ```
 
 Read this [page](https://ci.apache.org/projects/asterixdb/sqlpp/primer-sqlpp.html) about the details.
@@ -177,32 +204,29 @@ The script uses a feature called `Feed` to ingest tweets into AsterixDB. The fol
 a feed called `TweetFeed`:
 
 ```
-create feed TweetFeed using socket_adapter
-(
-    ("sockets"="$nc:10001"),
-    ("address-type"="nc"),
-    ("type-name"="typeTweet"),
-    ("format"="adm")
-);
-connect feed TweetFeed to dataset ds_tweet;
-start feed TweetFeed;
+create feed TweetFeed with { 
+    "adapter-name" : "socket_adapter", 
+    "sockets" : "asterix_nc1:10001", 
+    "address-type" : "nc", 
+    "type-name" : "typeTweet", 
+    "format" : "adm", 
+    "upsert-feed" : "false" 
+}; 
+
+connect feed TweetFeed to dataset ds_tweet; 
+start feed TweetFeed; 
 ```
 
 The following shell command ingests the data from a local file with tweets into AsterixDB using the defined `TweetFeed`:
 
 
 ```bash
-gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh $host 10001
+gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh 127.0.0.1 10001
 ```
 
 For more information about AsterixDB data feed, please refer to this [page](https://ci.apache.org/projects/asterixdb/feeds/tutorial.html).
 
-### 2.2 Setup Cloudberry
-
-In Step 10, we changed the configuration file of Cloudberry by providing the information about the
-AsterixDB instance.
-
-### 2.3 Setup TwitterMap Web Server
+**Step 3.2** Setup TwitterMap Web Server
 
 The TwitterMap Web application uses the [Play Framework](http://playframework.com) to talk to the Cloudberry service. The configuration
 of the framework is in the file `examples/twittermap/web/conf/application.conf`.  In the file, the `cloudberry.register` property specifies the
@@ -270,21 +294,20 @@ The frontend uses the web socket to communicate with the Cloudberry server direc
 
 For more information about how to write registration DDL and Cloudberry request please refer to this [page](/documentation).
 
-## 3. Build your own application
+## 4. Build your own application
 
 TwitterMap is one example of how to use Cloudberry. To develop your own application, you can do the following steps:
 
 1. Use AsterixDB to create your own data sets;
-2. Give the link of the AsterixDB instance to Cloudberry by following step 10;
-3. Register the necessary datasets into Cloudberry as in Section 2.3;
-4. Set up the Web socket connection between the front-end web page and the Cloudberry server as in Section 2.3;
-5. Define your queries and responses as in `twittermap/web/public/javascripts/common/services.js`.
+2. Register the necessary datasets into Cloudberry as in Step 3.2;
+3. Set up the Web socket connection between the front-end web page and the Cloudberry server as in Step 3.2;
+4. Define your queries and responses as in `twittermap/web/public/javascripts/common/services.js`.
 
 Have fun!  If you need assistance, please feel to contact us at
 &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;
 
 
-[architecture]: /img/quick-start-architecture.png
+[architecture]: /img/twittermap-architecture.png
 {: width="800px"}
 [docker]: /img/docker.png
 {: width="800px"}
