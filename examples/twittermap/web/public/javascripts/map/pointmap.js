@@ -272,7 +272,7 @@ angular.module('cloudberry.map')
             $scope.points.push([result[i].coordinate[1], result[i].coordinate[0]]);
           }
           else if (result[i].hasOwnProperty('place.bounding_box')){
-            $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]);
+            $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
           }
           $scope.pointIDs.push(result[i].id);
         }
