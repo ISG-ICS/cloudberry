@@ -124,7 +124,7 @@ angular.module("cloudberry.map")
       },
 
       function(newResult) {
-        if (cloudberry.parameters.maptype == "heatmap"){
+        if (cloudberry.parameters.maptype === "heatmap"){
           $scope.result = newResult;
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
