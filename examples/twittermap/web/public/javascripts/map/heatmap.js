@@ -100,14 +100,14 @@ angular.module("cloudberry.map")
     }
     
     // initialize
-    if (cloudberry.parameters.maptype == "heatmap"){
+    if (cloudberry.parameters.maptype === "heatmap"){
       setHeatMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlHeatMap();
     }
     
     $rootScope.$on("maptypeChange", function (event, data) {
-      if (cloudberry.parameters.maptype == "heatmap") {
+      if (cloudberry.parameters.maptype === "heatmap") {
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();
