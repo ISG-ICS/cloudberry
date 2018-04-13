@@ -102,25 +102,6 @@ angular.module('cloudberry.map')
         $scope.map.removeLayer($scope.currentMarker);
       }
 
-      //For randomize coordinates by bounding_box
-      //TODO Should be reused by HeatMap in HeatMap PR.
-      var gseed;
-
-      function CustomRandom() {
-        var x = Math.sin(gseed++) * 10000;
-        return x - Math.floor(x);
-      }
-
-      function randomNorm(mean, stdev) {
-        return mean + (((CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom()) - 3) / 3) * stdev;
-      }
-
-      function rangeRandom(seed, minV, maxV){
-        gseed = seed;
-        var ret = randomNorm((minV + maxV) / 2, (maxV - minV) / 16);
-        return ret;
-      }
-
       //To initialize the points layer
       if (!$scope.pointsLayer) {
        
@@ -291,7 +272,7 @@ angular.module('cloudberry.map')
             $scope.points.push([result[i].coordinate[1], result[i].coordinate[0]]);
           }
           else if (result[i].hasOwnProperty('place.bounding_box')){
-            $scope.points.push([rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]);
+            $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
           }
           $scope.pointIDs.push(result[i].id);
         }
