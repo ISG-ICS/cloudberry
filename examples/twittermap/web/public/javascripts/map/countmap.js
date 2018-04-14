@@ -62,11 +62,19 @@ angular.module('cloudberry.map')
           ctrlClass.remove();
         }
       }
+      
+      function hideMapControl(name){
+        var ctrlClass = $("."+name);
+        if (ctrlClass) {
+          ctrlClass.hide();
+        }
+      }
 
       // remove CountMap controls
       removeMapControl('legend');
       removeMapControl('normalize');
       removeMapControl('sentiment');
+      hideMapControl('info');
 
     }
     
@@ -142,6 +150,14 @@ angular.module('cloudberry.map')
         position: 'topleft'
       };
       $scope.controls.custom.push(info);
+      
+      function showMapControl(name){
+        var ctrlClass = $("."+name);
+        if (ctrlClass) {
+          ctrlClass.show();
+        }
+      }
+      showMapControl('info');
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
@@ -440,7 +456,7 @@ angular.module('cloudberry.map')
       }
     })
     
-    // monitor the countmap related variables, update the pointmap if necessary
+    // monitor the countmap related variables, update the countmap if necessary
     $scope.$watchCollection(
       function() {
         return {
