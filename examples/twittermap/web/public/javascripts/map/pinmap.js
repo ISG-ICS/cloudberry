@@ -1,55 +1,55 @@
-angular.module('cloudberry.map')
-  .controller('pinMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+angular.module("cloudberry.map")
+  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
         initStyle: {
           weight: 0.5,
           fillOpacity: 0,
-          color: 'white'
+          color: "white"
         },
         stateStyle: {
-          fillColor: '#f7f7f7',
+          fillColor: "#f7f7f7",
           weight: 0.5,
           opacity: 1,
-          color: '#92d1e1',
+          color: "#92d1e1",
           fillOpacity: 0
         },
         stateUpperStyle: {
-          fillColor: '#f7f7f7',
+          fillColor: "#f7f7f7",
           weight: 0.5,
           opacity: 1,
-          color: '#92d1e1',
+          color: "#92d1e1",
           fillOpacity: 0
         },
         countyStyle: {
-          fillColor: '#f7f7f7',
+          fillColor: "#f7f7f7",
           weight: 0.5,
           opacity: 1,
-          color: '#92d1e1',
+          color: "#92d1e1",
           fillOpacity: 0
         },
         countyUpperStyle: {
-          fillColor: '#f7f7f7',
+          fillColor: "#f7f7f7",
           weight: 0.5,
           opacity: 1,
-          color: '#92d1e1',
+          color: "#92d1e1",
           fillOpacity: 0
         },
         cityStyle: {
-          fillColor: '#f7f7f7',
+          fillColor: "#f7f7f7",
           weight: 0.5,
           opacity: 1,
-          color: '#92d1e1',
+          color: "#92d1e1",
           fillOpacity: 0
         },
         hoverStyle: {
           weight: 0.7,
-          color: '#666',
+          color: "#666",
           fillOpacity: 0
         },
-        colors: [ '#ffffff', '#92d1e1', '#4393c3', '#2166ac', '#f4a582', '#d6604d', '#b2182b'],
-        sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
+        colors: [ "#ffffff", "#92d1e1", "#4393c3", "#2166ac", "#f4a582", "#d6604d", "#b2182b"],
+        sentimentColors: ["#ff0000", "#C0C0C0", "#00ff00"]
       });
     }
     
@@ -109,17 +109,17 @@ angular.module('cloudberry.map')
           opacity: 0.8,
           radius: 1.2,//80,
           useAbsoluteRadius: false,//true,
-          color: '#00aced',//'#0084b4'
+          color: "#00aced",//"#0084b4"
           noMask: true,
-          lineColor: '#00aced'//'#00aced'
+          lineColor: "#00aced"//"#00aced"
         });
 
         $scope.map.addLayer($scope.pointsLayer);
 
-        //Create a new event called 'mouseintent' by listening to 'mousemove'.
-        $scope.map.on('mousemove', onMapMouseMove);
+        //Create a new event called "mouseintent" by listening to "mousemove".
+        $scope.map.on("mousemove", onMapMouseMove);
         var timer = null;
-        //If user hang the mouse cursor for 300ms, fire a 'mouseintent' event.
+        //If user hang the mouse cursor for 300ms, fire a "mouseintent" event.
         function onMapMouseMove(e) {
           var duration = 300;
           if (timer !== null) {
@@ -127,7 +127,7 @@ angular.module('cloudberry.map')
             timer = null;
           }
           timer = setTimeout(L.Util.bind(function() {
-            this.fire('mouseintent', {
+            this.fire("mouseintent", {
               latlng : e.latlng,
               layer : e.layer
             });
@@ -167,8 +167,8 @@ angular.module('cloudberry.map')
 
           var tweetText = "";
           try {
-            var tweetHtml = new DOMParser().parseFromString(tweetJSON.html, 'text/html');
-            tweetText = tweetHtml.getElementsByTagName('p')[0].innerHTML;
+            var tweetHtml = new DOMParser().parseFromString(tweetJSON.html, "text/html");
+            tweetText = tweetHtml.getElementsByTagName("p")[0].innerHTML;
           }
           catch (e){
             console.log("html missing in this Tweet.:" + e.message);
@@ -201,7 +201,7 @@ angular.module('cloudberry.map')
           return tweetTemplate;
         }
 
-        $scope.map.on('mouseintent', onMapMouseIntent);
+        $scope.map.on("mouseintent", onMapMouseIntent);
 
         $scope.currentMarker = null;
         $scope.points = [];
@@ -229,9 +229,9 @@ angular.module('cloudberry.map')
             //(2) Create a new Marker to highlight the point.
             $scope.currentMarker = L.circleMarker(e.latlng, {
               radius : 6,
-              color : '#0d3e99',
+              color : "#0d3e99",
               weight : 3,
-              fillColor : '#b8e3ff',
+              fillColor : "#b8e3ff",
               fillOpacity : 1.0
             }).addTo($scope.map);
             //(3) Send request to twitter.com for the oembed json tweet content.
@@ -268,10 +268,10 @@ angular.module('cloudberry.map')
         $scope.points = [];
         $scope.pointIDs = [];
         for (var i = 0; i < result.length; i++) {
-          if (result[i].hasOwnProperty('coordinate')){
+          if (result[i].hasOwnProperty("coordinate")){
             $scope.points.push([result[i].coordinate[1], result[i].coordinate[0]]);
           }
-          else if (result[i].hasOwnProperty('place.bounding_box')){
+          else if (result[i].hasOwnProperty("place.bounding_box")){
             $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
           }
           $scope.pointIDs.push(result[i].id);
@@ -286,7 +286,7 @@ angular.module('cloudberry.map')
     }
     
     // initialize if the default map type is pinmap
-    if (cloudberry.parameters.maptype == 'pinmap'){
+    if (cloudberry.parameters.maptype === "pinmap"){
       setPinMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlPinMap();
@@ -295,14 +295,14 @@ angular.module('cloudberry.map')
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
-    $rootScope.$on('maptypeChange', function (event, data) {
-      if (cloudberry.parameters.maptype == 'pinmap') {
+    $rootScope.$on("maptypeChange", function (event, data) {
+      if (cloudberry.parameters.maptype === "pinmap") {
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else if (data[0] == 'pinmap'){
+      else if (data[0] === "pinmap"){
         cleanPinMap();
       }
     })
@@ -314,7 +314,7 @@ angular.module('cloudberry.map')
       },
 
       function(newResult) {
-        if (cloudberry.parameters.maptype == 'pinmap'){
+        if (cloudberry.parameters.maptype === "pinmap"){
           $scope.result = newResult;
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
