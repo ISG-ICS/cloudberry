@@ -1,7 +1,7 @@
 angular.module('cloudberry.map')
-  .controller('pointMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
-    // set map styles for pointmap
-    function setPointMapStyle() {
+  .controller('pinMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+    // set map styles for pinmap
+    function setPinMapStyle() {
       $scope.setStyles({
         initStyle: {
           weight: 0.5,
@@ -53,8 +53,8 @@ angular.module('cloudberry.map')
       });
     }
     
-    // clear pointmap specific data
-    function cleanPointMap() {
+    // clear pinmap specific data
+    function cleanPinMap() {
       $scope.points = [];
       $scope.pointIDs = [];
       if($scope.pointsLayer != null) {
@@ -76,8 +76,8 @@ angular.module('cloudberry.map')
       $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
     }
 
-    // initialize pointmap
-    function setInfoControlPointMap() {
+    // initialize pinmap
+    function setInfoControlPinMap() {
 
       // add feature to each polygon
       // when a user click on a polygon, the map will zoom in to fit that polygon in the view
@@ -95,8 +95,8 @@ angular.module('cloudberry.map')
       $scope.mouseOverPointI = 0;
     }
     
-    // function for drawing pointmap
-    function drawPointMap(result) {
+    // function for drawing pinmap
+    function drawPinMap(result) {
 
       if ($scope.currentMarker != null) {
         $scope.map.removeLayer($scope.currentMarker);
@@ -285,42 +285,42 @@ angular.module('cloudberry.map')
       }
     }
     
-    // initialize if the default map type is pointmap
-    if (cloudberry.parameters.maptype == 'pointmap'){
-      setPointMapStyle();
+    // initialize if the default map type is pinmap
+    if (cloudberry.parameters.maptype == 'pinmap'){
+      setPinMapStyle();
       $scope.resetPolygonLayers();
-      setInfoControlPointMap();
+      setInfoControlPinMap();
     }
     
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
     $rootScope.$on('maptypeChange', function (event, data) {
-      if (cloudberry.parameters.maptype == 'pointmap') {
-        setPointMapStyle();
+      if (cloudberry.parameters.maptype == 'pinmap') {
+        setPinMapStyle();
         $scope.resetPolygonLayers();
-        setInfoControlPointMap();
+        setInfoControlPinMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else if (data[0] == 'pointmap'){
-        cleanPointMap();
+      else if (data[0] == 'pinmap'){
+        cleanPinMap();
       }
     })
     
-    // monitor the pointmap related variables, update the pointmap if necessary
+    // monitor the pinmap related variables, update the pinmap if necessary
     $scope.$watch(
       function() {
-        return cloudberry.pointmapMapResult;
+        return cloudberry.pinmapMapResult;
       },
 
       function(newResult) {
-        if (cloudberry.parameters.maptype == 'pointmap'){
+        if (cloudberry.parameters.maptype == 'pinmap'){
           $scope.result = newResult;
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
-            drawPointMap($scope.result);
+            drawPinMap($scope.result);
           } else {
-            drawPointMap($scope.result);
+            drawPinMap($scope.result);
           }
         }
       }
