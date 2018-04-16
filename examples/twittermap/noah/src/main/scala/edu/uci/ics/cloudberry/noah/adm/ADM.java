@@ -56,7 +56,7 @@ public class ADM {
         try {
             Date dt = new java.util.Date(srcDateTimeFmt.parse(srcDateTimeString).getTime());
             StringBuilder sbDateTime = new StringBuilder();
-            sbDateTime.append("date(\"").append(ADMTimeFormat.format(dt)).append("\")");
+            sbDateTime.append("date(\"").append(ADMDateFormat.format(dt)).append("\")");
             return sbDateTime.toString();
         } catch (Exception ex) {
             return null;

@@ -1,6 +1,6 @@
 package edu.uci.ics.cloudberry.noah
 
-import java.io.{File, FileWriter}
+import java.io.File
 import java.util.concurrent.Executors
 
 import edu.uci.ics.cloudberry.gnosis._
@@ -54,6 +54,7 @@ object TwitterJSONTagToADM {
       }
     }
   }
+
   //TODO make a parallel version of this one
   def main(args: Array[String]): Unit = {
     parseOption(args.toList)
