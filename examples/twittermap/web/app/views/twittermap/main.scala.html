@@ -49,6 +49,8 @@
       // The default query slicing milliseconds value
       querySliceMills: new String("2000"),
       }
+      heatmapSamplingDayRange: @TMAobject.heatmapSamplingDayRange,
+      heatmapSamplingLimit: @TMAobject.heatmapSamplingLimit,
       pointmapSamplingDayRange: @TMAobject.pointmapSamplingDayRange,
       pointmapSamplingLimit: @TMAobject.pointmapSamplingLimit,
       defaultMapType: "@TMAobject.defaultMapType"
@@ -76,6 +78,7 @@
   <script src='@routes.Assets.versioned("javascripts/map/heatmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/QuadTree.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/L.TileLayer.MaskCanvas.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/leaflet-heat.js")'></script>
 
   @if(isDrugMap) {
     <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
