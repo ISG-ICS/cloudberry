@@ -194,8 +194,8 @@ angular.module('cloudberry.map')
 
             var tweetTime = "";
             try {
-                var created_at = new Date(tweetJSON["create_at"]);
-                tweetTime = created_at.toDateString();
+                var createdAt = new Date(tweetJSON["create_at"]);
+                tweetTime = createdAt.toDateString();
             }
             catch (e){
                 console.log("Time missing in this Tweet. :" + e.message);
@@ -226,7 +226,7 @@ angular.module('cloudberry.map')
                     + "    <div class=\"user-info\"> "
                     + "      <img src=\""
                     + userPhotoUrl
-                    + "\" onerror=\" this.src='/assets/images/default_pinicon.jpg'\" style=\"width: 32px; display: inline; \">\n"
+                    + "\" onerror=\" this.src='/assets/images/default_pinicon.png'\" style=\"width: 32px; display: inline; \">\n"
                     + "      <span class=\"name\" style='color: #0e90d2; font-weight: bold'> "
                     + userName
                     + "      </span> "
