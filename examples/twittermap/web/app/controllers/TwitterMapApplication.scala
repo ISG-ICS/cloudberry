@@ -37,10 +37,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
+  val heatmapSamplingDayRange: String = config.getString("heatmap.samplingDayRange").getOrElse("30")
+  val heatmapSamplingLimit: String = config.getString("heatmap.samplingLimit").getOrElse("5000")
   val pointmapSamplingDayRange: String = config.getString("pointmap.samplingDayRange").getOrElse("30")
   val pointmapSamplingLimit: String = config.getString("pointmap.samplingLimit").getOrElse("5000")
+  val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
 
   val webSocketFactory = new WebSocketFactory()
+  val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
@@ -57,7 +61,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", startDate, endDate, sentimentEnabled, sentimentUDF, removeSearchBar, predefinedKeywords, cacheThreshold, querySliceMills, false, sqlDB, pointmapSamplingDayRange, pointmapSamplingDayRange))
+    Ok(views.html.twittermap.index("TwitterMap", this, false))
   }
 
   def drugmap = Action {
@@ -66,12 +70,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       val remoteAddress = request.remoteAddress
       val userAgent = request.headers.get("user-agent").getOrElse("unknown")
       clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-      Ok(views.html.twittermap.index("DrugMap", startDateDrugMap, endDate, false, sentimentUDF, true, Seq("drug"), cacheThreshold, querySliceMills, true, sqlDB, pointmapSamplingDayRange, pointmapSamplingDayRange))
+      Ok(views.html.twittermap.index("DrugMap", this, true))
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, maxTextMessageSize)
     }
   }
 

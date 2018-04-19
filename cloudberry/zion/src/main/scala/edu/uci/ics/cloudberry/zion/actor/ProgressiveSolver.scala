@@ -58,11 +58,12 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val boundary = new TInterval(min, max)
 
       val initialDuration = config.FirstQueryTimeGap
+      val minimumDuration = config.MinTimeGap
       val interval = calculateFirst(boundary, initialDuration)
       val queryGroup = QueryGroup(ts, queryInfos, request.postTransform)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
-      val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 1, initialDuration.toHours.toInt)
+      val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 0.00001, minimumDuration.toHours.toInt)
       context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
     case _: MiniQueryResult =>
       // do nothing

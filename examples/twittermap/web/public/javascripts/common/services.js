@@ -47,6 +47,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultNonSamplingDayRange = 1500;
     var defaultSamplingDayRange = 1;
     var defaultSamplingSize = 10;
+    var defaultHeatmapSamplingDayRange = parseInt(config.heatmapSamplingDayRange);
+    var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
     var defaultPointmapSamplingDayRange = parseInt(config.pointmapSamplingDayRange);
     var defaultPointmapLimit = parseInt(config.pointmapSamplingLimit);
     var ws = new WebSocket(cloudberryConfig.ws);
@@ -252,7 +254,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
     var cloudberryService = {
 
-      totalCount: 0,
+      commonTotalCount: 0,
       startDate: startDate,
       parameters: {
         dataset: "twitter.ds_tweet",
@@ -266,10 +268,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,49,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
       },
 
-      mapResult: [],
-      partialMapResult: [],
-      timeResult: [],
-      hashTagResult: [],
+      countmapMapResult: [],
+      countmapPartialMapResult: [],
+      commonTimeSeriesResult: [],
+      commonHashTagResult: [],
       errorMessage: null,
 
       query: function(parameters) {
@@ -351,7 +353,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             // Complete map result cache hit case - exclude map result request
             if(geoIdsNotInCache.length === 0)  {
-              cloudberryService.mapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
+              cloudberryService.countmapMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
                 cloudberryService.parameters.geoLevel);
 
               ws.send(sampleJson);
@@ -359,7 +361,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             }
             // Partial map result cache hit case
             else  {
-              cloudberryService.partialMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
+              cloudberryService.countmapPartialMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
                     cloudberryService.parameters.geoLevel);
 
               ws.send(sampleJson);
@@ -368,6 +370,62 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
             
           case 'heatmap':
+            var heatJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultHeatmapSamplingDayRange, parameters.geoIds),
+              select: {
+                order: ["-create_at"],
+                limit: defaultHeatmapLimit,
+                offset: 0,
+                field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+              },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
+              },
+              transform: {
+                wrap: {
+                  id: "heatMapResult",
+                  category: "heatMapResult"
+                }
+              }
+            }));
+
+            // for the time histogram
+            var heatTimeJson = (JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+              group: {
+                by: [{
+                  field: "create_at",
+                  apply: {
+                    name: "interval",
+                    args: {
+                      unit: parameters.timeBin
+                    }
+                  },
+                  as: parameters.timeBin
+                }],
+                aggregate: [{
+                  field: "*",
+                  apply: {
+                    name: "count"
+                  },
+                  as: "count"
+                }]
+              },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
+              },
+              transform: {
+                wrap: {
+                  id: "heatTime",
+                  category: "heatTime"
+                }
+              }
+            }));
+
+            ws.send(heatJson);
+            ws.send(heatTimeJson);
             break;
 
           case 'pointmap':
@@ -380,6 +438,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 limit: defaultPointmapLimit,
                 offset: 0,
                 field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+              },
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
               },
               transform: {
                 wrap: {
@@ -441,46 +502,57 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         switch (result.category) {
 
           case "sample":
-            cloudberryService.tweetResult = result.value[0];
+            cloudberryService.commonTweetResult = result.value[0];
             break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.timeResult = result.value[0];
-              cloudberryService.hashTagResult = result.value[1];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
+              cloudberryService.commonHashTagResult = result.value[1];
             }
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.timeResult = result.value[0];
-              cloudberryService.mapResult = result.value[1].concat(cloudberryService.partialMapResult);
-              cloudberryService.hashTagResult = result.value[2];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
+              cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
+              cloudberryService.commonHashTagResult = result.value[2];
             }
             // When the query is executed completely, we update the map result cache.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
                 result.value['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
               MapResultCache.putValues(geoIdsNotInCache, cloudberryService.parameters.geoLevel,
-                cloudberryService.mapResult);
+                cloudberryService.countmapMapResult);
             }
             break;
           case "batchHeatMapRequest":
             break;
           case "batchPointMapRequest":
             break;
+          case "heatMapResult":
+            if(angular.isArray(result.value)) {
+              cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+              cloudberryService.heatmapMapResult = result.value[0];
+            }
+            break;
+          case "heatTime":
+            if(angular.isArray(result.value)) {
+              cloudberryService.commonTimeSeriesResult = result.value[0];
+            }
+            break;
           case "points":
             if(angular.isArray(result.value)) {
-              cloudberryService.tweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
-              cloudberryService.pointsResult = result.value[0];
+              cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+              cloudberryService.pointmapMapResult = result.value[0];
             }
             break;
           case "pointsTime":
             if(angular.isArray(result.value)) {
-              cloudberryService.timeResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = result.value[0];
             }
             break;
           case "totalCount":
-            cloudberryService.totalCount = result.value[0][0].count;
+            cloudberryService.commonTotalCount = result.value[0][0].count;
             break;
           case "error":
             console.error(result);
