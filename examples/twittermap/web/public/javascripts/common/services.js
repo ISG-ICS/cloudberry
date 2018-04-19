@@ -11,7 +11,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
-      pinMapOneTweetResult: null,
+      pinMapOneTweetLookUpResult: null,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
@@ -436,19 +436,18 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
         }
       },
+        // This query retrieves the information about a specific tweet that the user selected.
+        pinMapOneTweetLookUpQuery: function(pinid){
 
-      pinMapOneTweetQuery: function(pinid){
-
-          var setpinfilter = [{
+          var setpinFilter = [{
               field: "id",
               relation: "in",
               values: pinid
           }];
 
-          //sql
           var pinDBquery = (JSON.stringify({
               dataset:"twitter.ds_tweet",
-              filter: setpinfilter,
+              filter: setpinFilter,
               select:{
                   order: ["-create_at"],
                   limit: defaultSamplingSize,
@@ -457,8 +456,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               },
               transform:{
                   wrap:{
-                      id:"pinMapOneTweetResult",
-                      category:"pinMapOneTweetResult"
+                      id:"pinMapOneTweetLookUpResult",
+                      category:"pinMapOneTweetLookUpResult"
                   }
               }
           }));
@@ -518,8 +517,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "totalCount":
             cloudberryService.commonTotalCount = result.value[0][0].count;
             break;
-          case "pinMapOneTweetResult":
-            cloudberryConfig.pinMapOneTweetResult = result.value[0][0];
+          case "pinMapOneTweetLookUpResult":
+            cloudberryConfig.pinMapOneTweetLookUpResult = result.value[0][0];
             break;
           case "error":
             console.error(result);

@@ -280,13 +280,12 @@ angular.module('cloudberry.map')
 
             //send the query to cloudberry.
             var passID = "" + $scope.pointIDs[i];
-
-            cloudberry.pinMapOneTweetQuery(passID);
+            cloudberry.pinMapOneTweetLookUpQuery(passID);
           }
         }
         //monitors and receives the result with updating content of each pin tweet.
         $scope.$watch(function () {
-           return cloudberryConfig.pinMapOneTweetResult;
+           return cloudberryConfig.pinMapOneTweetLookUpResult;
         }, function (newVal) {
            var tweetContent = translateTweetDataToShow(newVal);
            $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
