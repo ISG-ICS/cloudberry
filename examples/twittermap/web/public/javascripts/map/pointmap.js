@@ -52,7 +52,6 @@ angular.module('cloudberry.map')
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       });
     }
-
     // clear pointmap specific data
     function cleanPointMap() {
       $scope.points = [];
@@ -66,7 +65,6 @@ angular.module('cloudberry.map')
         $scope.currentMarker = null;
       }
     }
-
     // additional operations required by pinmap for zoom event
     // update the map boundary and x/y axis scale
     function zoomPostProcess() {
@@ -88,13 +86,11 @@ angular.module('cloudberry.map')
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
-
       $scope.resetZoomFunction(onEachFeature, zoomPostProcess);
       $scope.resetDragFunction(onEachFeature);
 
       $scope.mouseOverPointI = 0;
     }
-
     // function for drawing pointmap
     function drawPointMap(result) {
 
@@ -123,7 +119,6 @@ angular.module('cloudberry.map')
 
       //To initialize the points layer
       if (!$scope.pointsLayer) {
-
         $scope.pointsLayer = new L.TileLayer.MaskCanvas({
           opacity: 0.8,
           radius: 1.2,//80,
@@ -159,7 +154,7 @@ angular.module('cloudberry.map')
         $scope.scale_y = 0;
 
         //shows each point's info in Front-end.
-        function translateTweetdatatoShow(tweetJSON) {
+        function translateTweetDataToShow(tweetJSON) {
             var tweetid = "";
             try {
                 tweetid = tweetJSON["id"];
@@ -293,7 +288,7 @@ angular.module('cloudberry.map')
         $scope.$watch(function () {
            return cloudberryConfig.pinMapOneTweetResult;
         }, function (newVal) {
-           var tweetContent = translateTweetdatatoShow(newVal);
+           var tweetContent = translateTweetDataToShow(newVal);
            $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
            $scope.popUpTweet.setContent(tweetContent);
            if($scope.currentMarker === null)
@@ -338,14 +333,12 @@ angular.module('cloudberry.map')
         $scope.pointsLayer.setData($scope.points);
       }
     }
-
     // initialize if the default map type is pointmap
     if (cloudberry.parameters.maptype == 'pointmap'){
       setPointMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlPointMap();
     }
-
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
@@ -360,7 +353,6 @@ angular.module('cloudberry.map')
         cleanPointMap();
       }
     })
-
     // monitor the pointmap related variables, update the pointmap if necessary
     $scope.$watch(
       function() {
