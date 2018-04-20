@@ -42,7 +42,8 @@ cloudberryHostPort=${2:-"localhost:9000"}
 twittermapHostPort=${3:-"localhost:9001"}
 
 # Add more administrators here.
-adminEmails=("baiqiushi@gmail.com")
+# !!! Must put your e-mail address here !!!
+adminEmails=("your@email.com")
 
 # parameter $1: subject
 # parameter $2: content
