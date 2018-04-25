@@ -49,8 +49,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     var defaultSamplingSize = 10;
     var defaultHeatmapSamplingDayRange = parseInt(config.heatmapSamplingDayRange);
     var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
-    var defaultPointmapSamplingDayRange = parseInt(config.pointmapSamplingDayRange);
-    var defaultPointmapLimit = parseInt(config.pointmapSamplingLimit);
+    var defaultPinmapSamplingDayRange = parseInt(config.pinmapSamplingDayRange);
+    var defaultPinmapLimit = parseInt(config.pinmapSamplingLimit);
     var ws = new WebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
@@ -428,14 +428,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             ws.send(heatTimeJson);
             break;
 
-          case 'pointmap':
+          case 'pinmap':
 
             var pointsJson = (JSON.stringify({
               dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultPointmapSamplingDayRange, parameters.geoIds),
+              filter: getFilter(parameters, defaultPinmapSamplingDayRange, parameters.geoIds),
               select: {
                 order: ["-create_at"],
-                limit: defaultPointmapLimit,
+                limit: defaultPinmapLimit,
                 offset: 0,
                 field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
               },
@@ -527,7 +527,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "batchHeatMapRequest":
             break;
-          case "batchPointMapRequest":
+          case "batchPinMapRequest":
             break;
           case "heatMapResult":
             if(angular.isArray(result.value)) {
@@ -543,7 +543,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "points":
             if(angular.isArray(result.value)) {
               cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
-              cloudberryService.pointmapMapResult = result.value[0];
+              cloudberryService.pinmapMapResult = result.value[0];
             }
             break;
           case "pointsTime":
