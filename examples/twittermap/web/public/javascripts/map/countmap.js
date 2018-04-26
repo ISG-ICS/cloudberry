@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
     // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({
@@ -62,19 +62,12 @@ angular.module('cloudberry.map')
           ctrlClass.remove();
         }
       }
-      
-      function hideMapControl(name){
-        var ctrlClass = $("."+name);
-        if (ctrlClass) {
-          ctrlClass.hide();
-        }
-      }
 
       // remove CountMap controls
       removeMapControl('legend');
       removeMapControl('normalize');
       removeMapControl('sentiment');
-      hideMapControl('info');
+      removeMapControl('info');
 
     }
     
@@ -149,15 +142,14 @@ angular.module('cloudberry.map')
       info.options = {
         position: 'topleft'
       };
-      $scope.controls.custom.push(info);
-      
-      function showMapControl(name){
-        var ctrlClass = $("."+name);
-        if (ctrlClass) {
-          ctrlClass.show();
-        }
+      if ($scope.map){
+        $timeout(function(){
+          info.addTo($scope.map);
+        });
       }
-      showMapControl('info');
+      else {
+        $scope.controls.custom.push(info);
+      }
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
