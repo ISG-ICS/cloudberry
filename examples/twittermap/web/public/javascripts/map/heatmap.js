@@ -72,7 +72,8 @@ angular.module("cloudberry.map")
       $scope.resetDragFunction(onEachFeature);
 
       if (!$scope.heat){
-        $scope.heat = L.heatLayer([]);
+        var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
+        $scope.heat = L.heatLayer([], {radius: unitRadius});
       }
     }
     
@@ -87,7 +88,7 @@ angular.module("cloudberry.map")
         $scope.map.addLayer($scope.heatMapLayer);
       }
       
-      var unitIntensity = parseInt(config.heatmapUnitIntensity);
+      var unitIntensity = parseInt(config.heatmapUnitIntensity); // getting the default intensity for a tweet
       var points = [];
       for (var i = 0; i < result.length; i++) {
         if (result[i].hasOwnProperty("coordinate")){
