@@ -160,7 +160,7 @@ angular.module('cloudberry.map')
                 tweetid = tweetJSON["id"];
             }
             catch (e){
-                console.log("tweetid missing in this Tweet. :" + e.message);
+                //tweetid missing in this Tweet.
             }
 
             var userName = "";
@@ -168,7 +168,7 @@ angular.module('cloudberry.map')
                 userName = tweetJSON["user.name"];
             }
             catch (e){
-                console.log("author_name missing in this Tweet. :" + e.message);
+                //userName missing in this Tweet.
             }
 
             var userPhotoUrl = "";
@@ -176,7 +176,7 @@ angular.module('cloudberry.map')
                 userPhotoUrl = tweetJSON["user.profile_image_url"];
             }
             catch (e){
-                console.log("user.profile_image_url missing in this Tweet.:");
+                //user.profile_image_url missing in this Tweet.
             }
 
             var tweetText = "";
@@ -184,16 +184,16 @@ angular.module('cloudberry.map')
                 tweetText = tweetJSON.text;
             }
             catch (e){
-                console.log("Text missing in this Tweet. :" + e.message);
+                //Text missing in this Tweet.
             }
 
             var tweetTime = "";
             try {
                 var createdAt = new Date(tweetJSON["create_at"]);
-                tweetTime = createdAt.toDateString();
+                tweetTime = createdAt.toISOString();
             }
             catch (e){
-                console.log("Time missing in this Tweet. :" + e.message);
+                //Time missing in this Tweet.
             }
 
             var tweetLink = "";
@@ -201,7 +201,7 @@ angular.module('cloudberry.map')
                 tweetLink = "https://twitter.com/" + userName + "/status/" + tweetid;
             }
             catch (e){
-                console.log("tweetLink missing in this Tweet.:" + e.message);
+                //tweetLink missing in this Tweet.
             }
 
             var tweetTemplate;
@@ -278,7 +278,7 @@ angular.module('cloudberry.map')
               fillOpacity : 1.0
             }).addTo($scope.map);
 
-            //send the query to cloudberry.
+            //send the query to cloudberry using string format.
             var passID = "" + $scope.pointIDs[i];
             cloudberry.pinMapOneTweetLookUpQuery(passID);
           }
