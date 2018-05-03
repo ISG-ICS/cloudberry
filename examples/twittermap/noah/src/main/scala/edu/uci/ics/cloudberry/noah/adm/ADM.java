@@ -54,7 +54,7 @@ public class ADM {
 
     public static String mkDateStringFromTweet(String srcDateTimeString) {
         try {
-            Date dt = new java.util.Date(srcDateTimeFmt.parse(srcDateTimeString).getTime());
+            Date dt = new Date(srcDateTimeFmt.parse(srcDateTimeString).getTime());
             StringBuilder sbDateTime = new StringBuilder();
             sbDateTime.append("date(\"").append(ADMDateFormat.format(dt)).append("\")");
             return sbDateTime.toString();
