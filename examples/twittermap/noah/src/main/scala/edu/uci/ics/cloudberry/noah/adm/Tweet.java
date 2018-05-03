@@ -1,7 +1,7 @@
 package edu.uci.ics.cloudberry.noah.adm;
 
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis;
-import edu.uci.ics.cloudberry.noah.adm.MyTweet.*;
+import edu.uci.ics.cloudberry.noah.adm.mytweet.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,7 +66,7 @@ public class Tweet {
     public static void appendHashtags(JsonNode rootNode, StringBuilder admSB) {
         if (!rootNode.path("entities").isNull() && !rootNode.path("entities").path("hashtags").isNull()) {
             JsonNode hashtagNode = rootNode.path("entities").path("hashtags");
-            if (!hashtagNode.equals(null) && !hashtagNode.toString().equals("[]")) {
+            if (hashtagNode != null && !hashtagNode.toString().equals("[]")) {
                 ADM.keyValueToSbWithComma(admSB, HASHTAG, getHashtags(hashtagNode));
             }
         }
@@ -101,7 +101,7 @@ public class Tweet {
         if (!coordinate.getcLat().equals("")) {
             sbGeoCoordinate.append("point(\"").append(coordinate.getcLong()).append(",").append(coordinate.getcLat()).append("\")");
             ADM.keyValueToSbWithComma(admSB, GEO_COORDINATE, sbGeoCoordinate.toString());
-        } else if (!places.getName().equals("") && places.getPlace_type().equals("poi")) {
+        } else if (!places.getName().equals("") && places.getPlacetype().equals("poi")) {
             sbGeoCoordinate.append("point(\"").append(places.getaLat()).append(",").append(places.getaLong()).append("\")");
             ADM.keyValueToSbWithComma(admSB, GEO_COORDINATE, sbGeoCoordinate.toString());
         }
@@ -126,9 +126,9 @@ public class Tweet {
         place.setCountry(placeNode.path("country").asText());
         place.setId(placeNode.path("id").asText());
         place.setName(placeNode.path("name").asText());
-        place.setFull_name(placeNode.path("full_name").asText());
-        place.setCountry_code(placeNode.path("country_code").asText());
-        place.setPlace_type(placeNode.path("place_type").asText());
+        place.setFullname(placeNode.path("full_name").asText());
+        place.setCountrycode(placeNode.path("country_code").asText());
+        place.setPlacetype(placeNode.path("place_type").asText());
         try {
             //
             if (placeNode.path("bounding_box").path("coordinates").elements().hasNext()) {
@@ -226,28 +226,28 @@ public class Tweet {
             return false;
         }
         scala.Option<USGeoGnosis.USGeoTagInfo> info;
-        switch (place.getPlace_type()) {
+        switch (place.getPlacetype()) {
             case "country":
                 return false;
             case "admin": // state level
                 return false;
             case "city":
-                int index = place.getFull_name().indexOf(',');
+                int index = place.getFullname().indexOf(',');
                 if (index < 0) {
-                    System.err.println("unknown neighborhood:" + place.getFull_name());
+                    System.err.println("unknown neighborhood:" + place.getFullname());
                     return false;
                 }
-                String stateAbbr = place.getFull_name().substring(index + 1).trim();
+                String stateAbbr = place.getFullname().substring(index + 1).trim();
                 String cityName = place.getName();
                 info = gnosis.tagCity(cityName, stateAbbr);
                 break;
             case "neighborhood": // e.g. "The Las Vegas Strip, Paradise"
-                index = place.getFull_name().indexOf(',');
+                index = place.getFullname().indexOf(',');
                 if (index < 0) {
-                    System.err.println("unknown neighborhood:" + place.getFull_name());
+                    System.err.println("unknown neighborhood:" + place.getFullname());
                     return false;
                 }
-                cityName = place.getFull_name().substring(index + 1).trim();
+                cityName = place.getFullname().substring(index + 1).trim();
                 info = gnosis.tagNeighborhood(cityName, new Rectangle(place.getaLat(), place.getaLat(), place.getbLat(), place.getbLat()));
                 break;
             case "poi": // a point
@@ -256,7 +256,7 @@ public class Tweet {
                 info = gnosis.tagPoint(longitude, latitude);
                 break;
             default:
-                System.err.println("unknown place type:" + place.getPlace_type() + place.getFull_name());
+                System.err.println("unknown place type:" + place.getPlacetype() + place.getFullname());
                 return false;
         }
 

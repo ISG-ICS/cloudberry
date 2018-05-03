@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.noah.adm.MyTweet;
+package edu.uci.ics.cloudberry.noah.adm.mytweet;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import edu.uci.ics.cloudberry.noah.adm.ADM;
@@ -70,7 +70,7 @@ public class MyPlace {
         return url;
     }
 
-    public String getPlace_type() {
+    public String getPlacetype() {
         return place_type;
     }
 
@@ -78,11 +78,11 @@ public class MyPlace {
         return name;
     }
 
-    public String getFull_name() {
+    public String getFullname() {
         return full_name;
     }
 
-    public String getCountry_code() {
+    public String getCountrycode() {
         return country_code;
     }
 
@@ -102,7 +102,7 @@ public class MyPlace {
         this.country = country;
     }
 
-    public void setFull_name(String full_name) {
+    public void setFullname(String full_name) {
         this.full_name = full_name;
     }
 
@@ -110,7 +110,7 @@ public class MyPlace {
         this.id = id;
     }
 
-    public void setPlace_type(String place_type) {
+    public void setPlacetype(String place_type) {
         this.place_type = place_type;
     }
 
@@ -118,7 +118,7 @@ public class MyPlace {
         this.url = url;
     }
 
-    public void setCountry_code(String country_code) {
+    public void setCountrycode(String country_code) {
         this.country_code = country_code;
     }
 

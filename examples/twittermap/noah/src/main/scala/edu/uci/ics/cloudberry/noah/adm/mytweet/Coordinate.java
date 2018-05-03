@@ -1,4 +1,4 @@
-package edu.uci.ics.cloudberry.noah.adm.MyTweet;
+package edu.uci.ics.cloudberry.noah.adm.mytweet;
 
 public class Coordinate {
     private String cLat;
