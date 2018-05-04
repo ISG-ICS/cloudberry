@@ -84,6 +84,7 @@ angular.module("cloudberry.map")
       
       if (!$scope.heatMapLayer){
         $scope.heatMapLayer = $scope.heat;
+        
         $scope.map.addLayer($scope.heatMapLayer);
       }
         
@@ -106,6 +107,31 @@ angular.module("cloudberry.map")
       setInfoControlHeatMap();
     }
     
+    
+    
+    function initheatMap(){
+        setHeatMapStyle();
+        $scope.resetPolygonLayers();
+        setInfoControlHeatMap();
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+    }
+    var l ={
+            active:0,
+            init:initheatMap,
+            data:"",
+            draw:drawHeatMap,
+            clear:cleanHeatMap
+            
+    }
+        
+    cloudberry.layer["heatmap"] = l;
+    
+    
+    
+    
+    
+    
+    
     $rootScope.$on("maptypeChange", function (event, data) {
       if (cloudberry.parameters.maptype === "heatmap") {
         setHeatMapStyle();
@@ -121,10 +147,13 @@ angular.module("cloudberry.map")
     $scope.$watch(
       function() {
         return cloudberry.heatmapMapResult;
-      },
-
+      },        
       function(newResult) {
-        if (cloudberry.parameters.maptype === "heatmap"){
+        
+        if(cloudberry.layer["heatmap"])
+            cloudberry.layer["heatmap"].data = newResult; 
+          
+          if (cloudberry.parameters.maptype === "heatmap"){
           $scope.result = newResult;
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;

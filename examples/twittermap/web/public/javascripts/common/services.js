@@ -253,7 +253,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     }
 
     var cloudberryService = {
-
+      
+        
+      layer:{ 
+      },
       commonTotalCount: 0,
       startDate: startDate,
       parameters: {

@@ -292,6 +292,30 @@ angular.module("cloudberry.map")
       setInfoControlPinMap();
     }
     
+    
+    
+    
+    //register this map in main control
+    var l = {
+            active:0,    
+            data:"",
+            init:function(){
+                setPinMapStyle();
+                $scope.resetPolygonLayers();
+                setInfoControlPinMap();
+            },  
+            draw : drawPinMap,
+            clear: cleanPinMap,
+            
+            
+            
+    };
+          
+    cloudberry.layer["pinmap"] = l;
+    
+    
+    
+    
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
@@ -301,6 +325,9 @@ angular.module("cloudberry.map")
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+        
+  
+          
       }
       else if (data[0] === "pinmap"){
         cleanPinMap();
@@ -316,6 +343,7 @@ angular.module("cloudberry.map")
       function(newResult) {
         if (cloudberry.parameters.maptype === "pinmap"){
           $scope.result = newResult;
+          cloudberry.layer["pinmap"].data = newResult;    
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
             drawPinMap($scope.result);
