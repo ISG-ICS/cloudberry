@@ -39,7 +39,6 @@ object Dependencies {
   val utilDependencies: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-logback" % playVersion
   ) ++ testDeps
-
   val gnosisDependencies: Seq[ModuleID] = Seq(
     "org.scalactic" %% "scalactic" % "2.2.6",
     ("com.typesafe.play" %% "play-json" % playVersion).exclude("commons-logging", "commons-logging"),
@@ -66,7 +65,9 @@ object Dependencies {
     "org.webjars" % "d3js" % "3.5.16",
     // sidebar module
     "org.webjars" % "font-awesome" % "4.5.0",
-    "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1"
+    "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
     // other module
+    "com.fasterxml.jackson.core" % "jackson-core" % "2.9.4"
+
   ) ++ testDeps
 }
