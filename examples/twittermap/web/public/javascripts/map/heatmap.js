@@ -144,7 +144,7 @@ angular.module("cloudberry.map")
       }
     })
     
-    $scope.$watch(
+    /*$scope.$watch(
       function() {
         return cloudberry.heatmapMapResult;
       },        
@@ -163,5 +163,5 @@ angular.module("cloudberry.map")
           }
         }
       }
-    );
+    );*/
   });

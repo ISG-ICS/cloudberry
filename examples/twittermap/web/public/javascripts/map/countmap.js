@@ -316,6 +316,8 @@ angular.module('cloudberry.map')
       }
 
       function initNormalize(div) {
+        
+          
         if($scope.doNormalization)
           div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
         else
@@ -467,7 +469,7 @@ angular.module('cloudberry.map')
     })
     
     // monitor the countmap related variables, update the pointmap if necessary
-    $scope.$watchCollection(
+    /*$scope.$watchCollection(
       function() {
         return {
           'countmapMapResult': cloudberry.countmapMapResult,
@@ -506,5 +508,5 @@ angular.module('cloudberry.map')
           }
         }
       }
-    );
+    );*/
   });

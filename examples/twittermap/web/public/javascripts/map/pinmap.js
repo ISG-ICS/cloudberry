@@ -335,7 +335,7 @@ angular.module("cloudberry.map")
     })
     
     // monitor the pinmap related variables, update the pinmap if necessary
-    $scope.$watch(
+    /*$scope.$watch(
       function() {
         return cloudberry.pinmapMapResult;
       },
@@ -352,5 +352,5 @@ angular.module("cloudberry.map")
           }
         }
       }
-    );
+    );*/
   });

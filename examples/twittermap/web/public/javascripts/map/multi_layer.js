@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('multiLayerCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry) {
+  .controller('multiLayerCtrl', function($scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache) {
     
         
     
@@ -103,7 +103,7 @@ angular.module('cloudberry.map')
         
             cloudberry.layer[layer_name].init();
         
-            //cloudberry.layer[layer_name].draw(cloudberry.layer[layer_name].data);    
+             
             
             cloudberry.layer[layer_name].active = 1;    
             
@@ -116,19 +116,65 @@ angular.module('cloudberry.map')
                 }
             }    
         
-        
-        
-            //cloudberry.layer[layer_name].clear();
-                
             
-        
-            
-                
-           
-           
-    
-        
     })
+    
+    var count = 0;
+    
+    $scope.$watchCollection(
+      function() {
+        return {
+          'pinmapMapResult': cloudberry.pinmapMapResult,
+          'heatmapMapResult':cloudberry.heatmapMapResult,
+          'countmapMapResult': cloudberry.countmapMapResult,
+          'doNormalization': $('#toggle-normalize').prop('checked'),
+          'doSentiment': $('#toggle-sentiment').prop('checked')
+          
+        };
+      },
+
+      function(newResult, oldValue) {
+          
+        
+        
+        var layer_name = cloudberry.parameters.maptype;  
+        var result_name = layer_name + "MapResult";  
+        
+          if (newResult[result_name] !== oldValue[result_name]) {
+            $scope.result = newResult[result_name];
+            if (Object.keys($scope.result).length !== 0) {
+              $scope.status.init = false;
+              cloudberry.layer[layer_name].draw($scope.result);
+            } else {
+              cloudberry.layer[layer_name].draw($scope.result);
+            }
+          }
+          
+          
+          if(layer_name === "countmap" && count<5 )
+          {
+            count++;
+            
+            if(newResult['doNormalization'] !== oldValue['doNormalization']) {
+              $scope.doNormalization = newResult['doNormalization'];
+              cloudberry.layer["countmap"].draw($scope.result);
+            }
+            if(newResult['doSentiment'] !== oldValue['doSentiment']) {
+              $scope.doSentiment = newResult['doSentiment'];
+              if($scope.doSentiment) {
+                $scope.infoPromp = "Score";  // change the info promp
+              } else {
+               $scope.infoPromp = config.mapLegend;
+             }
+              cloudberry.layer["countmap"].draw($scope.result);
+            }
+              
+              
+          }
+
+        
+      }
+    );
     
     
     
