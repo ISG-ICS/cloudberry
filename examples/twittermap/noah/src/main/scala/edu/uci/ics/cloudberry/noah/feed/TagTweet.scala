@@ -19,7 +19,7 @@ object TagTweet {
   @throws[UnknownPlaceException]
   @throws[TwitterException]
   def tagOneTweet(ln: String, requireGeoField: Boolean): String = {
-    val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis, requireGeoField)
+    val adm = Tweet.toADM(ln, usGeoGnosis, requireGeoField)
     return adm
   }
 }
