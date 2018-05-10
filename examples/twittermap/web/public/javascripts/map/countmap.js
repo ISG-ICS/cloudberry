@@ -454,6 +454,9 @@ angular.module('cloudberry.map')
     }
         
     cloudberry.layer["countmap"] = l;
+    $scope.watchVariables["countmapMapResult"] = "cloudberry.countmapMapResult";
+    $scope.watchVariables["doNormalization"] = "$('#toggle-normalize').prop('checked')";
+    $scope.watchVariables["doSentiment"] = "$('#toggle-sentiment').prop('checked')";
     
     
     $rootScope.$on('maptypeChange', function (event, data) {

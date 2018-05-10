@@ -312,7 +312,7 @@ angular.module("cloudberry.map")
     };
           
     cloudberry.layer["pinmap"] = l;
-    
+    $scope.watchVariables["pinmapMapResult"] = "cloudberry.pinmapMapResult";
     
     
     

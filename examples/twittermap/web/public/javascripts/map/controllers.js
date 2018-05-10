@@ -24,6 +24,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
     $scope.cityIdSet = new Set();
+    $scope.watchVariables = {};
 
     // setting default map styles, zoom level, etc.
     angular.extend($scope, {

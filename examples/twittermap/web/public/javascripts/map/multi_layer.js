@@ -121,16 +121,31 @@ angular.module('cloudberry.map')
     
     var count = 0;
     
+    if($scope.watchVariables){}
+    else{
+        console.log("create variable in ml module");
+        $scope.watchVariables = {
+            'pinmapMapResult': "cloudberry.pinmapMapResult",
+            'countmapMapResult': "cloudberry.countmapMapResult",
+            'doNormalization': "$('#toggle-normalize').prop('checked')",
+            'doSentiment': "$('#toggle-sentiment').prop('checked')"
+          
+        }
+    }
+   
+    
     $scope.$watchCollection(
       function() {
-        return {
-          'pinmapMapResult': cloudberry.pinmapMapResult,
-          'heatmapMapResult':cloudberry.heatmapMapResult,
-          'countmapMapResult': cloudberry.countmapMapResult,
-          'doNormalization': $('#toggle-normalize').prop('checked'),
-          'doSentiment': $('#toggle-sentiment').prop('checked')
           
-        };
+        var obj = {}
+        
+        for (var key in $scope.watchVariables)
+        {
+            obj[key] = eval($scope.watchVariables[key]);
+            
+        }
+          
+        return obj;
       },
 
       function(newResult, oldValue) {

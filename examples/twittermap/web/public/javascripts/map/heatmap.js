@@ -121,12 +121,14 @@ angular.module("cloudberry.map")
             data:"",
             draw:drawHeatMap,
             clear:cleanHeatMap
-            
     }
         
     cloudberry.layer["heatmap"] = l;
+
+    $scope.watchVariables["heatmapMapResult"] = "cloudberry.heatmapMapResult";
+       
     
-    
+
     
     
     
