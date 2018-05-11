@@ -1,7 +1,7 @@
 angular.module('cloudberry.map')
   .controller('multiLayerCtrl', function($scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache) {
     
-        
+    $scope.layer = {};
     
     function drawTweetsLayer(result)
     {
@@ -76,14 +76,14 @@ angular.module('cloudberry.map')
 
         });
         
-        cloudberry.layer["tweets"].data = tweet_layer;
+        $scope.layer["tweets"].data = tweet_layer;
         return tweets_layer;
         
     }
     
     function clearTweetsLayer(){
         
-        cloudberry.layer["tweets"].data.setData([]);
+        $scope.layer["tweets"].data.setData([]);
         
     }
     
@@ -100,23 +100,34 @@ angular.module('cloudberry.map')
         
             var layer_name = cloudberry.parameters.maptype;
             
+            //if (cloudberry.
+            
         
-            cloudberry.layer[layer_name].init();
+            $scope.layer[layer_name].init();
         
              
             
-            cloudberry.layer[layer_name].active = 1;    
+            $scope.layer[layer_name].active = 1;    
             
             
-            for (var key in cloudberry.layer) {
-                if(key!=layer_name && cloudberry.layer[key]){
+            for (var key in $scope.layer) {
+                if(key!=layer_name && $scope.layer[key]){
                     console.log(key); 
-                    cloudberry.layer[key].clear();
+                    $scope.layer[key].clear();
                       
                 }
             }    
         
             
+    })
+    
+    $rootScope.$on('registerLayer', function (event, data) {
+        var layer_name = data[0];
+        var layer = data[1];
+        $scope.layer[layer_name] = layer;
+        for (var key in layer.watchVariables){
+            $scope.watchVariables[key] = layer.watchVariables[key];
+        }
     })
     
     var count = 0;
@@ -159,9 +170,9 @@ angular.module('cloudberry.map')
             $scope.result = newResult[result_name];
             if (Object.keys($scope.result).length !== 0) {
               $scope.status.init = false;
-              cloudberry.layer[layer_name].draw($scope.result);
+              $scope.layer[layer_name].draw($scope.result);
             } else {
-              cloudberry.layer[layer_name].draw($scope.result);
+              $scope.layer[layer_name].draw($scope.result);
             }
           }
           
@@ -172,7 +183,7 @@ angular.module('cloudberry.map')
             
             if(newResult['doNormalization'] !== oldValue['doNormalization']) {
               $scope.doNormalization = newResult['doNormalization'];
-              cloudberry.layer["countmap"].draw($scope.result);
+              $scope.layer["countmap"].draw($scope.result);
             }
             if(newResult['doSentiment'] !== oldValue['doSentiment']) {
               $scope.doSentiment = newResult['doSentiment'];
@@ -181,7 +192,7 @@ angular.module('cloudberry.map')
               } else {
                $scope.infoPromp = config.mapLegend;
              }
-              cloudberry.layer["countmap"].draw($scope.result);
+              $scope.layer["countmap"].draw($scope.result);
             }
               
               

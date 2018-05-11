@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
     
     // set map styles for countmap
     function setCountMapStyle() {
@@ -444,19 +444,29 @@ angular.module('cloudberry.map')
         
     }
     
+    var watchVariables = {"countmapMapResult":"cloudberry.countmapMapResult",
+                          "doNormalization":"$('#toggle-normalize').prop('checked')",
+                          "doSentiment":"$('#toggle-sentiment').prop('checked')"};
+    
     var l ={
             active:0,
             init:initCountMap,
             data:"",
             draw:drawCountMap,
-            clear:cleanCountMap
-            
+            clear:cleanCountMap,
+            watchVariables:watchVariables
     }
-        
+    
+    $timeout(function() {
+        $rootScope.$emit("registerLayer", ["countmap", l]);
+    })
+    
+    /*    
     cloudberry.layer["countmap"] = l;
     $scope.watchVariables["countmapMapResult"] = "cloudberry.countmapMapResult";
     $scope.watchVariables["doNormalization"] = "$('#toggle-normalize').prop('checked')";
     $scope.watchVariables["doSentiment"] = "$('#toggle-sentiment').prop('checked')";
+    */
     
     
     $rootScope.$on('maptypeChange', function (event, data) {

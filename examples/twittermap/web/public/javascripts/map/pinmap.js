@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
@@ -293,7 +293,7 @@ angular.module("cloudberry.map")
     }
     
     
-    
+    var watchVariables = {"pinmapMapResult":"cloudberry.pinmapMapResult"};
     
     //register this map in main control
     var l = {
@@ -306,13 +306,15 @@ angular.module("cloudberry.map")
             },  
             draw : drawPinMap,
             clear: cleanPinMap,
-            
-            
-            
+            watchVariables:watchVariables
     };
+    
+    $timeout(function() {
+        $rootScope.$emit("registerLayer", ["pinmap", l]);
+    })
           
-    cloudberry.layer["pinmap"] = l;
-    $scope.watchVariables["pinmapMapResult"] = "cloudberry.pinmapMapResult";
+    //cloudberry.layer["pinmap"] = l;
+    //$scope.watchVariables["pinmapMapResult"] = "cloudberry.pinmapMapResult";
     
     
     

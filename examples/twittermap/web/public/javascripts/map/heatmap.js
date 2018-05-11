@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
     function setHeatMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -107,25 +107,31 @@ angular.module("cloudberry.map")
       setInfoControlHeatMap();
     }
     
-    
-    
     function initheatMap(){
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
     }
+    
+    var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
+    
     var l ={
             active:0,
             init:initheatMap,
             data:"",
             draw:drawHeatMap,
-            clear:cleanHeatMap
+            clear:cleanHeatMap,
+            watchVariables:watchVariables
     }
+    
+    $timeout(function() {
+        $rootScope.$emit("registerLayer", ["heatmap", l]);
+    })
         
-    cloudberry.layer["heatmap"] = l;
+    //cloudberry.layer["heatmap"] = l;
 
-    $scope.watchVariables["heatmapMapResult"] = "cloudberry.heatmapMapResult";
+    //$scope.watchVariables["heatmapMapResult"] = "cloudberry.heatmapMapResult";
        
     
 
