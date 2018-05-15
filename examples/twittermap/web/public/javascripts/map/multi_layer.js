@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('multiLayerCtrl', function($scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache) {
+  .controller('multiLayerCtrl', function($scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache,multilayerService) {
     
     $scope.layer = {};
     
@@ -120,6 +120,12 @@ angular.module('cloudberry.map')
         
             
     })
+    
+    var heatmapLayer = multilayerService.createHeatmapLayer();
+    $scope.layer["heatmap"] = heatmapLayer;
+    for (var key in heatmapLayer.watchVariables){
+        $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
+    }
     
     $rootScope.$on('registerLayer', function (event, data) {
         var layer_name = data[0];

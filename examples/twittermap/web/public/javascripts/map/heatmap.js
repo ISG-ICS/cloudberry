@@ -116,7 +116,7 @@ angular.module("cloudberry.map")
     
     var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
     
-    var l ={
+    var l = {
             active:0,
             init:initheatMap,
             data:"",
@@ -125,9 +125,11 @@ angular.module("cloudberry.map")
             watchVariables:watchVariables
     }
     
+    /*
     $timeout(function() {
         $rootScope.$emit("registerLayer", ["heatmap", l]);
     })
+    */
         
     //cloudberry.layer["heatmap"] = l;
 
