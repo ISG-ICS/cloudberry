@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('multiLayerCtrl', function($scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache,multilayerService) {
+  .controller('multiLayerCtrl', function($timeout, $scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache,multilayerService) {
     
     $scope.layer = {};
     
@@ -103,16 +103,14 @@ angular.module('cloudberry.map')
             //if (cloudberry.
             
         
-            $scope.layer[layer_name].init();
-        
-             
-            
-            $scope.layer[layer_name].active = 1;    
+            if ($scope.layer[layer_name].active == 0){
+                $scope.layer[layer_name].init();
+                $scope.layer[layer_name].active = 1;
+            }
             
             
             for (var key in $scope.layer) {
                 if(key!=layer_name && $scope.layer[key]){
-                    console.log(key); 
                     $scope.layer[key].clear();
                       
                 }
@@ -121,11 +119,15 @@ angular.module('cloudberry.map')
             
     })
     
-    var heatmapLayer = multilayerService.createHeatmapLayer();
-    $scope.layer["heatmap"] = heatmapLayer;
-    for (var key in heatmapLayer.watchVariables){
-        $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
-    }
+    multilayerService.createHeatmapLayer().then(function(heatmapLayer){
+        $scope.layer["heatmap"] = heatmapLayer;
+        $scope.layer["heatmap"].init();
+        $scope.layer["heatmap"].active = 1;
+        $scope.map.addLayer($scope.layer["heatmap"].layer);
+        for (var key in heatmapLayer.watchVariables){
+            $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
+        }
+    })
     
     $rootScope.$on('registerLayer', function (event, data) {
         var layer_name = data[0];
