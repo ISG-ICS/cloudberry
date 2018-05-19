@@ -424,7 +424,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
-            var hashTagJson = JSON.stringify({
+            var heatHashTagJson = JSON.stringify({
               dataset: parameters.dataset,
               filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
               unnest: [{
@@ -457,7 +457,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             ws.send(heatJson);
             ws.send(heatTimeJson);
-            ws.send(hashTagJson);
+            ws.send(heatHashTagJson);
             break;
 
           case 'pinmap':
@@ -516,7 +516,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
-            var hashTagJson = JSON.stringify({
+            var pinHashTagJson = JSON.stringify({
               dataset: parameters.dataset,
               filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
               unnest: [{
@@ -549,7 +549,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             ws.send(pointsJson);
             ws.send(pointsTimeJson);
-            ws.send(hashTagJson);
+            ws.send(pinHashTagJson);
             break;
           
           default:
