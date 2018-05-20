@@ -77,7 +77,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
             icon3.src = "/assets/images/point_map_no_border.png";
             break;
             
-          case "pointmap":
+          case "pinmap":
             icon1.src = "/assets/images/aggregation_map_no_border.png";
             icon2.src = "/assets/images/heat_map_no_border.png";
             icon3.src = "/assets/images/point_map.png";
@@ -115,9 +115,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
         icon3.addEventListener("click", function () {
 
-            if (cloudberry.parameters.maptype !== 'pointmap') {
+            if (cloudberry.parameters.maptype !== 'pinmap') {
                 var premaptype = cloudberry.parameters.maptype;
-                cloudberry.parameters.maptype = 'pointmap';
+                cloudberry.parameters.maptype = 'pinmap';
                 icon1.src = "/assets/images/aggregation_map_no_border.png";
                 icon2.src = "/assets/images/heat_map_no_border.png";
                 icon3.src = "/assets/images/point_map.png";
