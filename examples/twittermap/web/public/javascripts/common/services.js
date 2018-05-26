@@ -619,6 +619,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             if(angular.isArray(result.value)) {
               cloudberryService.commonHashTagResult = result.value[0];
             }
+            break;
           case "totalCount":
             cloudberryService.commonTotalCount = result.value[0][0].count;
             break;
