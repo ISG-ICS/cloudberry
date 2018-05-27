@@ -26,8 +26,29 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
           $scope.currentTweetCount += value;
           result_array.push({'time': key, 'count': value});
         });
-
+          
       }
+        
+      //If county-hist cache method; in replacement with line21-28:
+      //assuming result is a JSON formated list of each county's histogram,
+      //represent as a list order by day.
+//      if (result && result[0]) {
+//        // Accumulation
+//        var add = (a, b) => a + b;
+//        var zip = rows => rows[0].map((_,c)=>rows.map(row=>row[c]));
+//        
+//        var accu_hist = [];
+//        for (var i = 0; i < data.length; i++) {
+//          accu_hist[c] = data[c]["hist"];
+//        }
+//        var ret = zip(accu_hist).map((idx,_)=>idx.reduce(add));
+//        
+//        result_hist = $scope.empty;
+//        for (var i=0; i<empty.length; i++) {
+//            result_hist[i]["count"] = ret[i];
+//        }               
+//      }
+        
       return result_array;
     };
 
