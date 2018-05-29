@@ -1,10 +1,11 @@
 angular.module('cloudberry.common')
-    .service('multilayerHeatmap', function($timeout, $q, cloudberryConfig){
-        function initheatMap(){
+    .service('multilayerHeatmap', function($timeout, $q, cloudberry, cloudberryConfig){
+        function initheatMap(scope){
             var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
             this.layer = L.heatLayer([], {radius: unitRadius});
+            var instance = this;
             
-            $watch(
+            scope.$watch(
               function() {
                 return cloudberry.heatmapMapResult;
               },        
@@ -14,12 +15,12 @@ angular.module('cloudberry.common')
                     cloudberry.layer["heatmap"].data = newResult; 
                   
                   if (cloudberry.parameters.maptype === "heatmap"){
-                  $scope.result = newResult;
-                  if (Object.keys($scope.result).length !== 0) {
-                    $scope.status.init = false;
-                    drawHeatMap($scope.result);
+                  scope.result = newResult;
+                  if (Object.keys(scope.result).length !== 0) {
+                    scope.status.init = false;
+                    instance.draw(scope.result);
                   } else {
-                    drawHeatMap($scope.result);
+                    instance.draw(scope.result);
                   }
                 }
               }
@@ -49,6 +50,7 @@ angular.module('cloudberry.common')
         }
         
         function drawHeatMap(result){
+            console.log("heatmap");
             var instance = this;
             function setHeatMapPoints(points) {
                 instance.layer.setLatLngs(points);
@@ -72,7 +74,12 @@ angular.module('cloudberry.common')
             this.layer = null;
         }
         
-        var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
+        function zoomFunction(){
+            console.log("heatmap zoom");
+        }
+        
+        //var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
+        var watchVariables = {};
         
         var heatmapService = {
             createLayer: function(parameters){
@@ -83,6 +90,7 @@ angular.module('cloudberry.common')
                     init: initheatMap,
                     draw: drawHeatMap,
                     clear: cleanHeatMap,
+                    zoom: zoomFunction,
                     watchVariables: watchVariables
                 });
                 return deferred.promise;

@@ -104,31 +104,24 @@ angular.module('cloudberry.map')
             
         
             if ($scope.layer[layer_name].active == 0){
-                $scope.layer[layer_name].init();
+                //$scope.layer[layer_name].init($scope);
                 $scope.layer[layer_name].active = 1;
+                $scope.map.addLayer($scope.layer[layer_name].layer);
             }
             
             
             for (var key in $scope.layer) {
                 if(key!=layer_name && $scope.layer[key]){
-                    $scope.layer[key].clear();
-                      
+                    if(key!="pinmap" && key != "polygon"){
+                        $scope.map.removeLayer($scope.layer[key].layer);
+                        //$scope.layer[key].clear();
+                        $scope.layer[key].active = 0;
+                    }
                 }
             }    
         
             
     })
-    
-    multilayerService.createCountmapLayer().then(function(countmapLayer){
-        $scope.layer["countmap"] = countmapLayer;
-        $scope.layer["countmap"].init().then(function(){
-            $scope.layer["countmap"].active = 1;
-            $scope.map.addLayer($scope.layer["countmap"].layer);
-            for (var key in countmapLayer.watchVariables){
-                $scope.watchVariables[key] = countmapLayer.watchVariables[key];
-            }
-        });
-    });
     
     multilayerService.createPolygonLayer().then(function(polygonLayer){
         $scope.layer["polygon"] = polygonLayer;
@@ -141,14 +134,27 @@ angular.module('cloudberry.map')
         });
     });
     
+    multilayerService.createCountmapLayer().then(function(countmapLayer){
+        $scope.layer["countmap"] = countmapLayer;
+        $scope.layer["countmap"].init().then(function(){
+            $scope.layer["countmap"].active = 1;
+            $scope.map.addLayer($scope.layer["countmap"].layer);
+            for (var key in countmapLayer.watchVariables){
+                $scope.watchVariables[key] = countmapLayer.watchVariables[key];
+            }
+        });
+    });
+    
     multilayerService.createHeatmapLayer().then(function(heatmapLayer){
         $scope.layer["heatmap"] = heatmapLayer;
-        $scope.layer["heatmap"].init();
+        $scope.layer["heatmap"].init($scope);
         $scope.layer["heatmap"].active = 1;
         $scope.map.addLayer($scope.layer["heatmap"].layer);
+        /*
         for (var key in heatmapLayer.watchVariables){
             $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
         }
+        */
     });
     
     $rootScope.$on('registerLayer', function (event, data) {
