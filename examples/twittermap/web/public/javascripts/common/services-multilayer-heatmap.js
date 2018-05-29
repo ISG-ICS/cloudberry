@@ -50,7 +50,6 @@ angular.module('cloudberry.common')
         }
         
         function drawHeatMap(result){
-            console.log("heatmap");
             var instance = this;
             function setHeatMapPoints(points) {
                 instance.layer.setLatLngs(points);
@@ -75,7 +74,7 @@ angular.module('cloudberry.common')
         }
         
         function zoomFunction(){
-            console.log("heatmap zoom");
+            console.log("heatmap");
         }
         
         //var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
