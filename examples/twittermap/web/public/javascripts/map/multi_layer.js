@@ -119,6 +119,28 @@ angular.module('cloudberry.map')
             
     })
     
+    multilayerService.createCountmapLayer().then(function(countmapLayer){
+        $scope.layer["countmap"] = countmapLayer;
+        $scope.layer["countmap"].init().then(function(){
+            $scope.layer["countmap"].active = 1;
+            $scope.map.addLayer($scope.layer["countmap"].layer);
+            for (var key in countmapLayer.watchVariables){
+                $scope.watchVariables[key] = countmapLayer.watchVariables[key];
+            }
+        });
+    });
+    
+    multilayerService.createPolygonLayer().then(function(polygonLayer){
+        $scope.layer["polygon"] = polygonLayer;
+        $scope.layer["polygon"].init().then(function(){
+            $scope.layer["polygon"].active = 1;
+            $scope.map.addLayer($scope.layer["polygon"].layer);
+            for (var key in polygonLayer.watchVariables){
+                $scope.watchVariables[key] = polygonLayer.watchVariables[key];
+            }
+        });
+    });
+    
     multilayerService.createHeatmapLayer().then(function(heatmapLayer){
         $scope.layer["heatmap"] = heatmapLayer;
         $scope.layer["heatmap"].init();
@@ -127,7 +149,7 @@ angular.module('cloudberry.map')
         for (var key in heatmapLayer.watchVariables){
             $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
         }
-    })
+    });
     
     $rootScope.$on('registerLayer', function (event, data) {
         var layer_name = data[0];
@@ -151,7 +173,14 @@ angular.module('cloudberry.map')
           
         }
     }
-   
+    
+    $scope.$on("leafletDirectiveMap.zoomend", function() {
+        for (var key in $scope.layer) {
+            if ($scope.layer[key].active && typeof $scope.layer[key].zoom === "function"){
+                $scope.layer[key].zoom();
+            }
+        }
+    })
     
     $scope.$watchCollection(
       function() {

@@ -426,11 +426,13 @@ angular.module('cloudberry.map')
     }
     
     // initialize if the default map type is countmap
+    /*
     if (cloudberry.parameters.maptype == 'countmap'){
       setCountMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlCountMap();
     }
+    */
     
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
@@ -457,9 +459,11 @@ angular.module('cloudberry.map')
             watchVariables:watchVariables
     }
     
+    /*
     $timeout(function() {
         $rootScope.$emit("registerLayer", ["countmap", l]);
     })
+    */
     
     /*    
     cloudberry.layer["countmap"] = l;

@@ -1,58 +1,29 @@
 angular.module('cloudberry.common')
     .service('multilayerHeatmap', function($timeout, $q, cloudberryConfig){
-        var heatmapStyle = {
-            initStyle: {
-                weight: 0.5,
-                fillOpacity: 0,
-                color: "white"
-            },
-            stateStyle: {
-                fillColor: "#f7f7f7",
-                weight: 0.5,
-                opacity: 1,
-                color: "#92d1e1",
-                fillOpacity: 0
-            },
-            stateUpperStyle: {
-                fillColor: "#f7f7f7",
-                weight: 0.5,
-                opacity: 1,
-                color: "#92d1e1",
-                fillOpacity: 0
-            },
-            countyStyle: {
-                fillColor: "#f7f7f7",
-                weight: 0.5,
-                opacity: 1,
-                color: "#92d1e1",
-                fillOpacity: 0
-            },
-            countyUpperStyle: {
-                fillColor: "#f7f7f7",
-                weight: 0.5,
-                opacity: 1,
-                color: "#92d1e1",
-                fillOpacity: 0
-            },
-            cityStyle: {
-                fillColor: "#f7f7f7",
-                weight: 0.5,
-                opacity: 1,
-                color: "#92d1e1",
-                fillOpacity: 0
-            },
-            hoverStyle: {
-                weight: 0.7,
-                color: "#666",
-                fillOpacity: 0
-            },
-            colors: [ "#ffffff", "#92d1e1", "#4393c3", "#2166ac", "#f4a582", "#d6604d", "#b2182b"],
-            sentimentColors: ["#ff0000", "#C0C0C0", "#00ff00"]
-        };
-        
         function initheatMap(){
             var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
             this.layer = L.heatLayer([], {radius: unitRadius});
+            
+            $watch(
+              function() {
+                return cloudberry.heatmapMapResult;
+              },        
+              function(newResult) {
+                
+                if(cloudberry.layer["heatmap"])
+                    cloudberry.layer["heatmap"].data = newResult; 
+                  
+                  if (cloudberry.parameters.maptype === "heatmap"){
+                  $scope.result = newResult;
+                  if (Object.keys($scope.result).length !== 0) {
+                    $scope.status.init = false;
+                    drawHeatMap($scope.result);
+                  } else {
+                    drawHeatMap($scope.result);
+                  }
+                }
+              }
+            );
         }
         
         // For randomize coordinates by bounding_box
