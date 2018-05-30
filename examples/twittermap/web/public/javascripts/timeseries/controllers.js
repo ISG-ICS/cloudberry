@@ -14,21 +14,18 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
-    $scope.preProcess = function (result) {
-      // TODO make the pattern can be changed by the returned result parameters
+    $scope.preProcess = function (result) {        
       var result_array = [];
-      $scope.currentTweetCount = 0;
+      $scope.currentTweetCount = 0;  
       if (result && result[0]) {
-        var granu = Object.keys(result[0])[0];
         angular.forEach(result, function (value, key) {
-          key = new Date(value[granu]);
-          value = +value.count;
-          $scope.currentTweetCount += value;
-          result_array.push({'time': key, 'count': value});
+          $scope.currentTweetCount += value.count;
+          key = new Date(value.day);
+          result_array.push({'time': key, 'count': value.count});
         });
-
       }
-      return result_array;
+        
+      return result_array; 
     };
 
     // add information about the count of tweets
@@ -106,8 +103,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               dc.redrawAll();
               return;
             }
-
+              
             $scope.ndx = crossfilter(newVal);
+             
             var timeDimension = $scope.ndx.dimension(function (d) {
               return d3.time.day(d.time);
             });
