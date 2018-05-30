@@ -1,9 +1,14 @@
+/*
+ * This module caches map results data of a query. The common services module communicates with
+ * middle ware and the map result cache.
+ */
 'use strict';
 angular.module('cloudberry.countyhistcache', [])
     .service('CountyHistCache', function () {
     
         // The key-value store that stores map results of a query.
         var store = new HashMap();
+        var countyStore = new HashMap();
         // To check if keyword in query is changed (new query?)
         var currentKeywords = [""];
         // To check if time range in query changed (new query?)
@@ -29,33 +34,14 @@ angular.module('cloudberry.countyhistcache', [])
         * this.preloadValues if this.isNewKeyword only.
         * current cache is cleared when new keyword is requested.
         */
-        this.isNewKeyword = function (keywords, timeInterval) {
-            if (keywords.toString() != currentKeywords.toString() ||
-                !angular.equals(currentTimeRange, timeInterval)) {
+        this.isNewKeyword = function (keywords) {
+            if (keywords.toString() != currentKeywords.toString()) {
                 store.clear();
-                return 1; //True
+                countyStore.clear();
+                return 1; //is new keyword
             }
             return 0;
         }
-        
-        
-        /** 
-        * Retrieve all county level map result and cache as historgrams,
-        * once a new keyword is requested.
-        */
-        this.preloadValues = function (keywords, timeInterval, mapResult) {//byGeoResult, byTimeResult) {
-            currentKeywords = keywords.slice();
-            currentTimeRange.start = timeInterval.start;
-            currentTimeRange.end = timeInterval.end;
-            var geoIdSet = new Set(this.allCountyIds);
-                        
-//            for (var i = 0; i < this.allCountyIds.length; i++) {
-//                store.set(prefix['county'] + this.allCountyIds[i], Object.assign({}, byGeoResult[i], byTimeResult[i]));
-//            }   
-            for (var i = 0; i < mapResult.length; i++) {
-                store.set(prefix['county'] + mapResult[i]['county'], mapResult[i]);
-            }
-        }        
         
         
         /**
@@ -70,18 +56,31 @@ angular.module('cloudberry.countyhistcache', [])
             var geoIdsNotInCache = [];
             
             // New query case
-            if (keywords.toString() != currentKeywords.toString() ||
-                !angular.equals(currentTimeRange, timeInterval)) {
+            if (keywords.toString() != currentKeywords.toString()) {
                 store.clear();
+                countyStore.clear();
                 currentKeywords = keywords.slice();
                 currentTimeRange.start = timeInterval.start;
                 currentTimeRange.end = timeInterval.end;
+                return geoIds; // since cache is emptied.
+            } 
+            // County level case
+            else if (geoLevel == "county") {
+                return geoIdsNotInCache;
             }
-
-            for (var i = 0; i < geoIds.length; i++) {
+            // New time interval non-county level case
+            else if (!angular.equals(currentTimeRange, timeInterval)) {
+              // delete state and city level cache
+              store.clear();
+              return geoIds;
+            }
+            // Same time interval non-county level case
+            else {
+              for (var i = 0; i < geoIds.length; i++) {
                 if (!store.has(prefix[geoLevel] + geoIds[i])) {
-                    geoIdsNotInCache.push(geoIds[i]);
+                  geoIdsNotInCache.push(geoIds[i]);
                 }
+              }
             }
 
             return geoIdsNotInCache;
@@ -93,33 +92,67 @@ angular.module('cloudberry.countyhistcache', [])
          */
         this.getValues = function (geoIds, geoLevel) {
             var resultArray = [];
-
-            for (var i = 0; i < geoIds.length; i++) {
-                var value = store.get(prefix[geoLevel] + geoIds[i]);
-                if (value !==  undefined && value !== INVALID_VALUE) {
+            var value = undefined;
+            var date = undefined;
+            
+            if (geoLevel == "county") {
+              for (var i = 0; i < geoIds.length; i++) {
+                value = countyStore.get(prefix[geoLevel] + geoIds[i]);
+                if (value !== undefined && value !== INVALID_VALUE) {
+                  for (var j = 0; j < value.length; j++) {
+                    date = new Date(value[j]["day"]);
+                    if (date >= currentTimeRange.start && 
+                        date <= currentTimeRange.end) {
+                      resultArray.push(value[j]);
+                    }
+                  }
+                }
+              }
+            } else {
+              for (var i = 0; i < geoIds.length; i++) {
+                value = store.get(prefix[geoLevel] + geoIds[i]);
+                if (value !== undefined && value !== INVALID_VALUE) {
                     resultArray.push(value);
                 }
+              }
             }
             return resultArray;
         };
 
     
         /**
-         * Updates the store with map result each time the middleware responds to json request.
+         * Updates the store with map result each time the middleware responds to json request:
+         * in case of "preloadRequest" or "batchWithPartialGeoRequest".
          */
         this.putValues = function (geoIds, geoLevel, mapResult) {
             var geoIdSet = new Set(geoIds);
+            var location = '';
+            var records = [];
 
             // First updates the store with geoIds that have results.
-            for (var i = 0; i < mapResult.length; i++) {
+            if (geoLevel == "county") {
+              for (var i = 0; i < mapResult.length; i++) {
+                location = prefix[geoLevel] + mapResult[i][geoLevel];
+                // when one location has more than one record
+                if (countyStore.has(location)) { 
+                  records = countyStore.get(location)
+                  records.push(mapResult[i])
+                  countyStore.set(location, records);
+                } else { countyStore.set(location, [mapResult[i]]); }
+             }
+            } else {
+              for (var i = 0; i < mapResult.length; i++) {
                 store.set(prefix[geoLevel] + mapResult[i][geoLevel], mapResult[i]);
                 geoIdSet.delete(mapResult[i][geoLevel]);
+              }
             }
+
             // Mark other results as checked: these are geoIds with no results
-            geoIdSet.forEach(function (value) {
+            if (geoLevel != "county") { // "county" geoIds not in store have value 0.
+              geoIdSet.forEach(function (value) {
                 store.set(prefix[geoLevel] + value, INVALID_VALUE);
-            });
+              });
+            }
         };
      
     });
-
