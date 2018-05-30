@@ -14,42 +14,18 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
-    $scope.preProcess = function (result) {
-      // TODO make the pattern can be changed by the returned result parameters
+    $scope.preProcess = function (result) {        
       var result_array = [];
-      $scope.currentTweetCount = 0;
+      $scope.currentTweetCount = 0;  
       if (result && result[0]) {
-        var granu = Object.keys(result[0])[0];
         angular.forEach(result, function (value, key) {
-          key = new Date(value[granu]);
-          value = +value.count;
-          $scope.currentTweetCount += value;
-          result_array.push({'time': key, 'count': value});
+          $scope.currentTweetCount += value.count;
+          key = new Date(value.day);
+          result_array.push({'time': key, 'count': value.count});
         });
-          
       }
         
-      //If county-hist cache method; in replacement with line21-28:
-      //assuming result is a JSON formated list of each county's histogram,
-      //represent as a list order by day.
-//      if (result && result[0]) {
-//        // Accumulation
-//        var add = (a, b) => a + b;
-//        var zip = rows => rows[0].map((_,c)=>rows.map(row=>row[c]));
-//        
-//        var accu_hist = [];
-//        for (var i = 0; i < data.length; i++) {
-//          accu_hist[c] = data[c]["hist"];
-//        }
-//        var ret = zip(accu_hist).map((idx,_)=>idx.reduce(add));
-//        
-//        result_hist = $scope.empty;
-//        for (var i=0; i<empty.length; i++) {
-//            result_hist[i]["count"] = ret[i];
-//        }               
-//      }
-        
-      return result_array;
+      return result_array; 
     };
 
     // add information about the count of tweets
@@ -127,8 +103,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               dc.redrawAll();
               return;
             }
-
+              
             $scope.ndx = crossfilter(newVal);
+             
             var timeDimension = $scope.ndx.dimension(function (d) {
               return d3.time.day(d.time);
             });

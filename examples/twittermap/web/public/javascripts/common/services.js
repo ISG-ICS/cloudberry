@@ -1,4 +1,4 @@
-angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.countyhistcache'])
+angular.module('cloudberry.common', ['cloudberry.countyhistcache'])
   .factory('cloudberryConfig', function(){
     return {
       ws: "ws://" + location.host + "/ws",
@@ -41,7 +41,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
       }
     };
   })
-  .service('cloudberry', function($timeout, cloudberryConfig, MapResultCache, CountyHistCache) {
+  .service('cloudberry', function($timeout, cloudberryConfig, CountyHistCache) {
     var startDate = config.startDate;
     var endDate = config.endDate;
     var defaultNonSamplingDayRange = 1500;
@@ -111,7 +111,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
           values: keywords
         }
       ];
-      if (geoIds.length <= 3222){
+      if (geoIds.length <= 3277){ //maximum number of counties plus states, 3221+56
         filter.push(
           {
             field: "geo_tag." + spatialField,
@@ -122,38 +122,49 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
       }
       return filter;
     }
-
-    /// INCOMPLETE
-//    function byCountyHistRequest(parameters) {
-//        return {
-//        dataset: parameters.dataset,
-//        filter: getFilter(parameters, defaultNonSamplingDayRange, CountyHistCache.allCountyIds),
-//        group: {
-//          by: [{
-//            field: "create_at",
-//            apply: {
-//              name: "interval",
-//              args: {
-//                unit: parameters.timeBin
-//              }
-//            },
-//            as: parameters.timeBin
-//          }],
-//          aggregate: [{
-//            field: "*",
-//            apply: {
-//              name: "count"
-//            },
-//            as: "count"
-//          }]
-//        }
-//      };
-//    }
     
     
-    function byGeoRequest(parameters, geoIds) {    
+    // Request all county's histogram data,
+    // return format {county, day, count}
+    function byCountyHistRequest(parameters) {
+        return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+        group: {
+          by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel
+              }
+            },
+            as: parameters.geoLevel
+          },
+          {
+            field: "create_at",
+            apply: {
+              name: "interval",
+              args: {
+                unit: parameters.timeBin
+              }
+            },
+            as: parameters.timeBin
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }]
+        }
+      };
+    }
+    
+    function byGeoRequest(parameters, geoIds) {
       if (cloudberryConfig.sentimentEnabled) {
-        ret = {
+        return {
           dataset: parameters.dataset,
           append: [{
             field: "text",
@@ -197,9 +208,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
             ]
           }
         };
-          return ret;
       } else {
-        ret2 = {
+        return {
           dataset: parameters.dataset,
           filter: getFilter(parameters, defaultNonSamplingDayRange, geoIds),
           group: {
@@ -225,7 +235,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
             ]
           }
         };
-        return ret2;
       }
     }
 
@@ -282,8 +291,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
       };
     }
 
-    
-    
     var cloudberryService = {
 
       commonTotalCount: 0,
@@ -300,6 +307,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
         geoIds : [37,51,24,11,10,34,42,9,44,48,35,4,40,6,20,32,8,49,12,22,28,1,13,45,5,47,21,29,54,17,18,39,19,55,26,27,31,56,41,46,16,30,53,38,25,36,50,33,23,2]
       },
 
+      preloadHistResult: [],    
       countmapMapResult: [],
       countmapPartialMapResult: [],
       commonTimeSeriesResult: [],
@@ -310,54 +318,23 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
       
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
-        
-        // preload county hist when new keyword is introduced.
-        if (CountyHistCache.isNewKeyword(cloudberryService.parameters.keywords,
-                                         cloudberryService.parameters.timeInterval)) {
-            var tempparam = Object.assign({}, parameters, {geoLevel:'county', geoIds: CountyHistCache.allCountyIds});
+
+        // generate query to preload county histogram when new keyword is introduced.  
+        if (CountyHistCache.isNewKeyword(parameters.keywords)) {
+          var tempparams = Object.assign({}, parameters, {geoLevel:'county', geoIds: CountyHistCache.allCountyIds});
             
-            var countyJson = (JSON.stringify({
-              dataset: tempparam.dataset,
-              filter: getFilter(tempparam, defaultSamplingDayRange, tempparam.geoIds),
-              select: {
-                order: ["-create_at"],
-                limit: defaultSamplingSize,
-                offset: 0,
-                field: ["create_at", "id", "user.id"]
-              },
-              transform: {
-                wrap: {
-                  id: "sample",
-                  category: "sample"
-                }
+          var preloadRequest = (JSON.stringify({
+            batch: [byCountyHistRequest(tempparams)],
+            transform: {
+              wrap: {
+                id: "preloadRequest",
+                category: "preloadRequest"
               }
-            }));
-            // Batch request without map result - used when the complete map result cache hit case
-            var preloadRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(tempparam), byHashTagRequest(tempparam)],
-              option: {
-                sliceMillis: cloudberryConfig.querySliceMills
-              },
-              transform: {
-                wrap: {
-                  id: "preloadRequest",
-                  category: "preloadRequest"
-                }
-              }
-            })) : (JSON.stringify({
-                batch: [byTimeRequest(tempparam), byHashTagRequest(tempparam)],
-                transform: {
-                    wrap: {
-                        id: "preloadRequest",
-                        category: "preloadRequest"
-                    }
-                }
-            }));
+            }
+          }));
 
-            ws.send(countyJson);
-            ws.send(preloadRequest);
-        };  
-
+          ws.send(preloadRequest);
+        }; 
           
         // generate query based on map type
         switch (parameters.maptype) {
@@ -400,7 +377,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
                     }
                 }
             }));
-                   
+
             // Gets the Geo IDs that are not in the map result cache.
             geoIdsNotInCache = CountyHistCache.getGeoIdsNotInCache(cloudberryService.parameters.keywords,
               cloudberryService.parameters.timeInterval,
@@ -429,14 +406,13 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
                         category: "batchWithPartialGeoRequest"
                     }
                 }
-            }));  
-            
-                
+            }));
+
             // Complete map result cache hit case - exclude map result request
             if(geoIdsNotInCache.length === 0)  {
               cloudberryService.countmapMapResult = CountyHistCache.getValues(cloudberryService.parameters.geoIds,
                 cloudberryService.parameters.geoLevel);
-                
+
               ws.send(sampleJson);
               ws.send(batchWithoutGeoRequest);
             }
@@ -564,7 +540,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
                 }
               }
             }));
-                
+
             ws.send(pointsJson);
             ws.send(pointsTimeJson);
             break;
@@ -579,17 +555,20 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-          
+
         switch (result.category) {
+
+          case "preloadRequest":
+            preloadHistResult = [];
+            if(angular.isArray(result.value)) {
+              cloudberryService.preloadHistResult = result.value[0];
+              CountyHistCache.putValues(CountyHistCache.allCountyIds, "county",
+                cloudberryService.preloadHistResult);
+            }
+            break;
+                
           case "sample":
             cloudberryService.commonTweetResult = result.value[0];
-            break;
-          // new keyword case
-          case "preloadRequest"://"countyBatchWithoutGeoRequest":
-                if(angular.isArray(result.value)) {
-                    CountyHistCache.preloadValues(cloudberryService.parameters.keywords, 
-                      cloudberryService.parameters.timeInterval, result.value[0])
-                }
             break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
@@ -608,7 +587,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
             // When the query is executed completely, we update the map result cache.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
                 result.value['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-              MapResultCache.putValues(geoIdsNotInCache, cloudberryService.parameters.geoLevel,
+              CountyHistCache.putValues(geoIdsNotInCache, cloudberryService.parameters.geoLevel,
                 cloudberryService.countmapMapResult);
             }
             break;
@@ -656,4 +635,3 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.co
 
     return cloudberryService;
   });
-
