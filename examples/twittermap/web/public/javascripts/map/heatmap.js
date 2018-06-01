@@ -72,7 +72,8 @@ angular.module("cloudberry.map")
       $scope.resetDragFunction(onEachFeature);
 
       if (!$scope.heat){
-        $scope.heat = L.heatLayer([]);
+        var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
+        $scope.heat = L.heatLayer([], {radius: unitRadius});
       }
     }
     
@@ -86,14 +87,15 @@ angular.module("cloudberry.map")
         $scope.heatMapLayer = $scope.heat;
         $scope.map.addLayer($scope.heatMapLayer);
       }
-        
+      
+      var unitIntensity = parseInt(config.heatmapUnitIntensity); // getting the default intensity for a tweet
       var points = [];
       for (var i = 0; i < result.length; i++) {
         if (result[i].hasOwnProperty("coordinate")){
-          points.push([result[i].coordinate[1], result[i].coordinate[0]]);
+          points.push([result[i].coordinate[1], result[i].coordinate[0], unitIntensity]);
         }
         else {
-          points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
+          points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0]), unitIntensity]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
         }
       }
       setHeatMapPoints(points);
