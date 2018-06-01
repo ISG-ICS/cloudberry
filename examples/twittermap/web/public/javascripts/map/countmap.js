@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({
@@ -130,10 +130,10 @@ angular.module('cloudberry.map')
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
         this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
-          '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
-          '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+          '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
+          '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
           '<br/>',
-          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
+          '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -143,9 +143,7 @@ angular.module('cloudberry.map')
         position: 'topleft'
       };
       if ($scope.map){
-        $timeout(function(){
-          info.addTo($scope.map);
-        });
+        info.addTo($scope.map);
       }
       else {
         $scope.controls.custom.push(info);
