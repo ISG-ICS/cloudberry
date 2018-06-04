@@ -67,6 +67,7 @@ angular.module('cloudberry.map')
       removeMapControl('legend');
       removeMapControl('normalize');
       removeMapControl('sentiment');
+      removeMapControl('info');
 
     }
     
@@ -129,10 +130,10 @@ angular.module('cloudberry.map')
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
         this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
-          '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
-          '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+          '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
+          '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
           '<br/>',
-          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
+          '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -141,7 +142,12 @@ angular.module('cloudberry.map')
       info.options = {
         position: 'topleft'
       };
-      $scope.controls.custom.push(info);
+      if ($scope.map){
+        info.addTo($scope.map);
+      }
+      else {
+        $scope.controls.custom.push(info);
+      }
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
@@ -440,7 +446,7 @@ angular.module('cloudberry.map')
       }
     })
     
-    // monitor the countmap related variables, update the pointmap if necessary
+    // monitor the countmap related variables, update the countmap if necessary
     $scope.$watchCollection(
       function() {
         return {

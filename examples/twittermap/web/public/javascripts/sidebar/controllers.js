@@ -1,12 +1,12 @@
 angular.module('cloudberry.sidebar', ['cloudberry.common'])
   .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
-    $scope.result = null;
+    $scope.hashTagsList = null;
     $scope.$watch(
       function () {
         return cloudberry.commonHashTagResult;
       },
       function (newResult) {
-        $scope.result = newResult;
+        $scope.hashTagsList = newResult;
       }
     );
   })
@@ -17,7 +17,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       template: [
         '<table class="table" id="hashcount">',
         '<thead>',
-        '<tr ng-repeat="r in result | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
+        '<tr ng-repeat="r in hashTagsList | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
         '</thead>',
         '</table>'
       ].join('')

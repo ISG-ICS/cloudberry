@@ -424,8 +424,40 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
+            var heatHashTagJson = JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+              unnest: [{
+                hashtags: "tag"
+              }],
+              group: {
+                by: [{
+                  field: "tag"
+                }],
+                aggregate: [{
+                  field: "*",
+                  apply: {
+                    name: "count"
+                  },
+                  as: "count"
+                }]
+              },
+              select: {
+                order: ["-count"],
+                limit: 50,
+                offset: 0
+              },
+              transform: {
+                wrap: {
+                  id: "hashTags",
+                  category: "hashTags"
+                }
+              }
+            });
+
             ws.send(heatJson);
             ws.send(heatTimeJson);
+            ws.send(heatHashTagJson);
             break;
 
           case 'pinmap':
@@ -484,8 +516,40 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
+            var pinHashTagJson = JSON.stringify({
+              dataset: parameters.dataset,
+              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+              unnest: [{
+                hashtags: "tag"
+              }],
+              group: {
+                by: [{
+                  field: "tag"
+                }],
+                aggregate: [{
+                  field: "*",
+                  apply: {
+                    name: "count"
+                  },
+                  as: "count"
+                }]
+              },
+              select: {
+                order: ["-count"],
+                limit: 50,
+                offset: 0
+              },
+              transform: {
+                wrap: {
+                  id: "hashTags",
+                  category: "hashTags"
+                }
+              }
+            });
+
             ws.send(pointsJson);
             ws.send(pointsTimeJson);
+            ws.send(pinHashTagJson);
             break;
           
           default:
@@ -549,6 +613,11 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "pointsTime":
             if(angular.isArray(result.value)) {
               cloudberryService.commonTimeSeriesResult = result.value[0];
+            }
+            break;
+          case "hashTags":
+            if(angular.isArray(result.value)) {
+              cloudberryService.commonHashTagResult = result.value[0];
             }
             break;
           case "totalCount":
