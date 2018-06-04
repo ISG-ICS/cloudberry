@@ -66,7 +66,7 @@ sendEmail()
 touchAsterixDB()
 {
 	echo "[1] Touching AsterixDB with \"select count(*) from berry.meta\" ..."
-	local result=$(curl -s --max-time 900 --data-urlencode "statement=select count(*) from berry.meta;" http://${asterixDBHostPort}/query/service)
+	local result=$(curl -s --max-time 300 --data-urlencode "statement=select count(*) from berry.meta;" http://${asterixDBHostPort}/query/service)
 	echo "Result is :" ${result}
 	local status=$(echo $result | python -c "import sys, json; print json.load(sys.stdin)['status']" 2>/dev/null)
 	echo "Status = " ${status}
@@ -98,7 +98,7 @@ touchCloudberry()
 touchTwittermap()
 {
 	echo "[3] Touching Twittermap with http request ..."
-	local httpCode=$(curl --max-time 900 -s -o /dev/null -w "%{http_code}" http://${twittermapHostPort})
+	local httpCode=$(curl --max-time 300 -s -o /dev/null -w "%{http_code}" http://${twittermapHostPort})
 	echo "httpCode is :" ${httpCode}
 	if [ "${httpCode}" = "200" ] ; then
 		echo "[Good!] Twittermap is accessible."
