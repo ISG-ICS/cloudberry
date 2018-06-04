@@ -90,6 +90,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     }
 
+    // when getAllInLevel=0 request all geoIds in parameters.geoLevel
     function getFilter(parameters, maxDay, geoIds, getAllInLevel=0) {
       var spatialField = getLevel(parameters.geoLevel);
       var keywords = [];
@@ -111,11 +112,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      // get all geoIds in parameters.geoLevel
-      if (getAllInLevel) {
-        return filter;
-      }
-      if (geoIds.length <= 2000){
+      if (!getAllInLevel && geoIds.length <= 2000){
         filter.push(
           {
             field: "geo_tag." + spatialField,
@@ -131,7 +128,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     function byTimeSeriesRequest(parameters) {
         return {
         dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange, [], getAllInLevel=1),
+        filter: getFilter(parameters, defaultNonSamplingDayRange, [], 1),
         group: {
           by: [{
             field: "geo",
