@@ -90,7 +90,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     }
 
-    function getFilter(parameters, maxDay, geoIds) {
+    function getFilter(parameters, maxDay, geoIds, getAllInLevel=0) {
       var spatialField = getLevel(parameters.geoLevel);
       var keywords = [];
       for(var i = 0; i < parameters.keywords.length; i++){
@@ -111,6 +111,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
+      // get all geoIds in parameters.geoLevel
+      if (getAllInLevel) {
+        return filter;
+      }
       if (geoIds.length <= 2000){
         filter.push(
           {
@@ -121,6 +125,46 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         );
       }
       return filter;
+    }
+    
+    // Request all data required by timeseriescache.
+    function byTimeSeriesRequest(parameters) {
+        return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultNonSamplingDayRange, [], getAllInLevel=1),
+        group: {
+          by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel,
+              }
+            },
+            as: parameters.geoLevel
+          },
+          {
+            field: "create_at",
+            apply: {
+              name: "interval",
+              args: {
+                unit: parameters.timeBin
+              }
+            },
+            as: parameters.timeBin
+          }],
+          aggregate: [{
+            field: "*",
+            apply: {
+              name: "count"
+            },
+            as: "count"
+          }],
+          lookup: [
+            cloudberryConfig.getPopulationTarget(parameters)
+          ]
+        }
+      };
     }
 
     function byGeoRequest(parameters, geoIds) {
