@@ -5,7 +5,7 @@ angular.module('cloudberry.common')
             this.layer = L.heatLayer([], {radius: unitRadius});
             var instance = this;
             
-            scope.$watch(
+            this.watch = scope.$watch(
               function() {
                 return cloudberry.heatmapMapResult;
               },        

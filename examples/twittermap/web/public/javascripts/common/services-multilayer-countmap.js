@@ -1,7 +1,11 @@
 angular.module('cloudberry.common')
-    .service('multilayerCountmap', function($http, $timeout, $q, $compile, cloudberryConfig, leafletData){
-        function initCountMap(){
+    .service('multilayerCountmap', function($http, $timeout, $q, $compile, cloudberry, cloudberryConfig, leafletData){
+        function initCountMap(scope){
             var instance = this;
+            
+            this.scope = scope;
+            this.doNormalization = false;
+            this.doSentiment = false;
             
             this.layer = L.layerGroup();
             
@@ -88,19 +92,22 @@ angular.module('cloudberry.common')
                     mouseout: resetHighlight,
                 });
             }
+            
+            leafletData.getMap().then(function(map){
+                instance.map = map;
+            });
 
             // add info control
-            /*
             var info = L.control();
 
             info.onAdd = function() {
                 this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
                 this._div.style.margin = '20% 0 0 0';
                 this._div.innerHTML = [
-                    '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
-                    '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+                    '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
+                    '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
                     '<br/>',
-                    '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
+                    '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
                 ].join('');
                 $compile(this._div)(this);
                 return this._div;
@@ -109,8 +116,7 @@ angular.module('cloudberry.common')
             info.options = {
                 position: 'topleft'
             };
-            this.layer.addLayer(info);
-            */
+            //info.addTo(instance.map);
             //$scope.controls.custom.push(info);
             
             // update the center and the boundary of the visible area of the map
@@ -144,20 +150,17 @@ angular.module('cloudberry.common')
             
             // reset the geo level (state, county, city)
             function resetGeoInfo(level) {
-                instance.logicLevel = level;
+                instance.status.logicLevel = level;
                 cloudberry.parameters.geoLevel = level;
                 if (instance.geojsonData[level])
                     resetGeoIds(instance.bounds, instance.geojsonData[level], level + 'ID');
             }
             
-            leafletData.getMap().then(function(map){
-                instance.map = map;
-            });
-            
             var deferred = $q.defer();
             
             var statePolygonsReady = false;
             var countyPolygonsReady = false;
+            resetGeoInfo("state");
             
             // load geoJson to get state and county polygons
             if (!this.polygons.statePolygons){
@@ -224,7 +227,7 @@ angular.module('cloudberry.common')
         }
         
         function drawCountMap(result){
-          var intance = this;
+          var instance = this;
           
           var colors = this.styles.colors;
           var sentimentColors = this.styles.sentimentColors;
@@ -268,9 +271,9 @@ angular.module('cloudberry.common')
           }
 
           function getColor(d) {
-            if($scope.doSentiment)  // 0 <= d <= 4
+            if(instance.doSentiment)  // 0 <= d <= 4
               return getSentimentColor(d);
-            else if($scope.doNormalization)
+            else if(instance.doNormalization)
               return getNormalizedCountColor(d);
             else
               return getUnnormalizedCountColor(d);
@@ -327,18 +330,18 @@ angular.module('cloudberry.common')
           }
 
           function updateTweetCountInGeojson(){
-            var level = $scope.status.logicLevel;
-            var geojsonData = $scope.geojsonData[level];
+            var level = instance.status.logicLevel;
+            var geojsonData = instance.geojsonData[level];
             if(geojsonData){
               angular.forEach(geojsonData['features'], function (geo) {
                 resetCount(geo);
                 angular.forEach(result, function (r) {
                   if (r[level] === geo['properties'][level+"ID"]){
-                    if($scope.doSentiment){
+                    if(instance.doSentiment){
                       // sentimentScore for all the tweets in the same polygon / number of tweets with the score
                       geo['properties']['count'] = r['sentimentScoreSum'] / r['sentimentScoreCount'];
                       geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
-                    } else if ($scope.doNormalization) {
+                    } else if (instance.doNormalization) {
                       setNormalizedCount(geo, r);
                     } else{
                       setUnnormalizedCount(geo, r);
@@ -348,7 +351,7 @@ angular.module('cloudberry.common')
               });
               difference = normalizedCountMax - normalizedCountMin;  // to enable dynamic legend for normalization
               // draw
-              $scope.polygons[level+"Polygons"].setStyle(style);
+              instance.polygons[level+"Polygons"].setStyle(style);
             }
           }
 
@@ -365,21 +368,21 @@ angular.module('cloudberry.common')
               ctrlClass.remove();
             }
 
-            $scope[name]= L.control({
+            instance[name]= L.control({
               position: position
             });
 
-            $scope[name].onAdd = function() {
+            instance[name].onAdd = function() {
               var div = L.DomUtil.create('div', 'info ' + name);
               initDiv(div);
               return div;
             };
               
             
-            if ($scope.map) {
+            if (instance.map) {
               
               
-              $scope[name].addTo($scope.map);
+              instance[name].addTo(instance.map);
               if (initJS)
                 initJS();
             }
@@ -388,7 +391,7 @@ angular.module('cloudberry.common')
           function initNormalize(div) {
             
               
-            if($scope.doNormalization)
+            if(instance.doNormalization)
               div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
             else
               div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
@@ -399,14 +402,14 @@ angular.module('cloudberry.common')
             toggle.bootstrapToggle({
               on: "By Population"
             });
-            if($scope.doSentiment){
+            if(instance.doSentiment){
               toggle.bootstrapToggle('off');
               toggle.bootstrapToggle('disable');
             }
           }
 
           function initSentiment(div) {
-            if($scope.doSentiment)
+            if(instance.doSentiment)
               div.innerHTML = '<p>Sentiment Analysis</p><input id="toggle-sentiment" checked type="checkbox">';
             else
               div.innerHTML = '<p>Sentiment Analysis</p><input id="toggle-sentiment" type="checkbox">';
@@ -431,7 +434,7 @@ angular.module('cloudberry.common')
           function setGrades(grades) {
             var i = 0;
             for(; i < grades.length; i++){
-              if ($scope.doNormalization)
+              if (instance.doNormalization)
                 grades[i] = normalizedCountMin + ((i * difference) / intervals);
               else
                 grades[i] = Math.pow(10, i);
@@ -450,7 +453,7 @@ angular.module('cloudberry.common')
               } else{
                 returnText = (d / 1000 / 1000).toFixed() + "M+";
               }
-              if($scope.doNormalization)
+              if(instance.doNormalization)
                 return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
               else
                 return returnText; //["1", "10", "100", "1K", "10K", "100K"];
@@ -461,7 +464,7 @@ angular.module('cloudberry.common')
             var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
             setGrades(grades);
             var gName  = getGradesNames(grades);
-            if($scope.doNormalization)
+            if(instance.doNormalization)
               div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
             // loop through our density intervals and generate a label with a colored square for each interval
             i = 1;
@@ -469,14 +472,14 @@ angular.module('cloudberry.common')
               div.innerHTML +=
                 '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
             }
-            if ($scope.doNormalization)
+            if (instance.doNormalization)
               div.innerHTML += '<i style="background:' + getColor(grades[i-1] + ((difference) / intervals)) + '"></i> ' + gName[i-1] + '+';
             else
               div.innerHTML += '<i style="background:' + getColor(grades[i-1]*10) + '"></i> ' + gName[i-1] + '+';
           }
 
           function initLegend(div) {
-            if($scope.doSentiment){
+            if(instance.doSentiment){
               setSentimentLegend(div);
             } else {
               setCountLegend(div);
@@ -500,6 +503,114 @@ angular.module('cloudberry.common')
             this.layer = null;
         }
         
+        function resetGeoIds(bounds, polygons, idTag) {
+            cloudberry.parameters.geoIds = [];
+            if (polygons != undefined) {
+                polygons.features.forEach(function (polygon) {
+                    if (bounds._southWest.lat <= polygon.properties.centerLat &&
+                        polygon.properties.centerLat <= bounds._northEast.lat &&
+                        bounds._southWest.lng <= polygon.properties.centerLog &&
+                        polygon.properties.centerLog <= bounds._northEast.lng) {
+                        cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
+                    }
+                });
+            }
+        }
+        
+        function zoomFunction(){
+            var instance = this;
+            
+            function resetGeoInfo(level) {
+                instance.status.logicLevel = level;
+                cloudberry.parameters.geoLevel = level;
+                if (instance.geojsonData[level]){
+                    resetGeoIds(instance.bounds, instance.geojsonData[level], level + 'ID');
+                }
+            }
+            
+            if (this.map) {
+                this.status.zoomLevel = this.map.getZoom();
+                this.bounds = this.map.getBounds();
+                if (this.status.zoomLevel > 9) {
+                    resetGeoInfo("city");
+                    if (this.polygons.statePolygons) {
+                        this.layer.removeLayer(this.polygons.statePolygons);
+                    }
+                    if (this.polygons.countyPolygons) {
+                        this.layer.removeLayer(this.polygons.countyPolygons);
+                    }
+                    if (this.polygons.stateUpperPolygons) {
+                        this.layer.removeLayer(this.polygons.stateUpperPolygons);
+                    }
+                    this.layer.addLayer(this.polygons.countyUpperPolygons);
+                    loadCityJsonByBound(onEachFeature);
+                } else if (this.status.zoomLevel > 5) {
+                    resetGeoInfo("county");
+                    //if (!this.status.init) {
+                        cloudberry.query(cloudberry.parameters);
+                    //}
+                    if (this.polygons.statePolygons) {
+                        this.layer.removeLayer(this.polygons.statePolygons);
+                    }
+                    if (this.polygons.cityPolygons) {
+                        this.layer.removeLayer(this.polygons.cityPolygons);
+                    }
+                    if (this.polygons.countyUpperPolygons) {
+                        this.layer.removeLayer(this.polygons.countyUpperPolygons);
+                    }
+                    this.layer.addLayer(this.polygons.stateUpperPolygons);
+                    this.layer.addLayer(this.polygons.countyPolygons);
+                } else if (this.status.zoomLevel <= 5) {
+                    resetGeoInfo("state");
+                    //if (!this.status.init) {
+                        cloudberry.query(cloudberry.parameters);
+                    //}
+                    if (this.polygons.countyPolygons) {
+                        this.layer.removeLayer(this.polygons.countyPolygons);
+                    }
+                    if (this.polygons.cityPolygons) {
+                        this.layer.removeLayer(this.polygons.cityPolygons);
+                    }
+                    if (this.polygons.stateUpperPolygons) {
+                        this.layer.removeLayer(this.polygons.stateUpperPolygons);
+                    }
+                    if (this.polygons.countyUpperPolygons) {
+                        this.layer.removeLayer(this.polygons.countyUpperPolygons);
+                    }
+                    if (this.polygons.statePolygons) {
+                        this.layer.addLayer(this.polygons.statePolygons);
+                    }
+                }
+            }
+        }
+        
+        function dragFunction(){
+            var instance = this;
+            
+            //if (!$scope.status.init) {
+                this.bounds = this.map.getBounds();
+                var geoData;
+                if (this.status.logicLevel === 'state') {
+                    geoData = this.geojsonData.state;
+                } else if (this.status.logicLevel === 'county') {
+                    geoData = this.geojsonData.county;
+                } else if (this.status.logicLevel === 'city') {
+                    geoData = this.geojsonData.city;
+                } else {
+                    console.error("Error: Illegal value of logicLevel, set to default: state");
+                    this.status.logicLevel = 'state';
+                    geoData = this.geojsonData.state;
+                }
+            //}
+            if (this.status.logicLevel === 'city') {
+                this.loadCityJsonByBound(this.onEachFeature);
+            } else {
+                resetGeoIds(this.bounds, geoData, this.status.logicLevel + "ID");
+                cloudberry.parameters.geoLevel = this.status.logicLevel;
+                cloudberry.query(cloudberry.parameters);
+            }
+        }
+        
         var watchVariables = {"countmapMapResult":"cloudberry.countmapMapResult",
                               "doNormalization":"$('#toggle-normalize').prop('checked')",
                               "doSentiment":"$('#toggle-sentiment').prop('checked')"};
@@ -513,6 +624,8 @@ angular.module('cloudberry.common')
                     init: initCountMap,
                     draw: drawCountMap,
                     clear: cleanCountMap,
+                    zoom: zoomFunction,
+                    drag: dragFunction,
                     watchVariables: watchVariables,
                     map: null,
                     geojsonData: {},

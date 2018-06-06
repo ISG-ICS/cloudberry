@@ -180,22 +180,22 @@ angular.module('cloudberry.common')
             this.layer = null;
         }
         
+        function resetGeoIds(bounds, polygons, idTag) {
+            cloudberry.parameters.geoIds = [];
+            if (polygons != undefined) {
+                polygons.features.forEach(function (polygon) {
+                    if (bounds._southWest.lat <= polygon.properties.centerLat &&
+                        polygon.properties.centerLat <= bounds._northEast.lat &&
+                        bounds._southWest.lng <= polygon.properties.centerLog &&
+                        polygon.properties.centerLog <= bounds._northEast.lng) {
+                        cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
+                    }
+                });
+            }
+        }
+        
         function zoomFunction(){
             var instance = this;
-            
-            function resetGeoIds(bounds, polygons, idTag) {
-                cloudberry.parameters.geoIds = [];
-                if (polygons != undefined) {
-                    polygons.features.forEach(function (polygon) {
-                        if (bounds._southWest.lat <= polygon.properties.centerLat &&
-                            polygon.properties.centerLat <= bounds._northEast.lat &&
-                            bounds._southWest.lng <= polygon.properties.centerLog &&
-                            polygon.properties.centerLog <= bounds._northEast.lng) {
-                            cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
-                        }
-                    });
-                }
-            }
             
             function resetGeoInfo(level) {
                 instance.status.logicLevel = level;
@@ -220,7 +220,7 @@ angular.module('cloudberry.common')
                         this.map.removeLayer(this.polygons.stateUpperPolygons);
                     }
                     this.map.addLayer(this.polygons.countyUpperPolygons);
-                    loadCityJsonByBound(onEachFeature);
+                    loadCityJsonByBound(this.onEachFeature);
                 } else if (this.status.zoomLevel > 5) {
                     resetGeoInfo("county");
                     //if (!this.status.init) {
@@ -261,6 +261,33 @@ angular.module('cloudberry.common')
             }
         }
         
+        function dragFunction(){
+            var instance = this;
+            
+            //if (!$scope.status.init) {
+                this.bounds = this.map.getBounds();
+                var geoData;
+                if (this.status.logicLevel === 'state') {
+                    geoData = this.geojsonData.state;
+                } else if (this.status.logicLevel === 'county') {
+                    geoData = this.geojsonData.county;
+                } else if (this.status.logicLevel === 'city') {
+                    geoData = this.geojsonData.city;
+                } else {
+                    console.error("Error: Illegal value of logicLevel, set to default: state");
+                    this.status.logicLevel = 'state';
+                    geoData = this.geojsonData.state;
+                }
+            //}
+            if (this.status.logicLevel === 'city') {
+                this.loadCityJsonByBound(this.onEachFeature);
+            } else {
+                resetGeoIds(this.bounds, geoData, this.status.logicLevel + "ID");
+                cloudberry.parameters.geoLevel = this.status.logicLevel;
+                cloudberry.query(cloudberry.parameters);
+            }
+        }
+        
         var watchVariables = {};
         
         var polygonService = {
@@ -273,6 +300,7 @@ angular.module('cloudberry.common')
                     draw: drawPolygon,
                     clear: cleanPolygon,
                     zoom: zoomFunction,
+                    drag: dragFunction,
                     watchVariables: watchVariables,
                     map: null,
                     geojsonData: {},

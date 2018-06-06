@@ -136,7 +136,7 @@ angular.module('cloudberry.map')
     
     multilayerService.createCountmapLayer().then(function(countmapLayer){
         $scope.layer["countmap"] = countmapLayer;
-        $scope.layer["countmap"].init().then(function(){
+        $scope.layer["countmap"].init($scope).then(function(){
             $scope.layer["countmap"].active = 1;
             $scope.map.addLayer($scope.layer["countmap"].layer);
             for (var key in countmapLayer.watchVariables){
@@ -186,7 +186,15 @@ angular.module('cloudberry.map')
                 $scope.layer[key].zoom();
             }
         }
-    })
+    });
+    
+    $scope.$on("leafletDirectiveMap.dragend", function() {
+        for (var key in $scope.layer) {
+            if ($scope.layer[key].active && typeof $scope.layer[key].drag === "function"){
+                $scope.layer[key].drag();
+            }
+        }
+    });
     
     $scope.$watchCollection(
       function() {
@@ -219,7 +227,7 @@ angular.module('cloudberry.map')
             }
           }
           
-          
+          /*
           if(layer_name === "countmap" && count<5 )
           {
             count++;
@@ -240,6 +248,7 @@ angular.module('cloudberry.map')
               
               
           }
+          */
 
         
       }
