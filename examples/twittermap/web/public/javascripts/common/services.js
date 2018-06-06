@@ -189,11 +189,11 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     }
     
     // Return geoIds' timeseries data within timeinterval.
-    function getTimeSeriesValues(store, geoIds, geoLevel, timeInterval) { //temp:192-211,timeseriescache module
+    function getTimeSeriesValues(store, geoIds, geoLevel, cachedGeoLevel, timeInterval) { //temp:192-211,timeseriescache module
       var resultArray = [];
       var hist, day;
 
-      if (geoLevel !== cloudberryService.histLevel) {
+      if (geoLevel !== cachedGeoLevel) {
           return resultArray;
       }
       for (var i = 0; i < geoIds.length; i++) {
@@ -357,6 +357,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
       histLevel: "county", //temp:timeseries cache is preloaded by Geo Level, current histLevel is set for testing.
       timeSeriesStore: new HashMap(), //temp:timeseriescache
+      localTimeSeriesResult: [], // Subset of commonTimeSeriesResult, data from timeSeriesStore.
       countmapMapResult: [],
       countmapPartialMapResult: [],
       commonTimeSeriesResult: [],
@@ -384,7 +385,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }));
 
           ws.send(timeSeriesRequest);
-        };
+        }
 
         // generate query based on map type
         switch (parameters.maptype) {
@@ -686,22 +687,24 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
-              var localTimeSeriesResult = getTimeSeriesValues(cloudberryService.timeSeriesStore,
-                                                              cloudberryService.parameters.geoIds,
-                                                              cloudberryService.parameters.geoLevel,
-                                                              cloudberryService.parameters.timeInterval);
-              cloudberryService.commonTimeSeriesResult = result.value[0].concat(localTimeSeriesResult);
+              cloudberryService.localTimeSeriesResult = getTimeSeriesValues(cloudberryService.timeSeriesStore,
+                                                                            cloudberryService.parameters.geoIds,
+                                                                            cloudberryService.parameters.geoLevel,
+                                                                            cloudberryService.histLevel,
+                                                                            cloudberryService.parameters.timeInterval);
+              cloudberryService.commonTimeSeriesResult = result.value[0].concat(cloudberryService.localTimeSeriesResult);
               cloudberryService.commonHashTagResult = result.value[1];
             }
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
-              var localTimeSeriesResult = getTimeSeriesValues(cloudberryService.timeSeriesStore,
-                                                              cloudberryService.parameters.geoIds,
-                                                              cloudberryService.parameters.geoLevel,
-                                                              cloudberryService.parameters.timeInterval);
-              cloudberryService.commonTimeSeriesResult = result.value[0].concat(localTimeSeriesResult);
+              cloudberryService.localTimeSeriesResult = getTimeSeriesValues(cloudberryService.timeSeriesStore,
+                                                                            cloudberryService.parameters.geoIds,
+                                                                            cloudberryService.parameters.geoLevel,
+                                                                            cloudberryService.histLevel,
+                                                                            cloudberryService.parameters.timeInterval);
+              cloudberryService.commonTimeSeriesResult = result.value[0].concat(cloudberryService.localTimeSeriesResult);
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
               cloudberryService.commonHashTagResult = result.value[2];
             }
