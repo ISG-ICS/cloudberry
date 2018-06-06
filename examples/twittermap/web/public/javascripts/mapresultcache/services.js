@@ -26,7 +26,11 @@ angular.module('cloudberry.mapresultcache', ['cloudberry.common'])
         });
         const INVALID_VALUE = 0;
 
-        /**
+        this.isNewKeyword = function (keywords) { //temp:29-31,timeseriescache module
+            return (keywords.toString() !== currentKeywords.toString());
+        }; 
+
+         /**
          * Checks keyword, time range and the cache store and returns the geoIds that
          * are not already cached.
          */
