@@ -319,9 +319,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           return;
 
         // generate query to load timeseries data.
-          var geoLevelParams = Object.assign({}, parameters, {geoIds: []});
           var timeSeriesRequest = (JSON.stringify({
-            batch: [byTimeSeriesRequest(geoLevelParams)],
+            batch: [byTimeSeriesRequest(parameters)],
             transform: {
               wrap: {
                 id: "timeSeriesRequest",
@@ -624,6 +623,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "timeSeriesRequest":
             if(angular.isArray(result.value)) {
               cloudberryService.commonTimeSeriesResult = [];
+              var day, geoId;
               for (var i = 0; i < result.value[0].length; i++) {
                 day = new Date(result.value[0][i]["day"]);
                 geoId = result.value[0][i][cloudberryService.parameters.geoLevel];
