@@ -6,7 +6,7 @@ import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.datastore.{IDataConn, IQLGenerator}
 import edu.uci.ics.cloudberry.zion.model.impl.DataSetInfo
 import edu.uci.ics.cloudberry.zion.model.schema._
-import org.joda.time.{DateTime, Duration}
+import org.joda.time.{DateTime, Duration, Interval}
 import play.api.libs.json._
 
 import scala.concurrent.duration._
@@ -57,7 +57,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
       lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count, newCount.ratePerSecond)
-      context.parent ! NewStats(dbName, newCount.count)
+      context.parent ! NewStats(dbName, newCount.count, new Interval(lastCount.from,newCount.till))
     case UpdateStats =>
       collectStats(lastCount.till)
   }
@@ -94,7 +94,7 @@ object OriginalDataAgent {
 
   object UpdateStats
 
-  case class NewStats(dbName: String, additionalCount: Long)
+  case class NewStats(dbName: String, additionalCount: Long, dataInterval: Interval)
 
   class Cardinality(var from: DateTime, var till: DateTime, var count: Long, var ratePerSecond: Int) {
     def reset(from: DateTime, till: DateTime, count: Long, rate: Int): Unit = {
