@@ -57,7 +57,7 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
   override protected def maintenanceWork: Receive = {
     case newCount: Cardinality =>
       lastCount.reset(lastCount.from, newCount.till, lastCount.count + newCount.count, newCount.ratePerSecond)
-      context.parent ! NewStats(dbName, newCount.count, new Interval(lastCount.from,newCount.till))
+      context.parent ! NewStats(dbName, newCount.count, new Interval(lastCount.from, newCount.till))
     case UpdateStats =>
       collectStats(lastCount.till)
   }
