@@ -90,9 +90,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     }
 
-    const GetAllInLevel = true;
-    // When getAllInLevel=true, send request for all geoIds in parameters.geoLevel.
-    function getFilter(parameters, maxDay, geoIds, getAllInLevel=false) {
+    function getFilter(parameters, maxDay, geoIds) {
       var spatialField = getLevel(parameters.geoLevel);
       var keywords = [];
       for(var i = 0; i < parameters.keywords.length; i++){
@@ -113,7 +111,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           values: keywords
         }
       ];
-      if (!getAllInLevel && geoIds.length <= 2000){
+      if (geoIds.length <= 2000){
         filter.push(
           {
             field: "geo_tag." + spatialField,
@@ -125,11 +123,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       return filter;
     }
 
-    // Request all data required by timeseriescache.
-    function byTimeSeriesRequest(parameters) {
+    function byTimeSeriesRequest(parameters, geoIds) {
         return {
         dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange, [], GetAllInLevel),
+        filter: getFilter(parameters, defaultNonSamplingDayRange, geoIds),
         group: {
           by: [{
             field: "geo",
@@ -161,7 +158,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }
       };
     }
-    
+
     function byGeoRequest(parameters, geoIds) {
       if (cloudberryConfig.sentimentEnabled) {
         return {
@@ -318,19 +315,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
 
-        // generate query to load timeseries data.
-          var timeSeriesRequest = (JSON.stringify({
-            batch: [byTimeSeriesRequest(parameters)],
-            transform: {
-              wrap: {
-                id: "timeSeriesRequest",
-                category: "timeSeriesRequest"
-              }
-            }
-          }));
-
-          ws.send(timeSeriesRequest);
-
         // generate query based on map type
         switch (parameters.maptype) {
           case 'countmap':
@@ -347,6 +331,18 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 wrap: {
                   id: "sample",
                   category: "sample"
+                }
+              }
+            }));
+
+            var geoIdsNotInTimeSeriesCache = parameters.geoIds;
+            // for the time histogram
+            var timeSeriesRequest = (JSON.stringify({
+              batch: [byTimeSeriesRequest(parameters, geoIdsNotInTimeSeriesCache)],
+              transform: {
+                wrap: {
+                  id: "timeSeriesRequest",
+                  category: "timeSeriesRequest"
                 }
               }
             }));
@@ -409,6 +405,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 cloudberryService.parameters.geoLevel);
 
               ws.send(sampleJson);
+              ws.send(timeSeriesRequest);
               ws.send(batchWithoutGeoRequest);
             }
             // Partial map result cache hit case
@@ -417,6 +414,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                     cloudberryService.parameters.geoLevel);
 
               ws.send(sampleJson);
+              ws.send(timeSeriesRequest);
               ws.send(batchWithPartialGeoRequest);
             }
             break;
@@ -621,18 +619,43 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             cloudberryService.commonTweetResult = result.value[0];
             break;
           case "timeSeriesRequest":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = [];
-              var day, geoId;
-              for (var i = 0; i < result.value[0].length; i++) {
-                day = new Date(result.value[0][i]["day"]);
-                geoId = result.value[0][i][cloudberryService.parameters.geoLevel];
-               // Get Geo Ids in the selected time interval and in the view.
-                if (day >= cloudberryService.parameters.timeInterval.start && day <= cloudberryService.parameters.timeInterval.end && cloudberryService.parameters.geoIds.includes(geoId)) {
-                  cloudberryService.commonTimeSeriesResult.push({day:result.value[0][i]["day"], count:result.value[0][i]["count"]});
-                }
+            var prefix = Object.freeze({
+                state: 'S',
+                county: 'C',
+                city: 'I'
+              });
+            const INVALID_VALUE = 0;
+                
+            var timeSeriesStore = new HashMap();
+            var geoIdSet = new Set(cloudberryService.parameters.geoIds);
+            for (var i = 0; i < result.value[0].length; i++) {
+              var currVal = result.value[0][i];
+              var geoIds = prefix[cloudberryService.parameters.geoLevel] + currVal[cloudberryService.parameters.geoLevel];
+              var values = timeSeriesStore.get(geoIds);
+              // First updates the store with geoIds that have results.
+              if (values !== undefined && values !== INVALID_VALUE) { // when one geoIds has more than one value
+                values.push({day:currVal["day"], count:currVal["count"]});
+                timeSeriesStore.set(geoIds, values);
+                geoIdSet.delete(currVal[cloudberryService.parameters.geoLevel]);
+              } else { // first value of current geoId
+                timeSeriesStore.set(geoIds, [{day:currVal["day"], count:currVal["count"]}]);
+                geoIdSet.delete(currVal[cloudberryService.parameters.geoLevel]);
+              }
+              // Mark other results as checked: these are geoIds with no results
+              geoIdSet.forEach(function (value) {
+                timeSeriesStore.set(prefix[cloudberryService.parameters.geoLevel] + value, INVALID_VALUE);
+              });
+            }
+
+            var timeSeriesResultArray = [];
+            for (var j = 0; j < cloudberryService.parameters.geoIds.length; j++) {
+              var value = timeSeriesStore.get(prefix[cloudberryService.parameters.geoLevel] + cloudberryService.parameters.geoIds[j]);
+              if (value !== undefined && value !== INVALID_VALUE) {
+                timeSeriesResultArray = timeSeriesResultArray.concat(value);
               }
             }
+
+            cloudberryService.commonTimeSeriesResult = timeSeriesResultArray;
             break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
