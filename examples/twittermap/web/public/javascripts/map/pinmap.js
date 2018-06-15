@@ -309,9 +309,11 @@ angular.module("cloudberry.map")
             watchVariables:watchVariables
     };
     
+    /*
     $timeout(function() {
         $rootScope.$emit("registerLayer", ["pinmap", l]);
     })
+    */
           
     //cloudberry.layer["pinmap"] = l;
     //$scope.watchVariables["pinmapMapResult"] = "cloudberry.pinmapMapResult";

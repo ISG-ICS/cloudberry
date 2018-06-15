@@ -5,6 +5,11 @@ angular.module('cloudberry.common')
             this.layer = L.heatLayer([], {radius: unitRadius});
             var instance = this;
             
+            var deferred = $q.defer();
+            deferred.resolve();
+            return deferred.promise;
+            
+            /*
             this.watch = scope.$watch(
               function() {
                 return cloudberry.heatmapMapResult;
@@ -25,6 +30,7 @@ angular.module('cloudberry.common')
                 }
               }
             );
+            */
         }
         
         // For randomize coordinates by bounding_box
@@ -77,14 +83,15 @@ angular.module('cloudberry.common')
             console.log("heatmap");
         }
         
-        //var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
-        var watchVariables = {};
+        var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
+        //var watchVariables = {};
         
         var heatmapService = {
             createLayer: function(parameters){
                 var deferred = $q.defer();
                 deferred.resolve({
                     active: 0,
+                    parameters: parameters,
                     layer: {},
                     init: initheatMap,
                     draw: drawHeatMap,

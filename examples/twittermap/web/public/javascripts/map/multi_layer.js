@@ -2,6 +2,7 @@ angular.module('cloudberry.map')
   .controller('multiLayerCtrl', function($timeout, $scope, $rootScope, $window, $http, $compile,cloudberryConfig,cloudberry,leafletData,Cache,multilayerService) {
     
     $scope.layer = {};
+    cloudberry.parameters.layers = {};
     
     function drawTweetsLayer(result)
     {
@@ -112,7 +113,7 @@ angular.module('cloudberry.map')
             
             for (var key in $scope.layer) {
                 if(key!=layer_name && $scope.layer[key]){
-                    if(key!="pinmap" && key != "polygon"){
+                    if(key != "polygon"){
                         $scope.map.removeLayer($scope.layer[key].layer);
                         //$scope.layer[key].clear();
                         $scope.layer[key].active = 0;
@@ -147,16 +148,47 @@ angular.module('cloudberry.map')
     
     multilayerService.createHeatmapLayer().then(function(heatmapLayer){
         $scope.layer["heatmap"] = heatmapLayer;
-        $scope.layer["heatmap"].init($scope);
-        $scope.layer["heatmap"].active = 1;
-        $scope.map.addLayer($scope.layer["heatmap"].layer);
-        /*
-        for (var key in heatmapLayer.watchVariables){
-            $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
-        }
-        */
+        $scope.layer["heatmap"].init($scope).then(function(){
+            $scope.layer["heatmap"].active = 0;
+            for (var key in heatmapLayer.watchVariables){
+                $scope.watchVariables[key] = heatmapLayer.watchVariables[key];
+            }
+        });
     });
     
+    var parameters = {
+        id: "pinmap",
+        dataset: "twitter.ds_tweet",
+        pinStyle: {
+            opacity: 0.8,
+            radius: 1.2,//80,
+            useAbsoluteRadius: false,//true,
+            color: "#00aced",//"#0084b4"
+            noMask: true,
+            lineColor: "#00aced"//"#00aced"
+        },
+        highlightPinStyle: {
+            radius : 6,
+            color : "#0d3e99",
+            weight : 3,
+            fillColor : "#b8e3ff",
+            fillOpacity : 1.0
+        }
+    }
+    
+    multilayerService.createPinmapLayer(parameters).then(function(pinmapLayer){
+        $scope.layer["pinmap"] = pinmapLayer;
+        $scope.layer["pinmap"].init($scope).then(function(){
+            $scope.layer["pinmap"].active = 0;
+            for (var key in pinmapLayer.watchVariables){
+                $scope.watchVariables[key] = pinmapLayer.watchVariables[key];
+            }
+            cloudberry.parameters.layers["pinmap"] = pinmapLayer;
+            cloudberry.query(cloudberry.parameters);
+        });
+    });
+    
+    /*
     $rootScope.$on('registerLayer', function (event, data) {
         var layer_name = data[0];
         var layer = data[1];
@@ -165,6 +197,7 @@ angular.module('cloudberry.map')
             $scope.watchVariables[key] = layer.watchVariables[key];
         }
     })
+    */
     
     var count = 0;
     
