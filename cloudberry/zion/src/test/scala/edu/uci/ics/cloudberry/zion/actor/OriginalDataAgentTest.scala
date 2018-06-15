@@ -126,15 +126,13 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val cardinality = Cardinality(initialMaxTime, dateNow, additionalCount)
 
       val agent = TestActorRef(OriginalDataAgent.props(dataSetInfo, mockQueryParser, mockConn, Config.Default), parent.ref, "child")
-      //parent.expectMsg(NewStats(dataSetInfo.name, initialCount, new Interval(initialMinTime, dateNow)))
       var newTestStates = parent.receiveOne(3.seconds).asInstanceOf[NewStats]
       assert( newTestStates.additionalCount == initialCount )
       assert( newTestStates.dbName == dataSetInfo.name )
 
       parent.expectNoMsg()
       sender.send(agent, UpdateStats)
-
-      //parent.expectMsg(NewStats(dataSetInfo.name, additionalCount, new Interval(initialMinTime, dateNow)))
+      
       newTestStates = parent.receiveOne(3.seconds).asInstanceOf[NewStats]
       assert( newTestStates.additionalCount == additionalCount )
       assert( newTestStates.dbName == dataSetInfo.name )
