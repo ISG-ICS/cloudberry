@@ -129,14 +129,16 @@ class OriginalDataAgentTest extends Specification with Mockito {
       var newTestStates = parent.receiveOne(3.seconds).asInstanceOf[NewStats]
       assert( newTestStates.additionalCount == initialCount )
       assert( newTestStates.dbName == dataSetInfo.name )
+      assert( Math.abs(newTestStates.dataInterval.getStartMillis - initialMinTime.getMillis) < 5000 && Math.abs(newTestStates.dataInterval.getEndMillis - dateNow.getMillis) < 5000 )
 
       parent.expectNoMsg()
       sender.send(agent, UpdateStats)
-      
+
       newTestStates = parent.receiveOne(3.seconds).asInstanceOf[NewStats]
       assert( newTestStates.additionalCount == additionalCount )
       assert( newTestStates.dbName == dataSetInfo.name )
-
+      assert( Math.abs(newTestStates.dataInterval.getStartMillis - initialMinTime.getMillis) < 5000 && Math.abs(newTestStates.dataInterval.getEndMillis - dateNow.getMillis) < 5000 )
+      
       ok
     }
     "answer estimable query using stats only" in new TestkitExample {
