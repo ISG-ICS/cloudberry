@@ -219,7 +219,7 @@ angular.module('cloudberry.common')
             this.layer = null;
         }
         
-        function createPinQuery(filter){
+        function createPinmapQuery(filter){
             var pointsJson = (JSON.stringify({
                 dataset: this.parameters.dataset,
                 filter: filter,
@@ -291,7 +291,7 @@ angular.module('cloudberry.common')
                     init: initPinMap,
                     draw: drawPinMap,
                     clear: cleanPinMap,
-                    createQuery: createPinQuery,
+                    createQuery: createPinmapQuery,
                     watchVariables: watchVariables
                 });
                 return deferred.promise;

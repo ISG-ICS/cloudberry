@@ -371,7 +371,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               ws.send(batchWithPartialGeoRequest);
             }
             break;
-            
+          
+          /*
           case 'heatmap':
             var heatJson = (JSON.stringify({
               dataset: parameters.dataset,
@@ -432,7 +433,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
 
           case 'pinmap':
-            /*
 
             var pointsJson = (JSON.stringify({
               dataset: parameters.dataset,
@@ -490,8 +490,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             ws.send(pointsJson);
             ws.send(pointsTimeJson);
-            */
             break;
+          */
           
           default:
             // unrecognized map type
@@ -499,10 +499,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }
         
         for (var key in parameters.layers){
-            //if (parameters.layers[key].active){
+            if (parameters.layers[key].active){
                 var queryJson = parameters.layers[key].createQuery(getFilter(parameters, defaultPinmapSamplingDayRange, parameters.geoIds));
                 ws.send(queryJson);
-            //}
+            }
         }
       }
     };
@@ -512,9 +512,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         var result = JSONbig.parse(event.data);
 
         if (result.category in cloudberryService.parameters.layers){
-            //if (cloudberryService.parameters.layers[result.category].active){
+            if (cloudberryService.parameters.layers[result.category].active){
                 cloudberryService.parameters.layers[result.category].draw(result.value[0]);
-            //}
+            }
         }
         else {
             switch (result.category) {

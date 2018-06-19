@@ -1,5 +1,7 @@
 angular.module('cloudberry.common')
     .service('multilayerHeatmap', function($timeout, $q, cloudberry, cloudberryConfig){
+        var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
+        
         function initheatMap(scope){
             var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
             this.layer = L.heatLayer([], {radius: unitRadius});
@@ -8,29 +10,6 @@ angular.module('cloudberry.common')
             var deferred = $q.defer();
             deferred.resolve();
             return deferred.promise;
-            
-            /*
-            this.watch = scope.$watch(
-              function() {
-                return cloudberry.heatmapMapResult;
-              },        
-              function(newResult) {
-                
-                if(cloudberry.layer["heatmap"])
-                    cloudberry.layer["heatmap"].data = newResult; 
-                  
-                  if (cloudberry.parameters.maptype === "heatmap"){
-                  scope.result = newResult;
-                  if (Object.keys(scope.result).length !== 0) {
-                    scope.status.init = false;
-                    instance.draw(scope.result);
-                  } else {
-                    instance.draw(scope.result);
-                  }
-                }
-              }
-            );
-            */
         }
         
         // For randomize coordinates by bounding_box
@@ -83,6 +62,30 @@ angular.module('cloudberry.common')
             console.log("heatmap");
         }
         
+        function createHeatmapQuery(filter){
+            var heatJson = (JSON.stringify({
+                dataset: this.parameters.dataset,
+                filter: filter,
+                select: {
+                    order: ["-create_at"],
+                    limit: defaultHeatmapLimit,
+                    offset: 0,
+                    field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+                },
+                option: {
+                    sliceMillis: cloudberryConfig.querySliceMills
+                },
+                transform: {
+                    wrap: {
+                        id: this.parameters.id,
+                        category: this.parameters.id
+                    }
+                }
+            }));
+            
+            return heatJson;
+        }
+        
         var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
         //var watchVariables = {};
         
@@ -97,6 +100,7 @@ angular.module('cloudberry.common')
                     draw: drawHeatMap,
                     clear: cleanHeatMap,
                     zoom: zoomFunction,
+                    createQuery: createHeatmapQuery,
                     watchVariables: watchVariables
                 });
                 return deferred.promise;
