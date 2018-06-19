@@ -123,42 +123,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       return filter;
     }
 
-    function byTimeSeriesRequest(parameters, geoIds) {
-        return {
-        dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange, geoIds),
-        group: {
-          by: [{
-            field: "geo",
-            apply: {
-              name: "level",
-              args: {
-                level: parameters.geoLevel,
-              }
-            },
-            as: parameters.geoLevel
-          },
-          {
-            field: "create_at",
-            apply: {
-              name: "interval",
-              args: {
-                unit: parameters.timeBin
-              }
-            },
-            as: parameters.timeBin
-          }],
-          aggregate: [{
-            field: "*",
-            apply: {
-              name: "count"
-            },
-            as: "count"
-          }]
-        }
-      };
-    }
-
     function byGeoRequest(parameters, geoIds) {
       if (cloudberryConfig.sentimentEnabled) {
         return {
@@ -235,12 +199,22 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     }
 
-    function byTimeRequest(parameters) {
-      return {
+    function byTimeRequest(parameters, geoIds) {
+        return {
         dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+        filter: getFilter(parameters, defaultNonSamplingDayRange, geoIds),
         group: {
           by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel,
+              }
+            },
+            as: parameters.geoLevel
+          },
+          {
             field: "create_at",
             apply: {
               name: "interval",
@@ -338,7 +312,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             var geoIdsNotInTimeSeriesCache = parameters.geoIds;
             // for the time histogram
             var timeSeriesRequest = (JSON.stringify({
-              batch: [byTimeSeriesRequest(parameters, geoIdsNotInTimeSeriesCache)],
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache)],
               transform: {
                 wrap: {
                   id: "timeSeriesRequest",
@@ -349,7 +323,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
             // Batch request without map result - used when the complete map result cache hit case
             var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byHashTagRequest(parameters)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
               },
@@ -360,7 +334,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
                         id: "batchWithoutGeoRequest",
@@ -377,7 +351,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
             // This case also covers the complete cache miss case.
             var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache),
                 byHashTagRequest(parameters)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
@@ -389,7 +363,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
+                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache),
                     byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
