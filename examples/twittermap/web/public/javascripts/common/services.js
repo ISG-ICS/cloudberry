@@ -199,12 +199,22 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       }
     }
 
-    function byTimeRequest(parameters) {
+    function byTimeRequest(parameters, geoIds) {
       return {
         dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+        filter: getFilter(parameters, defaultNonSamplingDayRange, geoIds),
         group: {
           by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel,
+              }
+            },
+            as: parameters.geoLevel
+          },
+          {
             field: "create_at",
             apply: {
               name: "interval",
@@ -299,9 +309,21 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
+            var geoIdsNotInTimeSeriesCache = parameters.geoIds;
+            // for the time histogram
+            var timeSeriesRequest = (JSON.stringify({
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache)],
+              transform: {
+                wrap: {
+                  id: "timeSeriesRequest",
+                  category: "timeSeriesRequest"
+                }
+              }
+            }));
+
             // Batch request without map result - used when the complete map result cache hit case
             var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byHashTagRequest(parameters)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
               },
@@ -312,7 +334,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
                         id: "batchWithoutGeoRequest",
@@ -329,7 +351,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
             // This case also covers the complete cache miss case.
             var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache),
                 byHashTagRequest(parameters)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
@@ -341,7 +363,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
+                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache),
                     byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
@@ -357,6 +379,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 cloudberryService.parameters.geoLevel);
 
               ws.send(sampleJson);
+              ws.send(timeSeriesRequest);
               ws.send(batchWithoutGeoRequest);
             }
             // Partial map result cache hit case
@@ -365,6 +388,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                     cloudberryService.parameters.geoLevel);
 
               ws.send(sampleJson);
+              ws.send(timeSeriesRequest);
               ws.send(batchWithPartialGeoRequest);
             }
             break;
@@ -568,17 +592,56 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "sample":
             cloudberryService.commonTweetResult = result.value[0];
             break;
+          case "timeSeriesRequest":
+            var prefix = Object.freeze({
+                state: 'S',
+                county: 'C',
+                city: 'I'
+              });
+            const INVALID_VALUE = 0;
+                
+            var timeSeriesStore = new HashMap();
+            var geoIdSet = new Set(cloudberryService.parameters.geoIds);
+            for (var i = 0; i < result.value[0].length; i++) {
+              var currVal = result.value[0][i];
+              var geoIds = prefix[cloudberryService.parameters.geoLevel] + currVal[cloudberryService.parameters.geoLevel];
+              var values = timeSeriesStore.get(geoIds);
+              // First updates the store with geoIds that have results.
+              if (values !== undefined && values !== INVALID_VALUE) { // when one geoIds has more than one value
+                values.push({day:currVal["day"], count:currVal["count"]});
+                timeSeriesStore.set(geoIds, values);
+                geoIdSet.delete(currVal[cloudberryService.parameters.geoLevel]);
+              } else { // first value of current geoId
+                timeSeriesStore.set(geoIds, [{day:currVal["day"], count:currVal["count"]}]);
+                geoIdSet.delete(currVal[cloudberryService.parameters.geoLevel]);
+              }
+              // Mark other results as checked: these are geoIds with no results
+              geoIdSet.forEach(function (value) {
+                timeSeriesStore.set(prefix[cloudberryService.parameters.geoLevel] + value, INVALID_VALUE);
+              });
+            }
+
+            var timeSeriesResultArray = [];
+            for (var j = 0; j < cloudberryService.parameters.geoIds.length; j++) {
+              var value = timeSeriesStore.get(prefix[cloudberryService.parameters.geoLevel] + cloudberryService.parameters.geoIds[j]);
+              if (value !== undefined && value !== INVALID_VALUE) {
+                timeSeriesResultArray = timeSeriesResultArray.concat(value);
+              }
+            }
+
+            cloudberryService.commonTimeSeriesResult = timeSeriesResultArray;
+            break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              //cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.commonHashTagResult = result.value[1];
             }
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              //cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
               cloudberryService.commonHashTagResult = result.value[2];
             }
