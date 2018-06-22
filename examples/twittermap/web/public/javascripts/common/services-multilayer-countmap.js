@@ -175,7 +175,7 @@ angular.module('cloudberry.common')
                         style: countmapStyle.stateUpperStyle
                     });
                     setCenterAndBoundry(instance.geojsonData.state.features);
-                    instance.layer = instance.polygons.statePolygons;
+                    instance.layer.addLayer(instance.polygons.statePolygons);
                     if (countyPolygonsReady){
                         deferred.resolve();
                     }

@@ -499,7 +499,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }
         
         for (var key in parameters.layers){
-            if (parameters.layers[key].active){
+            if (parameters.layers[key].active && typeof parameters.layers[key].createQuery === "function"){
                 var queryJson = parameters.layers[key].createQuery(getFilter(parameters, defaultPinmapSamplingDayRange, parameters.geoIds));
                 ws.send(queryJson);
             }
@@ -520,7 +520,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             switch (result.category) {
 
               case "sample":
-                cloudberryService.commonTweetResult = result.value[0];
+                cloudberryService.commonTweetResult = result.value[0];Rt
                 break;
               // Complete cache hit case
               case "batchWithoutGeoRequest":
