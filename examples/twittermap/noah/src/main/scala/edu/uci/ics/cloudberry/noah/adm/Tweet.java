@@ -5,7 +5,6 @@ import edu.uci.ics.cloudberry.noah.adm.mytweet.*;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringEscapeUtils;
 import edu.uci.ics.cloudberry.util.Rectangle;
 
 import java.io.IOException;
@@ -32,7 +31,7 @@ public class Tweet {
     public static void appendTweetPlainFields(JsonNode rootNode, StringBuilder admSB) {
         ADM.keyValueToSbWithComma(admSB, CREATE_AT, ADM.mkDateTimeStringFromTweet(rootNode.path("created_at").asText()));
         ADM.keyValueToSbWithComma(admSB, ID, ADM.mkInt64Constructor(rootNode.path("id").asLong()));
-        ADM.keyValueToSbWithComma(admSB, TEXT, ADM.mkQuote(StringEscapeUtils.unescapeHtml4(rootNode.path("text").asText())));
+        ADM.keyValueToSbWithComma(admSB, TEXT, ADM.mkQuoteOnly(rootNode.path("text").asText()));
         if (rootNode.path("in_reply_to_status_id").isNull())
             ADM.keyValueToSbWithComma(admSB, IN_REPLY_TO_STATUS, ADM.mkInt64Constructor(-1));
         else
@@ -56,7 +55,7 @@ public class Tweet {
             if (i > 0) {
                 sbHashtag.append(",");
             }
-            sbHashtag.append(ADM.mkQuote(elements.next().path("text").asText()));
+            sbHashtag.append(ADM.mkQuoteOnly(elements.next().path("text").asText()));
             i++;
         }
         sbHashtag.append("}}");
@@ -207,7 +206,7 @@ public class Tweet {
     }
 
     protected static boolean exactPointLookup(StringBuilder sb, USGeoGnosis gnosis, Coordinate coordinate) {
-        if (coordinate.getcLat().equals("")) {
+        if (coordinate.getcLat()==null||coordinate.getcLat().equals("")) {
             return false;
         }
         scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(Double.parseDouble(coordinate.getcLong()), Double.parseDouble(coordinate.getcLat()));
