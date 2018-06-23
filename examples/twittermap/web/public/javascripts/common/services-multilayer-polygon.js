@@ -1,7 +1,8 @@
 angular.module('cloudberry.common')
     .service('multilayerPolygon', function($http, $timeout, $q, leafletData, cloudberry){
-        function initPolygon(){
+        function initPolygon(scope){
             var instance = this;
+            this.scope = scope;
             
             var polygonStyle = {
                 initStyle: {
@@ -91,14 +92,6 @@ angular.module('cloudberry.common')
                 layer.on({
                     click: zoomToFeature
                 });
-            }
-            
-            // reset the geo level (state, county, city)
-            function resetGeoInfo(level) {
-                instance.logicLevel = level;
-                cloudberry.parameters.geoLevel = level;
-                if (instance.geojsonData[level])
-                    resetGeoIds(instance.bounds, instance.geojsonData[level], level + 'ID');
             }
             
             leafletData.getMap().then(function(map){

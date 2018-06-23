@@ -11,6 +11,9 @@ angular.module('cloudberry.map')
     
         if (cloudberry.parameters.layers[layer_name].active == 0){
             //cloudberry.parameters.layers[layer_name].init($scope);
+            if (typeof cloudberry.parameters.layers[layer_name].activate === "function"){
+                cloudberry.parameters.layers[layer_name].activate();
+            }
             cloudberry.parameters.layers[layer_name].active = 1;
             $scope.map.addLayer(cloudberry.parameters.layers[layer_name].layer);
         }
@@ -18,6 +21,9 @@ angular.module('cloudberry.map')
         for (var key in cloudberry.parameters.layers) {
             if(key!=layer_name && cloudberry.parameters.layers[key]){
                 if(key != "polygon"){
+                    if (typeof cloudberry.parameters.layers[layer_name].deactivate === "function"){
+                        cloudberry.parameters.layers[layer_name].deactivate();
+                    }
                     $scope.map.removeLayer(cloudberry.parameters.layers[key].layer);
                     //cloudberry.parameters.layers[key].clear();
                     cloudberry.parameters.layers[key].active = 0;

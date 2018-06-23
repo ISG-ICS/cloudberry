@@ -1,6 +1,8 @@
 angular.module('cloudberry.common')
     .service('multilayerPinmap', function($http, $timeout, $q, cloudberry, cloudberryConfig, leafletData){
+        var defaultPinmapSamplingDayRange = parseInt(config.pinmapSamplingDayRange);
         var defaultPinmapLimit = parseInt(config.pinmapSamplingLimit);
+        var defaultNonSamplingDayRange = 1500;
         
         function initPinMap(scope){
             var instance = this;
@@ -219,10 +221,10 @@ angular.module('cloudberry.common')
             this.layer = null;
         }
         
-        function createPinmapQuery(filter){
+        function createPinmapQuery(){
             var pointsJson = (JSON.stringify({
                 dataset: this.parameters.dataset,
-                filter: filter,
+                filter: cloudberry.getFilter(cloudberry.parameters, defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
                 select: {
                     order: ["-create_at"],
                     limit: defaultPinmapLimit,
@@ -240,23 +242,19 @@ angular.module('cloudberry.common')
                 }
             }));
             
-            return pointsJson;
-
-            /*
-            // for the time histogram
             var pointsTimeJson = (JSON.stringify({
-                dataset: parameters.dataset,
-                filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
+                dataset: this.parameters.dataset,
+                filter: cloudberry.getFilter(cloudberry.parameters, defaultNonSamplingDayRange, cloudberry.parameters.geoIds),
                 group: {
                     by: [{
                         field: "create_at",
                         apply: {
                             name: "interval",
                             args: {
-                                unit: parameters.timeBin
+                                unit: cloudberry.parameters.timeBin
                             }
                         },
-                        as: parameters.timeBin
+                        as: cloudberry.parameters.timeBin
                     }],
                     aggregate: [{
                         field: "*",
@@ -271,12 +269,13 @@ angular.module('cloudberry.common')
                 },
                 transform: {
                     wrap: {
-                        id: "pointsTime",
-                        category: "pointsTime"
+                        id: "timeSeries",
+                        category: "timeSeries"
                     }
                 }
             }));
-            */
+            
+            return [pointsJson, pointsTimeJson];
         }
         
         var watchVariables = {"pinmapMapResult":"cloudberry.pinmapMapResult"};

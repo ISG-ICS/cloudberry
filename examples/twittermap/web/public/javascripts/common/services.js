@@ -276,6 +276,39 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       commonTimeSeriesResult: [],
       commonHashTagResult: [],
       errorMessage: null,
+      
+      getFilter: function getFilter(parameters, maxDay, geoIds) {
+          var spatialField = getLevel(parameters.geoLevel);
+          var keywords = [];
+          for(var i = 0; i < parameters.keywords.length; i++){
+            keywords.push(parameters.keywords[i].replace("\"", "").trim());
+          }
+          var queryStartDate = new Date(parameters.timeInterval.end);
+          queryStartDate.setDate(queryStartDate.getDate() - maxDay);
+          queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+
+          var filter = [
+            {
+              field: "create_at",
+              relation: "inRange",
+              values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+            }, {
+              field: "text",
+              relation: "contains",
+              values: keywords
+            }
+          ];
+          if (geoIds.length <= 2000){
+            filter.push(
+              {
+                field: "geo_tag." + spatialField,
+                relation: "in",
+                values: geoIds
+              }
+            );
+          }
+          return filter;
+      },
 
       query: function(parameters) {
       
@@ -500,8 +533,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         
         for (var key in parameters.layers){
             if (parameters.layers[key].active && typeof parameters.layers[key].createQuery === "function"){
-                var queryJson = parameters.layers[key].createQuery(getFilter(parameters, defaultPinmapSamplingDayRange, parameters.geoIds));
-                ws.send(queryJson);
+                var queryJsons = parameters.layers[key].createQuery();
+                for (key in queryJsons){
+                    ws.send(queryJsons[key]);
+                }
             }
         }
       }
@@ -547,6 +582,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 break;
               case "batchPinMapRequest":
                 break;
+              case "timeSeries":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTimeSeriesResult = result.value[0];
+                }
+                break;
+              /*
               case "heatMapResult":
                 if(angular.isArray(result.value)) {
                   cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
@@ -569,6 +610,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   cloudberryService.commonTimeSeriesResult = result.value[0];
                 }
                 break;
+              */
               case "totalCount":
                 cloudberryService.commonTotalCount = result.value[0][0].count;
                 break;

@@ -1,6 +1,8 @@
 angular.module('cloudberry.common')
     .service('multilayerHeatmap', function($timeout, $q, cloudberry, cloudberryConfig){
         var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
+        var defaultHeatmapSamplingDayRange = parseInt(config.heatmapSamplingDayRange);
+        var defaultNonSamplingDayRange = 1500;
         
         function initheatMap(scope){
             var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
@@ -59,13 +61,12 @@ angular.module('cloudberry.common')
         }
         
         function zoomFunction(){
-            console.log("heatmap");
         }
         
-        function createHeatmapQuery(filter){
+        function createHeatmapQuery(){
             var heatJson = (JSON.stringify({
                 dataset: this.parameters.dataset,
-                filter: filter,
+                filter: cloudberry.getFilter(cloudberry.parameters, defaultHeatmapSamplingDayRange, cloudberry.parameters.geoIds),
                 select: {
                     order: ["-create_at"],
                     limit: defaultHeatmapLimit,
@@ -83,7 +84,40 @@ angular.module('cloudberry.common')
                 }
             }));
             
-            return heatJson;
+            var heatTimeJson = (JSON.stringify({
+                dataset: this.parameters.dataset,
+                filter: cloudberry.getFilter(cloudberry.parameters, defaultNonSamplingDayRange, cloudberry.parameters.geoIds),
+                group: {
+                    by: [{
+                        field: "create_at",
+                        apply: {
+                            name: "interval",
+                            args: {
+                                unit: cloudberry.parameters.timeBin
+                            }
+                        },
+                        as: cloudberry.parameters.timeBin
+                    }],
+                    aggregate: [{
+                        field: "*",
+                        apply: {
+                            name: "count"
+                        },
+                        as: "count"
+                    }]
+                },
+                option: {
+                    sliceMillis: cloudberryConfig.querySliceMills
+                },
+                transform: {
+                    wrap: {
+                        id: "timeSeries",
+                        category: "timeSeries"
+                    }
+                }
+            }));
+            
+            return [heatJson, heatTimeJson];
         }
         
         var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};

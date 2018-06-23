@@ -611,6 +611,13 @@ angular.module('cloudberry.common')
             }
         }
         
+        function activateFunction(){
+            this.zoom();
+        }
+        
+        function deactivateFunction(){
+        }
+        
         var watchVariables = {"countmapMapResult":"cloudberry.countmapMapResult",
                               "doNormalization":"$('#toggle-normalize').prop('checked')",
                               "doSentiment":"$('#toggle-sentiment').prop('checked')"};
@@ -626,6 +633,8 @@ angular.module('cloudberry.common')
                     clear: cleanCountMap,
                     zoom: zoomFunction,
                     drag: dragFunction,
+                    activate: activateFunction,
+                    deactivate: deactivateFunction,
                     watchVariables: watchVariables,
                     map: null,
                     geojsonData: {},
