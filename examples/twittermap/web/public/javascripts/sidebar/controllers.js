@@ -1,19 +1,19 @@
 angular.module('cloudberry.sidebar', ['cloudberry.common'])
-  .controller('SidebarCtrl', function($scope, cloudberry) {
+  .controller("SidebarCtrl", function($scope, cloudberry) {
     cloudberry.parameters.isSampleTweetsOpen = false;
     cloudberry.parameters.isHashTagOpen = false;
 
     $scope.currentTab = "about";
-    $scope.hashtag_currentKeywords = cloudberry.parameters.keywords;
-    $scope.hashtag_currentGeoLevel = cloudberry.parameters.geoLevel;
-    $scope.hashtag_currentTimeInterval = cloudberry.parameters.timeInterval;
-    $scope.tweet_currentKeywords = cloudberry.parameters.keywords;
-    $scope.tweet_currentGeoLevel = cloudberry.parameters.geoLevel;
-    $scope.tweet_currentTimeInterval = cloudberry.parameters.timeInterval;
+    $scope.hashtagCurrentKeywords = cloudberry.parameters.keywords;
+    $scope.hashtagCurrentGeoLevel = cloudberry.parameters.geoLevel;
+    $scope.hashtagCurrentTimeInterval = cloudberry.parameters.timeInterval;
+    $scope.tweetCurrentKeywords = cloudberry.parameters.keywords;
+    $scope.tweetCurrentGeoLevel = cloudberry.parameters.geoLevel;
+    $scope.tweetCurrentTimeInterval = cloudberry.parameters.timeInterval;
 
     $scope.showTab = function(tab) {
 
-      if (tab != $scope.currentTab) {
+      if (tab !== $scope.currentTab) {
         $scope.currentTab = tab;
 
         switch (tab) {
@@ -21,15 +21,15 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
             cloudberry.parameters.isHashTagOpen = true;
             cloudberry.parameters.isSampleTweetsOpen = false;
 
-            if ($scope.hashtag_currentKeywords === cloudberry.parameters.keywords
-              && $scope.hashtag_currentGeoLevel === cloudberry.parameters.geoLevel
-              && $scope.hashtag_currentTimeInterval === cloudberry.parameters.timeInterval) {
+            if ($scope.hashtagCurrentKeywords === cloudberry.parameters.keywords
+              && $scope.hashtagCurrentGeoLevel === cloudberry.parameters.geoLevel
+              && $scope.hashtagCurrentTimeInterval === cloudberry.parameters.timeInterval) {
               return;
             }
 
-            $scope.hashtag_currentKeywords = cloudberry.parameters.keywords;
-            $scope.hashtag_currentGeoLevel = cloudberry.parameters.geoLevel;
-            $scope.hashtag_currentTimeInterval = cloudberry.parameters.timeInterval;
+            $scope.hashtagCurrentKeywords = cloudberry.parameters.keywords;
+            $scope.hashtagCurrentGeoLevel = cloudberry.parameters.geoLevel;
+            $scope.hashtagCurrentTimeInterval = cloudberry.parameters.timeInterval;
 
             cloudberry.querySidebar(cloudberry.parameters);
             break;
@@ -37,15 +37,15 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
             cloudberry.parameters.isSampleTweetsOpen = true;
             cloudberry.parameters.isHashTagOpen = false;
 
-            if ($scope.tweet_currentKeywords === cloudberry.parameters.keywords
-              && $scope.tweet_currentGeoLevel === cloudberry.parameters.geoLevel
-              && $scope.tweet_currentTimeInterval === cloudberry.parameters.timeInterval) {
+            if ($scope.tweetCurrentKeywords === cloudberry.parameters.keywords
+              && $scope.tweetCurrentGeoLevel === cloudberry.parameters.geoLevel
+              && $scope.tweetCurrentTimeInterval === cloudberry.parameters.timeInterval) {
               return;
             }
 
-            $scope.tweet_currentKeywords = cloudberry.parameters.keywords;
-            $scope.tweet_currentGeoLevel = cloudberry.parameters.geoLevel;
-            $scope.tweet_currentTimeInterval = cloudberry.parameters.timeInterval;
+            $scope.tweetCurrentKeywords = cloudberry.parameters.keywords;
+            $scope.tweetCurrentGeoLevel = cloudberry.parameters.geoLevel;
+            $scope.tweetCurrentTimeInterval = cloudberry.parameters.timeInterval;
 
             cloudberry.querySidebar(cloudberry.parameters);
             break;
@@ -74,9 +74,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       function (newResult) {
         $scope.hashTagsList = newResult;
 
-        $scope.hashtag_currentKeywords = cloudberry.parameters.keywords;
-        $scope.hashtag_currentGeoLevel = cloudberry.parameters.geoLevel;
-        $scope.hashtag_currentTimeInterval = cloudberry.parameters.timeInterval;
+        $scope.hashtagCurrentKeywords = cloudberry.parameters.keywords;
+        $scope.hashtagCurrentGeoLevel = cloudberry.parameters.geoLevel;
+        $scope.hashtagCurrentTimeInterval = cloudberry.parameters.timeInterval;
       }
     );
   })
@@ -116,9 +116,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         $scope.results = newResult;
         drawTweets($scope.results);
 
-        $scope.tweet_currentKeywords = cloudberry.parameters.keywords;
-        $scope.tweet_currentGeoLevel = cloudberry.parameters.geoLevel;
-        $scope.tweet_currentTimeInterval = cloudberry.parameters.timeInterval;
+        $scope.tweetCurrentKeywords = cloudberry.parameters.keywords;
+        $scope.tweetCurrentGeoLevel = cloudberry.parameters.geoLevel;
+        $scope.tweetCurrentTimeInterval = cloudberry.parameters.timeInterval;
       }
     );
   })

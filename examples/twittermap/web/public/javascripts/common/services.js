@@ -305,11 +305,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       };
     }
 
-    function handleSampeTweetsRequest(parameters) {
+    function handleSampleTweetsRequest(parameters) {
 
-      if (parameters.isSampleTweetsOpen && parameters.maptype === 'countmap') {
+      if (parameters.isSampleTweetsOpen && parameters.maptype === "countmap") {
         var sampleTweetsRequestJson = JSON.stringify(genSampleTweetsRequest(parameters));
-        console.log("issue a query for Sample Tweets...");
         ws.send(sampleTweetsRequestJson);
       }
     }
@@ -318,7 +317,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
       if (parameters.isHashTagOpen) {
         var hashTagRequestJson = JSON.stringify(genHashTagRequest(parameters));
-        console.log("issue a query for Top 50 Hash Tags...");
         ws.send(hashTagRequestJson);
       }
     }
@@ -544,16 +542,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
         }
 
-        handleSampeTweetsRequest(parameters);
+        handleSampleTweetsRequest(parameters);
         handleHashTagRequest(parameters);
       },
 
-      querySidebar: function(parameters) {
+      querySidebar(parameters) {
 
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
 
-        handleSampeTweetsRequest(parameters);
+        handleSampleTweetsRequest(parameters);
         handleHashTagRequest(parameters);
       }
     };
