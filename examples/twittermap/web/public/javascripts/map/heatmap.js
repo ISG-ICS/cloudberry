@@ -67,9 +67,10 @@ angular.module("cloudberry.map")
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
-      
-      $scope.resetZoomFunction(onEachFeature);
-      $scope.resetDragFunction(onEachFeature);
+
+      $scope.onEachFeature = onEachFeature;
+      //$scope.resetZoomFunction(onEachFeature);
+      //$scope.resetDragFunction(onEachFeature);
 
       if (!$scope.heat){
         var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet

@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache, moduleManager) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
@@ -70,11 +70,16 @@ angular.module("cloudberry.map")
     // additional operations required by pinmap for zoom event
     // update the map boundary and x/y axis scale
     function zoomPostProcess() {
+      console.log("[pinmap] zoomPostProcess ...");
       //For rescaling the metric of distance between points and mouse cursor.
       $scope.currentBounds = $scope.map.getBounds();
       $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
       $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
     }
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, function (event) {
+      zoomPostProcess();
+    });
 
     // initialize pinmap
     function setInfoControlPinMap() {
@@ -88,9 +93,10 @@ angular.module("cloudberry.map")
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
-      
-      $scope.resetZoomFunction(onEachFeature, zoomPostProcess);
-      $scope.resetDragFunction(onEachFeature);
+
+      $scope.onEachFeature = onEachFeature;
+      //$scope.resetZoomFunction(onEachFeature, zoomPostProcess);
+      //$scope.resetDragFunction(onEachFeature);
 
       $scope.mouseOverPointI = 0;
     }

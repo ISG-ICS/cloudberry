@@ -151,8 +151,9 @@ angular.module('cloudberry.map')
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
-      $scope.resetZoomFunction(onEachFeature);
-      $scope.resetDragFunction(onEachFeature);
+      $scope.onEachFeature = onEachFeature;
+      //$scope.resetZoomFunction(onEachFeature);
+      //$scope.resetDragFunction(onEachFeature);
     }
     
     /**
