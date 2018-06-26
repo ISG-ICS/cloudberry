@@ -405,7 +405,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             }
             break;
           
-          /*
+          
           case 'heatmap':
             var heatJson = (JSON.stringify({
               dataset: parameters.dataset,
@@ -524,21 +524,21 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             ws.send(pointsJson);
             ws.send(pointsTimeJson);
             break;
-          */
+          
           
           default:
             // unrecognized map type
             break;
         }
         
-        for (var key in parameters.layers){
+        /*for (var key in parameters.layers){
             if (parameters.layers[key].active && typeof parameters.layers[key].createQuery === "function"){
                 var queryJsons = parameters.layers[key].createQuery();
                 for (key in queryJsons){
                     ws.send(queryJsons[key]);
                 }
             }
-        }
+        }*/
       }
     };
 
@@ -587,7 +587,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   cloudberryService.commonTimeSeriesResult = result.value[0];
                 }
                 break;
-              /*
+              
               case "heatMapResult":
                 if(angular.isArray(result.value)) {
                   cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
@@ -610,7 +610,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                   cloudberryService.commonTimeSeriesResult = result.value[0];
                 }
                 break;
-              */
+              
               case "totalCount":
                 cloudberryService.commonTotalCount = result.value[0][0].count;
                 break;

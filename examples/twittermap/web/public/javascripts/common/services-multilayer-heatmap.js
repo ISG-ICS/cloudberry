@@ -121,7 +121,6 @@ angular.module('cloudberry.common')
         }
         
         var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
-        //var watchVariables = {};
         
         var heatmapService = {
             createLayer: function(parameters){

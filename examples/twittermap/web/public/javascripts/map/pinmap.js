@@ -293,30 +293,8 @@ angular.module("cloudberry.map")
     }
     
     
-    var watchVariables = {"pinmapMapResult":"cloudberry.pinmapMapResult"};
     
-    //register this map in main control
-    var l = {
-            active:0,    
-            data:"",
-            init:function(){
-                setPinMapStyle();
-                $scope.resetPolygonLayers();
-                setInfoControlPinMap();
-            },  
-            draw : drawPinMap,
-            clear: cleanPinMap,
-            watchVariables:watchVariables
-    };
-    
-    /*
-    $timeout(function() {
-        $rootScope.$emit("registerLayer", ["pinmap", l]);
-    })
-    */
-          
-    //cloudberry.layer["pinmap"] = l;
-    //$scope.watchVariables["pinmapMapResult"] = "cloudberry.pinmapMapResult";
+
     
     
     
@@ -339,7 +317,7 @@ angular.module("cloudberry.map")
     })
     
     // monitor the pinmap related variables, update the pinmap if necessary
-    /*$scope.$watch(
+    $scope.$watch(
       function() {
         return cloudberry.pinmapMapResult;
       },
@@ -347,7 +325,7 @@ angular.module("cloudberry.map")
       function(newResult) {
         if (cloudberry.parameters.maptype === "pinmap"){
           $scope.result = newResult;
-          cloudberry.layer["pinmap"].data = newResult;    
+            
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
             drawPinMap($scope.result);
@@ -356,5 +334,5 @@ angular.module("cloudberry.map")
           }
         }
       }
-    );*/
+    );
   });

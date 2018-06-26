@@ -426,13 +426,13 @@ angular.module('cloudberry.map')
     }
     
     // initialize if the default map type is countmap
-    /*
+    
     if (cloudberry.parameters.maptype == 'countmap'){
       setCountMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlCountMap();
     }
-    */
+    
     
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
@@ -445,32 +445,10 @@ angular.module('cloudberry.map')
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);  
         
     }
+
+
     
-    var watchVariables = {"countmapMapResult":"cloudberry.countmapMapResult",
-                          "doNormalization":"$('#toggle-normalize').prop('checked')",
-                          "doSentiment":"$('#toggle-sentiment').prop('checked')"};
-    
-    var l ={
-            active:0,
-            init:initCountMap,
-            data:"",
-            draw:drawCountMap,
-            clear:cleanCountMap,
-            watchVariables:watchVariables
-    }
-    
-    /*
-    $timeout(function() {
-        $rootScope.$emit("registerLayer", ["countmap", l]);
-    })
-    */
-    
-    /*    
-    cloudberry.layer["countmap"] = l;
-    $scope.watchVariables["countmapMapResult"] = "cloudberry.countmapMapResult";
-    $scope.watchVariables["doNormalization"] = "$('#toggle-normalize').prop('checked')";
-    $scope.watchVariables["doSentiment"] = "$('#toggle-sentiment').prop('checked')";
-    */
+ 
     
     
     $rootScope.$on('maptypeChange', function (event, data) {
@@ -486,7 +464,7 @@ angular.module('cloudberry.map')
     })
     
     // monitor the countmap related variables, update the pointmap if necessary
-    /*$scope.$watchCollection(
+    $scope.$watchCollection(
       function() {
         return {
           'countmapMapResult': cloudberry.countmapMapResult,
@@ -497,8 +475,7 @@ angular.module('cloudberry.map')
 
       function(newResult, oldValue) {
           
-        if(cloudberry.layer["countmap"])
-            cloudberry.layer["countmap"].data = newResult;  
+        
           
         if (cloudberry.parameters.maptype == 'countmap'){
           if (newResult['countmapMapResult'] !== oldValue['countmapMapResult']) {
@@ -525,5 +502,5 @@ angular.module('cloudberry.map')
           }
         }
       }
-    );*/
+    );
   });
