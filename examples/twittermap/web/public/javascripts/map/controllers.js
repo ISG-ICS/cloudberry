@@ -1,5 +1,6 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache, moduleManager) { // use $rootScope event to get maptypeChange notification
+  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData,
+                                  cloudberryConfig, Cache, moduleManager, cloudberryClient, queryUtil) { // use $rootScope event to get maptypeChange notification
 
     cloudberry.parameters.maptype = config.defaultMapType;
 
@@ -518,7 +519,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
         }
       }
-    });
+    }, 0);
 
     // Listens to moduleManager's drag event
     moduleManager.subscribeEvent(moduleManager.EVENT.DRAG, function(event) {
@@ -545,7 +546,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         cloudberry.parameters.geoLevel = $scope.status.logicLevel;
         cloudberry.query(cloudberry.parameters);
       }
-    });
+    }, 0);
 
   })
   .directive("map", function () {
