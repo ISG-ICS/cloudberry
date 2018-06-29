@@ -86,6 +86,15 @@ angular.module("cloudberry.map")
       }, "pinTime");
     }
 
+    // additional operations required by pinmap for zoom event
+    // update the map boundary and x/y axis scale
+    function zoomPostProcess() {
+      //For rescaling the metric of distance between points and mouse cursor.
+      $scope.currentBounds = $scope.map.getBounds();
+      $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
+      $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
+    }
+
     // Event handler for zoom event
     function onZoomPinmap(event) {
       if (!$scope.status.init) {
@@ -117,15 +126,6 @@ angular.module("cloudberry.map")
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.ZOOM, onZoomPinmap);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.DRAG, onDragPinmap);
-    }
-    
-    // additional operations required by pinmap for zoom event
-    // update the map boundary and x/y axis scale
-    function zoomPostProcess() {
-      //For rescaling the metric of distance between points and mouse cursor.
-      $scope.currentBounds = $scope.map.getBounds();
-      $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
-      $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
     }
 
     // initialize pinmap
