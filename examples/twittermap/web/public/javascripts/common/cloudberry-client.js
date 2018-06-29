@@ -1,5 +1,5 @@
-angular.module('cloudberry.common')
-  .service('cloudberryClient', function($timeout, cloudberryConfig) {
+angular.module("cloudberry.common")
+  .service("cloudberryClient", function($timeout, cloudberryConfig) {
 
     var ws = new WebSocket(cloudberryConfig.ws);
 
@@ -67,7 +67,7 @@ angular.module('cloudberry.common')
             cloudberryClient.queryToResultHandlerMap[category]["common"](id, result.value);
           }
         }
-      })
+      });
     };
 
     return cloudberryClient;

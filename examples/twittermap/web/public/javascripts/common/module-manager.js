@@ -1,5 +1,5 @@
-angular.module('cloudberry.common')
-  .service('moduleManager', function() {
+angular.module("cloudberry.common")
+  .service("moduleManager", function() {
 
     var moduleManager = {
 
@@ -39,7 +39,7 @@ angular.module('cloudberry.common')
 
             if (isPriority) {
               this.eventsListeners[eventName].sort(function (a, b) {
-                a.p - b.p
+                a.p - b.p;
               });
             }
           }
@@ -63,8 +63,9 @@ angular.module('cloudberry.common')
 
         if (eventName in this.eventsListeners) {
           var index = this.eventsListeners[eventName].findIndex(function (element) {
-            if (element.h === eventHandler)
+            if (element.h === eventHandler){
               return true;
+            }
           });
 
           if (index >= 0) {
@@ -85,7 +86,7 @@ angular.module('cloudberry.common')
        */
       publishEvent(eventName, event) {
 
-        if (!eventName in this.EVENT) {
+        if (!(eventName in this.EVENT)) {
           return false;
         }
 

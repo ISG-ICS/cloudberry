@@ -53,6 +53,53 @@ angular.module("cloudberry.map")
         sentimentColors: ["#ff0000", "#C0C0C0", "#00ff00"]
       });
     }
+
+    // Send query to cloudberry
+    function sendPinmapQuery() {
+      var pinsJson = {
+        dataset: cloudberry.parameters.dataset,
+        filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
+        select: {
+          order: ["-create_at"],
+          limit: queryUtil.defaultPinmapLimit,
+          offset: 0,
+          field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+        },
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      };
+
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+
+      cloudberryClient.send(pinsJson, function(id, resultSet){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+          cloudberry.pinmapMapResult = resultSet[0];
+        }
+      }, "pinMapResult");
+
+      cloudberryClient.send(pinsTimeJson, function(id, resultSet){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTimeSeriesResult = resultSet[0];
+        }
+      }, "pinTime");
+    }
+
+    // Event handler for zoom event
+    function onZoomPinmap(event) {
+      if (!$scope.status.init) {
+        sendPinmapQuery();
+      }
+      zoomPostProcess();
+    }
+
+    // Event handler for drag event
+    function onDragPinmap(event) {
+      if (!$scope.status.init) {
+        sendPinmapQuery();
+      }
+    }
     
     // clear pinmap specific data
     function cleanPinMap() {
@@ -333,52 +380,5 @@ angular.module("cloudberry.map")
         }
       }
     );
-
-    // Send query to cloudberry
-    function sendPinmapQuery() {
-      var pinsJson = {
-        dataset: cloudberry.parameters.dataset,
-        filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
-        select: {
-          order: ["-create_at"],
-          limit: queryUtil.defaultPinmapLimit,
-          offset: 0,
-          field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
-        },
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        }
-      };
-
-      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
-
-      cloudberryClient.send(pinsJson, function(id, resultSet){
-        if(angular.isArray(resultSet)) {
-          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
-          cloudberry.pinmapMapResult = resultSet[0];
-        }
-      }, "pinMapResult");
-
-      cloudberryClient.send(pinsTimeJson, function(id, resultSet){
-        if(angular.isArray(resultSet)) {
-          cloudberry.commonTimeSeriesResult = resultSet[0];
-        }
-      }, "pinTime");
-    }
-
-    // Event handler for zoom event
-    function onZoomPinmap(event) {
-      if (!$scope.status.init) {
-        sendPinmapQuery();
-      }
-      zoomPostProcess();
-    }
-
-    // Event handler for drag event
-    function onDragPinmap(event) {
-      if (!$scope.status.init) {
-        sendPinmapQuery();
-      }
-    }
 
   });

@@ -1,5 +1,5 @@
-angular.module('cloudberry.common')
-  .service('queryUtil', function(cloudberryConfig) {
+angular.module("cloudberry.common")
+  .service("queryUtil", function(cloudberryConfig) {
 
     var queryUtil = {
 
