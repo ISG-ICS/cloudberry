@@ -1,5 +1,6 @@
 angular.module("cloudberry.map")
-  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache, moduleManager) {
+  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData,
+                                     cloudberryConfig, MapResultCache, moduleManager, cloudberryClient, queryUtil) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
@@ -65,21 +66,20 @@ angular.module("cloudberry.map")
         $scope.map.removeLayer($scope.currentMarker);
         $scope.currentMarker = null;
       }
+
+      // Unsubscribe to moduleManager's events
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.ZOOM, onZoomPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.DRAG, onDragPinmap);
     }
     
     // additional operations required by pinmap for zoom event
     // update the map boundary and x/y axis scale
     function zoomPostProcess() {
-      console.log("[pinmap] zoomPostProcess ...");
       //For rescaling the metric of distance between points and mouse cursor.
       $scope.currentBounds = $scope.map.getBounds();
       $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
       $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
     }
-
-    moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, function (event) {
-      zoomPostProcess();
-    });
 
     // initialize pinmap
     function setInfoControlPinMap() {
@@ -94,9 +94,11 @@ angular.module("cloudberry.map")
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
-      $scope.onEachFeature = onEachFeature;
-      //$scope.resetZoomFunction(onEachFeature, zoomPostProcess);
-      //$scope.resetDragFunction(onEachFeature);
+      $scope.$parent.onEachFeature = onEachFeature;
+
+      // Subscribe to moduleManager's events
+      moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, onZoomPinmap, 1);
+      moduleManager.subscribeEvent(moduleManager.EVENT.DRAG, onDragPinmap, 1);
 
       $scope.mouseOverPointI = 0;
     }
@@ -306,7 +308,7 @@ angular.module("cloudberry.map")
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+        sendPinmapQuery();
       }
       else if (data[0] === "pinmap"){
         cleanPinMap();
@@ -331,4 +333,52 @@ angular.module("cloudberry.map")
         }
       }
     );
+
+    // Send query to cloudberry
+    function sendPinmapQuery() {
+      var pinsJson = {
+        dataset: cloudberry.parameters.dataset,
+        filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
+        select: {
+          order: ["-create_at"],
+          limit: queryUtil.defaultPinmapLimit,
+          offset: 0,
+          field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+        },
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      };
+
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+
+      cloudberryClient.send(pinsJson, function(id, resultSet){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+          cloudberry.pinmapMapResult = resultSet[0];
+        }
+      }, "pinMapResult");
+
+      cloudberryClient.send(pinsTimeJson, function(id, resultSet){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTimeSeriesResult = resultSet[0];
+        }
+      }, "pinTime");
+    }
+
+    // Event handler for zoom event
+    function onZoomPinmap(event) {
+      if (!$scope.status.init) {
+        sendPinmapQuery();
+      }
+      zoomPostProcess();
+    }
+
+    // Event handler for drag event
+    function onDragPinmap(event) {
+      if (!$scope.status.init) {
+        sendPinmapQuery();
+      }
+    }
+
   });

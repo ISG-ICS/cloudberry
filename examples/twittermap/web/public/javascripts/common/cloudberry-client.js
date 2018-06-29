@@ -18,24 +18,29 @@ angular.module('cloudberry.common')
        * @returns {boolean}
        */
       send(query, resultHandler, category, id) {
+
+        if (ws.readyState !== ws.OPEN) {
+          return false;
+        }
+
         if (typeof category === "undefined") {
           return false;
         }
 
         // The first time registering resultHandler for this category
-        if (!category in this.queryToResultHandlerMap) {
-          this.queryToResultHandlerMap[category] = {common: resultHandler};
+        if (!(category in cloudberryClient.queryToResultHandlerMap)) {
+          cloudberryClient.queryToResultHandlerMap[category] = {common: resultHandler};
         }
 
         // This query has unique resultHandler for this query id
         if(id instanceof String) {
-          this.queryToResultHandlerMap[category][id] = resultHandler;
+          cloudberryClient.queryToResultHandlerMap[category][id] = resultHandler;
         }
 
         // Add "transform" attribute to the query JSON
         query["transform"] = {
           wrap: {
-            id: id,
+            id: id ? id : category,
             category: category
           }
         };

@@ -1,5 +1,6 @@
 angular.module("cloudberry.map")
-  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData,
+                                      cloudberryConfig, MapResultCache, moduleManager, cloudberryClient, queryUtil) {
     function setHeatMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -57,6 +58,10 @@ angular.module("cloudberry.map")
         $scope.map.removeLayer($scope.heatMapLayer);
         $scope.heatMapLayer = null;
       }
+
+      // Unsubscribe to moduleManager's events
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.ZOOM, onZoomHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.DRAG, onDragHeatmap);
     }
     
     function setInfoControlHeatMap() {
@@ -68,9 +73,11 @@ angular.module("cloudberry.map")
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
-      $scope.onEachFeature = onEachFeature;
-      //$scope.resetZoomFunction(onEachFeature);
-      //$scope.resetDragFunction(onEachFeature);
+      $scope.$parent.onEachFeature = onEachFeature;
+
+      // Subscribe to moduleManager's events
+      moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, onZoomHeatmap, 1);
+      moduleManager.subscribeEvent(moduleManager.EVENT.DRAG, onDragHeatmap, 1);
 
       if (!$scope.heat){
         var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
@@ -114,7 +121,7 @@ angular.module("cloudberry.map")
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+        sendHeatmapQuery();
       }
       else if (data[0] === "heatmap"){
         cleanHeatMap();
@@ -138,4 +145,51 @@ angular.module("cloudberry.map")
         }
       }
     );
+
+    // Send query to cloudberry
+    function sendHeatmapQuery() {
+      var heatJson = {
+        dataset: cloudberry.parameters.dataset,
+        filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultHeatmapSamplingDayRange, cloudberry.parameters.geoIds),
+        select: {
+          order: ["-create_at"],
+          limit: queryUtil.defaultHeatmapLimit,
+          offset: 0,
+          field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+        },
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      };
+
+      var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+
+      cloudberryClient.send(heatJson, function(id, resultSet){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+          cloudberry.heatmapMapResult = resultSet[0];
+        }
+      }, "heatMapResult");
+
+      cloudberryClient.send(heatTimeJson, function(id, resultSet){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTimeSeriesResult = resultSet[0];
+        }
+      }, "heatTime");
+    }
+
+    // Event handler for zoom event
+    function onZoomHeatmap(event) {
+      if (!$scope.status.init) {
+        sendHeatmapQuery();
+      }
+    }
+
+    // Event handler for drag event
+    function onDragHeatmap(event) {
+      if (!$scope.status.init) {
+        sendHeatmapQuery();
+      }
+    }
+
   });

@@ -20,7 +20,7 @@ angular.module('cloudberry.common')
        *
        * @param eventName moduleManager.EVENT, event name
        * @param eventHandler function, callback function(event): event is the content object of the event
-       * @param priority number, defines the order of calling of eventHandlers, 0 is highest
+       * @param priority number, defines the order of calling eventHandlers, 0 is highest
        * @returns {boolean}
        */
       subscribeEvent(eventName, eventHandler, priority) {
@@ -38,7 +38,9 @@ angular.module('cloudberry.common')
             this.eventsListeners[eventName].push({p: priority, h: eventHandler});
 
             if (isPriority) {
-              this.eventsListeners[eventName].sort(function(a, b){a.p - b.p});
+              this.eventsListeners[eventName].sort(function (a, b) {
+                a.p - b.p
+              });
             }
           }
           else {
@@ -51,6 +53,29 @@ angular.module('cloudberry.common')
       },
 
       /**
+       * unsubscribe an event
+       *
+       * @param eventName
+       * @param eventHandler
+       * @returns {boolean}
+       */
+      unsubscribeEvent(eventName, eventHandler) {
+
+        if (eventName in this.eventsListeners) {
+          var index = this.eventsListeners[eventName].findIndex(function (element) {
+            if (element.h === eventHandler)
+              return true;
+          });
+
+          if (index >= 0) {
+            this.eventsListeners[eventName].splice(index, 1);
+          }
+        }
+
+        return true;
+      },
+
+      /**
        * publish an event:
        *   publish a single event instance once.
        *
@@ -60,18 +85,19 @@ angular.module('cloudberry.common')
        */
       publishEvent(eventName, event) {
 
-        if (! eventName in this.EVENT) {
+        if (!eventName in this.EVENT) {
           return false;
         }
 
         if (eventName in this.eventsListeners) {
-          for (var i = 0; i < this.eventsListeners[eventName].length; i ++) {
-            this.eventsListeners[eventName][i](event);
+          for (var i = 0; i < this.eventsListeners[eventName].length; i++) {
+            this.eventsListeners[eventName][i].h(event);
           }
         }
 
         return true;
       }
+
     };
 
     return moduleManager;
