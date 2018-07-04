@@ -225,34 +225,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       };
     }
 
-    // TODO - will be deprecated once no use place
-    function byHashTagRequest(parameters) {
-      return {
-        dataset: parameters.dataset,
-        filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-        unnest: [{
-          hashtags: "tag"
-        }],
-        group: {
-          by: [{
-            field: "tag"
-          }],
-          aggregate: [{
-            field: "*",
-            apply: {
-              name: "count"
-            },
-            as: "count"
-          }]
-        },
-        select: {
-          order: ["-count"],
-          limit: 50,
-          offset: 0
-        }
-      };
-    }
-
+    // Generate top 50 hash tag JSON request
     function genHashTagRequest(parameters) {
       return {
         dataset: parameters.dataset,
@@ -279,13 +252,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         },
         transform: {
           wrap: {
-            id: "hashTags",
-            category: "hashTags"
+            id: "hashTagRequest",
+            category: "hashTagRequest"
           }
         }
       };
     }
 
+    // Generate latest 10 sample tweet JSON request
     function genSampleTweetsRequest(parameters) {
       return {
         dataset: parameters.dataset,
@@ -298,8 +272,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         },
         transform: {
           wrap: {
-            id: "sample",
-            category: "sample"
+            id: "sampleTweetRequest",
+            category: "sampleTweetRequest"
           }
         }
       };
@@ -307,6 +281,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
     function handleSampleTweetsRequest(parameters) {
 
+      // Only 'countmap' needs to send the sample tweet request,
+      // because other map results include sample tweet results as well
       if (parameters.isSampleTweetsOpen && parameters.maptype === "countmap") {
         var sampleTweetsRequestJson = JSON.stringify(genSampleTweetsRequest(parameters));
         ws.send(sampleTweetsRequestJson);
@@ -542,8 +518,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
         }
 
-        handleSampleTweetsRequest(parameters);
-        handleHashTagRequest(parameters);
+        cloudberryService.querySidebar(parameters);
       },
 
       querySidebar(parameters) {
@@ -562,7 +537,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
         switch (result.category) {
 
-          case "sample":
+          case "sampleTweetRequest":
             cloudberryService.commonTweetResult = result.value[0];
             break;
           // Complete cache hit case
@@ -610,7 +585,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               cloudberryService.commonTimeSeriesResult = result.value[0];
             }
             break;
-          case "hashTags":
+          case "hashTagRequest":
             if(angular.isArray(result.value)) {
               cloudberryService.commonHashTagResult = result.value[0];
             }
