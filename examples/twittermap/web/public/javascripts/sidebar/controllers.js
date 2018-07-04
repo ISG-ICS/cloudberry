@@ -66,10 +66,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
             return;
           }
 
-          /*$scope.hashtagCurrentParameters.keywords = cloudberry.parameters.keywords;
-          $scope.hashtagCurrentParameters.geoLevel = cloudberry.parameters.geoLevel;
-          $scope.hashtagCurrentParameters.timeInterval.start = new Date(cloudberry.parameters.timeInterval.start.getTime());
-          $scope.hashtagCurrentParameters.timeInterval.end = new Date(cloudberry.parameters.timeInterval.end.getTime());*/
           $scope.assignParameters(cloudberry.parameters, $scope.hashtagCurrentParameters);
 
           cloudberry.querySidebar(cloudberry.parameters);
@@ -86,10 +82,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
             return;
           }
 
-          /*$scope.sampletweetCurrentParameters.keywords = cloudberry.parameters.keywords;
-          $scope.sampletweetCurrentParameters.geoLevel = cloudberry.parameters.geoLevel;
-          $scope.sampletweetCurrentParameters.timeInterval.start = new Date(cloudberry.parameters.timeInterval.start.getTime());
-          $scope.sampletweetCurrentParameters.timeInterval.end = new Date(cloudberry.parameters.timeInterval.end.getTime());*/
           $scope.assignParameters(cloudberry.parameters, $scope.sampletweetCurrentParameters);
 
           cloudberry.querySidebar(cloudberry.parameters);
@@ -118,10 +110,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       function (newResult) {
         $scope.hashTagsList = newResult;
 
-        /*$scope.hashtagCurrentParameters.keywords = cloudberry.parameters.keywords;
-        $scope.hashtagCurrentParameters.geoLevel= cloudberry.parameters.geoLevel;
-        $scope.hashtagCurrentParameters.timeInterval.start = new Date(cloudberry.parameters.timeInterval.start.getTime());
-        $scope.hashtagCurrentParameters.timeInterval.end = new Date(cloudberry.parameters.timeInterval.end.getTime());*/
         $scope.assignParameters(cloudberry.parameters, $scope.hashtagCurrentParameters);
       }
     );
@@ -162,10 +150,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         $scope.results = newResult;
         drawTweets($scope.results);
 
-        /*$scope.sampletweetCurrentParameters.keywords = cloudberry.parameters.keywords;
-        $scope.sampletweetCurrentParameters.geoLevel = cloudberry.parameters.geoLevel;
-        $scope.sampletweetCurrentParameters.timeInterval.start = new Date(cloudberry.parameters.timeInterval.start.getTime());
-        $scope.sampletweetCurrentParameters.timeInterval.end = new Date(cloudberry.parameters.timeInterval.end.getTime());*/
         $scope.assignParameters(cloudberry.parameters, $scope.sampletweetCurrentParameters);
       }
     );
