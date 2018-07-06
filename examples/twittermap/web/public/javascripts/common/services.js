@@ -493,7 +493,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             ws.send(pointsTimeJson);
             break;
           
-          
           default:
             // unrecognized map type
             break;
