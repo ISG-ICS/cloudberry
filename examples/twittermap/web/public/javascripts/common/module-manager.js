@@ -39,7 +39,6 @@ angular.module("cloudberry.common")
         else {
           return false;
         }
-
         return true;
       },
 
@@ -56,7 +55,6 @@ angular.module("cloudberry.common")
         if (eventName in this.eventsListeners) {
           this.eventsListeners[eventName].delete(eventHandler);
         }
-
         return true;
       },
 
@@ -75,10 +73,8 @@ angular.module("cloudberry.common")
             this.eventsListeners[eventName][i](event);
           }
         }
-
         return true;
       }
-
     };
 
     return moduleManager;
