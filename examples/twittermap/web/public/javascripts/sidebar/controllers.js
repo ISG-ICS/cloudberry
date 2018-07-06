@@ -63,8 +63,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         var icon1 = document.getElementById('img1');
         var icon2 = document.getElementById('img2');
         var icon3 = document.getElementById('img3');
-        
-        
+
         switch (cloudberry.parameters.maptype){
           case "countmap":
             icon1.src = "/assets/images/aggregation_map.png";
