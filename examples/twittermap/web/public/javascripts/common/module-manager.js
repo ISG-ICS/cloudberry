@@ -5,11 +5,11 @@ angular.module("cloudberry.common")
 
       // Built-in events
       EVENT: {
-        SEARCH_BUTTON: "eventSearchButtonClick",
-        TIME_RANGE: "eventTimeRangeChange",
-        ZOOM: "eventZoom",
-        DRAG: "eventDrag",
-        MAP_TYPE: "eventMapTypeChange"
+        CLICK_SEARCH_BUTTON: "clickSearchButtonEvent",
+        CHANGE_TIME_SERIES_RANGE: "changeTimeSeriesRangeEvent",
+        CHANGE_ZOOM_LEVEL: "changeZoomLevelEvent",
+        CHANGE_REGION_BY_DRAG: "changeRegionByDragEvent",
+        CHANGE_MAP_TYPE: "changeMapTypeEvent"
       },
 
       eventsListeners: {},
@@ -20,57 +20,41 @@ angular.module("cloudberry.common")
        *
        * @param eventName moduleManager.EVENT, event name
        * @param eventHandler function, callback function(event): event is the content object of the event
-       * @param priority number, defines the order of calling eventHandlers, 0 is highest
-       * @returns {boolean}
+       * @returns {boolean} true: if subscribed successfully, false: otherwise
        */
-      subscribeEvent(eventName, eventHandler, priority) {
+      subscribeEvent(eventName, eventHandler) {
 
-        var isPriority = false;
-        if (priority instanceof Number) {
-          isPriority = true;
-        }
-        else {
-          priority = 0;
+        if (!(eventName in this.EVENT)) {
+          return false;
         }
 
         if (eventHandler instanceof Function) {
           if (eventName in this.eventsListeners) {
-            this.eventsListeners[eventName].push({p: priority, h: eventHandler});
-
-            if (isPriority) {
-              this.eventsListeners[eventName].sort(function (a, b) {
-                a.p - b.p;
-              });
-            }
+            this.eventsListeners[eventName].add(eventHandler);
           }
           else {
-            this.eventsListeners[eventName] = [{p: priority, h: eventHandler}];
+            this.eventsListeners[eventName] = new Set([eventHandler]);
           }
         }
         else {
           return false;
         }
+
+        return true;
       },
 
       /**
-       * unsubscribe an event
+       * unsubscribe an event:
+       *   after unsubscribe successfully, eventHandler function will not be called when event happens later
        *
-       * @param eventName
-       * @param eventHandler
-       * @returns {boolean}
+       * @param eventName moduleManager.EVENT, event name
+       * @param eventHandler function, callback function(event)
+       * @returns {boolean} true: if unsubscribe successfully, false: otherwise
        */
       unsubscribeEvent(eventName, eventHandler) {
 
         if (eventName in this.eventsListeners) {
-          var index = this.eventsListeners[eventName].findIndex(function (element) {
-            if (element.h === eventHandler){
-              return true;
-            }
-          });
-
-          if (index >= 0) {
-            this.eventsListeners[eventName].splice(index, 1);
-          }
+          this.eventsListeners[eventName].delete(eventHandler);
         }
 
         return true;
@@ -82,17 +66,13 @@ angular.module("cloudberry.common")
        *
        * @param eventName moduleManager.EVENT, event name
        * @param event object, event content which will be passed to every subscriber's eventHandler
-       * @returns {boolean}
+       * @returns {boolean} true: if publish successfully, false: otherwise
        */
       publishEvent(eventName, event) {
 
-        if (!(eventName in this.EVENT)) {
-          return false;
-        }
-
         if (eventName in this.eventsListeners) {
           for (var i = 0; i < this.eventsListeners[eventName].length; i++) {
-            this.eventsListeners[eventName][i].h(event);
+            this.eventsListeners[eventName][i](event);
           }
         }
 
