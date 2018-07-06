@@ -97,7 +97,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
                 icon2.src = "/assets/images/heat_map_no_border.png";
                 icon3.src = "/assets/images/point_map_no_border.png";
                 $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
-                $rootScope.$emit("multiLayer", [premaptype, cloudberry.parameters.maptype]);
             }
 
         });
@@ -111,7 +110,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
                 icon2.src = "/assets/images/heat_map.png";
                 icon3.src = "/assets/images/point_map_no_border.png";
                 $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
-                $rootScope.$emit("multiLayer", [premaptype, cloudberry.parameters.maptype]);
             }
 
         });
@@ -125,7 +123,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
                 icon2.src = "/assets/images/heat_map_no_border.png";
                 icon3.src = "/assets/images/point_map.png";
                 $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
-                $rootScope.$emit("multiLayer", [premaptype, cloudberry.parameters.maptype]);
             }
 
         });
