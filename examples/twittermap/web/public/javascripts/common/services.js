@@ -256,7 +256,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       
         
       layer:{ 
-      },
+      }, //This layer variable stores all layer managers, it's equivalent to cloudberry.parameters.layers object
       commonTotalCount: 0,
       startDate: startDate,
       parameters: {
@@ -277,38 +277,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       commonHashTagResult: [],
       errorMessage: null,
       
-      getFilter: function getFilter(parameters, maxDay, geoIds) {
-          var spatialField = getLevel(parameters.geoLevel);
-          var keywords = [];
-          for(var i = 0; i < parameters.keywords.length; i++){
-            keywords.push(parameters.keywords[i].replace("\"", "").trim());
-          }
-          var queryStartDate = new Date(parameters.timeInterval.end);
-          queryStartDate.setDate(queryStartDate.getDate() - maxDay);
-          queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
-
-          var filter = [
-            {
-              field: "create_at",
-              relation: "inRange",
-              values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
-            }, {
-              field: "text",
-              relation: "contains",
-              values: keywords
-            }
-          ];
-          if (geoIds.length <= 2000){
-            filter.push(
-              {
-                field: "geo_tag." + spatialField,
-                relation: "in",
-                values: geoIds
-              }
-            );
-          }
-          return filter;
-      },
+      getFilter:getFilter,
 
       query: function(parameters) {
       
@@ -404,8 +373,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               ws.send(batchWithPartialGeoRequest);
             }
             break;
-          
-          
+                    
           case 'heatmap':
             var heatJson = (JSON.stringify({
               dataset: parameters.dataset,
@@ -530,23 +498,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // unrecognized map type
             break;
         }
-        
-        /*for (var key in parameters.layers){
-            if (parameters.layers[key].active && typeof parameters.layers[key].createQuery === "function"){
-                var queryJsons = parameters.layers[key].createQuery();
-                for (key in queryJsons){
-                    ws.send(queryJsons[key]);
-                }
-            }
-        }*/
       }
     };
 
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-
-        if (result.category in cloudberryService.parameters.layers){
+        
+        if (result.category in cloudberryService.parameters.layers){ //check if query result has correspoding to certain map/layer, update the map accordingly
             if (cloudberryService.parameters.layers[result.category].active){
                 cloudberryService.parameters.layers[result.category].draw(result.value[0]);
             }
@@ -555,7 +514,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             switch (result.category) {
 
               case "sample":
-                cloudberryService.commonTweetResult = result.value[0];Rt
+                cloudberryService.commonTweetResult = result.value[0];
                 break;
               // Complete cache hit case
               case "batchWithoutGeoRequest":
