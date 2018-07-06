@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     function setHeatMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -84,8 +84,7 @@ angular.module("cloudberry.map")
       }
       
       if (!$scope.heatMapLayer){
-        $scope.heatMapLayer = $scope.heat;
-        
+        $scope.heatMapLayer = $scope.heat;      
         $scope.map.addLayer($scope.heatMapLayer);
       }
       
@@ -116,34 +115,7 @@ angular.module("cloudberry.map")
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
     }
     
-    var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
-    
-    var l = {
-            active:0,
-            init:initheatMap,
-            data:"",
-            draw:drawHeatMap,
-            clear:cleanHeatMap,
-            watchVariables:watchVariables
-    }
-    
-    /*
-    $timeout(function() {
-        $rootScope.$emit("registerLayer", ["heatmap", l]);
-    })
-    */
-        
-    //cloudberry.layer["heatmap"] = l;
 
-    //$scope.watchVariables["heatmapMapResult"] = "cloudberry.heatmapMapResult";
-       
-    
-
-    
-    
-    
-    
-    
     $rootScope.$on("maptypeChange", function (event, data) {
       if (cloudberry.parameters.maptype === "heatmap") {
         setHeatMapStyle();
@@ -156,24 +128,5 @@ angular.module("cloudberry.map")
       }
     })
     
-    /*$scope.$watch(
-      function() {
-        return cloudberry.heatmapMapResult;
-      },        
-      function(newResult) {
-        
-        if(cloudberry.layer["heatmap"])
-            cloudberry.layer["heatmap"].data = newResult; 
-          
-          if (cloudberry.parameters.maptype === "heatmap"){
-          $scope.result = newResult;
-          if (Object.keys($scope.result).length !== 0) {
-            $scope.status.init = false;
-            drawHeatMap($scope.result);
-          } else {
-            drawHeatMap($scope.result);
-          }
-        }
-      }
-    );*/
+
   });
