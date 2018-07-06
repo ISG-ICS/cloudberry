@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, $timeout, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
@@ -292,12 +292,6 @@ angular.module("cloudberry.map")
       setInfoControlPinMap();
     }
     
-    
-    
-
-    
-    
-    
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
@@ -307,9 +301,6 @@ angular.module("cloudberry.map")
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
         cloudberry.query(cloudberry.parameters, cloudberry.queryType);
-        
-  
-          
       }
       else if (data[0] === "pinmap"){
         cleanPinMap();
@@ -325,7 +316,6 @@ angular.module("cloudberry.map")
       function(newResult) {
         if (cloudberry.parameters.maptype === "pinmap"){
           $scope.result = newResult;
-            
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
             drawPinMap($scope.result);
