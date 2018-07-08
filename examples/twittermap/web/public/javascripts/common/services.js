@@ -234,24 +234,22 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         }
       };
     }
-    
-    function handleByTimeRequest(parameters, categoryName) {
-      // For countmap, byTimeRequest is send in batch
-      if (parameters.maptype === "heatmap" || "pinmap") {
-        var byTimeRequestquery = byTimeRequest(parameters);
-        byTimeRequestquery['option'] = {
-          sliceMillis: cloudberryConfig.querySliceMills
-        };
-        byTimeRequestquery['transform'] = {
-          wrap: {
-            id: categoryName,
-            category: categoryName
-          }
-        };
-        var byTimeRequestJson = JSON.stringify(byTimeRequestquery);
 
-        ws.send(byTimeRequestJson);
-      }
+    // Handle byTimeRequest in heatmap and pinmap.
+    function handleByTimeRequest(parameters, categoryName) {
+      var byTimeRequestquery = byTimeRequest(parameters);
+      byTimeRequestquery['option'] = {
+        sliceMillis: cloudberryConfig.querySliceMills
+      };
+      byTimeRequestquery['transform'] = {
+        wrap: {
+          id: categoryName,
+          category: categoryName
+        }
+      };
+      var byTimeRequestJson = JSON.stringify(byTimeRequestquery);
+
+      ws.send(byTimeRequestJson);
     }
 
     function byHashTagRequest(parameters) {
