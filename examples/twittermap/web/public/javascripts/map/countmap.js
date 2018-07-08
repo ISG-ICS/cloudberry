@@ -73,8 +73,8 @@ angular.module('cloudberry.map')
       removeMapControl('info');
 
       // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.ZOOM, onZoomCountmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.DRAG, onDragCountmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomCountmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragCountmap);
     }
     
     // initialize countmap
@@ -160,8 +160,8 @@ angular.module('cloudberry.map')
       $scope.$parent.onEachFeature = onEachFeature;
 
       // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, onZoomCountmap, 1);
-      moduleManager.subscribeEvent(moduleManager.EVENT.DRAG, onDragCountmap, 1);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomCountmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragCountmap);
     }
     
     /**

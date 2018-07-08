@@ -106,8 +106,8 @@ angular.module("cloudberry.map")
       }
 
       // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.ZOOM, onZoomHeatmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.DRAG, onDragHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragHeatmap);
     }
     
     function setInfoControlHeatMap() {
@@ -122,8 +122,8 @@ angular.module("cloudberry.map")
       $scope.$parent.onEachFeature = onEachFeature;
 
       // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, onZoomHeatmap, 1);
-      moduleManager.subscribeEvent(moduleManager.EVENT.DRAG, onDragHeatmap, 1);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomHeatmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragHeatmap);
 
       if (!$scope.heat){
         var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet

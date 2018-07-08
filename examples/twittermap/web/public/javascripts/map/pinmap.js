@@ -124,8 +124,8 @@ angular.module("cloudberry.map")
       }
 
       // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.ZOOM, onZoomPinmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.DRAG, onDragPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
     }
 
     // initialize pinmap
@@ -144,8 +144,8 @@ angular.module("cloudberry.map")
       $scope.$parent.onEachFeature = onEachFeature;
 
       // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.ZOOM, onZoomPinmap, 1);
-      moduleManager.subscribeEvent(moduleManager.EVENT.DRAG, onDragPinmap, 1);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
 
       $scope.mouseOverPointI = 0;
     }
