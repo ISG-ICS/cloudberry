@@ -1,3 +1,46 @@
+/**
+ * moduleManager - A service of AngularJS
+ *  This service manages the interactions among modules in Twittermap by an event pub/sub framework abstraction.
+ *  It provides 3 API functions:
+ *   - subscribeEvent(eventName, eventHandler)
+ *   - unsubscribeEvent(eventName, eventHandler)
+ *   - publishEvent(eventName, event)
+ *  It provides 5 built-in events:
+ *   - "change search keyword": CHANGE_SEARCH_KEYWORD
+ *       * when user change the keyword and "enter" or click "submit", this event triggered.
+ *   - "change time series range": CHANGE_TIME_SERIES_RANGE
+ *       * when time series bar range changed, this event triggered.
+ *   - "change zoom level": CHANGE_ZOOM_LEVEL
+ *       * when zoomed in or out, this event triggered.
+ *   - "change region by drag": CHANGE_REGION_BY_DRAG
+ *       * when the view region changed by drag, this event triggered.
+ *   - "change map type": CHANGE_MAP_TYPE
+ *       * when sidebar map type changed, this event triggered.
+ *  Example:
+ *  (1) in "countmap.js":
+ *      function onZoomCountmap(event) {
+ *        // issue a new query
+ *      }
+ *
+ *      function initCountmap() {
+ *        ...
+ *        moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomCountmap);
+ *        ...
+ *      }
+ *
+ *      function cleanCountmap() {
+ *        ...
+ *        moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomCountmap);
+ *        ...
+ *      }
+ *  (2) in "controllers.js":
+ *      $scope.$on("leafletDirectiveMap.zoomend", function() {
+ *        // load new polygons
+ *        ...
+ *        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: currentZoomLevel});
+ *        ...
+ *      }
+ */
 angular.module("cloudberry.common")
   .service("moduleManager", function() {
 
@@ -5,7 +48,7 @@ angular.module("cloudberry.common")
 
       // Built-in events
       EVENT: {
-        CLICK_SEARCH_BUTTON: "clickSearchButtonEvent",
+        CHANGE_SEARCH_KEYWORD: "changeSearchKeywordEvent",
         CHANGE_TIME_SERIES_RANGE: "changeTimeSeriesRangeEvent",
         CHANGE_ZOOM_LEVEL: "changeZoomLevelEvent",
         CHANGE_REGION_BY_DRAG: "changeRegionByDragEvent",
@@ -23,10 +66,6 @@ angular.module("cloudberry.common")
        * @returns {boolean} true: if subscribed successfully, false: otherwise
        */
       subscribeEvent(eventName, eventHandler) {
-
-        if (!(eventName in this.EVENT)) {
-          return false;
-        }
 
         if (eventHandler instanceof Function) {
           if (eventName in this.eventsListeners) {
@@ -69,8 +108,8 @@ angular.module("cloudberry.common")
       publishEvent(eventName, event) {
 
         if (eventName in this.eventsListeners) {
-          for (var i = 0; i < this.eventsListeners[eventName].length; i++) {
-            this.eventsListeners[eventName][i](event);
+          for (let eventHandler of this.eventsListeners[eventName]) {
+            eventHandler(event);
           }
         }
         return true;
