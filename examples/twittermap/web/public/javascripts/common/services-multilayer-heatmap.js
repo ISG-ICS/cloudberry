@@ -138,7 +138,7 @@ angular.module('cloudberry.common')
                 });
                 return deferred.promise;
             }
-        }
+        };
         
         return heatmapService;
     });

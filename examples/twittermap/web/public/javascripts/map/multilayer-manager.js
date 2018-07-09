@@ -1,24 +1,24 @@
-angular.module('cloudberry.map')
+angular.module("cloudberry.map")
   .controller('multiLayerCtrl', function($timeout, $scope, $rootScope, $window, $http, $compile, cloudberryConfig, cloudberry, leafletData, Cache, createLayerService) {
     
     cloudberry.parameters.layers = {};
     $scope.watchVariables = {};
     
     // This function will watch all maptypeChange events for all layers 
-    $rootScope.$on('maptypeChange', function (event, data) {
-        var layer_name = cloudberry.parameters.maptype;
+    $rootScope.$on("maptypeChange", function (event, data) {
+        var layerName = cloudberry.parameters.maptype;
         
-        if(layer_name!='heatmap'){
-                    $scope.map.removeLayer(cloudberry.parameters.layers['heatmap'].layer);
-                    cloudberry.parameters.layers['heatmap'].active = 0;
+        if(layerName!=="heatmap"){
+                    $scope.map.removeLayer(cloudberry.parameters.layers["heatmap"].layer);
+                    cloudberry.parameters.layers["heatmap"].active = 0;
         }
-        if (layer_name==='heatmap' && cloudberry.parameters.layers[layer_name].active == 0 ){
+        if (layerName==="heatmap" && cloudberry.parameters.layers[layerName].active === 0 ){
             
-            if (typeof cloudberry.parameters.layers[layer_name].activate === "function"){c
-                cloudberry.parameters.layers[layer_name].activate();
+            if (typeof cloudberry.parameters.layers[layerName].activate === "function"){
+                cloudberry.parameters.layers[layerName].activate();
             }
-            cloudberry.parameters.layers[layer_name].active = 1;
-            $scope.map.addLayer(cloudberry.parameters.layers[layer_name].layer);
+            cloudberry.parameters.layers[layerName].active = 1;
+            $scope.map.addLayer(cloudberry.parameters.layers[layerName].layer);
         }
         
         cloudberry.query(cloudberry.parameters);
@@ -42,7 +42,7 @@ angular.module('cloudberry.map')
     var heatmapParameters = {
         id: "heatmap",
         dataset: "twitter.ds_tweet",
-    }
+    };
     addLayer("heatmap", 0, heatmapParameters); 
     
     $scope.$on("leafletDirectiveMap.zoomend", function() {
@@ -63,7 +63,7 @@ angular.module('cloudberry.map')
     
     $scope.$watchCollection(
         function() {
-            var obj = {}
+            var obj = {};
         
             for (var key in $scope.watchVariables){
                 obj[key] = eval($scope.watchVariables[key]);
@@ -72,16 +72,16 @@ angular.module('cloudberry.map')
             return obj;
         },
         function(newResult, oldValue) {
-            var layer_name = cloudberry.parameters.maptype;  
-            var result_name = layer_name + "MapResult";  
+            var layerName = cloudberry.parameters.maptype;  
+            var resultName = layerName + "MapResult";  
         
-            if (newResult[result_name] !== oldValue[result_name]) {
-                $scope.result = newResult[result_name];
+            if (newResult[resultName] !== oldValue[resultName]) {
+                $scope.result = newResult[resultName];
                 if (Object.keys($scope.result).length !== 0) {
                     $scope.status.init = false;
-                    cloudberry.parameters.layers[layer_name].draw($scope.result);
+                    cloudberry.parameters.layers[layerName].draw($scope.result);
                 } else {
-                    cloudberry.parameters.layers[layer_name].draw($scope.result);
+                    cloudberry.parameters.layers[layerName].draw($scope.result);
                 }
             }
         }
