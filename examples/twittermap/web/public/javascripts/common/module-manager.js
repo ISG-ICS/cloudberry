@@ -48,11 +48,11 @@ angular.module("cloudberry.common")
 
       // Built-in events
       EVENT: {
-        CHANGE_SEARCH_KEYWORD: "changeSearchKeywordEvent",
-        CHANGE_TIME_SERIES_RANGE: "changeTimeSeriesRangeEvent",
-        CHANGE_ZOOM_LEVEL: "changeZoomLevelEvent",
-        CHANGE_REGION_BY_DRAG: "changeRegionByDragEvent",
-        CHANGE_MAP_TYPE: "changeMapTypeEvent"
+        CHANGE_SEARCH_KEYWORD: 1,
+        CHANGE_TIME_SERIES_RANGE: 2,
+        CHANGE_ZOOM_LEVEL: 3,
+        CHANGE_REGION_BY_DRAG: 4,
+        CHANGE_MAP_TYPE: 5
       },
 
       eventsListeners: {},
