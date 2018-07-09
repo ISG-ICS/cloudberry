@@ -1,5 +1,5 @@
-angular.module('cloudberry.common')
-    .service('multilayerHeatmap', function($timeout, $q, cloudberry, cloudberryConfig){
+angular.module("cloudberry.common")
+    .service("multilayerHeatmap", function($timeout, $q, cloudberry, cloudberryConfig){
         var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
         var defaultHeatmapSamplingDayRange = parseInt(config.heatmapSamplingDayRange);
         var defaultNonSamplingDayRange = 1500;

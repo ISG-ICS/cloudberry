@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller('multiLayerCtrl', function($timeout, $scope, $rootScope, $window, $http, $compile, cloudberryConfig, cloudberry, leafletData, Cache, createLayerService) {
+  .controller("multiLayerCtrl", function($timeout, $scope, $rootScope, $window, $http, $compile, cloudberryConfig, cloudberry, leafletData, Cache, createLayerService) {
     
     cloudberry.parameters.layers = {};
     $scope.watchVariables = {};
@@ -22,15 +22,16 @@ angular.module("cloudberry.map")
         }
         
         cloudberry.query(cloudberry.parameters);
-    })
-    
-    function addLayer(layerID, active, parameters){ //This function register layer to layer manager 
+    });
+    //This function register layer to layer manager 
+    function addLayer(layerID, active, parameters){ 
         createLayerService[layerID](parameters).then(function(layer){
             cloudberry.parameters.layers[layerID] = layer;
             cloudberry.parameters.layers[layerID].init($scope).then(function(){
                 cloudberry.parameters.layers[layerID].active = active;
                 for (var key in layer.watchVariables){
-                    $scope.watchVariables[key] = layer.watchVariables[key];
+                    if({}.hasOwnProperty.call(layer.watchVariables,key))
+                        $scope.watchVariables[key] = layer.watchVariables[key];
                 }
                 if (cloudberry.parameters.layers[layerID].active){
                     $scope.map.addLayer(cloudberry.parameters.layers[layerID].layer);
@@ -66,7 +67,8 @@ angular.module("cloudberry.map")
             var obj = {};
         
             for (var key in $scope.watchVariables){
-                obj[key] = eval($scope.watchVariables[key]);
+                if({}.hasOwnProperty.call($scope.watchVariables,key))
+                    obj[key] = eval($scope.watchVariables[key]);
             }
           
             return obj;

@@ -254,9 +254,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
     var cloudberryService = {
       
-        
+      //This layer variable stores all layer managers, it's equivalent to cloudberry.parameters.layers object    
       layer:{ 
-      }, //This layer variable stores all layer managers, it's equivalent to cloudberry.parameters.layers object
+      }, 
       commonTotalCount: 0,
       startDate: startDate,
       parameters: {
