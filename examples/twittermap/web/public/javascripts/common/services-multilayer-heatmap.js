@@ -18,14 +18,14 @@ angular.module("cloudberry.common")
         var randomizationSeed;
 
         // javascript does not provide API for setting seed for its random function, so we need to implement it ourselves.
-        function CustomRandom() {
+        function customRandom() {
             var x = Math.sin(randomizationSeed++) * 10000;
             return x - Math.floor(x);
         }
 
         // return a random number with normal distribution
         function randomNorm(mean, stdev) {
-            return mean + (((CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom() + CustomRandom()) - 3) / 3) * stdev;
+            return mean + (((customRandom() + customRandom() + customRandom() + customRandom() + customRandom() + customRandom()) - 3) / 3) * stdev;
         }
 
         // randomize a pin coordinate for a tweet according to the bounding box (normally distributed within the bounding box) when the actual coordinate is not availalble.
@@ -123,18 +123,18 @@ angular.module("cloudberry.common")
         var watchVariables = {"heatmapMapResult":"cloudberry.heatmapMapResult"};
         
         var heatmapService = {
-            createLayer: function(parameters){
+            createLayer(parameters){
                 var deferred = $q.defer();
                 deferred.resolve({
                     active: 0,
-                    parameters: parameters,
+                    parameters,
                     layer: {},
                     init: initheatMap,
                     draw: drawHeatMap,
                     clear: cleanHeatMap,
                     zoom: zoomFunction,
                     createQuery: createHeatmapQuery,
-                    watchVariables: watchVariables
+                    watchVariables
                 });
                 return deferred.promise;
             }
