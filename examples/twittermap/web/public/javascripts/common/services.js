@@ -298,7 +298,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
     }
 
     var cloudberryService = {
-
+      
+      //This layer variable stores all layer managers, it's equivalent to cloudberry.parameters.layers object    
+      layer:{ 
+      }, 
       commonTotalCount: 0,
       startDate: startDate,
       parameters: {
@@ -318,6 +321,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       commonTimeSeriesResult: [],
       commonHashTagResult: [],
       errorMessage: null,
+      
+      getFilter:getFilter,
 
       query: function(parameters) {
 
@@ -393,7 +398,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               ws.send(batchWithPartialGeoRequest);
             }
             break;
-            
+                    
           case 'heatmap':
             var heatJson = (JSON.stringify({
               dataset: parameters.dataset,
@@ -535,73 +540,86 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       $timeout(function() {
         var result = JSONbig.parse(event.data);
 
-        switch (result.category) {
+        
+        if (result.category in cloudberryService.parameters.layers){ //check if query result has correspoding to certain map/layer, update the map accordingly
+            if (cloudberryService.parameters.layers[result.category].active){
+                cloudberryService.parameters.layers[result.category].draw(result.value[0]);
+            }
+        }
+        else {
+            switch (result.category) {
 
-          case "sampleTweetRequest":
-            cloudberryService.commonTweetResult = result.value[0];
-            break;
-          // Complete cache hit case
-          case "batchWithoutGeoRequest":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              case "sample":
+                cloudberryService.commonTweetResult = result.value[0];
+                break;
+              // Complete cache hit case
+              case "batchWithoutGeoRequest":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTimeSeriesResult = result.value[0];
+                  cloudberryService.commonHashTagResult = result.value[1];
+                }
+                break;
+              // Partial map result cache hit or complete cache miss case
+              case "batchWithPartialGeoRequest":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTimeSeriesResult = result.value[0];
+                  cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
+                  cloudberryService.commonHashTagResult = result.value[2];
+                }
+                // When the query is executed completely, we update the map result cache.
+                if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
+                    result.value['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+                  MapResultCache.putValues(geoIdsNotInCache, cloudberryService.parameters.geoLevel,
+                    cloudberryService.countmapMapResult);
+                }
+                break;
+              case "batchHeatMapRequest":
+                break;
+              case "batchPinMapRequest":
+                break;
+              case "timeSeries":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTimeSeriesResult = result.value[0];
+                }
+                break;
+              
+              case "heatMapResult":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+                  cloudberryService.heatmapMapResult = result.value[0];
+                }
+                break;
+              case "heatTime":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTimeSeriesResult = result.value[0];
+                }
+                break;
+              case "points":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
+                  cloudberryService.pinmapMapResult = result.value[0];
+                }
+                break;
+              case "pointsTime":
+                if(angular.isArray(result.value)) {
+                  cloudberryService.commonTimeSeriesResult = result.value[0];
+                }
+                break;
+              
+              case "totalCount":
+                cloudberryService.commonTotalCount = result.value[0][0].count;
+                break;
+              case "error":
+                console.error(result);
+                cloudberryService.errorMessage = result.value;
+                break;
+              case "done":
+                break;
+              default:
+                console.log("ws get unknown data: ", result);
+                break;
             }
-            break;
-          // Partial map result cache hit or complete cache miss case
-          case "batchWithPartialGeoRequest":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
-              cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
-            }
-            // When the query is executed completely, we update the map result cache.
-            if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
-                result.value['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-              MapResultCache.putValues(geoIdsNotInCache, cloudberryService.parameters.geoLevel,
-                cloudberryService.countmapMapResult);
-            }
-            break;
-          case "batchHeatMapRequest":
-            break;
-          case "batchPinMapRequest":
-            break;
-          case "heatMapResult":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
-              cloudberryService.heatmapMapResult = result.value[0];
-            }
-            break;
-          case "heatTime":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
-            }
-            break;
-          case "points":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTweetResult = result.value[0].slice(0, defaultSamplingSize - 1);
-              cloudberryService.pinmapMapResult = result.value[0];
-            }
-            break;
-          case "pointsTime":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
-            }
-            break;
-          case "hashTagRequest":
-            if(angular.isArray(result.value)) {
-              cloudberryService.commonHashTagResult = result.value[0];
-            }
-            break;
-          case "totalCount":
-            cloudberryService.commonTotalCount = result.value[0][0].count;
-            break;
-          case "error":
-            console.error(result);
-            cloudberryService.errorMessage = result.value;
-            break;
-          case "done":
-            break;
-          default:
-            console.log("ws get unknown data: ", result);
-            break;
+
         }
       });
     };

@@ -24,6 +24,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
     $scope.cityIdSet = new Set();
+    $scope.watchVariables = {};
 
     // setting default map styles, zoom level, etc.
     angular.extend($scope, {
@@ -458,7 +459,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       },
       controller: 'MapCtrl',
       template:[
-        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet><div ng-controller="countMapCtrl"></div><div ng-controller="pinMapCtrl"></div><div ng-controller="heatMapCtrl"></div>'
+        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet><div ng-controller="countMapCtrl"></div><div ng-controller="pinMapCtrl"></div><div ng-controller="heatMapCtrl"></div><div ng-controller="multiLayerCtrl"></div>'
       ].join('')
     };
   });

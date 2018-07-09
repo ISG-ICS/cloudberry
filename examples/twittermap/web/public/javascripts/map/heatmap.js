@@ -84,7 +84,7 @@ angular.module("cloudberry.map")
       }
       
       if (!$scope.heatMapLayer){
-        $scope.heatMapLayer = $scope.heat;
+        $scope.heatMapLayer = $scope.heat;      
         $scope.map.addLayer($scope.heatMapLayer);
       }
       
@@ -108,6 +108,14 @@ angular.module("cloudberry.map")
       setInfoControlHeatMap();
     }
     
+    function initheatMap(){
+        setHeatMapStyle();
+        $scope.resetPolygonLayers();
+        setInfoControlHeatMap();
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+    }
+    
+
     $rootScope.$on("maptypeChange", function (event, data) {
       if (cloudberry.parameters.maptype === "heatmap") {
         setHeatMapStyle();
@@ -120,21 +128,5 @@ angular.module("cloudberry.map")
       }
     })
     
-    $scope.$watch(
-      function() {
-        return cloudberry.heatmapMapResult;
-      },
 
-      function(newResult) {
-        if (cloudberry.parameters.maptype === "heatmap"){
-          $scope.result = newResult;
-          if (Object.keys($scope.result).length !== 0) {
-            $scope.status.init = false;
-            drawHeatMap($scope.result);
-          } else {
-            drawHeatMap($scope.result);
-          }
-        }
-      }
-    );
   });
