@@ -30,8 +30,9 @@ angular.module("cloudberry.map")
             cloudberry.parameters.layers[layerID].init($scope).then(function(){
                 cloudberry.parameters.layers[layerID].active = active;
                 for (var key in layer.watchVariables){
-                    if({}.hasOwnProperty.call(layer.watchVariables,key))
+                    if({}.hasOwnProperty.call(layer.watchVariables,key)){
                         $scope.watchVariables[key] = layer.watchVariables[key];
+                    }
                 }
                 if (cloudberry.parameters.layers[layerID].active){
                     $scope.map.addLayer(cloudberry.parameters.layers[layerID].layer);
@@ -67,8 +68,9 @@ angular.module("cloudberry.map")
             var obj = {};
         
             for (var key in $scope.watchVariables){
-                if({}.hasOwnProperty.call($scope.watchVariables,key))
+                if({}.hasOwnProperty.call($scope.watchVariables,key)){
                     obj[key] = eval($scope.watchVariables[key]);
+                }
             }
           
             return obj;
