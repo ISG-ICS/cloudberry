@@ -205,6 +205,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
         group: {
           by: [{
+            field: "geo",
+            apply: {
+              name: "level",
+              args: {
+                level: parameters.geoLevel,
+              }
+            },
+            as: parameters.geoLevel
+          },
+          {
             field: "create_at",
             apply: {
               name: "interval",
@@ -223,6 +233,23 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           }]
         }
       };
+    }
+
+    // Handle byTimeRequest in heatmap and pinmap.
+    function handleByTimeRequest(parameters, categoryName) {
+      var byTimeRequestquery = byTimeRequest(parameters);
+      byTimeRequestquery['option'] = {
+        sliceMillis: cloudberryConfig.querySliceMills
+      };
+      byTimeRequestquery['transform'] = {
+        wrap: {
+          id: categoryName,
+          category: categoryName
+        }
+      };
+      var byTimeRequestJson = JSON.stringify(byTimeRequestquery);
+
+      ws.send(byTimeRequestJson);
     }
 
     function byHashTagRequest(parameters) {
@@ -250,6 +277,41 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           offset: 0
         }
       };
+    }
+
+    // Retrieves time-series histogram result from the byTimeRequest result.
+    function getTimeSeriesValues(byTimeRequestResult) {
+      const INVALID_VALUE = 0;
+
+      var timeSeriesStore = new HashMap();
+      var geoIdSet = new Set(cloudberryService.parameters.geoIds);
+      for (var i = 0; i < byTimeRequestResult.length; i++) {
+        var currVal = byTimeRequestResult[i];
+        var geoIds = currVal[cloudberryService.parameters.geoLevel];
+        var values = timeSeriesStore.get(geoIds);
+        // First updates the store with geoIds that have results.
+        if (values !== undefined && values !== INVALID_VALUE) { // when one geoIds has more than one value
+          values.push({day:currVal["day"], count:currVal["count"]});
+          timeSeriesStore.set(geoIds, values);
+          geoIdSet.delete(currVal[cloudberryService.parameters.geoLevel]);
+        } else { // first value of current geoId
+          timeSeriesStore.set(geoIds, [{day:currVal["day"], count:currVal["count"]}]);
+          geoIdSet.delete(currVal[cloudberryService.parameters.geoLevel]);
+        }
+      }
+      // Mark other results as checked: these are geoIds with no results
+      geoIdSet.forEach(function (value) {
+        timeSeriesStore.set(value, INVALID_VALUE);
+      });
+
+      var timeSeriesResultArray = [];
+      for (var j = 0; j < cloudberryService.parameters.geoIds.length; j++) {
+        var value = timeSeriesStore.get(cloudberryService.parameters.geoIds[j]);
+        if (value !== undefined && value !== INVALID_VALUE) {
+          timeSeriesResultArray = timeSeriesResultArray.concat(value);
+        }
+      }
+      return timeSeriesResultArray;
     }
 
     var cloudberryService = {
@@ -342,7 +404,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             })) : (JSON.stringify({
                 batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
-                    byHashTagRequest(parameters)],
+                  byHashTagRequest(parameters)],
                 transform: {
                     wrap: {
                         id: "batchWithPartialGeoRequest",
@@ -390,40 +452,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             }));
 
-            // for the time histogram
-            var heatTimeJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              group: {
-                by: [{
-                  field: "create_at",
-                  apply: {
-                    name: "interval",
-                    args: {
-                      unit: parameters.timeBin
-                    }
-                  },
-                  as: parameters.timeBin
-                }],
-                aggregate: [{
-                  field: "*",
-                  apply: {
-                    name: "count"
-                  },
-                  as: "count"
-                }]
-              },
-              option: {
-                sliceMillis: cloudberryConfig.querySliceMills
-              },
-              transform: {
-                wrap: {
-                  id: "heatTime",
-                  category: "heatTime"
-                }
-              }
-            }));
-
             var heatHashTagJson = JSON.stringify({
               dataset: parameters.dataset,
               filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
@@ -455,8 +483,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             });
 
+            handleByTimeRequest(parameters, "heatTime");
             ws.send(heatJson);
-            ws.send(heatTimeJson);
             ws.send(heatHashTagJson);
             break;
 
@@ -478,40 +506,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 wrap: {
                   id: "points",
                   category: "points"
-                }
-              }
-            }));
-
-            // for the time histogram
-            var pointsTimeJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              group: {
-                by: [{
-                  field: "create_at",
-                  apply: {
-                    name: "interval",
-                    args: {
-                      unit: parameters.timeBin
-                    }
-                  },
-                  as: parameters.timeBin
-                }],
-                aggregate: [{
-                  field: "*",
-                  apply: {
-                    name: "count"
-                  },
-                  as: "count"
-                }]
-              },
-              option: {
-                sliceMillis: cloudberryConfig.querySliceMills
-              },
-              transform: {
-                wrap: {
-                  id: "pointsTime",
-                  category: "pointsTime"
                 }
               }
             }));
@@ -547,8 +541,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               }
             });
 
+            handleByTimeRequest(parameters, "pointsTime");
             ws.send(pointsJson);
-            ws.send(pointsTimeJson);
             ws.send(pinHashTagJson);
             break;
           
@@ -571,14 +565,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = getTimeSeriesValues(result.value[0]);
               cloudberryService.commonHashTagResult = result.value[1];
             }
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = getTimeSeriesValues(result.value[0]);
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
               cloudberryService.commonHashTagResult = result.value[2];
             }
@@ -601,7 +595,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "heatTime":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = getTimeSeriesValues(result.value[0]);
             }
             break;
           case "points":
@@ -612,7 +606,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "pointsTime":
             if(angular.isArray(result.value)) {
-              cloudberryService.commonTimeSeriesResult = result.value[0];
+              cloudberryService.commonTimeSeriesResult = getTimeSeriesValues(result.value[0]);
             }
             break;
           case "hashTags":
