@@ -121,7 +121,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var requestFunc = function(min, max) {
               cloudberry.parameters.timeInterval.start = min;
               cloudberry.parameters.timeInterval.end = max;
-              cloudberry.query(cloudberry.parameters);
               moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
             };
 

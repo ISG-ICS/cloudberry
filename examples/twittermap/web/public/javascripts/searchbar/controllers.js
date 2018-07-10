@@ -25,7 +25,6 @@ angular.module('cloudberry.util', ['cloudberry.common'])
               }
               else {
                   cloudberry.parameters.keywords = newKeywords;
-                  cloudberry.query(cloudberry.parameters);
                   moduleManager.publishEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, {keywords: newKeywords});
               }
           }
