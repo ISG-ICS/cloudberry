@@ -1,5 +1,5 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
-  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
+  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
       var stopwordsMap = buildStopwordsMap();
 
       $scope.search = function() {
@@ -26,6 +26,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
               else {
                   cloudberry.parameters.keywords = newKeywords;
                   cloudberry.query(cloudberry.parameters);
+                  moduleManager.publishEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, {keywords: newKeywords});
               }
           }
           else {

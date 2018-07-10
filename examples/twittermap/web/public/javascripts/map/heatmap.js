@@ -85,15 +85,8 @@ angular.module("cloudberry.map")
       }, "heatTime");
     }
 
-    // Event handler for zoom event
-    function onZoomHeatmap(event) {
-      if (!$scope.status.init) {
-        sendHeatmapQuery();
-      }
-    }
-
-    // Event handler for drag event
-    function onDragHeatmap(event) {
+    // Common event handler for Heatmap
+    function commonEventHandlerHeatmap(event) {
       if (!$scope.status.init) {
         sendHeatmapQuery();
       }
@@ -106,8 +99,10 @@ angular.module("cloudberry.map")
       }
 
       // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomHeatmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, commonEventHandlerHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerHeatmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerHeatmap);
     }
     
     function setInfoControlHeatMap() {
@@ -122,8 +117,10 @@ angular.module("cloudberry.map")
       $scope.$parent.onEachFeature = onEachFeature;
 
       // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomHeatmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragHeatmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, commonEventHandlerHeatmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerHeatmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerHeatmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerHeatmap);
 
       if (!$scope.heat){
         var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
@@ -161,18 +158,23 @@ angular.module("cloudberry.map")
       $scope.resetPolygonLayers();
       setInfoControlHeatMap();
     }
-    
-    $rootScope.$on("maptypeChange", function (event, data) {
-      if (cloudberry.parameters.maptype === "heatmap") {
+
+    // map type change handler
+    // initialize the map (styles, zoom/drag handler, etc) when switch to this map
+    // clear the map when switch to other map
+    function onMaptypeChange(event) {
+      if (event.cur === "heatmap") {
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();
         sendHeatmapQuery();
       }
-      else if (data[0] === "heatmap"){
+      else if (event.pre === "heatmap"){
         cleanHeatMap();
       }
-    })
+    }
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMaptypeChange);
     
     $scope.$watch(
       function() {

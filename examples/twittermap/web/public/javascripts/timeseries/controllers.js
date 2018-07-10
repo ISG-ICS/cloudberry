@@ -73,7 +73,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     );
 
   })
-  .directive('timeSeries', function (cloudberry) {
+  .directive('timeSeries', function (cloudberry, moduleManager) {
     var margin = {
       top: 10,
       right: 30,
@@ -122,6 +122,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               cloudberry.parameters.timeInterval.start = min;
               cloudberry.parameters.timeInterval.end = max;
               cloudberry.query(cloudberry.parameters);
+              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
             };
 
             timeBrush.on('brushend', function (e) {

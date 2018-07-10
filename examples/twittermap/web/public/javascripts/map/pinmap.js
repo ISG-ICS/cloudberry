@@ -103,8 +103,8 @@ angular.module("cloudberry.map")
       zoomPostProcess();
     }
 
-    // Event handler for drag event
-    function onDragPinmap(event) {
+    // Common event handler for Countmap
+    function commonEventHandlerPinmap(event) {
       if (!$scope.status.init) {
         sendPinmapQuery();
       }
@@ -125,7 +125,9 @@ angular.module("cloudberry.map")
 
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerPinmap);
     }
 
     // initialize pinmap
@@ -145,7 +147,9 @@ angular.module("cloudberry.map")
 
       // Subscribe to moduleManager's events
       moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerPinmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerPinmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerPinmap);
 
       $scope.mouseOverPointI = 0;
     }
@@ -350,17 +354,19 @@ angular.module("cloudberry.map")
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
-    $rootScope.$on("maptypeChange", function (event, data) {
-      if (cloudberry.parameters.maptype === "pinmap") {
+    function onMaptypeChange(event) {
+      if (event.cur === "pinmap") {
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
         sendPinmapQuery();
       }
-      else if (data[0] === "pinmap"){
+      else if (event.pre === "pinmap"){
         cleanPinMap();
       }
-    })
+    }
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMaptypeChange);
     
     // monitor the pinmap related variables, update the pinmap if necessary
     $scope.$watch(

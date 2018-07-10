@@ -183,8 +183,49 @@ angular.module("cloudberry.common")
             sliceMillis: cloudberryConfig.querySliceMills
           }
         };
-      }
+      },
 
+      // Generate top 50 hash tag JSON request
+      getHashTagRequest(parameters) {
+        return {
+          dataset: parameters.dataset,
+          filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds),
+          unnest: [{
+            hashtags: "tag"
+          }],
+          group: {
+            by: [{
+              field: "tag"
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          },
+          select: {
+            order: ["-count"],
+            limit: 50,
+            offset: 0
+          }
+        };
+      },
+
+      // Generate latest 10 sample tweet JSON request
+      getSampleTweetsRequest(parameters) {
+        return {
+          dataset: parameters.dataset,
+          filter: queryUtil.getFilter(parameters, queryUtil.defaultSamplingDayRange, parameters.geoIds),
+          select: {
+            order: ["-create_at"],
+            limit: queryUtil.defaultSamplingSize,
+            offset: 0,
+            field: ["create_at", "id", "user.id"]
+          }
+        };
+      }
     };
 
     return queryUtil;
