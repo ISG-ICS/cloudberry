@@ -62,13 +62,12 @@ angular.module("cloudberry.common")
        * @returns {boolean} true: if valid, false: otherwise
        */
       isEventValid(eventName) {
-        var isValid = false;
-        Object.keys(moduleManager.EVENT).forEach(function(key) {
+        for (key of Object.keys(moduleManager.EVENT)) {
           if (moduleManager.EVENT[key] === eventName) {
-            isValid = true;
+            return true;
           }
-        });
-        return isValid;
+        }
+        return false;
       },
 
       eventsListeners: {},
