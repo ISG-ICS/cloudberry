@@ -48,11 +48,27 @@ angular.module("cloudberry.common")
 
       // Built-in events
       EVENT: {
-        CHANGE_SEARCH_KEYWORD: 1,
-        CHANGE_TIME_SERIES_RANGE: 2,
-        CHANGE_ZOOM_LEVEL: 3,
-        CHANGE_REGION_BY_DRAG: 4,
-        CHANGE_MAP_TYPE: 5
+        CHANGE_SEARCH_KEYWORD: "CHANGE_SEARCH_KEYWORD",
+        CHANGE_TIME_SERIES_RANGE: "CHANGE_TIME_SERIES_RANGE",
+        CHANGE_ZOOM_LEVEL: "CHANGE_ZOOM_LEVEL",
+        CHANGE_REGION_BY_DRAG: "CHANGE_REGION_BY_DRAG",
+        CHANGE_MAP_TYPE: "CHANGE_MAP_TYPE"
+      },
+
+      /**
+       * check if eventName is valid
+       *
+       * @param eventName
+       * @returns {boolean} true: if valid, false: otherwise
+       */
+      isEventValid(eventName) {
+        var isValid = false;
+        Object.keys(moduleManager.EVENT).forEach(function(key) {
+          if (moduleManager.EVENT[key] === eventName) {
+            isValid = true;
+          }
+        });
+        return isValid;
       },
 
       eventsListeners: {},
@@ -67,6 +83,10 @@ angular.module("cloudberry.common")
        */
       subscribeEvent(eventName, eventHandler) {
 
+        if (!this.isEventValid(eventName)) {
+          return false;
+        }
+
         if (eventHandler instanceof Function) {
           if (eventName in this.eventsListeners) {
             this.eventsListeners[eventName].add(eventHandler);
@@ -78,6 +98,7 @@ angular.module("cloudberry.common")
         else {
           return false;
         }
+        console.log(this.eventsListeners);
         return true;
       },
 

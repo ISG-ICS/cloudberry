@@ -97,17 +97,13 @@ angular.module("cloudberry.map")
 
     // Event handler for zoom event
     function onZoomPinmap(event) {
-      if (!$scope.status.init) {
-        sendPinmapQuery();
-      }
+      sendPinmapQuery();
       zoomPostProcess();
     }
 
     // Common event handler for Countmap
     function commonEventHandlerPinmap(event) {
-      if (!$scope.status.init) {
         sendPinmapQuery();
-      }
     }
     
     // clear pinmap specific data

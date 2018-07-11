@@ -559,9 +559,7 @@ angular.module('cloudberry.map')
 
     // Common event handler for Countmap
     function commonEventHandlerCountmap(event) {
-      if (!$scope.status.init) {
-        sendCountmapQuery();
-      }
+      sendCountmapQuery();
     }
 
   });

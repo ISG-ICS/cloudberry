@@ -71,7 +71,6 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     };
 
     function eventHandler(event) {
-      console.log("===> sidebar outdated <===");
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
       handleSidebarQuery();

@@ -87,9 +87,7 @@ angular.module("cloudberry.map")
 
     // Common event handler for Heatmap
     function commonEventHandlerHeatmap(event) {
-      if (!$scope.status.init) {
         sendHeatmapQuery();
-      }
     }
 
     function cleanHeatMap() {
