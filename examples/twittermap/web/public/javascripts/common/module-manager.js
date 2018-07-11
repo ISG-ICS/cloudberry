@@ -55,7 +55,21 @@ angular.module("cloudberry.common")
         CHANGE_MAP_TYPE: "CHANGE_MAP_TYPE"
       },
 
-      eventSet: new Set(Object.values(moduleManager.EVENT)),
+      /**
+       * check if eventName is valid
+       *
+       * @param eventName
+       * @returns {boolean} true: if valid, false: otherwise
+       */
+      isEventValid(eventName) {
+        var isValid = false;
+        Object.keys(moduleManager.EVENT).forEach(function(key) {
+          if (moduleManager.EVENT[key] === eventName) {
+            isValid = true;
+          }
+        });
+        return isValid;
+      },
 
       eventsListeners: {},
 
@@ -69,7 +83,7 @@ angular.module("cloudberry.common")
        */
       subscribeEvent(eventName, eventHandler) {
 
-        if (eventName in moduleManager.eventSet) {
+        if (!this.isEventValid(eventName)) {
           return false;
         }
 
@@ -84,6 +98,7 @@ angular.module("cloudberry.common")
         else {
           return false;
         }
+        console.log(this.eventsListeners);
         return true;
       },
 
