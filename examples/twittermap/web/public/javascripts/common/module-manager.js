@@ -98,7 +98,6 @@ angular.module("cloudberry.common")
         else {
           return false;
         }
-        console.log(this.eventsListeners);
         return true;
       },
 
