@@ -48,12 +48,14 @@ angular.module("cloudberry.common")
 
       // Built-in events
       EVENT: {
-        CHANGE_SEARCH_KEYWORD: 1,
-        CHANGE_TIME_SERIES_RANGE: 2,
-        CHANGE_ZOOM_LEVEL: 3,
-        CHANGE_REGION_BY_DRAG: 4,
-        CHANGE_MAP_TYPE: 5
+        CHANGE_SEARCH_KEYWORD: "CHANGE_SEARCH_KEYWORD",
+        CHANGE_TIME_SERIES_RANGE: "CHANGE_TIME_SERIES_RANGE",
+        CHANGE_ZOOM_LEVEL: "CHANGE_ZOOM_LEVEL",
+        CHANGE_REGION_BY_DRAG: "CHANGE_REGION_BY_DRAG",
+        CHANGE_MAP_TYPE: "CHANGE_MAP_TYPE"
       },
+
+      eventSet: new Set(Object.values(moduleManager.EVENT)),
 
       eventsListeners: {},
 
@@ -66,6 +68,10 @@ angular.module("cloudberry.common")
        * @returns {boolean} true: if subscribed successfully, false: otherwise
        */
       subscribeEvent(eventName, eventHandler) {
+
+        if (eventName in moduleManager.eventSet) {
+          return false;
+        }
 
         if (eventHandler instanceof Function) {
           if (eventName in this.eventsListeners) {
