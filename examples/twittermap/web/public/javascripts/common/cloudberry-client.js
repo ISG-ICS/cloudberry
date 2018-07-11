@@ -50,7 +50,7 @@ angular.module("cloudberry.common")
         }
 
         // This query has unique resultHandler for this query id
-        if(id instanceof String) {
+        if(typeof id !== "undefined" && id !== null) {
           cloudberryClient.queryToResultHandlerMap[category][id] = resultHandler;
         }
 
@@ -76,13 +76,11 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
-        if (category in cloudberryClient.queryToResultHandlerMap) {
-          if (id in cloudberryClient.queryToResultHandlerMap[category]) {
-            cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
-          }
-          else {
-            cloudberryClient.queryToResultHandlerMap[category]["common"](id, result.value);
-          }
+        if (id in cloudberryClient.queryToResultHandlerMap[category]) {
+          cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
+        }
+        else {
+          cloudberryClient.queryToResultHandlerMap[category]["common"](id, result.value);
         }
       });
     };
