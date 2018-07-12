@@ -14,13 +14,9 @@ angular.module("cloudberry.map")
                     $scope.map.removeLayer(cloudberry.parameters.layers[key].layer);
                     cloudberry.parameters.layers[key].active = 0;
             }
-        }
-
-        for(var key in cloudberry.parameters.layers)
-        {
-            if(key === layerName && cloudberry.parameters.layers[key].active === 0)
+            else if(key === layerName && cloudberry.parameters.layers[key].active === 0)
             {
-                 if(typeof cloudberry.parameters.layers[key].activate === "function"){
+                if(typeof cloudberry.parameters.layers[key].activate === "function"){
                     cloudberry.parameters.layers[key].activate();
                  }
                 cloudberry.parameters.layers[key].active = 1;
