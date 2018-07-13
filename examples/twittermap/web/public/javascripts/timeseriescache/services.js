@@ -21,11 +21,6 @@ angular.module('cloudberry.timeseriescache', [])
             start: new Date(),
             end: endDate
         };
-        // Time interval after byTimeRequest query is executed completely.
-        var completeTimeRange = {
-            start: new Date(),
-            end: endDate
-        };
         const INVALID_VALUE = 0;
 
         /**
@@ -45,15 +40,11 @@ angular.module('cloudberry.timeseriescache', [])
                 timeseriesStore.clear();
                 currentKeywords = keywords.slice();
                 currentGeoLevel = geoLevel;
-                completeTimeRange.start = timeInterval.start;
-                completeTimeRange.end = timeInterval.end;
-                // Set default value which each result is >= start and <= end.
-                cachedTimeRange.start = timeInterval.end;
-                cachedTimeRange.end = timeInterval.start;
+                cachedTimeRange.start = timeInterval.start;
+                cachedTimeRange.end = timeInterval.end;
 
                 return geoIds;
             }
-
             for (var i = 0; i < geoIds.length; i++) {
                 if (!timeseriesStore.has(geoIds[i])) {
                     geoIdsNotInCache.push(geoIds[i]);
@@ -61,19 +52,6 @@ angular.module('cloudberry.timeseriescache', [])
             }
 
             return geoIdsNotInCache;
-        };
-
-        /**
-         * Called when the byTimeRequest query is executed completely,
-         * set cached time range to the complete request time range.
-         */
-        this.setCompleteTimeInterval = function () {
-            if (completeTimeRange.start < cachedTimeRange.start) {
-                cachedTimeRange.start = completeTimeRange.start; 
-            }
-            if (completeTimeRange.end > cachedTimeRange.end) {
-                cachedTimeRange.end = completeTimeRange.end;
-            }
         };
 
         /**
@@ -86,10 +64,9 @@ angular.module('cloudberry.timeseriescache', [])
                 var values = timeseriesStore.get(geoIds[i]);
                 if (values !== undefined && values !== INVALID_VALUE) {
                     for (var j = 0; j < values.length; j++) {
-                        var currVal = values[j];
-                        var day = new Date(currVal["day"]);
+                        var day = new Date(values[j]["day"]);
                         if (day >= timeInterval.start && day <= timeInterval.end) {
-                            resultArray.push({"day":currVal["day"], "count":currVal["count"]});
+                            resultArray.push({"day":values[j]["day"], "count":values[j]["count"]});
                         }
                     }
                 }
@@ -98,52 +75,54 @@ angular.module('cloudberry.timeseriescache', [])
         };
 
         /**
+         * Return time-series histogram data from byTimeRequest result array.
+         */
+        this.getValuesFromResult = function (timeseriesResult) {
+            var resultArray = [];
+            for (var i = 0; i < timeseriesResult.length; i++) {
+                var currVal = {day:timeseriesResult[i]["day"], count:timeseriesResult[i]["count"]};
+                resultArray.push(currVal);
+            }
+            return resultArray;
+        }
+
+        /**
+         * Convert byTimeSeries result array to timeseriesStore HashMap format.
+         */
+        this.arrayToStore = function (geoIds, timeseriesResult) {
+            var store = new HashMap();
+            var geoIdSet = new Set(geoIds);
+
+            for (var i = 0; i < timeseriesResult.length; i++) {
+                var currVal = {day:timeseriesResult[i]["day"], count:timeseriesResult[i]["count"]};
+                var values = store.get(timeseriesResult[i][currentGeoLevel]);
+                // First updates the store with geoIds that have results.
+                if (values !== undefined && values !== INVALID_VALUE) { // when one geoIds has more than one value
+                    values.push(currVal);
+                    store.set(timeseriesResult[i][currentGeoLevel], values);
+                    geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
+                } else { // first value of current geoId
+                    store.set(timeseriesResult[i][currentGeoLevel], [currVal]);
+                    geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
+                }
+            };
+            // Mark other results as checked: these are geoIds with no results
+            geoIdSet.forEach(function (value) {
+                store.set(value, INVALID_VALUE);
+            });
+
+            return store;
+        };
+
+        /**
          * Updates the store with time-series result each time the middleware responds to the json request preloadRequest,
          * returns histogram data.
          */
         this.putTimeSeriesValues = function (geoIds, timeseriesResult) {
-            var resultArray = [];
             // In case of cache miss.
             if (geoIds.length !== 0) {
-                var store = new HashMap();
-                var currentTimeRange = {
-                    start: cachedTimeRange.start,
-                    end: cachedTimeRange.end
-                }
-                var geoIdSet = new Set(geoIds);
-
-                for (var i = 0; i < timeseriesResult.length; i++) {
-                    var currVal = {day:timeseriesResult[i]["day"], count:timeseriesResult[i]["count"]};
-                    resultArray.push(currVal);
-                    // Update current time interval.
-                    var currDate = new Date(currVal["day"]);
-                    if (currDate < currentTimeRange.start) {
-                        currentTimeRange.start = currDate;
-                    }
-                    if (currDate > currentTimeRange.end) {
-                        currentTimeRange.end = currDate;
-                    }
-                    var values = store.get(timeseriesResult[i][currentGeoLevel]);
-                    // First updates the store with geoIds that have results.
-                    if (values !== undefined && values !== INVALID_VALUE) { // when one geoIds has more than one value
-                        values.push(currVal);
-                        store.set(timeseriesResult[i][currentGeoLevel], values);
-                        geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
-                    } else { // first value of current geoId
-                        store.set(timeseriesResult[i][currentGeoLevel], [currVal]);
-                        geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
-                    }
-                };
-                // Mark other results as checked: these are geoIds with no results
-                geoIdSet.forEach(function (value) {
-                    store.set(value, INVALID_VALUE);
-                });
-
-                cachedTimeRange.start = currentTimeRange.start;
-                cachedTimeRange.end = currentTimeRange.end;
+                var store = this.arrayToStore(geoIds, timeseriesResult);
                 timeseriesStore = store;
             }
-        
-            return resultArray;
-        };
+        }
     });
