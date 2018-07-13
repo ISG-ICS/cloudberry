@@ -16,7 +16,7 @@ angular.module('cloudberry.timeseriescache', [])
         var endDate = new Date();
         // Deducts -1 to create a default value that can't exist
         endDate.setDate(endDate.getDate() - 1);
-        // Cached time interval, intermediate or complete byTimeRequest result.
+        // Cached time interval of complete byTimeRequest result.
         var cachedTimeRange = {
             start: new Date(),
             end: endDate
