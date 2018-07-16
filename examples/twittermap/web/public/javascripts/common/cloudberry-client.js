@@ -32,6 +32,8 @@ angular.module("cloudberry.common")
        * @param category String, not null, category of this query
        * @param id String, identification for this query, if null,
        *                   always use the same resultHandler for this category with id assigned "defaultID"
+       *           * NOTE: resultHandler for one unique id can be registered only once at the first time
+       *                 you call this send function.
        * @returns {boolean}
        */
       send(query, resultHandler, category, id) {
