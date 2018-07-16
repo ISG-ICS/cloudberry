@@ -86,7 +86,6 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
-        console.log(cloudberryClient.queryToResultHandlerMap);
         cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
       });
     };
