@@ -57,9 +57,10 @@ angular.module("cloudberry.common")
         // The first time registering queryCategory
         if (!(queryCategory in cloudberryClient.queryToResultHandlerMap)) {
           cloudberryClient.queryToResultHandlerMap[queryCategory] = {};
-          cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
-        } else if (!(queryID in cloudberryClient.queryToResultHandlerMap[queryCategory])) {
-          // Register resultHandler for this queryCategory and queryID
+        }
+        
+        // The first time registering queryID inside queryCategory
+        if (!(queryID in cloudberryClient.queryToResultHandlerMap[queryCategory])) {
           cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
         }
 
