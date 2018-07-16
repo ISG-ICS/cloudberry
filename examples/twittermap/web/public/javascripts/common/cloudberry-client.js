@@ -56,6 +56,7 @@ angular.module("cloudberry.common")
 
         // The first time registering queryCategory
         if (!(queryCategory in cloudberryClient.queryToResultHandlerMap)) {
+          cloudberryClient.queryToResultHandlerMap[queryCategory] = {};
           cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
         } else if (!(queryID in cloudberryClient.queryToResultHandlerMap[queryCategory])) {
           // Register resultHandler for this queryCategory and queryID
@@ -84,6 +85,7 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
+        console.log(cloudberryClient.queryToResultHandlerMap);
         cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
       });
     };
