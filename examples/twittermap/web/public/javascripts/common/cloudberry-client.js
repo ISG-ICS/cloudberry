@@ -31,34 +31,42 @@ angular.module("cloudberry.common")
        *          if your query's slice option is ON, resultHandler can be called several times.
        * @param category String, not null, category of this query
        * @param id String, identification for this query, if null,
-       *                   always use the same resultHandler for this category
+       *                   always use the same resultHandler for this category with id assigned "defaultID"
+       *           * NOTE: resultHandler for one unique id can be registered only once at the first time
+       *                 you call this send function.
        * @returns {boolean}
        */
       send(query, resultHandler, category, id) {
+
+        var queryCategory = category;
+        var queryID = "defaultID";
 
         if (ws.readyState !== ws.OPEN) {
           return false;
         }
 
-        if (typeof category === "undefined" || category === null) {
+        if (typeof queryCategory === "undefined" || queryCategory === null) {
           return false;
         }
 
-        // The first time registering resultHandler for this category
-        if (!(category in cloudberryClient.queryToResultHandlerMap)) {
-          cloudberryClient.queryToResultHandlerMap[category] = {common: resultHandler};
+        // This query has unique resultHandler for this queryID
+        if(typeof id !== "undefined" && id !== null) {
+          queryID = id;
         }
 
-        // This query has unique resultHandler for this query id
-        if(typeof id !== "undefined" && id !== null) {
-          cloudberryClient.queryToResultHandlerMap[category][id] = resultHandler;
+        // The first time registering queryCategory
+        if (!(queryCategory in cloudberryClient.queryToResultHandlerMap)) {
+          cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
+        } else if (!(queryID in cloudberryClient.queryToResultHandlerMap[queryCategory])) {
+          // Register resultHandler for this queryCategory and queryID
+          cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
         }
 
         // Add "transform" attribute to the query JSON
         query["transform"] = {
           wrap: {
-            id: id ? id : category,
-            category: category
+            id: queryID,
+            category: queryCategory
           }
         };
 
@@ -76,12 +84,7 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
-        if (id in cloudberryClient.queryToResultHandlerMap[category]) {
-          cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
-        }
-        else {
-          cloudberryClient.queryToResultHandlerMap[category]["common"](id, result.value);
-        }
+        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
       });
     };
 
