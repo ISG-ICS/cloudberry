@@ -55,6 +55,70 @@ angular.module('cloudberry.map')
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       });
     }
+
+    // Send query to cloudberry
+    function sendCountmapQuery() {
+      // Batch request without map result - used when the complete map result cache hit case
+      var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters)],
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      } : {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters)]
+      };
+
+      // Gets the Geo IDs that are not in the map result cache.
+      $scope.geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval,
+        cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
+      // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
+      // This case also covers the complete cache miss case.
+      var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      } : {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
+      };
+
+      // Complete map result cache hit case - exclude map result request
+      if($scope.geoIdsNotInCache.length === 0)  {
+        cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+
+        cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet){
+          if(angular.isArray(resultSet)) {
+            cloudberry.commonTimeSeriesResult = resultSet[0];
+          }
+        }, "batchWithoutGeoRequest");
+      }
+      // Partial map result cache hit case
+      else  {
+        cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+
+        cloudberryClient.send(batchWithPartialGeoRequest, function(id, resultSet){
+          if(angular.isArray(resultSet)) {
+            cloudberry.commonTimeSeriesResult = resultSet[0];
+            cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
+          }
+          // When the query is executed completely, we update the map result cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
+              cloudberry.countmapMapResult);
+          }
+        }, "batchWithPartialGeoRequest");
+      }
+    }
+
+    // Common event handler for Countmap
+    function commonEventHandlerCountmap(event) {
+      sendCountmapQuery();
+    }
     
     // clear countmap specific data
     function cleanCountMap() {
@@ -498,69 +562,5 @@ angular.module('cloudberry.map')
         }
       }
     );
-
-    // Send query to cloudberry
-    function sendCountmapQuery() {
-      // Batch request without map result - used when the complete map result cache hit case
-      var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters)],
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        }
-      } : {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters)]
-      };
-
-      // Gets the Geo IDs that are not in the map result cache.
-      $scope.geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
-        cloudberry.parameters.timeInterval,
-        cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
-
-      // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
-      // This case also covers the complete cache miss case.
-      var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        }
-      } : {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
-      };
-
-      // Complete map result cache hit case - exclude map result request
-      if($scope.geoIdsNotInCache.length === 0)  {
-        cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
-          cloudberry.parameters.geoLevel);
-
-        cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet){
-          if(angular.isArray(resultSet)) {
-            cloudberry.commonTimeSeriesResult = resultSet[0];
-          }
-        }, "batchWithoutGeoRequest");
-      }
-      // Partial map result cache hit case
-      else  {
-        cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
-          cloudberry.parameters.geoLevel);
-
-        cloudberryClient.send(batchWithPartialGeoRequest, function(id, resultSet){
-          if(angular.isArray(resultSet)) {
-            cloudberry.commonTimeSeriesResult = resultSet[0];
-            cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
-          }
-          // When the query is executed completely, we update the map result cache.
-          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
-              cloudberry.countmapMapResult);
-          }
-        }, "batchWithPartialGeoRequest");
-      }
-    }
-
-    // Common event handler for Countmap
-    function commonEventHandlerCountmap(event) {
-      sendCountmapQuery();
-    }
 
   });

@@ -1,4 +1,4 @@
-angular.module('cloudberry.sidebar', ['cloudberry.common'])
+angular.module("cloudberry.sidebar", ["cloudberry.common"])
   .controller("SidebarCtrl", function($scope, cloudberry, moduleManager, cloudberryClient, queryUtil) {
 
     // Flag whether current result is outdated
@@ -81,7 +81,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
-  .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
     $scope.hashTagsList = null;
     // TODO - get rid of this watch by doing work inside the callback function in sendHashTagQuery()
     $scope.$watch(
@@ -93,10 +93,10 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       }
     );
   })
-  .directive('hashtag', function () {
+  .directive("hashtag", function () {
     return {
-      restrict: 'E',
-      controller: 'HashTagCtrl',
+      restrict: "E",
+      controller: "HashTagCtrl",
       template: [
         '<table class="table" id="hashcount">',
         '<thead>',
@@ -106,16 +106,16 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       ].join('')
     };
   })
-  .controller('TweetCtrl', function ($scope, $window, $http, cloudberry) {
+  .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
     $scope.results = {};
 
     function drawTweets(message) {
-      $('#tweet').html('');
+      $('#tweet').html("");
       if (message) {
         $.each(message, function (i, d) {
           var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
           $http.jsonp(url).success(function (data) {
-            $('#tweet').append(data.html);
+            $("#tweet").append(data.html);
           });
         });
       }
@@ -132,21 +132,21 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       }
     );
   })
-  .directive('tweet', function () {
+  .directive("tweet", function () {
     return {
-      restrict: 'E',
-      controller: 'TweetCtrl'
+      restrict: "E",
+      controller: "TweetCtrl"
     };
   })
 
-  .controller('choosemap', function ($scope, $window, cloudberry, $rootScope, moduleManager) {
+  .controller("choosemap", function ($scope, $window, cloudberry, $rootScope, moduleManager) {
 
     $scope.result = null;
     cloudberry.parameters.maptype = config.defaultMapType;
 
-    var icon1 = document.getElementById('img1');
-    var icon2 = document.getElementById('img2');
-    var icon3 = document.getElementById('img3');
+    var icon1 = document.getElementById("img1");
+    var icon2 = document.getElementById("img2");
+    var icon3 = document.getElementById("img3");
 
     switch (cloudberry.parameters.maptype){
       case "countmap":
@@ -173,9 +173,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
     icon1.addEventListener("click", function () {
 
-      if (cloudberry.parameters.maptype !== 'countmap') {
+      if (cloudberry.parameters.maptype !== "countmap") {
         var premaptype = cloudberry.parameters.maptype;
-        cloudberry.parameters.maptype = 'countmap';
+        cloudberry.parameters.maptype = "countmap";
         icon1.src = "/assets/images/aggregation_map.png";
         icon2.src = "/assets/images/heat_map_no_border.png";
         icon3.src = "/assets/images/point_map_no_border.png";
@@ -186,9 +186,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
     icon2.addEventListener("click", function () {
 
-      if (cloudberry.parameters.maptype !== 'heatmap') {
+      if (cloudberry.parameters.maptype !== "heatmap") {
         var premaptype = cloudberry.parameters.maptype;
-        cloudberry.parameters.maptype = 'heatmap';
+        cloudberry.parameters.maptype = "heatmap";
         icon1.src = "/assets/images/aggregation_map_no_border.png";
         icon2.src = "/assets/images/heat_map.png";
         icon3.src = "/assets/images/point_map_no_border.png";
@@ -199,9 +199,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
     icon3.addEventListener("click", function () {
 
-      if (cloudberry.parameters.maptype !== 'pinmap') {
+      if (cloudberry.parameters.maptype !== "pinmap") {
         var premaptype = cloudberry.parameters.maptype;
-        cloudberry.parameters.maptype = 'pinmap';
+        cloudberry.parameters.maptype = "pinmap";
         icon1.src = "/assets/images/aggregation_map_no_border.png";
         icon2.src = "/assets/images/heat_map_no_border.png";
         icon3.src = "/assets/images/point_map.png";
@@ -212,9 +212,9 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
   })
 
-  .directive('mapchoose', function () {
+  .directive("mapchoose", function () {
       return {
-          restrict: 'E',
-          controller: 'choosemap'
+          restrict: "E",
+          controller: "choosemap"
       };
   });
