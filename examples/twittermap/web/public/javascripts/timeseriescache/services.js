@@ -50,6 +50,7 @@ angular.module('cloudberry.timeseriescache', [])
                     geoIdsNotInCache.push(geoIds[i]);
                 }
             }
+
             return geoIdsNotInCache;
         };
 
