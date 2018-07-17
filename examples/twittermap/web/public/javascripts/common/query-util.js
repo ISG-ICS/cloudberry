@@ -1,3 +1,7 @@
+/**
+ * queryUtil - A service of AngularJS
+ *  This service provides several common functions for modules to construct a JSON query for Cloudberry.
+ */
 angular.module("cloudberry.common")
   .service("queryUtil", function(cloudberryConfig) {
 
