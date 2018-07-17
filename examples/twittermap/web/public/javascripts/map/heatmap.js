@@ -174,6 +174,7 @@ angular.module("cloudberry.map")
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMaptypeChange);
     
+    // TODO - get rid of this watch by doing work inside the callback function in sendHeatmapQuery()
     $scope.$watch(
       function() {
         return cloudberry.heatmapMapResult;

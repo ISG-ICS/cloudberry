@@ -43,7 +43,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $compile(countDiv)($scope);
     stats.appendChild(countDiv);
 
-
+    // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
         return cloudberry.commonTimeSeriesResult;
@@ -60,6 +60,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       }
     );
 
+    // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function () {
         return cloudberry.commonTotalCount;

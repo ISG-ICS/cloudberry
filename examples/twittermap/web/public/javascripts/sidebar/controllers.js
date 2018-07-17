@@ -83,6 +83,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
   })
   .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
     $scope.hashTagsList = null;
+    // TODO - get rid of this watch by doing work inside the callback function in sendHashTagQuery()
     $scope.$watch(
       function () {
         return cloudberry.commonHashTagResult;
@@ -120,6 +121,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       }
     }
 
+    // TODO - get rid of this watch by doing work inside the callback function in sendSampleTweetsQuery()
     $scope.$watch(
       function () {
         return cloudberry.commonTweetResult;

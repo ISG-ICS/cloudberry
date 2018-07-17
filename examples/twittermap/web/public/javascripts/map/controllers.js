@@ -1,6 +1,6 @@
 angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
-  .controller('MapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData,
-                                  cloudberryConfig, Cache, moduleManager) { // use $rootScope event to get maptypeChange notification
+  .controller('MapCtrl', function($scope, $http, cloudberry, leafletData,
+                                  cloudberryConfig, Cache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
 

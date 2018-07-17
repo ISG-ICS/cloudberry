@@ -460,6 +460,7 @@ angular.module('cloudberry.map')
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMaptypeChange);
     
+    // TODO - get rid of these variables watching by events subscribing and publishing
     // monitor the countmap related variables, update the countmap if necessary
     $scope.$watchCollection(
       function() {

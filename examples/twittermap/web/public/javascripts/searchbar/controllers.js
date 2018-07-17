@@ -75,6 +75,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     }
   })
   .controller('ExceptionCtrl', function($scope, $window, cloudberry) {
+    // TODO - get rid of this variable watching by events subscribing and publishing
     $scope.$watch(
       function() {
         return cloudberry.errorMessage;
