@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
-  .controller("pinMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData,
-                                     cloudberryConfig, MapResultCache, moduleManager, cloudberryClient, queryUtil) {
+  .controller("pinMapCtrl", function($scope, $http, cloudberry, cloudberryConfig,
+                                     moduleManager, cloudberryClient, queryUtil) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({

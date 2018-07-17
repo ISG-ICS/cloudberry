@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
-  .controller("heatMapCtrl", function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData,
-                                      cloudberryConfig, MapResultCache, moduleManager, cloudberryClient, queryUtil) {
+  .controller("heatMapCtrl", function($scope, cloudberry, cloudberryConfig,
+                                      moduleManager, cloudberryClient, queryUtil) {
     function setHeatMapStyle() {
       $scope.setStyles({
         initStyle: {
