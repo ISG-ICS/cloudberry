@@ -40,8 +40,8 @@ angular.module('cloudberry.timeseriescache', [])
                 timeseriesStore.clear();
                 currentKeywords = keywords.slice();
                 currentGeoLevel = geoLevel;
-                cachedTimeRange.start = timeInterval.start;
-                cachedTimeRange.end = timeInterval.end;
+                cachedTimeRange.start = new Date(timeInterval.start.getTime());
+                cachedTimeRange.end = new Date(timeInterval.end.getTime());
 
                 return geoIds;
             }
@@ -50,7 +50,6 @@ angular.module('cloudberry.timeseriescache', [])
                     geoIdsNotInCache.push(geoIds[i]);
                 }
             }
-
             return geoIdsNotInCache;
         };
 
