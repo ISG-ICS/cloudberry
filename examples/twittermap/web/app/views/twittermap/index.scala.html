@@ -25,6 +25,15 @@
    <search-bar></search-bar>
    <predefined-keywords></predefined-keywords>
 
+  <!-- modifiy hide and show button -->
+
+  <!-- <button type="button" class="slide-up-down">down</button> -->
+
+  <div>
+    <button type="button" class="btn btn-default btn-lg slide-up-down">
+      <span id="downbutton" class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
+    </button>
+  </div>
 
 
   <div class="stats">
@@ -78,9 +87,24 @@
     <exception-bar></exception-bar>
   </div>
 
-
-
 </div>
 
-
 }
+
+<script>
+
+  $(document).ready(function() {
+    $(".slide-up-down").click(function() {
+      $(".stats").slideToggle();
+      if( $( 'button span' ).hasClass( 'glyphicon-menu-down' ) ) {
+        $( 'button span' ).removeClass( 'glyphicon-menu-down' ).addClass('glyphicon-menu-up');
+        $(this).animate({bottom: '5px'});
+      }
+      else {
+        $( 'button span' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
+        $(this).animate({bottom: '110px'}); 
+      }
+    });
+  });
+
+</script>

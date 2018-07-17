@@ -119,7 +119,7 @@ search-bar {
 
 .stats{
   position: absolute;
-  bottom:0;
+  bottom: 0;
   pointer-events: none;
   line-height: 1;
   width: 100%;
@@ -223,3 +223,13 @@ time-series {
 
 .tweet-link:hover {
   text-decoration: underline; }
+
+.slide-up-down {
+  position: absolute;
+  display: inline-block;
+  width: 40px;
+  height: 34px;
+  bottom : 110px;
+  margin-left: 5px;
+}
+
