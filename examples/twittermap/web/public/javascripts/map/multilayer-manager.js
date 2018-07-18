@@ -26,6 +26,7 @@ angular.module("cloudberry.map")
 
       cloudberry.query(cloudberry.parameters);
     });
+    
     //This function register layer to layer manager 
     function addLayer(layerID, active, parameters){ 
       createLayerService[layerID](parameters).then(function(layer){
