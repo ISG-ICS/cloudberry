@@ -244,7 +244,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     };
 
     // load geoJson to get city polygons
-    $scope.loadCityJsonByBound = function loadCityJsonByBound(onEachFeature){
+    $scope.loadCityJsonByBound = function loadCityJsonByBound(onEachFeature, fromEventName, fromEvent){
 
       var bounds = $scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
@@ -257,8 +257,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             if (!$scope.status.init) {
               $scope.resetGeoIds($scope.bounds, data, 'cityID');
               cloudberry.parameters.geoLevel = 'city';
-              // Publish zoom event to moduleManager
-              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+              // Publish zoom/drag event to moduleManager
+              moduleManager.publishEvent(fromEventName, fromEvent);
             }
 
             $scope.status.logicLevel = 'city';
@@ -308,8 +308,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
               setCenterAndBoundry($scope.geojsonData.city.features);
               $scope.resetGeoInfo("city");
               if (!$scope.status.init) {
-                // Publish zoom event to moduleManager
-                moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+                // Publish zoom/drag event to moduleManager
+                moduleManager.publishEvent(fromEventName, fromEvent);
               }
               $scope.map.addLayer($scope.polygons.cityPolygons);
             })
@@ -368,7 +368,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
           }
           $scope.map.addLayer($scope.polygons.countyUpperPolygons);
-          $scope.loadCityJsonByBound($scope.onEachFeature);
+          $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
+            {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
         } else if ($scope.status.zoomLevel > 5) {
           $scope.resetGeoInfo("county");
           if (!$scope.status.init) {
@@ -414,7 +415,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     // Listens to Leaflet's dragend event and publish it to moduleManager
     $scope.$on("leafletDirectiveMap.dragend", function() {
 
-      // Original operations on dragedn event
+      // Original operations on dragend event
       if (!$scope.status.init) {
         $scope.bounds = $scope.map.getBounds();
         var geoData;
@@ -431,7 +432,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
       }
       if ($scope.status.logicLevel === "city") {
-        $scope.loadCityJsonByBound($scope.onEachFeature);
+        $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_REGION_BY_DRAG,
+          {bounds: $scope.map.getBounds()});
       } else {
         $scope.resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
         cloudberry.parameters.geoLevel = $scope.status.logicLevel;

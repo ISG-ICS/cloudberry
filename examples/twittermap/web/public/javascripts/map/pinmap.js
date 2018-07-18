@@ -102,7 +102,7 @@ angular.module("cloudberry.map")
     }
 
     // Common event handler for Countmap
-    function commonEventHandlerPinmap(event) {
+    function pinMapCommonEventHandler(event) {
         sendPinmapQuery();
     }
     
@@ -121,9 +121,9 @@ angular.module("cloudberry.map")
 
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerPinmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerPinmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, pinMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, pinMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, pinMapCommonEventHandler);
     }
 
     // initialize pinmap
@@ -143,9 +143,9 @@ angular.module("cloudberry.map")
 
       // Subscribe to moduleManager's events
       moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerPinmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerPinmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerPinmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, pinMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, pinMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, pinMapCommonEventHandler);
 
       $scope.mouseOverPointI = 0;
     }
@@ -350,19 +350,19 @@ angular.module("cloudberry.map")
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
-    function onMaptypeChange(event) {
-      if (event.cur === "pinmap") {
+    function onMapTypeChange(event) {
+      if (event.currentMapType === "pinmap") {
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
         sendPinmapQuery();
       }
-      else if (event.pre === "pinmap"){
+      else if (event.previousMapType === "pinmap"){
         cleanPinMap();
       }
     }
 
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMaptypeChange);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
     
     // TODO - get rid of this watch by doing work inside the callback function in sendPinmapQuery()
     // monitor the pinmap related variables, update the pinmap if necessary

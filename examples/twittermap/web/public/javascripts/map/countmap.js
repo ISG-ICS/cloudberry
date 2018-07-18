@@ -116,7 +116,7 @@ angular.module('cloudberry.map')
     }
 
     // Common event handler for Countmap
-    function commonEventHandlerCountmap(event) {
+    function countMapCommonEventHandler(event) {
       sendCountmapQuery();
     }
     
@@ -137,10 +137,10 @@ angular.module('cloudberry.map')
       removeMapControl('info');
 
       // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, commonEventHandlerCountmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerCountmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerCountmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerCountmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
     
     // initialize countmap
@@ -226,10 +226,10 @@ angular.module('cloudberry.map')
       $scope.$parent.onEachFeature = onEachFeature;
 
       // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, commonEventHandlerCountmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, commonEventHandlerCountmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, commonEventHandlerCountmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, commonEventHandlerCountmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
     
     /**
@@ -510,19 +510,19 @@ angular.module('cloudberry.map')
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
-    function onMaptypeChange(event) {
-      if (event.cur === "countmap") {
+    function onMapTypeChange(event) {
+      if (event.currentMapType === "countmap") {
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();
         sendCountmapQuery();
       }
-      else if (event.pre === "countmap"){
+      else if (event.previousMapType === "countmap"){
         cleanCountMap();
       }
     }
 
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMaptypeChange);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
     
     // TODO - get rid of these variables watching by events subscribing and publishing
     // monitor the countmap related variables, update the countmap if necessary

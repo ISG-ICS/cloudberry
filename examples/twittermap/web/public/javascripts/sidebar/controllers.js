@@ -53,6 +53,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           $scope.isSampleTweetsOpen = true;
           $scope.isHashTagOpen = false;
           break;
+        case "about":
+          $scope.isHashTagOpen = false;
+          $scope.isSampleTweetsOpen = false;
+          break;
         default:
           break;
       }
@@ -179,7 +183,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         icon1.src = "/assets/images/aggregation_map.png";
         icon2.src = "/assets/images/heat_map_no_border.png";
         icon3.src = "/assets/images/point_map_no_border.png";
-        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, {pre: premaptype, cur: cloudberry.parameters.maptype});
+        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE,
+          {previousMapType: premaptype, currentMapType: cloudberry.parameters.maptype});
       }
 
     });
@@ -192,7 +197,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         icon1.src = "/assets/images/aggregation_map_no_border.png";
         icon2.src = "/assets/images/heat_map.png";
         icon3.src = "/assets/images/point_map_no_border.png";
-        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, {pre: premaptype, cur: cloudberry.parameters.maptype});
+        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE,
+          {previousMapType: premaptype, currentMapType: cloudberry.parameters.maptype});
       }
 
     });
@@ -205,7 +211,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         icon1.src = "/assets/images/aggregation_map_no_border.png";
         icon2.src = "/assets/images/heat_map_no_border.png";
         icon3.src = "/assets/images/point_map.png";
-        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, {pre: premaptype, cur: cloudberry.parameters.maptype});
+        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE,
+          {previousMapType: premaptype, currentMapType: cloudberry.parameters.maptype});
       }
 
     });
