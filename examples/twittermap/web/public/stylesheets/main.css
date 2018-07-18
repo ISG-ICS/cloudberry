@@ -227,9 +227,11 @@ time-series {
 .slide-up-down {
   position: absolute;
   display: inline-block;
-  width: 40px;
-  height: 34px;
+  width: 53px;
+  height: 35px;
   bottom : 110px;
   margin-left: 5px;
 }
+
+
 
