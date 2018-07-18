@@ -25,6 +25,7 @@
    <search-bar></search-bar>
    <predefined-keywords></predefined-keywords>
 
+   <!-- button for hide and show the timebar -->
   <div>
     <button type="button" class="btn btn-default btn-lg slide-up-down">
       <span id="downbutton" class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
@@ -88,7 +89,8 @@
 }
 
 <script>
-
+  // Function for the button that hiding and showing the timebar. 
+  // The button moves together with timebar and the arrow direction changes. 
   $(document).ready(function() {
     $(".slide-up-down").click(function() {
       $(".stats").slideToggle();
@@ -102,5 +104,4 @@
       }
     });
   });
-
 </script>

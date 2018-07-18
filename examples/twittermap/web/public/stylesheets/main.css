@@ -224,6 +224,7 @@ time-series {
 .tweet-link:hover {
   text-decoration: underline; }
 
+/* button for hiding and showing the timebar */
 .slide-up-down {
   position: absolute;
   display: inline-block;
