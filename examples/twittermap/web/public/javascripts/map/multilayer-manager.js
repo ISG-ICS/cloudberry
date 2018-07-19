@@ -1,10 +1,10 @@
 angular.module("cloudberry.map")
-  .controller("multiLayerManager", function($scope, $rootScope, cloudberry, createLayerService) {
+  .controller("multiLayerManager", function($scope, $rootScope, cloudberry, createLayerService, moduleManager, cloudberryClient) {
 
     cloudberry.parameters.layers = {};
 
     // This function will watch all maptypeChange events for all layers 
-    $rootScope.$on("maptypeChange", function (event, data) {
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, fuction(){
       var layerName = cloudberry.parameters.maptype;
 
       for(var key in cloudberry.parameters.layers)
