@@ -1,51 +1,42 @@
-angular.module('cloudberry.sidebar', ['cloudberry.common'])
-  .controller("SidebarCtrl", function($scope, cloudberry) {
-    cloudberry.parameters.isSampleTweetsOpen = false;
-    cloudberry.parameters.isHashTagOpen = false;
+angular.module("cloudberry.sidebar", ["cloudberry.common"])
+  .controller("SidebarCtrl", function($scope, cloudberry, moduleManager, cloudberryClient, queryUtil) {
+
+    // Flag whether current result is outdated
+    $scope.isHashTagOutdated = true;
+    $scope.isSampleTweetsOutdated = true;
+
+    // Flag whether sidebar tab is open
+    $scope.isHashTagOpen = false;
+    $scope.isSampleTweetsOpen = false;
 
     $scope.currentTab = "aboutTab";
 
-    // Remember current hash tag results corresponding query parameters
-    $scope.hashtagCurrentParameters =  {
-      keywords: Array.from(cloudberry.parameters.keywords),
-      timeInterval: {
-        start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
-        end: new Date(cloudberry.parameters.timeInterval.end.getTime())
-      },
-      geoLevel: cloudberry.parameters.geoLevel,
-      geoIds: Array.from(cloudberry.parameters.geoIds)
-    };
+    function sendHashTagQuery() {
+      var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
+      cloudberryClient.send(hashtagRequest, function(id, resultSet) {
+        cloudberry.commonHashTagResult = resultSet[0];
+      }, "hashtagRequest");
+      $scope.isHashTagOutdated = false;
+    }
 
-    // Remember current tweet results corresponding query parameters
-    $scope.sampletweetCurrentParameters =  {
-      keywords: Array.from(cloudberry.parameters.keywords),
-      timeInterval: {
-        start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
-        end: new Date(cloudberry.parameters.timeInterval.end.getTime())
-      },
-      geoLevel: cloudberry.parameters.geoLevel,
-      geoIds: Array.from(cloudberry.parameters.geoIds)
-    };
+    function sendSampleTweetsQuery() {
+      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters);
+      cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
+        cloudberry.commonTweetResult = resultSet[0];
+      }, "sampleTweetsRequest");
+      $scope.isSampleTweetsOutdated = false;
+    }
 
-    $scope.assignParameters = function(from, to) {
-      to.keywords = Array.from(from.keywords);
-      to.geoLevel = from.geoLevel;
-      to.timeInterval.start = new Date(from.timeInterval.start.getTime());
-      to.timeInterval.end = new Date(from.timeInterval.end.getTime());
-      to.geoIds = Array.from(from.geoIds);
-    };
+    function handleSidebarQuery() {
 
-    $scope.arraysEqual = function (a, b) {
-      if (a === b) return true;
-      if (a == null || b == null) return false;
-      if (a.length != b.length) return false;
-      a.sort();
-      b.sort();
-      for (var i = 0; i < a.length; ++i) {
-        if (a[i] !== b[i]) return false;
+      if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {
+        sendHashTagQuery();
       }
-      return true;
-    };
+
+      if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
+        sendSampleTweetsQuery();
+      }
+    }
 
     $scope.showTab = function(tab) {
 
@@ -55,40 +46,22 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
 
       switch (tab) {
         case "hashtagTab":
-          cloudberry.parameters.isHashTagOpen = true;
-          cloudberry.parameters.isSampleTweetsOpen = false;
-
-          if ($scope.arraysEqual($scope.hashtagCurrentParameters.keywords, cloudberry.parameters.keywords)
-            && $scope.hashtagCurrentParameters.geoLevel === cloudberry.parameters.geoLevel
-            && $scope.hashtagCurrentParameters.timeInterval.start.getTime() === cloudberry.parameters.timeInterval.start.getTime()
-            && $scope.hashtagCurrentParameters.timeInterval.end.getTime() === cloudberry.parameters.timeInterval.end.getTime()
-            && $scope.arraysEqual($scope.hashtagCurrentParameters.geoIds, cloudberry.parameters.geoIds)) {
-            return;
-          }
-
-          $scope.assignParameters(cloudberry.parameters, $scope.hashtagCurrentParameters);
-
-          cloudberry.querySidebar(cloudberry.parameters);
+          $scope.isHashTagOpen = true;
+          $scope.isSampleTweetsOpen = false;
           break;
         case "sampletweetTab":
-          cloudberry.parameters.isSampleTweetsOpen = true;
-          cloudberry.parameters.isHashTagOpen = false;
-
-          if ($scope.arraysEqual($scope.sampletweetCurrentParameters.keywords, cloudberry.parameters.keywords)
-            && $scope.sampletweetCurrentParameters.geoLevel === cloudberry.parameters.geoLevel
-            && $scope.sampletweetCurrentParameters.timeInterval.start.getTime() === cloudberry.parameters.timeInterval.start.getTime()
-            && $scope.sampletweetCurrentParameters.timeInterval.end.getTime() === cloudberry.parameters.timeInterval.end.getTime()
-            && $scope.arraysEqual($scope.sampletweetCurrentParameters.geoIds, cloudberry.parameters.geoIds)) {
-            return;
-          }
-
-          $scope.assignParameters(cloudberry.parameters, $scope.sampletweetCurrentParameters);
-
-          cloudberry.querySidebar(cloudberry.parameters);
+          $scope.isSampleTweetsOpen = true;
+          $scope.isHashTagOpen = false;
+          break;
+        case "about":
+          $scope.isHashTagOpen = false;
+          $scope.isSampleTweetsOpen = false;
           break;
         default:
           break;
       }
+
+      handleSidebarQuery();
     };
 
     $scope.showOrHideSidebar = function(click) {
@@ -100,24 +73,34 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
         $scope.showTab($scope.currentTab);
       }
     };
+
+    function eventHandler(event) {
+      $scope.isHashTagOutdated = true;
+      $scope.isSampleTweetsOutdated = true;
+      handleSidebarQuery();
+    }
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
-  .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
     $scope.hashTagsList = null;
+    // TODO - get rid of this watch by doing work inside the callback function in sendHashTagQuery()
     $scope.$watch(
       function () {
         return cloudberry.commonHashTagResult;
       },
       function (newResult) {
         $scope.hashTagsList = newResult;
-
-        $scope.assignParameters(cloudberry.parameters, $scope.hashtagCurrentParameters);
       }
     );
   })
-  .directive('hashtag', function () {
+  .directive("hashtag", function () {
     return {
-      restrict: 'E',
-      controller: 'HashTagCtrl',
+      restrict: "E",
+      controller: "HashTagCtrl",
       template: [
         '<table class="table" id="hashcount">',
         '<thead>',
@@ -127,21 +110,22 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       ].join('')
     };
   })
-  .controller('TweetCtrl', function ($scope, $window, $http, cloudberry) {
+  .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
     $scope.results = {};
 
     function drawTweets(message) {
-      $('#tweet').html('');
+      $('#tweet').html("");
       if (message) {
         $.each(message, function (i, d) {
           var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
           $http.jsonp(url).success(function (data) {
-            $('#tweet').append(data.html);
+            $("#tweet").append(data.html);
           });
         });
       }
     }
 
+    // TODO - get rid of this watch by doing work inside the callback function in sendSampleTweetsQuery()
     $scope.$watch(
       function () {
         return cloudberry.commonTweetResult;
@@ -149,94 +133,95 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       function (newResult) {
         $scope.results = newResult;
         drawTweets($scope.results);
-
-        $scope.assignParameters(cloudberry.parameters, $scope.sampletweetCurrentParameters);
       }
     );
   })
-  .directive('tweet', function () {
+  .directive("tweet", function () {
     return {
-      restrict: 'E',
-      controller: 'TweetCtrl'
+      restrict: "E",
+      controller: "TweetCtrl"
     };
   })
 
-    .controller('choosemap', function ($scope, $window, cloudberry, $rootScope, cloudberryConfig) {
+  .controller("choosemap", function ($scope, $window, cloudberry, $rootScope, moduleManager) {
 
-        $scope.result = null;
-        cloudberry.parameters.maptype = config.defaultMapType;
+    $scope.result = null;
+    cloudberry.parameters.maptype = config.defaultMapType;
 
-        var icon1 = document.getElementById('img1');
-        var icon2 = document.getElementById('img2');
-        var icon3 = document.getElementById('img3');
-        
-        switch (cloudberry.parameters.maptype){
-          case "countmap":
-            icon1.src = "/assets/images/aggregation_map.png";
-            icon2.src = "/assets/images/heat_map_no_border.png";
-            icon3.src = "/assets/images/point_map_no_border.png";
-            break;
-            
-          case "heatmap":
-            icon1.src = "/assets/images/aggregation_map_no_border.png";
-            icon2.src = "/assets/images/heat_map.png";
-            icon3.src = "/assets/images/point_map_no_border.png";
-            break;
-            
-          case "pinmap":
-            icon1.src = "/assets/images/aggregation_map_no_border.png";
-            icon2.src = "/assets/images/heat_map_no_border.png";
-            icon3.src = "/assets/images/point_map.png";
-            break;
-            
-          default:
-            break;
-        }
+    var icon1 = document.getElementById("img1");
+    var icon2 = document.getElementById("img2");
+    var icon3 = document.getElementById("img3");
 
-        icon1.addEventListener("click", function () {
+    switch (cloudberry.parameters.maptype){
+      case "countmap":
+        icon1.src = "/assets/images/aggregation_map.png";
+        icon2.src = "/assets/images/heat_map_no_border.png";
+        icon3.src = "/assets/images/point_map_no_border.png";
+        break;
 
-            if (cloudberry.parameters.maptype !== 'countmap') {
-                var premaptype = cloudberry.parameters.maptype;
-                cloudberry.parameters.maptype = 'countmap';
-                icon1.src = "/assets/images/aggregation_map.png";
-                icon2.src = "/assets/images/heat_map_no_border.png";
-                icon3.src = "/assets/images/point_map_no_border.png";
-                $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
-            }
+      case "heatmap":
+        icon1.src = "/assets/images/aggregation_map_no_border.png";
+        icon2.src = "/assets/images/heat_map.png";
+        icon3.src = "/assets/images/point_map_no_border.png";
+        break;
 
-        });
+      case "pinmap":
+        icon1.src = "/assets/images/aggregation_map_no_border.png";
+        icon2.src = "/assets/images/heat_map_no_border.png";
+        icon3.src = "/assets/images/point_map.png";
+        break;
 
-        icon2.addEventListener("click", function () {
+      default:
+        break;
+    }
 
-            if (cloudberry.parameters.maptype !== 'heatmap') {
-                var premaptype = cloudberry.parameters.maptype;
-                cloudberry.parameters.maptype = 'heatmap';
-                icon1.src = "/assets/images/aggregation_map_no_border.png";
-                icon2.src = "/assets/images/heat_map.png";
-                icon3.src = "/assets/images/point_map_no_border.png";
-                $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
-            }
+    icon1.addEventListener("click", function () {
 
-        });
+      if (cloudberry.parameters.maptype !== "countmap") {
+        var premaptype = cloudberry.parameters.maptype;
+        cloudberry.parameters.maptype = "countmap";
+        icon1.src = "/assets/images/aggregation_map.png";
+        icon2.src = "/assets/images/heat_map_no_border.png";
+        icon3.src = "/assets/images/point_map_no_border.png";
+        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE,
+          {previousMapType: premaptype, currentMapType: cloudberry.parameters.maptype});
+      }
 
-        icon3.addEventListener("click", function () {
-
-            if (cloudberry.parameters.maptype !== 'pinmap') {
-                var premaptype = cloudberry.parameters.maptype;
-                cloudberry.parameters.maptype = 'pinmap';
-                icon1.src = "/assets/images/aggregation_map_no_border.png";
-                icon2.src = "/assets/images/heat_map_no_border.png";
-                icon3.src = "/assets/images/point_map.png";
-                $rootScope.$emit("maptypeChange", [premaptype, cloudberry.parameters.maptype]);
-            }
-
-        });
-
-    })
-
-    .directive('mapchoose', function () {
-        return {
-            restrict: 'E',
-            controller: 'choosemap'
-        };
     });
+
+    icon2.addEventListener("click", function () {
+
+      if (cloudberry.parameters.maptype !== "heatmap") {
+        var premaptype = cloudberry.parameters.maptype;
+        cloudberry.parameters.maptype = "heatmap";
+        icon1.src = "/assets/images/aggregation_map_no_border.png";
+        icon2.src = "/assets/images/heat_map.png";
+        icon3.src = "/assets/images/point_map_no_border.png";
+        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE,
+          {previousMapType: premaptype, currentMapType: cloudberry.parameters.maptype});
+      }
+
+    });
+
+    icon3.addEventListener("click", function () {
+
+      if (cloudberry.parameters.maptype !== "pinmap") {
+        var premaptype = cloudberry.parameters.maptype;
+        cloudberry.parameters.maptype = "pinmap";
+        icon1.src = "/assets/images/aggregation_map_no_border.png";
+        icon2.src = "/assets/images/heat_map_no_border.png";
+        icon3.src = "/assets/images/point_map.png";
+        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_MAP_TYPE,
+          {previousMapType: premaptype, currentMapType: cloudberry.parameters.maptype});
+      }
+
+    });
+
+  })
+
+  .directive("mapchoose", function () {
+      return {
+          restrict: "E",
+          controller: "choosemap"
+      };
+  });
