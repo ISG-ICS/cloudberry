@@ -3,8 +3,8 @@ angular.module("cloudberry.map")
 
     cloudberry.parameters.layers = {};
 
-    // This function will watch all maptypeChange events for all layers 
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, fuction(){
+    // This function checks MAP_TYPE_CHANGE event for all layers 
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function(event){
       var layerName = cloudberry.parameters.maptype;
 
       for(var key in cloudberry.parameters.layers)
@@ -21,11 +21,68 @@ angular.module("cloudberry.map")
           }
           cloudberry.parameters.layers[key].active = 1;
           $scope.map.addLayer(cloudberry.parameters.layers[key].layer);
+          cloudberry.parameters.layers[key].onMapTypeChange();
         }
       }
 
-      cloudberry.query(cloudberry.parameters);
     });
+    
+    //This function checks CHANGE_SEARCH_KEYWORD event for all layers
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD,function(event){
+      var layerName = cloudberry.parameters.maptype;
+      
+      for(var key in cloudberry.parameters.layers)
+      {   
+        if(key === layerName && cloudberry.parameters.layers[key].active === 1)
+        {
+          cloudberry.parameters.layers[key].onChangeSearchKeyword();
+        }
+      }
+    });
+    
+    //This function checks CHANGE_TIME_SERIES_RANGE event for all layers
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, function(event){
+      var layerName = cloudberry.parameters.maptype;
+      
+      for(var key in cloudberry.parameters.layers)
+      {   
+        if(key === layerName && cloudberry.parameters.layers[key].active === 1)
+        {
+          cloudberry.parameters.layers[key].onChangeTimeSeriesRange();
+        }
+      }
+      
+    });
+  
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, function(event){
+      var layerName = cloudberry.parameters.maptype;
+      
+      for(var key in cloudberry.parameters.layers)
+      {   
+        if(key === layerName && cloudberry.parameters.layers[key].active === 1)
+        {
+          cloudberry.parameters.layers[key].onZoom();
+        }
+      }
+    });
+    
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, function(event){
+      var layerName = cloudberry.parameters.maptype;
+      
+      for(var key in cloudberry.parameters.layers)
+      {   
+        if(key === layerName && cloudberry.parameters.layers[key].active === 1)
+        {
+          cloudberry.parameters.layers[key].onDrag();
+        }
+      }  
+    });
+    
+    var heatmapParameters = {
+        id: "heatmap",
+        dataset: "twitter.ds_tweet",
+    }
+    addLayer("heatmap", 0, heatmapParameters);
     
     //This function register layer to layer manager 
     function addLayer(layerID, active, parameters){ 
@@ -39,20 +96,5 @@ angular.module("cloudberry.map")
         });
       });
     }         
-
-    $scope.$on("leafletDirectiveMap.zoomend", function() {
-      for (var key in cloudberry.parameters.layers) {
-        if (cloudberry.parameters.layers[key].active && typeof cloudberry.parameters.layers[key].zoom === "function"){
-          cloudberry.parameters.layers[key].zoom();
-        }
-      }
-    });
-
-    $scope.$on("leafletDirectiveMap.dragend", function() {
-      for (var key in cloudberry.parameters.layers) {
-        if (cloudberry.parameters.layers[key].active && typeof cloudberry.parameters.layers[key].drag === "function"){
-          cloudberry.parameters.layers[key].drag();
-        }
-      }
-    });    
+  
   });

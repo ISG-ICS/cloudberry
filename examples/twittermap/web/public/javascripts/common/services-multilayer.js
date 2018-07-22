@@ -1,7 +1,7 @@
-angular.module("cloudberry.common")
+angular.module("cloudberry.map")
     .service("createLayerService", function(multilayerHeatmap){
         var createLayerService = {
-            heatmap: multilayerHeatmap.createLayer,
+            heatmap: multilayerHeatmap.createLayer
         };
         
         return createLayerService;

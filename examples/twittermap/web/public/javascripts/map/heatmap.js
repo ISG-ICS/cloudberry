@@ -96,11 +96,6 @@ angular.module("cloudberry.map")
         $scope.heatMapLayer = null;
       }
 
-      // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, heatMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, heatMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, heatMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, heatMapCommonEventHandler);
     }
     
     function setInfoControlHeatMap() {
@@ -113,12 +108,6 @@ angular.module("cloudberry.map")
       $scope.loadGeoJsonFiles(onEachFeature);
 
       $scope.$parent.onEachFeature = onEachFeature;
-
-      // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, heatMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, heatMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, heatMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, heatMapCommonEventHandler);
 
       if (!$scope.heat){
         var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
@@ -165,7 +154,6 @@ angular.module("cloudberry.map")
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();
-        sendHeatmapQuery();
       }
       else if (event.previousMapType === "heatmap"){
         cleanHeatMap();
@@ -173,24 +161,4 @@ angular.module("cloudberry.map")
     }
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
-    
-    // TODO - get rid of this watch by doing work inside the callback function in sendHeatmapQuery()
-    $scope.$watch(
-      function() {
-        return cloudberry.heatmapMapResult;
-      },
-
-      function(newResult) {
-        if (cloudberry.parameters.maptype === "heatmap"){
-          $scope.result = newResult;
-          if (Object.keys($scope.result).length !== 0) {
-            $scope.status.init = false;
-            drawHeatMap($scope.result);
-          } else {
-            drawHeatMap($scope.result);
-          }
-        }
-      }
-    );
-
   });

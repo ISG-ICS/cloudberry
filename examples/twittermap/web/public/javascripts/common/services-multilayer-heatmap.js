@@ -1,37 +1,55 @@
-angular.module("cloudberry.common")
-  .service("multilayerHeatmap", function($timeout, $q, cloudberry, cloudberryConfig){
+angular.module("cloudberry.map")
+  .service("multilayerHeatmap", function($timeout, $q, cloudberry, cloudberryConfig, cloudberryClient, queryUtil){
     var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
     var defaultHeatmapSamplingDayRange = parseInt(config.heatmapSamplingDayRange);
     var defaultNonSamplingDayRange = 1500;
-
+    var instance;
     function initheatMap(scope){
       var unitRadius = parseInt(config.heatmapUnitRadius); // getting the default radius for a tweet
       this.layer = L.heatLayer([], {radius: unitRadius});
-      var instance = this;
-
-      scope.$watch(
-        function() {
-          return cloudberry.heatmapMapResult;
-        },
-        function(newResult) {
-          if (cloudberry.parameters.maptype === "heatmap"){
-            scope.result = newResult;
-            if (Object.keys(scope.result).length !== 0) {
-              scope.status.init = false;
-            }
-            drawHeatMap(scope.result,instance);
-          }
-        }
-      );
-
+      instance = this;
       var deferred = $q.defer();
       deferred.resolve();
       return deferred.promise;            
     }
-
+  
+    //This function handle all events for heatmap
+    function heatMapHandler(){
+      
+      var heatJson = {
+        dataset: cloudberry.parameters.dataset,
+        filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultHeatmapSamplingDayRange, cloudberry.parameters.geoIds),
+        select: {
+          order: ["-create_at"],
+          limit: queryUtil.defaultHeatmapLimit,
+          offset: 0,
+          field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+        },
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      };
+      
+      cloudberryClient.send(heatJson,function(id,resultSet){
+        if(angular.isArray(resultSet[0])){
+          drawHeatMap(resultSet[0]);
+          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+          cloudberry.heatmapMapResult = resultSet[0];
+        }
+      },"heatMapResult");
+      
+      var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+      
+      cloudberryClient.send(heatTimeJson,function(id,resultSet){
+        if(angular.isArray(resultSet[0])){
+          cloudberry.commonTimeSeriesResult = resultSet[0];
+        }
+      },"heatTime");
+    }
+  
     // For randomize coordinates by bounding_box
     var randomizationSeed;
-
+    
     // javascript does not provide API for setting seed for its random function, so we need to implement it ourselves.
     function customRandom() {
       var x = Math.sin(randomizationSeed++) * 10000;
@@ -52,7 +70,6 @@ angular.module("cloudberry.common")
     }
 
     function drawHeatMap(result,ref){
-      var instance = ref;
       function setHeatMapPoints(points) {
         instance.layer.setLatLngs(points);
         instance.layer.redraw();
@@ -78,63 +95,6 @@ angular.module("cloudberry.common")
     function zoomFunction(){
     }
 
-    function createHeatmapQuery(){
-      var heatJson = (JSON.stringify({
-        dataset: this.parameters.dataset,
-        filter: cloudberry.getFilter(cloudberry.parameters, defaultHeatmapSamplingDayRange, cloudberry.parameters.geoIds),
-        select: {
-          order: ["-create_at"],
-          limit: defaultHeatmapLimit,
-          offset: 0,
-          field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
-        },
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        },
-        transform: {
-          wrap: {
-            id: this.parameters.id,
-            category: this.parameters.id
-          }
-        }
-      }));
-
-      var heatTimeJson = (JSON.stringify({
-        dataset: this.parameters.dataset,
-        filter: cloudberry.getFilter(cloudberry.parameters, defaultNonSamplingDayRange, cloudberry.parameters.geoIds),
-        group: {
-          by: [{
-            field: "create_at",
-            apply: {
-              name: "interval",
-              args: {
-                unit: cloudberry.parameters.timeBin
-              }
-            },
-            as: cloudberry.parameters.timeBin
-          }],
-          aggregate: [{
-            field: "*",
-            apply: {
-              name: "count"
-            },
-            as: "count"
-          }]
-        },
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        },
-        transform: {
-          wrap: {
-            id: "timeSeries",
-            category: "timeSeries"
-          }
-        }
-      }));
-
-      return [heatJson, heatTimeJson];
-    }
-
     var heatmapService = {
       createLayer(parameters){             
         var deferred = $q.defer();
@@ -143,10 +103,12 @@ angular.module("cloudberry.common")
           parameters,
           layer: {},
           init: initheatMap,
-          draw: drawHeatMap,
           clear: cleanHeatMap,
-          zoom: zoomFunction,
-          createQuery: createHeatmapQuery,
+          onMapTypeChange:heatMapHandler,
+          onChangeSearchKeyword:heatMapHandler,
+          onChangeTimeSeriesRange:heatMapHandler,
+          onZoom:heatMapHandler,
+          onDrag:heatMapHandler
         });
         return deferred.promise;
       }
