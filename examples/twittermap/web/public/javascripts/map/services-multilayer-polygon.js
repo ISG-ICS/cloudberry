@@ -1,12 +1,13 @@
 angular.module('cloudberry.map')
-    .service('multilayerPolygon', function($http, $timeout, $q, leafletData, cloudberry){
+    .service('multilayerPolygon', function($http, $timeout, $q, leafletData, cloudberry, moduleManager){
         
         var ly_style = {}
         var Scope;
+        var instance;
         function initPolygon(scope){
-            var instance = this;
+            instance = this;
             Scope = scope;
-            Scope.on("leafletDirectiveMap.zoomend",zoomFunction)
+            scope.$on("leafletDirectiveMap.zoomend",zoomFunction);
             var polygonStyle = {
                 initStyle: {
                     weight: 0.5,
@@ -204,8 +205,7 @@ angular.module('cloudberry.map')
         }
         
         function zoomFunction(){
-            var instance = this;
-            
+            console.log(instance);
             function resetGeoInfo(level) {
                 instance.status.logicLevel = level;
                 cloudberry.parameters.geoLevel = level;

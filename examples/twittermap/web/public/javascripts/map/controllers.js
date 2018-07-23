@@ -350,6 +350,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.onEachFeature = null;
 
     // Listens to Leaflet's zoomend event and publish it to moduleManager
+    /*
     $scope.$on("leafletDirectiveMap.zoomend", function() {
 
       // Original operations on zoomend event
@@ -410,7 +411,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
         }
       }
-    });
+    });*/
 
     // Listens to Leaflet's dragend event and publish it to moduleManager
     $scope.$on("leafletDirectiveMap.dragend", function() {

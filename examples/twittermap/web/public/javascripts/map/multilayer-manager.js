@@ -83,6 +83,7 @@ angular.module("cloudberry.map")
         dataset: "twitter.ds_tweet",
     }
     addLayer("heatmap", 0, heatmapParameters);
+    addLayer("polygon", 1,{})
     
     //This function register layer to layer manager 
     function addLayer(layerID, active, parameters){ 
