@@ -226,10 +226,10 @@ angular.module('cloudberry.map')
       $scope.$parent.onEachFeature = onEachFeature;
 
       // Subscribe to moduleManager's events
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
+      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
+      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
+      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
+      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
     
     /**
@@ -522,45 +522,8 @@ angular.module('cloudberry.map')
       }
     }
 
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
+    //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
     
     // TODO - get rid of these variables watching by events subscribing and publishing
     // monitor the countmap related variables, update the countmap if necessary
-    $scope.$watchCollection(
-      function() {
-        return {
-          'countmapMapResult': cloudberry.countmapMapResult,
-          'doNormalization': $('#toggle-normalize').prop('checked'),
-          'doSentiment': $('#toggle-sentiment').prop('checked')
-        };
-      },
-
-      function(newResult, oldValue) {
-        if (cloudberry.parameters.maptype == 'countmap'){
-          if (newResult['countmapMapResult'] !== oldValue['countmapMapResult']) {
-            $scope.result = newResult['countmapMapResult'];
-            if (Object.keys($scope.result).length !== 0) {
-              $scope.status.init = false;
-              drawCountMap($scope.result);
-            } else {
-              drawCountMap($scope.result);
-            }
-          }
-          if(newResult['doNormalization'] !== oldValue['doNormalization']) {
-            $scope.doNormalization = newResult['doNormalization'];
-            drawCountMap($scope.result);
-          }
-          if(newResult['doSentiment'] !== oldValue['doSentiment']) {
-            $scope.doSentiment = newResult['doSentiment'];
-            if($scope.doSentiment) {
-              $scope.infoPromp = "Score";  // change the info promp
-            } else {
-              $scope.infoPromp = config.mapLegend;
-            }
-            drawCountMap($scope.result);
-          }
-        }
-      }
-    );
-
   });

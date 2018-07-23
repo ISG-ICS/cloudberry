@@ -362,7 +362,7 @@ angular.module("cloudberry.map")
       }
     }
 
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
+    //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
     
     // TODO - get rid of this watch by doing work inside the callback function in sendPinmapQuery()
     // monitor the pinmap related variables, update the pinmap if necessary

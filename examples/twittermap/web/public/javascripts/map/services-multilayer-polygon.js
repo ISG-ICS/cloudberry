@@ -7,7 +7,18 @@ angular.module('cloudberry.map')
         function initPolygon(scope){
             instance = this;
             Scope = scope;
-            scope.$on("leafletDirectiveMap.zoomend",zoomFunction);
+            scope.$on("leafletDirectiveMap.zoomend",function(){
+              if(cloudberry.parameters.maptype!="countmap")
+              {
+                zoomFunction();
+              }
+            });
+            scope.$on("leafletDirectiveMap.dragend", function(){
+              if(cloudberry.parameters.maptype!="countmap")
+              {
+                dragFunction();
+              }
+            });
             var polygonStyle = {
                 initStyle: {
                     weight: 0.5,
@@ -205,7 +216,6 @@ angular.module('cloudberry.map')
         }
         
         function zoomFunction(){
-            console.log(instance);
             function resetGeoInfo(level) {
                 instance.status.logicLevel = level;
                 cloudberry.parameters.geoLevel = level;
@@ -214,86 +224,87 @@ angular.module('cloudberry.map')
                 }
             }
             
-            if (this.map) {
-                this.status.zoomLevel = this.map.getZoom();
-                this.bounds = this.map.getBounds();
-                if (this.status.zoomLevel > 9) {
+            if (instance.map) {
+                instance.status.zoomLevel = instance.map.getZoom();
+                instance.bounds = instance.map.getBounds();
+                if (instance.status.zoomLevel > 9) {
                     resetGeoInfo("city");
-                    if (this.polygons.statePolygons) {
-                        this.map.removeLayer(this.polygons.statePolygons);
+                    if (instance.polygons.statePolygons) {
+                        instance.map.removeLayer(instance.polygons.statePolygons);
                     }
-                    if (this.polygons.countyPolygons) {
-                        this.map.removeLayer(this.polygons.countyPolygons);
+                    if (instance.polygons.countyPolygons) {
+                        instance.map.removeLayer(instance.polygons.countyPolygons);
                     }
-                    if (this.polygons.stateUpperPolygons) {
-                        this.map.removeLayer(this.polygons.stateUpperPolygons);
+                    if (instance.polygons.stateUpperPolygons) {
+                        instance.map.removeLayer(instance.polygons.stateUpperPolygons);
                     }
-                    this.map.addLayer(this.polygons.countyUpperPolygons);
-                    loadCityJsonByBound(this.onEachFeature);
-                } else if (this.status.zoomLevel > 5) {
+                    instance.map.addLayer(instance.polygons.countyUpperPolygons);
+                    loadCityJsonByBound(instance.onEachFeature);
+                } else if (instance.status.zoomLevel > 5) {
                     resetGeoInfo("county");
-                    //if (!this.status.init) {
-                        cloudberry.query(cloudberry.parameters);
+                    //if (!instance.status.init) {
+                        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+                        //cloudberry.query(cloudberry.parameters);
                     //}
-                    if (this.polygons.statePolygons) {
-                        this.map.removeLayer(this.polygons.statePolygons);
+                    if (instance.polygons.statePolygons) {
+                        instance.map.removeLayer(instance.polygons.statePolygons);
                     }
-                    if (this.polygons.cityPolygons) {
-                        this.map.removeLayer(this.polygons.cityPolygons);
+                    if (instance.polygons.cityPolygons) {
+                        instance.map.removeLayer(instance.polygons.cityPolygons);
                     }
-                    if (this.polygons.countyUpperPolygons) {
-                        this.map.removeLayer(this.polygons.countyUpperPolygons);
+                    if (instance.polygons.countyUpperPolygons) {
+                        instance.map.removeLayer(instance.polygons.countyUpperPolygons);
                     }
-                    this.map.addLayer(this.polygons.stateUpperPolygons);
-                    this.map.addLayer(this.polygons.countyPolygons);
-                } else if (this.status.zoomLevel <= 5) {
+                    instance.map.addLayer(instance.polygons.stateUpperPolygons);
+                    instance.map.addLayer(instance.polygons.countyPolygons);
+                } else if (instance.status.zoomLevel <= 5) {
                     resetGeoInfo("state");
-                    //if (!this.status.init) {
-                        cloudberry.query(cloudberry.parameters);
+                    //if (!instance.status.init) {
+                        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+                        //cloudberry.query(cloudberry.parameters);
                     //}
-                    if (this.polygons.countyPolygons) {
-                        this.map.removeLayer(this.polygons.countyPolygons);
+                    if (instance.polygons.countyPolygons) {
+                        instance.map.removeLayer(instance.polygons.countyPolygons);
                     }
-                    if (this.polygons.cityPolygons) {
-                        this.map.removeLayer(this.polygons.cityPolygons);
+                    if (instance.polygons.cityPolygons) {
+                        instance.map.removeLayer(instance.polygons.cityPolygons);
                     }
-                    if (this.polygons.stateUpperPolygons) {
-                        this.map.removeLayer(this.polygons.stateUpperPolygons);
+                    if (instance.polygons.stateUpperPolygons) {
+                        instance.map.removeLayer(instance.polygons.stateUpperPolygons);
                     }
-                    if (this.polygons.countyUpperPolygons) {
-                        this.map.removeLayer(this.polygons.countyUpperPolygons);
+                    if (instance.polygons.countyUpperPolygons) {
+                        instance.map.removeLayer(instance.polygons.countyUpperPolygons);
                     }
-                    if (this.polygons.statePolygons) {
-                        this.map.addLayer(this.polygons.statePolygons);
+                    if (instance.polygons.statePolygons) {
+                        instance.map.addLayer(instance.polygons.statePolygons);
                     }
                 }
             }
         }
         
-        function dragFunction(){
-            var instance = this;
-            
+        function dragFunction(){            
             //if (!$scope.status.init) {
-                this.bounds = this.map.getBounds();
+                instance.bounds = instance.map.getBounds();
                 var geoData;
-                if (this.status.logicLevel === 'state') {
-                    geoData = this.geojsonData.state;
-                } else if (this.status.logicLevel === 'county') {
-                    geoData = this.geojsonData.county;
-                } else if (this.status.logicLevel === 'city') {
-                    geoData = this.geojsonData.city;
+                if (instance.status.logicLevel === 'state') {
+                    geoData = instance.geojsonData.state;
+                } else if (instance.status.logicLevel === 'county') {
+                    geoData = instance.geojsonData.county;
+                } else if (instance.status.logicLevel === 'city') {
+                    geoData = instance.geojsonData.city;
                 } else {
                     console.error("Error: Illegal value of logicLevel, set to default: state");
-                    this.status.logicLevel = 'state';
-                    geoData = this.geojsonData.state;
+                    instance.status.logicLevel = 'state';
+                    geoData = instance.geojsonData.state;
                 }
             //}
-            if (this.status.logicLevel === 'city') {
-                this.loadCityJsonByBound(this.onEachFeature);
+            if (instance.status.logicLevel === 'city') {
+                instance.loadCityJsonByBound(instance.onEachFeature);
             } else {
-                resetGeoIds(this.bounds, geoData, this.status.logicLevel + "ID");
-                cloudberry.parameters.geoLevel = this.status.logicLevel;
-                cloudberry.query(cloudberry.parameters);
+                resetGeoIds(instance.bounds, geoData, instance.status.logicLevel + "ID");
+                cloudberry.parameters.geoLevel = instance.status.logicLevel;
+                //cloudberry.query(cloudberry.parameters);
+                moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: instance.map.getBounds()});
             }
         }
         

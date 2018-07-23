@@ -13,6 +13,9 @@ angular.module("cloudberry.map")
         {       
           $scope.map.removeLayer(cloudberry.parameters.layers[key].layer);
           cloudberry.parameters.layers[key].active = 0;
+          if(typeof(cloudberry.parameters.layers[key].clear) === "function"){
+            cloudberry.parameters.layers[key].clear();
+          }
         }
         else if(key === layerName && cloudberry.parameters.layers[key].active === 0)
         {
@@ -84,9 +87,10 @@ angular.module("cloudberry.map")
     }
     addLayer("heatmap", 0, heatmapParameters);
     addLayer("polygon", 1,{})
+    addLayer("countmap",1,{})
     
     //This function register layer to layer manager 
-    function addLayer(layerID, active, parameters){ 
+    function addLayer(layerID, active, parameters){
       createLayerService[layerID](parameters).then(function(layer){
         cloudberry.parameters.layers[layerID] = layer;
         cloudberry.parameters.layers[layerID].init($scope).then(function(){
