@@ -225,7 +225,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       };
     }
 
-    function byHashTagRequest(parameters) {
+    // Generate top 50 hash tag JSON request
+    function genHashTagRequest(parameters) {
       return {
         dataset: parameters.dataset,
         filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
@@ -248,8 +249,52 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           order: ["-count"],
           limit: 50,
           offset: 0
+        },
+        transform: {
+          wrap: {
+            id: "hashTagRequest",
+            category: "hashTagRequest"
+          }
         }
       };
+    }
+
+    // Generate latest 10 sample tweet JSON request
+    function genSampleTweetsRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultSamplingDayRange, parameters.geoIds),
+        select: {
+          order: ["-create_at"],
+          limit: defaultSamplingSize,
+          offset: 0,
+          field: ["create_at", "id", "user.id"]
+        },
+        transform: {
+          wrap: {
+            id: "sampleTweetRequest",
+            category: "sampleTweetRequest"
+          }
+        }
+      };
+    }
+
+    function handleSampleTweetsRequest(parameters) {
+
+      // Only 'countmap' needs to send the sample tweet request,
+      // because other map results include sample tweet results as well
+      if (parameters.isSampleTweetsOpen && parameters.maptype === "countmap") {
+        var sampleTweetsRequestJson = JSON.stringify(genSampleTweetsRequest(parameters));
+        ws.send(sampleTweetsRequestJson);
+      }
+    }
+
+    function handleHashTagRequest(parameters) {
+
+      if (parameters.isHashTagOpen) {
+        var hashTagRequestJson = JSON.stringify(genHashTagRequest(parameters));
+        ws.send(hashTagRequestJson);
+      }
     }
 
     var cloudberryService = {
@@ -275,33 +320,17 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       errorMessage: null,
 
       query: function(parameters) {
-      
+
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
 
         // generate query based on map type
         switch (parameters.maptype) {
           case 'countmap':
-            var sampleJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultSamplingDayRange, parameters.geoIds),
-              select: {
-                order: ["-create_at"],
-                limit: defaultSamplingSize,
-                offset: 0,
-                field: ["create_at", "id", "user.id"]
-              },
-              transform: {
-                wrap: {
-                  id: "sample",
-                  category: "sample"
-                }
-              }
-            }));
 
             // Batch request without map result - used when the complete map result cache hit case
             var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+              batch: [byTimeRequest(parameters)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
               },
@@ -312,7 +341,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters), byHashTagRequest(parameters)],
+                batch: [byTimeRequest(parameters)],
                 transform: {
                     wrap: {
                         id: "batchWithoutGeoRequest",
@@ -329,8 +358,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
             // This case also covers the complete cache miss case.
             var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
-                byHashTagRequest(parameters)],
+              batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
               },
@@ -341,8 +369,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache),
-                    byHashTagRequest(parameters)],
+                batch: [byTimeRequest(parameters), byGeoRequest(parameters, geoIdsNotInCache)],
                 transform: {
                     wrap: {
                         id: "batchWithPartialGeoRequest",
@@ -356,7 +383,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               cloudberryService.countmapMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
                 cloudberryService.parameters.geoLevel);
 
-              ws.send(sampleJson);
               ws.send(batchWithoutGeoRequest);
             }
             // Partial map result cache hit case
@@ -364,7 +390,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
               cloudberryService.countmapPartialMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
                     cloudberryService.parameters.geoLevel);
 
-              ws.send(sampleJson);
               ws.send(batchWithPartialGeoRequest);
             }
             break;
@@ -492,6 +517,17 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             // unrecognized map type
             break;
         }
+
+        cloudberryService.querySidebar(parameters);
+      },
+
+      querySidebar(parameters) {
+
+        if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
+          return;
+
+        handleSampleTweetsRequest(parameters);
+        handleHashTagRequest(parameters);
       }
     };
 
@@ -501,14 +537,13 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
         switch (result.category) {
 
-          case "sample":
+          case "sampleTweetRequest":
             cloudberryService.commonTweetResult = result.value[0];
             break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
               cloudberryService.commonTimeSeriesResult = result.value[0];
-              cloudberryService.commonHashTagResult = result.value[1];
             }
             break;
           // Partial map result cache hit or complete cache miss case
@@ -516,7 +551,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             if(angular.isArray(result.value)) {
               cloudberryService.commonTimeSeriesResult = result.value[0];
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
-              cloudberryService.commonHashTagResult = result.value[2];
             }
             // When the query is executed completely, we update the map result cache.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
@@ -549,6 +583,11 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
           case "pointsTime":
             if(angular.isArray(result.value)) {
               cloudberryService.commonTimeSeriesResult = result.value[0];
+            }
+            break;
+          case "hashTagRequest":
+            if(angular.isArray(result.value)) {
+              cloudberryService.commonHashTagResult = result.value[0];
             }
             break;
           case "totalCount":
