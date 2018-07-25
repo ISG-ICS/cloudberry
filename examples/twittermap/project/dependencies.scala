@@ -67,7 +67,9 @@ object Dependencies {
     "org.webjars" % "font-awesome" % "4.5.0",
     "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
     // other module
-    "com.fasterxml.jackson.core" % "jackson-core" % "2.9.4"
+    "com.fasterxml.jackson.core" % "jackson-core" % "2.9.4",
+    // Added jquery-ui for showing/hiding the time series histogram.
+    "org.webjars.bower" % "jquery-ui" % "1.12.1"
 
   ) ++ testDeps
 }
