@@ -101,8 +101,8 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
         val timeInterval: JsValue = JsObject(Seq(
             "timeInterval" -> JsObject(Seq(
-                "min" -> JsNumber(curInterval.getStart().getMillis()),
-                "max" -> JsNumber(boundary.getEnd().getMillis())
+                "start" -> JsNumber(curInterval.getStart().getMillis()),
+                "end" -> JsNumber(boundary.getEnd().getMillis())
             ))
         ))
         // for query with slicing request, add current timeInterval information in its query results.
@@ -124,8 +124,8 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
         val timeInterval: JsValue = JsObject(Seq(
             "timeInterval" -> JsObject(Seq(
-                "min" -> JsNumber(curInterval.getStart().getMillis()),
-                "max" -> JsNumber(boundary.getEnd().getMillis())
+                "start" -> JsNumber(curInterval.getStart().getMillis()),
+                "end" -> JsNumber(boundary.getEnd().getMillis())
             ))
         ))
         // for query with slicing request, add current timeInterval information in its query results.
