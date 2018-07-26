@@ -126,13 +126,19 @@ class OriginalDataAgentTest extends Specification with Mockito {
       val cardinality = Cardinality(initialMaxTime, dateNow, additionalCount)
 
       val agent = TestActorRef(OriginalDataAgent.props(dataSetInfo, mockQueryParser, mockConn, Config.Default), parent.ref, "child")
-      parent.expectMsg(NewStats(dataSetInfo.name, initialCount))
+      var newTestStates = parent.receiveOne(3.seconds).asInstanceOf[NewStats]
+      assert( newTestStates.additionalCount == initialCount )
+      assert( newTestStates.dbName == dataSetInfo.name )
+      assert( Math.abs(newTestStates.dataInterval.getStartMillis - initialMinTime.getMillis) < 5000 && Math.abs(newTestStates.dataInterval.getEndMillis - dateNow.getMillis) < 5000 )
 
       parent.expectNoMsg()
       sender.send(agent, UpdateStats)
 
-      parent.expectMsg(NewStats(dataSetInfo.name, additionalCount))
-
+      newTestStates = parent.receiveOne(3.seconds).asInstanceOf[NewStats]
+      assert( newTestStates.additionalCount == additionalCount )
+      assert( newTestStates.dbName == dataSetInfo.name )
+      assert( Math.abs(newTestStates.dataInterval.getStartMillis - initialMinTime.getMillis) < 5000 && Math.abs(newTestStates.dataInterval.getEndMillis - dateNow.getMillis) < 5000 )
+      
       ok
     }
     "answer estimable query using stats only" in new TestkitExample {
