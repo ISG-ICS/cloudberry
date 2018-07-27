@@ -96,6 +96,30 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $scope.hashTagsList = newResult;
       }
     );
+    $scope.drawChart=function (element) {
+      console.log(element);
+      if(!document.getElementById("collapse"+element.tag).classList.contains("in")){
+        var ctx = document.getElementById("myChart"+element.tag).getContext('2d');
+        setTimeout(function() {
+          var myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: [1750,1800,1850,1900,1950,1999,2050],
+              datasets: [{
+                data: [106,107,111,133,221,783,2478],
+                label: "Africa",
+                borderColor: "#3e95cd",
+                fill: false
+              }
+              ]
+            },
+            options: {
+            }
+          });
+        },300);
+      }
+    };
+
   })
   .directive("hashtag", function () {
     return {
@@ -103,9 +127,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       controller: "HashTagCtrl",
       template: [
         '<div class="hashtagDiv">' +
-        '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" class="accordion-toggle hashtagEle"  data-toggle="collapse" data-target="#collapse{{r.tag}}">' +
+        '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" ng-click="drawChart(r)" repeat-finish class="accordion-toggle hashtagEle"  data-toggle="collapse" data-target="#collapse{{r.tag}}">' +
         '<div class="row"><div class="col-xs-8"># {{r.tag}}</div><div class="col-xs-4">{{r.count}}</div></div> ' +
-        '<div id="collapse{{r.tag}}" class="collapse">line chart...<br/></div>'+
+        '<div id="collapse{{r.tag}}" class="collapse hashtagChart"><canvas id="myChart{{r.tag}}" ></canvas></div>'+
         '</div>' +
         '</div>'
       ].join('')
