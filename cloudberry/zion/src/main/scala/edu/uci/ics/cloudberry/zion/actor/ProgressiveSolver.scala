@@ -100,16 +100,13 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
         val timeInterval: JsValue = JsObject(Seq(
-            "timeInterval" -> JsObject(Seq(
-                "start" -> JsNumber(curInterval.getStart().getMillis()),
-                "end" -> JsNumber(boundary.getEnd().getMillis())
-            ))
+            "start" -> JsNumber(curInterval.getStart().getMillis()),
+            "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Seq(Json.obj(queryGroup.postTransform.transform(JsArray(mergedResults))), Json.obj(timeInterval))
-        var jsonResults = results.foldLeft(Json.obj())((obj, a) => obj.deepMerge(a.as[JsObject]))
+        var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval)
 
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, jsonResults)
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -123,16 +120,13 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
 
         val timeInterval: JsValue = JsObject(Seq(
-            "timeInterval" -> JsObject(Seq(
-                "start" -> JsNumber(curInterval.getStart().getMillis()),
-                "end" -> JsNumber(boundary.getEnd().getMillis())
-            ))
+            "start" -> JsNumber(curInterval.getStart().getMillis()),
+            "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Seq(Json.obj(queryGroup.postTransform.transform(JsArray(mergedResults))), Json.obj(timeInterval))
-        var jsonResults = results.foldLeft(Json.obj())((obj, a) => obj.deepMerge(a.as[JsObject]))
+        var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval)
 
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, jsonResults)
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
         issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
