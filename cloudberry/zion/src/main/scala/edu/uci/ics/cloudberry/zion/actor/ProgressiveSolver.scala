@@ -106,7 +106,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
             ))
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Seq(queryGroup.postTransform.transform(JsArray(mergedResults)), timeInterval)
+        var results = Seq(Json.obj(queryGroup.postTransform.transform(JsArray(mergedResults))), Json.obj(timeInterval))
         var jsonResults = results.foldLeft(Json.obj())((obj, a) => obj.deepMerge(a.as[JsObject]))
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, jsonResults)
@@ -129,7 +129,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
             ))
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Seq(queryGroup.postTransform.transform(JsArray(mergedResults)), timeInterval)
+        var results = Seq(Json.obj(queryGroup.postTransform.transform(JsArray(mergedResults))), Json.obj(timeInterval))
         var jsonResults = results.foldLeft(Json.obj())((obj, a) => obj.deepMerge(a.as[JsObject]))
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, jsonResults)
