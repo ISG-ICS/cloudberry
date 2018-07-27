@@ -102,11 +102,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       restrict: "E",
       controller: "HashTagCtrl",
       template: [
-        '<table class="table" id="hashcount">',
-        '<thead>',
-        '<tr ng-repeat="r in hashTagsList | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
-        '</thead>',
-        '</table>'
+        '<div class="hashtagDiv">' +
+        '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" class="accordion-toggle hashtagEle"  data-toggle="collapse" data-target="#collapse{{r.tag}}">' +
+        '<div class="row"><div class="col-xs-8"># {{r.tag}}</div><div class="col-xs-4">{{r.count}}</div></div> ' +
+        '<div id="collapse{{r.tag}}" class="collapse">line chart...<br/></div>'+
+        '</div>' +
+        '</div>'
       ].join('')
     };
   })

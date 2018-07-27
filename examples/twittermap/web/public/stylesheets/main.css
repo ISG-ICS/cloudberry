@@ -234,5 +234,13 @@ time-series {
   margin-left: 5px;
 }
 
+.hashtagDiv{
+  margin: 8% 0 0 0;
+}
+
+.hashtagEle{
+  padding: 3% 0 3% 5%;
+  border-bottom:1px solid #ddd;
+}
 
 
