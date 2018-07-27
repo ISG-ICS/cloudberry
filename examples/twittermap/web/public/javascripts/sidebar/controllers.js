@@ -96,38 +96,40 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $scope.hashTagsList = newResult;
       }
     );
-    $scope.drawChart=function (element) {
-      console.log(element);
-      if(!document.getElementById("collapse"+element.tag).classList.contains("in")){
-        var ctx = document.getElementById("myChart"+element.tag).getContext('2d');
-        setTimeout(function() {
-          var myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-              labels: [1750,1800,1850,1900,1950,1999,2050],
-              datasets: [{
-                data: [106,107,111,133,221,783,2478],
-                label: "Africa",
-                borderColor: "#3e95cd",
-                fill: false
-              }
-              ]
-            },
-            options: {
-            }
-          });
-        },300);
-      }
-    };
 
+    // draw the line chart when collapse is expanded
+    $('#AllCollapse').on('shown.bs.collapse', function(e) {
+      var chartTarget = e.target.firstChild;
+      var hashtagName = chartTarget.id.substring(7);
+      if(hashtagName){
+        console.log(hashtagName);
+        var ctx = chartTarget.getContext('2d');
+        var myChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: [1750,1800,1850,1900,1950,1999,2050],
+            datasets: [{
+              data: [106,107,111,133,221,783,2478],
+              label: "Africa",
+              borderColor: "#3e95cd",
+              fill: false
+            }
+            ]
+          },
+          options: {
+          }
+        });
+      }
+
+    });
   })
   .directive("hashtag", function () {
     return {
       restrict: "E",
       controller: "HashTagCtrl",
       template: [
-        '<div class="hashtagDiv">' +
-        '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" ng-click="drawChart(r)" class="accordion-toggle hashtagEle"  data-toggle="collapse" data-target="#collapse{{r.tag}}">' +
+        '<div id="AllCollapse" class="hashtagDiv">' +
+        '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" class="accordion-toggle hashtagEle"  data-toggle="collapse"  data-target="#collapse{{r.tag}}">' +
         '<div class="row"><div class="col-xs-8"># {{r.tag}}</div><div class="col-xs-4">{{r.count}}</div></div> ' +
         '<div id="collapse{{r.tag}}" class="collapse hashtagChart"><canvas id="myChart{{r.tag}}" ></canvas></div>'+
         '</div>' +
