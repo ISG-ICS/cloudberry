@@ -217,6 +217,11 @@ angular.module("cloudberry.common")
         };
       },
 
+      // Get the tendency chart data for a specific hashtag
+      getHashTagChartDataRequest(parameters, hashtagName){
+
+      },
+
       // Generate latest 10 sample tweet JSON request
       getSampleTweetsRequest(parameters) {
         return {

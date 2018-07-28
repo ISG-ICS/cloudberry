@@ -85,8 +85,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
-  .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry, queryUtil, cloudberryClient) {
     $scope.hashTagsList = null;
+    $scope.selectedHashtag = null;
+
     // TODO - get rid of this watch by doing work inside the callback function in sendHashTagQuery()
     $scope.$watch(
       function () {
@@ -97,13 +99,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     );
 
-    // draw the line chart when collapse is expanded
-    $('#AllCollapse').on('shown.bs.collapse', function(e) {
-      var chartTarget = e.target.firstChild;
-      var hashtagName = chartTarget.id.substring(7);
-      if(hashtagName){
-        console.log(hashtagName);
-        var ctx = chartTarget.getContext('2d');
+    //draw tendency chart
+    function drawChart(chartData) {
+      if(chartData.length !== 0){
+        var ctx = document.getElementById("myChart"+$scope.selectedHashtag).getContext('2d');
         var myChart = new Chart(ctx, {
           type: 'line',
           data: {
@@ -120,7 +119,22 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           }
         });
       }
+    }
 
+    // send query of hashtag, and draw the line chart when collapse is expanded
+    $('#AllCollapse').on('shown.bs.collapse', function(e) {
+      $scope.selectedHashtag = e.target.firstChild.id.substring(7);
+      if($scope.selectedHashtag){
+        console.log($scope.selectedHashtag);
+
+        // send query to cloudberry
+        var hashtagChartDataRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
+        cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
+          var chartData = resultSet[0];
+          console.log(chartData);
+          drawChart(chartData);
+        }, "hashtagChartDataRequest");
+      }
     });
   })
   .directive("hashtag", function () {
@@ -131,7 +145,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         '<div id="AllCollapse" class="hashtagDiv">' +
         '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" class="accordion-toggle hashtagEle"  data-toggle="collapse"  data-target="#collapse{{r.tag}}">' +
         '<div class="row"><div class="col-xs-8"># {{r.tag}}</div><div class="col-xs-4">{{r.count}}</div></div> ' +
-        '<div id="collapse{{r.tag}}" class="collapse hashtagChart"><canvas id="myChart{{r.tag}}" ></canvas></div>'+
+        '<div id="collapse{{r.tag}}" class="collapse hashtagChart"><canvas id="myChart{{r.tag}}" height="155" ></canvas></div>'+
         '</div>' +
         '</div>'
       ].join('')
