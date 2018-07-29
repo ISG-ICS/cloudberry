@@ -99,23 +99,88 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     );
 
+    // find difference of two arrays
+    function arr_diff (a1, a2) {
+      var a = [], diff = [];
+      for (var i = 0; i < a1.length; i++) {
+        a[a1[i]] = true;
+      }
+      for (var j = 0; j < a2.length; j++) {
+        if (a[a2[j]]) {
+          delete a[a2[j]];
+        } else {
+          a[a2[j]] = true;
+        }
+      }
+      for (var k in a) {
+        diff.push(k);
+      }
+      return diff;
+    }
+
+    // preprocess query result to chart data could be used by chart.js
+    function preProcess(queryResult) {
+      var chartData = [];
+      var hasCountMonth = [];
+      var zeroCountMonth = [];
+      var minDate = cloudberry.parameters.timeInterval.start;
+      var maxDate = cloudberry.parameters.timeInterval.end;
+
+      // add empty data point
+      for (var i = 0; i < queryResult.length; i++) {
+        var thisMonth = new Date(queryResult[i].month.split(('-'))[0],queryResult[i].month.split(('-'))[1]);
+        hasCountMonth.push(thisMonth);
+        chartData.push({x: thisMonth, y:queryResult[i].count})
+      }
+      for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
+        zeroCountMonth.push(new Date(m.getTime()));
+      }
+      zeroCountMonth = arr_diff(hasCountMonth,zeroCountMonth);
+      for (var j = 0; j < zeroCountMonth.length; j++) {
+        chartData.push({x: new Date(zeroCountMonth[j]), y:0});
+      }
+
+      // sort the date
+      chartData.sort(function(a,b){
+        return a.x - b.x;
+      });
+      return chartData;
+    }
+
     //draw tendency chart
     function drawChart(chartData) {
       if(chartData.length !== 0){
         var ctx = document.getElementById("myChart"+$scope.selectedHashtag).getContext('2d');
         var myChart = new Chart(ctx, {
           type: 'line',
-          data: {
-            labels: [1750,1800,1850,1900,1950,1999,2050],
-            datasets: [{
-              data: [106,107,111,133,221,783,2478],
-              label: "Africa",
-              borderColor: "#3e95cd",
-              fill: false
-            }
-            ]
+          data:{
+            datasets:[{
+              lineTension: 0,
+              data:chartData,
+              borderColor:"#3e95cd",
+              borderWidth: 0.8,
+              pointRadius: 1.5
+            }]
           },
+
           options: {
+            legend: {
+              display: false
+            },
+            scales: {
+              xAxes: [{
+                type: 'time',
+                time: {
+                  unit:'month'
+                }
+              }],
+              yAxes: [{
+                ticks: {
+                  beginAtZero: true,
+                  suggestedMax: 4
+                }
+              }]
+            }
           }
         });
       }
@@ -125,14 +190,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $('#AllCollapse').on('shown.bs.collapse', function(e) {
       $scope.selectedHashtag = e.target.firstChild.id.substring(7);
       if($scope.selectedHashtag){
-        console.log($scope.selectedHashtag);
-
         // send query to cloudberry
-        var hashtagChartDataRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
+        var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
-          var chartData = resultSet[0];
-          console.log(chartData);
-          drawChart(chartData);
+          if(angular.isArray(resultSet)) {
+            drawChart(preProcess(resultSet[0]));
+          }
         }, "hashtagChartDataRequest");
       }
     });

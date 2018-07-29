@@ -217,9 +217,42 @@ angular.module("cloudberry.common")
         };
       },
 
-      // Get the tendency chart data for a specific hashtag
+      // Get the tendency chart data for a specific hash tag
       getHashTagChartDataRequest(parameters, hashtagName){
-
+        var queryStartDate = new Date(parameters.timeInterval.end);
+        queryStartDate.setDate(queryStartDate.getDate() - queryUtil.defaultNonSamplingDayRange);
+        queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+        return {
+          dataset: parameters.dataset,
+          filter: [{
+            field: "create_at",
+            relation: "inRange",
+            values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+          }, {
+          field: "text",
+            relation: "contains",
+            values: [hashtagName]
+          }],
+          group: {
+            by: [{
+              field: "create_at",
+              apply: {
+                name: "interval",
+                args: {
+                  unit: "month"
+                }
+              },
+              as: "month"
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        };
       },
 
       // Generate latest 10 sample tweet JSON request
