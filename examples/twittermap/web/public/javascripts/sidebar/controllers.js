@@ -162,7 +162,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
               pointRadius: 1.5
             }]
           },
-
           options: {
             legend: {
               display: false
@@ -172,12 +171,18 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
                 type: 'time',
                 time: {
                   unit:'month'
+                },
+                gridLines:{
+                  display: false
                 }
               }],
               yAxes: [{
                 ticks: {
                   beginAtZero: true,
                   suggestedMax: 4
+                },
+                gridLines:{
+                  display: false
                 }
               }]
             }
@@ -208,7 +213,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         '<div id="AllCollapse" class="hashtagDiv">' +
         '<div ng-repeat="r in hashTagsList | orderBy:\'-count\'" class="accordion-toggle hashtagEle"  data-toggle="collapse"  data-target="#collapse{{r.tag}}">' +
         '<div class="row"><div class="col-xs-8"># {{r.tag}}</div><div class="col-xs-4">{{r.count}}</div></div> ' +
-        '<div id="collapse{{r.tag}}" class="collapse hashtagChart"><canvas id="myChart{{r.tag}}" height="155" ></canvas></div>'+
+        '<div id="collapse{{r.tag}}" class="collapse hashtagChart"><canvas id="myChart{{r.tag}}" height="100" ></canvas></div>'+
         '</div>' +
         '</div>'
       ].join('')
