@@ -219,20 +219,34 @@ angular.module("cloudberry.common")
 
       // Get the tendency chart data for a specific hash tag
       getHashTagChartDataRequest(parameters, hashtagName){
+        var spatialField = queryUtil.getLevel(parameters.geoLevel);
         var queryStartDate = new Date(parameters.timeInterval.end);
         queryStartDate.setDate(queryStartDate.getDate() - queryUtil.defaultNonSamplingDayRange);
         queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
-        return {
-          dataset: parameters.dataset,
-          filter: [{
+        var filter = [
+          {
             field: "create_at",
             relation: "inRange",
             values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
           }, {
-          field: "text",
+            field: "text",
             relation: "contains",
             values: [hashtagName]
-          }],
+          }
+        ];
+        if (parameters.geoIds.length <= 2000){
+          filter.push(
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: parameters.geoIds
+            }
+          );
+        }
+
+        return {
+          dataset: parameters.dataset,
+          filter: filter,
           group: {
             by: [{
               field: "create_at",
