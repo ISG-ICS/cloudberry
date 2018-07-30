@@ -128,14 +128,14 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
       // add empty data point
       for (var i = 0; i < queryResult.length; i++) {
-        var thisMonth = new Date(queryResult[i].month.split(('-'))[0],queryResult[i].month.split(('-'))[1]);
+        var thisMonth = new Date(queryResult[i].month.split(('-'))[0],queryResult[i].month.split(('-'))[1]-1);
         hasCountMonth.push(thisMonth);
         chartData.push({x: thisMonth, y:queryResult[i].count})
       }
       for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
         zeroCountMonth.push(new Date(m.getTime()));
       }
-      zeroCountMonth = arr_diff(hasCountMonth,zeroCountMonth);
+      zeroCountMonth = arr_diff(zeroCountMonth,hasCountMonth);
       for (var j = 0; j < zeroCountMonth.length; j++) {
         chartData.push({x: new Date(zeroCountMonth[j]), y:0});
       }
