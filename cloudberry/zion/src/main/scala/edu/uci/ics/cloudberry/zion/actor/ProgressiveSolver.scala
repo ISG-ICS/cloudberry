@@ -99,7 +99,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
-        val timeInterval: JsValue = JsObject(Seq(
+        val timeInterval = JsObject(Seq(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
@@ -107,7 +107,6 @@ class ProgressiveSolver(val dataManager: ActorRef,
         var results = Json.toJson(Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval))
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
-
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -120,7 +119,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
           curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
         }
 
-        val timeInterval: JsValue = JsObject(Seq(
+        val timeInterval = JsObject(Seq(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
