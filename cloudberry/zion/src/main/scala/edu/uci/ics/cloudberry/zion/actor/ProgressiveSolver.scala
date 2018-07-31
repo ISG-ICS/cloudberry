@@ -99,12 +99,13 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
-        val timeInterval = JsObject(Seq(
-            "timeInterval" -> JsObject(Seq(
-                "start" -> JsNumber(curInterval.getStart().getMillis()),
-                "end" -> JsNumber(boundary.getEnd().getMillis())
-            ))
-        ))
+        val timeInterval = JsObject(
+            "timeInterval" -> JsObject(
+                "start" -> JsNumber(curInterval.getStart().getMillis()) ::
+                "end" -> JsNumber(boundary.getEnd().getMillis()) ::
+            Nil
+            ) :: Nil
+        )
         // for query with slicing request, add current timeInterval information in its query results.
         var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] ++ timeInterval
 
@@ -121,12 +122,13 @@ class ProgressiveSolver(val dataManager: ActorRef,
           curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
         }
 
-        val timeInterval = JsObject(Seq(
-            "timeInterval" -> JsObject(Seq(
-                "start" -> JsNumber(curInterval.getStart().getMillis()),
-                "end" -> JsNumber(boundary.getEnd().getMillis())
-            ))
-        ))
+        val timeInterval = JsObject(
+            "timeInterval" -> JsObject(
+                "start" -> JsNumber(curInterval.getStart().getMillis()) ::
+                "end" -> JsNumber(boundary.getEnd().getMillis()) ::
+                Nil
+            ) :: Nil
+        )
         // for query with slicing request, add current timeInterval information in its query results.
         var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] ++ timeInterval
 
