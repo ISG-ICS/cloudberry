@@ -100,14 +100,14 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
         val timeInterval = JsObject(
-            "timeInterval" -> JsObject(
-                "start" -> JsNumber(curInterval.getStart().getMillis()) ::
-                "end" -> JsNumber(boundary.getEnd().getMillis()) ::
+          "timeInterval" -> JsObject(
+            "start" -> JsNumber(curInterval.getStart().getMillis()) ::
+            "end" -> JsNumber(boundary.getEnd().getMillis()) ::
             Nil
-            ) :: Nil
+          ) :: Nil
         )
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] ++ timeInterval
+        val results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] ++ timeInterval
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
@@ -123,14 +123,14 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
 
         val timeInterval = JsObject(
-            "timeInterval" -> JsObject(
-                "start" -> JsNumber(curInterval.getStart().getMillis()) ::
-                "end" -> JsNumber(boundary.getEnd().getMillis()) ::
-                Nil
-            ) :: Nil
+          "timeInterval" -> JsObject(
+            "start" -> JsNumber(curInterval.getStart().getMillis()) ::
+            "end" -> JsNumber(boundary.getEnd().getMillis()) ::
+            Nil
+          ) :: Nil
         )
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] ++ timeInterval
+        val results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] ++ timeInterval
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
         issueQueryGroup(nextInterval, queryGroup)
