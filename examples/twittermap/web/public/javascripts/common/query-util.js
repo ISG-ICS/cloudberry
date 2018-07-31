@@ -218,21 +218,10 @@ angular.module("cloudberry.common")
       },
 
       // Get the tendency chart data for a specific hash tag
-      // Todo: add a filter of hashtags, after cloundberry support contains relation in bag datatype
-      getHashTagChartDataRequest(parameters, hashtagName){
-         var filter = queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds);
-         // filter.push(
-         //   {
-         //      field: "hashtags",
-         //      relation: "contains",
-         //      values: [hashtagName]
-         //   }
-         // );
-
-
+      getHashTagChartDataRequest(parameters){
         return {
           dataset: parameters.dataset,
-          filter: filter,
+          filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds),
           unnest: [{
             hashtags: "tag"
           }],
