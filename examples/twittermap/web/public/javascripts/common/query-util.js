@@ -218,37 +218,30 @@ angular.module("cloudberry.common")
       },
 
       // Get the tendency chart data for a specific hash tag
+      // Todo: add a filter of hashtags, after cloundberry support contains relation in bag datatype
       getHashTagChartDataRequest(parameters, hashtagName){
-        var spatialField = queryUtil.getLevel(parameters.geoLevel);
-        var queryStartDate = new Date(parameters.timeInterval.end);
-        queryStartDate.setDate(queryStartDate.getDate() - queryUtil.defaultNonSamplingDayRange);
-        queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
-        var filter = [
-          {
-            field: "create_at",
-            relation: "inRange",
-            values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
-          }, {
-            field: "text",
-            relation: "contains",
-            values: [hashtagName]
-          }
-        ];
-        if (parameters.geoIds.length <= 2000){
-          filter.push(
-            {
-              field: "geo_tag." + spatialField,
-              relation: "in",
-              values: parameters.geoIds
-            }
-          );
-        }
+         var filter = queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds);
+         // filter.push(
+         //   {
+         //      field: "hashtags",
+         //      relation: "contains",
+         //      values: [hashtagName]
+         //   }
+         // );
+
 
         return {
           dataset: parameters.dataset,
           filter: filter,
+          unnest: [{
+            hashtags: "tag"
+          }],
           group: {
-            by: [{
+            by: [
+              {
+              field: "tag"
+              },
+              {
               field: "create_at",
               apply: {
                 name: "interval",

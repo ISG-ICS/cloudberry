@@ -15,6 +15,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
       cloudberryClient.send(hashtagRequest, function(id, resultSet) {
         cloudberry.commonHashTagResult = resultSet[0];
+        console.log(resultSet[0]);
       }, "hashtagRequest");
       $scope.isHashTagOutdated = false;
     }
@@ -135,7 +136,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
         zeroCountMonth.push(new Date(m.getTime()));
       }
-      zeroCountMonth = arr_diff(zeroCountMonth,hasCountMonth);
+      zeroCountMonth = arr_diff(hasCountMonth,zeroCountMonth);
       for (var j = 0; j < zeroCountMonth.length; j++) {
         chartData.push({x: new Date(zeroCountMonth[j]), y:0});
       }
@@ -200,6 +201,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
           if(angular.isArray(resultSet)) {
             drawChart(preProcess(resultSet[0]));
+            console.log(resultSet[0]);
           }
         }, "hashtagChartDataRequest");
       }
