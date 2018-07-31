@@ -99,15 +99,15 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
-        val timeInterval: JsValue = JsObject(Seq(
+        val timeInterval = JsObject(Seq(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Json.toJson(Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval))
+        var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval)
+log.debug(s"Jul31 1:35pm results ${results}")
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
-
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -120,12 +120,13 @@ class ProgressiveSolver(val dataManager: ActorRef,
           curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
         }
 
-        val timeInterval: JsValue = JsObject(Seq(
+        val timeInterval = JsObject(Seq(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        var results = Json.toJson(Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval))
+        var results = Json.toJson(queryGroup.postTransform.transform(JsArray(mergedResults))).as[JsObject] + ("timeInterval", timeInterval)
+log.debug(s"Jul31 1:35pm results ${results}")
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
         issueQueryGroup(nextInterval, queryGroup)
