@@ -108,8 +108,9 @@ class ProgressiveSolver(val dataManager: ActorRef,
         )
         // for query with slicing request, add current timeInterval information in its query results.
         val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
+        val timeIntervalValue = Json.toJson(timeInterval)
+        val results = timeIntervalValue ++ infoValue
         val infoObject = Json.toJson(infoValue).as[JsObject]
-        val results = Json.toJson(infoObject ++ timeInterval)
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
@@ -133,8 +134,9 @@ class ProgressiveSolver(val dataManager: ActorRef,
         )
         // for query with slicing request, add current timeInterval information in its query results.
         val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
+        val timeIntervalValue = Json.toJson(timeInterval)
+        val results = timeIntervalValue ++ infoValue
         val infoObject = Json.toJson(infoValue).as[JsObject]
-        val results = Json.toJson(infoObject ++ timeInterval)
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
         issueQueryGroup(nextInterval, queryGroup)
