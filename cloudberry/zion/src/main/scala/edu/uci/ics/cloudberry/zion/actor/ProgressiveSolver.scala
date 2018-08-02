@@ -107,11 +107,15 @@ class ProgressiveSolver(val dataManager: ActorRef,
           ) :: Nil
         )
         // for query with slicing request, add current timeInterval information in its query results.
-        val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
-        val infoObject = infoValue.asOpt[JsObject].getOrElse(JsObject(Seq.empty))
-        val results = Json.toJson(infoObject ++ timeInterval)
-
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
+        val infoValue = queryGroup.postTransform.transform(JsArray(returnedResult))
+        if (infoValue.isInstanceOf[JsObject]) {
+          val infoObject = infoValue.asOpt[JsObject].getOrElse(JsObject(Seq.empty))
+          val results = Json.toJson(infoObject ++ timeInterval)
+          reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
+        } else if (infoValue.isInstanceOf[JsArray]) {
+          val results = Json.toJson(JsObject("value" -> infoValue :: Nil) ++ timeInterval)
+          reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
+        }
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -133,11 +137,17 @@ class ProgressiveSolver(val dataManager: ActorRef,
         )
         // for query with slicing request, add current timeInterval information in its query results.
         val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
-        val infoObject = infoValue.asOpt[JsObject].getOrElse(JsObject(Seq.empty))
-        val results = Json.toJson(infoObject ++ timeInterval)
+        if (infoValue.isInstanceOf[JsObject]) {
+          val infoObject = infoValue.asOpt[JsObject].getOrElse(JsObject(Seq.empty))
+          val results = Json.toJson(infoObject ++ timeInterval)
+          reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
+          issueQueryGroup(nextInterval, queryGroup)
+        } else if (infoValue.isInstanceOf[JsArray]) {
+          val results = Json.toJson(JsObject("value" -> infoValue :: Nil) ++ timeInterval)
+          reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
+          issueQueryGroup(nextInterval, queryGroup)
+        }
 
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
-        issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case result: MiniQueryResult =>

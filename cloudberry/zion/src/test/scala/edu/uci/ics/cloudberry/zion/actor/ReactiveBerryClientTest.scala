@@ -195,7 +195,8 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       dataManager.reply(getRet(1))
-      sender.expectMsg(JsArray(Seq(getRet(1))))
+      ///sender.expectMsg(JsArray(Seq(getRet(1))))
+sender.expectMsg(Json.toJson(JsObject("value" -> JsArray(Seq(getRet(1))) :: "timeInterval" -> JsObject("start" -> JsNumber(interval1.getStart.getMillis()) :: "end" -> JsNumber(endTime.getMillis()) :: Nil) :: Nil)))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
@@ -206,7 +207,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval2.getStartMillis must be_>=(startTime.getMillis)
 
       dataManager.reply(getRet(2))
-      sender.expectMsg(JsArray(Seq(getRet(1) ++ getRet(2))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1) ++ getRet(2))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval2.getStart.getMillis()) ::
+          "end" -> JsNumber(endTime.getMillis()) ::
+          Nil) ::
+        Nil)))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
@@ -217,7 +224,14 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval3.getStartMillis must be_>=(startTime.getMillis)
 
       dataManager.reply(getRet(3))
-      sender.expectMsg(JsArray(Seq(getRet(1) ++ getRet(2) ++ getRet(3))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1) ++ getRet(2) ++ getRet(3))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval3.getStart.getMillis()) ::
+          "end" -> JsNumber(endTime.getMillis()) ::
+          Nil) ::
+        Nil)))
+
       ok
     }
 
@@ -271,7 +285,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
           case Some(TimeField("day", _)) => getRet(2)
         }
       )
-      sender.expectMsg(JsArray(Seq(getRet(1), getRet(2))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1), getRet(2))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval2.getStart.getMillis()) ::
+          "end" -> JsNumber(endTime.getMillis()) ::
+          Nil) ::
+        Nil)))
 
       ok
     }
@@ -315,7 +335,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         intervalx = qx.getTimeInterval(TimeField("create_at")).get
         dataManager.reply(getRet(0))
         response ++= getRet(0)
-        sender.expectMsg(JsArray(Seq(response)))
+        sender.expectMsg(Json.toJson(JsObject(
+          "value" -> JsArray(Seq(response)) ::
+          "timeInterval" -> JsObject(
+            "start" -> JsNumber(intervalx.getStart.getMillis()) ::
+            "end" -> JsNumber(endTime.getMillis()) ::
+            Nil) ::
+          Nil)))
 
         dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
         dataManager.reply(Seq(TestQuery.sourceInfo))
@@ -323,6 +349,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       qx.getTimeInterval(TimeField("create_at")).get.getStartMillis must_== startTime.getMillis
 
       dataManager.expectMsg(createView)
+
       ok
     }
     "cancel the haven't finished query if newer query comes" in {
@@ -356,7 +383,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       dataManager.reply(getRet(1))
-      sender.expectMsg(JsArray(Seq(getRet(1))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval1.getStart.getMillis()) ::
+          "end" -> JsNumber(interval1.getEnd.getMillis()) ::
+          Nil) ::
+        Nil)))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
@@ -383,7 +416,14 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval11.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       dataManager.reply(getRet(1))
-      sender.expectMsg(JsArray(Seq(getRet(1))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval11.getStart.getMillis()) ::
+          "end" -> JsNumber(interval11.getEnd.getMillis()) ::
+          Nil) ::
+        Nil)))
+
       ok
     }
     "stop when the number of returning results reached the limit" in {
@@ -425,7 +465,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       dataManager.reply(getRet(1))
-      sender.expectMsg(JsArray(Seq(getRet(1))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval1.getStart.getMillis()) ::
+          "end" -> JsNumber(endTime.getMillis()) ::
+          Nil) ::
+        Nil)))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
@@ -439,7 +485,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         Json.obj("hour" -> 3, "count" -> 3),
         Json.obj("hour" -> 4, "count" -> 4)
       )))
-      sender.expectMsg(JsArray(Seq(getRet(1) ++ getRet(2))))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1) ++ getRet(2))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval2.getStart.getMillis()) ::
+          "end" -> JsNumber(endTime.getMillis()) ::
+          Nil) ::
+        Nil)))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
