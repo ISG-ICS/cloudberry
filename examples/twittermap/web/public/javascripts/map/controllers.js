@@ -350,7 +350,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.onEachFeature = null;
 
     // Listens to Leaflet's zoomend event and publish it to moduleManager
-    /*
     $scope.$on("leafletDirectiveMap.zoomend", function() {
 
       // Original operations on zoomend event
@@ -411,8 +410,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
         }
       }
-    });*/
-    /*
+    });
+
     // Listens to Leaflet's dragend event and publish it to moduleManager
     $scope.$on("leafletDirectiveMap.dragend", function() {
 
@@ -441,7 +440,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         // Publish drag event to moduleManager
         moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: $scope.map.getBounds()});
       }
-    });*/
+    });
 
   })
   .directive("map", function () {
@@ -454,7 +453,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       },
       controller: 'MapCtrl',
       template:[
-        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet><div ng-controller="pinMapCtrl"></div><div ng-controller="heatMapCtrl"></div><div ng-controller="multiLayerManager"></div>'
+        '<leaflet lf-center="center" tiles="tiles" events="events" controls="controls" width="100%" height="100%" ng-init="init()"></leaflet><div ng-controller="multiLayerManager"></div><div ng-controller="pinMapCtrl"></div><div ng-controller="heatMapCtrl"></div>'
       ].join('')
     };
   });
