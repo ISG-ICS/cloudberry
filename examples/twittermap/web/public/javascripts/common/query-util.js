@@ -218,18 +218,22 @@ angular.module("cloudberry.common")
       },
 
       // Get the tendency chart data for a specific hash tag
-      getHashTagChartDataRequest(parameters){
+      getHashTagChartDataRequest(parameters, hashtagName){
+        var filter = queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds);
+        filter.push({
+          field: "tag",
+          relation: "matches",
+          values: [hashtagName]
+        });
+
         return {
           dataset: parameters.dataset,
-          filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds),
+          filter:filter,
           unnest: [{
             hashtags: "tag"
           }],
           group: {
             by: [
-              {
-              field: "tag"
-              },
               {
               field: "create_at",
               apply: {

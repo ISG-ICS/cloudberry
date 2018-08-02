@@ -10,39 +10,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOpen = false;
 
     $scope.currentTab = "aboutTab";
-    $scope.commonHashTagChartDataResult = [];
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
       cloudberryClient.send(hashtagRequest, function(id, resultSet) {
         cloudberry.commonHashTagResult = resultSet[0];
       }, "hashtagRequest");
-
-      var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters);
-      cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
-        if(angular.isArray(resultSet)) {
-          $scope.commonHashTagChartDataResult = arrayToMap(resultSet[0]);
-        }
-      }, "hashtagChartDataRequest");
-
       $scope.isHashTagOutdated = false;
-    }
-
-    // Change hashtag chart data array to map that take each hashtag as key
-    function arrayToMap(queryResult) {
-      var store = new HashMap();
-      for (var i = 0; i < queryResult.length; i++) {
-        var currVal = {month:queryResult[i]["month"], count:queryResult[i]["count"]};
-        var values = store.get(queryResult[i]["tag"]);
-        // First updates the store with geoIds that have results.
-        if (values !== undefined) { // when one geoIds has more than one value
-          values.push(currVal);
-          store.set(queryResult[i]["tag"], values);
-        } else { // first value of current geoId
-          store.set(queryResult[i]["tag"], [currVal]);
-        }
-      }
-      return store;
     }
 
     function sendSampleTweetsQuery() {
@@ -221,7 +195,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $('#AllCollapse').on('shown.bs.collapse', function(e) {
       $scope.selectedHashtag = e.target.firstChild.id.substring(7);
       if($scope.selectedHashtag){
-        drawChart(preProcess($scope.commonHashTagChartDataResult.get($scope.selectedHashtag)));
+        // send query to cloudberry
+        var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
+        cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
+          if(angular.isArray(resultSet)) {
+            drawChart(preProcess(resultSet[0]));
+          }
+        }, "hashtagChartDataRequest");
       }
     });
   })
