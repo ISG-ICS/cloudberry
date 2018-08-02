@@ -195,8 +195,13 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
 
       dataManager.reply(getRet(1))
-      ///sender.expectMsg(JsArray(Seq(getRet(1))))
-sender.expectMsg(Json.toJson(JsObject("value" -> JsArray(Seq(getRet(1))) :: "timeInterval" -> JsObject("start" -> JsNumber(interval1.getStart.getMillis()) :: "end" -> JsNumber(endTime.getMillis()) :: Nil) :: Nil)))
+      sender.expectMsg(Json.toJson(JsObject(
+        "value" -> JsArray(Seq(getRet(1))) ::
+        "timeInterval" -> JsObject(
+          "start" -> JsNumber(interval1.getStart.getMillis()) ::
+          "end" -> JsNumber(endTime.getMillis()) ::
+          Nil) ::
+        Nil)))
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))
