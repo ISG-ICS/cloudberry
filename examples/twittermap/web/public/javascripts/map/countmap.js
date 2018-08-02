@@ -2,7 +2,6 @@ angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
                                        moduleManager, cloudberryClient, queryUtil) {
 
-
     // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({

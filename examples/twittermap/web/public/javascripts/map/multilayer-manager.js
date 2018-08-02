@@ -11,7 +11,9 @@ angular.module("cloudberry.map")
       {   
         if(key!==layerName)
         {       
-          $scope.map.removeLayer(cloudberry.parameters.layers[key].layer);
+          if(cloudberry.parameters.layers[key].layer && key!="polygon"){
+            $scope.map.removeLayer(cloudberry.parameters.layers[key].layer);
+          }
           cloudberry.parameters.layers[key].active = 0;
           if(typeof(cloudberry.parameters.layers[key].clear) === "function"){
             cloudberry.parameters.layers[key].clear();
@@ -23,7 +25,9 @@ angular.module("cloudberry.map")
             cloudberry.parameters.layers[key].activate();
           }
           cloudberry.parameters.layers[key].active = 1;
-          $scope.map.addLayer(cloudberry.parameters.layers[key].layer);
+          if(cloudberry.parameters.layers[key].layer){
+            $scope.map.addLayer(cloudberry.parameters.layers[key].layer);
+          }
           cloudberry.parameters.layers[key].onMapTypeChange();
         }
       }
@@ -81,12 +85,6 @@ angular.module("cloudberry.map")
       }  
     });
     
-    var heatmapParameters = {
-        id: "heatmap",
-        dataset: "twitter.ds_tweet",
-    }
-    addLayer("heatmap", 0, heatmapParameters);
-    addLayer("polygon", 1,{})
     addLayer("countmap",1,{})
     
     //This function register layer to layer manager 

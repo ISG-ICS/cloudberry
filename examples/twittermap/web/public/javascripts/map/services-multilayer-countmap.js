@@ -345,9 +345,11 @@ angular.module('cloudberry.map')
         }, "batchWithPartialGeoRequest");
       }
     }
+    
     function countmapHandler(){
       sendCountmapQuery();
     }
+    
     function drawCountMap(result,ref=instance){
       var instance = ref;
       var colors = ref.styles.colors;
