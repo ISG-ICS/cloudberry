@@ -84,7 +84,7 @@ object QueryResolver {
     val producedFields = mutable.Map.newBuilder[String, Field]
     val resolved = unnests.map { unnest =>
       val field = resolveField(unnest.field, fieldMap)
-      val asField = StringField(unnest.as, field.isOptional)
+      val asField = Field.as(field, unnest.as)
       producedFields += unnest.as -> asField
       UnnestStatement(field, asField)
     }
