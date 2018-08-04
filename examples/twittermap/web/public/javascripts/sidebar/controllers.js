@@ -13,7 +13,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
+      console.time("All hashtags");
       cloudberryClient.send(hashtagRequest, function(id, resultSet) {
+        console.timeEnd("All hashtags");
         cloudberry.commonHashTagResult = resultSet[0];
       }, "hashtagRequest");
       $scope.isHashTagOutdated = false;
@@ -198,9 +200,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         // send query to cloudberry
         var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
         console.log(hashtagChartDataRequest);
+        console.time("one hashtag");
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
           if(angular.isArray(resultSet)) {
-            console.log(resultSet[0])
+            console.timeEnd("one hashtag");
+            console.log(resultSet[0]);
             drawChart(preProcess(resultSet[0]));
           }
         }, "hashtagChartDataRequest");
