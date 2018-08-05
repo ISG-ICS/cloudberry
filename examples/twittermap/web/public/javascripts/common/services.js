@@ -301,8 +301,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       countmapMapResult: [],
       countmapPartialMapResult: [],
       commonTimeSeriesResult: [],
-      // storage for the subset of time-series result in TimeSeriesCache, with format {day, count}.
-      timeSeriesPartialResult: [],
       // storage for the newest byTimeSeries query result, with format {geoId, day, count}.
       timeSeriesQueryResult: [],
       commonHashTagResult: [],
@@ -317,8 +315,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
         // and retrieve cached time-series data from the cache for the current user request.
         geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(parameters.keywords,
           parameters.timeInterval, parameters.geoIds, parameters.geoLevel);
-        cloudberryService.timeSeriesPartialResult = TimeSeriesCache.getTimeSeriesValues(parameters.geoIds,
-            parameters.geoLevel, parameters.timeInterval);
 
         // generate query based on map type
         switch (parameters.maptype) {
@@ -549,7 +545,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(cloudberryService.timeSeriesPartialResult);
+              var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+              }
+              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
+                TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
               cloudberryService.commonHashTagResult = result.value[1];
             }
             // When the query is executed completely, we update the time-series cache's time interval.
@@ -566,7 +567,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(cloudberryService.timeSeriesPartialResult);
+              var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+              }
+              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
+                TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
               cloudberryService.commonHashTagResult = result.value[2];
             }
@@ -595,7 +601,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(cloudberryService.timeSeriesPartialResult);
+              var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+              }
+              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
+               TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
             // When the query is executed completely, we update the time-series cache's time interval.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
@@ -616,7 +627,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(cloudberryService.timeSeriesPartialResult);
+              var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+              }
+              cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
+               TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
             // When the query is executed completely, we update the time-series cache's time interval.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
