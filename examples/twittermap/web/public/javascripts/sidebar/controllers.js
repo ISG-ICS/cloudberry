@@ -199,12 +199,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if($scope.selectedHashtag){
         // send query to cloudberry
         var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
-        console.log(hashtagChartDataRequest);
         console.time("one hashtag");
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
           if(angular.isArray(resultSet)) {
             console.timeEnd("one hashtag");
-            console.log(resultSet[0]);
             drawChart(preProcess(resultSet[0]));
           }
         }, "hashtagChartDataRequest");
