@@ -747,6 +747,7 @@ angular.module('cloudberry.map')
           init: initCountMap,
           onMapTypeChange: countmapHandler,
           onChangeSearchKeyword:countmapHandler,
+          onChangeTimeSeriesRange:countmapHandler,
           draw: drawCountMap,
           clear: cleanCountMap,
           zoom: zoomFunction,
