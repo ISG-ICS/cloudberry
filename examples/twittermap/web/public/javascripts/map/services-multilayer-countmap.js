@@ -164,21 +164,18 @@ angular.module('cloudberry.map')
       });
       
       //watch normalize switch and redraw map, when switch is on.
+
       scope.$watch(function(){
-        return instance.normalize;
-      },function(result){
-        if(result!==null)
-          scope.$watch(function(){
-            return $('#toggle-normalize').prop('checked');
-          },function(resultN){
-            scope.doNormalization = resultN;
-            instance.doNormalization = resultN;
-            if(cloudberry.parameters.maptype==="countmap")
-            {
-              sendCountmapQuery();    
-            }
-          })
-      },true)
+        return $('#toggle-normalize').prop('checked');
+      },function(resultN){
+        scope.doNormalization = resultN;
+        instance.doNormalization = resultN;
+        if(cloudberry.parameters.maptype==="countmap")
+        {
+          sendCountmapQuery();    
+        }
+      })
+
 
       // update the center and the boundary of the visible area of the map
       function setCenterAndBoundry(features){
@@ -286,7 +283,82 @@ angular.module('cloudberry.map')
 
       return deferred.promise;
     }
+    
+    function loadCityJsonByBound(onEachFeature){
+      var scope = instance.scope;
+      var bounds = scope.map.getBounds();
+      var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
 
+        // Caching feature only works when the given threshold is greater than zero.
+        if (cloudberryConfig.cacheThreshold > 0) {
+          Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
+
+            //set center and boundary done by Cache
+            if (!scope.status.init) {
+              scope.resetGeoIds(scope.bounds, data, 'cityID');
+              cloudberry.parameters.geoLevel = 'city';
+              // Publish zoom/drag event to moduleManager
+              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+            }
+
+            scope.status.logicLevel = 'city';
+
+            // initializes the scope.geojsonData.city and scope.cityIdSet when first time zoom in
+            if(typeof scope.polygons.cityPolygons === 'undefined'){
+              scope.geojsonData.city = data;
+              scope.polygons.cityPolygons = L.geoJson(data, {
+                style: scope.styles.cityStyle,
+                onEachFeature: onEachFeature
+              });
+
+              for (i = 0; i < scope.geojsonData.city.features.length; i++) {
+                scope.cityIdSet.add(scope.geojsonData.city.features[i].properties.cityID);
+              }
+            } else {
+              // compares the current region's cityIds with previously stored cityIds
+              // stores the new delta cities' ID and polygon info
+              // add the new polygons as GeoJson objects incrementally on the layer
+
+              for (i = 0; i < data.features.length; i++) {
+                if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
+                  scope.geojsonData.city.features.push(data.features[i]);
+                  scope.cityIdSet.add(data.features[i].properties.cityID);
+                  scope.polygons.cityPolygons.addData(data.features[i]);
+                }
+              }
+            }
+
+            // To add the city level map only when it doesn't exit
+            if(!scope.map.hasLayer(scope.polygons.cityPolygons)){
+              scope.map.addLayer(scope.polygons.cityPolygons);
+            }
+          });
+        } else {
+          // No caching used here.
+          $http.get(rteBounds)
+            .success(function (data) {
+              scope.geojsonData.city = data;
+              if (scope.polygons.cityPolygons) {
+                scope.map.removeLayer(scope.polygons.cityPolygons);
+              }
+              scope.polygons.cityPolygons = L.geoJson(data, {
+                style: scope.styles.cityStyle,
+                onEachFeature: onEachFeature
+              });
+              setCenterAndBoundry(scope.geojsonData.city.features);
+              scope.resetGeoInfo("city");
+              if (!scope.status.init) {
+                // Publish zoom/drag event to moduleManager
+                moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+              }
+              scope.map.addLayer(scope.polygons.cityPolygons);
+            })
+            .error(function (data) {
+              console.error("Load city data failure");
+            });
+        }
+    };
+   
     // Send query to cloudberry
     function sendCountmapQuery() {
       // Batch request without map result - used when the complete map result cache hit case
@@ -644,7 +716,7 @@ angular.module('cloudberry.map')
       }
     }
 
-    function zoomFunction(){            
+    function zoomFunction(){
       function resetGeoInfo(level) {
         instance.status.logicLevel = level;
         cloudberry.parameters.geoLevel = level;
@@ -652,7 +724,6 @@ angular.module('cloudberry.map')
           resetGeoIds(instance.bounds, instance.geojsonData[level], level + 'ID');
         }
       }
-
       if (instance.map) {
         instance.status.zoomLevel = instance.map.getZoom();
         instance.bounds = instance.map.getBounds();
@@ -668,6 +739,7 @@ angular.module('cloudberry.map')
             instance.layer.removeLayer(instance.polygons.stateUpperPolygons);
           }
           instance.layer.addLayer(instance.polygons.countyUpperPolygons);
+          onEachFeature = null;
           loadCityJsonByBound(onEachFeature);
         } else if (instance.status.zoomLevel > 5) {
           resetGeoInfo("county");
