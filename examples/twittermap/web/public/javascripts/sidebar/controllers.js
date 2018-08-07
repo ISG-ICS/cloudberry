@@ -91,15 +91,15 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       }
     };
 
-    $scope.showOrHideSidebar = function(click) {
-      if (click === -1) {
-        cloudberry.parameters.isSampleTweetsOpen = false;
-        cloudberry.parameters.isHashTagOpen = false;
-      }
-      else {
-        $scope.showTab($scope.currentTab);
-      }
-    };
+    // $scope.showOrHideSidebar = function(click) {
+    //   if (click === -1) {
+    //     cloudberry.parameters.isSampleTweetsOpen = false;
+    //     cloudberry.parameters.isHashTagOpen = false;
+    //   }
+    //   else {
+    //     $scope.showTab($scope.currentTab);
+    //   }
+    // };
   })
   .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
     $scope.hashTagsList = null;
