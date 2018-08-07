@@ -162,6 +162,7 @@ angular.module('cloudberry.map')
 
 
       });
+      
       //watch normalize switch and redraw map, when switch is on.
       scope.$watch(function(){
         return instance.normalize;
@@ -731,13 +732,6 @@ angular.module('cloudberry.map')
       }
     }
 
-    function activateFunction(){
-      this.zoom();
-    }
-
-    function deactivateFunction(){
-    }
-
     var countmapService = {
       createLayer: function(parameters){
         var deferred = $q.defer();
@@ -748,14 +742,9 @@ angular.module('cloudberry.map')
           onMapTypeChange: countmapHandler,
           onChangeSearchKeyword:countmapHandler,
           onChangeTimeSeriesRange:countmapHandler,
-          draw: drawCountMap,
-          clear: cleanCountMap,
-          zoom: zoomFunction,
-          drag: dragFunction,
           onZoom: countmapHandler,
           onDrag: countmapHandler,
-          activate: activateFunction,
-          deactivate: deactivateFunction,
+          clear: cleanCountMap,
           map: null,
           geojsonData: {},
           polygons: {},
