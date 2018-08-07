@@ -110,13 +110,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             $scope.ndx = crossfilter(newVal);
             var timeDimension = $scope.ndx.dimension(function (d) {
-              return d3.time.day(d.time);
+              return d3.time.week(d.time);
             });
             var timeGroup = timeDimension.group().reduceSum(function (d) {
               return d.count;
             });
 
-            var timeSeries = dc.barChart(chart[0][0]);
+            var timeSeries = dc.lineChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
 
             var requestFunc = function(min, max) {
@@ -136,7 +136,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             chart.append('a')
                 .text('Reset')
                 .attr('href',"#")
-                .on("click", function() { timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
+                .on("click", function() { timeSeries.filter([minDate, maxDate]); dc.redrawAll(); requestFunc(minDate, maxDate);})
                 .style("position", "absolute")
                 .style("bottom", "90%")
                 .style("left", "5%");
@@ -152,16 +152,15 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
               .dimension(timeDimension)
               .group(timeGroup)
-              .centerBar(true)
               .x(d3.time.scale().domain([minDate, maxDate]))
               .xUnits(d3.time.days)
-              .gap(1)
               .xAxisLabel(startDate + "   to   " + endDate)
               .elasticY(true);
 
 
 
             dc.renderAll();
+            timeSeries.filter([minDate, maxDate]);
 
           })
         }
