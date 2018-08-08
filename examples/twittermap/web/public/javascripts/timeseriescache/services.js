@@ -38,8 +38,7 @@ angular.module('cloudberry.timeseriescache', [])
             if (keywords.toString() != currentKeywords.toString() ||
                 timeInterval.start < cachedTimeRange.start ||
                 timeInterval.end > cachedTimeRange.end ||
-                geoLevel != currentGeoLevel ||
-                timeseriesStore.count() > MAX_GEOIDS) {
+                geoLevel != currentGeoLevel) {
                 timeseriesStore.clear();
                 currentKeywords = keywords.slice();
                 currentGeoLevel = geoLevel;
@@ -52,6 +51,11 @@ angular.module('cloudberry.timeseriescache', [])
                 if (!timeseriesStore.has(geoIds[i])) {
                     geoIdsNotInCache.push(geoIds[i]);
                 }
+            }
+            // Clear storage if caching the new query will exceed MAX_GEOIDS limit.
+            if (timeseriesStore.count() + geoIdsNotInCache.length > MAX_GEOIDS) {
+                timeseriesStore.clear();
+                return geoIds;
             }
 
             return geoIdsNotInCache;
