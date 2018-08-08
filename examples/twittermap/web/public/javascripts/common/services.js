@@ -11,6 +11,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
+      pinMapOneTweetLookUpResult: null,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
@@ -255,7 +256,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       ws.send(byTimeRequestJson);
     }
 
-    function byHashTagRequest(parameters) {
+    // Generate top 50 hash tag JSON request
+    function genHashTagRequest(parameters) {
       return {
         dataset: parameters.dataset,
         filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
@@ -278,8 +280,52 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
           order: ["-count"],
           limit: 50,
           offset: 0
+        },
+        transform: {
+          wrap: {
+            id: "hashTagRequest",
+            category: "hashTagRequest"
+          }
         }
       };
+    }
+
+    // Generate latest 10 sample tweet JSON request
+    function genSampleTweetsRequest(parameters) {
+      return {
+        dataset: parameters.dataset,
+        filter: getFilter(parameters, defaultSamplingDayRange, parameters.geoIds),
+        select: {
+          order: ["-create_at"],
+          limit: defaultSamplingSize,
+          offset: 0,
+          field: ["create_at", "id", "user.id"]
+        },
+        transform: {
+          wrap: {
+            id: "sampleTweetRequest",
+            category: "sampleTweetRequest"
+          }
+        }
+      };
+    }
+
+    function handleSampleTweetsRequest(parameters) {
+
+      // Only 'countmap' needs to send the sample tweet request,
+      // because other map results include sample tweet results as well
+      if (parameters.isSampleTweetsOpen && parameters.maptype === "countmap") {
+        var sampleTweetsRequestJson = JSON.stringify(genSampleTweetsRequest(parameters));
+        ws.send(sampleTweetsRequestJson);
+      }
+    }
+
+    function handleHashTagRequest(parameters) {
+
+      if (parameters.isHashTagOpen) {
+        var hashTagRequestJson = JSON.stringify(genHashTagRequest(parameters));
+        ws.send(hashTagRequestJson);
+      }
     }
 
     var cloudberryService = {
@@ -307,7 +353,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       errorMessage: null,
 
       query: function(parameters) {
-      
+
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
 
@@ -319,26 +365,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
         // generate query based on map type
         switch (parameters.maptype) {
           case 'countmap':
-            var sampleJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultSamplingDayRange, parameters.geoIds),
-              select: {
-                order: ["-create_at"],
-                limit: defaultSamplingSize,
-                offset: 0,
-                field: ["create_at", "id", "user.id"]
-              },
-              transform: {
-                wrap: {
-                  id: "sample",
-                  category: "sample"
-                }
-              }
-            }));
 
             // Batch request without map result - used when the complete map result cache hit case
             var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byHashTagRequest(parameters)],
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
               },
@@ -349,7 +379,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byHashTagRequest(parameters)],
+                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache)],
                 transform: {
                     wrap: {
                         id: "batchWithoutGeoRequest",
@@ -366,8 +396,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
             // This case also covers the complete cache miss case.
             var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? (JSON.stringify({
-              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache),
-                byHashTagRequest(parameters)],
+              batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache)],
               option: {
                 sliceMillis: cloudberryConfig.querySliceMills
               },
@@ -378,8 +407,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
                 }
               }
             })) : (JSON.stringify({
-                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache),
-                  byHashTagRequest(parameters)],
+                batch: [byTimeRequest(parameters, geoIdsNotInTimeSeriesCache), byGeoRequest(parameters, geoIdsNotInCache)],
                 transform: {
                     wrap: {
                         id: "batchWithPartialGeoRequest",
@@ -393,7 +421,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.countmapMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
                 cloudberryService.parameters.geoLevel);
 
-              ws.send(sampleJson);
               ws.send(batchWithoutGeoRequest);
             }
             // Partial map result cache hit case
@@ -401,7 +428,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.countmapPartialMapResult = MapResultCache.getValues(cloudberryService.parameters.geoIds,
                     cloudberryService.parameters.geoLevel);
 
-              ws.send(sampleJson);
               ws.send(batchWithPartialGeoRequest);
             }
             break;
@@ -427,15 +453,20 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               }
             }));
 
-            var heatHashTagJson = JSON.stringify({
+            // for the time histogram
+            var heatTimeJson = (JSON.stringify({
               dataset: parameters.dataset,
               filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              unnest: [{
-                hashtags: "tag"
-              }],
               group: {
                 by: [{
-                  field: "tag"
+                  field: "create_at",
+                  apply: {
+                    name: "interval",
+                    args: {
+                      unit: parameters.timeBin
+                    }
+                  },
+                  as: parameters.timeBin
                 }],
                 aggregate: [{
                   field: "*",
@@ -445,22 +476,19 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
                   as: "count"
                 }]
               },
-              select: {
-                order: ["-count"],
-                limit: 50,
-                offset: 0
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
               },
               transform: {
                 wrap: {
-                  id: "hashTags",
-                  category: "hashTags"
+                  id: "heatTime",
+                  category: "heatTime"
                 }
               }
-            });
+            }));
 
-            handleByTimeRequest(parameters, "heatTime");
             ws.send(heatJson);
-            ws.send(heatHashTagJson);
+            ws.send(heatTimeJson);
             break;
 
           case 'pinmap':
@@ -485,15 +513,20 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               }
             }));
 
-            var pinHashTagJson = JSON.stringify({
+            // for the time histogram
+            var pointsTimeJson = (JSON.stringify({
               dataset: parameters.dataset,
               filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              unnest: [{
-                hashtags: "tag"
-              }],
               group: {
                 by: [{
-                  field: "tag"
+                  field: "create_at",
+                  apply: {
+                    name: "interval",
+                    args: {
+                      unit: parameters.timeBin
+                    }
+                  },
+                  as: parameters.timeBin
                 }],
                 aggregate: [{
                   field: "*",
@@ -503,28 +536,67 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
                   as: "count"
                 }]
               },
-              select: {
-                order: ["-count"],
-                limit: 50,
-                offset: 0
+              option: {
+                sliceMillis: cloudberryConfig.querySliceMills
               },
               transform: {
                 wrap: {
-                  id: "hashTags",
-                  category: "hashTags"
+                  id: "pointsTime",
+                  category: "pointsTime"
                 }
               }
-            });
+            }));
 
-            handleByTimeRequest(parameters, "pointsTime");
             ws.send(pointsJson);
-            ws.send(pinHashTagJson);
+            ws.send(pointsTimeJson);
             break;
           
           default:
             // unrecognized map type
             break;
         }
+
+        cloudberryService.querySidebar(parameters);
+      },
+
+      querySidebar(parameters) {
+
+        if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
+          return;
+
+        handleSampleTweetsRequest(parameters);
+        handleHashTagRequest(parameters);
+      },
+        // This query retrieves the information about a specific tweet that the user selected.
+        pinMapOneTweetLookUpQuery: function(pinid){
+
+          var setpinFilter = [{
+              field: "id",
+              relation: "in",
+              values: pinid
+          }];
+
+          var pinDBquery = (JSON.stringify({
+              dataset:"twitter.ds_tweet",
+              filter: setpinFilter,
+              select:{
+                  order: ["-create_at"],
+                  limit: defaultSamplingSize,
+                  offset: 0,
+                  field: ["id","text","user.id","create_at","user.name","user.profile_image_url"]
+              },
+              transform:{
+                  wrap:{
+                      id:"pinMapOneTweetLookUpResult",
+                      category:"pinMapOneTweetLookUpResult"
+                  }
+              }
+          }));
+
+          //changes the id's type from string to int64.
+          pinDBquery = pinDBquery.replace(/"(\d+)"/,"[$1]");
+
+          ws.send(pinDBquery);
       }
     };
 
@@ -534,7 +606,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
 
         switch (result.category) {
 
-          case "sample":
+          case "sampleTweetRequest":
             cloudberryService.commonTweetResult = result.value[0];
             break;
           // Complete cache hit case
@@ -551,7 +623,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               }
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                 TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
-              cloudberryService.commonHashTagResult = result.value[1];
             }
             // When the query is executed completely, we update the time-series cache's time interval.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
@@ -574,7 +645,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                 TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);
-              cloudberryService.commonHashTagResult = result.value[2];
             }
             // When the query is executed completely, we update the map result cache and time-series cache's time interval.
             if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(result.value) &&
@@ -640,13 +710,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               TimeSeriesCache.putTimeSeriesValues(geoIdsNotInTimeSeriesCache, cloudberryService.timeSeriesQueryResult, cloudberryService.parameters.timeInterval);
             }
             break;
-          case "hashTags":
+          case "hashTagRequest":
             if(angular.isArray(result.value)) {
               cloudberryService.commonHashTagResult = result.value[0];
             }
             break;
           case "totalCount":
             cloudberryService.commonTotalCount = result.value[0][0].count;
+            break;
+          case "pinMapOneTweetLookUpResult":
+            cloudberryConfig.pinMapOneTweetLookUpResult = result.value[0][0];
             break;
           case "error":
             console.error(result);
