@@ -22,6 +22,8 @@ angular.module('cloudberry.timeseriescache', [])
             end: endDate
         };
         const INVALID_VALUE = 0;
+        // Maximum geoIds in cache, to avoid reaching mamximum browser memory capacity.
+        const MAX_GEOIDS = 3222;
 
         /**
          * Checks keyword, time range and the cache store, and returns the geoIds that
@@ -36,7 +38,8 @@ angular.module('cloudberry.timeseriescache', [])
             if (keywords.toString() != currentKeywords.toString() ||
                 timeInterval.start < cachedTimeRange.start ||
                 timeInterval.end > cachedTimeRange.end ||
-                geoLevel != currentGeoLevel) {
+                geoLevel != currentGeoLevel ||
+                timeseriesStore.count() > MAX_GEOIDS) {
                 timeseriesStore.clear();
                 currentKeywords = keywords.slice();
                 currentGeoLevel = geoLevel;
@@ -120,6 +123,7 @@ angular.module('cloudberry.timeseriescache', [])
          * Updates the store with time-series result each time the middleware responds to the json request preloadRequest,
          * returns histogram data.
          */
+        // TODO: combine geoIds and timeInterval dimensions in the time-series and map-rsult cache modules.
         this.putTimeSeriesValues = function (geoIds, timeseriesResult, timeInterval) {
             // In case of cache miss.
             if (geoIds.length !== 0) {
