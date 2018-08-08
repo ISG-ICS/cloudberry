@@ -7,7 +7,7 @@
  *  In "heatmap.js":
  *      function sendHeatmapQuery() {
  *        var heatJson = { JSON query in Cloudberry's format };
- *        cloudberryClient.send(heatJson, function(id, resultSet){
+ *        cloudberryClient.send(heatJson, function(id, resultSet, timeInterval){
  *          ...
  *          cloudberry.heatmapMapResult = resultSet[0];
  *        }, "heatMapResult");
@@ -27,7 +27,7 @@ angular.module("cloudberry.common")
        * send a query to Cloudberry
        *
        * @param query JSON object, query JSON for Cloudberry
-       * @param resultHandler function, callback function(id, resultSet),
+       * @param resultHandler function, callback function(id, resultSet, timeInterval),
        *          if your query's slice option is ON, resultHandler can be called several times.
        * @param category String, not null, category of this query
        * @param id String, identification for this query, if null,

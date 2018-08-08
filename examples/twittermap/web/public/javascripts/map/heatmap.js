@@ -98,7 +98,7 @@ angular.module("cloudberry.map")
         }
         // When the query is executed completely, we update the time series cache.
         if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-          resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+          resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
           TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
             cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
         }

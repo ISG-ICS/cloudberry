@@ -35,10 +35,10 @@ angular.module('cloudberry.timeseriescache', [])
             // otherwise in range (0, geoIds.length)
             var geoIdsNotInCache = [];
             // New query case
-            if (keywords.toString() != currentKeywords.toString() ||
+            if (keywords.toString() !== currentKeywords.toString() ||
                 timeInterval.start < cachedTimeRange.start ||
                 timeInterval.end > cachedTimeRange.end ||
-                geoLevel != currentGeoLevel) {
+                geoLevel !== currentGeoLevel) {
                 timeseriesStore.clear();
                 currentKeywords = keywords.slice();
                 currentGeoLevel = geoLevel;

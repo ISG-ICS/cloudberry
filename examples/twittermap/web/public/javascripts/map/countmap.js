@@ -136,7 +136,7 @@ angular.module('cloudberry.map')
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
             cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
           }
-          // When the query is executed completely, we update the map result cache.
+          // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
             MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,

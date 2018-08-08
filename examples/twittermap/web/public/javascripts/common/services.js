@@ -631,7 +631,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               var requestTimeRange = {
                 start: new Date(result.timeInterval.start),
                 end: new Date(result.timeInterval.end)
-              }
+               };
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
