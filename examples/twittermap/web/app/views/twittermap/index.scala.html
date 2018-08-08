@@ -106,6 +106,13 @@
       }
       else {
         $( '#downbutton' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
+
+      if( $( '#downbutton' ).hasClass( 'glyphicon-menu-down' ) ) {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-down' ).addClass('glyphicon-menu-up');
+        $(this).animate({bottom: '5px'});
+      }
+      else {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
         $(this).animate({bottom: '110px'}); 
       }
     });
