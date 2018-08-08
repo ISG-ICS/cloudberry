@@ -22,6 +22,8 @@ angular.module('cloudberry.timeseriescache', [])
             end: endDate
         };
         const INVALID_VALUE = 0;
+        // Maximum geoIds in cache, to avoid reaching mamximum browser memory capacity.
+        const MAX_GEOIDS = 3222;
 
         /**
          * Checks keyword, time range and the cache store, and returns the geoIds that
@@ -50,6 +52,11 @@ angular.module('cloudberry.timeseriescache', [])
                     geoIdsNotInCache.push(geoIds[i]);
                 }
             }
+            // Clear storage if caching the new query will exceed MAX_GEOIDS limit.
+            if (timeseriesStore.count() + geoIdsNotInCache.length > MAX_GEOIDS) {
+                timeseriesStore.clear();
+                return geoIds;
+            }
 
             return geoIdsNotInCache;
         };
@@ -71,6 +78,7 @@ angular.module('cloudberry.timeseriescache', [])
                     }
                 }
             }
+
             return resultArray;
         };
 
@@ -83,6 +91,7 @@ angular.module('cloudberry.timeseriescache', [])
                 var currVal = {day:timeseriesResult[i]["day"], count:timeseriesResult[i]["count"]};
                 resultArray.push(currVal);
             }
+
             return resultArray;
         }
 
@@ -118,11 +127,19 @@ angular.module('cloudberry.timeseriescache', [])
          * Updates the store with time-series result each time the middleware responds to the json request preloadRequest,
          * returns histogram data.
          */
-        this.putTimeSeriesValues = function (geoIds, timeseriesResult) {
+        // TODO: combine geoIds and timeInterval dimensions in the time-series and map-rsult cache modules.
+        this.putTimeSeriesValues = function (geoIds, timeseriesResult, timeInterval) {
             // In case of cache miss.
             if (geoIds.length !== 0) {
                 var store = this.arrayToStore(geoIds, timeseriesResult);
-                timeseriesStore = store;
+                if (timeseriesStore.count() == 0) {
+                    timeseriesStore = store;
+                } else if (timeInterval.start.getTime() == cachedTimeRange.start.getTime() &&
+                           timeInterval.end.getTime() == cachedTimeRange.end.getTime()) {
+                    store.forEach(function(value, key) {timeseriesStore.set(key, value)});
+                } else {
+                    // Result is not added to cache because it has a shorter time interval than older cached results.
+                }
             }
-        }
+        };
     });
