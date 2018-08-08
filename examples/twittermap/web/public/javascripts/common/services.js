@@ -242,10 +242,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     // Handle byTimeRequest in heatmap and pinmap.
     function handleByTimeRequest(parameters, categoryName) {
       var byTimeRequestquery = byTimeRequest(parameters, geoIdsNotInTimeSeriesCache);
-      byTimeRequestquery['option'] = {
+      byTimeRequestquery["option"] = {
         sliceMillis: cloudberryConfig.querySliceMills
       };
-      byTimeRequestquery['transform'] = {
+      byTimeRequestquery["transform"] = {
         wrap: {
           id: categoryName,
           category: categoryName
@@ -603,6 +603,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
+        var requestTimeRange = {
+          start: new Date(result.timeInterval.start),
+          end: new Date(result.timeInterval.end)
+        };
 
         switch (result.category) {
 
@@ -617,10 +621,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
-              }
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                 TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
@@ -638,10 +638,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
-              }
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                 TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
               cloudberryService.countmapMapResult = result.value[1].concat(cloudberryService.countmapPartialMapResult);

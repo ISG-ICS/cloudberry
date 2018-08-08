@@ -93,7 +93,7 @@ angular.module('cloudberry.timeseriescache', [])
             }
 
             return resultArray;
-        }
+        };
 
         /**
          * Convert byTimeSeries result array to timeseriesStore HashMap format.
@@ -114,7 +114,7 @@ angular.module('cloudberry.timeseriescache', [])
                     store.set(timeseriesResult[i][currentGeoLevel], [currVal]);
                     geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
                 }
-            };
+            }
             // Mark other results as checked: these are geoIds with no results
             geoIdSet.forEach(function (value) {
                 store.set(value, INVALID_VALUE);
@@ -132,11 +132,14 @@ angular.module('cloudberry.timeseriescache', [])
             // In case of cache miss.
             if (geoIds.length !== 0) {
                 var store = this.arrayToStore(geoIds, timeseriesResult);
-                if (timeseriesStore.count() == 0) {
+                if (timeseriesStore.count() === 0) {
                     timeseriesStore = store;
-                } else if (timeInterval.start.getTime() == cachedTimeRange.start.getTime() &&
-                           timeInterval.end.getTime() == cachedTimeRange.end.getTime()) {
-                    store.forEach(function(value, key) {timeseriesStore.set(key, value)});
+                } else if (timeInterval.start.getTime() === cachedTimeRange.start.getTime() &&
+                           timeInterval.end.getTime() === cachedTimeRange.end.getTime()) {
+                    // Add to cache.
+                    store.forEach(function(value, key) {
+                        timeseriesStore.set(key, value);
+                    });
                 } else {
                     // Result is not added to cache because it has a shorter time interval than older cached results.
                 }
