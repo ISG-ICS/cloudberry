@@ -98,7 +98,7 @@ angular.module('cloudberry.timeseriescache', [])
         /**
          * Convert byTimeSeries result array to timeseriesStore HashMap format.
          */
-        this.arrayToStore = function (geoIds, timeseriesResult) {
+        this.arrayToStore = function (geoIds, timeseriesResult, currentGeoLevel) {
             var store = new HashMap();
             var geoIdSet = new Set(geoIds);
 
@@ -131,7 +131,7 @@ angular.module('cloudberry.timeseriescache', [])
         this.putTimeSeriesValues = function (geoIds, timeseriesResult, timeInterval) {
             // In case of cache miss.
             if (geoIds.length !== 0) {
-                var store = this.arrayToStore(geoIds, timeseriesResult);
+                var store = this.arrayToStore(geoIds, timeseriesResult, currentGeoLevel);
                 if (timeseriesStore.count() === 0) {
                     timeseriesStore = store;
                 } else if (timeInterval.start.getTime() === cachedTimeRange.start.getTime() &&

@@ -357,8 +357,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
         if (ws.readyState !== ws.OPEN || typeof(parameters.keywords) === "undefined" || parameters.keywords == null || parameters.keywords.length == 0)
           return;
 
-        // For time-series histogram, get geoIds not in the TimeSeriesCache,
-        // and retrieve cached time-series data from the cache for the current user request.
+        // For time-series histogram, get geoIds not in the time series cache.
         geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(parameters.keywords,
           parameters.timeInterval, parameters.geoIds, parameters.geoLevel);
 
@@ -453,42 +452,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               }
             }));
 
-            // for the time histogram
-            var heatTimeJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              group: {
-                by: [{
-                  field: "create_at",
-                  apply: {
-                    name: "interval",
-                    args: {
-                      unit: parameters.timeBin
-                    }
-                  },
-                  as: parameters.timeBin
-                }],
-                aggregate: [{
-                  field: "*",
-                  apply: {
-                    name: "count"
-                  },
-                  as: "count"
-                }]
-              },
-              option: {
-                sliceMillis: cloudberryConfig.querySliceMills
-              },
-              transform: {
-                wrap: {
-                  id: "heatTime",
-                  category: "heatTime"
-                }
-              }
-            }));
-
             ws.send(heatJson);
-            ws.send(heatTimeJson);
+            handleByTimeRequest(parameters, "heatTime");
             break;
 
           case 'pinmap':
@@ -513,42 +478,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               }
             }));
 
-            // for the time histogram
-            var pointsTimeJson = (JSON.stringify({
-              dataset: parameters.dataset,
-              filter: getFilter(parameters, defaultNonSamplingDayRange, parameters.geoIds),
-              group: {
-                by: [{
-                  field: "create_at",
-                  apply: {
-                    name: "interval",
-                    args: {
-                      unit: parameters.timeBin
-                    }
-                  },
-                  as: parameters.timeBin
-                }],
-                aggregate: [{
-                  field: "*",
-                  apply: {
-                    name: "count"
-                  },
-                  as: "count"
-                }]
-              },
-              option: {
-                sliceMillis: cloudberryConfig.querySliceMills
-              },
-              transform: {
-                wrap: {
-                  id: "pointsTime",
-                  category: "pointsTime"
-                }
-              }
-            }));
-
             ws.send(pointsJson);
-            ws.send(pointsTimeJson);
+            handleByTimeRequest(parameters, "pointsTime");
             break;
           
           default:
@@ -603,10 +534,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        var requestTimeRange = {
-          start: new Date(result.timeInterval.start),
-          end: new Date(result.timeInterval.end)
-        };
 
         switch (result.category) {
 
@@ -616,6 +543,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
           // Complete cache hit case
           case "batchWithoutGeoRequest":
             if(angular.isArray(result.value)) {
+              var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+              };
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
@@ -633,6 +564,10 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
             if(angular.isArray(result.value)) {
+              var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+              };
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
@@ -670,7 +605,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               var requestTimeRange = {
                 start: new Date(result.timeInterval.start),
                 end: new Date(result.timeInterval.end)
-              }
+               };
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
