@@ -145,7 +145,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
-issueQueryGroup(nextInterval, queryGroup)
+        issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }
     case result: MiniQueryResult =>
