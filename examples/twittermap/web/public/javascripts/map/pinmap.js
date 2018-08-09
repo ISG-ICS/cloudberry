@@ -74,7 +74,7 @@ angular.module("cloudberry.map")
         }
       };
 
-      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
       cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {

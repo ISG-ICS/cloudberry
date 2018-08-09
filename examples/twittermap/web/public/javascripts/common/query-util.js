@@ -169,12 +169,21 @@ angular.module("cloudberry.common")
         }
       },
 
-      getTimeBarRequest(parameters) {
+      getTimeBarRequest(parameters, geoIds) {
         return {
           dataset: parameters.dataset,
-          filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds),
+          filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
           group: {
             by: [{
+              field: "geo",
+              apply: {
+                name: "level",
+                args: {
+                  level: parameters.geoLevel,
+                }
+              },
+              as: parameters.geoLevel
+            }, {
               field: "create_at",
               apply: {
                 name: "interval",

@@ -15,7 +15,7 @@
  *      }
  */
 angular.module("cloudberry.common")
-  .service("cloudberryClient", function($timeout, cloudberryConfig) {
+  .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig) {
 
     var ws = new WebSocket(cloudberryConfig.ws);
 
@@ -86,7 +86,14 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
-        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, result.timeInterval);
+        var timeInterval = JSON.stringify({
+          start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
+          end: new Date(cloudberry.parameters.timeInterval.end.getTime())
+        });
+        if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
+          timeInterval = result.timeInterval;
+        }
+        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);
       });
     };
 
