@@ -15,7 +15,7 @@
  *      }
  */
 angular.module("cloudberry.common")
-  .service("cloudberryClient", function($timeout, cloudberryConfig) {
+  .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig) {
 
     var ws = new WebSocket(cloudberryConfig.ws);
 
@@ -87,8 +87,8 @@ angular.module("cloudberry.common")
         var category = result.category;
         var id = result.id;
         var timeInterval = JSON.stringify({
-          start: null,
-          end: null
+          start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
+          end: new Date(cloudberry.parameters.timeInterval.end.getTime())
         });
         if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
           timeInterval = result.timeInterval;

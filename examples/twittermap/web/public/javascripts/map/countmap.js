@@ -95,13 +95,10 @@ angular.module('cloudberry.map')
 
         cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
-            if (resultTimeInterval.start !== null) {
-              var requestTimeRange = {
-                start: new Date(resultTimeInterval.start),
-                end: new Date(resultTimeInterval.end)
-              };
-            }
-
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
             // Since the middleware returns the query result in multiple steps,
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];

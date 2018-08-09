@@ -117,7 +117,7 @@ angular.module('cloudberry.timeseriescache', [])
 
             return resultArray;
         };
-             
+
         /**
          * Convert byTimeSeries result array to timeseriesStore HashMap format.
          */
