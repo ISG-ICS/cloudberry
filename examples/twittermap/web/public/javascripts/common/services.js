@@ -535,7 +535,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
           var setpinFilter = [{
               field: "id",
-              relation: "in",
+              relation: "=",
               values: pinid
           }];
 
