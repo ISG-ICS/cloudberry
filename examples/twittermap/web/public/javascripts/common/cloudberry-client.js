@@ -86,7 +86,14 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
-        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, result.timeInterval);
+        var timeInterval = JSON.stringify({
+          start: null,
+          end: null
+        });
+        if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
+          timeInterval = result.timeInterval;
+        }
+        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);
       });
     };
 

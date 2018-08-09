@@ -83,6 +83,29 @@ angular.module('cloudberry.timeseriescache', [])
         };
 
         /**
+         * Return subset of time-series store in the current map view.
+         */
+        this.getInViewTimeSeriesStore = function (geoIds, timeInterval) {
+            var store = new HashMap();
+
+            for (var i = 0; i < geoIds.length; i++) {
+                var values = timeseriesStore.get(geoIds[i]);
+                if (values !== undefined && values !== INVALID_VALUE) {
+                    var inRangeValues = [];
+                    for (var j = 0; j < values.length; j++) {
+                        var day = new Date(values[j]["day"]);
+                        if (day >= timeInterval.start && day <= timeInterval.end) {
+                            inRangeValues.push({"day":values[j]["day"], "count":values[j]["count"]});
+                        }
+                    }
+                    store.set(geoIds[i], inRangeValues);
+                }
+            }
+
+            return store;
+        };
+
+        /**
          * Return time-series histogram data from byTimeRequest result array.
          */
         this.getValuesFromResult = function (timeseriesResult) {
@@ -94,7 +117,7 @@ angular.module('cloudberry.timeseriescache', [])
 
             return resultArray;
         };
-
+             
         /**
          * Convert byTimeSeries result array to timeseriesStore HashMap format.
          */

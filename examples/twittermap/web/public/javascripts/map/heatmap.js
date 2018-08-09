@@ -73,7 +73,7 @@ angular.module("cloudberry.map")
         }
       };
 
-      var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+      var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
       cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
