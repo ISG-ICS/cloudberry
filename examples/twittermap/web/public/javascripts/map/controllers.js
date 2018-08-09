@@ -350,9 +350,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     
     // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
-      if (leafletEvent)
-        $scope.map.fitBounds(leafletEvent.target.getBounds());
+      if (leafletEvent){
         $(".leaflet-popup-close-button")[0].click();
+        $scope.map.fitBounds(leafletEvent.target.getBounds());
+      }
+
     };
     
     // For randomize coordinates by bounding_box

@@ -6,6 +6,9 @@ angular.module('cloudberry.map')
     $scope.chartData=[];
     // Map to store the chart data for every polygon
     $scope.ChartDataMap = new HashMap();
+    // The popup window shown now
+    $scope.popUp = null;
+
     // return difference of two arrays
     function arr_diff (a1, a2) {
       var a = [], diff = [];
@@ -24,6 +27,113 @@ angular.module('cloudberry.map')
       }
       return diff;
     }
+
+    // Concat two hashmap result
+    function concatHashmap(newMap, cacheMap) {
+      if (cacheMap.count()===0) return newMap;
+
+      var concatMap = new HashMap();
+      newMap.forEach(function(value, key){
+        var concatValue = [];
+        var cacheValue = cacheMap.get(key);
+        if(value !== 0) {
+          if (cacheValue === undefined) concatValue=value;
+          else concatValue = value.concat(cacheValue)
+        }
+        else if (cacheValue !== undefined) concatValue=cacheValue;
+
+        concatMap.set(key,concatValue);
+      });
+      return concatMap;
+    }
+
+    function getPopupContent() {
+      // get chart data for the polygon
+      var geoIDChartData = $scope.ChartDataMap.get($scope.selectedGeoID);
+      (geoIDChartData)? $scope.chartData = $scope.preProcess(geoIDChartData) : $scope.chartData = [];
+
+      // get the count info of polygon
+      var placeName = $scope.selectedPlace.properties.name;
+      var infoPromp = $scope.infoPromp;
+      var countText = '0';
+      var logicLevel = $scope.status.logicLevel;
+      if($scope.selectedPlace.properties.countText) {
+        countText = $scope.selectedPlace.properties.countText;
+      }
+
+      // Generate the html in pop up window
+      var content;
+      if($scope.chartData.length===0) {
+        content = '<div id="popup-info" style="margin-bottom: 0">' +
+          '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
+          '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+countText+'</b></div>' +
+          '</div>'+
+          "<canvas id=\"myChart\" height=\"0\" ></canvas>";
+      }else {
+        content = '<div id="popup-info">' +
+          '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
+          '<div id="popup-count">'+infoPromp+'<b> '+countText+'</b></div>' +
+          '</div>'+
+          "<canvas id=\"myChart\"></canvas>";
+      }
+      return content;
+    }
+
+    // If there are chartData, draw the line chart
+    function drawLineChart(){
+      if($scope.chartData.length !== 0 && document.getElementById("myChart")) {
+        var ctx = document.getElementById("myChart").getContext('2d');
+        var myChart = new Chart(ctx, {
+          type: 'line',
+          data:{
+            datasets:[{
+              lineTension: 0,
+              data:$scope.chartData,
+              borderColor:"#3e95cd",
+              borderWidth: 0.8,
+              pointRadius: 1.5
+            }]
+          },
+
+          options: {
+            legend: {
+              display: false
+            },
+            scales: {
+              xAxes: [{
+                type: 'time',
+                time: {
+                  unit:'month'
+                },
+                scaleLabel: {
+                  display: true,
+                  labelString: 'Date'
+                }
+              }],
+              yAxes: [{
+                scaleLabel: {
+                  display: true,
+                  labelString: 'Count'
+                },
+                ticks: {
+                  beginAtZero: true,
+                  suggestedMax: 4
+                }
+              }]
+            }
+          }
+        });
+      }
+    }
+
+    // redraw popup window after ChartdataMap is updated
+    function redrawPopup(){
+      if($scope.popUp){
+        $scope.popUp.setContent(getPopupContent());
+        drawLineChart();
+      }
+    }
+
     // Convert the array in chartDataMap to count result by month, which can be read by chart.js
     $scope.preProcess = function (result) {
       // group by year
@@ -68,17 +178,6 @@ angular.module('cloudberry.map')
       });
       return resultByMonth;
     };
-    // Watch the cloudberry.commonChartDataMap, to change chartDataMap
-    // $scope.$watch(
-    //   function() {
-    //     return cloudberry.commonChartDataMap;
-    //   },
-    //   function(newResult) {
-    //     if(newResult) {
-    //       $scope.ChartDataMap = newResult;
-    //     }
-    //   }
-    // );
 
     // set map styles for countmap
     function setCountMapStyle() {
@@ -180,19 +279,27 @@ angular.module('cloudberry.map')
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
             console.log("1");
-            console.log(cloudberry.timeSeriesQueryResult);
+            if(cloudberry.timeSeriesQueryResult.length!==0){
+              console.log(cloudberry.timeSeriesQueryResult);
+              console.log("!!!!!!");
+            }
 
             // Avoid memory leak.
             resultSet[0] = [];
+            $scope.ChartDataMap = concatHashmap(
+              TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
+              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
+            );
+            redrawPopup();
+
             cloudberry.commonTimeSeriesResult =
               TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
             TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
-            console.log(cloudberry.commonTimeSeriesResult);
           }
           // When the query is executed completely, we update the time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            console.log("done");
+            redrawPopup();
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
@@ -212,19 +319,25 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberry.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
+
             console.log("2");
-            console.log(cloudberry.timeSeriesQueryResult);
+
             // Avoid memory leak.
             resultSet[0] = [];
+            $scope.ChartDataMap = concatHashmap(
+              TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
+              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
+            );
+             redrawPopup();
+
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
-            console.log(cloudberry.commonTimeSeriesResult);
             cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
           }
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            console.log("done");
+            redrawPopup();
             MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
@@ -276,87 +389,16 @@ angular.module('cloudberry.map')
             layer.bringToFront();
           }
 
-          // get chart data for the polygon
+          // get selected geoID for the polygon
           $scope.selectedPlace = layer.feature;
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
-          console.log($scope.selectedGeoID);
-          var geoIDChartData = $scope.ChartDataMap.get($scope.selectedGeoID);
-          (geoIDChartData)? $scope.chartData = $scope.preProcess(geoIDChartData) : $scope.chartData = [];
-
-          // get the count info of polygon
-          var placeName = $scope.selectedPlace.properties.name;
-          var infoPromp = $scope.infoPromp;
-          var countText = '0';
-          var logicLevel = $scope.status.logicLevel;
-          if($scope.selectedPlace.properties.countText) {
-            countText = $scope.selectedPlace.properties.countText;
-          }
-
-          // Generate the html in pop up window
-          var linechart;
-          if($scope.chartData.length===0) {
-            linechart = '<div id="popup-info" style="margin-bottom: 0">' +
-              '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
-              '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+countText+'</b></div>' +
-              '</div>'+
-              "<canvas id=\"myChart\" height=\"0\" ></canvas>";
-          }else {
-            linechart = '<div id="popup-info">' +
-              '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
-              '<div id="popup-count">'+infoPromp+'<b> '+countText+'</b></div>' +
-              '</div>'+
-              "<canvas id=\"myChart\"></canvas>";
-          }
 
           // bind a pop up window
-          var popUp = L.popup();
-          layer.bindPopup(popUp).openPopup();
-          popUp.setContent(linechart).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+          $scope.popUp = L.popup();
+          layer.bindPopup($scope.popUp).openPopup();
+          $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+          drawLineChart();
 
-          // If there are chartData, draw the line chart
-          if($scope.chartData.length !== 0) {
-            var ctx = document.getElementById("myChart").getContext('2d');
-            var myChart = new Chart(ctx, {
-              type: 'line',
-              data:{
-                datasets:[{
-                  lineTension: 0,
-                  data:$scope.chartData,
-                  borderColor:"#3e95cd",
-                  borderWidth: 0.8,
-                  pointRadius: 1.5
-                }]
-              },
-
-              options: {
-                legend: {
-                  display: false
-                },
-                scales: {
-                  xAxes: [{
-                    type: 'time',
-                    time: {
-                      unit:'month'
-                    },
-                    scaleLabel: {
-                      display: true,
-                      labelString: 'Date'
-                    }
-                  }],
-                  yAxes: [{
-                    scaleLabel: {
-                      display: true,
-                      labelString: 'Count'
-                    },
-                    ticks: {
-                      beginAtZero: true,
-                      suggestedMax: 4
-                    }
-                  }]
-                }
-              }
-            });
-          }
         }
       }
 
