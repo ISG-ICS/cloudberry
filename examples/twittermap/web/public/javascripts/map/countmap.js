@@ -69,16 +69,16 @@ angular.module('cloudberry.map')
       return resultByMonth;
     };
     // Watch the cloudberry.commonChartDataMap, to change chartDataMap
-    $scope.$watch(
-      function() {
-        return cloudberry.commonChartDataMap;
-      },
-      function(newResult) {
-        if(newResult) {
-          $scope.ChartDataMap = newResult;
-        }
-      }
-    );
+    // $scope.$watch(
+    //   function() {
+    //     return cloudberry.commonChartDataMap;
+    //   },
+    //   function(newResult) {
+    //     if(newResult) {
+    //       $scope.ChartDataMap = newResult;
+    //     }
+    //   }
+    // );
 
     // set map styles for countmap
     function setCountMapStyle() {
@@ -179,15 +179,20 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
+            console.log("1");
+            console.log(cloudberry.timeSeriesQueryResult);
+
             // Avoid memory leak.
             resultSet[0] = [];
             cloudberry.commonTimeSeriesResult =
               TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
             TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+            console.log(cloudberry.commonTimeSeriesResult);
           }
           // When the query is executed completely, we update the time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            console.log("done");
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
@@ -207,15 +212,19 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberry.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
+            console.log("2");
+            console.log(cloudberry.timeSeriesQueryResult);
             // Avoid memory leak.
             resultSet[0] = [];
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+            console.log(cloudberry.commonTimeSeriesResult);
             cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
           }
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            console.log("done");
             MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
@@ -270,6 +279,7 @@ angular.module('cloudberry.map')
           // get chart data for the polygon
           $scope.selectedPlace = layer.feature;
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
+          console.log($scope.selectedGeoID);
           var geoIDChartData = $scope.ChartDataMap.get($scope.selectedGeoID);
           (geoIDChartData)? $scope.chartData = $scope.preProcess(geoIDChartData) : $scope.chartData = [];
 
