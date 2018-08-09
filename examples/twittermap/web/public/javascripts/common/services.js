@@ -350,6 +350,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       // storage for the newest byTimeSeries query result, with format {geoId, day, count}.
       timeSeriesQueryResult: [],
       commonHashTagResult: [],
+      commonChartDataMap: new HashMap(),
       errorMessage: null,
 
       query: function(parameters) {
@@ -550,6 +551,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
+              cloudberryService.commonChartDataMap = TimeSeriesCache.arrayToStore(cloudberryService.parameters.geoIds,result.value[0],cloudberryService.parameters.geoLevel);
               // Avoid memory leak.
               result.value[0] = [];
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
@@ -571,6 +573,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
+              cloudberryService.commonChartDataMap = TimeSeriesCache.arrayToStore(cloudberryService.parameters.geoIds,result.value[0],cloudberryService.parameters.geoLevel);
               // Avoid memory leak.
               result.value[0] = [];
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(

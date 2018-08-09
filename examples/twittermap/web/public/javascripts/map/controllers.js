@@ -201,6 +201,35 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
         features[id].properties["centerLog"] = (maxLog + minLog) / 2;
         features[id].properties["centerLat"] = (maxLat + minLat) / 2;
+
+        // Set the situation of popup window
+        if(maxLog*minLog<0 && minLog<0){
+          // For the "Alaska" State, special situation
+          minLog = Number.POSITIVE_INFINITY;
+          maxLog = Number.NEGATIVE_INFINITY;
+          if(features[id].geometry.type === "Polygon") {
+            features[id].geometry.coordinates[0].forEach(function(pair) {
+              if (pair[0]<0) {
+                minLog = Math.min(minLog, pair[0]);
+                maxLog = Math.max(maxLog, pair[0]);
+              }
+            });
+          } else if( features[id].geometry.type === "MultiPolygon") {
+            features[id].geometry.coordinates.forEach(function(array){
+              array[0].forEach(function(pair){
+                if (pair[0]<0) {
+                  minLog = Math.min(minLog, pair[0]);
+                  maxLog = Math.max(maxLog, pair[0]);
+                }
+              });
+            });
+          }
+          features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
+          features[id].properties["popUpLat"] = (maxLat + minLat) / 2;
+        }else {
+          features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
+          features[id].properties["popUpLat"] = maxLat;
+        }
       }
     }
     
@@ -323,6 +352,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent)
         $scope.map.fitBounds(leafletEvent.target.getBounds());
+        $(".leaflet-popup-close-button")[0].click();
     };
     
     // For randomize coordinates by bounding_box

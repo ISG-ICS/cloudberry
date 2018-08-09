@@ -2,6 +2,83 @@ angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
                                        TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
 
+    // Array to store the data for chart
+    $scope.chartData=[];
+    // Map to store the chart data for every polygon
+    $scope.ChartDataMap = new HashMap();
+    // return difference of two arrays
+    function arr_diff (a1, a2) {
+      var a = [], diff = [];
+      for (var i = 0; i < a1.length; i++) {
+        a[a1[i]] = true;
+      }
+      for (var j = 0; j < a2.length; j++) {
+        if (a[a2[j]]) {
+          delete a[a2[j]];
+        } else {
+          a[a2[j]] = true;
+        }
+      }
+      for (var k in a) {
+        diff.push(k);
+      }
+      return diff;
+    }
+    // Convert the array in chartDataMap to count result by month, which can be read by chart.js
+    $scope.preProcess = function (result) {
+      // group by year
+      groups = result.reduce(function (r, o) {
+        var m = o.day.split(('-'))[0];
+        (r[m])? r[m].data.push(o) : r[m] = {year: m, data: [o]};
+        return r;
+      }, {});
+      var resultByYear = Object.keys(groups).map(function(k){ return groups[k]; });
+      // sum up the result for every month
+      var resultByMonth = [];
+      var hasCountMonth = [];
+      for (var i=0; i<resultByYear.length;i++){
+        groups = resultByYear[i].data.reduce(function (r, o) {
+          var m = o.day.split(('-'))[1];
+          if (r[m]){
+            r[m].y += o.count;
+          }else{
+            var thisMonth = new Date(resultByYear[i].year,m-1);
+            r[m] = { y: o.count, x: thisMonth};
+            hasCountMonth.push(thisMonth);
+          }
+          return r;
+        }, {});
+        var resultByMonthOneYear = Object.keys(groups).map(function(k){ return groups[k]; });
+        resultByMonth = resultByMonth.concat(resultByMonthOneYear);
+      }
+      // add empty data point
+      var zeroCountMonth = [];
+      var minDate = cloudberry.parameters.timeInterval.start;
+      var maxDate = cloudberry.parameters.timeInterval.end;
+      for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
+        zeroCountMonth.push(new Date(m.getTime()));
+      }
+      zeroCountMonth = arr_diff(hasCountMonth,zeroCountMonth);
+      for (var j = 0; j < zeroCountMonth.length; j++) {
+        resultByMonth.push({x: new Date(zeroCountMonth[j]), y:0});
+      }
+      // sort the date
+      resultByMonth.sort(function(a,b){
+        return a.x - b.x;
+      });
+      return resultByMonth;
+    };
+    // Watch the cloudberry.commonChartDataMap, to change chartDataMap
+    $scope.$watch(
+      function() {
+        return cloudberry.commonChartDataMap;
+      },
+      function(newResult) {
+        if(newResult) {
+          $scope.ChartDataMap = newResult;
+        }
+      }
+    );
 
     // set map styles for countmap
     function setCountMapStyle() {
@@ -178,21 +255,102 @@ angular.module('cloudberry.map')
     
     // initialize countmap
     function setInfoControlCountMap() {
-    
+
       // Interaction function
-      // highlight a polygon when the mouse is pointing at it
-      function highlightFeature(leafletEvent) {
+      // highlight a polygon when the mouse is pointing at it, and popup a window
+      function highlightPopupInfo(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
+          // highlight a polygon
           var layer = leafletEvent.target;
           layer.setStyle($scope.styles.hoverStyle);
           if (!L.Browser.ie && !L.Browser.opera) {
             layer.bringToFront();
           }
+
+          // get chart data for the polygon
           $scope.selectedPlace = layer.feature;
+          $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
+          var geoIDChartData = $scope.ChartDataMap.get($scope.selectedGeoID);
+          (geoIDChartData)? $scope.chartData = $scope.preProcess(geoIDChartData) : $scope.chartData = [];
+
+          // get the count info of polygon
+          var placeName = $scope.selectedPlace.properties.name;
+          var infoPromp = $scope.infoPromp;
+          var countText = '0';
+          var logicLevel = $scope.status.logicLevel;
+          if($scope.selectedPlace.properties.countText) {
+            countText = $scope.selectedPlace.properties.countText;
+          }
+
+          // Generate the html in pop up window
+          var linechart;
+          if($scope.chartData.length===0) {
+            linechart = '<div id="popup-info" style="margin-bottom: 0">' +
+              '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
+              '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+countText+'</b></div>' +
+              '</div>'+
+              "<canvas id=\"myChart\" height=\"0\" ></canvas>";
+          }else {
+            linechart = '<div id="popup-info">' +
+              '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
+              '<div id="popup-count">'+infoPromp+'<b> '+countText+'</b></div>' +
+              '</div>'+
+              "<canvas id=\"myChart\"></canvas>";
+          }
+
+          // bind a pop up window
+          var popUp = L.popup();
+          layer.bindPopup(popUp).openPopup();
+          popUp.setContent(linechart).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+
+          // If there are chartData, draw the line chart
+          if($scope.chartData.length !== 0) {
+            var ctx = document.getElementById("myChart").getContext('2d');
+            var myChart = new Chart(ctx, {
+              type: 'line',
+              data:{
+                datasets:[{
+                  lineTension: 0,
+                  data:$scope.chartData,
+                  borderColor:"#3e95cd",
+                  borderWidth: 0.8,
+                  pointRadius: 1.5
+                }]
+              },
+
+              options: {
+                legend: {
+                  display: false
+                },
+                scales: {
+                  xAxes: [{
+                    type: 'time',
+                    time: {
+                      unit:'month'
+                    },
+                    scaleLabel: {
+                      display: true,
+                      labelString: 'Date'
+                    }
+                  }],
+                  yAxes: [{
+                    scaleLabel: {
+                      display: true,
+                      labelString: 'Count'
+                    },
+                    ticks: {
+                      beginAtZero: true,
+                      suggestedMax: 4
+                    }
+                  }]
+                }
+              }
+            });
+          }
         }
       }
 
-      // remove the highlight interaction function for the polygons
+      // remove the highlight interaction function for the polygons， and close popup window
       function resetHighlight(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
           var style;
@@ -212,6 +370,10 @@ angular.module('cloudberry.map')
           }
           if (leafletEvent){
             leafletEvent.target.setStyle(style);
+            var orginalTarget = leafletEvent.originalEvent.relatedTarget;
+            if(orginalTarget && orginalTarget.toString()!=="[object HTMLDivElement]" && $(".leaflet-popup-close-button")[0]) {
+              $(".leaflet-popup-close-button")[0].click();
+            }
           }
         }
       }
@@ -222,37 +384,37 @@ angular.module('cloudberry.map')
       // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
         layer.on({
-          mouseover: highlightFeature,
+          mouseover: highlightPopupInfo,
           mouseout: resetHighlight,
           click: $scope.zoomToFeature
         });
       }
 
-      // add info control
-      var info = L.control();
-
-      info.onAdd = function() {
-        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
-        this._div.style.margin = '20% 0 0 0';
-        this._div.innerHTML = [
-          '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
-          '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
-          '<br/>',
-          '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
-        ].join('');
-        $compile(this._div)($scope);
-        return this._div;
-      };
-
-      info.options = {
-        position: 'topleft'
-      };
-      if ($scope.map){
-        info.addTo($scope.map);
-      }
-      else {
-        $scope.controls.custom.push(info);
-      }
+      // // add info control
+      // var info = L.control();
+      //
+      // info.onAdd = function() {
+      //   this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+      //   this._div.style.margin = '20% 0 0 0';
+      //   this._div.innerHTML = [
+      //     '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
+      //     '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
+      //     '<br/>',
+      //     '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
+      //   ].join('');
+      //   $compile(this._div)($scope);
+      //   return this._div;
+      // };
+      //
+      // info.options = {
+      //   position: 'topleft'
+      // };
+      // if ($scope.map){
+      //   info.addTo($scope.map);
+      // }
+      // else {
+      //   $scope.controls.custom.push(info);
+      // }
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
@@ -496,6 +658,7 @@ angular.module('cloudberry.map')
       }
 
       function setCountLegend(div) {
+        div.style.margin = '20% 0 0 0';
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
         var gName  = getGradesNames(grades);
