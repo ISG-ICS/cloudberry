@@ -122,7 +122,8 @@ class DataStoreManager(metaDataset: String,
         val originInfo = metaData.get(newStats.dbName).head
         val updatedCardinality = originInfo.stats.cardinality + newStats.additionalCount
         val updatedStats = originInfo.stats.copy(cardinality = updatedCardinality)
-        val updatedInfo = originInfo.copy(stats = updatedStats)
+        val updatedDataInterval = newStats.dataInterval
+        val updatedInfo = originInfo.copy(stats = updatedStats, dataInterval = updatedDataInterval)
         metaData.put(newStats.dbName, updatedInfo)
         flushMetaData()
       } else {
