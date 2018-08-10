@@ -1,4 +1,4 @@
-angular.module('cloudberry.sidebar', ['cloudberry.common'])
+angular.module("cloudberry.sidebar", ["cloudberry.common"])
   .controller("SidebarCtrl", function($scope, cloudberry) {
     cloudberry.parameters.isSampleTweetsOpen = false;
     cloudberry.parameters.isHashTagOpen = false;
@@ -101,7 +101,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
     //   }
     // };
   })
-  .controller('HashTagCtrl', function ($scope, $window, cloudberry) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
     $scope.hashTagsList = null;
     $scope.$watch(
       function () {
@@ -116,8 +116,8 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
   })
   .directive('hashtag', function () {
     return {
-      restrict: 'E',
-      controller: 'HashTagCtrl',
+      restrict: "E",
+      controller: "HashTagCtrl",
       template: [
         '<table class="table" id="hashcount">',
         '<thead>',
@@ -127,16 +127,16 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       ].join('')
     };
   })
-  .controller('TweetCtrl', function ($scope, $window, $http, cloudberry) {
+  .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
     $scope.results = {};
 
     function drawTweets(message) {
-      $('#tweet').html('');
+      $("#tweet").html('');
       if (message) {
         $.each(message, function (i, d) {
           var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
           $http.jsonp(url).success(function (data) {
-            $('#tweet').append(data.html);
+            $("#tweet").append(data.html);
           });
         });
       }
@@ -154,7 +154,7 @@ angular.module('cloudberry.sidebar', ['cloudberry.common'])
       }
     );
   })
-  .directive('tweet', function () {
+  .directive("tweet", function () {
     return {
       restrict: 'E',
       controller: 'TweetCtrl'
