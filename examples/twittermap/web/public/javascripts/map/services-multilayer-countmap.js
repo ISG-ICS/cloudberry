@@ -1,8 +1,7 @@
 angular.module('cloudberry.map')
-  .service('multilayerCountmap', function($http, $timeout,$q, $compile, cloudberry, cloudberryConfig, leafletData, moduleManager, MapResultCache, cloudberryClient, queryUtil){
-    var instance;
-    function initCountMap(scope){
-      instance = this;
+  .service('multilayerCountmap', function($http, $timeout,$q, $compile, cloudberry, cloudberryConfig, leafletData, moduleManager, MapResultCache, cloudberryClient, queryUtil, Cache){
+
+    function initCountMap(scope,instance){
       this.scope = scope;
       this.doNormalization = false;
       this.doSentiment = false;
@@ -13,13 +12,13 @@ angular.module('cloudberry.map')
       scope.$on("leafletDirectiveMap.zoomend",function(){
         if(cloudberry.parameters.maptype=="countmap")
         {
-          zoomFunction();
+          zoomFunction(instance);
         }
       });
       scope.$on("leafletDirectiveMap.dragend", function(){
         if(cloudberry.parameters.maptype=="countmap")
         {
-          dragFunction();
+          dragFunction(instance);
         }
       });
       countmapStyle = {
@@ -172,7 +171,7 @@ angular.module('cloudberry.map')
         instance.doNormalization = resultN;
         if(cloudberry.parameters.maptype==="countmap")
         {
-          sendCountmapQuery();    
+          sendCountmapQuery(instance);    
         }
       })
 
@@ -360,7 +359,7 @@ angular.module('cloudberry.map')
     };
    
     // Send query to cloudberry
-    function sendCountmapQuery() {
+    function sendCountmapQuery(instance) {
       // Batch request without map result - used when the complete map result cache hit case
       var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
         batch: [queryUtil.byTimeRequest(cloudberry.parameters)],
@@ -391,7 +390,7 @@ angular.module('cloudberry.map')
       if(instance.geoIdsNotInCache.length === 0)  {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
                                                                 cloudberry.parameters.geoLevel);
-        drawCountMap(cloudberry.countmapMapResult);
+        drawCountMap(cloudberry.countmapMapResult,instance);
         cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet){
           if(angular.isArray(resultSet)) {
             cloudberry.commonTimeSeriesResult = resultSet[0];
@@ -407,7 +406,7 @@ angular.module('cloudberry.map')
           if(angular.isArray(resultSet)) {
             cloudberry.commonTimeSeriesResult = resultSet[0];
             cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
-            drawCountMap(cloudberry.countmapMapResult);
+            drawCountMap(cloudberry.countmapMapResult,instance);
           }
           // When the query is executed completely, we update the map result cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
@@ -419,14 +418,13 @@ angular.module('cloudberry.map')
       }
     }
     
-    function countmapHandler(){
-      sendCountmapQuery();
+    function countmapHandler(instance){
+      sendCountmapQuery(instance);
     }
     
-    function drawCountMap(result,ref=instance){
-      var instance = ref;
-      var colors = ref.styles.colors;
-      var sentimentColors = ref.styles.sentimentColors;
+    function drawCountMap(result,instance){
+      var colors = instance.styles.colors;
+      var sentimentColors = instance.styles.sentimentColors;
       var normalizedCountMax = 0,
           normalizedCountMin = 0,
           intervals = colors.length - 1,
@@ -716,7 +714,7 @@ angular.module('cloudberry.map')
       }
     }
 
-    function zoomFunction(){
+    function zoomFunction(instance){
       function resetGeoInfo(level) {
         instance.status.logicLevel = level;
         cloudberry.parameters.geoLevel = level;
@@ -780,7 +778,7 @@ angular.module('cloudberry.map')
       }
     }
 
-    function dragFunction(){            
+    function dragFunction(instance){            
       instance.bounds = instance.map.getBounds();
       var geoData;
       if (instance.status.logicLevel === 'state') {
@@ -795,7 +793,7 @@ angular.module('cloudberry.map')
         geoData = instance.geojsonData.state;
       }  
       if (instance.status.logicLevel === 'city') {
-        instance.loadCityJsonByBound(instance.onEachFeature);
+          loadCityJsonByBound(instance.onEachFeature);
       } else {
         resetGeoIds(instance.bounds, geoData, instance.status.logicLevel + "ID");
         cloudberry.parameters.geoLevel = instance.status.logicLevel;

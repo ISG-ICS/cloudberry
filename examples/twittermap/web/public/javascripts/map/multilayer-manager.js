@@ -28,7 +28,8 @@ angular.module("cloudberry.map")
           if(cloudberry.parameters.layers[key].layer){
             $scope.map.addLayer(cloudberry.parameters.layers[key].layer);
           }
-          cloudberry.parameters.layers[key].onMapTypeChange();
+          //Pass the instance back to handler function
+          cloudberry.parameters.layers[key].onMapTypeChange(cloudberry.parameters.layers[key]);
         }
       }
 
@@ -42,7 +43,7 @@ angular.module("cloudberry.map")
       {   
         if(key === layerName && cloudberry.parameters.layers[key].active === 1)
         {
-          cloudberry.parameters.layers[key].onChangeSearchKeyword();
+          cloudberry.parameters.layers[key].onChangeSearchKeyword(cloudberry.parameters.layers[key]);
         }
       }
     });
@@ -55,7 +56,7 @@ angular.module("cloudberry.map")
       {   
         if(key === layerName && cloudberry.parameters.layers[key].active === 1)
         {
-          cloudberry.parameters.layers[key].onChangeTimeSeriesRange();
+          cloudberry.parameters.layers[key].onChangeTimeSeriesRange(cloudberry.parameters.layers[key]);
         }
       }
       
@@ -68,7 +69,7 @@ angular.module("cloudberry.map")
       {   
         if(key === layerName && cloudberry.parameters.layers[key].active === 1)
         {
-          cloudberry.parameters.layers[key].onZoom();
+          cloudberry.parameters.layers[key].onZoom(cloudberry.parameters.layers[key]);
         }
       }
     });
@@ -80,7 +81,7 @@ angular.module("cloudberry.map")
       {   
         if(key === layerName && cloudberry.parameters.layers[key].active === 1)
         {
-          cloudberry.parameters.layers[key].onDrag();
+          cloudberry.parameters.layers[key].onDrag(cloudberry.parameters.layers[key]);
         }
       }  
     });
@@ -91,7 +92,7 @@ angular.module("cloudberry.map")
     function addLayer(layerID, active, parameters){
       createLayerService[layerID](parameters).then(function(layer){
         cloudberry.parameters.layers[layerID] = layer;
-        cloudberry.parameters.layers[layerID].init($scope).then(function(){
+        cloudberry.parameters.layers[layerID].init($scope,layer).then(function(){
           cloudberry.parameters.layers[layerID].active = active;
           if (cloudberry.parameters.layers[layerID].active){
             $scope.map.addLayer(cloudberry.parameters.layers[layerID].layer);
