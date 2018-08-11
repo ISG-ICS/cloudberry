@@ -64,17 +64,17 @@ angular.module('cloudberry.map')
       // Generate the html in pop up window
       var content;
       if($scope.chartData.length===0) {
-        content = '<div id="popupAll"><div id="popup-info" style="margin-bottom: 0">' +
+        content = '<div id="popup-info" style="margin-bottom: 0">' +
           '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
           '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+countText+'</b></div>' +
           '</div>'+
-          "<canvas id=\"myChart\" height=\"0\" ></canvas></div>";
+          "<canvas id=\"myChart\" height=\"0\" ></canvas>";
       }else {
-        content = '<div id="popupAll"><div id="popup-info">' +
+        content = '<div id="popup-info">' +
           '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
           '<div id="popup-count">'+infoPromp+'<b> '+countText+'</b></div>' +
           '</div>'+
-          "<canvas id=\"myChart\"></canvas></div>";
+          "<canvas id=\"myChart\"></canvas>";
       }
       return content;
     }
@@ -83,7 +83,9 @@ angular.module('cloudberry.map')
     function addPopupEvent() {
       document.getElementsByClassName("leaflet-popup")[0].onmouseout=function (e) {
         var target = e.relatedTarget;
-        if(target && target.className.toString()==="[object SVGAnimatedString]") $scope.map.closePopup();
+        if(target && target.className.toString()==="[object SVGAnimatedString]") {
+          $scope.map.closePopup();
+        }
       };
     }
 
@@ -437,7 +439,7 @@ angular.module('cloudberry.map')
           if (leafletEvent){
             leafletEvent.target.setStyle(style);
             var orginalTarget = leafletEvent.originalEvent.relatedTarget;
-            if(orginalTarget && orginalTarget.toString()!=="[object HTMLDivElement]") {
+            if(orginalTarget && orginalTarget.toString()==="[object SVGSVGElement]") {
               $scope.map.closePopup();
             }
           }
