@@ -64,19 +64,26 @@ angular.module('cloudberry.map')
       // Generate the html in pop up window
       var content;
       if($scope.chartData.length===0) {
-        content = '<div id="popup-info" style="margin-bottom: 0">' +
+        content = '<div id="popupAll"><div id="popup-info" style="margin-bottom: 0">' +
           '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
           '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+countText+'</b></div>' +
           '</div>'+
-          "<canvas id=\"myChart\" height=\"0\" ></canvas>";
+          "<canvas id=\"myChart\" height=\"0\" ></canvas></div>";
       }else {
-        content = '<div id="popup-info">' +
+        content = '<div id="popupAll"><div id="popup-info">' +
           '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
           '<div id="popup-count">'+infoPromp+'<b> '+countText+'</b></div>' +
           '</div>'+
-          "<canvas id=\"myChart\"></canvas>";
+          "<canvas id=\"myChart\"></canvas></div>";
       }
       return content;
+    }
+
+    // Add the event for popup window: when mouse out, close the popup window
+    function addPopupEvent() {
+      document.getElementById("popupAll").onmouseout=function (e) {
+        if(e.relatedTarget.id==="") $scope.map.closePopup();
+      };
     }
 
     // If there are chartData, draw the line chart
@@ -128,8 +135,9 @@ angular.module('cloudberry.map')
 
     // redraw popup window after ChartdataMap is updated
     function redrawPopup(){
-      if($scope.popUp){
+      if($scope.popUp && $scope.popUp._isOpen){
         $scope.popUp.setContent(getPopupContent());
+        addPopupEvent();
         drawLineChart();
       }
     }
@@ -264,6 +272,7 @@ angular.module('cloudberry.map')
         batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
       };
 
+      console.log($scope.geoIdsNotInCache);
       // Complete map result cache hit case - exclude map result request
       if($scope.geoIdsNotInCache.length === 0)  {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
@@ -279,6 +288,7 @@ angular.module('cloudberry.map')
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
             console.log("1");
+            console.log(cloudberry.timeSeriesQueryResult);
             if(cloudberry.timeSeriesQueryResult.length!==0){
               console.log(cloudberry.timeSeriesQueryResult);
               console.log("!!!!!!");
@@ -321,6 +331,7 @@ angular.module('cloudberry.map')
             cloudberry.timeSeriesQueryResult = resultSet[0];
 
             console.log("2");
+            console.log(cloudberry.timeSeriesQueryResult);
 
             // Avoid memory leak.
             resultSet[0] = [];
@@ -374,7 +385,7 @@ angular.module('cloudberry.map')
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
-    
+
     // initialize countmap
     function setInfoControlCountMap() {
 
@@ -394,9 +405,11 @@ angular.module('cloudberry.map')
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
 
           // bind a pop up window
-          $scope.popUp = L.popup();
+          $scope.popUp = L.popup({closeButton:false});
           layer.bindPopup($scope.popUp).openPopup();
           $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+
+          addPopupEvent();
           drawLineChart();
 
         }
@@ -423,8 +436,8 @@ angular.module('cloudberry.map')
           if (leafletEvent){
             leafletEvent.target.setStyle(style);
             var orginalTarget = leafletEvent.originalEvent.relatedTarget;
-            if(orginalTarget && orginalTarget.toString()!=="[object HTMLDivElement]" && $(".leaflet-popup-close-button")[0]) {
-              $(".leaflet-popup-close-button")[0].click();
+            if(orginalTarget && orginalTarget.toString()!=="[object HTMLDivElement]") {
+              $scope.map.closePopup();
             }
           }
         }
