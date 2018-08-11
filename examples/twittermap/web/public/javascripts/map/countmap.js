@@ -81,8 +81,9 @@ angular.module('cloudberry.map')
 
     // Add the event for popup window: when mouse out, close the popup window
     function addPopupEvent() {
-      document.getElementById("popupAll").onmouseout=function (e) {
-        if(e.relatedTarget.id==="") $scope.map.closePopup();
+      document.getElementsByClassName("leaflet-popup")[0].onmouseout=function (e) {
+        var target = e.relatedTarget;
+        if(target && target.className.toString()==="[object SVGAnimatedString]") $scope.map.closePopup();
       };
     }
 
@@ -405,7 +406,7 @@ angular.module('cloudberry.map')
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
 
           // bind a pop up window
-          $scope.popUp = L.popup({closeButton:false});
+          $scope.popUp = L.popup();
           layer.bindPopup($scope.popUp).openPopup();
           $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
 
