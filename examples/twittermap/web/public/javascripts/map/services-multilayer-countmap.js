@@ -283,7 +283,7 @@ angular.module('cloudberry.map')
       return deferred.promise;
     }
     
-    function loadCityJsonByBound(onEachFeature){
+    function loadCityJsonByBound(onEachFeature,instance){
       var scope = instance.scope;
       var bounds = scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
@@ -738,7 +738,7 @@ angular.module('cloudberry.map')
           }
           instance.layer.addLayer(instance.polygons.countyUpperPolygons);
           onEachFeature = null;
-          loadCityJsonByBound(onEachFeature);
+          loadCityJsonByBound(onEachFeature,instance);
         } else if (instance.status.zoomLevel > 5) {
           resetGeoInfo("county");
           moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
@@ -755,10 +755,12 @@ angular.module('cloudberry.map')
           instance.layer.addLayer(instance.polygons.countyPolygons);
         } else if (instance.status.zoomLevel <= 5) {
           resetGeoInfo("state");
-          moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
-          //if (!instance.status.init) {
+          if(!instance.status.init){
+            moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+          }
+          if (!instance.status.init) {
           cloudberry.query(cloudberry.parameters);
-          //}
+          }
           if (instance.polygons.countyPolygons) {
             instance.layer.removeLayer(instance.polygons.countyPolygons);
           }
@@ -793,11 +795,12 @@ angular.module('cloudberry.map')
         geoData = instance.geojsonData.state;
       }  
       if (instance.status.logicLevel === 'city') {
-          loadCityJsonByBound(instance.onEachFeature);
+          loadCityJsonByBound(instance.onEachFeature,instance);
       } else {
         resetGeoIds(instance.bounds, geoData, instance.status.logicLevel + "ID");
-        cloudberry.parameters.geoLevel = instance.status.logicLevel;
-        //cloudberry.query(cloudberry.parameters);
+        if(!instance.status.init){
+          cloudberry.parameters.geoLevel = instance.status.logicLevel;
+        }
         moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: instance.map.getBounds()});
       }
     }
