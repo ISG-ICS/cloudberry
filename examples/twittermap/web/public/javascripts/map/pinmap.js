@@ -56,6 +56,13 @@ angular.module("cloudberry.map")
 
     // Send query to cloudberry
     function sendPinmapQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords == null
+        || cloudberry.parameters.keywords.length == 0) {
+        return;
+      }
+
       var pinsJson = {
         dataset: cloudberry.parameters.dataset,
         filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),

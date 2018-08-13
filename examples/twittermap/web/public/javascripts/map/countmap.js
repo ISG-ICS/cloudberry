@@ -58,6 +58,13 @@ angular.module('cloudberry.map')
 
     // Send query to cloudberry
     function sendCountmapQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords == null
+        || cloudberry.parameters.keywords.length == 0) {
+        return;
+      }
+
       // Batch request without map result - used when the complete map result cache hit case
       var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
         batch: [queryUtil.byTimeRequest(cloudberry.parameters)],

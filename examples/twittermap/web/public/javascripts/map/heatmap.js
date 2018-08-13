@@ -55,6 +55,13 @@ angular.module("cloudberry.map")
 
     // Send query to cloudberry
     function sendHeatmapQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords == null
+        || cloudberry.parameters.keywords.length == 0) {
+        return;
+      }
+
       var heatJson = {
         dataset: cloudberry.parameters.dataset,
         filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultHeatmapSamplingDayRange, cloudberry.parameters.geoIds),
