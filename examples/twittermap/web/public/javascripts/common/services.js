@@ -11,6 +11,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
+      pinMapOneTweetLookUpResult: null,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
@@ -531,6 +532,37 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
 
         handleSampleTweetsRequest(parameters);
         handleHashTagRequest(parameters);
+      },
+        // This query retrieves the information about a specific tweet that the user selected.
+        pinMapOneTweetLookUpQuery: function(pinid){
+
+          var setpinFilter = [{
+              field: "id",
+              relation: "=",
+              values: pinid
+          }];
+
+          var pinDBquery = (JSON.stringify({
+              dataset:"twitter.ds_tweet",
+              filter: setpinFilter,
+              select:{
+                  order: ["-create_at"],
+                  limit: defaultSamplingSize,
+                  offset: 0,
+                  field: ["id","text","user.id","create_at","user.name","user.profile_image_url"]
+              },
+              transform:{
+                  wrap:{
+                      id:"pinMapOneTweetLookUpResult",
+                      category:"pinMapOneTweetLookUpResult"
+                  }
+              }
+          }));
+
+          //changes the id's type from string to int64.
+          pinDBquery = pinDBquery.replace(/"(\d+)"/,"[$1]");
+
+          ws.send(pinDBquery);
       }
     };
 
@@ -595,6 +627,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
             break;
           case "totalCount":
             cloudberryService.commonTotalCount = result.value[0][0].count;
+            break;
+          case "pinMapOneTweetLookUpResult":
+            cloudberryConfig.pinMapOneTweetLookUpResult = result.value[0][0];
             break;
           case "error":
             console.error(result);

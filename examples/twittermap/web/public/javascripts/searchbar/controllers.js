@@ -1,5 +1,5 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
-  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig) {
+  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
       var stopwordsMap = buildStopwordsMap();
 
       $scope.search = function() {
@@ -25,7 +25,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
               }
               else {
                   cloudberry.parameters.keywords = newKeywords;
-                  cloudberry.query(cloudberry.parameters);
+                  moduleManager.publishEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, {keywords: newKeywords});
               }
           }
           else {
@@ -75,6 +75,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     }
   })
   .controller('ExceptionCtrl', function($scope, $window, cloudberry) {
+    // TODO - get rid of this variable watching by events subscribing and publishing
     $scope.$watch(
       function() {
         return cloudberry.errorMessage;
