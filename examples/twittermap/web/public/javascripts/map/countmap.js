@@ -62,7 +62,7 @@ angular.module('cloudberry.map')
       $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
         cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
 
-      // Batch request without map result - used when the complete map result cache hit case
+      // Batch request without map result - used when the complete map result cache hit, partial time series result cache hit case
       var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
         batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache)],
         option: {
@@ -77,9 +77,14 @@ angular.module('cloudberry.map')
         cloudberry.parameters.timeInterval,
         cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
 
-      // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
+      // Batch request without time series result - used when the complete time series cache hit, partial map result cache hit case
+      var batchWithoutTimeRequest = {
+        batch: [queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
+      };
+
+      // Batch request with only the geoIds whose map result or time series are not cached yet - partial map result cache hit case
       // This case also covers the complete cache miss case.
-      var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
+      var batchWithPartialRequest = cloudberryConfig.querySliceMills > 0 ? {
         batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
         option: {
           sliceMillis: cloudberryConfig.querySliceMills
@@ -88,8 +93,14 @@ angular.module('cloudberry.map')
         batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
       };
 
+      // Complete map result cache and time series cache hit case
+      if($scope.geoIdsNotInCache.length === 0 && $scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+        cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+      }
       // Complete map result cache hit case - exclude map result request
-      if($scope.geoIdsNotInCache.length === 0)  {
+      else if($scope.geoIdsNotInCache.length === 0)  {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
 
@@ -116,12 +127,26 @@ angular.module('cloudberry.map')
           }
         }, "batchWithoutGeoRequest");
       }
+      // Complete time series cache hit case - exclude time series request
+      else if($scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+        cloudberryClient.send(batchWithoutTimeRequest, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            cloudberry.countmapMapResult = resultSet[0];
+          }
+          // When the query is executed completely, we update the map result cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
+              cloudberry.countmapMapResult);
+          }
+        }, "batchWithoutTimeRequest");
+      }
       // Partial map result cache hit case
-      else  {
+      else {
         cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
 
-        cloudberryClient.send(batchWithPartialGeoRequest, function(id, resultSet, resultTimeInterval){
+        cloudberryClient.send(batchWithPartialRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
             var requestTimeRange = {
               start: new Date(resultTimeInterval.start),
@@ -144,7 +169,7 @@ angular.module('cloudberry.map')
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
-        }, "batchWithPartialGeoRequest");
+        }, "batchWithPartialRequest");
       }
     }
 
