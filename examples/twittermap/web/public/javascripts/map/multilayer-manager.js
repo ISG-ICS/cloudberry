@@ -9,9 +9,13 @@ angular.module("cloudberry.map")
 
       for(var key in cloudberry.parameters.layers)
       {   
-        if(key!==layerName)
-        {       
-          if(cloudberry.parameters.layers[key].layer && key!="polygon"){
+        if(key !== layerName)
+        { 
+          //We do not remove polygon layer, for 2 reason
+          //(1) we do not have polygon maptype, so once the layer been removed it will not be redraw
+          //(2) we need polygon layer whenever the map type is not countmap, for 
+          //    efficiency consideration, it's wasting to redraw polygon layer when user switch between maps.
+          if(cloudberry.parameters.layers[key].layer && key !== "polygon"){
             $scope.map.removeLayer(cloudberry.parameters.layers[key].layer);
           }
           cloudberry.parameters.layers[key].active = 0;
@@ -85,9 +89,7 @@ angular.module("cloudberry.map")
         }
       }  
     });
-    
-    addLayer("countmap",1,{})
-    
+  
     //This function register layer to layer manager 
     function addLayer(layerID, active, parameters){
       createLayerService[layerID](parameters).then(function(layer){
@@ -99,6 +101,7 @@ angular.module("cloudberry.map")
           }
         });
       });
-    }         
-  
+    }
+    
+    addLayer("countmap",1,{});
   });

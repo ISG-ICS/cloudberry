@@ -1,7 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
-                                       moduleManager, cloudberryClient, queryUtil) {
-
+  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
     // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({
@@ -54,70 +52,6 @@ angular.module('cloudberry.map')
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       });
     }
-
-    // Send query to cloudberry
-    function sendCountmapQuery() {
-      // Batch request without map result - used when the complete map result cache hit case
-      var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters)],
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        }
-      } : {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters)]
-      };
-
-      // Gets the Geo IDs that are not in the map result cache.
-      $scope.geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
-        cloudberry.parameters.timeInterval,
-        cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
-
-      // Batch request with only the geoIds whose map result are not cached yet - partial map result cache hit case
-      // This case also covers the complete cache miss case.
-      var batchWithPartialGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
-        option: {
-          sliceMillis: cloudberryConfig.querySliceMills
-        }
-      } : {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
-      };
-
-      // Complete map result cache hit case - exclude map result request
-      if($scope.geoIdsNotInCache.length === 0)  {
-        cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
-          cloudberry.parameters.geoLevel);
-
-        cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet){
-          if(angular.isArray(resultSet)) {
-            cloudberry.commonTimeSeriesResult = resultSet[0];
-          }
-        }, "batchWithoutGeoRequest");
-      }
-      // Partial map result cache hit case
-      else  {
-        cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
-          cloudberry.parameters.geoLevel);
-
-        cloudberryClient.send(batchWithPartialGeoRequest, function(id, resultSet){
-          if(angular.isArray(resultSet)) {
-            cloudberry.commonTimeSeriesResult = resultSet[0];
-            cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
-          }
-          // When the query is executed completely, we update the map result cache.
-          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
-              cloudberry.countmapMapResult);
-          }
-        }, "batchWithPartialGeoRequest");
-      }
-    }
-
-    // Common event handler for Countmap
-    function countMapCommonEventHandler(event) {
-      sendCountmapQuery();
-    }
     
     // clear countmap specific data
     function cleanCountMap() {
@@ -135,11 +69,6 @@ angular.module('cloudberry.map')
       removeMapControl('sentiment');
       removeMapControl('info');
 
-      // Unsubscribe to moduleManager's events
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
     
     // initialize countmap
@@ -222,13 +151,8 @@ angular.module('cloudberry.map')
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
-      $scope.$parent.onEachFeature = onEachFeature;
-
-      // Subscribe to moduleManager's events
-      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
-      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
-      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
-      //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
+      $scope.resetZoomFunction(onEachFeature);
+      $scope.resetDragFunction(onEachFeature);
     }
     
     /**
@@ -236,6 +160,7 @@ angular.module('cloudberry.map')
      * @param    result  =>  mapPlotData, an array of coordinate and weight objects
      */
     function drawCountMap(result) {
+
       var colors = $scope.styles.colors;
       var sentimentColors = $scope.styles.sentimentColors;
       var normalizedCountMax = 0,
@@ -509,20 +434,53 @@ angular.module('cloudberry.map')
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
-    function onMapTypeChange(event) {
-      if (event.currentMapType === "countmap") {
+    $rootScope.$on('maptypeChange', function (event, data) {
+      if (cloudberry.parameters.maptype == 'countmap') {
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();
-        sendCountmapQuery();
+        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
       }
-      else if (event.previousMapType === "countmap"){
+      else if (data[0] == 'countmap'){
         cleanCountMap();
       }
-    }
-
-    //moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
+    })
     
-    // TODO - get rid of these variables watching by events subscribing and publishing
     // monitor the countmap related variables, update the countmap if necessary
+    $scope.$watchCollection(
+      function() {
+        return {
+          'countmapMapResult': cloudberry.countmapMapResult,
+          'doNormalization': $('#toggle-normalize').prop('checked'),
+          'doSentiment': $('#toggle-sentiment').prop('checked')
+        };
+      },
+
+      function(newResult, oldValue) {
+        if (cloudberry.parameters.maptype == 'countmap'){
+          if (newResult['countmapMapResult'] !== oldValue['countmapMapResult']) {
+            $scope.result = newResult['countmapMapResult'];
+            if (Object.keys($scope.result).length !== 0) {
+              $scope.status.init = false;
+              drawCountMap($scope.result);
+            } else {
+              drawCountMap($scope.result);
+            }
+          }
+          if(newResult['doNormalization'] !== oldValue['doNormalization']) {
+            $scope.doNormalization = newResult['doNormalization'];
+            drawCountMap($scope.result);
+          }
+          if(newResult['doSentiment'] !== oldValue['doSentiment']) {
+            $scope.doSentiment = newResult['doSentiment'];
+            if($scope.doSentiment) {
+              $scope.infoPromp = "Score";  // change the info promp
+            } else {
+              $scope.infoPromp = config.mapLegend;
+            }
+            drawCountMap($scope.result);
+          }
+        }
+      }
+    );
   });
