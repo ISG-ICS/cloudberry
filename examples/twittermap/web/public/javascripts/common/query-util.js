@@ -229,7 +229,31 @@ angular.module("cloudberry.common")
             field: ["create_at", "id", "user.id"]
           }
         };
+      },
+
+      getStatusOfView(parameters){
+        var keywords = [];
+        for(var i = 0; i < parameters.keywords.length; i++){
+          keywords.push(parameters.keywords[i].replace("\"", "").trim());
+        }
+        var filter = [
+          {
+            field: "unnest1",
+            relation: "matches",
+            values: keywords
+          }
+        ];
+        return {
+          dataset: "berry.meta",
+          filter: filter,
+          unnest: [{
+            "createQuery.filter": "unnest0"
+          },{
+            "unnest0.values": "unnest1"
+          }]
+        };
       }
+
     };
 
     return queryUtil;
