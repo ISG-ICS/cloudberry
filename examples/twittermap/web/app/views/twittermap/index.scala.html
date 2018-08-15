@@ -1,3 +1,4 @@
+
 @import controllers.TwitterMapApplication.DBType
 @(title: String, TMAobject: TwitterMapApplication, isDrugMap: Boolean) @main(title, TMAobject, isDrugMap){
 <div xmlns="http://www.w3.org/1999/html" ng-controller="AppCtrl">
@@ -31,18 +32,24 @@
     </button>
   </div>
 
-
   <div class="stats">
     <time-series id="chart"></time-series>
   </div>
 
-  <div id='sidebar' ng-init="click = -1" ng-class="{toggled: click === 1}" ng-controller="SidebarCtrl">
+  <!-- button for hiding and showing the sidebar -->
+  <div class="w3-teal" ng-init="click = 1" ng-class="{toggled: click === 1}">
+    <button type="button" class="btn btn-default btn-sm" onclick="openRightMenu()" ng-click="click = click*-1; showOrHideSidebar(click)">
+      <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div id='sidebar' class="open" ng-init="click = 1" ng-class="{toggled: click === 1}" ng-controller="SidebarCtrl">
     <div class = "col-xs-2">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeRightMenu()">&times;</a>
       <ul class="nav nav-tabs tabs-left">
         <li role="presentation" ng-click="click = 1; showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
         <li role="presentation" ng-click="click = 1; showTab('sampletweetTab')"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
         <li role="presentation" ng-click="click = 1; showTab('aboutTab')" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
-        <li role="presentation" ng-click="click = click*-1; showOrHideSidebar(click)"><i ng-class="click ===-1 ? 'fa fa-chevron-left fa-2x': 'fa fa-chevron-right fa-2x'"></i></li>
         <li><br/></li>
         <mapchoose>
           <li role="presentation"><img id="img1" name="img1" title="Count Map" src="/assets/images/aggregation_map.png" width="63" height="63" ></li><br/>
@@ -93,14 +100,22 @@
   $(document).ready(function() {
     $(".slide-up-down").click(function() {
       $(".stats").slideToggle();
-      if( $( 'button span' ).hasClass( 'glyphicon-menu-down' ) ) {
-        $( 'button span' ).removeClass( 'glyphicon-menu-down' ).addClass('glyphicon-menu-up');
+      if( $( '#downbutton' ).hasClass( 'glyphicon-menu-down' ) ) {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-down' ).addClass('glyphicon-menu-up');
         $(this).animate({bottom: '5px'});
       }
       else {
-        $( 'button span' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
-        $(this).animate({bottom: '110px'}); 
-      }
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
+      };
     });
   });
+
+  // Function for the button that open the sidebar.
+  function openRightMenu() {
+      document.getElementById("sidebar").style.left = "76%";
+  }
+  //Function for the button for close the sidebar.
+  function closeRightMenu() {
+      document.getElementById("sidebar").style.left = "100%";
+  }
 </script>
