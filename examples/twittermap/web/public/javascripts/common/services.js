@@ -534,6 +534,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     ws.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
+        var requestTimeRange;
 
         switch (result.category) {
 
@@ -542,9 +543,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
-            var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
+            requestTimeRange = {
+              start: new Date(result.timeInterval.start),
+              end: new Date(result.timeInterval.end)
             };
             if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
@@ -563,9 +564,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
-            var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
+            requestTimeRange = {
+              start: new Date(result.timeInterval.start),
+              end: new Date(result.timeInterval.end)
             };
             if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
@@ -596,9 +597,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             }
             break;
           case "heatTime":
-            var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
+            requestTimeRange = {
+              start: new Date(result.timeInterval.start),
+              end: new Date(result.timeInterval.end)
             };
             if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
@@ -622,9 +623,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             }
             break;
           case "pointsTime":
-            var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
+            requestTimeRange = {
+              start: new Date(result.timeInterval.start),
+              end: new Date(result.timeInterval.end)
             };
             if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
