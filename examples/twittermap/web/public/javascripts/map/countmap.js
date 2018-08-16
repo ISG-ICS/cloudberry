@@ -85,19 +85,22 @@ angular.module('cloudberry.map')
       // Batch request with only the geoIds whose map result or time series are not cached yet - partial map result cache hit case
       // This case also covers the complete cache miss case.
       var batchWithPartialRequest = cloudberryConfig.querySliceMills > 0 ? {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache),
+                queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
         option: {
           sliceMillis: cloudberryConfig.querySliceMills
         }
       } : {
-        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache), queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache),
+                queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
       };
 
       // Complete map result cache and time series cache hit case
       if($scope.geoIdsNotInCache.length === 0 && $scope.geoIdsNotInTimeSeriesCache.length === 0)  {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
-        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
       }
       // Complete map result cache hit case - exclude map result request
       else if($scope.geoIdsNotInCache.length === 0)  {
@@ -129,6 +132,9 @@ angular.module('cloudberry.map')
       }
       // Complete time series cache hit case - exclude time series request
       else if($scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+
         cloudberryClient.send(batchWithoutTimeRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
             cloudberry.countmapMapResult = resultSet[0];
