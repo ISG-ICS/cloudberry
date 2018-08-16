@@ -46,19 +46,20 @@ angular.module('cloudberry.timeseriescache', [])
                 cachedTimeRange.end = new Date(timeInterval.end.getTime());
 
                 return geoIds;
-            }
-            for (var i = 0; i < geoIds.length; i++) {
+            } else {
+              for (var i = 0; i < geoIds.length; i++) {
                 if (!timeseriesStore.has(geoIds[i])) {
                     geoIdsNotInCache.push(geoIds[i]);
                 }
+              }
             }
             // Clear storage if caching the new query will exceed MAX_GEOIDS limit.
             if (timeseriesStore.count() + geoIdsNotInCache.length > MAX_GEOIDS) {
                 timeseriesStore.clear();
                 return geoIds;
+            } else {
+              return geoIdsNotInCache;
             }
-
-            return geoIdsNotInCache;
         };
 
         /**
@@ -69,12 +70,10 @@ angular.module('cloudberry.timeseriescache', [])
 
             for (var i = 0; i < geoIds.length; i++) {
                 var values = timeseriesStore.get(geoIds[i]);
-                if (values !== undefined && values !== INVALID_VALUE) {
-                    for (var j = 0; j < values.length; j++) {
-                        var day = new Date(values[j]["day"]);
-                        if (day >= timeInterval.start && day <= timeInterval.end) {
-                            resultArray.push({"day":values[j]["day"], "count":values[j]["count"]});
-                        }
+                for (var j = 0; (values !== undefined && values !== INVALID_VALUE) && j < values.length; j++) {
+                    var day = new Date(values[j]["day"]);
+                    if (day >= timeInterval.start && day <= timeInterval.end) {
+                        resultArray.push({"day":values[j]["day"], "count":values[j]["count"]});
                     }
                 }
             }
@@ -90,16 +89,14 @@ angular.module('cloudberry.timeseriescache', [])
 
             for (var i = 0; i < geoIds.length; i++) {
                 var values = timeseriesStore.get(geoIds[i]);
-                if (values !== undefined && values !== INVALID_VALUE) {
-                    var inRangeValues = [];
-                    for (var j = 0; j < values.length; j++) {
-                        var day = new Date(values[j]["day"]);
-                        if (day >= timeInterval.start && day <= timeInterval.end) {
-                            inRangeValues.push({"day":values[j]["day"], "count":values[j]["count"]});
-                        }
+                var inRangeValues = [];
+                for (var j = 0; (values !== undefined && values !== INVALID_VALUE) && j < values.length; j++) {
+                    var day = new Date(values[j]["day"]);
+                    if (day >= timeInterval.start && day <= timeInterval.end) {
+                        inRangeValues.push({"day":values[j]["day"], "count":values[j]["count"]});
                     }
-                    store.set(geoIds[i], inRangeValues);
                 }
+                store.set(geoIds[i], inRangeValues);
             }
 
             return store;
@@ -152,20 +149,17 @@ angular.module('cloudberry.timeseriescache', [])
          */
         // TODO: combine geoIds and timeInterval dimensions in the time-series and map-rsult cache modules.
         this.putTimeSeriesValues = function (geoIds, timeseriesResult, timeInterval) {
-            // In case of cache miss.
-            if (geoIds.length !== 0) {
-                var store = this.arrayToStore(geoIds, timeseriesResult, currentGeoLevel);
-                if (timeseriesStore.count() === 0) {
-                    timeseriesStore = store;
-                } else if (timeInterval.start.getTime() === cachedTimeRange.start.getTime() &&
-                           timeInterval.end.getTime() === cachedTimeRange.end.getTime()) {
-                    // Add to cache.
-                    store.forEach(function(value, key) {
-                        timeseriesStore.set(key, value);
-                    });
-                } else {
-                    // Result is not added to cache because it has a shorter time interval than older cached results.
-                }
+            var store = this.arrayToStore(geoIds, timeseriesResult, currentGeoLevel);
+            if (timeseriesStore.count() === 0) {
+                timeseriesStore = store;
+            } else if (timeInterval.start.getTime() === cachedTimeRange.start.getTime() &&
+                       timeInterval.end.getTime() === cachedTimeRange.end.getTime()) {
+                // Add to cache.
+                store.forEach(function(value, key) {
+                    timeseriesStore.set(key, value);
+                });
+            } else {
+                // Result is not added to cache because it has a shorter time interval than older cached results.
             }
         };
     });

@@ -542,11 +542,11 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             break;
           // Complete cache hit case
           case "batchWithoutGeoRequest":
-            if(angular.isArray(result.value)) {
-              var requestTimeRange = {
+            var requestTimeRange = {
                 start: new Date(result.timeInterval.start),
                 end: new Date(result.timeInterval.end)
-              };
+            };
+            if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
@@ -563,11 +563,11 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             break;
           // Partial map result cache hit or complete cache miss case
           case "batchWithPartialGeoRequest":
-            if(angular.isArray(result.value)) {
-              var requestTimeRange = {
+            var requestTimeRange = {
                 start: new Date(result.timeInterval.start),
                 end: new Date(result.timeInterval.end)
-              };
+            };
+            if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
@@ -596,16 +596,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             }
             break;
           case "heatTime":
+            var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+            };
             if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
-               };
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
@@ -622,16 +622,16 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             }
             break;
           case "pointsTime":
+            var requestTimeRange = {
+                start: new Date(result.timeInterval.start),
+                end: new Date(result.timeInterval.end)
+            };
             if(angular.isArray(result.value)) {
               // Since the middleware returns the query result in multiple steps,
               // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
               cloudberryService.timeSeriesQueryResult = result.value[0];
               // Avoid memory leak.
               result.value[0] = [];
-              var requestTimeRange = {
-                start: new Date(result.timeInterval.start),
-                end: new Date(result.timeInterval.end)
-               };
               cloudberryService.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberryService.timeSeriesQueryResult).concat(
                TimeSeriesCache.getTimeSeriesValues(cloudberryService.parameters.geoIds, cloudberryService.parameters.geoLevel, requestTimeRange));
             }
