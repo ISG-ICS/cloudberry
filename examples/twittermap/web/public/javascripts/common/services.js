@@ -2,6 +2,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
   .factory('cloudberryConfig', function(){
     return {
       ws: "ws://" + location.host + "/ws",
+      viewStatus: "ws://" + location.host + "/viewStatus",
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
@@ -81,7 +82,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache'])
         ws.send(countRequest);
       }
     }
-    var myVar = setInterval(requestLiveCounts, 1000);
+    requestLiveCounts()
+    // var myVar = setInterval(requestLiveCounts, 1000);
 
     function getLevel(level){
       switch(level){

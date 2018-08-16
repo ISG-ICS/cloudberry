@@ -18,6 +18,11 @@ class QueryPlanner {
     splitQuery(query, source, bestView)
   }
 
+  def queryViewExist(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
+    if(views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema))).isEmpty)  false
+    else true
+  }
+
   def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
     //TODO currently only suggest the keyword subset views
     if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {

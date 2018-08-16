@@ -105,8 +105,16 @@ class DataStoreManager(metaDataset: String,
     case askInfo: AskInfoAndViews =>
       sender ! {
         metaData.get(askInfo.who) match {
-          case Some(info) => info +: metaData.filter(_._2.createQueryOpt.exists(q => q.dataset == askInfo.who)).values.toList
-          case None => Seq.empty
+          case Some(info) => {
+            println("-------------")
+            println(askInfo.who)
+            println("yes")
+            info +: metaData.filter(_._2.createQueryOpt.exists(q => q.dataset == askInfo.who)).values.toList
+          }
+          case None => {
+            println("no")
+            Seq.empty
+          }
         }
       }
     case askInfo: AskInfo =>

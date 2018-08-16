@@ -131,6 +131,10 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     }
   }
 
+  def viewStatus = Action.async(parse.json) { request =>
+    handleRegisterPartial(request.body.validate[Register])((r: DataManagerResponse) => Ok(r.message))
+  }
+
   private def handleRegisterPartial(jsResult: JsResult[Register])
                                       (successHandler: DataManagerResponse => Result): Future[Result] = {
     implicit val timeout: Timeout = Timeout(config.UserTimeOut)

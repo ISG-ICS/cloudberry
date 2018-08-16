@@ -11,19 +11,43 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.currentTab = "aboutTab";
 
+    $scope.isViewExist = false;
+
+    var wsViewStatus = new WebSocket(cloudberryConfig.viewStatus);
+    wsViewStatus.onmessage = function(event) {
+      $timeout(function() {
+        var result = JSONbig.parse(event.data);
+        console.log(result);
+        $scope.isViewExist = result.value[0];
+      });
+    };
+
+    function getStatusOfViewRequest(){
+      var keywords = [];
+      for(var i = 0; i < cloudberry.parameters.keywords.length; i++){
+        keywords.push(cloudberry.parameters.keywords[i].replace("\"", "").trim());
+      }
+      var filter = [
+        {
+          field: "text",
+          relation: "contains",
+          values: keywords
+        }
+      ];
+      return {
+        dataset: "twitter.ds_tweet",
+        filter: filter
+      };
+    }
 
     function sendViewStatusQuery() {
-      if(true){
-        var viewStatusRequest = queryUtil.getStatusOfView(cloudberry.parameters);
-        console.log(viewStatusRequest);
-        cloudberryClient.send(viewStatusRequest, function(id, resultSet){
-          if(angular.isArray(resultSet)) {
-            console.log(resultSet);
-          }
-        }, "viewStatus");
+      if(!$scope.isViewExist){
+        if(wsViewStatus.readyState === wsViewStatus.OPEN){
+          wsViewStatus.send(JSON.stringify(getStatusOfViewRequest()));
+        }
       }
     }
-    // setInterval(requestViewStatus, 1000);
+    // setInterval(sendViewStatusQuery, 1000);
 
 
     function sendHashTagQuery() {
@@ -96,9 +120,16 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       handleSidebarQuery();
     }
 
+    function keywordEventHandler(event) {
+      $scope.isHashTagOutdated = true;
+      $scope.isSampleTweetsOutdated = true;
+      $scope.isViewExist = false;
+      handleSidebarQuery();
+    }
+
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordEventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
   .controller("HashTagCtrl", function ($scope, $window, cloudberry) {

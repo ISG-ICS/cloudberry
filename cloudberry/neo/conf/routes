@@ -9,6 +9,7 @@ POST       /berry                               controllers.Cloudberry.berryQuer
 POST       /webregister                         controllers.Cloudberry.webRegister
 POST       /admin/register                      controllers.Cloudberry.register
 POST       /admin/deregister                    controllers.Cloudberry.deregister
+POST       /viewStatus                          controllers.Cloudberry.viewStatus
 
 
 # Map static resources from the /public folder to the /assets URL path
