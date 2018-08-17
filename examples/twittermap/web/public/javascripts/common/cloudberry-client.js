@@ -7,7 +7,7 @@
  *  In "heatmap.js":
  *      function sendHeatmapQuery() {
  *        var heatJson = { JSON query in Cloudberry's format };
- *        cloudberryClient.send(heatJson, function(id, resultSet){
+ *        cloudberryClient.send(heatJson, function(id, resultSet, timeInterval){
  *          ...
  *          cloudberry.heatmapMapResult = resultSet[0];
  *        }, "heatMapResult");
@@ -15,7 +15,7 @@
  *      }
  */
 angular.module("cloudberry.common")
-  .service("cloudberryClient", function($timeout, cloudberryConfig) {
+  .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig) {
 
     var ws = new WebSocket(cloudberryConfig.ws);
 
@@ -27,7 +27,7 @@ angular.module("cloudberry.common")
        * send a query to Cloudberry
        *
        * @param query JSON object, query JSON for Cloudberry
-       * @param resultHandler function, callback function(id, resultSet),
+       * @param resultHandler function, callback function(id, resultSet, timeInterval),
        *          if your query's slice option is ON, resultHandler can be called several times.
        * @param category String, not null, category of this query
        * @param id String, identification for this query, if null,
@@ -86,7 +86,14 @@ angular.module("cloudberry.common")
         var result = JSONbig.parse(event.data);
         var category = result.category;
         var id = result.id;
-        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value);
+        var timeInterval = JSON.stringify({
+          start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
+          end: new Date(cloudberry.parameters.timeInterval.end.getTime())
+        });
+        if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
+          timeInterval = result.timeInterval;
+        }
+        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);
       });
     };
 
