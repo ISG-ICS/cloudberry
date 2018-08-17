@@ -50,7 +50,7 @@ angular.module('cloudberry.map')
     function getPopupContent() {
       // get chart data for the polygon
       var geoIDChartData = $scope.ChartDataMap.get($scope.selectedGeoID);
-      (geoIDChartData)? $scope.chartData = $scope.preProcess(geoIDChartData) : $scope.chartData = [];
+      (geoIDChartData && geoIDChartData.length!==0)? $scope.chartData = $scope.preProcess(geoIDChartData) : $scope.chartData = [];
 
       // get the count info of polygon
       var placeName = $scope.selectedPlace.properties.name;
@@ -83,7 +83,7 @@ angular.module('cloudberry.map')
     function addPopupEvent() {
       document.getElementsByClassName("leaflet-popup")[0].onmouseout=function (e) {
         var target = e.relatedTarget;
-        if(target && target.className.toString()==="[object SVGAnimatedString]") {
+        if(target && (target.className.toString()==="[object SVGAnimatedString]"||target.className.toString().substring(0,4)==="form")) {
           $scope.map.closePopup();
         }
       };
@@ -138,7 +138,7 @@ angular.module('cloudberry.map')
 
     // redraw popup window after ChartdataMap is updated
     function redrawPopup(){
-      if($scope.popUp && $scope.popUp._isOpen){
+      if($scope.popUp && $scope.popUp._isOpen && $scope.geoIdsNotInTimeSeriesCache.includes($scope.selectedGeoID)){
         $scope.popUp.setContent(getPopupContent());
         addPopupEvent();
         drawLineChart();
@@ -289,15 +289,20 @@ angular.module('cloudberry.map')
 
       // Complete map result cache and time series cache hit case
       if($scope.geoIdsNotInCache.length === 0 && $scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+        console.log("1");
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+        $scope.ChartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,
+          cloudberry.parameters.timeInterval);
+        redrawPopup();
       }
       // Complete map result cache hit case - exclude map result request
       else if($scope.geoIdsNotInCache.length === 0)  {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
+        $scope.ChartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval);
 
         cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
@@ -308,18 +313,15 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
-            console.log("1");
-            console.log(cloudberry.timeSeriesQueryResult);
-            if(cloudberry.timeSeriesQueryResult.length!==0){
-              console.log(cloudberry.timeSeriesQueryResult);
-              console.log("!!!!!!");
-            }
+            console.log("2");
+            console.log($scope.geoIdsNotInTimeSeriesCache);
+            console.log(resultSet[0]);
 
             // Avoid memory leak.
             resultSet[0] = [];
             $scope.ChartDataMap = concatHashmap(
               TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
-              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
+              $scope.ChartDataMap
             );
             redrawPopup();
 
@@ -347,13 +349,18 @@ angular.module('cloudberry.map')
               start: new Date(resultTimeInterval.start),
               end: new Date(resultTimeInterval.end)
             };
+            console.log("3");
+            console.log(resultSet[0]);
             cloudberry.countmapMapResult = resultSet[0].concat(cloudberry.countmapPartialMapResult);
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
               cloudberry.parameters.geoLevel, requestTimeRange);
+            $scope.ChartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,requestTimeRange);
+            redrawPopup();
           }
           // When the query is executed completely, we update the map result cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            redrawPopup();
             MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
           }
@@ -363,6 +370,7 @@ angular.module('cloudberry.map')
       else {
         cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
+        $scope.ChartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval);
 
         cloudberryClient.send(batchWithPartialRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
@@ -374,14 +382,16 @@ angular.module('cloudberry.map')
             // cloudberry.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
 
-            console.log("2");
-            console.log(cloudberry.timeSeriesQueryResult);
+            console.log("4");
+            console.log($scope.geoIdsNotInCache);
+            console.log($scope.geoIdsNotInTimeSeriesCache);
+            console.log(resultSet);
 
             // Avoid memory leak.
             resultSet[0] = [];
             $scope.ChartDataMap = concatHashmap(
               TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
-              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
+              $scope.ChartDataMap
             );
              redrawPopup();
 
@@ -480,7 +490,7 @@ angular.module('cloudberry.map')
           if (leafletEvent){
             leafletEvent.target.setStyle(style);
             var orginalTarget = leafletEvent.originalEvent.relatedTarget;
-            if(orginalTarget && orginalTarget.toString()==="[object SVGSVGElement]") {
+            if(orginalTarget && (orginalTarget.toString()==="[object SVGSVGElement]"||orginalTarget.toString()==="[object HTMLInputElement]")) {
               $scope.map.closePopup();
             }
           }
