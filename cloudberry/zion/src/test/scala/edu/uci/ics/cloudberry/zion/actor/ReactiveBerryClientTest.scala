@@ -338,7 +338,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       var intervalx = new TInterval(DateTime.now(), DateTime.now())
       var response = JsArray()
       var qx: Query = Query("dataset")
-      var resultx : JsValue = JsObject(Seq.empty)
 
       while (intervalx.getStartMillis > startTime.getMillis) {
         qx = dataManager.receiveOne(5 second).asInstanceOf[Query]
@@ -346,7 +345,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         dataManager.reply(getRet(0))
         response ++= getRet(0)
 
-        resultx = JsObject(Seq(
+        val resultx = JsObject(Seq(
           "value" -> JsArray(Seq(response)),
           "timeInterval" -> JsObject(Seq(
             "start" -> JsNumber(intervalx.getStart.getMillis()),

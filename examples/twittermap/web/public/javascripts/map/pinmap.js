@@ -83,27 +83,34 @@ angular.module("cloudberry.map")
         }
       }, "pinMapResult");
 
-      cloudberryClient.send(pinsTimeJson, function(id, resultSet, resultTimeInterval){
-        if(angular.isArray(resultSet)) {
-          var requestTimeRange = {
-            start: new Date(resultTimeInterval.start),
-            end: new Date(resultTimeInterval.end)
-          };
-          // Since the middleware returns the query result in multiple steps,
-          // cloudberry.timeSeriesQueryResult stores the current intermediate result.
-          cloudberry.timeSeriesQueryResult = resultSet[0];
-          // Avoid memory leak.
-          resultSet[0] = [];
-          cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
-            TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
-        }
-        // When the query is executed completely, we update the time series cache.
-        if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-          resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
-          TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
-            cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
-        }
-      }, "pinTime");
+      // Complete time series cache hit case - exclude time series request
+      if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+      }
+      // Partial time series cache hit case
+      else {
+        cloudberryClient.send(pinsTimeJson, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
+            // Since the middleware returns the query result in multiple steps,
+            // cloudberry.timeSeriesQueryResult stores the current intermediate result.
+            cloudberry.timeSeriesQueryResult = resultSet[0];
+            // Avoid memory leak.
+            resultSet[0] = [];
+            cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
+              TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+          }
+          // When the query is executed completely, we update the time series cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
+              cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
+          }
+        }, "pinTime");
+      }
     }
 
     // additional operations required by pinmap for zoom event
