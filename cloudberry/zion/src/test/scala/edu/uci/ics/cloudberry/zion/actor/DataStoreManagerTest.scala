@@ -187,7 +187,7 @@ class DataStoreManagerTest extends TestkitExample with SpecificationLike with Mo
       metaQuery.asInstanceOf[Query].dataset must_== metaDataSet
       meta.reply(initialInfo)
 
-      val newStats = NewStats(sourceInfo.name, 999)
+      val newStats = NewStats(sourceInfo.name, 999, sourceInterval)
       sender.send(dataManager, newStats)
       meta.receiveOne(1 second)
 

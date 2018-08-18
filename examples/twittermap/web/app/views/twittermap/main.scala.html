@@ -69,19 +69,22 @@
   <script src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/bootstrap-toggle/js/bootstrap-toggle.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/jquery-ui/jquery-ui.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/rbush.min.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/turf.min.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/app.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/cache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/mapresultcache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/timeseriescache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/countmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/pinmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/heatmap.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/map/multilayer-manager.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/QuadTree.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/L.TileLayer.MaskCanvas.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/leaflet-heat.js")'></script>
-
+  
   @if(isDrugMap) {
     <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
   }
@@ -96,6 +99,9 @@
       <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
     }
   }
+  <script src='@routes.Assets.versioned("javascripts/common/module-manager.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/common/cloudberry-client.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/common/query-util.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/timeseries/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/sidebar/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/searchbar/controllers.js")'></script>

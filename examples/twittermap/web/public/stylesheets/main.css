@@ -12,11 +12,14 @@ body {
   bottom: 0;
   width: 100%;
 }
+
 #sidebar {
   position: relative;
+  display: block;
+  right: 0;
+  left: 100%;
   top: 0;
   bottom: 0;
-  left: 96%;
   width: 24%;
   height: 700px;
   overflow: auto;
@@ -30,8 +33,26 @@ body {
   z-index: 1;
 }
 
-#sidebar.toggled {
-  margin-left: -20%;
+#img1, #img2, #img3 {
+  max-width: 100%;
+  margin-left: 1px;
+}
+
+/* button for showing the sidebar */
+.w3-teal {
+  position: absolute;
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  left: 97%;
+  margin-top: 9px;
+}
+
+/* button for hiding the sidebar */
+.closebtn {
+  font-size: 36px;
+  display: inline-block;
+  margin-left: 19px;
 }
 
 search-bar {
@@ -40,7 +61,6 @@ search-bar {
   top: 2%;
   width: 50%;
 }
-
 
 .info {
   padding: 6px 8px;
@@ -73,11 +93,15 @@ search-bar {
   height: 36px;
   text-align: center;
   vertical-align: middle;
-  font-size:20px;
+  font-size: 20px;
 }
 
 .fa-2x {
   font-size: 2em;
+}  
+
+#arrow {
+  margin-top: 2px;
 }
 
 .col-xs-2{
@@ -85,8 +109,8 @@ search-bar {
   padding-right: 0;
 }
 .col-xs-10{
-  padding-left: 0;
-  padding-right: 0;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 #logo_img{
@@ -102,7 +126,6 @@ search-bar {
 .btn.btn-info{
   position: relative;
   left: 110%;
-
 }
 
 #powerby{
@@ -119,7 +142,7 @@ search-bar {
 
 .stats{
   position: absolute;
-  bottom:0;
+  bottom: 0;
   pointer-events: none;
   line-height: 1;
   width: 100%;
@@ -223,3 +246,16 @@ time-series {
 
 .tweet-link:hover {
   text-decoration: underline; }
+
+/* button for hiding and showing the timebar */
+.slide-up-down {
+  position: absolute;
+  display: inline-block;
+  width: 53px;
+  height: 35px;
+  bottom : 110px;
+  margin-left: 5px;
+}
+
+
+
