@@ -293,7 +293,6 @@ angular.module('cloudberry.map')
 
       // Complete map result cache and time series cache hit case
       if($scope.geoIdsNotInCache.length === 0 && $scope.geoIdsNotInTimeSeriesCache.length === 0)  {
-        console.log("1");
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
@@ -317,9 +316,6 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
-            console.log("2");
-            console.log($scope.geoIdsNotInTimeSeriesCache);
-            console.log(resultSet[0]);
 
             // Avoid memory leak.
             resultSet[0] = [];
@@ -352,8 +348,6 @@ angular.module('cloudberry.map')
               start: new Date(resultTimeInterval.start),
               end: new Date(resultTimeInterval.end)
             };
-            console.log("3");
-            console.log(resultSet[0]);
             cloudberry.countmapMapResult = resultSet[0].concat(cloudberry.countmapPartialMapResult);
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
               cloudberry.parameters.geoLevel, requestTimeRange);
@@ -383,11 +377,6 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberry.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
-
-            console.log("4");
-            console.log($scope.geoIdsNotInCache);
-            console.log($scope.geoIdsNotInTimeSeriesCache);
-            console.log(resultSet);
 
             // Avoid memory leak.
             resultSet[0] = [];
