@@ -1,7 +1,36 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
       var stopwordsMap = buildStopwordsMap();
+        
+        $("#keyword-textbox").autocomplete({source:[]});
+        $("#keyword-textbox").on("keyup",function(event){
+          
+          q = $scope.keyword;
+          url = "http://127.0.0.1:5000/spoof?query="+q;
+          
+            $.ajax({url:url}).done(function(data){
+              data = JSON.parse(data);
+              var suggestion = [];
+              for(var i=0;i<data.topics.length;i++)
+              {
+                var value = String(data.topics[i].topic);
+                if(value[0] !== "#" && !suggestion.includes(value)){
+                  suggestion.push(value);
+                }
+              }
+              $("#keyword-textbox").autocomplete({source:suggestion});
+            });
+          
+        })
+        
+        $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ) {
+          $scope.keyword = ui.item.value;
+          $scope.search();
+          $scope.updateSearchBox($scope.keyword);
+        } );
 
+      
+  
       $scope.search = function() {
           if ($scope.keyword && $scope.keyword.trim().length > 0) {
               //Splits out all individual words in the query keyword.
