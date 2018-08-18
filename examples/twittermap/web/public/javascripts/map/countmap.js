@@ -47,6 +47,13 @@ angular.module('cloudberry.map')
       return concatMap;
     }
 
+    // sum of one element in an array of objects
+    function sum(items, prop){
+      return items.reduce( function(a, b){
+        return a + b[prop];
+      }, 0);
+    }
+
     function getPopupContent() {
       // get chart data for the polygon
       var geoIDChartData = $scope.ChartDataMap.get($scope.selectedGeoID);
@@ -55,24 +62,21 @@ angular.module('cloudberry.map')
       // get the count info of polygon
       var placeName = $scope.selectedPlace.properties.name;
       var infoPromp = $scope.infoPromp;
-      var countText = '0';
       var logicLevel = $scope.status.logicLevel;
-      if($scope.selectedPlace.properties.countText) {
-        countText = $scope.selectedPlace.properties.countText;
-      }
+      var count = sum($scope.chartData,"y");
 
       // Generate the html in pop up window
       var content;
       if($scope.chartData.length===0) {
         content = '<div id="popup-info" style="margin-bottom: 0">' +
           '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
-          '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+countText+'</b></div>' +
+          '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+count+'</b></div>' +
           '</div>'+
           "<canvas id=\"myChart\" height=\"0\" ></canvas>";
       }else {
         content = '<div id="popup-info">' +
           '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
-          '<div id="popup-count">'+infoPromp+'<b> '+countText+'</b></div>' +
+          '<div id="popup-count">'+infoPromp+'<b> '+count+'</b></div>' +
           '</div>'+
           "<canvas id=\"myChart\"></canvas>";
       }
@@ -332,7 +336,6 @@ angular.module('cloudberry.map')
           // When the query is executed completely, we update the time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            redrawPopup(0);
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
@@ -360,7 +363,6 @@ angular.module('cloudberry.map')
           // When the query is executed completely, we update the map result cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            redrawPopup(1);
             MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
           }
@@ -402,7 +404,6 @@ angular.module('cloudberry.map')
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            redrawPopup(0);
             MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
