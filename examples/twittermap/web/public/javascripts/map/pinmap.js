@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
   .controller("pinMapCtrl", function($scope, $http, cloudberry, cloudberryConfig,
-                                     moduleManager, cloudberryClient, queryUtil) {
+                                     TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
@@ -56,6 +56,10 @@ angular.module("cloudberry.map")
 
     // Send query to cloudberry
     function sendPinmapQuery() {
+      // For time-series histogram, get geoIds not in the time series cache.
+      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
       var pinsJson = {
         dataset: cloudberry.parameters.dataset,
         filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
@@ -70,20 +74,43 @@ angular.module("cloudberry.map")
         }
       };
 
-      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
-      cloudberryClient.send(pinsJson, function(id, resultSet){
+      cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
           cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
           cloudberry.pinmapMapResult = resultSet[0];
         }
       }, "pinMapResult");
 
-      cloudberryClient.send(pinsTimeJson, function(id, resultSet){
-        if(angular.isArray(resultSet)) {
-          cloudberry.commonTimeSeriesResult = resultSet[0];
-        }
-      }, "pinTime");
+      // Complete time series cache hit case - exclude time series request
+      if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+      }
+      // Partial time series cache hit case
+      else {
+        cloudberryClient.send(pinsTimeJson, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
+            // Since the middleware returns the query result in multiple steps,
+            // cloudberry.timeSeriesQueryResult stores the current intermediate result.
+            cloudberry.timeSeriesQueryResult = resultSet[0];
+            // Avoid memory leak.
+            resultSet[0] = [];
+            cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
+              TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+          }
+          // When the query is executed completely, we update the time series cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
+              cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
+          }
+        }, "pinTime");
+      }
     }
 
     // additional operations required by pinmap for zoom event
