@@ -60,8 +60,8 @@ angular.module('cloudberry.map')
     function sendCountmapQuery() {
 
       if (typeof(cloudberry.parameters.keywords) === "undefined"
-        || cloudberry.parameters.keywords == null
-        || cloudberry.parameters.keywords.length == 0) {
+        || cloudberry.parameters.keywords === null
+        || cloudberry.parameters.keywords.length === 0) {
         return;
       }
 
