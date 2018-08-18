@@ -5,8 +5,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         $("#keyword-textbox").autocomplete({source:[]});
         $("#keyword-textbox").on("keyup",function(event){
           
-          q = $scope.keyword;
-          url = "http://127.0.0.1:5000/spoof?query="+q;
+          var q = $scope.keyword;
+          var url = "http://127.0.0.1:5000/spoof?query="+q;
           
             $.ajax({url:url}).done(function(data){
               data = JSON.parse(data);
