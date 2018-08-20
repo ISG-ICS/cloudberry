@@ -43,7 +43,7 @@ angular.module('cloudberry.map')
             concatValue=value;
           }
           else {
-            concatValue = value.concat(cacheValue)
+            concatValue = value.concat(cacheValue);
           }
         }
         else if (cacheValue !== undefined) {
@@ -76,16 +76,16 @@ angular.module('cloudberry.map')
       // Generate the html in pop up window
       var content;
       if($scope.chartData.length===0) {
-        content = '<div id="popup-info" style="margin-bottom: 0">' +
-          '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
-          '<div id="popup-count" style="margin-bottom: 0">'+infoPromp+'<b> '+count+'</b></div>' +
-          '</div>'+
+        content = "<div id=\"popup-info\" style=\"margin-bottom: 0\">" +
+          "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
+          "<div id=\"popup-count\" style=\"margin-bottom: 0\">"+infoPromp+"<b> "+count+"</b></div>" +
+          "</div>"+
           "<canvas id=\"myChart\" height=\"0\" ></canvas>";
       }else {
-        content = '<div id="popup-info">' +
-          '<div id="popup-statename">'+logicLevel+': '+placeName+'</div>' +
-          '<div id="popup-count">'+infoPromp+'<b> '+count+'</b></div>' +
-          '</div>'+
+        content = "<div id=\"popup-info\">" +
+          "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
+          "<div id=\"popup-count\">"+infoPromp+"<b> "+count+"</b></div>" +
+          "</div>"+
           "<canvas id=\"myChart\"></canvas>";
       }
       return content;
