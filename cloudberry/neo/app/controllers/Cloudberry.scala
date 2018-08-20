@@ -10,7 +10,7 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{DataManagerResponse, Register, _}
-import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.{BerryClient, ViewStatusClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl._
 import play.Logger
@@ -88,6 +88,12 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     }
   }
 
+  def viewStatus = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef { out =>
+      RequestRouter.props(ViewStatusClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)
+    }
+  }
+
   class Listener extends Actor with ActorLogging {
     def receive = {
       case d: DeadLetter => Logger.info(d.toString)
@@ -129,10 +135,6 @@ class Cloudberry @Inject()(val wsClient: WSClient,
           BadRequest("Not valid Json POST: " + e.toString)
         }
     }
-  }
-
-  def viewStatus = Action.async(parse.json) { request =>
-    handleRegisterPartial(request.body.validate[Register])((r: DataManagerResponse) => Ok(r.message))
   }
 
   private def handleRegisterPartial(jsResult: JsResult[Register])

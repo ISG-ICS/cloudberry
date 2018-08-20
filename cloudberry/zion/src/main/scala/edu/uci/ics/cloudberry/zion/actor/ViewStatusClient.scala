@@ -17,14 +17,14 @@ import scala.concurrent.{ExecutionContext, Future}
   *
   * TODO: merge the multiple times AskViewsInfos
   */
-class BerryClient(val jsonParser: JSONParser,
+class ViewStatusClient(val jsonParser: JSONParser,
                   val dataManager: ActorRef,
                   val planner: QueryPlanner,
                   val config: Config,
                   val out: ActorRef
                  )(implicit val ec: ExecutionContext) extends Actor with Stash with ActorLogging {
 
-  import BerryClient._
+  import ViewStatusClient._
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
@@ -34,8 +34,6 @@ class BerryClient(val jsonParser: JSONParser,
   override def receive: Receive = {
     case json: JsValue =>
       handleRequest(json, NoTransform)
-    case (json: JsValue, transform: IPostTransform) =>
-      handleRequest(json, transform)
   }
 
   private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
@@ -52,8 +50,6 @@ class BerryClient(val jsonParser: JSONParser,
           return
       }.toMap
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
-      println("-----------------1 queries")
-      println(queries)
       if (runOption.sliceMills <= 0) {
         restfulSolver ! (queries, transform)
       } else {
@@ -61,12 +57,7 @@ class BerryClient(val jsonParser: JSONParser,
         val resultSizeLimit = runOption.limit
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
 
-        if (resultSizeLimit.nonEmpty && queries.size > 1) {
-          // TODO send error messages to user
-          throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
-        }
         //Right now, we create one stream actor for one 'category' query indicated by 'transform'->'wrap'->'category'.
-        //TODO Clients can also cancel or reset a specific request.
         val actorName = transform match{
           case categorical: ICategoricalTransform => categorical.category
           case _ => "default"
@@ -74,20 +65,19 @@ class BerryClient(val jsonParser: JSONParser,
         val child = context.child(actorName).getOrElse(
           context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), actorName)
         )
-        child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
         child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
       }
     }
   }
 }
 
-object BerryClient {
+object ViewStatusClient {
 
   val Done = Json.obj("key" -> JsString("done"))
 
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
            (implicit ec: ExecutionContext) = {
-    Props(new BerryClient(jsonParser, dataManager, planner, config, out))
+    Props(new ViewStatusClient(jsonParser, dataManager, planner, config, out))
   }
 
   def noSuchDatasetJson(name: String): JsValue = {

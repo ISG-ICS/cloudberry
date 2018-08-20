@@ -62,6 +62,10 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val interval = calculateFirst(boundary, initialDuration)
       val queryGroup = QueryGroup(ts, queryInfos, request.postTransform)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
+      println("---------------- 2 queryInfos")
+      println(queryInfos)
+      println("---------------- 3 queryGroup")
+      println(queryGroup)
       issueQueryGroup(interval, queryGroup)
       val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 0.00001, minimumDuration.toHours.toInt)
       context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
@@ -128,6 +132,8 @@ class ProgressiveSolver(val dataManager: ActorRef,
   private def issueQueryGroup(interval: TInterval, queryGroup: QueryGroup): Unit = {
     val futures = Future.traverse(queryGroup.queries) {
       queryInfo =>
+        println("-------------4 queryInfo")
+        println(queryInfo)
         if (queryInfo.queryBound.overlaps(interval)) {
           val overlaps = queryInfo.queryBound.overlap(interval)
           val schema = queryInfo.dataSetInfo.schema.asInstanceOf[Schema]

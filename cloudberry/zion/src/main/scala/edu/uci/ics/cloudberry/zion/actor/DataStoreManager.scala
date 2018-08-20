@@ -106,8 +106,6 @@ class DataStoreManager(metaDataset: String,
       sender ! {
         metaData.get(askInfo.who) match {
           case Some(info) => {
-            println("-------------")
-            println(askInfo.who)
             println("yes")
             info +: metaData.filter(_._2.createQueryOpt.exists(q => q.dataset == askInfo.who)).values.toList
           }
