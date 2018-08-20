@@ -201,10 +201,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
         features[id].properties["centerLog"] = (maxLog + minLog) / 2;
         features[id].properties["centerLat"] = (maxLat + minLat) / 2;
+        features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
+        features[id].properties["popUpLat"] = maxLat;
 
-        // Set the situation of popup window
+        // Set the position of popup window for special case, eg. "Alaska" State
         if(maxLog*minLog<0 && minLog<0){
-          // For the "Alaska" State, special situation
           minLog = Number.POSITIVE_INFINITY;
           maxLog = Number.NEGATIVE_INFINITY;
           if(features[id].geometry.type === "Polygon") {
@@ -226,9 +227,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
           features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
           features[id].properties["popUpLat"] = (maxLat + minLat) / 2;
-        }else {
-          features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
-          features[id].properties["popUpLat"] = maxLat;
         }
       }
     }

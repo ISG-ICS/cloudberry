@@ -10,16 +10,16 @@ angular.module('cloudberry.map')
     $scope.popUp = null;
 
     // return difference of two arrays
-    function arr_diff (a1, a2) {
+    function arrayDiff (newArray, oldArray) {
       var a = [], diff = [];
-      for (var i = 0; i < a1.length; i++) {
-        a[a1[i]] = true;
+      for (var i = 0; i < newArray.length; i++) {
+        a[newArray[i]] = true;
       }
-      for (var j = 0; j < a2.length; j++) {
-        if (a[a2[j]]) {
-          delete a[a2[j]];
+      for (var j = 0; j < oldArray.length; j++) {
+        if (a[oldArray[j]]) {
+          delete a[oldArray[j]];
         } else {
-          a[a2[j]] = true;
+          a[oldArray[j]] = true;
         }
       }
       for (var k in a) {
@@ -183,7 +183,7 @@ angular.module('cloudberry.map')
       for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
         zeroCountMonth.push(new Date(m.getTime()));
       }
-      zeroCountMonth = arr_diff(hasCountMonth,zeroCountMonth);
+      zeroCountMonth = arrayDiff(hasCountMonth,zeroCountMonth);
       for (var j = 0; j < zeroCountMonth.length; j++) {
         resultByMonth.push({x: new Date(zeroCountMonth[j]), y:0});
       }
@@ -498,32 +498,6 @@ angular.module('cloudberry.map')
           click: $scope.zoomToFeature
         });
       }
-
-      // // add info control
-      // var info = L.control();
-      //
-      // info.onAdd = function() {
-      //   this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
-      //   this._div.style.margin = '20% 0 0 0';
-      //   this._div.innerHTML = [
-      //     '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
-      //     '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
-      //     '<br/>',
-      //     '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
-      //   ].join('');
-      //   $compile(this._div)($scope);
-      //   return this._div;
-      // };
-      //
-      // info.options = {
-      //   position: 'topleft'
-      // };
-      // if ($scope.map){
-      //   info.addTo($scope.map);
-      // }
-      // else {
-      //   $scope.controls.custom.push(info);
-      // }
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
