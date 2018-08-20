@@ -30,17 +30,25 @@ angular.module('cloudberry.map')
 
     // Concat two hashmap result
     function concatHashmap(newMap, cacheMap) {
-      if (cacheMap.count()===0) return newMap;
+      if (cacheMap.count()===0) {
+        return newMap;
+      }
 
       var concatMap = new HashMap();
       newMap.forEach(function(value, key){
         var concatValue = [];
         var cacheValue = cacheMap.get(key);
         if(value !== 0) {
-          if (cacheValue === undefined) concatValue=value;
-          else concatValue = value.concat(cacheValue)
+          if (cacheValue === undefined) {
+            concatValue=value;
+          }
+          else {
+            concatValue = value.concat(cacheValue)
+          }
         }
-        else if (cacheValue !== undefined) concatValue=cacheValue;
+        else if (cacheValue !== undefined) {
+          concatValue=cacheValue;
+        }
 
         concatMap.set(key,concatValue);
       });
