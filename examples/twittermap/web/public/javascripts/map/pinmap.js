@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
   .controller("pinMapCtrl", function($scope, $http, cloudberry, cloudberryConfig,
-                                     moduleManager, cloudberryClient, queryUtil) {
+                                     TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
     // set map styles for pinmap
     function setPinMapStyle() {
       $scope.setStyles({
@@ -56,6 +56,10 @@ angular.module("cloudberry.map")
 
     // Send query to cloudberry
     function sendPinmapQuery() {
+      // For time-series histogram, get geoIds not in the time series cache.
+      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
       var pinsJson = {
         dataset: cloudberry.parameters.dataset,
         filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
@@ -70,20 +74,43 @@ angular.module("cloudberry.map")
         }
       };
 
-      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters);
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
-      cloudberryClient.send(pinsJson, function(id, resultSet){
+      cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
           cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
           cloudberry.pinmapMapResult = resultSet[0];
         }
       }, "pinMapResult");
 
-      cloudberryClient.send(pinsTimeJson, function(id, resultSet){
-        if(angular.isArray(resultSet)) {
-          cloudberry.commonTimeSeriesResult = resultSet[0];
-        }
-      }, "pinTime");
+      // Complete time series cache hit case - exclude time series request
+      if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+      }
+      // Partial time series cache hit case
+      else {
+        cloudberryClient.send(pinsTimeJson, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
+            // Since the middleware returns the query result in multiple steps,
+            // cloudberry.timeSeriesQueryResult stores the current intermediate result.
+            cloudberry.timeSeriesQueryResult = resultSet[0];
+            // Avoid memory leak.
+            resultSet[0] = [];
+            cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
+              TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+          }
+          // When the query is executed completely, we update the time series cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
+              cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
+          }
+        }, "pinTime");
+      }
     }
 
     // additional operations required by pinmap for zoom event
@@ -105,7 +132,7 @@ angular.module("cloudberry.map")
     function pinMapCommonEventHandler(event) {
         sendPinmapQuery();
     }
-    
+
     // clear pinmap specific data
     function cleanPinMap() {
       $scope.points = [];
@@ -194,66 +221,95 @@ angular.module("cloudberry.map")
         $scope.scale_x = 0;
         $scope.scale_y = 0;
 
-        //To generate Tweet Popup content from Twitter API (oembed.json?) response JSON
-        function translateOembedTweet(tweetJSON) {
-          var userName = "";
-          try {
-            userName = tweetJSON.author_name;
-          }
-          catch (e){
-            console.log("author_name missing in this Tweet.:" + e.message);
-          }
+        //shows each point's info in Front-end.
+        function translateTweetDataToShow(tweetJSON) {
+            var tweetid = "";
+            try {
+                tweetid = tweetJSON["id"];
+            }
+            catch (e){
+                //tweetid missing in this Tweet.
+            }
 
-          var userLink = "";
-          try {
-            userLink = tweetJSON.author_url;
-          }
-          catch (e) {
-            console.log("author_url missing in this Tweet.:" + e.message);
-          }
+            var userName = "";
+            try {
+                userName = tweetJSON["user.name"];
+            }
+            catch (e){
+                //userName missing in this Tweet.
+            }
 
-          var tweetLink = "";
-          try {
-            tweetLink = tweetJSON.url;
-          }
-          catch (e){
-            console.log("url missing in this Tweet.:" + e.message);
-          }
+            var userPhotoUrl = "";
+            try {
+                userPhotoUrl = tweetJSON["user.profile_image_url"];
+            }
+            catch (e){
+                //user.profile_image_url missing in this Tweet.
+            }
 
-          var tweetText = "";
-          try {
-            var tweetHtml = new DOMParser().parseFromString(tweetJSON.html, "text/html");
-            tweetText = tweetHtml.getElementsByTagName("p")[0].innerHTML;
-          }
-          catch (e){
-            console.log("html missing in this Tweet.:" + e.message);
-          }
+            var tweetText = "";
+            try {
+                tweetText = tweetJSON.text;
+            }
+            catch (e){
+                //Text missing in this Tweet.
+            }
 
-          var tweetTemplate = "\n"
-            + "<div class=\"tweet\">\n "
-            + "  <div class=\"tweet-body\">"
-            + "    <div class=\"user-info\"> "
-            + "      <span class=\"name\"> "
-            + "        <a href=\""
-            + userLink
-            + "        \"> "
-            + "@"
-            + userName
-            + "        </a>"
-            + "      </span> "
-            + "    </div>\n	"
-            + "    <div class=\"tweet-text\">"
-            + tweetText
-            + "\n &nbsp;&nbsp;<a href=\""
-            + tweetLink
-            + "      \"> "
-            + "[more]..."
-            + "      </a>"
-            + "    </div>\n	 "
-            + "  </div>\n	"
-            + "</div>\n";
+            var tweetTime = "";
+            try {
+                var createdAt = new Date(tweetJSON["create_at"]);
+                tweetTime = createdAt.toISOString();
+            }
+            catch (e){
+                //Time missing in this Tweet.
+            }
 
-          return tweetTemplate;
+            var tweetLink = "";
+            try {
+                tweetLink = "https://twitter.com/" + userName + "/status/" + tweetid;
+            }
+            catch (e){
+                //tweetLink missing in this Tweet.
+            }
+
+            var tweetTemplate;
+
+            //handles exceptions:
+            if(tweetText == "" || null || undefined){
+                tweetTemplate = "\n"
+                + "<div>"
+                + "Fail to get Tweets data."
+                + "</div>\n";
+            }
+            else {
+                //presents all the information.
+                tweetTemplate = "\n"
+                    + "<div class=\"tweet\">\n "
+                    + "  <div class=\"tweet-body\">"
+                    + "    <div class=\"user-info\"> "
+                    + "      <img src=\""
+                    + userPhotoUrl
+                    + "\" onerror=\" this.src='/assets/images/default_pinicon.png'\" style=\"width: 32px; display: inline; \">\n"
+                    + "      <span class=\"name\" style='color: #0e90d2; font-weight: bold'> "
+                    + userName
+                    + "      </span> "
+                    + "    </div>\n	"
+                    + "    <span class=\"tweet-time\" style='color: darkgray'>"
+                    + tweetTime
+                    + "    <br></span>\n	 "
+                    + "    <span class=\"tweet-text\" style='color: #0f0f0f'>"
+                    + tweetText
+                    + "    </span><br>\n	 "
+                    + "\n <a href=\""
+                    + tweetLink
+                    + "\"> "
+                    + tweetLink
+                    + "</a>"
+                    + "  </div>\n	"
+                    + "</div>\n";
+            }
+
+            return tweetTemplate;
         }
 
         $scope.map.on("mouseintent", onMapMouseIntent);
@@ -289,22 +345,27 @@ angular.module("cloudberry.map")
               fillColor : "#b8e3ff",
               fillOpacity : 1.0
             }).addTo($scope.map);
-            //(3) Send request to twitter.com for the oembed json tweet content.
-            var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + $scope.pointIDs[i];
-            $http.jsonp(url).success(function (data) {
-              var tweetContent = translateOembedTweet(data);
-              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-              $scope.popUpTweet.setContent(tweetContent);
-              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-            }).
-            error(function() {
-              var tweetContent = "Sorry! It seems the tweet with that ID has been deleted by the author.@_@";
-              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-              $scope.popUpTweet.setContent(tweetContent);
-              $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-            });
+
+            //send the query to cloudberry using string format.
+            var passID = "" + $scope.pointIDs[i];
+            cloudberry.pinMapOneTweetLookUpQuery(passID);
           }
         }
+        //monitors and receives the result with updating content of each pin tweet.
+        $scope.$watch(function () {
+           return cloudberryConfig.pinMapOneTweetLookUpResult;
+        }, function (newVal) {
+           var tweetContent = translateTweetDataToShow(newVal);
+           $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+           $scope.popUpTweet.setContent(tweetContent);
+           if($scope.currentMarker === null)
+           {
+               //pass
+           }
+           else {
+               $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+           }
+        });
 
         function isMouseOverAPoint(x, y) {
           for (var i = 0; i < $scope.points.length; i += 1) {
@@ -363,7 +424,7 @@ angular.module("cloudberry.map")
     }
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
-    
+
     // TODO - get rid of this watch by doing work inside the callback function in sendPinmapQuery()
     // monitor the pinmap related variables, update the pinmap if necessary
     $scope.$watch(
