@@ -5,29 +5,31 @@ angular.module("cloudberry.map")
     
     function setCenterAndBoundry(features) {
       for(var id in features){
-        var minLog = Number.POSITIVE_INFINITY;
-        var maxLog = Number.NEGATIVE_INFINITY;
-        var minLat = Number.POSITIVE_INFINITY;
-        var maxLat = Number.NEGATIVE_INFINITY;
-        if(features[id].geometry.type === "Polygon") {
-          features[id].geometry.coordinates[0].forEach(function(pair) {
-            minLog = Math.min(minLog, pair[0]);
-            maxLog = Math.max(maxLog, pair[0]);
-            minLat = Math.min(minLat, pair[1]);
-            maxLat = Math.max(maxLat, pair[1]);
-          });
-        } else if( features[id].geometry.type === "MultiPolygon") {
-          features[id].geometry.coordinates.forEach(function(array){
-            array[0].forEach(function(pair){
+        if ({}.hasOwnProperty.call(features, id)) {
+          var minLog = Number.POSITIVE_INFINITY;
+          var maxLog = Number.NEGATIVE_INFINITY;
+          var minLat = Number.POSITIVE_INFINITY;
+          var maxLat = Number.NEGATIVE_INFINITY;
+          if(features[id].geometry.type === "Polygon") {
+            features[id].geometry.coordinates[0].forEach(function(pair) {
               minLog = Math.min(minLog, pair[0]);
               maxLog = Math.max(maxLog, pair[0]);
               minLat = Math.min(minLat, pair[1]);
               maxLat = Math.max(maxLat, pair[1]);
             });
-          });
+          } else if( features[id].geometry.type === "MultiPolygon") {
+            features[id].geometry.coordinates.forEach(function(array){
+              array[0].forEach(function(pair){
+                minLog = Math.min(minLog, pair[0]);
+                maxLog = Math.max(maxLog, pair[0]);
+                minLat = Math.min(minLat, pair[1]);
+                maxLat = Math.max(maxLat, pair[1]);
+              });
+            });
+          }
+          features[id].properties["centerLog"] = (maxLog + minLog) / 2;
+          features[id].properties["centerLat"] = (maxLat + minLat) / 2;
         }
-        features[id].properties["centerLog"] = (maxLog + minLog) / 2;
-        features[id].properties["centerLat"] = (maxLat + minLat) / 2;
       }
     }
   
@@ -61,7 +63,8 @@ angular.module("cloudberry.map")
               for (var i = 0; i < scope.geojsonData.city.features.length; i++) {
                 scope.cityIdSet.add(scope.geojsonData.city.features[i].properties.cityID);
               }
-            } else {
+            } 
+            else {
               // compares the current region"s cityIds with previously stored cityIds
               // stores the new delta cities" ID and polygon info
               // add the new polygons as GeoJson objects incrementally on the layer
@@ -90,7 +93,7 @@ angular.module("cloudberry.map")
               }
               scope.polygons.cityPolygons = L.geoJson(data, {
                 style: scope.styles.cityStyle,
-                onEachFeature: onEachFeature
+                onEachFeature
               });
               setCenterAndBoundry(scope.geojsonData.city.features);
               scope.resetGeoInfo("city");
@@ -203,8 +206,9 @@ angular.module("cloudberry.map")
       function setNormalizedCount(geo, r){
         var normalizedCount = r["count"] / r["population"] * cloudberryConfig.normalizationUpscaleFactor;
         geo["properties"]["count"] = normalizedCount;
-        if(normalizedCount > normalizedCountMax)  // update max to enable dynamic legends
+        if(normalizedCount > normalizedCountMax){  // update max to enable dynamic legends
           normalizedCountMax = normalizedCount;
+        }
         setNormalizedCountText(geo);
       }
 
@@ -320,10 +324,12 @@ angular.module("cloudberry.map")
       function setGrades(grades) {
         var i = 0;
         for(; i < grades.length; i++){
-          if (instance.doNormalization)
+          if (instance.doNormalization){
             grades[i] = normalizedCountMin + ((i * difference) / intervals);
-          else
+          }
+          else{
             grades[i] = Math.pow(10, i);
+          }
         }
       }
 
@@ -789,8 +795,8 @@ angular.module("cloudberry.map")
 
       //watch variable for left up corner"s info control
       scope.$watchCollection(function(){
-        return { "if":instance.selectedPlace,
-                "gl":cloudberry.parameters.geoLevel};
+        return { "selectedPalace":instance.selectedPlace,
+                 "geoLevel":cloudberry.parameters.geoLevel};
 
       },function(oldResult,newResult){
 
@@ -963,7 +969,7 @@ angular.module("cloudberry.map")
         });
         return deferred.promise;
       }
-    }
+    };
 
     return countmapService;
   });
