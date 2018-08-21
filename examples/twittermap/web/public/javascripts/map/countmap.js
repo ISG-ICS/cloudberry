@@ -11,33 +11,33 @@ angular.module('cloudberry.map')
 
     // return difference of two arrays
     function arrayDiff (newArray, oldArray) {
-      var a = [], diff = [];
+      var diffArray = [], difference = [];
       for (var i = 0; i < newArray.length; i++) {
-        a[newArray[i]] = true;
+        diffArray[newArray[i]] = true;
       }
       for (var j = 0; j < oldArray.length; j++) {
-        if (a[oldArray[j]]) {
-          delete a[oldArray[j]];
+        if (diffArray[oldArray[j]]) {
+          delete diffArray[oldArray[j]];
         } else {
-          a[oldArray[j]] = true;
+          diffArray[oldArray[j]] = true;
         }
       }
-      for (var k in a) {
-        diff.push(k);
+      for (var key in diffArray) {
+        difference.push(key);
       }
-      return diff;
+      return difference;
     }
 
-    // Concat two hashmap result
-    function concatHashmap(newMap, cacheMap) {
-      if (cacheMap.count()===0) {
+    // Concat two hashmap results
+    function concatHashmap(newMap, cachedMap) {
+      if (cachedMap.count()===0) {
         return newMap;
       }
 
       var concatMap = new HashMap();
       newMap.forEach(function(value, key){
         var concatValue = [];
-        var cacheValue = cacheMap.get(key);
+        var cacheValue = cachedMap.get(key);
         if(value !== 0) {
           if (cacheValue === undefined) {
             concatValue=value;
@@ -160,30 +160,32 @@ angular.module('cloudberry.map')
     // Convert the array in chartDataMap to count result by month, which can be read by chart.js
     $scope.preProcess = function (result) {
       // group by year
-      groups = result.reduce(function (r, o) {
-        var m = o.day.split(('-'))[0];
-        (r[m])? r[m].data.push(o) : r[m] = {year: m, data: [o]};
-        return r;
+      groups = result.reduce(function (previousVal, currentVal) {
+        var yearNum = currentVal.day.split(('-'))[0];
+        (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
+        return previousVal;
       }, {});
       var resultByYear = Object.keys(groups).map(function(k){ return groups[k]; });
+
       // sum up the result for every month
       var resultByMonth = [];
       var hasCountMonth = [];
       for (var i=0; i<resultByYear.length;i++){
-        groups = resultByYear[i].data.reduce(function (r, o) {
-          var m = o.day.split(('-'))[1];
-          if (r[m]){
-            r[m].y += o.count;
+        groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
+          var monthNum = currentVal.day.split(('-'))[1];
+          if (previousVal[monthNum]){
+            previousVal[monthNum].y += currentVal.count;
           }else{
-            var thisMonth = new Date(resultByYear[i].year,m-1);
-            r[m] = { y: o.count, x: thisMonth};
+            var thisMonth = new Date(resultByYear[i].year,monthNum-1);
+            previousVal[monthNum] = { y: currentVal.count, x: thisMonth};
             hasCountMonth.push(thisMonth);
           }
-          return r;
+          return previousVal;
         }, {});
-        var resultByMonthOneYear = Object.keys(groups).map(function(k){ return groups[k]; });
+        var resultByMonthOneYear = Object.keys(groups).map(function(key){ return groups[key]; });
         resultByMonth = resultByMonth.concat(resultByMonthOneYear);
       }
+
       // add empty data point
       var zeroCountMonth = [];
       var minDate = cloudberry.parameters.timeInterval.start;
@@ -195,9 +197,10 @@ angular.module('cloudberry.map')
       for (var j = 0; j < zeroCountMonth.length; j++) {
         resultByMonth.push({x: new Date(zeroCountMonth[j]), y:0});
       }
+
       // sort the date
-      resultByMonth.sort(function(a,b){
-        return a.x - b.x;
+      resultByMonth.sort(function(previousVal,currentVal){
+        return previousVal.x - currentVal.x;
       });
       return resultByMonth;
     };

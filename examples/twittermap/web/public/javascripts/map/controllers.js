@@ -205,7 +205,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         features[id].properties["popUpLat"] = maxLat;
 
         // Set the position of popup window for special case, eg. "Alaska" State
-        if(maxLog*minLog<0 && minLog<0){
+        if( maxLog > 0 && minLog < 0){
           minLog = Number.POSITIVE_INFINITY;
           maxLog = Number.NEGATIVE_INFINITY;
           if(features[id].geometry.type === "Polygon") {
