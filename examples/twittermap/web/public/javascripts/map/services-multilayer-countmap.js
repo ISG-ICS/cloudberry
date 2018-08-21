@@ -59,8 +59,8 @@ angular.module("cloudberry.map")
                 style: scope.styles.cityStyle,
                 onEachFeature: onEachFeature
               });
-
-              for (var i = 0; i < scope.geojsonData.city.features.length; i++) {
+              var i = 0
+              for (; i < scope.geojsonData.city.features.length; i++) {
                 scope.cityIdSet.add(scope.geojsonData.city.features[i].properties.cityID);
               }
             } 
@@ -68,8 +68,8 @@ angular.module("cloudberry.map")
               // compares the current region"s cityIds with previously stored cityIds
               // stores the new delta cities" ID and polygon info
               // add the new polygons as GeoJson objects incrementally on the layer
-
-              for (var i = 0; i < data.features.length; i++) {
+              var i = 0
+              for (; i < data.features.length; i++) {
                 if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
                   scope.geojsonData.city.features.push(data.features[i]);
                   scope.cityIdSet.add(data.features[i].properties.cityID);
@@ -345,10 +345,12 @@ angular.module("cloudberry.map")
           } else{
             returnText = (d / 1000 / 1000).toFixed() + "M+";
           }
-          if(instance.doNormalization)
+          if(instance.doNormalization){
             return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
-          else
+          }
+          else{
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
+          }
         });
       }
 
@@ -466,7 +468,7 @@ angular.module("cloudberry.map")
           }
           // When the query is executed completely, we update the time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
             TimeSeriesCache.putTimeSeriesValues(instance.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
@@ -553,7 +555,7 @@ angular.module("cloudberry.map")
       }
 
       // remove CountMap controls
-      removeMapControl("info")
+      removeMapControl("info");
       removeMapControl("legend");
       removeMapControl("normalize");
     }
@@ -875,8 +877,9 @@ angular.module("cloudberry.map")
       function resetGeoInfo(level) {
         instance.status.logicLevel = level;
         cloudberry.parameters.geoLevel = level;
-        if (instance.geojsonData[level])
+        if (instance.geojsonData[level]){
           resetGeoIds(instance.bounds, instance.geojsonData[level], level + "ID");
+        }
       }
 
       var deferred = $q.defer();
