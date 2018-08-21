@@ -372,15 +372,18 @@ angular.module("cloudberry.map")
         }
       }
 
-      // add legend
-      addMapControl("legend", "topleft", initLegend, null);
-      // add toggle normalize
-      addMapControl("normalize", "topleft", initNormalize, initNormalizeToggle);
+
+      if(cloudberry.parameters.maptype==="countmap"){
+        // add legend
+        // add toggle normalize
+        addMapControl("legend", "topleft", initLegend, null);
+        addMapControl("normalize", "topleft", initNormalize, initNormalizeToggle);
+      }
       
 
       instance.normalize =  $("#toggle-normalize").prop("checked");  
     }
-   
+  
     // Send query to cloudberry
     function sendCountmapQuery(instance) {
       // For time-series histogram, get geoIds not in the time series cache.
@@ -523,9 +526,17 @@ angular.module("cloudberry.map")
     function countmapHandler(instance){
       sendCountmapQuery(instance);
     }
+  
+    function onMapTypeChangeHandler(instance)
+    {
+        // add info control
+        var info = instance.info;
+        
+        info.addTo(instance.map);
+      
+        countmapHandler(instance);
+    }
     
-    
-
     function cleanCountMap(){
 
       function removeMapControl(name){
@@ -536,6 +547,7 @@ angular.module("cloudberry.map")
       }
 
       // remove CountMap controls
+      removeMapControl("info")
       removeMapControl("legend");
       removeMapControl("normalize");
     }
@@ -740,6 +752,61 @@ angular.module("cloudberry.map")
         }
       }
 
+      // add info control
+      var info = L.control();
+      var placeName = "No place selected";
+      var countText = "0";
+      var infoDiv;
+      
+      info.onAdd = function() {
+        this._div = L.DomUtil.create("div", "info"); // create a div with a class "info"
+        this._div.style.margin = "20% 0 0 0";
+        infoDiv = this._div;
+        instance.infoDiv = infoDiv;
+        this._div.innerHTML = [
+          "<h4>Count: by "+cloudberry.parameters.geoLevel+"</h4>",
+          "<b>"+placeName+"</b>",
+          "<br/>Count: "+countText,
+          ""
+        ].join("");
+        $compile(this._div)(this);
+        return this._div;
+      };     
+
+      info.options = {
+        position: "topleft"
+      };
+      
+      instance.info = info;
+      
+      instance.scope.$watch(function(){
+        return instance.map;
+      },function(result){
+        if(cloudberry.parameters.maptype==="countmap"){
+          info.addTo(instance.map);
+        }
+      });
+
+      //watch variable for left up corner"s info control
+      scope.$watchCollection(function(){
+        return { "if":instance.selectedPlace,
+                "gl":cloudberry.parameters.geoLevel};
+
+      },function(oldResult,newResult){
+
+        if(!instance.countText){
+          instance.countText = "0";
+        }
+
+          infoDiv.innerHTML = innerHTML = [
+          "<h4>Count: by "+cloudberry.parameters.geoLevel+"</h4>",
+          "<b>"+instance.selectedPlace+"</b>",
+          "<br/>Count: "+instance.countText,
+          ""].join("");
+
+
+      });
+      
       // add feature to each polygon
       // highlight a polygon when mouseover
       // remove the highlight when mouseout
@@ -755,60 +822,8 @@ angular.module("cloudberry.map")
       leafletData.getMap().then(function(map){
         instance.map = map;
       });
-
-      // add info control
-      var info = L.control();
-      var logicLevel = cloudberry.parameters.geoLevel;
-      var placeName = "No place selected";
-      var countText = "0";
-      var infoDiv;
-      info.onAdd = function() {
-        this._div = L.DomUtil.create("div", "info"); // create a div with a class "info"
-        this._div.style.margin = "20% 0 0 0";
-        infoDiv = this._div;
-        this._div.innerHTML = [
-          "<h4>Count: by "+logicLevel+"</h4>",
-          "<b>"+placeName+"</b>",
-          "<br/>Count: "+countText,
-          ""
-        ].join("");
-        $compile(this._div)(this);
-        return this._div;
-      };     
-
-      info.options = {
-        position: "topleft"
-      };
-
-      instance.scope.$watch(function(){
-        return instance.map;
-      },function(result){
-        info.addTo(instance.map);
-      });
-
-      //watch variable for left up corner"s info control
-      scope.$watchCollection(function(){
-        return { "if":instance.selectedPlace,
-                "gl":cloudberry.parameters.geoLevel};
-
-      },function(oldResult,newResult){
-
-
-        if(!instance.countText){
-          instance.countText = "0";
-        }
-        
-        infoDiv.innerHTML = innerHTML = [
-          "<h4>Count: by "+cloudberry.parameters.geoLevel+"</h4>",
-          "<b>"+instance.selectedPlace+"</b>",
-          "<br/>Count: "+instance.countText,
-          ""].join("");
-
-
-      });
       
       //watch normalize switch and redraw map, when switch is on.
-
       scope.$watch(function(){
         return $("#toggle-normalize").prop("checked");
       },function(resultN){
@@ -816,7 +831,7 @@ angular.module("cloudberry.map")
         instance.doNormalization = resultN;
         if(cloudberry.parameters.maptype==="countmap")
         {
-          sendCountmapQuery(instance);    
+          drawCountMap(cloudberry.countmapMapResult,instance);    
         }
       });
 
@@ -935,7 +950,7 @@ angular.module("cloudberry.map")
           active: 0,
           layer: {},
           init: initCountMap,
-          onMapTypeChange: countmapHandler,
+          onMapTypeChange: onMapTypeChangeHandler,
           onChangeSearchKeyword:countmapHandler,
           onChangeTimeSeriesRange:countmapHandler,
           onZoom: countmapHandler,
