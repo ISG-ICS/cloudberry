@@ -48,8 +48,8 @@
       <a href="javascript:void(0)" class="closebtn" onclick="closeRightMenu()">&times;</a>
       <ul class="nav nav-tabs tabs-left">
         <li role="presentation" ng-click="click = 1; showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="click = 1; showTab('sampletweetTab')"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="click = 1; showTab('aboutTab')" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
+        <li role="presentation" ng-click="click = 1; showTab('sampletweetTab')" class="active"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" ng-click="click = 1; showTab('aboutTab')"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
         <li><br/></li>
         <mapchoose>
           <li role="presentation"><img id="img1" name="img1" title="Count Map" src="/assets/images/aggregation_map.png" width="63" height="63" ></li><br/>
@@ -61,8 +61,8 @@
     <div class="col-xs-10">
       <div class="tab-content">
         <hashtag id="hashtag" class="tab-pane"></hashtag>
-        <tweet id="tweet" class="tab-pane"></tweet>
-        <div id="about" class="tab-pane active">
+        <tweet id="tweet" class="tab-pane active"></tweet>
+        <div id="about" class="tab-pane">
           <h1> About </h1>
           <p><b>TwitterMap</b> is a research prototype powered by <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a>
             and <a href="https://asterixdb.apache.org/">Apache AsterixDB</a> to support

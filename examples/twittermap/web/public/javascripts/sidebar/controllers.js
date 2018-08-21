@@ -7,9 +7,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
-    $scope.isSampleTweetsOpen = false;
+    $scope.isSampleTweetsOpen = true;
 
-    $scope.currentTab = "aboutTab";
+    $scope.currentTab = "sampletweetTab";
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
