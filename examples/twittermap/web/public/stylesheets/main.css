@@ -30,7 +30,7 @@ body {
   transition: all 0.5s ease;
   background-color: white;
   opacity: 1.0;
-  z-index: 1;
+  z-index: 1000;
 }
 
 #img1, #img2, #img3 {
@@ -149,7 +149,7 @@ search-bar {
 }
 
 time-series {
-  z-index: 1000;
+  z-index: 1;
   pointer-events: auto;
   position: relative;
   display: inline-block;
