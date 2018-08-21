@@ -57,8 +57,8 @@ angular.module('cloudberry.map')
 
     // sum of one element in an array of objects
     function sum(items, prop){
-      return items.reduce( function(a, b){
-        return a + b[prop];
+      return items.reduce( function(previousVal, currentVal){
+        return previousVal + currentVal[prop];
       }, 0);
     }
 
