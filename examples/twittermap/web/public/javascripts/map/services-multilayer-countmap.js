@@ -59,8 +59,8 @@ angular.module("cloudberry.map")
                 style: scope.styles.cityStyle,
                 onEachFeature
               });
-              var i = 0;
-              for (; i < scope.geojsonData.city.features.length; i++) {
+              
+              for (var i = 0; i < scope.geojsonData.city.features.length; i++) {
                 scope.cityIdSet.add(scope.geojsonData.city.features[i].properties.cityID);
               }
             } 
@@ -68,8 +68,8 @@ angular.module("cloudberry.map")
               // compares the current region"s cityIds with previously stored cityIds
               // stores the new delta cities" ID and polygon info
               // add the new polygons as GeoJson objects incrementally on the layer
-              var i = 0;
-              for (; i < data.features.length; i++) {
+              
+              for (var i = 0; i < data.features.length; i++) {
                 if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
                   scope.geojsonData.city.features.push(data.features[i]);
                   scope.cityIdSet.add(data.features[i].properties.cityID);
@@ -364,14 +364,16 @@ angular.module("cloudberry.map")
         // loop through our density intervals and generate a label with a colored square for each interval
         
         var i = 1;
-        for (;i < grades.length; i++) {
+        for (; i < grades.length; i++) {
           div.innerHTML +=
             "<i style='background:" + getColor(grades[i]) + "'></i>" + gName[i-1] + "&ndash;" + gName[i] + "<br>";
         }
-        if (instance.doNormalization)
+        if (instance.doNormalization){
           div.innerHTML += "<i style='background:" + getColor(grades[i-1] + ((difference) / intervals)) + "'></i> " + gName[i-1] + "+";
-        else
+        }
+        else{
           div.innerHTML += "<i style='background:" + getColor(grades[i-1]*10) + "'></i> " + gName[i-1] + "+";
+        }
       }
 
       function initLegend(div) {
