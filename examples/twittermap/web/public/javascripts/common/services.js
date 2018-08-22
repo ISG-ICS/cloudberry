@@ -2,7 +2,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
   .factory('cloudberryConfig', function(){
     return {
       ws: "ws://" + location.host + "/ws",
-      viewStatus: "ws://" + location.host + "/viewStatus",
+      querySolveByView: "ws://" + location.host + "/querySolveByView",
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,

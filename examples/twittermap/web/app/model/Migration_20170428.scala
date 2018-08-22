@@ -11,7 +11,7 @@ private[model] class Migration_20170428() {
 
   def up(wsClient: WSClient, cloudberryURL: String)(implicit ec: ExecutionContext): Future[Boolean] = {
 //    Future.traverse(Seq(TwitterDrugMapDDL, TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
-    Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation, berryMetaDDL)) { jsonStr =>
+    Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
       wsClient.url(cloudberryURL).withHeaders("Content-Type" -> "application/json").post(jsonStr).map { response =>
         if (response.status % 100 == 2) {
           true
@@ -151,22 +151,6 @@ object Migration_20170428 {
       |            { "name": "population", "isOptional": false, "datatype": "Number" }
       |        ],
       |        "primaryKey": ["cityID"]
-      |    }
-      |}
-    """.stripMargin
-
-  val berryMetaDDL: String =
-    """
-      |{
-      |    "dataset": "berry.meta",
-      |    "schema": {
-      |        "typeName": "berry.metaType",
-      |        "dimension": [
-      |            { "name": "name", "isOptional": false, "datatype": "String" },
-      |            { "name": "createQuery.filter", "isOptional": true, "datatype":"Bag","innerType":"Bag"}
-      |        ],
-      |        "measurement": [],
-      |        "primaryKey": ["name"]
       |    }
       |}
     """.stripMargin

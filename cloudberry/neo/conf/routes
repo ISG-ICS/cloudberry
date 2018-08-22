@@ -5,7 +5,7 @@
 # cloudberry routes
 GET        /                                    controllers.Cloudberry.index
 GET        /ws                                  controllers.Cloudberry.ws
-GET        /viewStatus                          controllers.Cloudberry.viewStatus
+GET        /querySolveByView                    controllers.Cloudberry.querySolveByView
 POST       /berry                               controllers.Cloudberry.berryQuery
 POST       /webregister                         controllers.Cloudberry.webRegister
 POST       /admin/register                      controllers.Cloudberry.register

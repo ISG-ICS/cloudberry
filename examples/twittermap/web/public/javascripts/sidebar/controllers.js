@@ -11,43 +11,26 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.currentTab = "aboutTab";
 
-    $scope.isViewExist = false;
+    $scope.isViewExisted = false;
 
-    var wsViewStatus = new WebSocket(cloudberryConfig.viewStatus);
-    wsViewStatus.onmessage = function(event) {
+    var wsQuerySolveByView = new WebSocket(cloudberryConfig.querySolveByView);
+    wsQuerySolveByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
         console.log(result);
-        // $scope.isViewExist = result.value[0];
+        // $scope.isViewExisted = result.value[0];
       });
     };
 
-    function getStatusOfViewRequest(){
-      var keywords = [];
-      for(var i = 0; i < cloudberry.parameters.keywords.length; i++){
-        keywords.push(cloudberry.parameters.keywords[i].replace("\"", "").trim());
-      }
-      var filter = [
-        {
-          field: "text",
-          relation: "contains",
-          values: keywords
-        }
-      ];
-      return {
-        dataset: "twitter.ds_tweet",
-        filter: filter
-      };
-    }
-
-    function sendViewStatusQuery() {
-      if(!$scope.isViewExist){
-        if(wsViewStatus.readyState === wsViewStatus.OPEN){
-          wsViewStatus.send(JSON.stringify(getStatusOfViewRequest()));
+    function isQuerySolveByView() {
+      var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
+      if(!$scope.isViewExisted){
+        if(wsQuerySolveByView.readyState === wsQuerySolveByView.OPEN){
+          wsQuerySolveByView.send(JSON.stringify(hashtagRequest));
         }
       }
     }
-    // setInterval(sendViewStatusQuery, 1000);
+    // setInterval(isQuerySolveByView, 1000);
 
 
     function sendHashTagQuery() {
@@ -70,7 +53,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
       if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {
         sendHashTagQuery();
-        sendViewStatusQuery();
+        isQuerySolveByView();
       }
 
       if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
@@ -123,7 +106,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function keywordEventHandler(event) {
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
-      $scope.isViewExist = false;
+      $scope.isViewExisted = false;
       handleSidebarQuery();
     }
 

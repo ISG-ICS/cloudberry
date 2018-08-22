@@ -248,7 +248,6 @@ angular.module("cloudberry.common")
           }
         };
       }
-
     };
 
     return queryUtil;

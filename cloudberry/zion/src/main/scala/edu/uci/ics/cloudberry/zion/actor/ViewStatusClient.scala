@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json._
@@ -13,7 +13,7 @@ import play.api.libs.json._
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * A reactive client which checks the status of view, according to a query
+  * A reactive client which checks whether a query can be solved by existed view.
   *
   */
 class ViewStatusClient(val jsonParser: JSONParser,
@@ -29,11 +29,10 @@ class ViewStatusClient(val jsonParser: JSONParser,
 
   override def receive: Receive = {
     case (json: JsValue, transform: IPostTransform)=>
-      println("--------------1111111111")
-      handleRequest(json, transform)
+      handleRequest(json)
   }
 
-  private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
+  private def handleRequest(json: JsValue): Unit = {
     val datasets = jsonParser.getDatasets(json).toSeq
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
@@ -46,19 +45,14 @@ class ViewStatusClient(val jsonParser: JSONParser,
           out ! noSuchDatasetJson(dataset)
           return
       }.toMap
+
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
-      println("--------------222222")
-      println(queries)
-      val futureResult = Future.traverse(queries)(q => solveViewQuery(q)).map(JsArray.apply)
-      futureResult.map(result => (queries, result)).foreach { case (qs, r) =>
-        println("--------------33333333")
-        println(r)
-        out ! transform.transform(r)
-      }
+      val futureResult = Future.traverse(queries)(q => isQuerySolveByView(q)).map(JsArray.apply)
+      futureResult.map(result => (queries, result)).foreach { case (qs, r) => out ! r }
     }
   }
 
-  protected def solveViewQuery(query: Query): Future[JsValue] = {
+  protected def isQuerySolveByView(query: Query): Future[JsValue] = {
     val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
       case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
         seq.map(_.asInstanceOf[DataSetInfo])
@@ -69,15 +63,14 @@ class ViewStatusClient(val jsonParser: JSONParser,
       case seq if seq.isEmpty =>
         Future(noSuchDatasetJson(query.dataset))
       case infos: Seq[DataSetInfo] =>
-        val isViewExisted = planner.requestViewStatus(query, infos.head, infos.tail)
-        if(isViewExisted) Future(viewExistedJson())
-        else Future(viewNotExistedJson())
+        val hasMatchedViews = planner.requestViewForQuery(query, infos.head, infos.tail)
+        if(hasMatchedViews) Future(JsString(s"true"))
+        else Future(JsString(s"false"))
     }
   }
 }
 
 object ViewStatusClient {
-
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
            (implicit ec: ExecutionContext) = {
     Props(new ViewStatusClient(jsonParser, dataManager, planner, config, out))
@@ -85,12 +78,5 @@ object ViewStatusClient {
 
   def noSuchDatasetJson(name: String): JsValue = {
     JsObject(Seq("error" -> JsString(s"Dataset $name does not exist")))
-  }
-
-  def viewExistedJson(): JsValue = {
-    JsObject(Seq("view" -> JsString(s"true")))
-  }
-  def viewNotExistedJson(): JsValue = {
-    JsObject(Seq("view" -> JsString(s"false")))
   }
 }

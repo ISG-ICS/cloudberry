@@ -16,7 +16,6 @@ trait IQuerySolver {
   def planner: QueryPlanner
 
   protected def solveAQuery(query: Query)(implicit timeout: Timeout, execution: ExecutionContext): Future[JsValue] = {
-
     val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
       case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
         seq.map(_.asInstanceOf[DataSetInfo])

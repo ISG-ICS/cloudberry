@@ -88,7 +88,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     }
   }
 
-  def viewStatus = WebSocket.accept[JsValue, JsValue] { request =>
+  def querySolveByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
       RequestRouter.props(ViewStatusClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)
     }
