@@ -38,7 +38,7 @@
 
   <!-- button for hiding and showing the sidebar -->
   <div class="w3-teal" ng-init="click = -1" ng-class="{toggled: click === 1}">
-    <button type="button" class="btn btn-default btn-sm" onclick="openRightMenu()" ng-click="click = click*-1; showOrHideSidebar(click)">
+    <button id="hamburgerButton" type="button" class="btn btn-default btn-sm" onclick="openRightMenu()" ng-click="click = click*-1; showOrHideSidebar(click)">
       <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
     </button>
   </div>

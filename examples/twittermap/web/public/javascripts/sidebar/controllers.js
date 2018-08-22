@@ -13,25 +13,43 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.isViewExisted = false;
 
+    $scope.timer = null;
+
     var wsQuerySolveByView = new WebSocket(cloudberryConfig.querySolveByView);
+
     wsQuerySolveByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        console.log(result);
-        // $scope.isViewExisted = result.value[0];
+        console.log(result[0]);
+        if (result[0] === "true") {
+          clearInterval($scope.timer);
+          enableHamburgerButton()
+        }
       });
     };
 
-    function isQuerySolveByView() {
-      var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
-      if(!$scope.isViewExisted){
+    function setTimer() {
+      var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
+      $scope.timer = setInterval(function(){
         if(wsQuerySolveByView.readyState === wsQuerySolveByView.OPEN){
-          wsQuerySolveByView.send(JSON.stringify(hashtagRequest));
+          wsQuerySolveByView.send(JSON.stringify(queryToCheck));
         }
-      }
+      }, 1000);
     }
-    // setInterval(isQuerySolveByView, 1000);
 
+    function closeRightMenu() {
+      document.getElementById("sidebar").style.left = "100%";
+    }
+
+    function enableHamburgerButton() {
+      document.getElementById("hamburgerButton").disabled = false;
+    }
+
+    function disableHamburgerButton() {
+      document.getElementById("hamburgerButton").disabled = true;
+    }
+
+    disableHamburgerButton();
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
@@ -53,7 +71,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
       if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {
         sendHashTagQuery();
-        isQuerySolveByView();
       }
 
       if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
@@ -104,9 +121,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     function keywordEventHandler(event) {
+      if($scope.timer) clearInterval($scope.timer);
+      setTimer();
+      closeRightMenu();
+      disableHamburgerButton();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
-      $scope.isViewExisted = false;
       handleSidebarQuery();
     }
 

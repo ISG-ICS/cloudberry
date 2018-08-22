@@ -85,8 +85,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
         ws.send(countRequest);
       }
     }
-    requestLiveCounts()
-    // var myVar = setInterval(requestLiveCounts, 1000);
+    var myVar = setInterval(requestLiveCounts, 1000);
 
     function getLevel(level){
       switch(level){
