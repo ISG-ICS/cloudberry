@@ -35,7 +35,6 @@ class TwitterMapPigeon (val factory: WebSocketFactory,
   override def preStart(): Unit = {
     super.preStart
     client.start()
-    println("-----------------",cloudberryWS)
     client.connect(socket, new URI(cloudberryWS))
   }
 
