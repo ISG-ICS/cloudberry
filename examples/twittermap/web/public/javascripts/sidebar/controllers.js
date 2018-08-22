@@ -18,7 +18,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     wsQuerySolveByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
-        console.log(result[0]);
         if (result[0] === "true") {
           clearInterval($scope.timer);
           enableHamburgerButton()
