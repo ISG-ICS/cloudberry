@@ -57,7 +57,7 @@ angular.module("cloudberry.map")
               scope.geojsonData.city = data;
               scope.polygons.cityPolygons = L.geoJson(data, {
                 style: scope.styles.cityStyle,
-                onEachFeature: onEachFeature
+                onEachFeature
               });
               var i = 0;
               for (; i < scope.geojsonData.city.features.length; i++) {
@@ -358,11 +358,13 @@ angular.module("cloudberry.map")
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
         var gName  = getGradesNames(grades);
-        if(instance.doNormalization)
+        if(instance.doNormalization){
           div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
+        }
         // loop through our density intervals and generate a label with a colored square for each interval
+        
         var i = 1;
-        for (; i < grades.length; i++) {
+        for (;i < grades.length; i++) {
           div.innerHTML +=
             "<i style='background:" + getColor(grades[i]) + "'></i>" + gName[i-1] + "&ndash;" + gName[i] + "<br>";
         }
