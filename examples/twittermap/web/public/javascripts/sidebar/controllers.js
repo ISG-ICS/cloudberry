@@ -121,7 +121,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     function keywordEventHandler(event) {
-      if($scope.timer) clearInterval($scope.timer);
+      if($scope.timer) {
+        clearInterval($scope.timer);
+      }
       setTimer();
       closeRightMenu();
       disableHamburgerButton();
