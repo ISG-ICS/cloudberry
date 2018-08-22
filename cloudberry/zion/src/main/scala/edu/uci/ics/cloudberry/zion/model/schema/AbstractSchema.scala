@@ -84,7 +84,14 @@ object Field {
         RecordField(name, recordField.schema, recordField.isOptional)
       case DataType.Bag =>
         val bagField = field.asInstanceOf[BagField]
-        BagField(name, bagField.innerType, bagField.isOptional)
+        bagField.innerType match {
+          case DataType.Number => NumberField(name, field.isOptional)
+          case DataType.Time => TimeField(name, field.isOptional)
+          case DataType.String => StringField(name, field.isOptional)
+          case DataType.Text => TextField(name, field.isOptional)
+          case DataType.Point => PointField(name, field.isOptional)
+          case DataType.Boolean => PointField(name, field.isOptional)
+        }
     }
 
   }
