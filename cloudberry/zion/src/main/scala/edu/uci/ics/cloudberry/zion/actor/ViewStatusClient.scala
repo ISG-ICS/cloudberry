@@ -3,19 +3,18 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.pattern.ask
 import akka.util.Timeout
-import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.AskInfo
+import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{ICategoricalTransform, IPostTransform, JsonRequestException, NoTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
+import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
-  * A reactive client which will continuously feed the result back to user
-  * One user should only attach to one ReactiveClient
+  * A reactive client which checks the status of view, according to a query
   *
-  * TODO: merge the multiple times AskViewsInfos
   */
 class ViewStatusClient(val jsonParser: JSONParser,
                   val dataManager: ActorRef,
@@ -28,12 +27,10 @@ class ViewStatusClient(val jsonParser: JSONParser,
 
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
-  //One RESTFul solver is enough to solve the RESTFul request.
-  private val restfulSolver: ActorRef = context.actorOf(Props(new RESTSolver(dataManager, planner, out)))
-
   override def receive: Receive = {
-    case json: JsValue =>
-      handleRequest(json, NoTransform)
+    case (json: JsValue, transform: IPostTransform)=>
+      println("--------------1111111111")
+      handleRequest(json, transform)
   }
 
   private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
@@ -50,30 +47,36 @@ class ViewStatusClient(val jsonParser: JSONParser,
           return
       }.toMap
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
-      if (runOption.sliceMills <= 0) {
-        restfulSolver ! (queries, transform)
-      } else {
-        val paceMS = runOption.sliceMills
-        val resultSizeLimit = runOption.limit
-        val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
-
-        //Right now, we create one stream actor for one 'category' query indicated by 'transform'->'wrap'->'category'.
-        val actorName = transform match{
-          case categorical: ICategoricalTransform => categorical.category
-          case _ => "default"
-        }
-        val child = context.child(actorName).getOrElse(
-          context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), actorName)
-        )
-        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
+      println("--------------222222")
+      println(queries)
+      val futureResult = Future.traverse(queries)(q => solveViewQuery(q)).map(JsArray.apply)
+      futureResult.map(result => (queries, result)).foreach { case (qs, r) =>
+        println("--------------33333333")
+        println(r)
+        out ! transform.transform(r)
       }
+    }
+  }
+
+  protected def solveViewQuery(query: Query): Future[JsValue] = {
+    val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
+      case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
+        seq.map(_.asInstanceOf[DataSetInfo])
+      case _ => Seq.empty
+    }
+
+    fInfos.flatMap {
+      case seq if seq.isEmpty =>
+        Future(noSuchDatasetJson(query.dataset))
+      case infos: Seq[DataSetInfo] =>
+        val isViewExisted = planner.requestViewStatus(query, infos.head, infos.tail)
+        if(isViewExisted) Future(viewExistedJson())
+        else Future(viewNotExistedJson())
     }
   }
 }
 
 object ViewStatusClient {
-
-  val Done = Json.obj("key" -> JsString("done"))
 
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
            (implicit ec: ExecutionContext) = {
@@ -82,5 +85,12 @@ object ViewStatusClient {
 
   def noSuchDatasetJson(name: String): JsValue = {
     JsObject(Seq("error" -> JsString(s"Dataset $name does not exist")))
+  }
+
+  def viewExistedJson(): JsValue = {
+    JsObject(Seq("view" -> JsString(s"true")))
+  }
+  def viewNotExistedJson(): JsValue = {
+    JsObject(Seq("view" -> JsString(s"false")))
   }
 }

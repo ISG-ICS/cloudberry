@@ -20,7 +20,7 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
   }
 
   /**
-    * Handles Websocket received from Cloudberry
+    * Handles Websocket received from Cloudberr
     */
   @OnWebSocketMessage
   @throws[IOException]
@@ -40,6 +40,8 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
 
   def sendMessage(str: String): Unit = {
     try {
+      println(str)
+      println(session)
       session.getRemote.sendString(str)
     }
     catch {

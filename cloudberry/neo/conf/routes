@@ -5,11 +5,11 @@
 # cloudberry routes
 GET        /                                    controllers.Cloudberry.index
 GET        /ws                                  controllers.Cloudberry.ws
+GET        /viewStatus                          controllers.Cloudberry.viewStatus
 POST       /berry                               controllers.Cloudberry.berryQuery
 POST       /webregister                         controllers.Cloudberry.webRegister
 POST       /admin/register                      controllers.Cloudberry.register
 POST       /admin/deregister                    controllers.Cloudberry.deregister
-POST       /viewStatus                          controllers.Cloudberry.viewStatus
 
 
 # Map static resources from the /public folder to the /assets URL path

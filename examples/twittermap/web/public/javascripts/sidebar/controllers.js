@@ -1,5 +1,5 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($scope, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig) {
+  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig) {
 
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
@@ -18,7 +18,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $timeout(function() {
         var result = JSONbig.parse(event.data);
         console.log(result);
-        $scope.isViewExist = result.value[0];
+        // $scope.isViewExist = result.value[0];
       });
     };
 
@@ -70,7 +70,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
       if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {
         sendHashTagQuery();
-        // sendViewStatusQuery();
+        sendViewStatusQuery();
       }
 
       if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {

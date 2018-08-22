@@ -52,8 +52,6 @@ class BerryClient(val jsonParser: JSONParser,
           return
       }.toMap
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
-      println("-----------------1 queries")
-      println(queries)
       if (runOption.sliceMills <= 0) {
         restfulSolver ! (queries, transform)
       } else {

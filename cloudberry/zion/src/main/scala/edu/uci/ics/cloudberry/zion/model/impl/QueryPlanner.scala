@@ -18,8 +18,9 @@ class QueryPlanner {
     splitQuery(query, source, bestView)
   }
 
-  def queryViewExist(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
-    if(views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema))).isEmpty)  false
+  def requestViewStatus(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
+    val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
+    if(matchedViews.isEmpty) false
     else true
   }
 

@@ -70,10 +70,6 @@ case class Query(dataset: String,
     //TODO read paper http://www.vldb.org/conf/1996/P318.PDF
     import Query._
 
-    println("!!!!!!!!!!!!!!!!!")
-    println(another)
-    println(another.filter)
-
     if (!covers(this.filter, another.filter)) {
       return false
     }
