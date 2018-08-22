@@ -13,9 +13,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
-      console.time("All hashtags");
       cloudberryClient.send(hashtagRequest, function(id, resultSet) {
-        console.timeEnd("All hashtags");
         cloudberry.commonHashTagResult = resultSet[0];
       }, "hashtagRequest");
       $scope.isHashTagOutdated = false;
@@ -101,23 +99,23 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     );
 
-    // find difference of two arrays
-    function arr_diff (a1, a2) {
-      var a = [], diff = [];
-      for (var i = 0; i < a1.length; i++) {
-        a[a1[i]] = true;
+    // return difference of two arrays
+    function arrayDiff (newArray, oldArray) {
+      var diffArray = [], difference = [];
+      for (var i = 0; i < newArray.length; i++) {
+        diffArray[newArray[i]] = true;
       }
-      for (var j = 0; j < a2.length; j++) {
-        if (a[a2[j]]) {
-          delete a[a2[j]];
+      for (var j = 0; j < oldArray.length; j++) {
+        if (diffArray[oldArray[j]]) {
+          delete diffArray[oldArray[j]];
         } else {
-          a[a2[j]] = true;
+          diffArray[oldArray[j]] = true;
         }
       }
-      for (var k in a) {
-        diff.push(k);
+      for (var key in diffArray) {
+        difference.push(key);
       }
-      return diff;
+      return difference;
     }
 
     // preprocess query result to chart data could be used by chart.js
@@ -137,14 +135,14 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
         zeroCountMonth.push(new Date(m.getTime()));
       }
-      zeroCountMonth = arr_diff(hasCountMonth,zeroCountMonth);
+      zeroCountMonth = arrayDiff(hasCountMonth,zeroCountMonth);
       for (var j = 0; j < zeroCountMonth.length; j++) {
         chartData.push({x: new Date(zeroCountMonth[j]), y:0});
       }
 
       // sort the date
-      chartData.sort(function(a,b){
-        return a.x - b.x;
+      chartData.sort(function(previousVal, currentVal){
+        return previousVal.x - currentVal.x;
       });
       return chartData;
     }
@@ -199,10 +197,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if($scope.selectedHashtag){
         // send query to cloudberry
         var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
-        console.time("one hashtag");
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
           if(angular.isArray(resultSet)) {
-            console.timeEnd("one hashtag");
             drawChart(preProcess(resultSet[0]));
           }
         }, "hashtagChartDataRequest");
