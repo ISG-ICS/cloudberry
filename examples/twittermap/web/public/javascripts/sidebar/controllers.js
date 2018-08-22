@@ -11,8 +11,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.currentTab = "aboutTab";
 
-    $scope.isViewExisted = false;
-
     $scope.timer = null;
 
     var wsQuerySolveByView = new WebSocket(cloudberryConfig.querySolveByView);
