@@ -600,8 +600,7 @@ angular.module("cloudberry.map")
             instance.layer.removeLayer(instance.polygons.stateUpperPolygons);
           }
           instance.layer.addLayer(instance.polygons.countyUpperPolygons);
-          var onEachFeature = undefined;
-          loadCityJsonByBound(onEachFeature,instance);
+          loadCityJsonByBound(instance.onEachFeature,instance);
         } else if (instance.status.zoomLevel > 5) {
           resetGeoInfo("county");
           moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
