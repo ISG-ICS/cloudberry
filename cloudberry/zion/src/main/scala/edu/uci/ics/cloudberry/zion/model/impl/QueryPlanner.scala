@@ -20,7 +20,7 @@ class QueryPlanner {
 
   def requestViewForQuery(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
     val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
-    matchedViews.isEmpty
+    matchedViews.nonEmpty
   }
 
   def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
