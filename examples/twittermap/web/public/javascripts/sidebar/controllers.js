@@ -15,25 +15,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     var wsQuerySolveByView = new WebSocket(cloudberryConfig.querySolveByView);
 
-    wsQuerySolveByView.onmessage = function(event) {
-      $timeout(function() {
-        var result = JSONbig.parse(event.data);
-        if (result[0] === "true") {
-          clearInterval($scope.timer);
-          enableHamburgerButton()
-        }
-      });
-    };
-
-    function setTimer() {
-      var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
-      $scope.timer = setInterval(function(){
-        if(wsQuerySolveByView.readyState === wsQuerySolveByView.OPEN){
-          wsQuerySolveByView.send(JSON.stringify(queryToCheck));
-        }
-      }, 1000);
-    }
-
     function closeRightMenu() {
       document.getElementById("sidebar").style.left = "100%";
     }
@@ -47,6 +28,25 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     disableHamburgerButton();
+
+    wsQuerySolveByView.onmessage = function(event) {
+      $timeout(function() {
+        var result = JSONbig.parse(event.data);
+        if (result[0] === "true") {
+          clearInterval($scope.timer);
+          enableHamburgerButton();
+        }
+      });
+    };
+
+    function setTimer() {
+      var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
+      $scope.timer = setInterval(function(){
+        if(wsQuerySolveByView.readyState === wsQuerySolveByView.OPEN){
+          wsQuerySolveByView.send(JSON.stringify(queryToCheck));
+        }
+      }, 1000);
+    }
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
