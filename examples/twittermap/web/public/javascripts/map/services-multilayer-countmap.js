@@ -43,25 +43,25 @@ angular.module("cloudberry.map")
           Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
 
             //set center and boundary done by Cache
-            if (!scope.status.init) {
-              scope.resetGeoIds(scope.bounds, data, "cityID");
+            if (!instance.status.init) {
+              resetGeoIds(instance.bounds, data, "cityID");
               cloudberry.parameters.geoLevel = "city";
               // Publish zoom/drag event to moduleManager
-              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: scope.map.getZoom(), bounds: scope.map.getBounds()});
             }
 
-            scope.status.logicLevel = "city";
+            instance.status.logicLevel = "city";
 
-            // initializes the scope.geojsonData.city and scope.cityIdSet when first time zoom in
-            if(typeof scope.polygons.cityPolygons === "undefined"){
-              scope.geojsonData.city = data;
-              scope.polygons.cityPolygons = L.geoJson(data, {
-                style: scope.styles.cityStyle,
+            // initializes the instance.geojsonData.city and instance.cityIdSet when first time zoom in
+            if(typeof instance.polygons.cityPolygons === "undefined"){
+              instance.geojsonData.city = data;
+              instance.polygons.cityPolygons = L.geoJson(data, {
+                style: instance.styles.cityStyle,
                 onEachFeature
               });
               
-              for (var i = 0; i < scope.geojsonData.city.features.length; i++) {
-                scope.cityIdSet.add(scope.geojsonData.city.features[i].properties.cityID);
+              for (var i = 0; i < instance.geojsonData.city.features.length; i++) {
+                scope.cityIdSet.add(instance.geojsonData.city.features[i].properties.cityID);
               }
             } 
             else {
@@ -71,37 +71,37 @@ angular.module("cloudberry.map")
               
               for (var i = 0; i < data.features.length; i++) {
                 if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
-                  scope.geojsonData.city.features.push(data.features[i]);
+                  instance.geojsonData.city.features.push(data.features[i]);
                   scope.cityIdSet.add(data.features[i].properties.cityID);
-                  scope.polygons.cityPolygons.addData(data.features[i]);
+                  instance.polygons.cityPolygons.addData(data.features[i]);
                 }
               }
             }
 
             // To add the city level map only when it doesn"t exit
-            if(!scope.map.hasLayer(scope.polygons.cityPolygons)){
-              scope.map.addLayer(scope.polygons.cityPolygons);
-            }
+           
+            instance.layer.addLayer(instance.polygons.cityPolygons);
+            
           });
         } else {
           // No caching used here.
           $http.get(rteBounds)
             .success(function (data) {
-              scope.geojsonData.city = data;
-              if (scope.polygons.cityPolygons) {
-                scope.map.removeLayer(scope.polygons.cityPolygons);
+              instance.geojsonData.city = data;
+              if (instance.polygons.cityPolygons) {
+                instance.layer.removeLayer(instance.polygons.cityPolygons);
               }
-              scope.polygons.cityPolygons = L.geoJson(data, {
-                style: scope.styles.cityStyle,
+              instance.polygons.cityPolygons = L.geoJson(data, {
+                style: instance.styles.cityStyle,
                 onEachFeature
               });
-              setCenterAndBoundry(scope.geojsonData.city.features);
-              scope.resetGeoInfo("city");
-              if (!scope.status.init) {
+              setCenterAndBoundry(instance.geojsonData.city.features);
+              resetGeoInfo("city");
+              if (!instance.status.init) {
                 // Publish zoom/drag event to moduleManager
                 moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
               }
-              scope.map.addLayer(scope.polygons.cityPolygons);
+              instance.layer.addLayer(instance.polygons.cityPolygons);
             })
             .error(function (data) {
               console.error("Load city data failure");
@@ -637,6 +637,7 @@ angular.module("cloudberry.map")
             instance.layer.removeLayer(instance.polygons.countyUpperPolygons);
           }
           if (instance.polygons.statePolygons) {
+            console.log(typeof(instance.layer));
             instance.layer.addLayer(instance.polygons.statePolygons);
           }
         }
