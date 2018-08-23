@@ -27,8 +27,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       document.getElementById("hamburgerButton").disabled = true;
     }
 
-    disableHamburgerButton();
-
     wsQuerySolveByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSONbig.parse(event.data);
