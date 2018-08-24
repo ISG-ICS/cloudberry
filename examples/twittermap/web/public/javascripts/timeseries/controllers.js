@@ -118,11 +118,40 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var timeSeries = dc.lineChart(chart[0][0]);
             var timeBrush = timeSeries.brush();
+            var resetClink = 0;
 
             var requestFunc = function(min, max) {
               cloudberry.parameters.timeInterval.start = min;
               cloudberry.parameters.timeInterval.end = max;
               moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
+            };
+
+            var removeHighlight = function() {
+              var panel = $('.line')[0].parentElement;
+              while (panel.childElementCount !== 1) {
+                panel.removeChild(panel.lastChild);
+              }
+            };
+
+            var highlightChart = function() {
+              var chartBody = $('.chart-body')[0];
+              var extent = $('.extent')[0];
+              var oldPath = $('.line')[0];
+              var newPath = oldPath.cloneNode(true);
+              var panel = oldPath.parentElement;
+
+              if (resetClink === 1 || extent.getAttribute("width") === '0') {
+                oldPath.setAttribute('stroke', '#1f77b4');
+                return
+              }
+
+              if (panel.childElementCount !== 1) removeHighlight();
+              var left = extent.getBoundingClientRect().left - chartBody.getBoundingClientRect().left;
+              var right = chartBody.getBoundingClientRect().right - extent.getBoundingClientRect().right;
+              oldPath.setAttribute('stroke', 'silver');
+              newPath.setAttribute('stroke', '#1f77b4');
+              newPath.style.clipPath = "inset(0px "+right+"px 0px "+left+"px)";
+              panel.appendChild(newPath);
             };
 
             timeBrush.on('brushend', function (e) {
@@ -136,7 +165,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             chart.append('a')
                 .text('Reset')
                 .attr('href',"#")
-                .on("click", function() { timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
+                .on("click", function() { resetClink++; timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
                 .style("position", "absolute")
                 .style("bottom", "90%")
                 .style("left", "5%");
@@ -155,7 +184,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .x(d3.time.scale().domain([minDate, maxDate]))
               .xUnits(d3.time.days)
               .xAxisLabel(startDate + "   to   " + endDate)
-              .elasticY(true);
+              .elasticY(true)
+              .on("postRedraw", highlightChart)
+              .on("filtered", removeHighlight);
 
 
 
