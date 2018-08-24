@@ -136,7 +136,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             chart.append('a')
                 .text('Reset')
                 .attr('href',"#")
-                .on("click", function() { timeSeries.filter([minDate, maxDate]); dc.redrawAll(); requestFunc(minDate, maxDate);})
+                .on("click", function() { timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
                 .style("position", "absolute")
                 .style("bottom", "90%")
                 .style("left", "5%");
