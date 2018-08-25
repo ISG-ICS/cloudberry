@@ -127,7 +127,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             };
 
             var removeHighlight = function() {
-              var panel = $(".line"")[0].parentElement;
+              var panel = $(".line")[0].parentElement;
               while (panel.childElementCount !== 1) {
                 panel.removeChild(panel.lastChild);
               }
