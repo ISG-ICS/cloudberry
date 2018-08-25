@@ -127,29 +127,31 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             };
 
             var removeHighlight = function() {
-              var panel = $('.line')[0].parentElement;
+              var panel = $(".line"")[0].parentElement;
               while (panel.childElementCount !== 1) {
                 panel.removeChild(panel.lastChild);
               }
             };
 
             var highlightChart = function() {
-              var chartBody = $('.chart-body')[0];
-              var extent = $('.extent')[0];
-              var oldPath = $('.line')[0];
+              var chartBody = $(".chart-body")[0];
+              var extent = $(".extent")[0];
+              var oldPath = $(".line")[0];
               var newPath = oldPath.cloneNode(true);
               var panel = oldPath.parentElement;
 
-              if (resetClink === 1 || extent.getAttribute("width") === '0') {
-                oldPath.setAttribute('stroke', '#1f77b4');
-                return
+              if (resetClink === 1 || extent.getAttribute("width") === "0") {
+                oldPath.setAttribute("stroke", "#1f77b4");
+                return ;
               }
 
-              if (panel.childElementCount !== 1) removeHighlight();
+              if (panel.childElementCount !== 1) {
+                removeHighlight();
+              }
               var left = extent.getBoundingClientRect().left - chartBody.getBoundingClientRect().left;
               var right = chartBody.getBoundingClientRect().right - extent.getBoundingClientRect().right;
-              oldPath.setAttribute('stroke', 'silver');
-              newPath.setAttribute('stroke', '#1f77b4');
+              oldPath.setAttribute("stroke", "silver");
+              newPath.setAttribute("stroke", "#1f77b4");
               newPath.style.clipPath = "inset(0px "+right+"px 0px "+left+"px)";
               panel.appendChild(newPath);
             };
