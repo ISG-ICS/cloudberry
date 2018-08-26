@@ -350,7 +350,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
     // Listens to Leaflet's zoomend event and publish it to moduleManager
     $scope.$on("leafletDirectiveMap.zoomend", function() {
-      if(cloudberry.parameters.maptype !== 'countmap'){
         // Original operations on zoomend event
         if ($scope.map) {
           $scope.status.zoomLevel = $scope.map.getZoom();
@@ -405,17 +404,14 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
               $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
             }
             if ($scope.polygons.statePolygons) {
-              console.log($scope.map);
               $scope.map.addLayer($scope.polygons.statePolygons);
             }
           }
-        }
-      }
+        }     
     });
 
     // Listens to Leaflet's dragend event and publish it to moduleManager
     $scope.$on("leafletDirectiveMap.dragend", function() {
-      if(cloudberry.parameters.maptype == 'countmap'){
         // Original operations on dragend event
         if (!$scope.status.init) {
           $scope.bounds = $scope.map.getBounds();
@@ -441,7 +437,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           // Publish drag event to moduleManager
           moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: $scope.map.getBounds()});
         }
-      }
     });
 
   })
