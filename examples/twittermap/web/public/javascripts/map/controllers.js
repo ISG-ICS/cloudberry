@@ -245,6 +245,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
 
     // load geoJson to get city polygons
     $scope.loadCityJsonByBound = function loadCityJsonByBound(onEachFeature, fromEventName, fromEvent){
+
       var bounds = $scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
 
