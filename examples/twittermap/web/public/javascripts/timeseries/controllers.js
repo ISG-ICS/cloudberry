@@ -129,7 +129,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             // This function is to remove the "blue color" highlight of line chart in selected time range
             // It happens when the time brush is moved by user
             var removeHighlight = function() {
-              console.log("remove")
               var panel = $(".chart-body")[0].firstChild;
               while (panel.childElementCount !== 1) {
                 panel.removeChild(panel.lastChild);
@@ -139,14 +138,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             // This function is to highlight the line chart in selected time range
             // It happens when the chart has redrawn after the time brush in moved by user
             var highlightChart = function() {
-              console.log("high")
               var chartBody = $(".chart-body")[0];
               var extent = $(".extent")[0];
               var panel = chartBody.firstChild;
               var oldPath = panel.firstChild;
               var newPath = oldPath.cloneNode(true);
 
-              // If user clink the reset button, the whole line will be highlighted
+              // If user clink the "reset" button, the whole line will be highlighted, the function return.
               if (resetClink === 1 || extent.getAttribute("width") === "0") {
                 resetClink += 2;
                 oldPath.setAttribute("stroke", "#1f77b4");
@@ -170,7 +168,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             // set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
-              console.log("change")
               resetClink = 0;
             });
 
