@@ -158,7 +158,6 @@ object TwitterMapApplication {
     val json = Json.parse(stream)
     stream.close()
     (json).as[List[JsObject]]
-
   }
 
   /** Use binary search twice to find two breakpoints (startIndex and endIndex) to take out all cities whose longitude are in the range,

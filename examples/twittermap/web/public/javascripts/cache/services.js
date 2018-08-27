@@ -75,6 +75,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                     RequestPolygonWithPrefetch = turf.bboxPolygon(newMBR);
                     extraBounds = "city/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
                     $http.get(extraBounds).success(function (data) {
+
                         insertIntoTree(data.features, RequestPolygonWithPrefetch).done(function () {
 
                             data_response = data;
