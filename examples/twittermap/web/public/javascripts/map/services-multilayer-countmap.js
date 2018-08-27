@@ -46,8 +46,8 @@ angular.module("cloudberry.map")
             if (!instance.status.init) {
               resetGeoIds(instance.bounds, data, "cityID");
               cloudberry.parameters.geoLevel = "city";
-              // Publish zoom/drag event to moduleManager
-              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: scope.map.getZoom(), bounds: scope.map.getBounds()});
+              // TODO Publish zoom/drag event to moduleManager
+              //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: scope.map.getZoom(), bounds: scope.map.getBounds()});
             }
 
             cloudberry.parameters.geoLevel = "city";
@@ -98,8 +98,8 @@ angular.module("cloudberry.map")
               setCenterAndBoundry(instance.geojsonData.city.features);
               resetGeoInfo("city");
               if (!instance.status.init) {
-                // Publish zoom/drag event to moduleManager
-                moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+                //TODO Publish zoom/drag event to moduleManager
+                //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
               }
               instance.layer.addLayer(instance.polygons.cityPolygons);
             })
@@ -605,7 +605,8 @@ angular.module("cloudberry.map")
         } else if (instance.status.zoomLevel > 5) {
           resetGeoInfo("county");
           scope.resetGeoInfo("county");
-          moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+          //TODO publish events
+          //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
           if (instance.polygons.statePolygons) {
             instance.layer.removeLayer(instance.polygons.statePolygons);
           }
@@ -620,7 +621,8 @@ angular.module("cloudberry.map")
         } else if (instance.status.zoomLevel <= 5) {
           resetGeoInfo("state");
           if(!instance.status.init){
-            moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+            //TODO publish events
+            //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
           }
           if (!instance.status.init) {
           cloudberry.query(cloudberry.parameters);
@@ -665,7 +667,8 @@ angular.module("cloudberry.map")
         if(!instance.status.init){
           cloudberry.parameters.geoLevel = cloudberry.parameters.geoLevel;
         }
-        moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: instance.map.getBounds()});
+        //TODO publish events
+        //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: instance.map.getBounds()});
       }
     }
 
@@ -843,6 +846,9 @@ angular.module("cloudberry.map")
       });
       
       scope.loadGeoJsonFiles(this.onEachFeature);
+      
+      //Change the init to be false, otherwise map/controllers.js will not publish zoom/drag events
+      scope.status.init = false;
 
       // update the center and the boundary of the visible area of the map
       function setCenterAndBoundry(features){
