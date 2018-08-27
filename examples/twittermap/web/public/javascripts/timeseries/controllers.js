@@ -126,19 +126,24 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
             };
 
+            // This function is to remove the "blue color" highlight of line chart in selected time range
+            // It happens when the time brush is moved by user
             var removeHighlight = function() {
-              var panel = $(".line")[0].parentElement;
+              var panel = $(".chart-body")[0].firstChild;
               while (panel.childElementCount !== 1) {
                 panel.removeChild(panel.lastChild);
               }
             };
 
+            // This function is to highlight the line chart in selected time range
+            // It happens when the chart has redrawn after the time brush in moved by user
             var highlightChart = function() {
               var chartBody = $(".chart-body")[0];
               var extent = $(".extent")[0];
-              var oldPath = $(".line")[0];
+              var panel = chartBody.firstChild;
+              var oldPath = panel.firstChild;
               var newPath = oldPath.cloneNode(true);
-              var panel = oldPath.parentElement;
+
 
               if (resetClink === 1 || extent.getAttribute("width") === "0") {
                 oldPath.setAttribute("stroke", "#1f77b4");
@@ -150,11 +155,20 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               }
               var left = extent.getBoundingClientRect().left - chartBody.getBoundingClientRect().left;
               var right = chartBody.getBoundingClientRect().right - extent.getBoundingClientRect().right;
-              oldPath.setAttribute("stroke", "silver");
+
+              // Dim the old line in chart by setting it to "grey color"
+              oldPath.setAttribute("stroke", "#ccc");
               newPath.setAttribute("stroke", "#1f77b4");
               newPath.style.clipPath = "inset(0px "+right+"px 0px "+left+"px)";
+
+              // Add the "blue color" highlight segment of line to the chart
               panel.appendChild(newPath);
             };
+
+            // set the times of resetClink to 0 if the keyword is change
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
+              resetClink = 0;
+            });
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
