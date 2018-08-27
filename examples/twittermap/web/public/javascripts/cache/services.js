@@ -68,7 +68,6 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
 
             } else {
                 //cache MISS
-                Hit = false;
                 var centroidRequestPoly = turf.centroid(currentRequestPolygon);
 
                 prefetch(currentRequestPolygon).done(function (newMBR) {
@@ -76,7 +75,6 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                     RequestPolygonWithPrefetch = turf.bboxPolygon(newMBR);
                     extraBounds = "city/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
                     $http.get(extraBounds).success(function (data) {
-
                         insertIntoTree(data.features, RequestPolygonWithPrefetch).done(function () {
 
                             data_response = data;
@@ -256,7 +254,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
         }
 
         function findNewDirection(nearestPoint) {
-            console.log("Finding  new direction");
+            console.log("Finding new direction");
 
             if (nearestPoint == UpperRightPoint) {
                 return "SW";
@@ -273,7 +271,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
 
         }
 //Determines which part of the cached region needs to be evicted to reduce the cached city polygons to ensure staying within the cache budget.
-        var evict = function Evict(currentRequest) {
+        var evict = function evict(currentRequest) {
 
             var deferred = new $.Deferred();
             var cache_bbox = turf.bbox(cachedRegion);

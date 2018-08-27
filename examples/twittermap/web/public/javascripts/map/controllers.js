@@ -1,6 +1,6 @@
-angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
+angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache', 'cloudberry.populationcache'])
   .controller('MapCtrl', function($scope, $http, cloudberry, leafletData,
-                                  cloudberryConfig, Cache, moduleManager) {
+                                  cloudberryConfig, Cache, PopulationCache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
 
@@ -270,22 +270,35 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 style: $scope.styles.cityStyle,
                 onEachFeature: onEachFeature
               });
-
+              var newCities = [];
               for (i = 0; i < $scope.geojsonData.city.features.length; i++) {
                 $scope.cityIdSet.add($scope.geojsonData.city.features[i].properties.cityID);
+                newCities.push($scope.geojsonData.city.features[i].properties.cityID);
+              }
+
+              if (newCities.length !== 0) {
+                // Load city population data for first time zoom in
+                PopulationCache.loadCityPopulationToCache(newCities);
               }
             } else {
               // compares the current region's cityIds with previously stored cityIds
               // stores the new delta cities' ID and polygon info
               // add the new polygons as GeoJson objects incrementally on the layer
 
+              var newCities = [];
               for (i = 0; i < data.features.length; i++) {
                 if (!$scope.cityIdSet.has(data.features[i].properties.cityID)) {
                   $scope.geojsonData.city.features.push(data.features[i]);
                   $scope.cityIdSet.add(data.features[i].properties.cityID);
+                  newCities.push(data.features[i].properties.cityID);
                   $scope.polygons.cityPolygons.addData(data.features[i]);
                 }
               }
+            }
+
+            if (newCities.length !== 0) {
+              // Load newly added cities' population
+              PopulationCache.loadCityPopulationToCache(newCities);
             }
 
             // To add the city level map only when it doesn't exit
@@ -312,13 +325,45 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 moduleManager.publishEvent(fromEventName, fromEvent);
               }
               $scope.map.addLayer($scope.polygons.cityPolygons);
+
+              var newCities = [];
+              for (i = 0; i < data.features.length; i++) {
+                newCities.push(data.features[i].properties.cityID);
+              }
+              if (newCities.length !== 0) {
+                // Load newly added cities' population
+                PopulationCache.loadCityPopulationToCache(newCities);
+              }
             })
             .error(function (data) {
               console.error("Load city data failure");
             });
         }
     };
-    
+
+    // load population Json to get state and county polygons, store in countmap cache.
+    $scope.loadPopJsonFiles = function loadPopJsonFiles(onEachFeature) {
+      $scope.popjsonData = {};
+      if (PopulationCache.statePopulationCached() === false){
+        $http.get("assets/data/allStatePopulation.json")
+        .success(function(data) {
+          PopulationCache.putPopValues(data, "state");
+        })
+        .error(function(data) {
+          console.error("Load state population data failure");
+        });
+      }
+      if (PopulationCache.countyPopulationCached() === false){
+        $http.get("assets/data/allCountyPopulation.json")
+        .success(function(data) {
+          PopulationCache.putPopValues(data, "county");
+        })
+        .error(function(data) {
+          console.error("Load county population data failure");
+        });
+      }
+    };
+
     // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent)
