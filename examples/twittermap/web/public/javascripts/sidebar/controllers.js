@@ -136,7 +136,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
   .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
     $scope.results = {};
     function drawTweets(message) {           
-      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["user.id"];
+      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
         var object = $(data.html);
         $("#tweet").prepend(data.html);
