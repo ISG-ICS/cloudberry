@@ -6,7 +6,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         $("#keyword-textbox").on("keyup",function(event){
           
           var q = $scope.keyword;
-          var url = "http://127.0.0.1:5000/spoof?query="+q;
+          var hostName = "http://"+window.location.hostname+":5000";
+          var url = hostName+"/spoof?query="+q;
           
             $.ajax({url:url}).done(function(data){
               data = JSON.parse(data);
