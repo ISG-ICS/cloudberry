@@ -270,35 +270,21 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 style: $scope.styles.cityStyle,
                 onEachFeature: onEachFeature
               });
-              var newCities = [];
               for (i = 0; i < $scope.geojsonData.city.features.length; i++) {
                 $scope.cityIdSet.add($scope.geojsonData.city.features[i].properties.cityID);
-                newCities.push($scope.geojsonData.city.features[i].properties.cityID);
-              }
-
-              if (newCities.length !== 0) {
-                // Load city population data for first time zoom in
-                PopulationCache.loadCityPopulationToCache(newCities);
               }
             } else {
               // compares the current region's cityIds with previously stored cityIds
               // stores the new delta cities' ID and polygon info
               // add the new polygons as GeoJson objects incrementally on the layer
 
-              var newCities = [];
               for (i = 0; i < data.features.length; i++) {
                 if (!$scope.cityIdSet.has(data.features[i].properties.cityID)) {
                   $scope.geojsonData.city.features.push(data.features[i]);
                   $scope.cityIdSet.add(data.features[i].properties.cityID);
-                  newCities.push(data.features[i].properties.cityID);
                   $scope.polygons.cityPolygons.addData(data.features[i]);
                 }
               }
-            }
-
-            if (newCities.length !== 0) {
-              // Load newly added cities' population
-              PopulationCache.loadCityPopulationToCache(newCities);
             }
 
             // To add the city level map only when it doesn't exit
@@ -325,15 +311,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 moduleManager.publishEvent(fromEventName, fromEvent);
               }
               $scope.map.addLayer($scope.polygons.cityPolygons);
-
-              var newCities = [];
-              for (i = 0; i < data.features.length; i++) {
-                newCities.push(data.features[i].properties.cityID);
-              }
-              if (newCities.length !== 0) {
-                // Load newly added cities' population
-                PopulationCache.loadCityPopulationToCache(newCities);
-              }
             })
             .error(function (data) {
               console.error("Load city data failure");

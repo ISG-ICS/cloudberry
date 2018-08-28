@@ -90,7 +90,7 @@ angular.module("cloudberry.common")
           start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
           end: new Date(cloudberry.parameters.timeInterval.end.getTime())
         });
-        if (typeof result.timeInterval !== undefined && result.timeInterval !== null) {
+        if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
           timeInterval = result.timeInterval;
         }
         cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);

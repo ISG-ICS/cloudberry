@@ -3,15 +3,16 @@
  */
 'use strict';
 angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
-    .service('PopulationCache', ['$http', 'TimeSeriesCache', function ($http, TimeSeriesCache) {
+    .service('PopulationCache', ['$window', '$http', '$compile', 'TimeSeriesCache', function ($window, $http, $compile, TimeSeriesCache) {
         const INVALID_VALUE = 0;
 
         // When popCached.state or county is true, all state or county level population is preloaded/cached;
-        // when popCached.city is true, it is partically loaded/cached.
+        // when popCached.city is true when the newest city population request is loaded/cached,
+        // popCached.city is false when any city population request is in progress
         var popCached = {
             state: false,
             county: false,
-            city: false
+            city: null
         }
         var popStore = {
             state: new HashMap(),
@@ -21,7 +22,11 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
 
          this.statePopulationCached = function(){return popCached.state;};
          this.countyPopulationCached = function(){return popCached.county;};
-         //this.cityPopulationCached = function(){return popCached.city;};
+
+         this.cityPopulationCached = function(){return popCached.city;};
+         this.setCityPopCacheNotReady = function(){popCached.city = false;};
+
+         this.cityPopulationStore = function(){return popStore.city;};
 
         /*
          * Put result in population store in {geoID, population} form.
@@ -32,8 +37,8 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
                 for (var i = 0; i < data.length; i++) {
                   store.set(data[i][geoLevel+'ID'], data[i]['population']);
                 }
-                    popStore[geoLevel] = store;
-                    popCached[geoLevel] = true;
+            popStore[geoLevel] = store;
+            popCached[geoLevel] = true;
             }
         };
 
@@ -43,13 +48,16 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
         this.loadCityPopulationToCache = function(cityIds) {
             // Distinguish outer scope with http scope.
             var self = this;
+            var deferred = new $.Deferred();
 
             $http.get("cityPopulation/" + cityIds).success(function (data) {
                 // Cache return results in popStore.city.
                 self.putPopValues(data, "city");
+                deferred.resolve(data);
             }).error(function (data) {
                 console.error("Load city population failure");
             });
+            return deferred.promise();
         };
 
         /*
@@ -57,7 +65,7 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
          * byGeoTimeRequest sliced result (timeseriesPartialStore) and byGeoTimeRequest cache {day, count}.
          */
         this.getCountMapValues = function (geoIds, geoLevel, timeInterval, timeseriesPartialStore) {
-             var resultArray = [];
+            var resultArray = [];
 
             for (var i = 0; i < geoIds.length; i++) {
                 // Cache hit case: geoID's byGeoTimeRequest results in time series cache case.
@@ -88,6 +96,10 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
          */
         this.getCurrentSum = function(values, timeInterval) {
             var sum = 0;
+
+            if (values === INVALID_VALUE) {
+              return 0;
+            }
             for (var j = 0; j < values.length; j++) {
                 var currVal = values[j];
                 var day = new Date(currVal["day"]);
@@ -95,7 +107,6 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
                     sum += currVal["count"];
                 }
             }
-
             return sum;
         };
     }]);

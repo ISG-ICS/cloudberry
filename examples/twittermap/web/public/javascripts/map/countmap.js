@@ -70,12 +70,14 @@ angular.module('cloudberry.map')
         cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
 
       // Handle byGeoTimeRequest query slice option.
-      var byGeoTimeRequestJson = queryUtil.byGeoTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
-      if (cloudberryConfig.querySliceMills > 0) {
-        byGeoTimeRequestJson['option'] = {
+      var byGeoTimeRequestJson = cloudberryConfig.querySliceMills > 0 ? {
+        batch: [queryUtil.byGeoTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache)],
+        option: {
           sliceMillis: cloudberryConfig.querySliceMills
-        };
-      }
+        }
+      } : {
+        batch: [queryUtil.byGeoTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache)]
+      };
 
       // Gets the Geo IDs that are not in the map result cache.
       $scope.geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
@@ -87,8 +89,20 @@ angular.module('cloudberry.map')
         cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
 
         var emptyStore = new HashMap();
-        cloudberry.countmapMapResult = PopulationCache.getCountMapValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
-          cloudberry.parameters.timeInterval, emptyStore).concat(cloudberry.countmapPartialMapResult);
+        if (cloudberry.parameters.geoLevel === "city") {
+          var newCities = [];
+          for (i = 0; i < cloudberry.parameters.geoIds.length; i++) {
+                newCities.push(cloudberry.parameters.geoIds[i]);
+          }
+          PopulationCache.loadCityPopulationToCache(newCities).done(function(){
+            cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+            cloudberry.countmapMapResult = PopulationCache.getCountMapValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
+              cloudberry.parameters.timeInterval, emptyStore).concat(cloudberry.countmapPartialMapResult);
+          })
+        } else {
+          cloudberry.countmapMapResult = PopulationCache.getCountMapValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
+            cloudberry.parameters.timeInterval, emptyStore).concat(cloudberry.countmapPartialMapResult);
+        }
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
         MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel, cloudberry.countmapMapResult);
@@ -110,10 +124,24 @@ angular.module('cloudberry.map')
             resultSet[0] = [];
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+            if (cloudberry.parameters.geoLevel === "city") {
+              var newCities = [];
+              for (i = 0; i < cloudberry.parameters.geoIds.length; i++) {
+                newCities.push(cloudberry.parameters.geoIds[i]);
+              }
+              PopulationCache.loadCityPopulationToCache(newCities).done(function(){
+                cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+                cloudberry.countmapMapResult = PopulationCache.getCountMapValues($scope.geoIdsNotInCache,
+                  cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval,
+                  TimeSeriesCache.arrayToStore($scope.geoIdsNotInCache, cloudberry.timeSeriesQueryResult, cloudberry.parameters.geoLevel)).concat(
+                  cloudberry.countmapPartialMapResult);
+              })
+            } else {
             cloudberry.countmapMapResult = PopulationCache.getCountMapValues($scope.geoIdsNotInCache,
               cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval,
               TimeSeriesCache.arrayToStore($scope.geoIdsNotInCache, cloudberry.timeSeriesQueryResult, cloudberry.parameters.geoLevel)).concat(
               cloudberry.countmapPartialMapResult);
+            }
           }
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&

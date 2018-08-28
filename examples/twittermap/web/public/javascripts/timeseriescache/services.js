@@ -180,8 +180,8 @@ angular.module('cloudberry.timeseriescache', [])
                     }
                 }
 
-             return {values: inRangeValues, sum: sum};
+                return {values: inRangeValues, count: sum};
             }
-            return {values: INVALID_VALUE, sum: 0};
+            return {values: INVALID_VALUE, count: sum};
         };
     });
