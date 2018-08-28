@@ -56,6 +56,13 @@ angular.module("cloudberry.map")
 
     // Send query to cloudberry
     function sendPinmapQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords === null
+        || cloudberry.parameters.keywords.length === 0) {
+        return;
+      }
+
       // For time-series histogram, get geoIds not in the time series cache.
       $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
         cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
