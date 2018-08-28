@@ -2,33 +2,35 @@ angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
       var stopwordsMap = buildStopwordsMap();
         
-        $("#keyword-textbox").autocomplete({source:[]});
-        $("#keyword-textbox").on("keyup",function(event){
-          
-          var q = $scope.keyword;
-          var hostName = "http://"+window.location.hostname+":5000";
-          var url = hostName+"/spoof?query="+q;
-          
-            $.ajax({url:url}).done(function(data){
+      $("#keyword-textbox").autocomplete({source:[]});
+      $("#keyword-textbox").on("keyup",function(event){   
+        var q = $scope.keyword;
+        var hostName = "http://"+window.location.hostname+":5000";
+        var url = hostName+"/spoof?query="+q;
+        try{
+          $.ajax({url:url}).done(function(data){
               data = JSON.parse(data);
               var suggestion = [];
               for(var i=0;i<data.topics.length;i++)
               {
                 var value = String(data.topics[i].topic);
+                //Exclude hashtag topic and repetitive topic
                 if(value[0] !== "#" && !suggestion.includes(value)){
                   suggestion.push(value);
                 }
               }
               $("#keyword-textbox").autocomplete({source:suggestion});
-            });
-          
-        })
+          });
+        }
+        catch(err){}
+      })
         
-        $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ) {
-          $scope.keyword = ui.item.value;
-          $scope.search();
-          $scope.updateSearchBox($scope.keyword);
-        } );
+      //If keyword been selected and user pushed enter,then we perform search directly
+      $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ){
+        $scope.keyword = ui.item.value;
+        $scope.search();
+        $scope.updateSearchBox($scope.keyword);
+      });
 
       
   
