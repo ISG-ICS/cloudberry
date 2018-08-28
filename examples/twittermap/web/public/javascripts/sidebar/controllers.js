@@ -6,13 +6,62 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOutdated = true;
     $scope.sampleTweets = [];
     var sendQueryLoop = {}; //Store variable for window.setInterval function, keep only one setInterval function avtive at a time
-    
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
 
     $scope.currentTab = "aboutTab";
+    
+    // Using this function to get current date time in cloudberry query format
+    function getCurrentDateTime(reduceDays=0){
+      var d = new Date();
+      var month = "";
+      var day = "";
+      var hours = "";
+      var minutes = "";
+      var seconds = "";
+      
+      if(d.getHours()<10){
+        hours = "0"+d.getHours();
+      }
+      else{
+        hours = d.getHours();
+      }
+      
+      if(d.getMinutes()<10){
+        minutes = "0"+d.getMinutes();
+      }
+      else{
+        minutes = d.getMinutes();
+      }
+      
+      if(d.getSeconds()<10){
+        seconds = "0"+d.getSeconds();
+      }
+      else{
+        seconds = d.getSeconds();
+      }
+      
+      if((d.getMonth()+1)<10){
+        month = "0"+(d.getMonth()+1);
+      }
+      else{
+        moth = d.getMonth();
+      }
+      
+      if(d.getDate()<10){
+        day = "0"+(d.getDate()-reduceDays);
+      }
+      else{
+        day = (d.getDate()-reduceDays);
+      }
 
+      return d.getFullYear()+"-"+month+"-"+day+"T"+hours+":"+minutes+":"+seconds+"."+d.getMilliseconds()+"Z";
+    }
+    
+    var timeLowerBound = getCurrentDateTime(7); //lower bound of live tweets, the first lower bound will be current time - 7days, to ensure there at least some contents
+    var timeUpperBound = getCurrentDateTime(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
+        
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
       cloudberryClient.send(hashtagRequest, function(id, resultSet) {
@@ -29,7 +78,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             "field": "text",
             "relation": "contains",
             "values": [$scope.keyword]
-          }],
+          },
+          {
+            "field": "create_at",
+            "relation": "inRange",
+            "values": [ timeLowerBound, timeUpperBound]
+          }
+          ],
           select: {
             order: ["-create_at"],
             limit: 10,
@@ -38,7 +93,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           }
         };
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-        $scope.sampleTweets = $scope.sampleTweets.concat(resultSet[0].reverse());//oldest tweet will be at front
+        $scope.sampleTweets = $scope.sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
       }, "sampleTweetsRequest");
       $scope.isSampleTweetsOutdated = false;
     }
@@ -54,8 +109,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     },function(newResult){ 
       if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
         window.clearInterval(sendQueryLoop);
+        $scope.sampleTweets = [];//Clean the queue for old keyword;
         sendSampleTweetsQuery();
         sendQueryLoop = window.setInterval(function(){
+          //Update time range of live tweets to avoid get repetitive tweets
+          timeLowerBound = timeUpperBound;
+          timeUpperBound = getCurrentDateTime();
           sendSampleTweetsQuery();
         },30000);
       }  
