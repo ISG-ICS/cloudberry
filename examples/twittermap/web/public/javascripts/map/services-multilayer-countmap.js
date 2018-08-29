@@ -61,7 +61,7 @@ angular.module("cloudberry.map")
             });
 
             for (var i = 0; i < instance.geojsonData.city.features.length; i++) {
-              scope.cityIdSet.add(instance.geojsonData.city.features[i].properties.cityID);
+              instance.cityIdSet.add(instance.geojsonData.city.features[i].properties.cityID);
             }
           }
           else {
@@ -69,16 +69,18 @@ angular.module("cloudberry.map")
             // stores the new delta cities' ID and polygon info
             // add the new polygons as GeoJson objects incrementally on the layer
             for (var i = 0; i < data.features.length; i++) {
-              if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
+              if (!instance.cityIdSet.has(data.features[i].properties.cityID)) {
                 instance.geojsonData.city.features.push(data.features[i]);
-                scope.cityIdSet.add(data.features[i].properties.cityID);
+                instance.cityIdSet.add(data.features[i].properties.cityID);
                 instance.polygons.cityPolygons.addData(data.features[i]);
               }
             }
           }
 
           // To add the city level map only when it doesn't exit
-          instance.layer.addLayer(instance.polygons.cityPolygons);
+          if(!instance.layer.hasLayer(instance.polygons.cityPolygons)){
+            instance.layer.addLayer(instance.polygons.cityPolygons);
+          }
         });
       } else {
         // No caching used here.
@@ -677,7 +679,8 @@ angular.module("cloudberry.map")
       instance.countText = "0";
       this.layer = L.layerGroup();
       instance.normalize = null;
-
+      instance.cityIdSet = new Set();
+      
       scope.$on("leafletDirectiveMap.zoomend", function () {
         zoomFunction(instance);
       });
@@ -808,7 +811,7 @@ angular.module("cloudberry.map")
           instance.countText = "0";
         }
 
-        infoDiv.innerHTML = innerHTML = [
+        infoDiv.innerHTML = [
           "<h4>Count: by " + cloudberry.parameters.geoLevel + "</h4>",
           "<b>" + instance.selectedPlace + "</b>",
           "<br/>Count: " + instance.countText,
