@@ -624,9 +624,6 @@ angular.module("cloudberry.map")
             //TODO publish events
             //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
           }
-          if (!instance.status.init) {
-          cloudberry.query(cloudberry.parameters);
-          }
           if (instance.polygons.countyPolygons) {
             instance.layer.removeLayer(instance.polygons.countyPolygons);
           }
