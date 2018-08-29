@@ -1,25 +1,25 @@
 angular.module("cloudberry.map")
-  .service("multilayerCountmap", function($http, $q, $compile, cloudberry, cloudberryConfig, leafletData,
-                                          moduleManager, MapResultCache, cloudberryClient, queryUtil, Cache,
-                                          TimeSeriesCache){
-    
+  .service("multilayerCountmap", function ($http, $q, $compile, cloudberry, cloudberryConfig, leafletData,
+                                           moduleManager, MapResultCache, cloudberryClient, queryUtil, Cache,
+                                           TimeSeriesCache) {
+
     function setCenterAndBoundry(features) {
-      for(var id in features){
+      for (var id in features) {
         if ({}.hasOwnProperty.call(features, id)) {
           var minLog = Number.POSITIVE_INFINITY;
           var maxLog = Number.NEGATIVE_INFINITY;
           var minLat = Number.POSITIVE_INFINITY;
           var maxLat = Number.NEGATIVE_INFINITY;
-          if(features[id].geometry.type === "Polygon") {
-            features[id].geometry.coordinates[0].forEach(function(pair) {
+          if (features[id].geometry.type === "Polygon") {
+            features[id].geometry.coordinates[0].forEach(function (pair) {
               minLog = Math.min(minLog, pair[0]);
               maxLog = Math.max(maxLog, pair[0]);
               minLat = Math.min(minLat, pair[1]);
               maxLat = Math.max(maxLat, pair[1]);
             });
-          } else if( features[id].geometry.type === "MultiPolygon") {
-            features[id].geometry.coordinates.forEach(function(array){
-              array[0].forEach(function(pair){
+          } else if (features[id].geometry.type === "MultiPolygon") {
+            features[id].geometry.coordinates.forEach(function (array) {
+              array[0].forEach(function (pair) {
                 minLog = Math.min(minLog, pair[0]);
                 maxLog = Math.max(maxLog, pair[0]);
                 minLat = Math.min(minLat, pair[1]);
@@ -32,105 +32,104 @@ angular.module("cloudberry.map")
         }
       }
     }
-  
-    function loadCityJsonByBound(onEachFeature,instance){
+
+    function loadCityJsonByBound(onEachFeature, instance) {
       var scope = instance.scope;
       var bounds = scope.map.getBounds();
       var rteBounds = "city/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
 
-        // Caching feature only works when the given threshold is greater than zero.
-        if (cloudberryConfig.cacheThreshold > 0) {
-          Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
+      // Caching feature only works when the given threshold is greater than zero.
+      if (cloudberryConfig.cacheThreshold > 0) {
+        Cache.getCityPolygonsFromCache(rteBounds).done(function (data) {
 
-            //set center and boundary done by Cache
-            if (!instance.status.init) {
-              resetGeoIds(instance.bounds, data, "cityID");
-              cloudberry.parameters.geoLevel = "city";
-              // TODO Publish zoom/drag event to moduleManager
-              //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: scope.map.getZoom(), bounds: scope.map.getBounds()});
-            }
-
+          // set center and boundary done by Cache
+          if (!instance.status.init) {
+            resetGeoIds(instance.bounds, data, "cityID");
             cloudberry.parameters.geoLevel = "city";
+            // TODO Publish zoom/drag event to moduleManager when we abandon map/controllers.js
+            // moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: scope.map.getZoom(), bounds: scope.map.getBounds()});
+          }
 
-            // initializes the instance.geojsonData.city and instance.cityIdSet when first time zoom in
-            if(typeof instance.polygons.cityPolygons === "undefined"){
-              instance.geojsonData.city = data;
-              instance.polygons.cityPolygons = L.geoJson(data, {
-                style: instance.styles.cityStyle,
-                onEachFeature
-              });
-              
-              for (var i = 0; i < instance.geojsonData.city.features.length; i++) {
-                scope.cityIdSet.add(instance.geojsonData.city.features[i].properties.cityID);
-              }
-            } 
-            else {
-              // compares the current region"s cityIds with previously stored cityIds
-              // stores the new delta cities" ID and polygon info
-              // add the new polygons as GeoJson objects incrementally on the layer
-              
-              for (var i = 0; i < data.features.length; i++) {
-                if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
-                  instance.geojsonData.city.features.push(data.features[i]);
-                  scope.cityIdSet.add(data.features[i].properties.cityID);
-                  instance.polygons.cityPolygons.addData(data.features[i]);
-                }
+          cloudberry.parameters.geoLevel = "city";
+
+          // initializes the instance.geojsonData.city and instance.cityIdSet when first time zoom in
+          if (typeof instance.polygons.cityPolygons === "undefined") {
+            instance.geojsonData.city = data;
+            instance.polygons.cityPolygons = L.geoJson(data, {
+              style: instance.styles.cityStyle,
+              onEachFeature
+            });
+
+            for (var i = 0; i < instance.geojsonData.city.features.length; i++) {
+              scope.cityIdSet.add(instance.geojsonData.city.features[i].properties.cityID);
+            }
+          }
+          else {
+            // compares the current region's cityIds with previously stored cityIds
+            // stores the new delta cities' ID and polygon info
+            // add the new polygons as GeoJson objects incrementally on the layer
+            for (var i = 0; i < data.features.length; i++) {
+              if (!scope.cityIdSet.has(data.features[i].properties.cityID)) {
+                instance.geojsonData.city.features.push(data.features[i]);
+                scope.cityIdSet.add(data.features[i].properties.cityID);
+                instance.polygons.cityPolygons.addData(data.features[i]);
               }
             }
+          }
 
-            // To add the city level map only when it doesn"t exit
-           
+          // To add the city level map only when it doesn't exit
+          if (!instance.layer.hasLayer(instance.polygons.cityPolygons)) {
             instance.layer.addLayer(instance.polygons.cityPolygons);
-            
-          });
-        } else {
-          // No caching used here.
-          $http.get(rteBounds)
-            .success(function (data) {
-              instance.geojsonData.city = data;
-              if (instance.polygons.cityPolygons) {
-                instance.layer.removeLayer(instance.polygons.cityPolygons);
-              }
-              instance.polygons.cityPolygons = L.geoJson(data, {
-                style: instance.styles.cityStyle,
-                onEachFeature
-              });
-              setCenterAndBoundry(instance.geojsonData.city.features);
-              resetGeoInfo("city");
-              if (!instance.status.init) {
-                //TODO Publish zoom/drag event to moduleManager
-                //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
-              }
-              instance.layer.addLayer(instance.polygons.cityPolygons);
-            })
-            .error(function (data) {
-              console.error("Load city data failure");
+          }
+        });
+      } else {
+        // No caching used here.
+        $http.get(rteBounds)
+          .success(function (data) {
+            instance.geojsonData.city = data;
+            if (instance.polygons.cityPolygons) {
+              instance.layer.removeLayer(instance.polygons.cityPolygons);
+            }
+            instance.polygons.cityPolygons = L.geoJson(data, {
+              style: instance.styles.cityStyle,
+              onEachFeature
             });
-        }
+            setCenterAndBoundry(instance.geojsonData.city.features);
+            resetGeoInfo("city");
+            if (!instance.status.init) {
+              // TODO Publish zoom/drag event to moduleManager when we abandon map/controllers.js
+              // moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+            }
+            instance.layer.addLayer(instance.polygons.cityPolygons);
+          })
+          .error(function (data) {
+            console.error("Load city data failure");
+          });
+      }
     }
-    
-    function drawCountMap(result,instance){
+
+    function drawCountMap(result, instance) {
       var colors = instance.styles.colors;
       var sentimentColors = instance.styles.sentimentColors;
       var normalizedCountMax = 0,
-          normalizedCountMin = 0,
-          intervals = colors.length - 1,
-          difference = 0;
+        normalizedCountMin = 0,
+        intervals = colors.length - 1,
+        difference = 0;
 
       function getSentimentColor(d) {
-        if( d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3
+        if (d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3
           return sentimentColors[0];
-        } else if( d < 2 * cloudberryConfig.sentimentUpperBound / 3){    // 2/3
+        } else if (d < 2 * cloudberryConfig.sentimentUpperBound / 3) {    // 2/3
           return sentimentColors[1];
-        } else{     // 3/3
+        } else {     // 3/3
           return sentimentColors[2];
         }
       }
 
       function getNormalizedCountColor(d) {
         var i = 1;
-        for (; i <= intervals; i++){
-          if ( d <= normalizedCountMin + ((i * difference) / intervals)){  // bound = min + (i / 6) * difference
+        for (; i <= intervals; i++) {
+          if (d <= normalizedCountMin + ((i * difference) / intervals)) {  // bound = min + (i / 6) * difference
             return colors[i];
           }
         }
@@ -138,34 +137,34 @@ angular.module("cloudberry.map")
       }
 
       function getUnnormalizedCountColor(d) {
-        if(!d || d <= 0) {
+        if (!d || d <= 0) {
           d = 0;
-        } else if (d ===1 ){
+        } else if (d === 1) {
           d = 1;
         } else {
           d = Math.ceil(Math.log10(d));
-          if(d <= 0){ // treat smaller counts the same as 0
+          if (d <= 0) { // treat smaller counts the same as 0
             d = 0;
           }
         }
-        d = Math.min(d, colors.length-1);
+        d = Math.min(d, colors.length - 1);
         return colors[d];
       }
 
       function getColor(d) {
-        if(instance.doSentiment){  // 0 <= d <= 4
+        if (instance.doSentiment) {  // 0 <= d <= 4
           return getSentimentColor(d);
         }
-        else if(instance.doNormalization){
+        else if (instance.doNormalization) {
           return getNormalizedCountColor(d);
         }
-        else{
+        else {
           return getUnnormalizedCountColor(d);
         }
       }
 
       function style(feature) {
-        if (!feature.properties.count || feature.properties.count === 0){
+        if (!feature.properties.count || feature.properties.count === 0) {
           return {
             fillColor: "#f7f7f7",
             weight: 1.5,
@@ -184,54 +183,54 @@ angular.module("cloudberry.map")
         }
       }
 
-      function setNormalizedCountText(geo){
+      function setNormalizedCountText(geo) {
         // beautify 0.0000123 => 1.23e-5, 1.123 => 1.1
-        if(geo["properties"]["count"] < 1){
+        if (geo["properties"]["count"] < 1) {
           geo["properties"]["countText"] = geo["properties"]["count"].toExponential(1);
-        } else{
+        } else {
           geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
         }
         geo["properties"]["countText"] += cloudberryConfig.normalizationUpscaleText; // "/M"
       }
 
       function resetCount(geo) {
-        if (geo["properties"]["count"]){
+        if (geo["properties"]["count"]) {
           geo["properties"]["count"] = 0;
         }
-        if (geo["properties"]["countText"]){
+        if (geo["properties"]["countText"]) {
           geo["properties"]["countText"] = "";
         }
       }
 
-      function setNormalizedCount(geo, r){
+      function setNormalizedCount(geo, r) {
         var normalizedCount = r["count"] / r["population"] * cloudberryConfig.normalizationUpscaleFactor;
         geo["properties"]["count"] = normalizedCount;
-        if(normalizedCount > normalizedCountMax){  // update max to enable dynamic legends
+        if (normalizedCount > normalizedCountMax) {  // update max to enable dynamic legends
           normalizedCountMax = normalizedCount;
         }
         setNormalizedCountText(geo);
       }
 
-      function setUnnormalizedCount(geo ,r) {
+      function setUnnormalizedCount(geo, r) {
         geo["properties"]["count"] = r["count"];
         geo["properties"]["countText"] = geo["properties"]["count"].toString();
       }
 
-      function updateTweetCountInGeojson(){
+      function updateTweetCountInGeojson() {
         var level = cloudberry.parameters.geoLevel;
         var geojsonData = instance.geojsonData[level];
-        if(geojsonData){
+        if (geojsonData) {
           angular.forEach(geojsonData["features"], function (geo) {
             resetCount(geo);
             angular.forEach(result, function (r) {
-              if (r[level] === geo["properties"][level+"ID"]){
-                if(instance.doSentiment){
+              if (r[level] === geo["properties"][level + "ID"]) {
+                if (instance.doSentiment) {
                   // sentimentScore for all the tweets in the same polygon / number of tweets with the score
                   geo["properties"]["count"] = r["sentimentScoreSum"] / r["sentimentScoreCount"];
                   geo["properties"]["countText"] = geo["properties"]["count"].toFixed(1);
                 } else if (instance.doNormalization) {
                   setNormalizedCount(geo, r);
-                } else{
+                } else {
                   setUnnormalizedCount(geo, r);
                 }
               }
@@ -239,7 +238,7 @@ angular.module("cloudberry.map")
           });
           difference = normalizedCountMax - normalizedCountMin;  // to enable dynamic legend for normalization
           // draw
-          instance.polygons[level+"Polygons"].setStyle(style);
+          instance.polygons[level + "Polygons"].setStyle(style);
         }
       }
 
@@ -247,29 +246,28 @@ angular.module("cloudberry.map")
       updateTweetCountInGeojson();
 
       /**
-           * add information control: legend, toggle
-           * */
-
-      function addMapControl(name, position, initDiv, initJS){
-        var ctrlClass = $("."+name);
+       * add information control: legend, toggle
+       * */
+      function addMapControl(name, position, initDiv, initJS) {
+        var ctrlClass = $("." + name);
         if (ctrlClass) {
           ctrlClass.remove();
         }
 
-        instance[name]= L.control({
+        instance[name] = L.control({
           position
         });
 
-        instance[name].onAdd = function() {
+        instance[name].onAdd = function () {
           var div = L.DomUtil.create("div", "info " + name);
           initDiv(div);
           return div;
         };
 
 
-        if (instance.map) {   
+        if (instance.map) {
           instance[name].addTo(instance.map);
-          if (initJS){
+          if (initJS) {
             initJS();
           }
         }
@@ -277,10 +275,10 @@ angular.module("cloudberry.map")
 
       function initNormalize(div) {
 
-        if(instance.doNormalization){
+        if (instance.doNormalization) {
           div.innerHTML = "<p>Normalize</p><input id=\"toggle-normalize\" checked type=\"checkbox\">";
         }
-        else{
+        else {
           div.innerHTML = "<p>Normalize</p><input id=\"toggle-normalize\" type=\"checkbox\">";
         }
       }
@@ -290,17 +288,17 @@ angular.module("cloudberry.map")
         toggle.bootstrapToggle({
           on: "By Population"
         });
-        if(instance.doSentiment){
+        if (instance.doSentiment) {
           toggle.bootstrapToggle("off");
           toggle.bootstrapToggle("disable");
         }
       }
 
       function initSentiment(div) {
-        if(instance.doSentiment){
+        if (instance.doSentiment) {
           div.innerHTML = "<p>Sentiment Analysis</p><input id=\"toggle-sentiment\" checked type=\"checkbox\">";
         }
-        else{
+        else {
           div.innerHTML = "<p>Sentiment Analysis</p><input id=\"toggle-sentiment\" type=\"checkbox\">";
         }
       }
@@ -323,61 +321,62 @@ angular.module("cloudberry.map")
 
       function setGrades(grades) {
         var i = 0;
-        for(; i < grades.length; i++){
-          if (instance.doNormalization){
+        for (; i < grades.length; i++) {
+          if (instance.doNormalization) {
             grades[i] = normalizedCountMin + ((i * difference) / intervals);
           }
-          else{
+          else {
             grades[i] = Math.pow(10, i);
           }
         }
       }
 
       function getGradesNames(grades) {
-        return grades.map( function(d) {
+        return grades.map(function (d) {
           var returnText = "";
-          if (d < 1000){
+          if (d < 1000) {
             returnText = d.toFixed();
           } else if (d < 1000 * 1000) {
             returnText = (d / 1000).toFixed() + "K";
           } else if (d < 1000 * 1000 * 1000) {
             returnText = (d / 1000 / 1000).toFixed() + "M";
-          } else{
+          } else {
             returnText = (d / 1000 / 1000).toFixed() + "M+";
           }
-          if(instance.doNormalization){
+          if (instance.doNormalization) {
             return returnText + cloudberryConfig.normalizationUpscaleText; //["1/M", "10/M", "100/M", "1K/M", "10K/M", "100K/M"];
           }
-          else{
+          else {
             return returnText; //["1", "10", "100", "1K", "10K", "100K"];
           }
         });
       }
 
       function setCountLegend(div) {
-        var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
+        var grades = new Array(colors.length - 1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
-        var gName  = getGradesNames(grades);
-        if(instance.doNormalization){
-          div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
+        var gName = getGradesNames(grades);
+        if (instance.doNormalization) {
+          // add tool-tips for the legend to explain the meaning of "M"
+          div.setAttribute("title", "# of Tweets per Million People");
         }
+
         // loop through our density intervals and generate a label with a colored square for each interval
-        
         var i = 1;
         for (; i < grades.length; i++) {
           div.innerHTML +=
-            "<i style='background:" + getColor(grades[i]) + "'></i>" + gName[i-1] + "&ndash;" + gName[i] + "<br>";
+            "<i style='background:" + getColor(grades[i]) + "'></i>" + gName[i - 1] + "&ndash;" + gName[i] + "<br>";
         }
-        if (instance.doNormalization){
-          div.innerHTML += "<i style='background:" + getColor(grades[i-1] + ((difference) / intervals)) + "'></i> " + gName[i-1] + "+";
+        if (instance.doNormalization) {
+          div.innerHTML += "<i style='background:" + getColor(grades[i - 1] + ((difference) / intervals)) + "'></i> " + gName[i - 1] + "+";
         }
-        else{
-          div.innerHTML += "<i style='background:" + getColor(grades[i-1]*10) + "'></i> " + gName[i-1] + "+";
+        else {
+          div.innerHTML += "<i style='background:" + getColor(grades[i - 1] * 10) + "'></i> " + gName[i - 1] + "+";
         }
       }
 
       function initLegend(div) {
-        if(instance.doSentiment){
+        if (instance.doSentiment) {
           setSentimentLegend(div);
         } else {
           setCountLegend(div);
@@ -385,17 +384,17 @@ angular.module("cloudberry.map")
       }
 
 
-      if(cloudberry.parameters.maptype==="countmap"){
+      if (cloudberry.parameters.maptype === "countmap") {
         // add legend
         // add toggle normalize
         addMapControl("legend", "topleft", initLegend, null);
         addMapControl("normalize", "topleft", initNormalize, initNormalizeToggle);
       }
-      
 
-      instance.normalize =  $("#toggle-normalize").prop("checked");  
+
+      instance.normalize = $("#toggle-normalize").prop("checked");
     }
-  
+
     // Send query to cloudberry
     function sendCountmapQuery(instance) {
       var scope = instance.scope;
@@ -443,21 +442,21 @@ angular.module("cloudberry.map")
       };
 
       // Complete map result cache and time series cache hit case
-      if(scope.geoIdsNotInCache.length === 0 && scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+      if (scope.geoIdsNotInCache.length === 0 && scope.geoIdsNotInTimeSeriesCache.length === 0) {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
-        drawCountMap(cloudberry.countmapMapResult,instance);
+        drawCountMap(cloudberry.countmapMapResult, instance);
       }
       // Complete map result cache hit case - exclude map result request
-      else if(scope.geoIdsNotInCache.length === 0)  {
+      else if (scope.geoIdsNotInCache.length === 0) {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
-        drawCountMap(cloudberry.countmapMapResult,instance);
+        drawCountMap(cloudberry.countmapMapResult, instance);
 
-        cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet, resultTimeInterval){
-          if(angular.isArray(resultSet)) {
+        cloudberryClient.send(batchWithoutGeoRequest, function (id, resultSet, resultTimeInterval) {
+          if (angular.isArray(resultSet)) {
             var requestTimeRange = {
               start: new Date(resultTimeInterval.start),
               end: new Date(resultTimeInterval.end)
@@ -472,7 +471,7 @@ angular.module("cloudberry.map")
                 TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
           }
           // When the query is executed completely, we update the time series cache.
-          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+          if ((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
             TimeSeriesCache.putTimeSeriesValues(scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
@@ -480,23 +479,23 @@ angular.module("cloudberry.map")
         }, "batchWithoutGeoRequest");
       }
       // Complete time series cache hit case - exclude time series request
-      else if(scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+      else if (scope.geoIdsNotInTimeSeriesCache.length === 0) {
         cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
 
-        cloudberryClient.send(batchWithoutTimeRequest, function(id, resultSet, resultTimeInterval){
-          if(angular.isArray(resultSet)) {
+        cloudberryClient.send(batchWithoutTimeRequest, function (id, resultSet, resultTimeInterval) {
+          if (angular.isArray(resultSet)) {
             var requestTimeRange = {
               start: new Date(resultTimeInterval.start),
               end: new Date(resultTimeInterval.end)
             };
             cloudberry.countmapMapResult = resultSet[0].concat(cloudberry.countmapPartialMapResult);
-            drawCountMap(cloudberry.countmapMapResult,instance);
+            drawCountMap(cloudberry.countmapMapResult, instance);
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
               cloudberry.parameters.geoLevel, requestTimeRange);
           }
           // When the query is executed completely, we update the map result cache.
-          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+          if ((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
             MapResultCache.putValues(scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
@@ -508,8 +507,8 @@ angular.module("cloudberry.map")
         cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
 
-        cloudberryClient.send(batchWithPartialRequest, function(id, resultSet, resultTimeInterval){
-          if(angular.isArray(resultSet)) {
+        cloudberryClient.send(batchWithPartialRequest, function (id, resultSet, resultTimeInterval) {
+          if (angular.isArray(resultSet)) {
             var requestTimeRange = {
               start: new Date(resultTimeInterval.start),
               end: new Date(resultTimeInterval.end)
@@ -522,10 +521,10 @@ angular.module("cloudberry.map")
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
             cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
-            drawCountMap(cloudberry.countmapMapResult,instance);
+            drawCountMap(cloudberry.countmapMapResult, instance);
           }
           // When the query is executed completely, we update the map result cache and time series cache.
-          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+          if ((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
             MapResultCache.putValues(scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
               cloudberry.countmapMapResult);
@@ -535,23 +534,22 @@ angular.module("cloudberry.map")
         }, "batchWithPartialRequest");
       }
     }
-    
-    function countmapHandler(instance){
+
+    function countmapHandler(instance) {
       sendCountmapQuery(instance);
     }
-  
-    function onMapTypeChangeHandler(instance)
-    {
-        // add info control
-        instance.info.addTo(instance.map);
-      
-        countmapHandler(instance);
-    }
-    
-    function cleanCountMap(){
 
-      function removeMapControl(name){
-        var ctrlClass = $("."+name);
+    function onMapTypeChangeHandler(instance) {
+      // add info control
+      instance.info.addTo(instance.map);
+
+      countmapHandler(instance);
+    }
+
+    function cleanCountMap() {
+
+      function removeMapControl(name) {
+        var ctrlClass = $("." + name);
         if (ctrlClass) {
           ctrlClass.remove();
         }
@@ -568,24 +566,26 @@ angular.module("cloudberry.map")
       if (polygons !== undefined) {
         polygons.features.forEach(function (polygon) {
           if (bounds._southWest.lat <= polygon.properties.centerLat &&
-              polygon.properties.centerLat <= bounds._northEast.lat &&
-              bounds._southWest.lng <= polygon.properties.centerLog &&
-              polygon.properties.centerLog <= bounds._northEast.lng) {
+            polygon.properties.centerLat <= bounds._northEast.lat &&
+            bounds._southWest.lng <= polygon.properties.centerLog &&
+            polygon.properties.centerLog <= bounds._northEast.lng) {
             cloudberry.parameters.geoIds.push(polygon.properties[idTag]);
           }
         });
       }
     }
 
-    function zoomFunction(instance){
+    function zoomFunction(instance) {
       var scope = instance.scope;
+
       function resetGeoInfo(level) {
         cloudberry.parameters.geoLevel = level;
         cloudberry.parameters.geoLevel = level;
-        if (instance.geojsonData[level]){
+        if (instance.geojsonData[level]) {
           resetGeoIds(instance.bounds, instance.geojsonData[level], level + "ID");
         }
       }
+
       if (instance.map) {
         instance.status.zoomLevel = instance.map.getZoom();
         instance.bounds = instance.map.getBounds();
@@ -601,12 +601,14 @@ angular.module("cloudberry.map")
             instance.layer.removeLayer(instance.polygons.stateUpperPolygons);
           }
           instance.layer.addLayer(instance.polygons.countyUpperPolygons);
-          loadCityJsonByBound(instance.onEachFeature,instance);
+          loadCityJsonByBound(instance.onEachFeature, instance);
         } else if (instance.status.zoomLevel > 5) {
           resetGeoInfo("county");
           scope.resetGeoInfo("county");
-          //TODO publish events
-          //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+          if (!instance.status.init) {
+            // TODO publish events when we abandon map/controllers.js
+            // moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+          }
           if (instance.polygons.statePolygons) {
             instance.layer.removeLayer(instance.polygons.statePolygons);
           }
@@ -620,9 +622,9 @@ angular.module("cloudberry.map")
           instance.layer.addLayer(instance.polygons.countyPolygons);
         } else if (instance.status.zoomLevel <= 5) {
           resetGeoInfo("state");
-          if(!instance.status.init){
-            //TODO publish events
-            //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
+          if (!instance.status.init) {
+            // TODO publish events when we abandon map/controllers.js
+            // moduleManager.publishEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, {level: instance.map.getZoom(), bounds: instance.map.getBounds()});
           }
           if (instance.polygons.countyPolygons) {
             instance.layer.removeLayer(instance.polygons.countyPolygons);
@@ -643,7 +645,7 @@ angular.module("cloudberry.map")
       }
     }
 
-    function dragFunction(instance){
+    function dragFunction(instance) {
       instance.bounds = instance.map.getBounds();
       var geoData;
       if (cloudberry.parameters.geoLevel === "state") {
@@ -656,20 +658,20 @@ angular.module("cloudberry.map")
         console.error("Error: Illegal value of logicLevel, set to default: state");
         cloudberry.parameters.geoLevel = "state";
         geoData = instance.geojsonData.state;
-      }  
+      }
       if (cloudberry.parameters.geoLevel === "city") {
-          loadCityJsonByBound(instance.onEachFeature,instance);
+        loadCityJsonByBound(instance.onEachFeature, instance);
       } else {
         resetGeoIds(instance.bounds, geoData, cloudberry.parameters.geoLevel + "ID");
-        if(!instance.status.init){
+        if (!instance.status.init) {
           cloudberry.parameters.geoLevel = cloudberry.parameters.geoLevel;
         }
-        //TODO publish events
-        //moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: instance.map.getBounds()});
+        // TODO publish events when we abandon map/controllers.js
+        // moduleManager.publishEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, {bounds: instance.map.getBounds()});
       }
     }
 
-    function initCountMap(scope,instance){
+    function initCountMap(scope, instance) {
       this.scope = scope;
       this.doNormalization = false;
       this.doSentiment = false;
@@ -677,13 +679,14 @@ angular.module("cloudberry.map")
       instance.countText = "0";
       this.layer = L.layerGroup();
       instance.normalize = null;
-      
-      scope.$on("leafletDirectiveMap.zoomend",function(){       
-          zoomFunction(instance);   
+
+      scope.$on("leafletDirectiveMap.zoomend", function () {
+        zoomFunction(instance);
       });
-      scope.$on("leafletDirectiveMap.dragend", function(){     
-          dragFunction(instance);       
+      scope.$on("leafletDirectiveMap.dragend", function () {
+        dragFunction(instance);
       });
+
       var countmapStyle = {
         initStyle: {
           weight: 1.5,
@@ -730,7 +733,7 @@ angular.module("cloudberry.map")
           color: "#666",
           fillOpacity: 0.5
         },
-        colors: [ "#ffffff", "#92d1e1", "#4393c3", "#2166ac", "#f4a582", "#d6604d", "#b2182b"],
+        colors: ["#ffffff", "#92d1e1", "#4393c3", "#2166ac", "#f4a582", "#d6604d", "#b2182b"],
         sentimentColors: ["#ff0000", "#C0C0C0", "#00ff00"]
       };
 
@@ -754,7 +757,7 @@ angular.module("cloudberry.map")
           fillOpacity: 0.5,
           color: "#92d1e1"
         };
-        if (leafletEvent){
+        if (leafletEvent) {
           leafletEvent.target.setStyle(style);
         }
       }
@@ -764,56 +767,56 @@ angular.module("cloudberry.map")
       var placeName = "No place selected";
       var countText = "0";
       var infoDiv;
-      
-      info.onAdd = function() {
+
+      info.onAdd = function () {
         this._div = L.DomUtil.create("div", "info"); // create a div with a class "info"
         this._div.style.margin = "20% 0 0 0";
         infoDiv = this._div;
         instance.infoDiv = infoDiv;
         this._div.innerHTML = [
-          "<h4>Count: by "+cloudberry.parameters.geoLevel+"</h4>",
-          "<b>"+placeName+"</b>",
-          "<br/>Count: "+countText,
+          "<h4>Count: by " + cloudberry.parameters.geoLevel + "</h4>",
+          "<b>" + placeName + "</b>",
+          "<br/>Count: " + countText,
           ""
         ].join("");
         $compile(this._div)(this);
         return this._div;
-      };     
+      };
 
       info.options = {
         position: "topleft"
       };
-      
+
       instance.info = info;
-      
-      instance.scope.$watch(function(){
+
+      instance.scope.$watch(function () {
         return instance.map;
-      },function(result){
-        if(cloudberry.parameters.maptype==="countmap"){
+      }, function (result) {
+        if (cloudberry.parameters.maptype === "countmap") {
           info.addTo(instance.map);
         }
       });
 
       //watch variable for left up corner"s info control
-      scope.$watchCollection(function(){
-        return { "selectedPalace":instance.selectedPlace,
-                 "geoLevel":cloudberry.parameters.geoLevel};
+      scope.$watchCollection(function () {
+        return {
+          "selectedPlace": instance.selectedPlace,
+          "geoLevel": cloudberry.parameters.geoLevel
+        };
 
-      },function(oldResult,newResult){
+      }, function (oldResult, newResult) {
 
-        if(!instance.countText){
+        if (!instance.countText) {
           instance.countText = "0";
         }
 
-          infoDiv.innerHTML = innerHTML = [
-          "<h4>Count: by "+cloudberry.parameters.geoLevel+"</h4>",
-          "<b>"+instance.selectedPlace+"</b>",
-          "<br/>Count: "+instance.countText,
+        infoDiv.innerHTML = innerHTML = [
+          "<h4>Count: by " + cloudberry.parameters.geoLevel + "</h4>",
+          "<b>" + instance.selectedPlace + "</b>",
+          "<br/>Count: " + instance.countText,
           ""].join("");
-
-
       });
-      
+
       // add feature to each polygon
       // highlight a polygon when mouseover
       // remove the highlight when mouseout
@@ -822,48 +825,47 @@ angular.module("cloudberry.map")
         layer.on({
           mouseover: highlightFeature,
           mouseout: resetHighlight,
-          click:scope.zoomToFeature
+          click: scope.zoomToFeature
         });
       };
 
-      leafletData.getMap().then(function(map){
+      leafletData.getMap().then(function (map) {
         instance.map = map;
       });
-      
+
       //watch normalize switch and redraw map, when switch is on.
-      scope.$watch(function(){
+      scope.$watch(function () {
         return $("#toggle-normalize").prop("checked");
-      },function(resultN){
+      }, function (resultN) {
         scope.doNormalization = resultN;
         instance.doNormalization = resultN;
-        if(cloudberry.parameters.maptype==="countmap")
-        {
-          drawCountMap(cloudberry.countmapMapResult,instance);    
+        if (cloudberry.parameters.maptype === "countmap") {
+          drawCountMap(cloudberry.countmapMapResult, instance);
         }
       });
-      
+
       scope.loadGeoJsonFiles(this.onEachFeature);
-      
+
       //Change the init to be false, otherwise map/controllers.js will not publish zoom/drag events
       scope.status.init = false;
 
       // update the center and the boundary of the visible area of the map
-      function setCenterAndBoundry(features){
-        for (var id in features){
+      function setCenterAndBoundry(features) {
+        for (var id in features) {
           var minLog = Number.POSITIVE_INFINITY;
           var maxLog = Number.NEGATIVE_INFINITY;
           var minLat = Number.POSITIVE_INFINITY;
           var maxLat = Number.NEGATIVE_INFINITY;
-          if (features[id].geometry.type === "Polygon"){
-            features[id].geometry.coordinates[0].forEach(function(pair){
+          if (features[id].geometry.type === "Polygon") {
+            features[id].geometry.coordinates[0].forEach(function (pair) {
               minLog = Math.min(minLog, pair[0]);
               maxLog = Math.max(maxLog, pair[0]);
               minLat = Math.min(minLat, pair[1]);
               maxLat = Math.max(maxLat, pair[1]);
             });
-          } else if( features[id].geometry.type === "MultiPolygon") {
-            features[id].geometry.coordinates.forEach(function(array){
-              array[0].forEach(function(pair){
+          } else if (features[id].geometry.type === "MultiPolygon") {
+            features[id].geometry.coordinates.forEach(function (array) {
+              array[0].forEach(function (pair) {
                 minLog = Math.min(minLog, pair[0]);
                 maxLog = Math.max(maxLog, pair[0]);
                 minLat = Math.min(minLat, pair[1]);
@@ -880,7 +882,7 @@ angular.module("cloudberry.map")
       function resetGeoInfo(level) {
         cloudberry.parameters.geoLevel = level;
         cloudberry.parameters.geoLevel = level;
-        if (instance.geojsonData[level]){
+        if (instance.geojsonData[level]) {
           resetGeoIds(instance.bounds, instance.geojsonData[level], level + "ID");
         }
       }
@@ -892,79 +894,79 @@ angular.module("cloudberry.map")
       resetGeoInfo("state");
 
       // load geoJson to get state and county polygons
-      if (!this.polygons.statePolygons){
+      if (!this.polygons.statePolygons) {
         $http.get("assets/data/state.json")
-          .success(function(data) {
-          instance.geojsonData.state = data;
-          instance.polygons.statePolygons = L.geoJson(data, {
-            style: countmapStyle.stateStyle,
-            onEachFeature: instance.onEachFeature
+          .success(function (data) {
+            instance.geojsonData.state = data;
+            instance.polygons.statePolygons = L.geoJson(data, {
+              style: countmapStyle.stateStyle,
+              onEachFeature: instance.onEachFeature
+            });
+            instance.polygons.stateUpperPolygons = L.geoJson(data, {
+              style: countmapStyle.stateUpperStyle
+            });
+            setCenterAndBoundry(instance.geojsonData.state.features);
+            instance.layer.addLayer(instance.polygons.statePolygons);
+            if (countyPolygonsReady) {
+              deferred.resolve();
+            }
+            else {
+              statePolygonsReady = true;
+            }
+          })
+          .error(function (data) {
+            console.error("Load state data failure");
+            if (countyPolygonsReady) {
+              deferred.resolve();
+            }
+            else {
+              statePolygonsReady = true;
+            }
           });
-          instance.polygons.stateUpperPolygons = L.geoJson(data, {
-            style: countmapStyle.stateUpperStyle
-          });
-          setCenterAndBoundry(instance.geojsonData.state.features);
-          instance.layer.addLayer(instance.polygons.statePolygons);
-          if (countyPolygonsReady){
-            deferred.resolve();
-          }
-          else {
-            statePolygonsReady = true;
-          }
-        })
-          .error(function(data) {
-          console.error("Load state data failure");
-          if (countyPolygonsReady){
-            deferred.resolve();
-          }
-          else {
-            statePolygonsReady = true;
-          }
-        });
       }
-      if (!this.polygons.countyPolygons){
+      if (!this.polygons.countyPolygons) {
         $http.get("assets/data/county.json")
-          .success(function(data) {
-          instance.geojsonData.county = data;
-          instance.polygons.countyPolygons = L.geoJson(data, {
-            style: countmapStyle.countyStyle,
-            onEachFeature: instance.onEachFeature
+          .success(function (data) {
+            instance.geojsonData.county = data;
+            instance.polygons.countyPolygons = L.geoJson(data, {
+              style: countmapStyle.countyStyle,
+              onEachFeature: instance.onEachFeature
+            });
+            instance.polygons.countyUpperPolygons = L.geoJson(data, {
+              style: countmapStyle.countyUpperStyle
+            });
+            setCenterAndBoundry(instance.geojsonData.county.features);
+            if (statePolygonsReady) {
+              deferred.resolve();
+            }
+            else {
+              countyPolygonsReady = true;
+            }
+          })
+          .error(function (data) {
+            console.error("Load county data failure");
+            if (statePolygonsReady) {
+              deferred.resolve();
+            }
+            else {
+              countyPolygonsReady = true;
+            }
           });
-          instance.polygons.countyUpperPolygons = L.geoJson(data, {
-            style: countmapStyle.countyUpperStyle
-          });
-          setCenterAndBoundry(instance.geojsonData.county.features);
-          if (statePolygonsReady){
-            deferred.resolve();
-          }
-          else {
-            countyPolygonsReady = true;
-          }
-        })
-          .error(function(data) {
-          console.error("Load county data failure");
-          if (statePolygonsReady){
-            deferred.resolve();
-          }
-          else {
-            countyPolygonsReady = true;
-          }
-        });
       }
 
       return deferred.promise;
     }
 
     var countmapService = {
-      createLayer: function(parameters){
+      createLayer: function (parameters) {
         var deferred = $q.defer();
         deferred.resolve({
           active: 0,
           layer: {},
           init: initCountMap,
           onMapTypeChange: onMapTypeChangeHandler,
-          onChangeSearchKeyword:countmapHandler,
-          onChangeTimeSeriesRange:countmapHandler,
+          onChangeSearchKeyword: countmapHandler,
+          onChangeTimeSeriesRange: countmapHandler,
           onZoom: countmapHandler,
           onDrag: countmapHandler,
           clear: cleanCountMap,
