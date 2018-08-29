@@ -78,9 +78,7 @@ angular.module("cloudberry.map")
           }
 
           // To add the city level map only when it doesn't exit
-          if (!instance.layer.hasLayer(instance.polygons.cityPolygons)) {
-            instance.layer.addLayer(instance.polygons.cityPolygons);
-          }
+          instance.layer.addLayer(instance.polygons.cityPolygons);
         });
       } else {
         // No caching used here.
