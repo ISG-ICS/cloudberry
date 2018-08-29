@@ -84,18 +84,7 @@ object QueryResolver {
     val producedFields = mutable.Map.newBuilder[String, Field]
     val resolved = unnests.map { unnest =>
       val field = resolveField(unnest.field, fieldMap)
-      var asField : Field = null
-
-      val bagField = field.asInstanceOf[BagField]
-      bagField.innerType match {
-        case DataType.Number => asField = NumberField(unnest.as, field.isOptional)
-        case DataType.Time => asField = TimeField(unnest.as, field.isOptional)
-        case DataType.String => asField = StringField(unnest.as, field.isOptional)
-        case DataType.Text => asField = TextField(unnest.as, field.isOptional)
-        case DataType.Point => asField = PointField(unnest.as, field.isOptional)
-        case DataType.Boolean => asField = PointField(unnest.as, field.isOptional)
-      }
-
+      val asField = Field.asInnerType(field, unnest.as)
       producedFields += unnest.as -> asField
       UnnestStatement(field, asField)
     }
