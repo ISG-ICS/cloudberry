@@ -3,6 +3,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       var stopwordsMap = buildStopwordsMap();
         
       $("#keyword-textbox").autocomplete({source:[]});
+      //When user input keyword we will first send query to and get result to render auto-complete menu
+      //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
       $("#keyword-textbox").on("keyup",function(event){   
         var q = $scope.keyword;
         var hostName = "http://"+window.location.hostname+":5000";
