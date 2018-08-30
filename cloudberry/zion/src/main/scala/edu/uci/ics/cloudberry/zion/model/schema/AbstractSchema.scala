@@ -103,7 +103,7 @@ object Field {
       case DataType.String => StringField(name, field.isOptional)
       case DataType.Text => TextField(name, field.isOptional)
       case DataType.Point => PointField(name, field.isOptional)
-      case DataType.Boolean => PointField(name, field.isOptional)
+      case DataType.Boolean => BooleanField(name, field.isOptional)
     }
   }
 
