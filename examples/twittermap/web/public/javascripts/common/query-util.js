@@ -236,10 +236,36 @@ angular.module("cloudberry.common")
       },
 
       // Generate latest 10 sample tweet JSON request
-      getSampleTweetsRequest(parameters) {
+      getSampleTweetsRequest(parameters,timeLowerBound,timeUpperBound) {
+        var spatialField = queryUtil.getLevel(parameters.geoLevel);
+        var keywords = [];
+        for(var i = 0; i < parameters.keywords.length; i++){
+          keywords.push(parameters.keywords[i].replace("\"", "").trim());
+        }
+        var geoIds = parameters.geoIds;
+        var filter = [
+          {
+            field: "create_at",
+            relation: "inRange",
+            values: [timeLowerBound, timeUpperBound]
+          }, {
+            field: "text",
+            relation: "contains",
+            values: keywords
+          }
+        ];
+        if (geoIds.length <= 2000){
+          filter.push(
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: geoIds
+            }
+          );
+        }
         return {
           dataset: parameters.dataset,
-          filter: queryUtil.getFilter(parameters, queryUtil.defaultSamplingDayRange, parameters.geoIds),
+          filter,
           select: {
             order: ["-create_at"],
             limit: queryUtil.defaultSamplingSize,
