@@ -72,6 +72,8 @@ object Migration_20170428 {
       |      {"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},
       |      {"name":"user_mentions","isOptional":true,"datatype":"Bag","innerType":"Number"},
       |      {"name":"user.id","isOptional":false,"datatype":"Number"},
+      |      {"name":"user.name","isOptional":false,"datatype":"String"},
+      |      {"name":"user.profile_image_url","isOptional":false,"datatype":"String"},
       |      {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},

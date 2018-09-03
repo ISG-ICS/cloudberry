@@ -25,24 +25,36 @@
    <search-bar></search-bar>
    <predefined-keywords></predefined-keywords>
 
-
+   <!-- button for hide and show the timebar -->
+  <div>
+    <button type="button" class="btn btn-default btn-lg slide-up-down">
+      <span id="downbutton" class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
+    </button>
+  </div>
 
   <div class="stats">
     <time-series id="chart"></time-series>
   </div>
 
-  <div id='sidebar' ng-init="click = -1" ng-class="{toggled: click === 1}" >
+  <!-- button for hiding and showing the sidebar -->
+  <div class="w3-teal" ng-init="click = -1" ng-class="{toggled: click === 1}">
+    <button type="button" class="btn btn-default btn-sm" onclick="openRightMenu()" ng-click="click = click*-1; showOrHideSidebar(click)">
+      <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div id='sidebar' class="open" ng-init="click = -1" ng-class="{toggled: click === 1}" ng-controller="SidebarCtrl">
     <div class = "col-xs-2">
+      <a href="javascript:void(0)" class="closebtn" onclick="closeRightMenu()">&times;</a>
       <ul class="nav nav-tabs tabs-left">
-        <li role="presentation" ng-click="click = 1"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="click = 1"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="click = 1" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
-        <li role="presentation" ng-click="click = click*-1"><i ng-class="click ===-1 ? 'fa fa-chevron-left fa-2x': 'fa fa-chevron-right fa-2x'"></i></li>
+        <li role="presentation" ng-click="click = 1; showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" ng-click="click = 1; showTab('sampletweetTab')"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" ng-click="click = 1; showTab('aboutTab')" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
         <li><br/></li>
         <mapchoose>
           <li role="presentation"><img id="img1" name="img1" title="Count Map" src="/assets/images/aggregation_map.png" width="63" height="63" ></li><br/>
           <li role="presentation"><img id="img2" name="img2" title="Heat Map" src="/assets/images/heat_map_no_border.png" width="63" height="63" ></li><br/>
-          <li role="presentation"><img id="img3" name="img3" title="Point Map" src="/assets/images/point_map_no_border.png" width="63" height="63"></li>
+          <li role="presentation"><img id="img3" name="img3" title="Pin Map" src="/assets/images/point_map_no_border.png" width="63" height="63"></li>
         </mapchoose>
       </ul>
     </div>
@@ -52,18 +64,19 @@
         <tweet id="tweet" class="tab-pane"></tweet>
         <div id="about" class="tab-pane active">
           <h1> About </h1>
-          <p><b>Cloudberry</b> is a research prototype to support interactive analytics and visualization of large amounts of spatial-temporal data. </p>
+          <p><b>TwitterMap</b> is a research prototype powered by <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a>
+            and <a href="https://asterixdb.apache.org/">Apache AsterixDB</a> to support
+            interactive analytics and visualization of large amounts of tweets. </p>
           <p> Basic Information: </p>
           <ul>
             <li>Data set: Tweets</li>
-            <li>Number of records: > 500,000,000 </li>
+            <li>Number of records: > 1.3 billions </li>
             <li>Collection period: From 2015-11-23 </li>
-            <li>Total data size: > 500G bytes</li>
-            <li>The live tweets is appending to db at the speed of ~30 tweets/sec </li>
+            <li>Total data size: > 2TB </li>
+            <li>The live tweets is appending to db at the speed of ~20 tweets/sec </li>
             <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
           </ul>
-          <p>The backend is running the big data management system <b><a href="http://asterixdb.apache.org/">Apache AsterixDB</a></b>
-          to support large compute clusters. Here is the small NUC cluster where the server runs! </p>
+          <p>Here is the small cluster where the server runs! </p>
           <img src='@routes.Assets.versioned("images/nuc.cluster.jpg")' width="256" height="192"><br>
           <p>For questions and comments, please contact <b>
               <a href="mailto:&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;">
@@ -77,9 +90,33 @@
     <exception-bar></exception-bar>
   </div>
 
-
-
 </div>
 
-
 }
+
+<script>
+  // Function for the button that hiding and showing the timebar. 
+  // The button moves together with timebar and the arrow direction changes. 
+  $(document).ready(function() {
+    $(".slide-up-down").click(function() {
+      $(".stats").slideToggle();
+      if( $( '#downbutton' ).hasClass( 'glyphicon-menu-down' ) ) {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-down' ).addClass('glyphicon-menu-up');
+        $(this).animate({bottom: '5px'});
+      }
+      else {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
+        $(this).animate({bottom: '110px'}); 
+      };
+    });
+  });
+
+  // Function for the button that open the sidebar.
+  function openRightMenu() {
+      document.getElementById("sidebar").style.left = "76%";
+  }
+  //Function for the button for close the sidebar.
+  function closeRightMenu() {
+      document.getElementById("sidebar").style.left = "100%";
+  }
+</script>

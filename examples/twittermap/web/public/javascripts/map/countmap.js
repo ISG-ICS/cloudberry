@@ -1,5 +1,8 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $rootScope, $window, $http, $compile, cloudberry, leafletData, cloudberryConfig, Cache) {
+  .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
+                                       TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
+
+
     // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({
@@ -52,6 +55,152 @@ angular.module('cloudberry.map')
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       });
     }
+
+    // Send query to cloudberry
+    function sendCountmapQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords === null
+        || cloudberry.parameters.keywords.length === 0) {
+        return;
+      }
+
+      // For time-series histogram, get geoIds not in the time series cache.
+      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
+      // Batch request without map result - used when the complete map result cache hit, partial time series result cache hit case
+      var batchWithoutGeoRequest = cloudberryConfig.querySliceMills > 0 ? {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache)],
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      } : {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache)]
+      };
+
+      // Gets the Geo IDs that are not in the map result cache.
+      $scope.geoIdsNotInCache = MapResultCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval,
+        cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
+      // Batch request without time series result - used when the complete time series cache hit, partial map result cache hit case
+      var batchWithoutTimeRequest = cloudberryConfig.querySliceMills > 0 ? {
+        batch: [queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      } : {
+        batch: [queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
+      };
+
+      // Batch request with only the geoIds whose map result or time series are not cached yet - partial map result cache hit case
+      // This case also covers the complete cache miss case.
+      var batchWithPartialRequest = cloudberryConfig.querySliceMills > 0 ? {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache),
+                queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)],
+        option: {
+          sliceMillis: cloudberryConfig.querySliceMills
+        }
+      } : {
+        batch: [queryUtil.byTimeRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache),
+                queryUtil.byGeoRequest(cloudberry.parameters, $scope.geoIdsNotInCache)]
+      };
+
+      // Complete map result cache and time series cache hit case
+      if($scope.geoIdsNotInCache.length === 0 && $scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+        cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+        cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+      }
+      // Complete map result cache hit case - exclude map result request
+      else if($scope.geoIdsNotInCache.length === 0)  {
+        cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+
+        cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
+            // Since the middleware returns the query result in multiple steps,
+            // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
+            cloudberry.timeSeriesQueryResult = resultSet[0];
+            // Avoid memory leak.
+            resultSet[0] = [];
+            cloudberry.commonTimeSeriesResult =
+              TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
+              TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+          }
+          // When the query is executed completely, we update the time series cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
+              cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
+          }
+        }, "batchWithoutGeoRequest");
+      }
+      // Complete time series cache hit case - exclude time series request
+      else if($scope.geoIdsNotInTimeSeriesCache.length === 0)  {
+        cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+
+        cloudberryClient.send(batchWithoutTimeRequest, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
+            cloudberry.countmapMapResult = resultSet[0].concat(cloudberry.countmapPartialMapResult);
+            cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
+              cloudberry.parameters.geoLevel, requestTimeRange);
+          }
+          // When the query is executed completely, we update the map result cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
+              cloudberry.countmapMapResult);
+          }
+        }, "batchWithoutTimeRequest");
+      }
+      // Partial map result cache hit case
+      else {
+        cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
+          cloudberry.parameters.geoLevel);
+
+        cloudberryClient.send(batchWithPartialRequest, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            var requestTimeRange = {
+              start: new Date(resultTimeInterval.start),
+              end: new Date(resultTimeInterval.end)
+            };
+            // Since the middleware returns the query result in multiple steps,
+            // cloudberry.timeSeriesQueryResult stores the current intermediate result.
+            cloudberry.timeSeriesQueryResult = resultSet[0];
+            // Avoid memory leak.
+            resultSet[0] = [];
+            cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
+              TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
+            cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
+          }
+          // When the query is executed completely, we update the map result cache and time series cache.
+          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+            resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            MapResultCache.putValues($scope.geoIdsNotInCache, cloudberry.parameters.geoLevel,
+              cloudberry.countmapMapResult);
+            TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
+              cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
+          }
+        }, "batchWithPartialRequest");
+      }
+    }
+
+    // Common event handler for Countmap
+    function countMapCommonEventHandler(event) {
+      sendCountmapQuery();
+    }
     
     // clear countmap specific data
     function cleanCountMap() {
@@ -67,7 +216,13 @@ angular.module('cloudberry.map')
       removeMapControl('legend');
       removeMapControl('normalize');
       removeMapControl('sentiment');
+      removeMapControl('info');
 
+      // Unsubscribe to moduleManager's events
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
     
     // initialize countmap
@@ -129,10 +284,10 @@ angular.module('cloudberry.map')
         this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
         this._div.style.margin = '20% 0 0 0';
         this._div.innerHTML = [
-          '<h4>{{ infoPromp }} by {{ status.logicLevel }}</h4>',
-          '<b>{{ selectedPlace.properties.name || "No place selected" }}</b>',
+          '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
+          '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
           '<br/>',
-          '{{ infoPromp }} {{ selectedPlace.properties.countText || "0" }}'
+          '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
         ].join('');
         $compile(this._div)($scope);
         return this._div;
@@ -141,12 +296,22 @@ angular.module('cloudberry.map')
       info.options = {
         position: 'topleft'
       };
-      $scope.controls.custom.push(info);
+      if ($scope.map){
+        info.addTo($scope.map);
+      }
+      else {
+        $scope.controls.custom.push(info);
+      }
 
       $scope.loadGeoJsonFiles(onEachFeature);
 
-      $scope.resetZoomFunction(onEachFeature);
-      $scope.resetDragFunction(onEachFeature);
+      $scope.$parent.onEachFeature = onEachFeature;
+
+      // Subscribe to moduleManager's events
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, countMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, countMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, countMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, countMapCommonEventHandler);
     }
     
     /**
@@ -154,7 +319,6 @@ angular.module('cloudberry.map')
      * @param    result  =>  mapPlotData, an array of coordinate and weight objects
      */
     function drawCountMap(result) {
-
       var colors = $scope.styles.colors;
       var sentimentColors = $scope.styles.sentimentColors;
       var normalizedCountMax = 0,
@@ -428,19 +592,22 @@ angular.module('cloudberry.map')
     // map type change handler
     // initialize the map (styles, zoom/drag handler, etc) when switch to this map
     // clear the map when switch to other map
-    $rootScope.$on('maptypeChange', function (event, data) {
-      if (cloudberry.parameters.maptype == 'countmap') {
+    function onMapTypeChange(event) {
+      if (event.currentMapType === "countmap") {
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();
-        cloudberry.query(cloudberry.parameters, cloudberry.queryType);
+        sendCountmapQuery();
       }
-      else if (data[0] == 'countmap'){
+      else if (event.previousMapType === "countmap"){
         cleanCountMap();
       }
-    })
+    }
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
     
-    // monitor the countmap related variables, update the pointmap if necessary
+    // TODO - get rid of these variables watching by events subscribing and publishing
+    // monitor the countmap related variables, update the countmap if necessary
     $scope.$watchCollection(
       function() {
         return {
@@ -477,4 +644,5 @@ angular.module('cloudberry.map')
         }
       }
     );
+
   });
