@@ -261,7 +261,7 @@ angular.module('cloudberry.map')
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
-      $scope.loadPopJsonFiles(onEachFeature);
+      $scope.loadPopJsonFiles();
 
       $scope.$parent.onEachFeature = onEachFeature;
 

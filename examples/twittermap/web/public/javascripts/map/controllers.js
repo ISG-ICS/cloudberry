@@ -319,7 +319,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     };
 
     // load population Json to get state and county polygons, store in countmap cache.
-    $scope.loadPopJsonFiles = function loadPopJsonFiles(onEachFeature) {
+    $scope.loadPopJsonFiles = function loadPopJsonFiles() {
       $scope.popjsonData = {};
       if (PopulationCache.statePopulationCached() === false){
         $http.get("assets/data/allStatePopulation.json")
