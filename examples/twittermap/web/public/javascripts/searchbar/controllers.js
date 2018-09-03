@@ -37,6 +37,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       
   
       $scope.search = function() {
+          $("#keyword-textbox").autocomplete("close");
           if ($scope.keyword && $scope.keyword.trim().length > 0) {
               //Splits out all individual words in the query keyword.
               var keywords = $scope.keyword.trim().split(/\s+/);
