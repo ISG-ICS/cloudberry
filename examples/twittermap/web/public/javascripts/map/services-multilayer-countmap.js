@@ -740,26 +740,32 @@ angular.module("cloudberry.map")
 
       this.styles = countmapStyle;
 
-      function highlightFeature(leafletEvent) {
+      function highlightFeature(leafletEvent) {        
         var layer = leafletEvent.target;
-        layer.setStyle(countmapStyle.hoverStyle);
-        if (!L.Browser.ie && !L.Browser.opera) {
-          layer.bringToFront();
-        }
+        if(cloudberry.parameters.maptype === "countmap")
+        {
+          layer.setStyle(countmapStyle.hoverStyle);
+          if (!L.Browser.ie && !L.Browser.opera) {
+            layer.bringToFront();
+          }
 
-        instance.selectedPlace = layer.feature.properties.name;
-        instance.countText = layer.feature.properties.countText;
+          instance.selectedPlace = layer.feature.properties.name;
+          instance.countText = layer.feature.properties.countText;
+        }
       }
 
       // remove the highlight interaction function for the polygons
       function resetHighlight(leafletEvent) {
-        var style = {
-          weight: 1.5,
-          fillOpacity: 0.5,
-          color: "#92d1e1"
-        };
-        if (leafletEvent) {
-          leafletEvent.target.setStyle(style);
+        console.log(leafletEvent);
+        if(cloudberry.parameters.maptype === "countmap"){
+          var style = {
+            weight: 1.5,
+            fillOpacity: 0.5,
+            color: "#92d1e1"
+          };
+          if (leafletEvent) {
+            leafletEvent.target.setStyle(style);
+          }
         }
       }
 
