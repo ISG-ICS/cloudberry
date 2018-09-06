@@ -246,7 +246,7 @@ angular.module("cloudberry.common")
 
         return {
           dataset: parameters.dataset,
-          filter:filter,
+          filter: filter,
           unnest: [{
             hashtags: "tag"
           }],
