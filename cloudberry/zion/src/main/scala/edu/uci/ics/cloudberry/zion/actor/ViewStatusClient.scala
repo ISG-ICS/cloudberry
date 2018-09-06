@@ -28,7 +28,9 @@ class ViewStatusClient(val jsonParser: JSONParser,
   implicit val askTimeOut: Timeout = config.UserTimeOut
 
   override def receive: Receive = {
-    case (json: JsValue, transform: IPostTransform)=>
+    case json: JsValue =>
+      handleRequest(json)
+    case (json: JsValue, transform: IPostTransform) =>
       handleRequest(json)
   }
 
