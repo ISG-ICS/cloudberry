@@ -72,6 +72,8 @@ object Dependencies {
     "org.webjars.bower" % "jquery-ui" % "1.12.1",
     // draw chart module
     "org.webjars.bower" % "chart.js" % "2.7.2"
+    // Added jquery-ui theme for decorating auto-complete menu
+    "org.webjars" % "jquery-ui-themes" % "1.12.1"
 
   ) ++ testDeps
 }
