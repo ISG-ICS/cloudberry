@@ -179,6 +179,20 @@ time-series {
   text-align: center;
 }
 
+/* style for auto-complete menu item*/
+.ui-menu-item{
+    color: #66757f;
+    font-size: 14px;
+    padding-top: 7px; 
+}
+
+/* style for auto-complete menu item that has been selected*/
+.ui-state-active, .ui-state-active:hover{
+    background-color: #E8F5FD !important;
+    color: #337ab7 !important;
+    border:none !important;
+}
+
 .search-keyword-btn{
   background-color: crimson;
   color: white;
