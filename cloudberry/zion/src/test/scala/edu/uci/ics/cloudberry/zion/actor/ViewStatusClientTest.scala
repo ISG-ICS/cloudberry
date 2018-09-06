@@ -44,7 +44,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
-      sender.expectMsg(JsString(s"true"))
+      sender.expectMsg(Seq(JsString(s"true")))
 
       ok
     }
