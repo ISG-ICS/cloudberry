@@ -22,7 +22,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
   sequential
 
   "ViewStatusClient" should {
-    "send multiple queries to dataManager if the planner said so" in {
+    "send query to dataManager to check whether it can solve by view" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
       val mockParser = mock[JSONParser]
