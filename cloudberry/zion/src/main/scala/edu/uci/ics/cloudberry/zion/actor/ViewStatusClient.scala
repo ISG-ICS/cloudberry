@@ -36,6 +36,7 @@ class ViewStatusClient(val jsonParser: JSONParser,
 
   private def handleRequest(json: JsValue): Unit = {
     val datasets = jsonParser.getDatasets(json).toSeq
+    val queryID = jsonParser.getQueryID(json)
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
@@ -49,12 +50,14 @@ class ViewStatusClient(val jsonParser: JSONParser,
       }.toMap
 
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
-      val futureResult = Future.traverse(queries)(q => isQuerySolveByView(q)).map(JsArray.apply)
-      futureResult.map(result => (queries, result)).foreach { case (qs, r) => out ! r }
+      val futureResult = Future.traverse(queries)(q => checkQuerySolvableByView(q)).map(JsArray.apply)
+      futureResult.map(result => (queries, result)).foreach {
+        case (qs, r) => out ! r.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+      }
     }
   }
 
-  protected def isQuerySolveByView(query: Query): Future[JsValue] = {
+  protected def checkQuerySolvableByView(query: Query): Future[JsValue] = {
     val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
       case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
         seq.map(_.asInstanceOf[DataSetInfo])
@@ -63,11 +66,11 @@ class ViewStatusClient(val jsonParser: JSONParser,
 
     fInfos.flatMap {
       case seq if seq.isEmpty =>
-        Future(noSuchDatasetJson(query.dataset))
+        Future(resultJson(false))
       case infos: Seq[DataSetInfo] =>
         val hasMatchedViews = planner.requestViewForQuery(query, infos.head, infos.tail)
-        if(hasMatchedViews) Future(JsString(s"true"))
-        else Future(JsString(s"false"))
+        if (hasMatchedViews) Future(resultJson(true))
+        else  Future(resultJson(false))
     }
   }
 }
@@ -76,6 +79,10 @@ object ViewStatusClient {
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
            (implicit ec: ExecutionContext) = {
     Props(new ViewStatusClient(jsonParser, dataManager, planner, config, out))
+  }
+
+  def resultJson(result: Boolean): JsValue = {
+    JsObject(Seq("isQuerySolvableByView" -> JsBoolean(result)))
   }
 
   def noSuchDatasetJson(name: String): JsValue = {

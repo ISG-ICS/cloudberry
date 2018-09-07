@@ -30,8 +30,10 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
+      val queryID = 1
       when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(TwitterDataSet))
+      when(mockParser.getQueryID(jsonRequest)).thenReturn(queryID)
 
       val client = system.actorOf(ViewStatusClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
       sender.send(client, jsonRequest)
@@ -44,7 +46,11 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
-      sender.expectMsg(JsArray(Seq(JsString(s"true"))))
+      val expectResult = Json.arr()
+      expectResult.append(ViewStatusClient.resultJson(true))
+      expectResult.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+
+      sender.expectMsg(expectResult)
 
       ok
     }

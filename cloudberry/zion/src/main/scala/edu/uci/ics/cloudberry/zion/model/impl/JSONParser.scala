@@ -17,6 +17,11 @@ class JSONParser extends IJSONParser {
     datasets.toSet
   }
 
+  def getQueryID(json: JsValue): Int = {
+    val queryID = (json \ "queryID").as[Int]
+    queryID
+  }
+
   /**
     * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
     * First parse the [[JsValue]] into a [[UnresolvedQuery]] using json parsing APIs provided by Play framework.

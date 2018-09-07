@@ -13,6 +13,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.timer = null;
 
+    $scope.nextQueryID = 0;
+
+    $scope.nowQueryID = null;
+
     var wsQuerySolveByView = new WebSocket(cloudberryConfig.querySolveByView);
 
     function closeRightMenu() {
@@ -29,8 +33,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     wsQuerySolveByView.onmessage = function(event) {
       $timeout(function() {
-        var result = JSONbig.parse(event.data);
-        if (result[0] === "true") {
+        var result = JSON.parse(event.data);
+        console.log(result)
+        if (result[1].queryID === $scope.nowQueryID && result[0].isQuerySolvableByView) {
           clearInterval($scope.timer);
           enableHamburgerButton();
         }
@@ -39,6 +44,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     function setTimer() {
       var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
+      queryToCheck.queryID = $scope.nextQueryID++;
+      $scope.nowQueryID = queryToCheck.queryID;
       $scope.timer = setInterval(function(){
         if(wsQuerySolveByView.readyState === wsQuerySolveByView.OPEN){
           wsQuerySolveByView.send(JSON.stringify(queryToCheck));
