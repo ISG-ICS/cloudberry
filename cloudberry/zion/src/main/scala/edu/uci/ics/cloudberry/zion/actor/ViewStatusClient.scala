@@ -70,7 +70,7 @@ class ViewStatusClient(val jsonParser: JSONParser,
       case infos: Seq[DataSetInfo] =>
         val hasMatchedViews = planner.requestViewForQuery(query, infos.head, infos.tail)
         if (hasMatchedViews) Future(resultJson(true))
-        else  Future(resultJson(false))
+        else Future(resultJson(false))
     }
   }
 }
