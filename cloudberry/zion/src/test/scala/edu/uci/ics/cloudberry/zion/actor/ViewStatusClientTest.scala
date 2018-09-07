@@ -46,11 +46,11 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
-      var expectResult = Json.arr()
-      expectResult = expectResult.append(ViewStatusClient.resultJson(true))
-      expectResult = expectResult.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+      val jsonArray = Json.arr()
+      val resultArray = jsonArray.append(ViewStatusClient.resultJson(true))
+      val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
 
-      sender.expectMsg(expectResult)
+      sender.expectMsg(resultArrayWithId)
 
       ok
     }
