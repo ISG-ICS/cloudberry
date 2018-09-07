@@ -11,12 +11,14 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.currentTab = "aboutTab";
 
+    // Timer for sending query to check whether it can be solved by view
     $scope.timer = null;
 
+    // queryID used to identify a query, which is sent by timer
     $scope.nextQueryID = 0;
-
     $scope.nowQueryID = null;
 
+    // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
 
     function closeRightMenu() {
@@ -31,10 +33,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       document.getElementById("hamburgerButton").disabled = true;
     }
 
+    // When receiving messages from websocket, check its queryID and result.
+    // If queryID is matched and result is true, enable the sidebar button and clear timer.
     wsCheckQuerySolvableByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSON.parse(event.data);
-        console.log(result)
         if (result[1].queryID === $scope.nowQueryID && result[0].isQuerySolvableByView) {
           clearInterval($scope.timer);
           enableHamburgerButton();
@@ -42,8 +45,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       });
     };
 
+    // Set a timer to sending query to check whether it is solvable, every one second
     function setTimer() {
       var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
+
+      // Add the queryID for a query in to request
       queryToCheck.queryID = $scope.nextQueryID++;
       $scope.nowQueryID = queryToCheck.queryID;
       $scope.timer = setInterval(function(){
@@ -122,6 +128,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       handleSidebarQuery();
     }
 
+    // When the keyword changed, we need to:
+    // 1. clear previous timer 2. close and disable sidebar 3. set a new timer for new keyword
     function keywordEventHandler(event) {
       if($scope.timer) {
         clearInterval($scope.timer);

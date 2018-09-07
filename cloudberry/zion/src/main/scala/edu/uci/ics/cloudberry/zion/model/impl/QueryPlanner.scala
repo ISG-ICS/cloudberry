@@ -18,6 +18,7 @@ class QueryPlanner {
     splitQuery(query, source, bestView)
   }
 
+  // Return whether there is matched views for a query, and it is used by the ViewStatusClient
   def requestViewForQuery(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
     val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
     matchedViews.nonEmpty

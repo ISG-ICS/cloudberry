@@ -88,6 +88,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     }
   }
 
+  // A WebSocket for checking whether a query is solvable by view
   def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
       RequestRouter.props(ViewStatusClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)

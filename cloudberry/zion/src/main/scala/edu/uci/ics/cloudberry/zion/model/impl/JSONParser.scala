@@ -17,6 +17,7 @@ class JSONParser extends IJSONParser {
     datasets.toSet
   }
 
+  // Parse json to get the queryID, and  it is used by the ViewStatusClient
   def getQueryID(json: JsValue): Int = {
     val queryID = (json \ "queryID").as[Int]
     queryID

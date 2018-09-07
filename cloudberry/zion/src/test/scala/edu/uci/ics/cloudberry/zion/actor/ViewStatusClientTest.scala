@@ -21,6 +21,8 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
   sequential
 
+  // A test to check whether query can be solved by view
+  // The expected result in this test is true
   "ViewStatusClient" should {
     "send query to dataManager to check whether it can be solved by view" in {
       val sender = new TestProbe(system)
@@ -54,6 +56,8 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
       ok
     }
 
+    // A test to send a request with unknown dataset to client
+    // The expected result in this test is noSuchDatasetJson
     "send the NoSuchData msg if the request is on a unknown dataset" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)

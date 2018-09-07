@@ -82,6 +82,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     }
   }
 
+  // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
   def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
       TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, maxTextMessageSize)
