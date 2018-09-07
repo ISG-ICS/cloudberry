@@ -3,15 +3,15 @@
 # ~~~~
 
 # cloudberry routes
-GET         /                                controllers.Cloudberry.index
-GET         /ws                              controllers.Cloudberry.ws
-GET         /checkQuerySolvableByView        controllers.Cloudberry.checkQuerySolvableByView
-POST        /berry                           controllers.Cloudberry.berryQuery
-POST        /webregister                     controllers.Cloudberry.webRegister
-POST        /admin/register                  controllers.Cloudberry.register
-POST        /admin/deregister                controllers.Cloudberry.deregister
+GET        /                                    controllers.Cloudberry.index
+GET        /ws                                  controllers.Cloudberry.ws
+GET        /checkQuerySolvableByView            controllers.Cloudberry.checkQuerySolvableByView
+POST       /berry                               controllers.Cloudberry.berryQuery
+POST       /webregister                         controllers.Cloudberry.webRegister
+POST       /admin/register                      controllers.Cloudberry.register
+POST       /admin/deregister                    controllers.Cloudberry.deregister
 
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                    controllers.Assets.versioned(path="/public", file: Asset)
-GET         /favicon.ico                     controllers.Assets.at(path="/public/images", file="favicon.ico")
+GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
+GET        /favicon.ico                         controllers.Assets.at(path="/public/images", file="favicon.ico")
