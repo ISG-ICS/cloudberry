@@ -109,9 +109,9 @@ angular.module('cloudberry.map')
     // If there are chartData, draw the line chart
     function drawLineChart(){
       if($scope.chartData.length !== 0 && document.getElementById("myChart")) {
-        var ctx = document.getElementById("myChart").getContext('2d');
+        var ctx = document.getElementById("myChart").getContext("2d");
         var myChart = new Chart(ctx, {
-          type: 'line',
+          type: "line",
           data:{
             datasets:[{
               lineTension: 0,
@@ -128,19 +128,19 @@ angular.module('cloudberry.map')
             },
             scales: {
               xAxes: [{
-                type: 'time',
+                type: "time",
                 time: {
-                  unit:'month'
+                  unit:"month"
                 },
                 scaleLabel: {
                   display: true,
-                  labelString: 'Date'
+                  labelString: "Date"
                 }
               }],
               yAxes: [{
                 scaleLabel: {
                   display: true,
-                  labelString: 'Count'
+                  labelString: "Count"
                 },
                 ticks: {
                   beginAtZero: true,
@@ -165,7 +165,7 @@ angular.module('cloudberry.map')
     $scope.preProcess = function (result) {
       // group by year
       groups = result.reduce(function (previousVal, currentVal) {
-        var yearNum = currentVal.day.split(('-'))[0];
+        var yearNum = currentVal.day.split(("-"))[0];
         (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
         return previousVal;
       }, {});
@@ -176,7 +176,7 @@ angular.module('cloudberry.map')
       var hasCountMonth = [];
       for (var i = 0; i < resultByYear.length; i++){
         groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
-          var monthNum = currentVal.day.split(('-'))[1];
+          var monthNum = currentVal.day.split(("-"))[1];
           if (previousVal[monthNum]) {
             previousVal[monthNum].y += currentVal.count;
           } else {
@@ -768,7 +768,7 @@ angular.module('cloudberry.map')
       }
 
       function setCountLegend(div) {
-        div.style.margin = '20% 0 0 0';
+        div.style.margin = "20% 0 0 0";
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
         var gName  = getGradesNames(grades);
