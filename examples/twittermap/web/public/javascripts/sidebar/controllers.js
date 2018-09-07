@@ -99,7 +99,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     );
 
-    // return difference of two arrays
+    // return difference of two arrays, the arrays must has no duplicate
     function arrayDiff (newArray, oldArray) {
       var diffArray = [], difference = [];
       for (var i = 0; i < newArray.length; i++) {
