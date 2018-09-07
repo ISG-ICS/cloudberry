@@ -36,14 +36,13 @@ class ViewStatusClient(val jsonParser: JSONParser,
       handleRequest(json)
   }
 
-  // Handle the Request by:
-  // 1. Use jsonParser to parse the json to get some information
-  // 2. Ask DataManager to get the schemaMap for the dataset
-  // 3. Parse the json progressively with schemaMap, get the queries
-  // 4. For each query, call "checkQuerySolvableByView"
+  // Handle the Request in following step
   private def handleRequest(json: JsValue): Unit = {
+    // 1. Use jsonParser to parse the json to get datasets name and queryID
     val datasets = jsonParser.getDatasets(json).toSeq
     val queryID = jsonParser.getQueryID(json)
+
+    // 2. Ask DataManager to get the schemaMap for the dataset, which can be used to parse json
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
@@ -56,9 +55,13 @@ class ViewStatusClient(val jsonParser: JSONParser,
           return
       }.toMap
 
+      // 3. Parse the json progressively with schemaMap, get the queries
       val (queries, runOption) = jsonParser.parse(json, schemaMap)
+
+      // 4. For each query, call "checkQuerySolvableByView"
       val futureResult = Future.traverse(queries)(q => checkQuerySolvableByView(q)).map(JsArray.apply)
       futureResult.map(result => (queries, result)).foreach {
+        // 5. Return the result with queryID to frontend
         case (qs, r) => out ! r.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
       }
     }
@@ -66,6 +69,7 @@ class ViewStatusClient(val jsonParser: JSONParser,
 
   // Send DataManager AskInfoAndViews message, and then ask QueryPlanner to request view for query
   protected def checkQuerySolvableByView(query: Query): Future[JsValue] = {
+    // get the necessary information about matched views from dataManager
     val fInfos = dataManager ? AskInfoAndViews(query.dataset) map {
       case seq: Seq[_] if seq.forall(_.isInstanceOf[DataSetInfo]) =>
         seq.map(_.asInstanceOf[DataSetInfo])
@@ -76,8 +80,9 @@ class ViewStatusClient(val jsonParser: JSONParser,
       case seq if seq.isEmpty =>
         Future(resultJson(false))
       case infos: Seq[DataSetInfo] =>
-        // If there are matched views, return json with true, otherwise return false
+        // give these information and query to QueryPlanner to request view for query
         val hasMatchedViews = planner.requestViewForQuery(query, infos.head, infos.tail)
+        // If there are matched views, return json with true, otherwise return false
         if (hasMatchedViews) Future(resultJson(true))
         else Future(resultJson(false))
     }
@@ -85,6 +90,7 @@ class ViewStatusClient(val jsonParser: JSONParser,
 }
 
 object ViewStatusClient {
+  // New an object of ViewStatusClient
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
            (implicit ec: ExecutionContext) = {
     Props(new ViewStatusClient(jsonParser, dataManager, planner, config, out))
