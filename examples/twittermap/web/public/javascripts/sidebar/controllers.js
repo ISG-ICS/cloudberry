@@ -17,7 +17,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.nowQueryID = null;
 
-    var wsQuerySolveByView = new WebSocket(cloudberryConfig.querySolveByView);
+    var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
 
     function closeRightMenu() {
       document.getElementById("sidebar").style.left = "100%";
@@ -31,7 +31,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       document.getElementById("hamburgerButton").disabled = true;
     }
 
-    wsQuerySolveByView.onmessage = function(event) {
+    wsCheckQuerySolvableByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSON.parse(event.data);
         console.log(result)
@@ -47,8 +47,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       queryToCheck.queryID = $scope.nextQueryID++;
       $scope.nowQueryID = queryToCheck.queryID;
       $scope.timer = setInterval(function(){
-        if(wsQuerySolveByView.readyState === wsQuerySolveByView.OPEN){
-          wsQuerySolveByView.send(JSON.stringify(queryToCheck));
+        if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
+          wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
         }
       }, 1000);
     }

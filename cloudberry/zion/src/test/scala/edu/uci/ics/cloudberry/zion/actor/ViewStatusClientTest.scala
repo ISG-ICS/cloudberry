@@ -22,7 +22,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
   sequential
 
   "ViewStatusClient" should {
-    "send query to dataManager to check whether it can solve by view" in {
+    "send query to dataManager to check whether it can be solved by view" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
       val mockParser = mock[JSONParser]
@@ -46,14 +46,14 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
-      val jsonArray = Json.arr()
-      val resultArray = jsonArray.append(ViewStatusClient.resultJson(true))
+      val resultArray = Json.arr(ViewStatusClient.resultJson(true))
       val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
 
       sender.expectMsg(resultArrayWithId)
 
       ok
     }
+
     "send the NoSuchData msg if the request is on a unknown dataset" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)

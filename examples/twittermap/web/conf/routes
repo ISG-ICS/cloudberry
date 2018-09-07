@@ -6,7 +6,7 @@
 GET        /                                    controllers.TwitterMapApplication.index
 GET        /ws                                  controllers.TwitterMapApplication.ws
 GET        /drugmap                             controllers.TwitterMapApplication.drugmap
-GET        /querySolveByView                    controllers.TwitterMapApplication.querySolveByView
+GET        /checkQuerySolvableByView            controllers.TwitterMapApplication.checkQuerySolvableByView
 
 GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
 
