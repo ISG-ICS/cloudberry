@@ -32,7 +32,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
-      val queryID = 1
+      val queryID = "query.toString()"
       when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(TwitterDataSet))
       when(mockParser.getQueryID(jsonRequest)).thenReturn(queryID)
@@ -49,7 +49,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
       when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
       val resultArray = Json.arr(ViewStatusClient.resultJson(true))
-      val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+      val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsString(queryID))))
 
       sender.expectMsg(resultArrayWithId)
 
@@ -66,7 +66,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
       val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
       val query = Query(sourceInfo.name)
-      val queryID = 1
+      val queryID = "query.toString()"
       when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
       when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(TwitterDataSet))
       when(mockParser.getQueryID(jsonRequest)).thenReturn(queryID)
@@ -80,10 +80,10 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq(sourceInfo))
 
-      when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(false)
+      when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
       val resultArray = Json.arr(ViewStatusClient.resultJson(false))
-      val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+      val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsString(queryID))))
 
       sender.expectMsg(resultArrayWithId)
 
