@@ -62,7 +62,7 @@ class ViewStatusClient(val jsonParser: JSONParser,
       val futureResult = Future.traverse(queries)(q => checkQuerySolvableByView(q)).map(JsArray.apply)
       futureResult.map(result => (queries, result)).foreach {
         // 5. Return the result with queryID to frontend
-        case (qs, r) => out ! r.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+        case (qs, r) => out ! r.append(JsObject(Seq("queryID" -> JsString(queryID))))
       }
     }
   }

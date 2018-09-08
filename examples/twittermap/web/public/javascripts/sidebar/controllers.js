@@ -12,10 +12,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.currentTab = "aboutTab";
 
     // Timer for sending query to check whether it can be solved by view
-    $scope.timer = null;
+    $scope.timerCheckQuerySolvableByView = null;
 
     // queryID used to identify a query, which is sent by timer
-    $scope.nextQueryID = 0;
     $scope.nowQueryID = null;
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
@@ -39,20 +38,20 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $timeout(function() {
         var result = JSON.parse(event.data);
         if (result[1].queryID === $scope.nowQueryID && result[0].isQuerySolvableByView) {
-          clearInterval($scope.timer);
+          clearInterval($scope.timerCheckQuerySolvableByView);
           enableHamburgerButton();
         }
       });
     };
 
     // Set a timer to sending query to check whether it is solvable, every one second
-    function setTimer() {
+    function setTimerCheckQuery() {
       var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
 
       // Add the queryID for a query in to request
-      queryToCheck.queryID = $scope.nextQueryID++;
+      queryToCheck.queryID =  queryToCheck.toString();
       $scope.nowQueryID = queryToCheck.queryID;
-      $scope.timer = setInterval(function(){
+      $scope.timerCheckQuerySolvableByView = setInterval(function(){
         if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
           wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
         }
@@ -128,13 +127,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       handleSidebarQuery();
     }
 
-    // When the keyword changed, we need to:
-    // 1. clear previous timer 2. close and disable sidebar 3. set a new timer for new keyword
-    function keywordEventHandler(event) {
-      if($scope.timer) {
-        clearInterval($scope.timer);
+    // When the keywords changed, we need to:
+    // 1. clear previous timer 2. close and disable sidebar 3. set a new timer for new keywords
+    function keywordsEventHandler(event) {
+      if($scope.timerCheckQuerySolvableByView) {
+        clearInterval($scope.timerCheckQuerySolvableByView);
       }
-      setTimer();
+      setTimerCheckQuery();
       closeRightMenu();
       disableHamburgerButton();
       $scope.isHashTagOutdated = true;
@@ -144,7 +143,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordEventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordsEventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
   .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
