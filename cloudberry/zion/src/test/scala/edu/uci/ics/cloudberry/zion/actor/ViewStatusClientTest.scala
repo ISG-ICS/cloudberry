@@ -21,10 +21,10 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
 
   sequential
 
-  // A test to check whether query can be solved by view
-  // The expected result in this test is true
   "ViewStatusClient" should {
-    "send query to dataManager to check whether it can be solved by view" in {
+    // A test to check whether query can be solved by view
+    // The expected result in this test is true
+    "send query to dataManager to check whether it can be solved by view, return true" in {
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
       val mockParser = mock[JSONParser]
@@ -49,6 +49,40 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
       when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
 
       val resultArray = Json.arr(ViewStatusClient.resultJson(true))
+      val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
+
+      sender.expectMsg(resultArrayWithId)
+
+      ok
+    }
+
+    // A test to check whether query can be solved by view
+    // The expected result in this test is false
+    "send query to dataManager to check whether it can be solved by view, return false" in {
+      val sender = new TestProbe(system)
+      val dataManager = new TestProbe(system)
+      val mockParser = mock[JSONParser]
+      val mockPlanner = mock[QueryPlanner]
+
+      val jsonRequest = JsObject(Seq("fake" -> JsNumber(1)))
+      val query = Query(sourceInfo.name)
+      val queryID = 1
+      when(mockParser.parse(jsonRequest, twitterSchemaMap)).thenReturn((Seq(query), QueryExeOption.NoSliceNoContinue))
+      when(mockParser.getDatasets(jsonRequest)).thenReturn(Set(TwitterDataSet))
+      when(mockParser.getQueryID(jsonRequest)).thenReturn(queryID)
+
+      val client = system.actorOf(ViewStatusClient.props(mockParser, dataManager.ref, mockPlanner, Config.Default, sender.ref))
+      sender.send(client, jsonRequest)
+
+      dataManager.expectMsg(DataStoreManager.AskInfo(query.dataset))
+      dataManager.reply(Some(sourceInfo))
+
+      dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
+      dataManager.reply(Seq(sourceInfo))
+
+      when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(false)
+
+      val resultArray = Json.arr(ViewStatusClient.resultJson(false))
       val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsNumber(queryID))))
 
       sender.expectMsg(resultArrayWithId)
