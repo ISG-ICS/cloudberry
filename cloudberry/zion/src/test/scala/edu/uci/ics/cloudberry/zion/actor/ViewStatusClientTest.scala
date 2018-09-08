@@ -80,7 +80,7 @@ class ViewStatusClientTest extends TestkitExample with SpecificationLike with Mo
       dataManager.expectMsg(DataStoreManager.AskInfoAndViews(query.dataset))
       dataManager.reply(Seq(sourceInfo))
 
-      when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(true)
+      when(mockPlanner.requestViewForQuery(query, sourceInfo, Seq.empty)).thenReturn(false)
 
       val resultArray = Json.arr(ViewStatusClient.resultJson(false))
       val resultArrayWithId= resultArray.append(JsObject(Seq("queryID" -> JsString(queryID))))
