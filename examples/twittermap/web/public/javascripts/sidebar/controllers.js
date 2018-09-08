@@ -128,11 +128,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
       // add empty data point
       for (var i = 0; i < queryResult.length; i++) {
-        var thisMonth = new Date(queryResult[i].month.split(("-"))[0],queryResult[i].month.split(("-"))[1]-1);
+        var thisMonth = new Date(queryResult[i].month.split(("-"))[0], queryResult[i].month.split(("-"))[1] - 1);
         hasCountMonth.push(thisMonth);
         chartData.push({x: thisMonth, y:queryResult[i].count});
       }
-      for (var m = new Date(minDate.getFullYear(),minDate.getMonth());m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
+      for (var m = new Date(minDate.getFullYear(),minDate.getMonth()); m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)) {
         zeroCountMonth.push(new Date(m.getTime()));
       }
       zeroCountMonth = arrayDiff(hasCountMonth,zeroCountMonth);
@@ -141,7 +141,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
 
       // sort the date
-      chartData.sort(function(previousVal, currentVal){
+      chartData.sort(function(previousVal, currentVal) {
         return previousVal.x - currentVal.x;
       });
       return chartData;
@@ -149,8 +149,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     //draw tendency chart
     function drawChart(chartData) {
-      if(chartData.length !== 0){
-        var ctx = document.getElementById("myChart"+$scope.selectedHashtag).getContext("2d");
+      if (chartData.length !== 0) {
+        var ctx = document.getElementById("myChart" + $scope.selectedHashtag).getContext("2d");
         var myChart = new Chart(ctx, {
           type: "line",
           data:{
@@ -194,11 +194,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     // send query of hashtag, and draw the line chart when collapse is expanded
     $("#AllCollapse").on("shown.bs.collapse", function(e) {
       $scope.selectedHashtag = e.target.firstChild.id.substring(7);
-      if($scope.selectedHashtag){
+      if ($scope.selectedHashtag) {
         // send query to cloudberry
         var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
-          if(angular.isArray(resultSet)) {
+          if (angular.isArray(resultSet)) {
             drawChart(preProcess(resultSet[0]));
           }
         }, "hashtagChartDataRequest");
@@ -223,7 +223,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.results = {};
 
     function drawTweets(message) {
-      $("#tweet").html("");
+      $('#tweet'').html("");
       if (message) {
         $.each(message, function (i, d) {
           var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;

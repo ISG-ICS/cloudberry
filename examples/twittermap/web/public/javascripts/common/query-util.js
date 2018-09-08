@@ -236,7 +236,7 @@ angular.module("cloudberry.common")
       },
 
       // Get the tendency chart data for a specific hash tag
-      getHashTagChartDataRequest(parameters, hashtagName){
+      getHashTagChartDataRequest(parameters, hashtagName) {
         var filter = queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds);
         filter.push({
           field: "tag",
