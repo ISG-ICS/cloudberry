@@ -49,7 +49,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
 
       // Add the queryID for a query in to request
-      queryToCheck.queryID =  queryToCheck.toString();
+      queryToCheck.queryID =  cloudberry.parameters.keywords.toString();
       $scope.nowQueryID = queryToCheck.queryID;
       $scope.timerCheckQuerySolvableByView = setInterval(function(){
         if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
