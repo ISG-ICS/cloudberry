@@ -45,7 +45,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     };
 
     // Set a timer to sending query to check whether it is solvable, every one second
-    function setTimerCheckQuery() {
+    function setTimerToCheckQuery() {
       var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
 
       // Add the queryID for a query in to request
@@ -133,7 +133,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if($scope.timerCheckQuerySolvableByView) {
         clearInterval($scope.timerCheckQuerySolvableByView);
       }
-      setTimerCheckQuery();
+      setTimerToCheckQuery();
       closeRightMenu();
       disableHamburgerButton();
       $scope.isHashTagOutdated = true;
