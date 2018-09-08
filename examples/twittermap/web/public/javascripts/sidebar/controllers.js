@@ -223,7 +223,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.results = {};
 
     function drawTweets(message) {
-      $('#tweet'').html("");
+      $('#tweet').html("");
       if (message) {
         $.each(message, function (i, d) {
           var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
