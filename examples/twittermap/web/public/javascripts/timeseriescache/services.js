@@ -3,8 +3,8 @@
  * middle ware and the time-series cache.
  */
 'use strict';
-angular.module('cloudberry.timeseriescache', [])
-    .service('TimeSeriesCache', function () {
+angular.module('cloudberry.timeseriescache', ['cloudberry.populationcache'])
+    .service('TimeSeriesCache', ['PopulationCache', function (PopulationCache) {
 
         // The key-value stores time series results of a query.
         var timeseriesStore = new HashMap();
@@ -63,7 +63,7 @@ angular.module('cloudberry.timeseriescache', [])
         };
 
         /**
-         * Retrieves time-series data from the cache; ignores empty objects
+         * Retrieves time-series data from the cache; ignores empty objects.
          */
         this.getTimeSeriesValues = function (geoIds, geoLevel, timeInterval) {
             var resultArray = [];
@@ -164,6 +164,36 @@ angular.module('cloudberry.timeseriescache', [])
         };
 
         /*
+         * Accumulate and return map result data {geoID, count, population} from byGeoTimeRequest sliced result.
+         */
+        this.getCountMapValues = function (geoIds, geoLevel, timeInterval, timeseriesPartialStore) {
+            var resultArray = [];
+
+            for (var i = 0; i < geoIds.length; i++) {
+                // Cache hit case: geoID's byGeoTimeRequest results in time series cache case.
+                var {values, count} = this.getGeoRegionValues(geoIds[i], timeInterval);
+                // Cache miss case: geoID's byGeoTimeRequest results in new request sliced result case.
+                if (values === INVALID_VALUE && timeseriesPartialStore.has(geoIds[i])) {
+                    values = timeseriesPartialStore.get(geoIds[i]);
+                    count = this.getCurrentSum(values, timeInterval);
+                }
+                if (values !== undefined && values !== INVALID_VALUE) {
+                    var population = PopulationCache.getGeoIdPop(geoLevel, geoIds[i])
+                    switch (geoLevel){
+                      case "state":
+                        resultArray.push({"state":geoIds[i], "count":count, "population":population});
+                      case "county":
+                        resultArray.push({"county":geoIds[i], "count":count, "population":population});
+                      case "city":
+                        resultArray.push({"city":geoIds[i], "count":count, "population":population});
+                    }
+                }
+            }
+
+            return resultArray;
+        };
+
+        /**
          * For other service to obtain some geoId's values in timeInterval from timeSeriesStore.
          */
         this.getGeoRegionValues = function(geoId, timeInterval) {
@@ -184,4 +214,24 @@ angular.module('cloudberry.timeseriescache', [])
             }
             return {values: INVALID_VALUE, count: sum};
         };
-    });
+
+        /**
+         * Return sum all "count" in values with variables {day, count}.
+         */
+        this.getCurrentSum = function(values, timeInterval) {
+            var sum = 0;
+
+            if (values === INVALID_VALUE) {
+              return 0;
+            }
+            for (var j = 0; j < values.length; j++) {
+                var currVal = values[j];
+                var day = new Date(currVal["day"]);
+                if (day >= timeInterval.start && day <= timeInterval.end) {
+                    sum += currVal["count"];
+                }
+            }
+
+            return sum;
+        };
+    }]);

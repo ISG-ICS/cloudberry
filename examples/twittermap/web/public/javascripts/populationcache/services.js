@@ -2,8 +2,8 @@
  * This module caches geo regions' population histogram data.
  */
 'use strict';
-angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
-    .service('PopulationCache', ['$http', 'TimeSeriesCache', function ($http, TimeSeriesCache) {
+angular.module('cloudberry.populationcache', [])
+    .service('PopulationCache', ['$http', function ($http) {
         const INVALID_VALUE = 0;
 
         // When popCached.state or county is true, all state or county level population is preloaded/cached;
@@ -22,21 +22,31 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
          this.statePopulationCached = function(){return popCached.state;};
          this.countyPopulationCached = function(){return popCached.county;};
 
-        /*
-         * Put result in population store in {geoID, population} form.
+        /**
+         * Return geoId's population.
          */
-        this.putPopValues = function (data, geoLevel) {
-            if (data !== undefined) {
-                var store = popStore[geoLevel];
-                for (var i = 0; i < data.length; i++) {
-                  store.set(data[i][geoLevel+'ID'], data[i]['population']);
-                }
-            popStore[geoLevel] = store;
-            popCached[geoLevel] = true;
-            }
+        this.getGeoIdPop = function(geoLevel, geoId) {
+          return popStore[geoLevel].get(geoId);
         };
 
-        /*
+        /**
+         * Returns the cities' geoIds that are not already cached.
+         */
+        this.getCitiesNotInCache = function (geoIds) {
+            // The length of geoIdsNotInCache is 0 in case of complete cache hit,
+            // same length as the geoIds parameter in case of complete cache miss,
+            // otherwise in range (0, geoIds.length)
+            var geoIdsNotInCache = [];
+            for (var i = 0; i < geoIds.length; i++) {
+                if (!popStore["city"].has(geoIds[i])) {
+                    geoIdsNotInCache.push(geoIds[i]);
+                }
+              }
+
+            return geoIdsNotInCache;
+        };
+
+        /**
          * Load and store cities in cityIds' population.
          */
         this.loadCityPopulationToCache = function(cityIds) {
@@ -55,54 +65,17 @@ angular.module('cloudberry.populationcache', ['cloudberry.timeseriescache'])
             return deferred.promise();
         };
 
-        /*
-         * Accumulate and return map result data {geoID, count, population} from
-         * byGeoTimeRequest sliced result (timeseriesPartialStore) and byGeoTimeRequest cache {day, count}.
+        /**
+         * Put result in population store in {geoID, population} form.
          */
-        this.getCountMapValues = function (geoIds, geoLevel, timeInterval, timeseriesPartialStore) {
-            var resultArray = [];
-
-            for (var i = 0; i < geoIds.length; i++) {
-                // Cache hit case: geoID's byGeoTimeRequest results in time series cache case.
-                var {values, count} = TimeSeriesCache.getGeoRegionValues(geoIds[i], timeInterval);
-                // Cache miss case: geoID's byGeoTimeRequest results in new request sliced result case.
-                if (values === INVALID_VALUE && timeseriesPartialStore.has(geoIds[i])) {
-                    values = timeseriesPartialStore.get(geoIds[i]);
-                    count = this.getCurrentSum(values, timeInterval);
+        this.putPopValues = function (data, geoLevel) {
+            if (data !== undefined) {
+                var store = popStore[geoLevel];
+                for (var i = 0; i < data.length; i++) {
+                  store.set(data[i][geoLevel+'ID'], data[i]['population']);
                 }
-                if (values !== undefined && values !== INVALID_VALUE) {
-                    var population = popStore[geoLevel].get(geoIds[i]);
-                    switch (geoLevel){
-                      case "state":
-                        resultArray.push({"state":geoIds[i], "count":count, "population":population});
-                      case "county":
-                        resultArray.push({"county":geoIds[i], "count":count, "population":population});
-                      case "city":
-                        resultArray.push({"city":geoIds[i], "count":count, "population":population});
-                    }
-                }
+            popStore[geoLevel] = store;
+            popCached[geoLevel] = true;
             }
-
-            return resultArray;
-        };
-
-        /*
-         * Return sum all "count" in values with variables {day, count}.
-         */
-        this.getCurrentSum = function(values, timeInterval) {
-            var sum = 0;
-
-            if (values === INVALID_VALUE) {
-              return 0;
-            }
-            for (var j = 0; j < values.length; j++) {
-                var currVal = values[j];
-                var day = new Date(currVal["day"]);
-                if (day >= timeInterval.start && day <= timeInterval.end) {
-                    sum += currVal["count"];
-                }
-            }
-
-            return sum;
         };
     }]);
