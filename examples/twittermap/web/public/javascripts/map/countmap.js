@@ -343,7 +343,7 @@ angular.module('cloudberry.map')
             resultSet[0] = [];
             $scope.chartDataMap = concatHashmap(
               TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
-              $scope.chartDataMap
+              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
             );
             redrawPopup(false);
 
@@ -404,7 +404,7 @@ angular.module('cloudberry.map')
             resultSet[0] = [];
             $scope.chartDataMap = concatHashmap(
               TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
-              $scope.chartDataMap
+              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
             );
              redrawPopup(false);
 
