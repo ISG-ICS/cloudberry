@@ -9,18 +9,18 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.liveTweetsLoop = {};//Store variable for winddow.setInterval function, stop live tweets feeding when user specified a 
                             //time interval in time bar
     var timeSeriesEnd = new Date(cloudberry.parameters.timeInterval.end);// This date will be the latest date of tweets been ingested
-    // Flag whether sidebar tab is open
-    $scope.isHashTagOpen = false;
-    $scope.isSampleTweetsOpen = false;
-
-    $scope.currentTab = "aboutTab";
-        
+    var timeZoneOffset = ((new Date).getTimezoneOffset())/60;
+    timeSeriesEnd.setHours(timeSeriesEnd.getHours()-timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
     var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
-    
     var startDate = new Date(Date.now())
     startDate.setDate(startDate.getDate() - 21);
     var timeLowerBound = startDate.toISOString(); //lower bound of live tweets, the first lower bound will be current time - 7days, to ensure there at least some contents
-    
+
+    // Flag whether sidebar tab is open
+    $scope.isHashTagOpen = false;
+    $scope.isSampleTweetsOpen = false;
+    $scope.currentTab = "aboutTab";
+  
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
       cloudberryClient.send(hashtagRequest, function(id, resultSet) {
@@ -71,13 +71,19 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           window.clearInterval(sendQueryLoop);
           $scope.sampleTweets = [];//Clean the queue for old event;
           sendSampleTweetsQuery(timeLowerBound,timeUpperBound);
-          timeLowerBound = timeUpperBound;
-          timeUpperBound =(new Date(Date.now())).toISOString();
+          var tempDateTime = (new Date(Date.now()));
+          tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
+          timeUpperBound = tempDateTime.toISOString();
+          tempDateTime.setMinutes(tempDateTime.getMinutes()-2);//Live tweets get latest tweets in 2 mins
+          timeLowerBound = tempDateTime.toISOString();
 
           sendQueryLoop = window.setInterval(function(){
             //Update time range of live tweets to avoid get repetitive tweets
-            timeLowerBound = timeUpperBound;
-            timeUpperBound =(new Date(Date.now())).toISOString();
+            var tempDateTime = (new Date(Date.now()));
+            tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
+            timeUpperBound = tempDateTime.toISOString();
+            tempDateTime.setMinutes(tempDateTime.getMinutes()-2);
+            timeLowerBound = tempDateTime.toISOString();
             sendSampleTweetsQuery(timeLowerBound,timeUpperBound);
           },30000);
           $scope.cleanLiveTweet();
