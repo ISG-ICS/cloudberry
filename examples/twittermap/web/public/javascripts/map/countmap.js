@@ -2,6 +2,212 @@ angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
                                        TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
 
+    // Array to store the data for chart
+    $scope.chartData = [];
+    // Map to store the chart data for every polygon
+    $scope.chartDataMap = new HashMap();
+    // The popup window shown now
+    $scope.popUp = null;
+
+    // return difference of two arrays, the arrays must has no duplicate
+    function arrayDiff (newArray, oldArray) {
+      var diffArray = [], difference = [];
+      for (var i = 0; i < newArray.length; i++) {
+        diffArray[newArray[i]] = true;
+      }
+      for (var j = 0; j < oldArray.length; j++) {
+        if (diffArray[oldArray[j]]) {
+          delete diffArray[oldArray[j]];
+        } else {
+          diffArray[oldArray[j]] = true;
+        }
+      }
+      for (var key in diffArray) {
+        difference.push(key);
+      }
+      return difference;
+    }
+
+    // Concat two hashmap results
+    function concatHashmap(newMap, cachedMap) {
+      if (cachedMap.count() === 0) {
+        return newMap;
+      }
+
+      var concatMap = new HashMap();
+      newMap.forEach(function(value, key){
+        var concatValue = [];
+        var cacheValue = cachedMap.get(key);
+        if(value !== 0) {
+          if (cacheValue === undefined) {
+            concatValue = value;
+          }
+          else {
+            concatValue = value.concat(cacheValue);
+          }
+        }
+        else if (cacheValue !== undefined) {
+          concatValue = cacheValue;
+        }
+
+        concatMap.set(key,concatValue);
+      });
+      return concatMap;
+    }
+
+    // sum of one element in an array of objects
+    function sum(items, prop) {
+      return items.reduce( function(previousVal, currentVal) {
+        return previousVal + currentVal[prop];
+      }, 0);
+    }
+
+    function getPopupContent() {
+      // get chart data for the polygon
+      var geoIDChartData = $scope.chartDataMap.get($scope.selectedGeoID);
+      $scope.chartData = (geoIDChartData && geoIDChartData.length !== 0) ? $scope.preProcess(geoIDChartData) : [];
+
+      // get the count info of polygon
+      var placeName = $scope.selectedPlace.properties.name;
+      var infoPromp = $scope.infoPromp;
+      var logicLevel = $scope.status.logicLevel;
+      var count = sum($scope.chartData, "y");
+
+      // Generate the html in pop up window
+      var content;
+      if($scope.chartData.length === 0) {
+        content = "<div id=\"popup-info\" style=\"margin-bottom: 0\">" +
+          "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
+          "<div id=\"popup-count\" style=\"margin-bottom: 0\">"+infoPromp+"<b> "+count+"</b></div>" +
+          "</div>"+
+          "<canvas id=\"myChart\" height=\"0\" ></canvas>";
+      }else {
+        content = "<div id=\"popup-info\">" +
+          "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
+          "<div id=\"popup-count\">"+infoPromp+"<b> "+count+"</b></div>" +
+          "</div>"+
+          "<canvas id=\"myChart\"></canvas>";
+      }
+      return content;
+    }
+
+    // Add the event for popup window: when mouse out, close the popup window
+    function addPopupEvent() {
+      document.getElementsByClassName("leaflet-popup")[0].onmouseout = function (e) {
+        var target = e.relatedTarget;
+
+        // Close popup when the mouse out of popup window and:
+        // 1. move into the area of map without polygons
+        // 2. Or move into the search bar
+        // When the mouse move into the polygon which is the owner of popup window, it should not be close.
+        if(target && (target.className.toString() === "[object SVGAnimatedString]" || target.className.toString().substring(0,4) === "form")) {
+          $scope.map.closePopup();
+        }
+      };
+    }
+
+    // If there are chartData, draw the line chart
+    function drawLineChart(){
+      if($scope.chartData.length !== 0 && document.getElementById("myChart")) {
+        var ctx = document.getElementById("myChart").getContext("2d");
+        var myChart = new Chart(ctx, {
+          type: "line",
+          data:{
+            datasets:[{
+              lineTension: 0,
+              data:$scope.chartData,
+              borderColor:"#3e95cd",
+              borderWidth: 0.8,
+              pointRadius: 1.5
+            }]
+          },
+
+          options: {
+            legend: {
+              display: false
+            },
+            scales: {
+              xAxes: [{
+                type: "time",
+                time: {
+                  unit:"month"
+                },
+                scaleLabel: {
+                  display: true,
+                  labelString: "Date"
+                }
+              }],
+              yAxes: [{
+                scaleLabel: {
+                  display: true,
+                  labelString: "Count"
+                },
+                ticks: {
+                  beginAtZero: true,
+                  suggestedMax: 4
+                }
+              }]
+            }
+          }
+        });
+      }
+    }
+
+    // redraw popup window after chartDataMap is updated
+    function redrawPopup(drawAll) {
+      if($scope.popUp && $scope.popUp._isOpen && (drawAll || $scope.geoIdsNotInTimeSeriesCache.includes($scope.selectedGeoID))){
+        $scope.popUp.setContent(getPopupContent());
+        drawLineChart();
+      }
+    }
+
+    // Convert the array in chartDataMap to count result by month, which can be read by chart.js
+    $scope.preProcess = function (result) {
+      // group by year
+      groups = result.reduce(function (previousVal, currentVal) {
+        var yearNum = currentVal.day.split(("-"))[0];
+        (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
+        return previousVal;
+      }, {});
+      var resultByYear = Object.keys(groups).map(function(k) { return groups[k];});
+
+      // sum up the result for every month
+      var resultByMonth = [];
+      var hasCountMonth = [];
+      for (var i = 0; i < resultByYear.length; i++){
+        groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
+          var monthNum = currentVal.day.split(("-"))[1];
+          if (previousVal[monthNum]) {
+            previousVal[monthNum].y += currentVal.count;
+          } else {
+            var thisMonth = new Date(resultByYear[i].year,monthNum-1);
+            previousVal[monthNum] = { y: currentVal.count, x: thisMonth};
+            hasCountMonth.push(thisMonth);
+          }
+          return previousVal;
+        }, {});
+        var resultByMonthOneYear = Object.keys(groups).map(function(key){ return groups[key]; });
+        resultByMonth = resultByMonth.concat(resultByMonthOneYear);
+      }
+
+      // add empty data point
+      var zeroCountMonth = [];
+      var minDate = cloudberry.parameters.timeInterval.start;
+      var maxDate = cloudberry.parameters.timeInterval.end;
+      for (var m = new Date(minDate.getFullYear(),minDate.getMonth()); m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
+        zeroCountMonth.push(new Date(m.getTime()));
+      }
+      zeroCountMonth = arrayDiff(hasCountMonth,zeroCountMonth);
+      for (var j = 0; j < zeroCountMonth.length; j++) {
+        resultByMonth.push({x: new Date(zeroCountMonth[j]), y:0});
+      }
+
+      // sort the date
+      resultByMonth.sort(function(previousVal,currentVal){
+        return previousVal.x - currentVal.x;
+      });
+      return resultByMonth;
+    };
 
     // set map styles for countmap
     function setCountMapStyle() {
@@ -113,11 +319,15 @@ angular.module('cloudberry.map')
           cloudberry.parameters.geoLevel);
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+        $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,
+          cloudberry.parameters.timeInterval);
+        redrawPopup(true);
       }
       // Complete map result cache hit case - exclude map result request
       else if($scope.geoIdsNotInCache.length === 0)  {
         cloudberry.countmapMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
+        $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval);
 
         cloudberryClient.send(batchWithoutGeoRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
@@ -128,8 +338,15 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberryService.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
+
             // Avoid memory leak.
             resultSet[0] = [];
+            $scope.chartDataMap = concatHashmap(
+              TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
+              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
+            );
+            redrawPopup(false);
+
             cloudberry.commonTimeSeriesResult =
               TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
@@ -156,6 +373,8 @@ angular.module('cloudberry.map')
             cloudberry.countmapMapResult = resultSet[0].concat(cloudberry.countmapPartialMapResult);
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
               cloudberry.parameters.geoLevel, requestTimeRange);
+            $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,requestTimeRange);
+            redrawPopup(true);
           }
           // When the query is executed completely, we update the map result cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
@@ -169,6 +388,7 @@ angular.module('cloudberry.map')
       else {
         cloudberry.countmapPartialMapResult = MapResultCache.getValues(cloudberry.parameters.geoIds,
           cloudberry.parameters.geoLevel);
+        $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval);
 
         cloudberryClient.send(batchWithPartialRequest, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
@@ -179,8 +399,15 @@ angular.module('cloudberry.map')
             // Since the middleware returns the query result in multiple steps,
             // cloudberry.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
+
             // Avoid memory leak.
             resultSet[0] = [];
+            $scope.chartDataMap = concatHashmap(
+              TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
+              TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
+            );
+             redrawPopup(false);
+
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
             cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
@@ -229,19 +456,32 @@ angular.module('cloudberry.map')
     function setInfoControlCountMap() {
     
       // Interaction function
-      // highlight a polygon when the mouse is pointing at it
-      function highlightFeature(leafletEvent) {
+      // highlight a polygon when the mouse is pointing at it, and popup a window
+      function highlightPopupInfo(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
+          // highlight a polygon
           var layer = leafletEvent.target;
           layer.setStyle($scope.styles.hoverStyle);
           if (!L.Browser.ie && !L.Browser.opera) {
             layer.bringToFront();
           }
+
+          // get selected geoID for the polygon
           $scope.selectedPlace = layer.feature;
+          $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
+
+          // bind a pop up window
+          $scope.popUp = L.popup({autoPan:false});
+          layer.bindPopup($scope.popUp).openPopup();
+          $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+
+          addPopupEvent();
+          drawLineChart();
+
         }
       }
 
-      // remove the highlight interaction function for the polygons
+      // remove the highlight interaction function for the polygons， and close popup window
       function resetHighlight(leafletEvent) {
         if (cloudberry.parameters.maptype == 'countmap'){
           var style;
@@ -259,8 +499,17 @@ angular.module('cloudberry.map')
               color: '#92d1e1'
             };
           }
-          if (leafletEvent){
+          if (leafletEvent) {
             leafletEvent.target.setStyle(style);
+            var orginalTarget = leafletEvent.originalEvent.relatedTarget;
+
+            // Close popup when the mouse out of polygon and:
+            // 1. move into the area of map without polygons
+            // 2. Or move into the search bar
+            // When the mouse move into the the popup window of this polygon, it should not be close. The window should maintain open.
+            if (orginalTarget && (orginalTarget.toString() === "[object SVGSVGElement]" || orginalTarget.toString() === "[object HTMLInputElement]")) {
+              $scope.map.closePopup();
+            }
           }
         }
       }
@@ -271,36 +520,10 @@ angular.module('cloudberry.map')
       // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
         layer.on({
-          mouseover: highlightFeature,
+          mouseover: highlightPopupInfo,
           mouseout: resetHighlight,
           click: $scope.zoomToFeature
         });
-      }
-
-      // add info control
-      var info = L.control();
-
-      info.onAdd = function() {
-        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
-        this._div.style.margin = '20% 0 0 0';
-        this._div.innerHTML = [
-          '<h4><span ng-bind="infoPromp + \' by \' + status.logicLevel"></span></h4>',
-          '<b><span ng-bind="selectedPlace.properties.name || \'No place selected\'"></span></b>',
-          '<br/>',
-          '<span ng-bind="infoPromp"></span> <span ng-bind="selectedPlace.properties.countText || \'0\'"></span>'
-        ].join('');
-        $compile(this._div)($scope);
-        return this._div;
-      };
-
-      info.options = {
-        position: 'topleft'
-      };
-      if ($scope.map){
-        info.addTo($scope.map);
-      }
-      else {
-        $scope.controls.custom.push(info);
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
@@ -545,6 +768,7 @@ angular.module('cloudberry.map')
       }
 
       function setCountLegend(div) {
+        div.style.margin = "20% 0 0 0";
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
         var gName  = getGradesNames(grades);
