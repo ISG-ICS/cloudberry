@@ -5,7 +5,7 @@ import akka.pattern.ask
 import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{AskInfo, AskInfoAndViews}
 import edu.uci.ics.cloudberry.zion.common.Config
-import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform}
+import edu.uci.ics.cloudberry.zion.model.datastore.{IPostTransform, NoTransform}
 import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, JSONParser, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema.Query
 import play.api.libs.json._
@@ -31,16 +31,15 @@ class ViewStatusClient(val jsonParser: JSONParser,
   // Handle the request when the client received message
   override def receive: Receive = {
     case json: JsValue =>
-      handleRequest(json)
+      handleRequest(json, NoTransform)
     case (json: JsValue, transform: IPostTransform) =>
-      handleRequest(json)
+      handleRequest(json, transform)
   }
 
   // Handle the Request in following step
-  private def handleRequest(json: JsValue): Unit = {
-    // 1. Use jsonParser to parse the json to get datasets name and queryID
+  private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
+    // 1. Use jsonParser to parse the json to get datasets name
     val datasets = jsonParser.getDatasets(json).toSeq
-    val queryID = jsonParser.getQueryID(json)
 
     // 2. Ask DataManager to get the schemaMap for the dataset, which can be used to parse json
     val fDataInfos = Future.traverse(datasets) { dataset =>
@@ -62,7 +61,7 @@ class ViewStatusClient(val jsonParser: JSONParser,
       val futureResult = Future.traverse(queries)(q => checkQuerySolvableByView(q)).map(JsArray.apply)
       futureResult.map(result => (queries, result)).foreach {
         // 5. Return the result with queryID to frontend
-        case (qs, r) => out ! r.append(JsObject(Seq("queryID" -> JsString(queryID))))
+        case (qs, r) => out ! transform.transform(r)
       }
     }
   }
@@ -78,13 +77,13 @@ class ViewStatusClient(val jsonParser: JSONParser,
 
     fInfos.flatMap {
       case seq if seq.isEmpty =>
-        Future(resultJson(false))
+        Future(JsBoolean(false))
       case infos: Seq[DataSetInfo] =>
         // give these information and query to QueryPlanner to request view for query
         val hasMatchedViews = planner.requestViewForQuery(query, infos.head, infos.tail)
         // If there are matched views, return json with true, otherwise return false
-        if (hasMatchedViews) Future(resultJson(true))
-        else Future(resultJson(false))
+        if (hasMatchedViews) Future(JsBoolean(true))
+        else Future(JsBoolean(false))
     }
   }
 }
@@ -94,11 +93,6 @@ object ViewStatusClient {
   def props(jsonParser: JSONParser, dataManager: ActorRef, planner: QueryPlanner, config: Config, out: ActorRef)
            (implicit ec: ExecutionContext) = {
     Props(new ViewStatusClient(jsonParser, dataManager, planner, config, out))
-  }
-
-  // The json format for the result "isQuerySolvableByView"
-  def resultJson(result: Boolean): JsValue = {
-    JsObject(Seq("isQuerySolvableByView" -> JsBoolean(result)))
   }
 
   // The json format for the no such dataset error

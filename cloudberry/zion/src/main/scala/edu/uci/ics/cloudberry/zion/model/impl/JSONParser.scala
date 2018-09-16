@@ -17,12 +17,6 @@ class JSONParser extends IJSONParser {
     datasets.toSet
   }
 
-  // Parse json to get the queryID, and  it is used by the ViewStatusClient
-  def getQueryID(json: JsValue): String = {
-    val queryID = (json \ "queryID").as[String]
-    queryID
-  }
-
   /**
     * Parse a [[JsValue]] with a schema map, and returns a [[Query]]
     * First parse the [[JsValue]] into a [[UnresolvedQuery]] using json parsing APIs provided by Play framework.

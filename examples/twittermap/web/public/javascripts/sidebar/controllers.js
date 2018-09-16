@@ -37,7 +37,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     wsCheckQuerySolvableByView.onmessage = function(event) {
       $timeout(function() {
         var result = JSON.parse(event.data);
-        if (result[1].queryID === $scope.nowQueryID && result[0].isQuerySolvableByView) {
+        console.log(result);
+        if (result.id === $scope.nowQueryID && result.value[0]) {
           clearInterval($scope.timerCheckQuerySolvableByView);
           enableHamburgerButton();
         }
@@ -49,8 +50,14 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
 
       // Add the queryID for a query in to request
-      queryToCheck.queryID =  cloudberry.parameters.keywords.toString();
-      $scope.nowQueryID = queryToCheck.queryID;
+      queryToCheck["transform"] = {
+        wrap: {
+          id: cloudberry.parameters.keywords.toString(),
+          category: "checkQuerySolvableByView"
+        }
+      };
+      $scope.nowQueryID = cloudberry.parameters.keywords.toString();
+      console.log(queryToCheck);
       $scope.timerCheckQuerySolvableByView = setInterval(function(){
         if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
           wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
