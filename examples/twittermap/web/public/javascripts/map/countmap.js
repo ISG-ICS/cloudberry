@@ -62,6 +62,20 @@ angular.module('cloudberry.map')
       }, 0);
     }
 
+    // given count and population, return the normalized count text
+    function normalizeCount(count, population) {
+      var normalizedCount = count / population * cloudberryConfig.normalizationUpscaleFactor;
+
+      var normalizedCountText;
+      if(normalizedCount < 1){
+        normalizedCountText = normalizedCount.toExponential(1);
+      } else{
+        normalizedCountText = normalizedCount.toFixed(1);
+      }
+      normalizedCountText += cloudberryConfig.normalizationUpscaleText; // "/M"
+      return normalizedCountText;
+    }
+
     function getPopupContent() {
       // get chart data for the polygon
       var geoIDChartData = $scope.chartDataMap.get($scope.selectedGeoID);
@@ -72,6 +86,22 @@ angular.module('cloudberry.map')
       var infoPromp = $scope.infoPromp;
       var logicLevel = $scope.status.logicLevel;
       var count = sum($scope.chartData, "y");
+
+      // get the population of polygon
+      var population = $scope.selectedPlace.properties.population;
+      if (!population){
+        angular.forEach(cloudberry.countmapMapResult, function (r) {
+          if (r[$scope.status.logicLevel] === $scope.selectedGeoID){
+            $scope.selectedPlace.properties.population = r['population'];
+            population = r['population'];
+          }
+        });
+      }
+
+      // If normalize button is on, normalize the count value
+      if ($scope.doNormalization && population && count) {
+        count = normalizeCount(count, population);
+      }
 
       // Generate the html in pop up window
       var content;
@@ -154,8 +184,9 @@ angular.module('cloudberry.map')
     }
 
     // redraw popup window after chartDataMap is updated
-    function redrawPopup(drawAll) {
-      if($scope.popUp && $scope.popUp._isOpen && (drawAll || $scope.geoIdsNotInTimeSeriesCache.includes($scope.selectedGeoID))){
+    function redrawPopup() {
+      if($scope.popUp && $scope.popUp._isOpen
+        && ($scope.geoIdsNotInTimeSeriesCache.length === 0 || $scope.geoIdsNotInTimeSeriesCache.includes($scope.selectedGeoID))){
         $scope.popUp.setContent(getPopupContent());
         drawLineChart();
       }
@@ -321,7 +352,7 @@ angular.module('cloudberry.map')
           cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
         $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,
           cloudberry.parameters.timeInterval);
-        redrawPopup(true);
+        redrawPopup();
       }
       // Complete map result cache hit case - exclude map result request
       else if($scope.geoIdsNotInCache.length === 0)  {
@@ -345,7 +376,7 @@ angular.module('cloudberry.map')
               TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
               TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
             );
-            redrawPopup(false);
+            redrawPopup();
 
             cloudberry.commonTimeSeriesResult =
               TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
@@ -374,7 +405,7 @@ angular.module('cloudberry.map')
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds,
               cloudberry.parameters.geoLevel, requestTimeRange);
             $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,requestTimeRange);
-            redrawPopup(true);
+            redrawPopup();
           }
           // When the query is executed completely, we update the map result cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
@@ -396,6 +427,7 @@ angular.module('cloudberry.map')
               start: new Date(resultTimeInterval.start),
               end: new Date(resultTimeInterval.end)
             };
+            cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
             // Since the middleware returns the query result in multiple steps,
             // cloudberry.timeSeriesQueryResult stores the current intermediate result.
             cloudberry.timeSeriesQueryResult = resultSet[0];
@@ -406,11 +438,9 @@ angular.module('cloudberry.map')
               TimeSeriesCache.arrayToStore(cloudberry.parameters.geoIds,cloudberry.timeSeriesQueryResult,cloudberry.parameters.geoLevel),
               TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval)
             );
-             redrawPopup(false);
-
+             redrawPopup();
             cloudberry.commonTimeSeriesResult = TimeSeriesCache.getValuesFromResult(cloudberry.timeSeriesQueryResult).concat(
               TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
-            cloudberry.countmapMapResult = resultSet[1].concat(cloudberry.countmapPartialMapResult);
           }
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
