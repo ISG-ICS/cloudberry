@@ -25,7 +25,7 @@ object TestQuery {
   val text = twitterField("text")
   val lang = twitterField("lang")
 
-  val tag = Field.as(hashtags, "tag")
+  val tag = Field.asInnerType(hashtags, "tag")
   val hash = Field.as(hashtags, "hashtags")
   val geoStateID = twitterField("geo_tag.stateID")
   val isRetweet = twitterField("is_retweet")

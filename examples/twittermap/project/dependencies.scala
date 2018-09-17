@@ -69,7 +69,11 @@ object Dependencies {
     // other module
     "com.fasterxml.jackson.core" % "jackson-core" % "2.9.4",
     // Added jquery-ui for showing/hiding the time series histogram.
-    "org.webjars.bower" % "jquery-ui" % "1.12.1"
+    "org.webjars.bower" % "jquery-ui" % "1.12.1",
+    // draw chart module
+    "org.webjars.bower" % "chart.js" % "2.7.2",
+    // Added jquery-ui theme for decorating auto-complete menu
+    "org.webjars" % "jquery-ui-themes" % "1.12.1"
 
   ) ++ testDeps
 }
