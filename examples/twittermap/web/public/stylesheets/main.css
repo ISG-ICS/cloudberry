@@ -194,6 +194,8 @@ time-series {
 
 .search-keyword-btn-group{
   margin-left: 36%;
+  position: relative;
+  overflow: hidden;
 }
 /*For the popup box of tweets in points map*/
 .tweet {
@@ -277,3 +279,8 @@ mapchoose li {
   border: 0.5px solid black;
 }
 
+.input-group {
+  position: relative; 
+  overflow: hidden;
+  width: 100%;
+}
