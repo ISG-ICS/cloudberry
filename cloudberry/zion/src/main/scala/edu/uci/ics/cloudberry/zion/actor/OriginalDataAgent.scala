@@ -69,9 +69,10 @@ class OriginalDataAgent(val dataSetInfo: DataSetInfo,
     }
     val temporalSchema = dataSetInfo.schema.asInstanceOf[Schema]
     val now = DateTime.now().minusMillis(1)
-    val filter = FilterStatement(temporalSchema.timeField, None, Relation.inRange, Seq(start, now).map(TimeField.TimeFormat.print))
+    val startFilter = FilterStatement(temporalSchema.timeField, None, Relation.>, Seq(start).map(TimeField.TimeFormat.print))
+    val endFilter = FilterStatement(temporalSchema.timeField, None, Relation.<=, Seq(now).map(TimeField.TimeFormat.print))
     val aggr = GlobalAggregateStatement(AggregateStatement(temporalSchema.fieldMap("*"), Count, Field.as(Count(temporalSchema.fieldMap("*")), "count")))
-    val queryCardinality = Query(dbName, filter = Seq(filter), globalAggr = Some(aggr))
+    val queryCardinality = Query(dbName, filter = Seq(startFilter, endFilter), globalAggr = Some(aggr))
     conn.postQuery(queryParser.generate(queryCardinality, Map(dbName -> temporalSchema)))
       .map(r => Cardinality(start, now, (r \\ "count").head.as[Long])) pipeTo self
   }
