@@ -279,6 +279,7 @@ mapchoose {
   bottom: 0;
   background-color: white;
   opacity: 0.8;
+  border-radius: 10px;
 }
 
 mapchoose ul {
@@ -290,7 +291,10 @@ mapchoose ul {
 mapchoose li {
   float: left;
   display: inline;
-  border: 0.5px solid black;
+}
+
+mapchoose li #img1, #img2 {
+  border-right: 0.5px solid black;
 }
 
 .input-group {
