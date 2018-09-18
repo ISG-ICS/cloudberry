@@ -7,9 +7,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
-    $scope.isSampleTweetsOpen = false;
+    $scope.isSampleTweetsOpen = true;
 
-    $scope.currentTab = "aboutTab";
+    $scope.currentTab = "sampletweetTab";
 
     // Timer for sending query to check whether it can be solved by view
     $scope.timerCheckQuerySolvableByView = null;
