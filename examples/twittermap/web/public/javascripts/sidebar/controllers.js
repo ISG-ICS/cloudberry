@@ -20,9 +20,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
 
-    function closeRightMenu() {
+    //Function for the button for close the sidebar, and change the flags
+    $scope.closeRightMenu = function() {
       document.getElementById("sidebar").style.left = "100%";
-    }
+      $scope.showOrHideSidebar(-1)
+    };
+
+    // Function for the button that open the sidebar, and change the flags
+    $scope.openRightMenu = function() {
+      document.getElementById("sidebar").style.left = "76%";
+      $scope.showOrHideSidebar(1)
+    };
 
     function enableHamburgerButton() {
       document.getElementById("hamburgerButton").disabled = false;

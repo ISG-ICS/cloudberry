@@ -37,19 +37,19 @@
   </div>
 
   <!-- button for hiding and showing the sidebar -->
-  <div class="w3-teal" ng-init="click = -1" ng-class="{toggled: click === 1}">
-    <button id="hamburgerButton" type="button" class="btn btn-default btn-sm" onclick="openRightMenu()" ng-click="click = click*-1; showOrHideSidebar(click)">
+  <div class="w3-teal">
+    <button id="hamburgerButton" type="button" class="btn btn-default btn-sm" ng-click="openRightMenu()" ng-controller="SidebarCtrl">
       <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
     </button>
   </div>
 
-  <div id='sidebar' class="open" ng-init="click = -1" ng-class="{toggled: click === 1}" ng-controller="SidebarCtrl">
+  <div id='sidebar' class="open"  ng-controller="SidebarCtrl">
     <div class = "col-xs-2">
-      <a href="javascript:void(0)" class="closebtn" onclick="closeRightMenu()">&times;</a>
+      <a href="javascript:void(0)" class="closebtn" ng-click="closeRightMenu()">&times;</a>
       <ul class="nav nav-tabs tabs-left">
-        <li role="presentation" ng-click="click = 1; showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="click = 1; showTab('sampletweetTab')"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="click = 1; showTab('aboutTab')" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
+        <li role="presentation" ng-click="showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" ng-click="showTab('sampletweetTab')"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+        <li role="presentation" ng-click="showTab('aboutTab')" class="active"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
         <li><br/></li>
         <mapchoose>
           <li role="presentation"><img id="img1" name="img1" title="Count Map" src="/assets/images/aggregation_map.png" width="63" height="63" ></li><br/>
@@ -107,16 +107,8 @@
       else {
         $( '#downbutton' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
         $(this).animate({bottom: '110px'}); 
-      };
+      }
     });
   });
 
-  // Function for the button that open the sidebar.
-  function openRightMenu() {
-      document.getElementById("sidebar").style.left = "76%";
-  }
-  //Function for the button for close the sidebar.
-  function closeRightMenu() {
-      document.getElementById("sidebar").style.left = "100%";
-  }
 </script>
