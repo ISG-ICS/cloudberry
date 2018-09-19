@@ -75,6 +75,5 @@ object Dependencies {
     // Added jquery-ui theme for decorating auto-complete menu
     "org.webjars" % "jquery-ui-themes" % "1.12.1"
 
-
   ) ++ testDeps
 }

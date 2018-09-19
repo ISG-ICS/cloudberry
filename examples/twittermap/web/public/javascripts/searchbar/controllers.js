@@ -1,71 +1,70 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
-      var stopwordsMap = buildStopwordsMap();
-        
-      $("#keyword-textbox").autocomplete({source:[]});
-      //When user input keyword we will first send query to and get result to render auto-complete menu
-      //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
-      $("#keyword-textbox").on("keyup",function(event){   
-        var q = $scope.keyword;
-        var hostName = "http://"+window.location.hostname+":5000";
-        var url = hostName+"/spoof?query="+q;
-        try{
-          $.ajax({url:url}).done(function(data){
-              data = JSON.parse(data);
-              var suggestion = [];
-              for(var i=0;i<data.topics.length;i++)
-              {
-                var value = String(data.topics[i].topic);
-                //Exclude hashtag topic and repetitive topic
-                if(value[0] !== "#" && !suggestion.includes(value)){
-                  suggestion.push(value);
-                }
-              }
-              $("#keyword-textbox").autocomplete({source:suggestion});
-          });
+    var stopwordsMap = buildStopwordsMap();
+
+    $("#keyword-textbox").autocomplete({source:[]});
+    //When user input keyword we will first send query to and get result to render auto-complete menu
+    //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
+    $("#keyword-textbox").on("keyup",function(event){   
+      var q = $scope.keyword;
+      var hostName = "http://"+window.location.hostname+":5000";
+      var url = hostName+"/spoof?query="+q;
+      try{
+        $.ajax({url:url}).done(function(data){
+          data = JSON.parse(data);
+          var suggestion = [];
+          for(var i=0;i<data.topics.length;i++)
+          {
+            var value = String(data.topics[i].topic);
+            //Exclude hashtag topic and repetitive topic
+            if(value[0] !== "#" && !suggestion.includes(value)){
+              suggestion.push(value);
+            }
+          }
+          $("#keyword-textbox").autocomplete({source:suggestion});
+        });
+      }
+      catch(err){}
+    });
+
+    //If keyword been selected and user pushed enter,then we perform search directly
+    $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ){
+      $scope.keyword = ui.item.value;
+      $scope.search();
+      $scope.updateSearchBox($scope.keyword);
+    });
+
+    $scope.search = function() {
+      $("#keyword-textbox").autocomplete("close");
+      if ($scope.keyword && $scope.keyword.trim().length > 0) {
+        //Splits out all individual words in the query keyword.
+        var keywords = $scope.keyword.trim().split(/\s+/);
+        var newKeywords = new Array();
+
+        //Adds the stopword filtering feature and checks each token.
+        for(var x=0; x<keywords.length; x++){
+          //If matches, remove it from the keywords
+          if(!stopwordsMap.has(keywords[x].toLowerCase()))
+          {
+              //creates the final keyword.
+              newKeywords.push(keywords[x]);
+          }
         }
-        catch(err){}
-      })
-        
-      //If keyword been selected and user pushed enter,then we perform search directly
-      $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ){
-        $scope.keyword = ui.item.value;
-        $scope.search();
-        $scope.updateSearchBox($scope.keyword);
-      });
 
-      
-  
-      $scope.search = function() {
-          if ($scope.keyword && $scope.keyword.trim().length > 0) {
-              //Splits out all individual words in the query keyword.
-              var keywords = $scope.keyword.trim().split(/\s+/);
-              var newKeywords = new Array();
-
-              //Adds the stopword filtering feature and checks each token.
-              for(var x=0; x<keywords.length; x++){
-                  //If matches, remove it from the keywords
-                  if(!stopwordsMap.has(keywords[x].toLowerCase()))
-                  {
-                      //creates the final keyword.
-                      newKeywords.push(keywords[x]);
-                  }
-              }
-
-              if (newKeywords.length === 0) {
-                  //All the words are stopwords.
-                  cloudberry.parameters.keywords = [];
-                  alert("Your query only contains stopwords. Please re-enter your query.");
-              }
-              else {
-                  cloudberry.parameters.keywords = newKeywords;
-                  moduleManager.publishEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, {keywords: newKeywords});
-              }
-          }
-          else {
-              cloudberry.parameters.keywords = [];
-          }
-      };
+        if (newKeywords.length === 0) {
+          //All the words are stopwords.
+          cloudberry.parameters.keywords = [];
+          alert("Your query only contains stopwords. Please re-enter your query.");
+        }
+        else {
+          cloudberry.parameters.keywords = newKeywords;
+          moduleManager.publishEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, {keywords: newKeywords});
+        }
+      }
+      else {
+        cloudberry.parameters.keywords = [];
+      }
+    };
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
     $scope.updateSearchBox = function (keyword) {
       $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');

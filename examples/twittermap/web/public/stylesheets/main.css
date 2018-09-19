@@ -21,7 +21,7 @@ body {
   top: 0;
   bottom: 0;
   width: 24%;
-  height: 700px;
+  height: 630px;
   overflow: auto;
   margin-left: 0%;
   -webkit-transition: all 0.5s ease;
@@ -30,7 +30,7 @@ body {
   transition: all 0.5s ease;
   background-color: white;
   opacity: 1.0;
-  z-index: 1;
+  z-index: 1000;
 }
 
 #img1, #img2, #img3 {
@@ -125,14 +125,14 @@ search-bar {
 
 .btn.btn-info{
   position: relative;
-  left: 110%;
+  /*left: 110%;*/
 }
 
 #powerby{
   position: absolute;
   bottom: 0%;
-  left: 74%;
-  width: 10%;
+  right: 1%;
+  /*width: 10%;*/
   z-index: 0;
 }
 
@@ -149,7 +149,7 @@ search-bar {
 }
 
 time-series {
-  z-index: 1000;
+  z-index: 1;
   pointer-events: auto;
   position: relative;
   display: inline-block;
@@ -208,6 +208,8 @@ time-series {
 
 .search-keyword-btn-group{
   margin-left: 36%;
+  position: relative;
+  overflow: hidden;
 }
 /*For the popup box of tweets in points map*/
 .tweet {
@@ -271,6 +273,7 @@ time-series {
   margin-left: 5px;
 }
 
+/* For the hashtag trends in sidebar */
 .hashtagDiv{
   margin: 8% 0 0 0;
 }
@@ -283,5 +286,33 @@ time-series {
 .hashtagChart{
   margin-right: 15%;
   margin-top: 4%;
+
+mapchoose {
+  position: absolute;
+  left: 80%;
+  bottom: 0;
+  background-color: white;
+  opacity: 0.8;
+  border-radius: 10px;
 }
 
+mapchoose ul {
+  list-style-type: none;
+  margin: 0px; 
+  padding: 0px;
+}
+
+mapchoose li {
+  float: left;
+  display: inline;
+}
+
+mapchoose li #img1, #img2 {
+  border-right: 0.5px solid black;
+}
+
+.input-group {
+  position: relative; 
+  overflow: hidden;
+  width: 100%;
+}
