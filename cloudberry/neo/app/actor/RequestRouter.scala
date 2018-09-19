@@ -11,12 +11,12 @@ import play.api.mvc.RequestHeader
 
 import scala.concurrent.ExecutionContext
 
-class RequestRouter (berryClientProp: Props, config: Config, requestHeader: RequestHeader)
+class RequestRouter (clientProp: Props, config: Config, requestHeader: RequestHeader)
                     (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
   import RequestRouter._
 
-  val berry = context.actorOf(berryClientProp)
+  val client = context.actorOf(clientProp)
   val clientLogger = Logger("client")
 
   override def receive: Receive = {
@@ -26,8 +26,8 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
       clientLogger.info(s"Request: user-IP = $remoteAddress; user-agent = $userAgent; user-query = ${requestBody.toString}")
 
       val transformer = parseTransform(requestBody)
-      val berryRequestBody = getBerryRequest(requestBody)
-      berry ! (berryRequestBody, transformer)
+      val clientRequestBody = getBerryRequest(requestBody)
+      client ! (clientRequestBody, transformer)
     case e =>
       log.error("Unknown type of request: " + e)
   }
@@ -54,8 +54,8 @@ class RequestRouter (berryClientProp: Props, config: Config, requestHeader: Requ
 
 object RequestRouter {
 
-  def props(berryClientProp: Props, config: Config, requestHeader: RequestHeader)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(berryClientProp, config, requestHeader))
+  def props(clientProp: Props, config: Config, requestHeader: RequestHeader)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new RequestRouter(clientProp, config, requestHeader))
 
   case class WrapTransform(id: String, category: String) extends ICategoricalTransform{
     override def transform(jsonBody: JsValue): JsValue = {
