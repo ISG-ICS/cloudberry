@@ -147,7 +147,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         clearInterval($scope.timerCheckQuerySolvableByView);
       }
       setTimerToCheckQuery();
-      closeRightMenu();
+      $scope.closeRightMenu();
       disableHamburgerButton();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
