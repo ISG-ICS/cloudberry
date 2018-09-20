@@ -229,6 +229,8 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                 features[id].maxY = box[3];
                 features[id].properties["centerLog"] = (features[id].maxX + features[id].minX) / 2;
                 features[id].properties["centerLat"] = (features[id].maxY + features[id].minY) / 2;
+                features[id].properties["popUpLog"] = (features[id].maxX + features[id].minX) / 2;
+                features[id].properties["popUpLat"] = features[id].maxY
                 treeID = box[0] + "/" + box[1] + "/" + box[2] + "/" + box[3];
                 if (insertedTreeIDs.has(treeID) == false) {
                     nodes.push(features[id]);

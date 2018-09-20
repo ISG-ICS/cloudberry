@@ -32,11 +32,14 @@ angular.module('cloudberry.populationcache', [])
         /**
          * Returns the cities' geoIds that are not already cached.
          */
-        this.getCitiesNotInCache = function (geoIds) {
+        this.getCitiesNotInCache = function (geoLevel, geoIds) {
             // The length of geoIdsNotInCache is 0 in case of complete cache hit,
             // same length as the geoIds parameter in case of complete cache miss,
             // otherwise in range (0, geoIds.length)
             var geoIdsNotInCache = [];
+            if (geoLevel !== "city") {
+              return geoIdsNotInCache;
+            }
             for (var i = 0; i < geoIds.length; i++) {
                 if (!popStore["city"].has(geoIds[i])) {
                     geoIdsNotInCache.push(geoIds[i]);

@@ -29,6 +29,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
+  val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -80,6 +81,13 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
       TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, maxTextMessageSize)
+    }
+  }
+
+  // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
+  def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef { out =>
+      TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, maxTextMessageSize)
     }
   }
 
