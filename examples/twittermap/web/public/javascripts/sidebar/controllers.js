@@ -159,7 +159,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordsEventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
-  .controller("HashTagCtrl", function ($scope, $window, cloudberry, queryUtil, cloudberryClient) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry, queryUtil, cloudberryClient, chartUtil) {
     $scope.hashTagsList = null;
     $scope.selectedHashtag = null;
 
@@ -173,98 +173,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     );
 
-    // return difference of two arrays, the arrays must has no duplicate
-    function arrayDiff (newArray, oldArray) {
-      var diffArray = [], difference = [];
-      for (var i = 0; i < newArray.length; i++) {
-        diffArray[newArray[i]] = true;
-      }
-      for (var j = 0; j < oldArray.length; j++) {
-        if (diffArray[oldArray[j]]) {
-          delete diffArray[oldArray[j]];
-        } else {
-          diffArray[oldArray[j]] = true;
-        }
-      }
-      for (var key in diffArray) {
-        difference.push(key);
-      }
-      return difference;
-    }
-
-    // preprocess query result to chart data could be used by chart.js
-    function preProcess(queryResult) {
-      var chartData = [];
-      var hasCountMonth = [];
-      var zeroCountMonth = [];
-      var minDate = cloudberry.parameters.timeInterval.start;
-      var maxDate = cloudberry.parameters.timeInterval.end;
-
-      // add empty data point
-      for (var i = 0; i < queryResult.length; i++) {
-        var thisMonth = new Date(queryResult[i].month.split(("-"))[0], queryResult[i].month.split(("-"))[1] - 1);
-        hasCountMonth.push(thisMonth);
-        chartData.push({x: thisMonth, y:queryResult[i].count});
-      }
-      for (var m = new Date(minDate.getFullYear(),minDate.getMonth()); m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)) {
-        zeroCountMonth.push(new Date(m.getTime()));
-      }
-      zeroCountMonth = arrayDiff(hasCountMonth,zeroCountMonth);
-      for (var j = 0; j < zeroCountMonth.length; j++) {
-        chartData.push({x: new Date(zeroCountMonth[j]), y:0});
-      }
-
-      // sort the date
-      chartData.sort(function(previousVal, currentVal) {
-        return previousVal.x - currentVal.x;
-      });
-      return chartData;
-    }
-
-    //draw tendency chart
-    function drawChart(chartData) {
-      if (chartData.length !== 0) {
-        var ctx = document.getElementById("myChart" + $scope.selectedHashtag).getContext("2d");
-        var myChart = new Chart(ctx, {
-          type: "line",
-          data:{
-            datasets:[{
-              lineTension: 0,
-              data:chartData,
-              borderColor:"#3e95cd",
-              borderWidth: 0.8,
-              pointRadius: 1.5
-            }]
-          },
-          options: {
-            legend: {
-              display: false
-            },
-            scales: {
-              xAxes: [{
-                type: "time",
-                time: {
-                  unit:"month"
-                },
-                gridLines:{
-                  display: false
-                }
-              }],
-              yAxes: [{
-                ticks: {
-                  beginAtZero: true,
-                  suggestedMax: 4
-                },
-                gridLines:{
-                  display: false
-                }
-              }]
-            }
-          }
-        });
-      }
-    }
-
     // send query of hashtag, and draw the line chart when collapse is expanded
     $("#AllCollapse").on("shown.bs.collapse", function(e) {
       $scope.selectedHashtag = e.target.firstChild.id.substring(7);
@@ -273,7 +181,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
           if (angular.isArray(resultSet)) {
-            drawChart(preProcess(resultSet[0]));
+            chartUtil.drawChart(chartUtil.preProcessByMonthResult(resultSet[0]) ,"myChart" + $scope.selectedHashtag ,chartUtil.chartConfig(false,false));
           }
         }, "hashtagChartDataRequest");
       }
