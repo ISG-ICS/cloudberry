@@ -1,5 +1,5 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($scope, cloudberry, moduleManager, cloudberryClient, queryUtil) {
+  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig) {
 
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
@@ -10,6 +10,66 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOpen = true;
 
     $scope.currentTab = "sampletweetTab";
+
+    // Timer for sending query to check whether it can be solved by view
+    $scope.timerCheckQuerySolvableByView = null;
+
+    // queryID used to identify a query, which is sent by timer
+    $scope.nowQueryID = null;
+
+    // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
+    var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
+
+    //Function for the button for close the sidebar, and change the flags
+    $scope.closeRightMenu = function() {
+      document.getElementById("sidebar").style.left = "100%";
+      $scope.showOrHideSidebar(-1);
+    };
+
+    // Function for the button that open the sidebar, and change the flags
+    $scope.openRightMenu = function() {
+      document.getElementById("sidebar").style.left = "76%";
+      $scope.showOrHideSidebar(1);
+    };
+
+    function enableHamburgerButton() {
+      document.getElementById("hamburgerButton").disabled = false;
+    }
+
+    function disableHamburgerButton() {
+      document.getElementById("hamburgerButton").disabled = true;
+    }
+
+    // When receiving messages from websocket, check its queryID and result.
+    // If queryID is matched and result is true, enable the sidebar button and clear timer.
+    wsCheckQuerySolvableByView.onmessage = function(event) {
+      $timeout(function() {
+        var result = JSON.parse(event.data);
+        if (result.id === $scope.nowQueryID && result.value[0]) {
+          clearInterval($scope.timerCheckQuerySolvableByView);
+          enableHamburgerButton();
+        }
+      });
+    };
+
+    // Set a timer to sending query to check whether it is solvable, every one second
+    function setTimerToCheckQuery() {
+      var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
+
+      // Add the queryID for a query in to request
+      queryToCheck["transform"] = {
+        wrap: {
+          id: cloudberry.parameters.keywords.toString(),
+          category: "checkQuerySolvableByView"
+        }
+      };
+      $scope.nowQueryID = cloudberry.parameters.keywords.toString();
+      $scope.timerCheckQuerySolvableByView = setInterval(function(){
+        if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
+          wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
+        }
+      }, 1000);
+    }
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
@@ -80,9 +140,23 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       handleSidebarQuery();
     }
 
+    // When the keywords changed, we need to:
+    // 1. clear previous timer 2. close and disable sidebar 3. set a new timer for new keywords
+    function keywordsEventHandler(event) {
+      if($scope.timerCheckQuerySolvableByView) {
+        clearInterval($scope.timerCheckQuerySolvableByView);
+      }
+      setTimerToCheckQuery();
+      $scope.closeRightMenu();
+      disableHamburgerButton();
+      $scope.isHashTagOutdated = true;
+      $scope.isSampleTweetsOutdated = true;
+      handleSidebarQuery();
+    }
+
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordsEventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
   .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
