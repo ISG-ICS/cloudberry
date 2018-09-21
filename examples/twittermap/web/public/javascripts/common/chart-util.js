@@ -68,7 +68,7 @@ angular.module("cloudberry.common")
     // The `queryResult` is group by day, after prepocess it change to group by month.
     preProcessByDayResult(queryResult) {
       // group by year
-      var groups = queryResult.reduce(function (previousVal, currentVal) {
+      groups = queryResult.reduce(function (previousVal, currentVal) {
         var yearNum = currentVal.day.split(("-"))[0];
         (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
         return previousVal;
@@ -79,7 +79,7 @@ angular.module("cloudberry.common")
       var resultByMonth = [];
       var hasCountMonth = [];
       for (var i = 0; i < resultByYear.length; i++){
-        var groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
+        groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
           var monthNum = currentVal.day.split(("-"))[1];
           if (previousVal[monthNum]) {
             previousVal[monthNum].y += currentVal.count;
