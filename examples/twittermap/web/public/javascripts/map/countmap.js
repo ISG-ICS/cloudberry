@@ -1,6 +1,6 @@
 angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
-                                       TimeSeriesCache, moduleManager, cloudberryClient, queryUtil, chartUtil) {
+                                       TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
 
     // Array to store the data for chart
     $scope.chartData = [];

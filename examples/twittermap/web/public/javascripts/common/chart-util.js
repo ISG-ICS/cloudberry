@@ -3,12 +3,12 @@
  * It provides function for preprocessing chart data, and use chart.js to draw chart.
  * It is used by popup window and hash tag module now.
  */
-'use strict';
-angular.module('cloudberry.common', [])
-  .service('chartUtil', function (cloudberry) {
+angular.module("cloudberry.common")
+  .service("chartUtil", function (cloudberry) {
 
-    // Return difference of two arrays, the arrays must has no duplicate
-    this.arrayDiff = function (newArray, oldArray) {
+    var chartUtil = {
+      // Return difference of two arrays, the arrays must has no duplicate
+      arrayDiff(newArray, oldArray) {
       var diffArray = [], difference = [];
       for (var i = 0; i < newArray.length; i++) {
         diffArray[newArray[i]] = true;
@@ -24,11 +24,11 @@ angular.module('cloudberry.common', [])
         difference.push(key);
       }
       return difference;
-    };
+    },
 
 
     // Complement chart data by adding empty data point and then sort it
-    this.complementData = function (chartData, hasCountMonth) {
+    complementData(chartData, hasCountMonth) {
       var zeroCountMonth = [];
       var minDate = cloudberry.parameters.timeInterval.start;
       var maxDate = cloudberry.parameters.timeInterval.end;
@@ -47,12 +47,12 @@ angular.module('cloudberry.common', [])
         return previousVal.x - currentVal.x;
       });
       return chartData;
-    };
+    },
 
 
     // Preprocess query result to chart data could be used by chart.js
     // The `queryResult` is group by month, after prepocess it is still group by month.
-    this.preProcessByMonthResult = function (queryResult) {
+    preProcessByMonthResult(queryResult) {
       var chartData = [];
       var hasCountMonth = [];
       for (var i = 0; i < queryResult.length; i++) {
@@ -61,12 +61,12 @@ angular.module('cloudberry.common', [])
         chartData.push({x: thisMonth, y:queryResult[i].count});
       }
       return this.complementData(chartData, hasCountMonth);
-    };
+    },
 
 
     // Preprocess query result to chart data could be used by chart.js
     // The `queryResult` is group by day, after prepocess it change to group by month.
-    this.preProcessByDayResult = function (queryResult) {
+    preProcessByDayResult(queryResult) {
       // group by year
       var groups = queryResult.reduce(function (previousVal, currentVal) {
         var yearNum = currentVal.day.split(("-"))[0];
@@ -94,17 +94,17 @@ angular.module('cloudberry.common', [])
         resultByMonth = resultByMonth.concat(resultByMonthOneYear);
       }
       return this.complementData(resultByMonth, hasCountMonth);
-    };
+    },
 
 
     // Configure the chart: whether show the lable/grid or not in chart.
-    this.chartConfig = function (displayLable, displayGrid) {
+    chartConfig(chartData, displayLable, displayGrid) {
       return {
         type: "line",
         data:{
           datasets:[{
             lineTension: 0,
-            data:chartData,
+            data: chartData,
             borderColor:"#3e95cd",
             borderWidth: 0.8,
             pointRadius: 1.5
@@ -144,17 +144,19 @@ angular.module('cloudberry.common', [])
           }
         }
       };
-    };
+    },
 
 
     //draw tendency chart using chart.js
-    this.drawChart = function(chartData, chartElementId, chartConfig) {
+    drawChart(chartData, chartElementId, displayLable, displayGrid) {
       if (chartData.length !== 0 && document.getElementById(chartElementId)) {
         var ctx = document.getElementById(chartElementId).getContext("2d");
-        var myChart = new Chart(ctx, chartConfig);
+        var myChart = new Chart(ctx, chartUtil.chartConfig(chartData, displayLable, displayGrid));
       }
+    },
     };
 
+    return chartUtil;
 
 
 

@@ -181,7 +181,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
         cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
           if (angular.isArray(resultSet)) {
-            chartUtil.drawChart(chartUtil.preProcessByMonthResult(resultSet[0]) ,"myChart" + $scope.selectedHashtag ,chartUtil.chartConfig(false,false));
+            chartUtil.drawChart(chartUtil.preProcessByMonthResult(resultSet[0]), "myChart" + $scope.selectedHashtag, false, false);
           }
         }, "hashtagChartDataRequest");
       }
