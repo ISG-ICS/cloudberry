@@ -1,6 +1,6 @@
 /*
  * This service is for drawing tendency line chart.
- * It provides function for preprocessing chart data, and use chart.js to draw chart.
+ * It provides function for preprocessing chart data, and using chart.js to draw chart.
  * It is used by popup window and hash tag module now.
  */
 angular.module("cloudberry.common")
@@ -68,18 +68,18 @@ angular.module("cloudberry.common")
     // The `queryResult` is group by day, after prepocess it change to group by month.
     preProcessByDayResult(queryResult) {
       // group by year
-      groups = queryResult.reduce(function (previousVal, currentVal) {
+      var groupsByYear = queryResult.reduce(function (previousVal, currentVal) {
         var yearNum = currentVal.day.split(("-"))[0];
         (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
         return previousVal;
       }, {});
-      var resultByYear = Object.keys(groups).map(function(k) { return groups[k];});
+      var resultByYear = Object.keys(groupsByYear).map(function(k) { return groupsByYear[k];});
 
       // sum up the result for every month
       var resultByMonth = [];
       var hasCountMonth = [];
       for (var i = 0; i < resultByYear.length; i++){
-        groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
+        var groupsByMonthOneYear = resultByYear[i].data.reduce(function (previousVal, currentVal) {
           var monthNum = currentVal.day.split(("-"))[1];
           if (previousVal[monthNum]) {
             previousVal[monthNum].y += currentVal.count;
@@ -90,7 +90,7 @@ angular.module("cloudberry.common")
           }
           return previousVal;
         }, {});
-        var resultByMonthOneYear = Object.keys(groups).map(function(key){ return groups[key]; });
+        var resultByMonthOneYear = Object.keys(groupsByMonthOneYear).map(function(key){ return groupsByMonthOneYear[key]; });
         resultByMonth = resultByMonth.concat(resultByMonthOneYear);
       }
       return this.complementData(resultByMonth, hasCountMonth);
