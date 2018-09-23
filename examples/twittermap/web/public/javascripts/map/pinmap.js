@@ -44,6 +44,13 @@ angular.module("cloudberry.map")
           color: "#92d1e1",
           fillOpacity: 0
         },
+        zipStyle: {
+          fillColor: '#f7f7f7',
+          weight: 1.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0.5
+        },
         hoverStyle: {
           weight: 0.7,
           color: "#666",

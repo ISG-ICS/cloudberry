@@ -11,6 +11,7 @@ package object gnosis {
   val StateLevel: TypeLevel = 1
   val CountyLevel: TypeLevel = 2
   val CityLevel: TypeLevel = 3
+  val ZipcodeLevel: TypeLevel = 6
 
   val BoroLevel: TypeLevel = 4
   val NeighborLevel: TypeLevel = 5

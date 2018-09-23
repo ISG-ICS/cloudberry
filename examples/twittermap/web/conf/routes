@@ -8,6 +8,7 @@ GET        /ws                                  controllers.TwitterMapApplicatio
 GET        /drugmap                             controllers.TwitterMapApplication.drugmap
 
 GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
+GET        /zip/:nLat/:sLat/:nLng/:sLng         controllers.TwitterMapApplication.getZip(nLat: Double, sLat: Double, nLng: Double, sLng: Double)
 
 
 # Map static resources from the /public folder to the /assets URL path

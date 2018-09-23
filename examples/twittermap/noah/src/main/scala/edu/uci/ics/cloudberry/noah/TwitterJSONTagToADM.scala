@@ -32,6 +32,7 @@ object TwitterJSONTagToADM {
       case "-state" :: value :: tail => shapeMap += StateLevel -> value; parseOption(tail)
       case "-county" :: value :: tail => shapeMap += CountyLevel -> value; parseOption(tail)
       case "-city" :: value :: tail => shapeMap += CityLevel -> value; parseOption(tail)
+      case "-zipcode" :: value :: tail => shapeMap += ZipcodeLevel -> value; parseOption(tail)
       case "-thread" :: value :: tail => threadNumber = value.toInt; parseOption(tail)
       case "-debug" :: value :: tail => isDebug = true; parseOption(tail)
       case option :: tail => System.err.println("unknown option:" + option); System.err.println(usage); System.exit(1);
@@ -42,7 +43,7 @@ object TwitterJSONTagToADM {
     try {
       val admJacksonJson = Tweet.toADM(ln, usGeoGnosis, true)
       if (admJacksonJson.length > 0) {
-        println(admJacksonJson)
+//        println(admJacksonJson)
       }
     }
     catch {
@@ -50,6 +51,7 @@ object TwitterJSONTagToADM {
         if (isDebug) {
           e.printStackTrace(System.err)
           System.err.println(ln)
+
         }
       }
     }
