@@ -195,6 +195,14 @@ public class Tweet {
         if (textMatchPlace(sbGeoTag, gnosis, place)) {
             return sbGeoTag.toString();
         }
+
+        sbGeoTag.delete(0, sbGeoTag.length());
+        if (coordinate.getcLat() == null){
+            scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(place.getaLat(), place.getaLong());
+            sbGeoTag.append(info.get().toString());
+            return sbGeoTag.toString();
+        }
+
         sbGeoTag.delete(0, sbGeoTag.length());
         if (exactPointLookup(sbGeoTag, gnosis, coordinate)) {
             return sbGeoTag.toString();
