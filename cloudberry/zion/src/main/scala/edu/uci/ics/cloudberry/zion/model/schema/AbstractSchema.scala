@@ -75,7 +75,7 @@ object Field {
       case DataType.String => StringField(name, field.isOptional)
       case DataType.Text => TextField(name, field.isOptional)
       case DataType.Point => PointField(name, field.isOptional)
-      case DataType.Boolean => PointField(name, field.isOptional)
+      case DataType.Boolean => BooleanField(name, field.isOptional)
       case DataType.Hierarchy =>
         val hierarchyField = field.asInstanceOf[HierarchyField]
         HierarchyField(name, hierarchyField.innerType, hierarchyField.levels, hierarchyField.isOptional)
@@ -87,6 +87,24 @@ object Field {
         BagField(name, bagField.innerType, bagField.isOptional)
     }
 
+  }
+
+  /**
+    * Copy a given field "innerType" with a new name, used in resolveUnnests
+    * @param field
+    * @param name
+    * @return
+    */
+  def asInnerType(field: Field, name: String): Field = {
+    val bagField = field.asInstanceOf[BagField]
+    bagField.innerType match {
+      case DataType.Number => NumberField(name, field.isOptional)
+      case DataType.Time => TimeField(name, field.isOptional)
+      case DataType.String => StringField(name, field.isOptional)
+      case DataType.Text => TextField(name, field.isOptional)
+      case DataType.Point => PointField(name, field.isOptional)
+      case DataType.Boolean => BooleanField(name, field.isOptional)
+    }
   }
 
 }
