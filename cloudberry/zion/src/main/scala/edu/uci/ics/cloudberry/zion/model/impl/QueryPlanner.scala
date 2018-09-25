@@ -12,10 +12,19 @@ class QueryPlanner {
 
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): (Seq[Query], IMerger) = {
 
-    val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
     //TODO currently only get the best one
-    val bestView = selectBestView(matchedViews)
+    val bestView = selectBestView(findMatchedViews(query, source, views))
     splitQuery(query, source, bestView)
+  }
+
+  // Return whether there is matched views for a query, and it is used by the ViewStatusClient
+  def requestViewForQuery(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
+    findMatchedViews(query, source, views).nonEmpty
+  }
+
+  // Find the matched views for a query
+  def findMatchedViews(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[DataSetInfo] = {
+    views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
   }
 
   def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
