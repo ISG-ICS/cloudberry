@@ -43,7 +43,7 @@ object TwitterJSONTagToADM {
     try {
       val admJacksonJson = Tweet.toADM(ln, usGeoGnosis, true)
       if (admJacksonJson.length > 0) {
-//        println(admJacksonJson)
+        println(admJacksonJson)
       }
     }
     catch {
@@ -51,7 +51,6 @@ object TwitterJSONTagToADM {
         if (isDebug) {
           e.printStackTrace(System.err)
           System.err.println(ln)
-
         }
       }
     }
