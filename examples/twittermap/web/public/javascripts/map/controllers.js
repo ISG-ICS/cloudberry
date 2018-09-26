@@ -174,9 +174,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.polygons.zipcodePolygons) {
           $scope.polygons.zipcodePolygons.setStyles($scope.styles.zipcodeStyle);
       }
-      // if ($scope.polygons.cityPolygons) {
-      //   $scope.polygons.cityPolygons.setStyle($scope.styles.cityStyle);
-      // }
+      if ($scope.polygons.cityPolygons) {
+        $scope.polygons.cityPolygons.setStyle($scope.styles.cityStyle);
+      }
       if ($scope.polygons.stateUpperPolygons) {
         $scope.polygons.stateUpperPolygons.setStyle($scope.styles.stateUpperStyle);
       }
@@ -516,9 +516,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.zipcodePolygons){
               $scope.map.removeLayer($scope.polygons.zipcodePolygons);
           }
-          // if ($scope.polygons.cityPolygons) {
-          //   $scope.map.removeLayer($scope.polygons.cityPolygons);
-          // }
+          if ($scope.polygons.cityPolygons) {
+            $scope.map.removeLayer($scope.polygons.cityPolygons);
+          }
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
@@ -536,9 +536,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.zipcodePolygons){
               $scope.map.removeLayer($scope.polygons.zipcodePolygons);
           }
-          // if ($scope.polygons.cityPolygons) {
-          //   $scope.map.removeLayer($scope.polygons.cityPolygons);
-          // }
+          if ($scope.polygons.cityPolygons) {
+            $scope.map.removeLayer($scope.polygons.cityPolygons);
+          }
           if ($scope.polygons.stateUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
           }

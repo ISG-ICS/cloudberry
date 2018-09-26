@@ -230,7 +230,7 @@ public class Tweet {
         if (place.getName() == null) {
             return false;
         }
-        if (!("United States").equals(place.getCountry())) {
+        if (!("\ub300\ud55c\ubbfc\uad6d").equals(place.getCountry()) && !("Republic of Korea").equals(place.getCountry())) {
             return false;
         }
         scala.Option<USGeoGnosis.USGeoTagInfo> info;
@@ -241,10 +241,11 @@ public class Tweet {
                 return false;
             case "city":
                 int index = place.getFullname().indexOf(',');
-                if (index < 0) {
+                if (index < 0){
                     System.err.println("unknown neighborhood:" + place.getFullname());
                     return false;
                 }
+
                 String stateAbbr = place.getFullname().substring(index + 1).trim();
                 String cityName = place.getName();
                 info = gnosis.tagCity(cityName, stateAbbr);
