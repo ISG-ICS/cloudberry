@@ -94,7 +94,11 @@ EOF
 #[ -f ./script/sample.adm.gz ] || { echo "Downloading the data...";  ./script/getSampleTweetsFromGDrive.sh; }
 
 echo "Start ingestion ..." 
+<<<<<<< HEAD
 gunzip -c ./script/somefile.adm.gz | ./script/fileFeed.sh 127.0.0.1 10001
+=======
+gunzip -c ./script/thirty.adm.gz | ./script/fileFeed.sh 127.0.0.1 10001
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
 echo "Ingested sample tweets."
 
 cat <<'EOF' | curl -XPOST --data-binary @- $host

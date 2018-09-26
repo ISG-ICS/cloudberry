@@ -25,7 +25,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.doSentiment = false;
     $scope.infoPromp = config.mapLegend;
     $scope.cityIdSet = new Set();
+<<<<<<< HEAD
     $scope.zipcodeIdSet = new Set();
+=======
+    $scope.zipIdSet = new Set();
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
 
     // setting default map styles, zoom level, etc.
     angular.extend($scope, {
@@ -89,7 +93,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           color: '#92d1e1',
           fillOpacity: 0.5
         },
+<<<<<<< HEAD
         zipcodeStyle:  {
+=======
+        zipStyle: {
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
           fillColor: '#f7f7f7',
           weight: 1.5,
           opacity: 1,
@@ -160,7 +168,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         $scope.map.setView([$scope.lat, $scope.lng], 7);
       });
 
-      $scope.resetGeoInfo("state");
     };
     
     // redraw the polygons with the new map styles
@@ -241,7 +248,8 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
       }
     }
-    
+
+
     // load geoJson to get state and county polygons
     $scope.loadGeoJsonFiles = function loadGeoJsonFiles(onEachFeature) {
       if (typeof($scope.polygons.statePolygons) === "undefined" || $scope.polygons.statePolygons == null){
@@ -363,7 +371,30 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       var rteBounds = "zipcode/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
         // Caching feature only works when the given threshold is greater than zero.
         if (cloudberryConfig.cacheThreshold > 0) {
+<<<<<<< HEAD
             Cache.getZipcodePolygonsFromCache(rteBounds).done(function(data) {
+=======
+          Cache.getCityPolygonsFromCache(rteBounds).done(function(data) {
+
+            //set center and boundary done by Cache
+            if (!$scope.status.init) {
+              $scope.resetGeoIds($scope.bounds, data, 'cityID');
+              cloudberry.parameters.geoLevel = 'city';
+              // Publish zoom/drag event to moduleManager
+              moduleManager.publishEvent(fromEventName, fromEvent);
+            }
+
+            $scope.status.logicLevel = 'city';
+
+            // initializes the $scope.geojsonData.city and $scope.cityIdSet when first time zoom in
+            if(typeof $scope.polygons.cityPolygons === 'undefined'){
+                console.log(data);
+              $scope.geojsonData.city = data;
+              $scope.polygons.cityPolygons = L.geoJson(data, {
+                style: $scope.styles.cityStyle,
+                onEachFeature: onEachFeature
+              });
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
 
                 //set center and boundary done by Cache
                 if (!$scope.status.init) {
@@ -373,6 +404,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                     moduleManager.publishEvent(fromEventName, fromEvent);
                 }
 
+<<<<<<< HEAD
                 $scope.status.logicLevel = 'zipcode';
 
                 // initializes the $scope.geojsonData.city and $scope.cityIdSet when first time zoom in
@@ -428,10 +460,105 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 .error(function (data) {
                     console.error("Load zipcode data failure");
                 });
+=======
+            // To add the city level map only when it doesn't exit
+            if(!$scope.map.hasLayer($scope.polygons.cityPolygons)){
+              $scope.map.addLayer($scope.polygons.cityPolygons);
+            }
+          });
+
+        } else {
+          // No caching used here.
+          $http.get(rteBounds)
+            .success(function (data) {
+              $scope.geojsonData.city = data;
+              if ($scope.polygons.cityPolygons) {
+                $scope.map.removeLayer($scope.polygons.cityPolygons);
+              }
+              $scope.polygons.cityPolygons = L.geoJson(data, {
+                style: $scope.styles.cityStyle,
+                onEachFeature: onEachFeature
+              });
+              setCenterAndBoundry($scope.geojsonData.city.features);
+              $scope.resetGeoInfo("city");
+              if (!$scope.status.init) {
+                // Publish zoom/drag event to moduleManager
+                moduleManager.publishEvent(fromEventName, fromEvent);
+              }
+              $scope.map.addLayer($scope.polygons.cityPolygons);
+            })
+            .error(function (data) {
+              console.error("Load city data failure");
+            });
+
+
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
         }
 
     };
-    
+
+    // $scope.loadZipJsonByBound = function loadZipJsonByBound(onEachFeature, fromEventName, fromEvent){
+    //       var bounds = $scope.map.getBounds();
+    //       var rteBounds_zip = "zip/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" +bounds._southWest.lng;
+    //
+    //     if (cloudberryConfig.cacheThreshold > 0) {
+    //         Cache.getZipPolygonsFromCache(rteBounds_zip).done(function(data) {
+    //             if (!$scope.status.init){
+    //                 $scope.resetGeoIds($scope.bounds, data, 'zipID');
+    //                 cloudberry.parameters.geoLevel = 'zip code';
+    //                 moduleManager.publishEvent(fromEventName, fromEvent);
+    //             }
+    //
+    //             $scope.status.logicLevel = 'zip code';
+    //
+    //             if(typeof $scope.polygons.zipPolygons === 'undefined'){
+    //                 $scope.geojsonData.zip = data;
+    //                 $scope.polygons.zipPolygons = L.geoJson(data, {
+    //                     style: $scope.styles.zipStyle,
+    //                     onEachFeature: onEachFeature
+    //                 });
+    //
+    //                 for (var i = 0; i < $scope.geojsonData.zip.features.length; i++) {
+    //                     $scope.zipIdSet.add($scope.geojsonData.zip.features[i].properties.zipID);
+    //                 }
+    //             } else {
+    //                 for (i = 0; i < data.features.length; i++){
+    //                     if (!$scope.zipIdSet.has(data.features[i].properties.zipID)) {
+    //                         $scope.geojsonData.zip.features.push(data.features[i]);
+    //                         $scope.zipIdSet.add(data.features[i].properties.zipID);
+    //                         $scope.polygons.zipPolygons.addData(data.features[i]);
+    //                     }
+    //                 }
+    //             }
+    //             if(!$scope.map.hasLayer($scope.polygons.zipPolygons)){
+    //                 $scope.map.addLayer($scope.polygons.zipPolygons)
+    //             }
+    //         });
+    //     } else{
+    //         $http.get(rteBounds_zip)
+    //             .success(function (data) {
+    //                 $scope.geojsonData.zip = data;
+    //                 if ($scope.polygons.zipPolygons) {
+    //                     $scope.map.removeLayer($scope.polygons.zipPolygons);
+    //                 }
+    //                 $scope.polygons.zipPolygons = L.geoJson(data, {
+    //                     style: $scope.styles.zipStyle,
+    //                     onEachFeature: onEachFeature
+    //                 });
+    //                 setCenterAndBoundry($scope.geojsonData.zip.features);
+    //                 $scope.resetGeoInfo("zip");
+    //                 if (!$scope.status.init) {
+    //                     // Publish zoom/drag event to moduleManager
+    //                     moduleManager.publishEvent(fromEventName, fromEvent);
+    //                 }
+    //                 $scope.map.addLayer($scope.polygons.zipPolygons);
+    //             })
+    //             .error(function (data) {
+    //                 console.error("Load zip data failure");
+    //             });
+    //     }
+    // };
+
     // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent){
@@ -472,6 +599,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
         $scope.bounds = $scope.map.getBounds();
+<<<<<<< HEAD
         // if ($scope.status.zoomLevel > 12) {
         //       $scope.resetGeoInfo("city");
         //       if ($scope.polygons.statePolygons) {
@@ -505,6 +633,39 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
 
         else if ($scope.status.zoomLevel > 8) {
+=======
+        if ($scope.status.zoomLevel > 12) {
+          $scope.resetGeoInfo("city");
+          if ($scope.polygons.statePolygons) {
+            $scope.map.removeLayer($scope.polygons.statePolygons);
+          }
+          if ($scope.polygons.countyPolygons) {
+            $scope.map.removeLayer($scope.polygons.countyPolygons);
+          }
+          if ($scope.polygons.stateUpperPolygons) {
+            $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+          }
+          $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+          $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
+            {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+        }
+        //   if ($scope.status.zoomLevel > 12){
+        //     $scope.resetGeoInfo("zip code");
+        //     if ($scope.polygons.statePolygons){
+        //       $scope.map.removeLayer($scope.polygons.statePolygons);
+        //     }
+        //     if ($scope.polygons.countyPolygons) {
+        //       $scope.map.removeLayer($scope.polygons.countyPolygons);
+        //     }
+        //     if ($scope.polygons.stateUpperPolygons) {
+        //       $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+        //     }
+        //     $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+        //     $scope.loadZipJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
+        //         {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+        //   }
+          else if ($scope.status.zoomLevel > 8) {
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
           $scope.resetGeoInfo("county");
           if (!$scope.status.init) {
             // Publish zoom event to moduleManager
@@ -518,6 +679,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
           if ($scope.polygons.cityPolygons) {
             $scope.map.removeLayer($scope.polygons.cityPolygons);
+          }
+          if ($scope.polygons.zipPolygons) {
+              $scope.map.removeLayer($scope.polygons.zipPolygons);
           }
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
@@ -538,6 +702,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
           if ($scope.polygons.cityPolygons) {
             $scope.map.removeLayer($scope.polygons.cityPolygons);
+          }
+          if ($scope.polygons.zipPolygons) {
+              $scope.map.removeLayer($scope.polygons.zipPolygons);
           }
           if ($scope.polygons.stateUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
@@ -565,9 +732,15 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           geoData = $scope.geojsonData.county;
         } else if ($scope.status.logicLevel === "city") {
           geoData = $scope.geojsonData.city;
+<<<<<<< HEAD
         } else if ($scope.status.logicLevel === "zipcode") {
           geoData = $scope.geojsonData.zipcode;
         }else {
+=======
+        } else if ($scope.status.logicLevel === "zip code") {
+            geoData = $scope.geojsonData.zip;
+        } else{
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
           console.error("Error: Illegal value of logicLevel, set to default: state");
           $scope.status.logicLevel = "state";
           geoData = $scope.geojsonData.state;
@@ -576,10 +749,17 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.status.logicLevel === "city") {
         $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_REGION_BY_DRAG,
           {bounds: $scope.map.getBounds()});
+<<<<<<< HEAD
       } else if ($scope.status.logicLevel === "zipcode"){
         $scope.loadZipcodeJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_REGION_BY_DRAG,
             {bounds: $scope.map.getBounds()});
       }else {
+=======
+      } else if ($scope.status.logicLevel === "zip") {
+          $scope.loadZipJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_REGION_BY_DRAG,
+              {bounds: $scope.map.getBounds()});
+        } else{
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
         $scope.resetGeoIds($scope.bounds, geoData, $scope.status.logicLevel + "ID");
         cloudberry.parameters.geoLevel = $scope.status.logicLevel;
         // Publish drag event to moduleManager

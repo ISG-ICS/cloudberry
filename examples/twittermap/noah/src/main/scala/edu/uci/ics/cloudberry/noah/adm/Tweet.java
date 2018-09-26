@@ -171,7 +171,6 @@ public class Tweet {
         admSB.append("{");
         try {
             JsonNode rootNode = objectMapper.readTree(ln);
-            //
             appendTweetPlainFields(rootNode, admSB);
             appendHashtags(rootNode, admSB);
             appendUserMentsions(rootNode, admSB);
@@ -184,13 +183,16 @@ public class Tweet {
             appendGeoTag(gnosis, true, admSB, place, coordinate);
             appendUser(rootNode, admSB);
             admSB.append("}");
+//            System.out.println(admSB);
         } catch (Exception ex) {
+//            System.out.println(ex);
             throw ex;
         }
         return admSB.toString();
     }
 
     public static String geoTag(USGeoGnosis gnosis, boolean requireGeoField, MyPlace place, Coordinate coordinate) throws UnknownPlaceException {
+//        System.out.println("///geoTag");
         StringBuilder sbGeoTag = new StringBuilder();
         if (textMatchPlace(sbGeoTag, gnosis, place)) {
             return sbGeoTag.toString();
@@ -204,9 +206,17 @@ public class Tweet {
         }
 
         sbGeoTag.delete(0, sbGeoTag.length());
+        if (coordinate.getcLat() == null){
+            scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(place.getaLat(), place.getaLong());
+            sbGeoTag.append(info.get().toString());
+            return sbGeoTag.toString();
+        }
+        sbGeoTag.delete(0, sbGeoTag.length());
         if (exactPointLookup(sbGeoTag, gnosis, coordinate)) {
             return sbGeoTag.toString();
         }
+
+
         if (requireGeoField) {
             throw new UnknownPlaceException("unknown place:" + place.toString());
         } else {
@@ -219,6 +229,7 @@ public class Tweet {
             return false;
         }
         scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(Double.parseDouble(coordinate.getcLong()), Double.parseDouble(coordinate.getcLat()));
+        System.out.println("info: "+info);
         if (info.isEmpty()) {
             return false;
         }
@@ -230,6 +241,10 @@ public class Tweet {
         if (place.getName() == null) {
             return false;
         }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
         if (!("\ub300\ud55c\ubbfc\uad6d").equals(place.getCountry()) && !("Republic of Korea").equals(place.getCountry())) {
             return false;
         }
@@ -249,6 +264,7 @@ public class Tweet {
                 String stateAbbr = place.getFullname().substring(index + 1).trim();
                 String cityName = place.getName();
                 info = gnosis.tagCity(cityName, stateAbbr);
+                System.out.println("info: "+info);
                 break;
             case "neighborhood": // e.g. "The Las Vegas Strip, Paradise"
                 index = place.getFullname().indexOf(',');

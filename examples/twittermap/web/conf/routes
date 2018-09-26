@@ -9,7 +9,12 @@ GET        /drugmap                             controllers.TwitterMapApplicatio
 GET        /checkQuerySolvableByView            controllers.TwitterMapApplication.checkQuerySolvableByView
 
 GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
+<<<<<<< HEAD
 GET        /zipcode/:nLat/:sLat/:nLng/:sLng     controllers.TwitterMapApplication.getZipcode(nLat: Double, sLat: Double, nLng: Double, sLng: Double)
+=======
+GET        /zip/:nLat/:sLat/:nLng/:sLng         controllers.TwitterMapApplication.getZip(nLat: Double, sLat: Double, nLng: Double, sLng: Double)
+
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)

@@ -283,12 +283,21 @@ angular.module('cloudberry.map')
           color: '#92d1e1',
           fillOpacity: 0.5
         },
+<<<<<<< HEAD
         zipcodeStyle:  {
           fillColor: '#f7f7f7',
           weight: 1.5,
           opacity: 1,
           color: '#92d1e1',
           fillOpacity: 0.5
+=======
+        zipStyle: {
+            fillColor: '#f7f7f7',
+            weight: 1.5,
+            opacity: 1,
+            color: '#92d1e1',
+            fillOpacity: 0.5
+>>>>>>> 4afdab8c1f8e1076bdeceae953fdb977d0aca3f6
         },
         hoverStyle: {
           weight: 5,
