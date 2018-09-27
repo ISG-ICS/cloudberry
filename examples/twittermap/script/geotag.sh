@@ -21,7 +21,8 @@ set -o nounset                              # Treat unset variables as an error
 
 thread=${1:-1}
 sbt -mem 2048 "project noah" --error 'set showSuccess := false'  "run-main edu.uci.ics.cloudberry.noah.TwitterJSONTagToADM\
-    -state twittermap/public/data/state.json\
-    -county twittermap/public/data/county.json \
-    -city twittermap/public/data/city.json \
+    -state ./web/public/data/state.json\
+    -county ./web/public/data/county.json \
+    -city ./web/public/data/city.json \
+    -zipcode ./web/public/data/zipcode.json \
     -thread $thread"

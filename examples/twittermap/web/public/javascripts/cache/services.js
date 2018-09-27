@@ -4,6 +4,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
     .service('Cache', function ($window, $http, $compile, cloudberryConfig) {
 
         var cachedCityPolygonTree = rbush();
+        var cachedZipcodePolygonTree = rbush();
         var cachedRegion;
         var cacheSize = 0;
         var insertedTreeIDs = new Set();
@@ -26,11 +27,20 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
         /* Map controller calls this function and this function checks whether a requested region is present in the cache or not. If not,
          it gets the requested region data from the middleware.*/
         this.getCityPolygonsFromCache = function city(rteBounds) {
+            return cacheCode(rteBounds)
+        }
 
+        // zipcode
+        this.getZipcodePolygonsFromCache = function zipcode(rteBounds) {
+            return cacheCode(rteBounds)
+        }
+
+        function cacheCode(rteBounds) {
             var deferred = new $.Deferred();
             var data_response;
 
             var bounds = rteBounds.split("/");
+            var level = bounds[0];
             var bounds_northEast_lat = parseFloat(bounds[1]);
             var bounds_southWest_lat = parseFloat(bounds[2]);
             var bounds_northEast_lng = parseFloat(bounds[3]);
@@ -59,7 +69,10 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
             if (typeof cachedRegion != "undefined" && typeof turf.difference(currentRequestPolygon, cachedRegion) == "undefined") {
                 //cache HIT
 
-                var result = cachedCityPolygonTree.search(item);
+                if (level == "zipcode")
+                    var result = cachedZipcodePolygonTree.search(item);
+                else if (level == "city")
+                    var result = cachedCityPolygonTree.search(item);
                 data_response = turf.featureCollection(result);
                 RequestPolygonWithPrefetch = currentRequestPolygon;
                 console.log(data_response);
@@ -74,7 +87,10 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                 prefetch(currentRequestPolygon).done(function (newMBR) {
 
                     RequestPolygonWithPrefetch = turf.bboxPolygon(newMBR);
-                    extraBounds = "city/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
+                    if (level == "zipcode")
+                        extraBounds = "zipcode/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
+                    else if (level == "city")
+                        extraBounds = "city/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
                     $http.get(extraBounds).success(function (data) {
 
                         insertIntoTree(data.features, RequestPolygonWithPrefetch).done(function () {
@@ -91,14 +107,13 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                             deferred.resolve(data_response);
                         });
                     }).error(function (data) {
-                        console.error("Load city data failure");
+                        console.error("Load city or zipcode data failure");
                     });
                 });
 
                 return deferred.promise();
             }
         }
-
 
 //Find Angle between two points
         function getAngle(pt1, pt2) {
@@ -229,6 +244,8 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                 features[id].maxY = box[3];
                 features[id].properties["centerLog"] = (features[id].maxX + features[id].minX) / 2;
                 features[id].properties["centerLat"] = (features[id].maxY + features[id].minY) / 2;
+                features[id].properties["popUpLog"] = (features[id].maxX + features[id].minX) / 2;
+                features[id].properties["popUpLat"] = features[id].maxY
                 treeID = box[0] + "/" + box[1] + "/" + box[2] + "/" + box[3];
                 if (insertedTreeIDs.has(treeID) == false) {
                     nodes.push(features[id]);
