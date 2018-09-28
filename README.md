@@ -78,4 +78,4 @@ You can run the *TwitterMap* application in the same way by running the followin
 > cd web-1.0-SNAPSHOT
 > bin/web -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=/full/path/to/production.conf -Dhttp.port=9001 &
 ```
-
+updated by leeeunah 2018-09-28
