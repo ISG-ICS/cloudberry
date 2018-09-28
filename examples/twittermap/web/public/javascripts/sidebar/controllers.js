@@ -5,6 +5,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOutdated = true;
     $scope.isSampleTweetsOutdated = true;
     $scope.sampleTweets = [];
+    var timeRange = 3; // Set leng of time interval
     var sendQueryLoop = {}; //Store variable for window.setInterval function, keep only one setInterval function avtive at a time
     $scope.liveTweetsLoop = {};//Store variable for winddow.setInterval function, stop live tweets feeding when user specified a 
                             //time interval in time bar
@@ -13,8 +14,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     timeSeriesEnd.setHours(timeSeriesEnd.getHours()-timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
     var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
     var startDate = new Date(Date.now())
-    startDate.setDate(startDate.getDate() - 21);
-    var timeLowerBound = startDate.toISOString(); //lower bound of live tweets, the first lower bound will be current time - 7days, to ensure there at least some contents
+    startDate.setDate(startDate.getDate() - 1);
+    var timeLowerBound = startDate.toISOString(); //lower bound of live tweets, the first lower bound will be current time - 1 day, to ensure there at least some contents
 
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
@@ -33,7 +34,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var parameters = cloudberry.parameters;
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters,timeLowerBound,timeUpperBound);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-        $scope.sampleTweets = $scope.sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+        if(resultSet[0].length==0)
+        {
+          
+        }else{
+          $scope.sampleTweets = $scope.sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+        }
+
       }, "sampleTweetsRequest");
       $scope.isSampleTweetsOutdated = false;
     }
@@ -70,22 +77,21 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         else{
           window.clearInterval(sendQueryLoop);
           $scope.sampleTweets = [];//Clean the queue for old event;
-          sendSampleTweetsQuery(timeLowerBound,timeUpperBound);
           var tempDateTime = (new Date(Date.now()));
           tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
           timeUpperBound = tempDateTime.toISOString();
-          tempDateTime.setMinutes(tempDateTime.getMinutes()-2);//Live tweets get latest tweets in 2 mins
+          tempDateTime.setDate(tempDateTime.getDate()-1);//Send first query retrieve lastest 1 day tweets
           timeLowerBound = tempDateTime.toISOString();
-
+          sendSampleTweetsQuery(timeLowerBound,timeUpperBound,10);
           sendQueryLoop = window.setInterval(function(){
             //Update time range of live tweets to avoid get repetitive tweets
             var tempDateTime = (new Date(Date.now()));
             tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
             timeUpperBound = tempDateTime.toISOString();
-            tempDateTime.setMinutes(tempDateTime.getMinutes()-2);
+            tempDateTime.setSeconds(tempDateTime.getSeconds()-timeRange);
             timeLowerBound = tempDateTime.toISOString();
-            sendSampleTweetsQuery(timeLowerBound,timeUpperBound);
-          },30000);
+            sendSampleTweetsQuery(timeLowerBound,timeUpperBound,1);
+          },timeRange*1000);//send query every second
           $scope.cleanLiveTweet();
           $scope.startLiveTweet();
 
@@ -123,6 +129,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if (click === -1) {
         cloudberry.parameters.isSampleTweetsOpen = false;
         cloudberry.parameters.isHashTagOpen = false;
+        window.clearInterval(sendQueryLoop); // Stop send query when sidebar is close
       }
       else {
         $scope.showTab($scope.currentTab);
