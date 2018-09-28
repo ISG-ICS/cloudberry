@@ -13,7 +13,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     var timeZoneOffset = ((new Date).getTimezoneOffset())/60;
     timeSeriesEnd.setHours(timeSeriesEnd.getHours()-timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
     var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
-    var startDate = new Date(Date.now())
+    var startDate = new Date(Date.now());
     startDate.setDate(startDate.getDate() - 1);
     var timeLowerBound = startDate.toISOString(); //lower bound of live tweets, the first lower bound will be current time - 1 day, to ensure there at least some contents
 
@@ -34,13 +34,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var parameters = cloudberry.parameters;
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters,timeLowerBound,timeUpperBound);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-        if(resultSet[0].length==0)
-        {
-          
-        }else{
           $scope.sampleTweets = $scope.sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
-        }
-
       }, "sampleTweetsRequest");
       $scope.isSampleTweetsOutdated = false;
     }
@@ -191,19 +185,19 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             var data = $scope.sampleTweets.pop();
             drawTweets(data);
           }
-          if($('#tweet').children().length>9)
+          if($("#tweet").children().length>9)
           {
-            $('#tweet').children().last().remove();
+            $("#tweet").children().last().remove();
           }
         },3000);
-    }
+    };
     
     $scope.cleanLiveTweet = function cleanLiveTweet()
     {
       window.clearInterval($scope.liveTweetsLoop);
-      $('#tweet').html("");//clean tweets in sidebar
+      $("#tweet").html("");//clean tweets in sidebar
       $scope.sampleTweets = [];//clean cached data
-    }
+    };
   })
   .directive("tweet", function () {
     return {
