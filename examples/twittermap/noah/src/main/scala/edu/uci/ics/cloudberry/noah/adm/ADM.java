@@ -7,13 +7,14 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Locale;
 
 public class ADM {
 
     public static final SimpleDateFormat ADMDateFormat = new SimpleDateFormat("yyyy-MM-dd");
     public static final SimpleDateFormat ADMTimeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
     //
-    public static final SimpleDateFormat srcDateTimeFmt=new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy");
+    public static final SimpleDateFormat srcDateTimeFmt=new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US);
     //
     public static String mkADMConstructor(String constructor, String content) {
         StringBuilder sbConstructor = new StringBuilder();

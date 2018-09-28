@@ -149,7 +149,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       var body = document.getElementsByTagName("search-bar")[0];
       body.appendChild(button);
       button.addEventListener ("click", function() {
-        $scope.map.setView([$scope.lat, $scope.lng], 4);
+        $scope.map.setView([$scope.lat, $scope.lng], 7);
       });
 
       $scope.resetGeoInfo("state");
@@ -356,7 +356,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
         $scope.bounds = $scope.map.getBounds();
-        if ($scope.status.zoomLevel > 9) {
+        if ($scope.status.zoomLevel > 12) {
           $scope.resetGeoInfo("city");
           if ($scope.polygons.statePolygons) {
             $scope.map.removeLayer($scope.polygons.statePolygons);
@@ -370,7 +370,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           $scope.map.addLayer($scope.polygons.countyUpperPolygons);
           $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
             {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
-        } else if ($scope.status.zoomLevel > 5) {
+        } else if ($scope.status.zoomLevel > 8) {
           $scope.resetGeoInfo("county");
           if (!$scope.status.init) {
             // Publish zoom event to moduleManager
@@ -387,7 +387,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           }
           $scope.map.addLayer($scope.polygons.stateUpperPolygons);
           $scope.map.addLayer($scope.polygons.countyPolygons);
-        } else if ($scope.status.zoomLevel <= 5) {
+        } else if ($scope.status.zoomLevel <= 8) {
           $scope.resetGeoInfo("state");
           if (!$scope.status.init) {
             // Publish zoom event to moduleManager
