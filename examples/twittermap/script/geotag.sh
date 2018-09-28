@@ -24,4 +24,5 @@ sbt -mem 2048 "project noah" --error 'set showSuccess := false'  "run-main edu.u
     -state ./web/public/data/state.json\
     -county ./web/public/data/county.json \
     -city ./web/public/data/city.json \
+    -zipcode ./web/public/data/zipcode.json \
     -thread $thread"
