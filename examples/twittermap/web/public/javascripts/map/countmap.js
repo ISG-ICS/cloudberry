@@ -453,8 +453,7 @@ angular.module('cloudberry.map')
           }
         }, "batchWithPartialRequest");
       }
-
-      checkIfQueryIsRequested = true;
+      $scope.checkIfQueryIsRequested = true;
     }
 
     // Common event handler for Countmap
@@ -502,7 +501,7 @@ angular.module('cloudberry.map')
           // get selected geoID for the polygon
           $scope.selectedPlace = layer.feature;
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
-          if (checkIfQueryIsRequested == true) {
+          if ($scope.checkIfQueryIsRequested == true) {
               // bind a pop up window
               $scope.popUp = L.popup({autoPan:false});
               layer.bindPopup($scope.popUp).openPopup();
