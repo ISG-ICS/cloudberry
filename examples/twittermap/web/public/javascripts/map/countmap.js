@@ -8,6 +8,7 @@ angular.module('cloudberry.map')
     $scope.chartDataMap = new HashMap();
     // The popup window shown now
     $scope.popUp = null;
+    $scope.checkIfQueryIsRequested = false;
 
     // return difference of two arrays, the arrays must has no duplicate
     function arrayDiff (newArray, oldArray) {
@@ -452,6 +453,8 @@ angular.module('cloudberry.map')
           }
         }, "batchWithPartialRequest");
       }
+
+      checkIfQueryIsRequested = true;
     }
 
     // Common event handler for Countmap
@@ -499,15 +502,15 @@ angular.module('cloudberry.map')
           // get selected geoID for the polygon
           $scope.selectedPlace = layer.feature;
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
+          if (checkIfQueryIsRequested == true) {
+              // bind a pop up window
+              $scope.popUp = L.popup({autoPan:false});
+              layer.bindPopup($scope.popUp).openPopup();
+              $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
 
-          // bind a pop up window
-          $scope.popUp = L.popup({autoPan:false});
-          layer.bindPopup($scope.popUp).openPopup();
-          $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
-
-          addPopupEvent();
-          drawLineChart();
-
+              addPopupEvent();
+              drawLineChart();
+          }
         }
       }
 
