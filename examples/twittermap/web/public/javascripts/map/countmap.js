@@ -501,14 +501,15 @@ angular.module('cloudberry.map')
           // get selected geoID for the polygon
           $scope.selectedPlace = layer.feature;
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
-          if ($scope.checkIfQueryIsRequested == true) {
-              // bind a pop up window
-              $scope.popUp = L.popup({autoPan:false});
-              layer.bindPopup($scope.popUp).openPopup();
-              $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
 
-              addPopupEvent();
-              drawLineChart();
+          // bind a pop up window
+          if ($scope.checkIfQueryIsRequested === true) {
+            $scope.popUp = L.popup({autoPan:false});
+            layer.bindPopup($scope.popUp).openPopup();
+            $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+
+            addPopupEvent();
+            drawLineChart();
           }
         }
       }
