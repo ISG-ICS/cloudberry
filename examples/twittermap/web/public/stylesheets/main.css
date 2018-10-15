@@ -257,5 +257,10 @@ time-series {
   margin-left: 5px;
 }
 
+/**/
+.twitter-tweet{
+  display: none !important;
+}
+
 
 

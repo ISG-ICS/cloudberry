@@ -30,9 +30,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
-    function sendSampleTweetsQuery(timeLowerBound,timeUpperBound) {
+    function sendSampleTweetsQuery(timeLowerBound,timeUpperBound,sampleTweetSize) {
       var parameters = cloudberry.parameters;
-      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters,timeLowerBound,timeUpperBound);
+      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters,timeLowerBound,timeUpperBound,sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
           $scope.sampleTweets = $scope.sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
       }, "sampleTweetsRequest");
@@ -168,11 +168,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
   })
   .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
     $scope.results = {};
+    var tweetInd = -1;
     function drawTweets(message) {           
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
-        var object = $(data.html);
-        $("#tweet").prepend(data.html);
+        $(data.html).hide().prependTo("#tweet")
+        $("#tweet").children().filter('twitterwidget').first().removeClass('twitter-tweet').hide().slideDown(1000);
+        
       });   
     }
 
@@ -185,7 +187,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             var data = $scope.sampleTweets.pop();
             drawTweets(data);
           }
-          if($("#tweet").children().length>9)
+          if($("#tweet").children().length>20)
           {
             $("#tweet").children().last().remove();
           }
