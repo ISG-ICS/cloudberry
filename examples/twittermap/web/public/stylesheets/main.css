@@ -257,7 +257,7 @@ time-series {
   margin-left: 5px;
 }
 
-/**/
+/* For hiding tweets in sidebar in order to avoid blink*/
 .twitter-tweet{
   display: none !important;
 }
