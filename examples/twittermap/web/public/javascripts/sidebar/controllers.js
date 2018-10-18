@@ -159,8 +159,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordsEventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
-  .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry, queryUtil, cloudberryClient, chartUtil) {
     $scope.hashTagsList = null;
+    $scope.selectedHashtag = null;
+
     // TODO - get rid of this watch by doing work inside the callback function in sendHashTagQuery()
     $scope.$watch(
       function () {
@@ -170,17 +172,32 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $scope.hashTagsList = newResult;
       }
     );
+
+    // send query of hashtag, and draw the line chart when collapse is expanded
+    $("#AllCollapse").on("shown.bs.collapse", function(e) {
+      $scope.selectedHashtag = e.target.firstChild.id.substring(7);
+      if ($scope.selectedHashtag) {
+        // send query to cloudberry
+        var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
+        cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
+          if (angular.isArray(resultSet)) {
+            chartUtil.drawChart(chartUtil.preProcessByMonthResult(resultSet[0]), "myChart" + $scope.selectedHashtag, false, false);
+          }
+        }, "hashtagChartDataRequest");
+      }
+    });
   })
   .directive("hashtag", function () {
     return {
       restrict: "E",
       controller: "HashTagCtrl",
       template: [
-        '<table class="table" id="hashcount">',
-        '<thead>',
-        '<tr ng-repeat="r in hashTagsList | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
-        '</thead>',
-        '</table>'
+        "<div id=\"AllCollapse\" class=\"hashtagDiv\">" +
+        "<div ng-repeat=\"r in hashTagsList | orderBy:\'-count\'\" class=\"accordion-toggle hashtagEle\"  data-toggle=\"collapse\"  data-target=\"#collapse{{r.tag}}\">" +
+        "<div class=\"row\"><div class=\"col-xs-8\"># {{r.tag}}</div><div class=\"col-xs-4\">{{r.count}}</div></div> " +
+        "<div id=\"collapse{{r.tag}}\" class=\"collapse hashtagChart\"><canvas id=\"myChart{{r.tag}}\" height=\"130\" ></canvas></div>"+
+        "</div>" +
+        "</div>"
       ].join('')
     };
   })
