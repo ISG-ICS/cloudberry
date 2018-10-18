@@ -1,6 +1,6 @@
 angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig, MapResultCache,
-                                       TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
+                                       TimeSeriesCache, moduleManager, cloudberryClient, queryUtil, chartUtil) {
 
     // Array to store the data for chart
     $scope.chartData = [];
@@ -8,25 +8,6 @@ angular.module('cloudberry.map')
     $scope.chartDataMap = new HashMap();
     // The popup window shown now
     $scope.popUp = null;
-
-    // return difference of two arrays, the arrays must has no duplicate
-    function arrayDiff (newArray, oldArray) {
-      var diffArray = [], difference = [];
-      for (var i = 0; i < newArray.length; i++) {
-        diffArray[newArray[i]] = true;
-      }
-      for (var j = 0; j < oldArray.length; j++) {
-        if (diffArray[oldArray[j]]) {
-          delete diffArray[oldArray[j]];
-        } else {
-          diffArray[oldArray[j]] = true;
-        }
-      }
-      for (var key in diffArray) {
-        difference.push(key);
-      }
-      return difference;
-    }
 
     // Concat two hashmap results
     function concatHashmap(newMap, cachedMap) {
@@ -79,7 +60,7 @@ angular.module('cloudberry.map')
     function getPopupContent() {
       // get chart data for the polygon
       var geoIDChartData = $scope.chartDataMap.get($scope.selectedGeoID);
-      $scope.chartData = (geoIDChartData && geoIDChartData.length !== 0) ? $scope.preProcess(geoIDChartData) : [];
+      $scope.chartData = (geoIDChartData && geoIDChartData.length !== 0) ? chartUtil.preProcessByDayResult(geoIDChartData) : [];
 
       // get the count info of polygon
       var placeName = $scope.selectedPlace.properties.name;
@@ -136,109 +117,14 @@ angular.module('cloudberry.map')
       };
     }
 
-    // If there are chartData, draw the line chart
-    function drawLineChart(){
-      if($scope.chartData.length !== 0 && document.getElementById("myChart")) {
-        var ctx = document.getElementById("myChart").getContext("2d");
-        var myChart = new Chart(ctx, {
-          type: "line",
-          data:{
-            datasets:[{
-              lineTension: 0,
-              data:$scope.chartData,
-              borderColor:"#3e95cd",
-              borderWidth: 0.8,
-              pointRadius: 1.5
-            }]
-          },
-
-          options: {
-            legend: {
-              display: false
-            },
-            scales: {
-              xAxes: [{
-                type: "time",
-                time: {
-                  unit:"month"
-                },
-                scaleLabel: {
-                  display: true,
-                  labelString: "Date"
-                }
-              }],
-              yAxes: [{
-                scaleLabel: {
-                  display: true,
-                  labelString: "Count"
-                },
-                ticks: {
-                  beginAtZero: true,
-                  suggestedMax: 4
-                }
-              }]
-            }
-          }
-        });
-      }
-    }
-
     // redraw popup window after chartDataMap is updated
     function redrawPopup() {
       if($scope.popUp && $scope.popUp._isOpen
         && ($scope.geoIdsNotInTimeSeriesCache.length === 0 || $scope.geoIdsNotInTimeSeriesCache.includes($scope.selectedGeoID))){
         $scope.popUp.setContent(getPopupContent());
-        drawLineChart();
+        chartUtil.drawChart($scope.chartData, "myChart", true, true);
       }
     }
-
-    // Convert the array in chartDataMap to count result by month, which can be read by chart.js
-    $scope.preProcess = function (result) {
-      // group by year
-      groups = result.reduce(function (previousVal, currentVal) {
-        var yearNum = currentVal.day.split(("-"))[0];
-        (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
-        return previousVal;
-      }, {});
-      var resultByYear = Object.keys(groups).map(function(k) { return groups[k];});
-
-      // sum up the result for every month
-      var resultByMonth = [];
-      var hasCountMonth = [];
-      for (var i = 0; i < resultByYear.length; i++){
-        groups = resultByYear[i].data.reduce(function (previousVal, currentVal) {
-          var monthNum = currentVal.day.split(("-"))[1];
-          if (previousVal[monthNum]) {
-            previousVal[monthNum].y += currentVal.count;
-          } else {
-            var thisMonth = new Date(resultByYear[i].year,monthNum-1);
-            previousVal[monthNum] = { y: currentVal.count, x: thisMonth};
-            hasCountMonth.push(thisMonth);
-          }
-          return previousVal;
-        }, {});
-        var resultByMonthOneYear = Object.keys(groups).map(function(key){ return groups[key]; });
-        resultByMonth = resultByMonth.concat(resultByMonthOneYear);
-      }
-
-      // add empty data point
-      var zeroCountMonth = [];
-      var minDate = cloudberry.parameters.timeInterval.start;
-      var maxDate = cloudberry.parameters.timeInterval.end;
-      for (var m = new Date(minDate.getFullYear(),minDate.getMonth()); m <= new Date(maxDate.getFullYear(),maxDate.getMonth()); m.setMonth(m.getMonth()+1)){
-        zeroCountMonth.push(new Date(m.getTime()));
-      }
-      zeroCountMonth = arrayDiff(hasCountMonth,zeroCountMonth);
-      for (var j = 0; j < zeroCountMonth.length; j++) {
-        resultByMonth.push({x: new Date(zeroCountMonth[j]), y:0});
-      }
-
-      // sort the date
-      resultByMonth.sort(function(previousVal,currentVal){
-        return previousVal.x - currentVal.x;
-      });
-      return resultByMonth;
-    };
 
     // set map styles for countmap
     function setCountMapStyle() {
@@ -506,7 +392,8 @@ angular.module('cloudberry.map')
           $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
 
           addPopupEvent();
-          drawLineChart();
+          chartUtil.drawChart($scope.chartData, "myChart", true, true);
+
 
         }
       }

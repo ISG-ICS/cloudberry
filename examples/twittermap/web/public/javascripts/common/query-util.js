@@ -235,6 +235,44 @@ angular.module("cloudberry.common")
         };
       },
 
+      // Get the tendency chart data for a specific hash tag
+      getHashTagChartDataRequest(parameters, hashtagName) {
+        var filter = queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds);
+        filter.push({
+          field: "tag",
+          relation: "matches",
+          values: [hashtagName]
+        });
+
+        return {
+          dataset: parameters.dataset,
+          filter: filter,
+          unnest: [{
+            hashtags: "tag"
+          }],
+          group: {
+            by: [
+              {
+              field: "create_at",
+              apply: {
+                name: "interval",
+                args: {
+                  unit: "month"
+                }
+              },
+              as: "month"
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        };
+      },
+
       // Generate latest 10 sample tweet JSON request
       getSampleTweetsRequest(parameters) {
         return {
