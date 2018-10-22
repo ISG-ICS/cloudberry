@@ -5,7 +5,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOutdated = true;
     $scope.isSampleTweetsOutdated = true;
     $scope.sampleTweets = [];
-    var timeRange = 3; // Set leng of time interval
+    var timeRange = 3; // Set length of time interval in seconds
     var sendQueryLoop = {}; //Store variable for window.setInterval function, keep only one setInterval function avtive at a time
     $scope.liveTweetsLoop = {};//Store variable for winddow.setInterval function, stop live tweets feeding when user specified a 
                             //time interval in time bar
@@ -264,8 +264,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function drawTweets(message) {           
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
-        $(data.html).hide().prependTo("#tweet")
-        $("#tweet").children().filter('twitterwidget').first().removeClass('twitter-tweet').hide().slideDown(1000);
+        $(data.html).hide().prependTo("#tweet");
+        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
         
       });   
     }
