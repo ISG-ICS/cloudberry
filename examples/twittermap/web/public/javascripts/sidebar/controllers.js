@@ -23,11 +23,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "aboutTab";
   
-
-    $scope.isSampleTweetsOpen = true;
-
-    $scope.currentTab = "sampletweetTab";
-
     // Timer for sending query to check whether it can be solved by view
     $scope.timerCheckQuerySolvableByView = null;
 
