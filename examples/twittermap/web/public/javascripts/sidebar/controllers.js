@@ -20,7 +20,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
 
-    $scope.isSampleTweetsOpen = false;
+    $scope.isSampleTweetsOpen = true;
     $scope.currentTab = "aboutTab";
   
     // Timer for sending query to check whether it can be solved by view
@@ -99,6 +99,36 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }, "sampleTweetsRequest");
       $scope.isSampleTweetsOutdated = false;
     }
+  
+    function drawTweets(message) {           
+      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
+      $http.jsonp(url).success(function (data) {
+        $(data.html).hide().prependTo("#tweet");
+        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+        
+      });   
+    }
+  
+    //Constantly checking local tweets queue to draw tweet one by one
+    $scope.startLiveTweet = function startLiveTweet(){        
+        $scope.liveTweetsLoop = window.setInterval(function(){
+          if($scope.sampleTweets.length>0){
+            var data = $scope.sampleTweets.pop();
+            drawTweets(data);
+          }
+          if($("#tweet").children().length>20)
+          {
+            $("#tweet").children().last().remove();
+          }
+        },3000);
+    };
+  
+    $scope.cleanLiveTweet = function cleanLiveTweet()
+    {
+      window.clearInterval($scope.liveTweetsLoop);
+      $("#tweet").html("");//clean tweets in sidebar
+      $scope.sampleTweets = [];//clean cached data
+    };
 
     function handleSidebarQuery(){  
 
@@ -259,39 +289,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     };
   })
   .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
-    $scope.results = {};
-    var tweetInd = -1;
-    function drawTweets(message) {           
-      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
-      $http.jsonp(url).success(function (data) {
-        $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
-        
-      });   
-    }
 
-    // TODO - get rid of this watch by doing work inside the callback function in sendSampleTweetsQuery()
-  
-    //Constantly checking local tweets queue to draw tweet one by one
-    $scope.startLiveTweet = function startLiveTweet(){        
-        $scope.liveTweetsLoop = window.setInterval(function(){
-          if($scope.sampleTweets.length>0){
-            var data = $scope.sampleTweets.pop();
-            drawTweets(data);
-          }
-          if($("#tweet").children().length>20)
-          {
-            $("#tweet").children().last().remove();
-          }
-        },3000);
-    };
+   // TODO - get rid of this watch by doing work inside the callback function in sendSampleTweetsQuery()
     
-    $scope.cleanLiveTweet = function cleanLiveTweet()
-    {
-      window.clearInterval($scope.liveTweetsLoop);
-      $("#tweet").html("");//clean tweets in sidebar
-      $scope.sampleTweets = [];//clean cached data
-    };
   })
   .directive("tweet", function () {
     return {
