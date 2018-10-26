@@ -37,45 +37,47 @@
   </div>
 
   <!-- button for hiding and showing the sidebar -->
-  <div class="w3-teal">
-    <button id="hamburgerButton" type="button" class="btn btn-default btn-sm" ng-click="openRightMenu()" ng-controller="SidebarCtrl">
-      <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
-    </button>
-  </div>
-
-  <div id='sidebar' class="open"  ng-controller="SidebarCtrl">
-    <div class = "col-xs-2">
-      <a href="javascript:void(0)" class="closebtn" ng-click="closeRightMenu()">&times;</a>
-      <ul class="nav nav-tabs tabs-left">
-        <li role="presentation" ng-click="showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="showTab('sampletweetTab')" class="active"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
-        <li role="presentation" ng-click="showTab('aboutTab')"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
-        <li><br/></li>
-      </ul>
+  <div ng-controller="SidebarCtrl">
+    <div class="w3-teal">
+      <button id="hamburgerButton" type="button" class="btn btn-default btn-sm" ng-click="openRightMenu()" >
+        <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+      </button>
     </div>
-    <div class="col-xs-10">
-      <div class="tab-content">
-        <hashtag id="hashtag" class="tab-pane"></hashtag>
-        <tweet id="tweet" class="tab-pane active"></tweet>
-        <div id="about" class="tab-pane">
-          <h1> About </h1>
-          <p><b>TwitterMap</b> is a research prototype powered by <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a>
-            and <a href="https://asterixdb.apache.org/">Apache AsterixDB</a> to support
-            interactive analytics and visualization of large amounts of tweets. </p>
-          <p> Basic Information: </p>
-          <ul>
-            <li>Data set: Tweets</li>
-            <li>Number of records: > 1.3 billions </li>
-            <li>Collection period: From 2015-11-23 </li>
-            <li>Total data size: > 2TB </li>
-            <li>The live tweets is appending to db at the speed of ~20 tweets/sec </li>
-            <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
-          </ul>
-          <p>Here is the small cluster where the server runs! </p>
-          <img src='@routes.Assets.versioned("images/nuc.cluster.jpg")' width="256" height="192"><br>
-          <p>For questions and comments, please contact <b>
-              <a href="mailto:&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;">
-                &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;</a></b></p>
+
+    <div id='sidebar' class="open"  >
+      <div class = "col-xs-2">
+        <a href="javascript:void(0)" class="closebtn" ng-click="closeRightMenu()">&times;</a>
+        <ul class="nav nav-tabs tabs-left">
+          <li role="presentation" ng-click="showTab('hashtagTab')"><a href="#hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
+          <li role="presentation" ng-click="showTab('sampletweetTab')" class="active"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+          <li role="presentation" ng-click="showTab('aboutTab')"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
+          <li><br/></li>
+        </ul>
+      </div>
+      <div class="col-xs-10">
+        <div class="tab-content">
+          <hashtag id="hashtag" class="tab-pane"></hashtag>
+          <tweet id="tweet" class="tab-pane active"></tweet>
+          <div id="about" class="tab-pane">
+            <h1> About </h1>
+            <p><b>TwitterMap</b> is a research prototype powered by <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a>
+              and <a href="https://asterixdb.apache.org/">Apache AsterixDB</a> to support
+              interactive analytics and visualization of large amounts of tweets. </p>
+            <p> Basic Information: </p>
+            <ul>
+              <li>Data set: Tweets</li>
+              <li>Number of records: > 1.3 billions </li>
+              <li>Collection period: From 2015-11-23 </li>
+              <li>Total data size: > 2TB </li>
+              <li>The live tweets is appending to db at the speed of ~20 tweets/sec </li>
+              <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
+            </ul>
+            <p>Here is the small cluster where the server runs! </p>
+            <img src='@routes.Assets.versioned("images/nuc.cluster.jpg")' width="256" height="192"><br>
+            <p>For questions and comments, please contact <b>
+                <a href="mailto:&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;">
+                  &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;</a></b></p>
+          </div>
         </div>
       </div>
     </div>
