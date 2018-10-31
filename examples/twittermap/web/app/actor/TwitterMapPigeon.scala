@@ -15,17 +15,20 @@ import scala.concurrent.ExecutionContext
   * A routing actor that servers for rendering user request into cloudberry request
   *  and transfer cloudberry request/response through websocket connection.
   *
+  * @param factory Factory of WebSocketClient
   * @param cloudberryWS Websocket url of cloudberry
   * @param out ActorRef in akka flow representing frontend client
+  * @param maxTextMessageSize Max size of text messages transmit in ws.
   * @param ec implicit execution context
   * @param materializer implicit materializer
   */
 class TwitterMapPigeon (val factory: WebSocketFactory,
                         val cloudberryWS: String,
-                        val out: ActorRef)
+                        val out: ActorRef,
+                        val maxTextMessageSize: Int)
                        (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
 
-  private val client: WebSocketClient = factory.newClient()
+  private val client: WebSocketClient = factory.newClient(maxTextMessageSize)
   private val socket: TwitterMapServerToCloudBerrySocket = factory.newSocket(out)
   private val clientLogger = Logger("client")
 
@@ -58,6 +61,6 @@ class TwitterMapPigeon (val factory: WebSocketFactory,
 }
 
 object TwitterMapPigeon {
-  def props(factory: WebSocketFactory, cloudberryWS: String, out: ActorRef)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWS, out))
+  def props(factory: WebSocketFactory, cloudberryWS: String, out: ActorRef, maxTextMessageSize: Int)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWS, out, maxTextMessageSize))
 }

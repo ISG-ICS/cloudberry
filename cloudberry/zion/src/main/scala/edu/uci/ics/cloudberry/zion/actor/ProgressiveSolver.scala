@@ -11,7 +11,7 @@ import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, QueryPlanner}
 import edu.uci.ics.cloudberry.zion.model.schema._
 import edu.uci.ics.cloudberry.zion.model.slicing.Drum
 import org.joda.time.DateTime
-import play.api.libs.json.{JsArray, JsNumber}
+import play.api.libs.json.{JsArray, JsNumber, JsValue, JsObject, Json}
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,11 +58,12 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val boundary = new TInterval(min, max)
 
       val initialDuration = config.FirstQueryTimeGap
+      val minimumDuration = config.MinTimeGap
       val interval = calculateFirst(boundary, initialDuration)
       val queryGroup = QueryGroup(ts, queryInfos, request.postTransform)
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
-      val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 1, initialDuration.toHours.toInt)
+      val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 0.00001, minimumDuration.toHours.toInt)
       context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
     case _: MiniQueryResult =>
       // do nothing
@@ -97,7 +98,23 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, queryGroup.postTransform.transform(JsArray(returnedResult)))
+
+        val timeInterval = Json.obj(
+          "timeInterval" -> Json.obj(
+            "start" -> JsNumber(curInterval.getStart().getMillis()),
+            "end" -> JsNumber(boundary.getEnd().getMillis())
+        ))
+        // for query with slicing request, add current timeInterval information in its query results.
+        val infoValue = queryGroup.postTransform.transform(JsArray(returnedResult))
+        val results : JsValue = infoValue match {
+          case _: JsArray =>
+            Json.toJson(JsObject(Seq("value" -> infoValue)) ++ timeInterval)
+          case _: JsValue =>
+            val infoObject = infoValue.asOpt[JsObject].getOrElse(JsObject(Seq.empty))
+            Json.toJson(infoObject ++ timeInterval)
+        }
+
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -109,7 +126,23 @@ class ProgressiveSolver(val dataManager: ActorRef,
         } else {
           curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
         }
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, queryGroup.postTransform.transform(JsArray(mergedResults)))
+
+        val timeInterval = Json.obj(
+          "timeInterval" -> Json.obj(
+            "start" -> JsNumber(curInterval.getStart().getMillis()),
+            "end" -> JsNumber(boundary.getEnd().getMillis())
+        ))
+        // for query with slicing request, add current timeInterval information in its query results.
+        val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
+        val results : JsValue = infoValue match {
+          case _: JsArray =>
+            Json.toJson(JsObject(Seq("value" -> infoValue)) ++ timeInterval)
+          case _: JsValue =>
+            val infoObject = infoValue.asOpt[JsObject].getOrElse(JsObject(Seq.empty))
+            Json.toJson(infoObject ++ timeInterval)
+        }
+
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
         issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
       }

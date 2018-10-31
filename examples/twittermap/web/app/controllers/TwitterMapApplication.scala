@@ -28,6 +28,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
+  val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -37,10 +38,16 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
-  val pointmapSamplingDayRange: String = config.getString("pointmap.samplingDayRange").getOrElse("30")
-  val pointmapSamplingLimit: String = config.getString("pointmap.samplingLimit").getOrElse("5000")
+  val heatmapSamplingDayRange: String = config.getString("heatmap.samplingDayRange").getOrElse("30")
+  val heatmapSamplingLimit: String = config.getString("heatmap.samplingLimit").getOrElse("5000")
+  val heatmapUnitIntensity: String = config.getString("heatmap.unitIntensity").getOrElse("50")
+  val heatmapUnitRadius: String = config.getString("heatmap.unitRadius").getOrElse("15")
+  val pinmapSamplingDayRange: String = config.getString("pinmap.samplingDayRange").getOrElse("30")
+  val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
+  val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
 
   val webSocketFactory = new WebSocketFactory()
+  val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
@@ -71,7 +78,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, maxTextMessageSize)
+    }
+  }
+
+  // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
+  def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef { out =>
+      TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, maxTextMessageSize)
     }
   }
 
