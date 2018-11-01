@@ -22,3 +22,4 @@ curl -d "@./script/dataModel/deregisterTweets.json" -H "Content-Type: applicatio
 curl -d "@./script/dataModel/deregisterStatePopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/deregister
 curl -d "@./script/dataModel/deregisterCountyPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/deregister
 curl -d "@./script/dataModel/deregisterCityPopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/deregister
+curl -d "@./script/dataModel/deregisterZipcodePopulation.json" -H "Content-Type: application/json" -X POST http://localhost:9000/admin/deregister

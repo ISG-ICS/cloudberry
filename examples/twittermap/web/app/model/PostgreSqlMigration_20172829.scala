@@ -65,9 +65,11 @@ object PostgreSqlMigration_20172829 {
       |            { "name" : "geo_tag.stateID", "isOptional" : true, "datatype" : "Number" },
       |            { "name" : "geo_tag.countyID", "isOptional" : true, "datatype" : "Number" },
       |            { "name" : "geo_tag.cityID", "isOptional" : true, "datatype" : "Number" },
+      |            { "name" : "geo_tag.zipcodeID", "isOptional" : true, "datatype" : "Number" },
       |            { "name" : "geo_tag.stateName", "isOptional" : true, "datatype" : "String" },
       |            { "name" : "geo_tag.countyName", "isOptional" : true, "datatype" : "String" },
       |            { "name" : "geo_tag.cityName", "isOptional" : true, "datatype" : "String" },
+      |            { "name" : "geo_tag.zipcodeName", "isOptional" : true, "datatype" : "String" },
       |            { "name" : "hashtags", "isOptional" : true, "datatype": "Bag", "innerType": "String"},
       |            { "name" : "user_mentions", "isOptional" : true, "datatype": "Bag", "innerType": "Number"}
       |      ],

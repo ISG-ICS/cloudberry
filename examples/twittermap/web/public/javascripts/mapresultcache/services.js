@@ -22,7 +22,8 @@ angular.module('cloudberry.mapresultcache', ['cloudberry.common'])
         var prefix = Object.freeze({
             state: 'S',
             county: 'C',
-            city: 'I'
+            city: 'I',
+            zipcode: 'Z'
         });
         const INVALID_VALUE = 0;
 

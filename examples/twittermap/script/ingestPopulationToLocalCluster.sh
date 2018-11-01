@@ -51,6 +51,17 @@ create type typeCityPopulation if not exists as open{
 }; 
 create dataset dsCityPopulation(typeCityPopulation) if not exists primary key cityID; 
 
+create type typeZipcodePopulation if not exists as open{
+    name:string,
+    population:int64,
+    zipcodeID:int64,
+    countyName:string,
+    countyID:int64,
+    stateName:string,
+    stateID:int64
+};
+create dataset dsZipcodePopulation(typeZipcodePopulation) if not exists primary key zipcodeID;
+
 create feed StatePopulationFeed with { 
     "adapter-name" : "socket_adapter", 
     "sockets" : "asterix_nc1:10003", 
@@ -85,7 +96,19 @@ create feed CityPopulationFeed with {
 }; 
 
 connect feed CityPopulationFeed to dataset dsCityPopulation; 
-start feed CityPopulationFeed; 
+start feed CityPopulationFeed;
+
+create feed ZipcodePopulationFeed with {
+    "adapter-name" : "socket_adapter",
+    "sockets" : "asterix_nc1:10006",
+    "address-type" : "nc",
+    "type-name" : "typeZipcodePopulation",
+    "format" : "adm",
+    "upsert-feed" : "false"
+};
+
+connect feed ZipcodePopulationFeed to dataset dsZipcodePopulation;
+start feed ZipcodePopulationFeed;
 EOF
 
 echo 'Created population datasets in AsterixDB.'
@@ -99,8 +122,13 @@ echo 'Ingested county population dataset.'
 cat ./noah/src/main/resources/population/adm/allCityPopulation.adm | ./script/fileFeed.sh 127.0.0.1 10005
 echo 'Ingested city population dataset.'
 
+cat ./noah/src/main/resources/population/adm/allZipcodePopulation.adm | ./script/fileFeed.sh 127.0.0.1 10006
+echo 'Ingested zipcode population dataset.'
+
 cat <<'EOF' | curl -XPOST --data-binary @- $host
-use twitter; 
+use twitter;
+stop feed ZipcodePopulationFeed;
+drop feed ZipcodePopulationFeed;
 stop feed CityPopulationFeed; 
 drop feed CityPopulationFeed; 
 stop feed CountyPopulationFeed; 

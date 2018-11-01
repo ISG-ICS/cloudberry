@@ -116,6 +116,42 @@ case class USCityEntity(geoID: String,
     "waterArea" -> Double.box(waterArea))
 }
 
+case class USZipcodeEntity(geoID: String,
+                           stateID: Int,
+                           stateName: String,
+                           countyID: Int,
+                           countyName: String,
+                           zipcodeID: Int,
+                           name: String,
+                           landArea: Double,
+                           waterArea: Double,
+                           geometry: Geometry
+                          ) extends IUSGeoJSONEntity {
+  val area = landArea + waterArea
+
+  override def toJson: JsObject =
+    Json.obj("geoID" -> geoID, "stateID" -> stateID, "zipcodeID" -> zipcodeID, "name" -> name, "area" -> area)
+
+  override def level: TypeLevel = ZipcodeLevel
+
+  override def parentLevel: TypeLevel = if (countyID != 0) CountyLevel else StateLevel
+
+  override def key: Long = zipcodeID
+
+  override def parentKey: Long = if (countyID != 0) countyID.toLong else stateID.toLong
+
+  override def toPropertyMap: Map[String, AnyRef] = Map[String, AnyRef](
+    "geoID" -> geoID,
+    "stateID" -> Int.box(stateID),
+    "stateName" -> stateName,
+    "countyID" -> Int.box(countyID),
+    "countyName" -> countyName,
+    "zipcodeID" -> Int.box(zipcodeID),
+    "name" -> name,
+    "landArea" -> Double.box(landArea),
+    "waterArea" -> Double.box(waterArea))
+}
+
 object IUSGeoJSONEntity {
 
   def apply(map: Map[String, AnyRef], geometry: Geometry): IUSGeoJSONEntity = {
@@ -134,26 +170,41 @@ object IUSGeoJSONEntity {
           geometry
         )
       case None =>
-        map.get("countyID") match {
+        map.get("zipcodeID") match {
           case Some(obj) =>
-            USCountyEntity(
+            USZipcodeEntity(
               geoID = map.get("geoID").get.asInstanceOf[String],
               stateID = map.get("stateID").get.asInstanceOf[Int],
               stateName = map.get("stateName").get.asInstanceOf[String],
               countyID = map.get("countyID").get.asInstanceOf[Int],
+              countyName = map.get("countyName").get.asInstanceOf[String],
+              zipcodeID = map.get("zipcodeID").get.asInstanceOf[Int],
               name = map.get("name").get.asInstanceOf[String],
-              area = map.get("area").get.asInstanceOf[Double],
+              landArea = map.get("landArea").get.asInstanceOf[Double],
+              waterArea = map.get("waterArea").get.asInstanceOf[Double],
               geometry
             )
-          case None => USStateEntity(
-            geoID = map.get("geoID").get.asInstanceOf[String],
-            stateID = map.get("stateID").get.asInstanceOf[Int],
-            name = map.get("name").get.asInstanceOf[String],
-            area = map.get("area").get.asInstanceOf[Double],
-            geometry
-          )
+          case None =>
+            map.get("countyID") match {
+              case Some(obj) =>
+                USCountyEntity(
+                  geoID = map.get("geoID").get.asInstanceOf[String],
+                  stateID = map.get("stateID").get.asInstanceOf[Int],
+                  stateName = map.get("stateName").get.asInstanceOf[String],
+                  countyID = map.get("countyID").get.asInstanceOf[Int],
+                  name = map.get("name").get.asInstanceOf[String],
+                  area = map.get("area").get.asInstanceOf[Double],
+                  geometry
+                )
+              case None => USStateEntity(
+                geoID = map.get("geoID").get.asInstanceOf[String],
+                stateID = map.get("stateID").get.asInstanceOf[Int],
+                name = map.get("name").get.asInstanceOf[String],
+                area = map.get("area").get.asInstanceOf[Double],
+                geometry
+              )
+            }
         }
     }
   }
 }
-

@@ -26,6 +26,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       implicit val system: ActorSystem) extends Controller {
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
+  val USZipcodeDataPath: String = config.getString("us.zipcode.path").getOrElse("/public/data/zipcode.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
   val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
@@ -35,7 +36,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
   val endDate : Option[String] = config.getString("endDate")
-  val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
+  val cities: List[JsValue] = TwitterMapApplication.loadCityOrZipcode(environment.getFile(USCityDataPath))
+  val zipcodes: List[JsValue] = TwitterMapApplication.loadCityOrZipcode(environment.getFile(USZipcodeDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
   val heatmapSamplingDayRange: String = config.getString("heatmap.samplingDayRange").getOrElse("30")
@@ -97,7 +99,11 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   }
 
   def getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double) = Action {
-    Ok(TwitterMapApplication.findCity(neLat, swLat, neLng, swLng, cities))
+    Ok(TwitterMapApplication.findCityOrZipcode(neLat, swLat, neLng, swLng, cities))
+  }
+
+  def getZipcode(nLat: Double, sLat: Double, nLng: Double, sLng: Double) = Action {
+    Ok(TwitterMapApplication.findCityOrZipcode(nLat, sLat, nLng, sLng, zipcodes))
   }
 
 }
@@ -114,7 +120,7 @@ object TwitterMapApplication {
 
   val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
 
-  def loadCity(file: File): List[JsValue] = {
+  def loadCityOrZipcode(file: File): List[JsValue] = {
     val stream = new FileInputStream(file)
     val json = Json.parse(stream)
     stream.close()
@@ -149,7 +155,7 @@ object TwitterMapApplication {
           thisValue + (CentroidLongitude -> Json.toJson(thisLong)) + (CentroidLatitude -> Json.toJson(thisLat))
         }
         case _ => {
-          throw new IllegalArgumentException("Unidentified geometry type in city.json");
+          throw new IllegalArgumentException("Unidentified geometry type in city.json or zipcode.json");
         }
       }
     }
@@ -166,7 +172,7 @@ object TwitterMapApplication {
     * @param cities List of all cities
     * @return List of cities which centroids is in current boundary
     */
-  def findCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]): JsValue = {
+  def findCityOrZipcode(neLat: Double, swLat: Double, neLng: Double, swLng: Double, cities: List[JsValue]): JsValue = {
     val startIndex = binarySearch(cities, 0, cities.size, swLng)
     val endIndex = binarySearch(cities, 0, cities.size, neLng)
 
