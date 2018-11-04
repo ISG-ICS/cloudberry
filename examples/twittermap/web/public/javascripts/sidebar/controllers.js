@@ -194,7 +194,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
               timeUpperBound = tempDateTime.toISOString();
               tempDateTime.setSeconds(tempDateTime.getSeconds() - timeRange);
               timeLowerBound = tempDateTime.toISOString();
-              sendSampleTweetsQuery(timeLowerBound,timeUpperBound,1);
+              sendSampleTweetsQuery(timeLowerBound, timeUpperBound, 1);
             },timeRange*1000);//send query every second
             clearInterval($scope.liveTweetsLoop);
             startLiveTweet();
