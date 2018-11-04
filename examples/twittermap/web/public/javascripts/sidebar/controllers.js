@@ -173,7 +173,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         if(timeBarMax < timeSeriesEnd){
           
           $scope.drawTweetMode = 1;
-          sendSampleTweetsQuery(timeBarMin.toISOString(),timeBarMax.toISOString(),10,mode=1);
+          sendSampleTweetsQuery(timeBarMin.toISOString(), timeBarMax.toISOString(), 10);
         }
         else{
           
