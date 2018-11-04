@@ -181,7 +181,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           var tempDateTime = (new Date(Date.now()));
           tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
           timeUpperBound = tempDateTime.toISOString();
-          tempDateTime.setDate(tempDateTime.getDate()-1);//Send first query retrieve lastest 1 day tweets
+          tempDateTime.setDate(tempDateTime.getDate() - 1);//Send first query retrieve lastest 1 day tweets
           timeLowerBound = tempDateTime.toISOString();
           sendSampleTweetsQuery(timeLowerBound,timeUpperBound,10);
           startLiveTweet();
