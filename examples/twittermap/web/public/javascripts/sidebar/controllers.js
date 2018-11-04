@@ -138,7 +138,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           var data = sampleTweets.pop();
           drawTweets(data);
         }
-        if($("#tweet").children().length>20)
+        if($("#tweet").children().length > 20)
         {
           $("#tweet").children().last().remove();
         }
