@@ -274,7 +274,7 @@ angular.module("cloudberry.common")
       },
 
       // Generate latest 10 sample tweet JSON request
-      getSampleTweetsRequest(parameters,timeLowerBound,timeUpperBound,sampleSize = queryUtil.defaultSamplingSize) {
+      getSampleTweetsRequest(parameters, timeLowerBound, timeUpperBound, sampleSize = queryUtil.defaultSamplingSize) {
         var spatialField = queryUtil.getLevel(parameters.geoLevel);
         var keywords = [];
         for(var i = 0; i < parameters.keywords.length; i++){
