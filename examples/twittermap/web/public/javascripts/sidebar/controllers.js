@@ -134,7 +134,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     //Constantly checking local tweets queue to draw tweet one by one
     function startLiveTweet(){        
       $scope.liveTweetsLoop = window.setInterval(function(){
-        if(sampleTweets.length>0){
+        if(sampleTweets.length > 0){
           var data = sampleTweets.pop();
           drawTweets(data);
         }
