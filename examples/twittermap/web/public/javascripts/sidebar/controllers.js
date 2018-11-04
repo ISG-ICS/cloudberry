@@ -96,7 +96,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
       var parameters = cloudberry.parameters;
-      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters,timeLowerBound,timeUpperBound,sampleTweetSize);
+      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
 
           if($scope.drawTweetMode == 1){
