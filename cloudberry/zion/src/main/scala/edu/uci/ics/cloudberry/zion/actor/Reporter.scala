@@ -23,11 +23,13 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
     case result: PartialResult =>
       queue.enqueue(result)
     case TimeToReport => {
+      log.info("it's time to report")
       if (queue.isEmpty) {
         timer.cancel()
         context.become(hungry(DateTime.now()), discardOld = false)
       } else {
         val result = queue.dequeue()
+        log.info("out partial json")
         out ! Json.toJson(result.content)
       }
     }
@@ -37,6 +39,7 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
 
   private def hungry(since: DateTime): Actor.Receive = commonReceive orElse {
     case r: PartialResult =>
+      log.info("hungry mode")
       out ! Json.toJson(r.content)
       val delay = new TInterval(since, DateTime.now())
       log.warning(s"delayed ${delay.toDurationMillis / 1000.0} seconds ")
@@ -55,6 +58,7 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       context.become(receive)
     case fin : Fin => {
       if (queue.nonEmpty) {
+        log.info(queue.length.toString)
         out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
         //TODO remove this special DONE message
         out ! fin.lastMsg // notifying the client the processing is done

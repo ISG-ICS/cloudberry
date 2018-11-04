@@ -440,6 +440,7 @@ angular.module("cloudberry.map")
             },
 
             function(newResult) {
+                console.log(newResult.length);
                 if (cloudberry.parameters.maptype === "pinmap"){
                     $scope.result = newResult;
                     if (Object.keys($scope.result).length !== 0) {
