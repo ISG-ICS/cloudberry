@@ -94,7 +94,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
-    function sendSampleTweetsQuery(timeLowerBound,timeUpperBound,sampleTweetSize) {
+    function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
       var parameters = cloudberry.parameters;
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters,timeLowerBound,timeUpperBound,sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
