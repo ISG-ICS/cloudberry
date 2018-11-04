@@ -192,7 +192,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
               var tempDateTime = (new Date(Date.now()));
               tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
               timeUpperBound = tempDateTime.toISOString();
-              tempDateTime.setSeconds(tempDateTime.getSeconds()-timeRange);
+              tempDateTime.setSeconds(tempDateTime.getSeconds() - timeRange);
               timeLowerBound = tempDateTime.toISOString();
               sendSampleTweetsQuery(timeLowerBound,timeUpperBound,1);
             },timeRange*1000);//send query every second
