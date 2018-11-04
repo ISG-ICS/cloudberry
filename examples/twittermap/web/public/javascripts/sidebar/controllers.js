@@ -198,7 +198,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             }, timeRange*1000);//send query every second
             clearInterval($scope.liveTweetsLoop);
             startLiveTweet();
-          },timeRange*10000);//send second query 30 seconds later than first query, to avoid duplication
+          }, timeRange*10000);//send second query 30 seconds later than first query, to avoid duplication
         }
 
       }
