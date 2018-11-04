@@ -16,9 +16,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
                             //time interval in time bar
 
     var secondLiveTweetQueryTimeOut = null;
-    var timeSeriesEnd = new Date(cloudberry.parameters.timeInterval.end);// This date will be the latest date of tweets been ingested
+    var timeSeriesEnd = cloudberry.parameters.timeInterval.end ? new Date(cloudberry.parameters.timeInterval.end) : new Date();// This date will be the latest date of tweets been ingested, and time bar's end date when application is initializing
     var timeZoneOffset = ((new Date).getTimezoneOffset()) / 60;
-    timeSeriesEnd.setHours(timeSeriesEnd.getHours()-timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
+    timeSeriesEnd.setHours(timeSeriesEnd.getHours() - timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
     var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
     var startDate = new Date(Date.now());
     startDate.setDate(startDate.getDate() - 1);
@@ -95,7 +95,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
-      var parameters = cloudberry.parameters;
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
 
@@ -103,6 +102,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             sampleTweets = [];
             sampleTweets = resultSet[0];
             drawTweetsTraditional();
+            //To enable smoothly updating sample tweets, we wait 1 second for rendering twitterwidget
             setTimeout(function(){
                 $("#tweet").children().filter("twitterwidget").removeClass("twitter-tweet").css("opacity","0").animate({opacity:1},1000);
             },1000);
@@ -179,7 +179,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           
           $scope.drawTweetMode = 2;
           var tempDateTime = (new Date(Date.now()));
-          tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
+          tempDateTime.setHours(tempDateTime.getHours() - timeZoneOffset);
           timeUpperBound = tempDateTime.toISOString();
           tempDateTime.setDate(tempDateTime.getDate() - 1);//Send first query retrieve lastest 1 day tweets
           timeLowerBound = tempDateTime.toISOString();
@@ -190,7 +190,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             sendQueryLoop = window.setInterval(function(){
               //Update time range of live tweets to avoid get repetitive tweets
               var tempDateTime = (new Date(Date.now()));
-              tempDateTime.setHours(tempDateTime.getHours()-timeZoneOffset);
+              tempDateTime.setHours(tempDateTime.getHours() - timeZoneOffset);
               timeUpperBound = tempDateTime.toISOString();
               tempDateTime.setSeconds(tempDateTime.getSeconds() - timeRange);
               timeLowerBound = tempDateTime.toISOString();
