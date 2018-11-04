@@ -17,7 +17,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     var secondLiveTweetQueryTimeOut = null;
     var timeSeriesEnd = new Date(cloudberry.parameters.timeInterval.end);// This date will be the latest date of tweets been ingested
-    var timeZoneOffset = ((new Date).getTimezoneOffset())/60;
+    var timeZoneOffset = ((new Date).getTimezoneOffset()) / 60;
     timeSeriesEnd.setHours(timeSeriesEnd.getHours()-timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
     var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
     var startDate = new Date(Date.now());
