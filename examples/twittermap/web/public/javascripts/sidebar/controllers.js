@@ -170,7 +170,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         
         cleanLiveTweet();
         //Do traditional sample tweets,when user specifed time interval, and the end of time interval is older than latest tweet
-        if(timeBarMax<timeSeriesEnd){
+        if(timeBarMax < timeSeriesEnd){
           
           $scope.drawTweetMode = 1;
           sendSampleTweetsQuery(timeBarMin.toISOString(),timeBarMax.toISOString(),10,mode=1);
