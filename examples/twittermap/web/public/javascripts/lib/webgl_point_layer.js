@@ -7,10 +7,10 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         this._initGL();
         this._initTextures();
         this._cid = 0;
-        // Twitter Logo Blue
-        this._pointColorX = 0 / 255.0;
-        this._pointColorY = 172 / 255.0;
-        this._pointColorZ = 237 / 255.0;
+        // Twitter Blue
+        this._pointColorX = 29 / 255.0;
+        this._pointColorY = 161 / 255.0;
+        this._pointColorZ = 242 / 255.0;
     },
 
 
