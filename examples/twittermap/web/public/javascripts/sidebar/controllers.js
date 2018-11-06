@@ -94,11 +94,29 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
+    function drawTweets(message) {           
+      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
+      $http.jsonp(url).success(function (data) { 
+        $(data.html).hide().prependTo("#tweet");
+        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+      });
+      
+    }
+  
+    function drawTweetsTraditional(){
+      $.each(sampleTweets, function (i, d) {
+      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
+      $http.jsonp(url).success(function (data) {
+          $(data.html).hide().prependTo("#tweet");
+        });
+      });
+    }
+  
     function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
 
-          if($scope.drawTweetMode == 1){
+          if($scope.drawTweetMode === 1){
             sampleTweets = [];
             sampleTweets = resultSet[0];
             drawTweetsTraditional();
@@ -114,23 +132,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       
       
     }
-  
-    function drawTweets(message) {           
-      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
-      $http.jsonp(url).success(function (data) { 
-        $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
-      });
-      
-    }
-    function drawTweetsTraditional(){
-      $.each(sampleTweets, function (i, d) {
-      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
-      $http.jsonp(url).success(function (data) {
-          $(data.html).hide().prependTo("#tweet");
-        });
-      });
-    }  
+   
     //Constantly checking local tweets queue to draw tweet one by one
     function startLiveTweet(){        
       $scope.liveTweetsLoop = window.setInterval(function(){
@@ -143,7 +145,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           $("#tweet").children().last().remove();
         }
       },3000);
-    };
+    }
   
     function cleanLiveTweet(){
       window.clearInterval($scope.liveTweetsLoop);
