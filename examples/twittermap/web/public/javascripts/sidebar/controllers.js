@@ -3,12 +3,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
-    $scope.isSampleTweetsOutdated = true;
+    $scope.isSampleTweetsOutdated = false;
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
     var sampleTweets = [];
+    var previousTweetId = null;
     $scope.drawTweetMode = 2; //Initially set to 2 liveTweets Mode, change this variable to 1 to enable traditional draw
     var timeRange = 3; // Set length of time interval in seconds
     var sendQueryLoop = {}; //Store variable for window.setInterval function, keep only one setInterval function avtive at a time
@@ -94,7 +95,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
-    function drawTweets(message) {           
+    function drawTweets(message) {
+      previousTweetId = JSON.stringify(message["id"]);
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) { 
         $(data.html).hide().prependTo("#tweet");
@@ -126,8 +128,14 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             },1000);
           }
           else{
-            sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+              sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+            //Update 1 tweet immdiately 
+            if(sampleTweets.length > 0){
+              var data = sampleTweets.pop();
+              drawTweets(data);
+            }
           }
+          $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");
       
       
@@ -149,6 +157,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
   
     function cleanLiveTweet(){
       window.clearInterval($scope.liveTweetsLoop);
+      window.clearInterval(sendQueryLoop);
       $("#tweet").html("");//clean tweets in sidebar
       sampleTweets=[];
     };
@@ -169,7 +178,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       
       if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
-        
         cleanLiveTweet();
         //Do traditional sample tweets,when user specifed time interval, and the end of time interval is older than latest tweet
         if(timeBarMax < timeSeriesEnd){
@@ -204,7 +212,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         }
 
       }
-      else{
+      else if ($scope.isSampleTweetsOutdated){
+        //Whenever new event occur sample tweet is outdated and should be cleaned
         cleanLiveTweet();
       }
     }
