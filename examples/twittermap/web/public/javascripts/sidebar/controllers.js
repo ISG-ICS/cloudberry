@@ -3,7 +3,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
-    $scope.isSampleTweetsOutdated = true;
+    $scope.isSampleTweetsOutdated = false;
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
@@ -127,7 +127,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           }
           else{
             sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+            //Update 1 tweet immediately 
+            if(sampleTweets.length > 0){
+              var data = sampleTweets.pop();
+              drawTweets(data);
+            }
           }
+          $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");
       
       
@@ -149,6 +155,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
   
     function cleanLiveTweet(){
       window.clearInterval($scope.liveTweetsLoop);
+      window.clearInterval(sendQueryLoop);
       $("#tweet").html("");//clean tweets in sidebar
       sampleTweets=[];
     };
@@ -204,7 +211,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         }
 
       }
-      else{
+      else if ($scope.isSampleTweetsOutdated){
+        //Whenever new event occur sample tweet is outdated and should be cleaned
         cleanLiveTweet();
       }
     }
