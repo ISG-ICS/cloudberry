@@ -127,7 +127,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           }
           else{
             sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
-            //Update 1 tweet immdiately 
+            //Update 1 tweet immediately 
             if(sampleTweets.length > 0){
               var data = sampleTweets.pop();
               drawTweets(data);
