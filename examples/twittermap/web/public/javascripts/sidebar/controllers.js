@@ -9,7 +9,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
     var sampleTweets = [];
-    var previousTweetId = null;
+
     $scope.drawTweetMode = 2; //Initially set to 2 liveTweets Mode, change this variable to 1 to enable traditional draw
     var timeRange = 3; // Set length of time interval in seconds
     var sendQueryLoop = {}; //Store variable for window.setInterval function, keep only one setInterval function avtive at a time
@@ -95,8 +95,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
-    function drawTweets(message) {
-      previousTweetId = JSON.stringify(message["id"]);
+
+    function drawTweets(message) {           
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) { 
         $(data.html).hide().prependTo("#tweet");
@@ -128,7 +128,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             },1000);
           }
           else{
-              sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+            sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
             //Update 1 tweet immdiately 
             if(sampleTweets.length > 0){
               var data = sampleTweets.pop();
