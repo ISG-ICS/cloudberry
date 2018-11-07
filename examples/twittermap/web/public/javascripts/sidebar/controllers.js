@@ -98,7 +98,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) { 
         $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
       });
       
     }
@@ -122,7 +122,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             drawTweetsTraditional();
             //To enable smoothly updating sample tweets, we wait 1 second for rendering twitterwidget
             setTimeout(function(){
-                $("#tweet").children().filter("twitterwidget").removeClass("twitter-tweet").css("opacity","0").animate({opacity:1},1000);
+                $("#tweet").children().filter("twitter-widget").removeClass("twitter-tweet").css("opacity","0").animate({opacity:1},1000);
             },1000);
           }
           else{
