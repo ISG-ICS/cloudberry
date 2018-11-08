@@ -115,6 +115,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
+          
           if($scope.drawTweetMode === 1){
             sampleTweets = [];
             sampleTweets = resultSet[0];
@@ -160,6 +161,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     };
 
     function handleSidebarQuery(){  
+      
       var timeBarMin = new Date(cloudberry.parameters.timeInterval.start);//user specified time series start
       var timeBarMax = new Date(cloudberry.parameters.timeInterval.end);//user specified time series end
       //Clear both query and updating loop of live Tweets
