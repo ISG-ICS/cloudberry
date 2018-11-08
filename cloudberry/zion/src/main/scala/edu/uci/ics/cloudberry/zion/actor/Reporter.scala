@@ -4,7 +4,6 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill}
 import edu.uci.ics.cloudberry.zion.TInterval
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json, Writes}
-
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -23,13 +22,11 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
     case result: PartialResult =>
       queue.enqueue(result)
     case TimeToReport => {
-      log.info("it's time to report")
       if (queue.isEmpty) {
         timer.cancel()
         context.become(hungry(DateTime.now()), discardOld = false)
       } else {
         val result = queue.dequeue()
-        log.info("out partial json")
         out ! Json.toJson(result.content)
       }
     }
@@ -39,7 +36,6 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
 
   private def hungry(since: DateTime): Actor.Receive = commonReceive orElse {
     case r: PartialResult =>
-      log.info("hungry mode")
       out ! Json.toJson(r.content)
       val delay = new TInterval(since, DateTime.now())
       log.warning(s"delayed ${delay.toDurationMillis / 1000.0} seconds ")
@@ -58,8 +54,16 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       context.become(receive)
     case fin : Fin => {
       if (queue.nonEmpty) {
-        log.info(queue.length.toString)
-        out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        if(fin.isDelta){
+          log.info("slow deque")
+          while(queue.isEmpty == false){
+
+            out ! Json.toJson(queue.dequeue().content)
+          }
+        }
+        else {
+          out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        }
         //TODO remove this special DONE message
         out ! fin.lastMsg // notifying the client the processing is done
       }
@@ -78,7 +82,9 @@ object Reporter {
 
   case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
 
-  case class Fin(lastMsg: JsValue)
+  case class DeltaResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
+
+  case class Fin(lastMsg: JsValue, isDelta: Boolean)
 
   implicit val partialResultWriter: Writes[PartialResult] = Json.writes[PartialResult]
 

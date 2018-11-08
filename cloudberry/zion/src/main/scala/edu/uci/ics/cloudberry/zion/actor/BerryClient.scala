@@ -73,7 +73,12 @@ class BerryClient(val jsonParser: JSONParser,
           context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), actorName)
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
-        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
+
+        var IsDelta = false
+        if (transform.toString.contains("pinMapResult")){
+          IsDelta = true
+        }
+        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, IsDelta)
       }
     }
   }

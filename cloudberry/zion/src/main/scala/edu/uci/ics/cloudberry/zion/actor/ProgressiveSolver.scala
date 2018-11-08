@@ -64,7 +64,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
       val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 0.00001, minimumDuration.toHours.toInt)
-      context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
+      context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now, request.IsDelta), discardOld = true)
     case _: MiniQueryResult =>
       // do nothing
       log.debug(s"receive: obsolete query result")
@@ -82,11 +82,17 @@ class ProgressiveSolver(val dataManager: ActorRef,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
                        accumulateResults: Seq[JsArray],
-                       issuedTimestamp: DateTime): Receive = {
+                       issuedTimestamp: DateTime,
+                       isDelta : Boolean): Receive = {
     case result: MiniQueryResult if result.key == ts =>
       val mergedResults = queryGroup.queries.zipWithIndex.map {
         case (q, idx) =>
-          q.merger(Seq(accumulateResults(idx), result.jsons(idx)))
+          if(isDelta){
+            q.merger(Seq(result.jsons(idx)))
+          }
+          else {
+            q.merger(Seq(accumulateResults(idx), result.jsons(idx)))
+          }
       }
 
       val timeSpend = DateTime.now.getMillis - issuedTimestamp.getMillis
@@ -115,7 +121,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
-        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
+        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done), isDelta)
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         unstashAll() // in case there are new queries
@@ -142,16 +148,19 @@ class ProgressiveSolver(val dataManager: ActorRef,
             Json.toJson(infoObject ++ timeInterval)
         }
 
+
+
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
+
         issueQueryGroup(nextInterval, queryGroup)
-        context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now, isDelta), discardOld = true)
       }
     case result: MiniQueryResult =>
       log.debug(s"old result: $result")
     case _: SlicingRequest =>
       stash()
     case ProgressiveSolver.Cancel =>
-      reporter ! Reporter.Fin(JsNumber(0))
+      reporter ! Reporter.Fin(JsNumber(0),false)
       log.debug("askslice resceive cancel")
       unstashAll()
       context.become(receive, discardOld = true)
@@ -202,7 +211,7 @@ object ProgressiveSolver {
 
   case object Cancel
 
-  case class SlicingRequest(intervalMS: Long, resultSizeLimitOpt: Option[Int], queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
+  case class SlicingRequest(intervalMS: Long, resultSizeLimitOpt: Option[Int], queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform, IsDelta: Boolean)
 
   private case class MiniQueryResult(key: Long, queryGroup: QueryGroup, jsons: Seq[JsArray])
 
