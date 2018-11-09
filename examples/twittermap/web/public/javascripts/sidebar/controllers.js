@@ -3,7 +3,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
-    $scope.isSampleTweetsOutdated = true;
+    $scope.isSampleTweetsOutdated = false;
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
@@ -98,7 +98,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) { 
         $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitterwidget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
       });
       
     }
@@ -115,19 +115,25 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-
+          
           if($scope.drawTweetMode === 1){
             sampleTweets = [];
             sampleTweets = resultSet[0];
             drawTweetsTraditional();
             //To enable smoothly updating sample tweets, we wait 1 second for rendering twitterwidget
             setTimeout(function(){
-                $("#tweet").children().filter("twitterwidget").removeClass("twitter-tweet").css("opacity","0").animate({opacity:1},1000);
+                $("#tweet").children().filter("twitter-widget").removeClass("twitter-tweet").css("opacity","0").animate({opacity:1},1000);
             },1000);
           }
           else{
             sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
+            //Update 1 tweet immediately 
+            if(sampleTweets.length > 0){
+              var data = sampleTweets.pop();
+              drawTweets(data);
+            }
           }
+          $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");
       
       
@@ -149,17 +155,18 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
   
     function cleanLiveTweet(){
       window.clearInterval($scope.liveTweetsLoop);
+      window.clearInterval(sendQueryLoop);
       $("#tweet").html("");//clean tweets in sidebar
       sampleTweets=[];
     };
 
     function handleSidebarQuery(){  
-
+      
       var timeBarMin = new Date(cloudberry.parameters.timeInterval.start);//user specified time series start
       var timeBarMax = new Date(cloudberry.parameters.timeInterval.end);//user specified time series end
       //Clear both query and updating loop of live Tweets
 
-      if(secondLiveTweetQueryTimeOut){
+      if(secondLiveTweetQueryTimeOut && $scope.isSampleTweetsOutdated){
         clearTimeout(secondLiveTweetQueryTimeOut);
       }
 
@@ -204,7 +211,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         }
 
       }
-      else{
+      else if ($scope.isSampleTweetsOutdated){
+        //Whenever new event occur sample tweet is outdated and should be cleaned
         cleanLiveTweet();
       }
     }
