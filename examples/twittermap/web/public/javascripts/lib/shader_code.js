@@ -23,6 +23,7 @@ var fragCode = `
             float idx = v_index[0]*65536.0 + v_index[1]*256.0 + v_index[2];
             float border = 0.05;
             float radius = 0.5;
+            // ??? color0 not used?
             vec4 color0 = vec4(0.0, 0.0, 0.0, 0.0);
             vec4 color1 = abs(idx - u_selected)< 1e-4 ? vec4(1.0, 0.0, 0.0, 1.0) : vec4(u_color, 0.75);
 
@@ -46,8 +47,9 @@ var fragCode2 = `
             float border = 0.05;
             float radius = 0.5;
             vec4 color0 = vec4(0.0, 0.0, 0.0, 1.0);
-
+            // ??? color1 is the ID of the corresponding tweet rather than color of the point?
             vec4 color1 = vec4(v_index.xyz/255.0, 1.0);
+
             vec2 m = gl_PointCoord.xy - vec2(0.5, 0.5);
             float dist = radius - sqrt(m.x*m.x + m.y*m.y);
             gl_FragColor = dist > border ? color1 : color0;

@@ -30,6 +30,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
     },
 
 
+    // ??? Never called
     appendData: function(data) {
         if ( this._checkData(data) ) {
             this._data = this._data.concat(data);
@@ -182,10 +183,13 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         if ( gl == null || this._data == null ) return;
 
         var verts = [];
+        // ??? Why not id = 0; id < this._data.length
         for ( var id = 1; id <= this._data.length; ++id ) {
             var pixel = this._LatLongToPixel_XY(this._data[id - 1][0], this._data[id - 1][1]);
 
+            // ??? is r, g, b here the color? Or we just need to present the data in 3-dimensions?
             ///// id = r + 256*g + 256^2*b
+            ///// id is up to 2^12 which is 1 billion
             var r = Math.floor(id / (65536));
             var g = Math.floor((id % (65536)) / 256);
             var b = id % 256;
@@ -282,6 +286,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.viewport(0, 0, canvas.width, canvas.height);
 
         // Pass 1
+        // Draw the blue pinned points
 
         gl.useProgram(this._programs[1]);
         gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._fb);
@@ -298,6 +303,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
             gl.drawArrays(gl.POINTS, 0, this._data.length);
 
         // Pass 2
+        // Compute the cursor location to pinned points/tweets map
 
         gl.useProgram(this._programs[0]);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
