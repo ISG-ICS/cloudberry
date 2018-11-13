@@ -15,8 +15,10 @@ For developers please join our [slack group](https://cloudberry-uci.slack.com/)
 Prerequisites: scala, sbt, [AsterixDB](http://asterixdb.apache.org)
 
 ### Prepare the AsterixDB cluster
-Option 1: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
+Option 1: Follow the official [documentation](https://asterixdb.apache.org/docs/0.9.4/ncservice.html) to setup a fully functional cluster.
 
+Note that the Docker AsterixDB is out-of-date and no longer working for the latest TwitterMap example.
+~~~
 Option 2: Use the prebuilt AsterixDB docker image to run a small test cluster locally.
 This approach serves the debug purpose.
 
@@ -26,6 +28,7 @@ you can simply run the following command to create an AsterixDB cluster locally.
 ```
 > ./script/dockerRunAsterixDB.sh  
 ```
+~~~
 
 ### To compile projects
 ```
