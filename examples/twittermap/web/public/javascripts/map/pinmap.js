@@ -185,6 +185,7 @@ angular.module("cloudberry.map")
       if (!$scope.pointsLayer) {
        
         $scope.pointsLayer = new WebGLPointLayer();
+        //$scope.pointsLayer.setPointSize(10);
         $scope.pointsLayer.setPointSize(3);
         $scope.pointsLayer.setPointColor(29, 161, 242);
 

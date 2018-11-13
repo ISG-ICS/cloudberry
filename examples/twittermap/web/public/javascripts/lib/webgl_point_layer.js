@@ -273,6 +273,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
 
         pixelsToWebGLMatrix.set([2 / canvas.width, 0, 0, 0, 0, -2 / canvas.height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
         var pointSize = Math.max(map.getZoom() - 4.0, this._pointSize);
+        //var pointSize = 20;
         // var pointSize = Math.max(map.getZoom() - 4.0, 1.0);
         console.log("map.getZoom() = " + map.getZoom() + ", pointSize = " + pointSize);
         mapMatrix.set(pixelsToWebGLMatrix);
@@ -295,9 +296,11 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        // aPointSize seems to be never used; instead there is a this._programs[0].PointSize
         gl.vertexAttrib1f(this._programs[1].aPointSize, pointSize);
         gl.uniformMatrix4fv(this._programs[1].matLoc, false, mapMatrix);
         gl.uniform1f(this._programs[1].pointSize, 1.2*pointSize);
+        //gl.uniform1f(this._programs[1].pointSize, 12*pointSize);
 
         if ( this._data )
             gl.drawArrays(gl.POINTS, 0, this._data.length);
@@ -313,6 +316,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
+        // aPointSize seems to be never used; instead there is a this._programs[0].PointSize
         gl.vertexAttrib1f(this._programs[0].aPointSize, 10.0);
         gl.uniformMatrix4fv(this._programs[0].matLoc, false, mapMatrix);
 
