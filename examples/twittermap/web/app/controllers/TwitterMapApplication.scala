@@ -45,7 +45,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val pinmapSamplingDayRange: String = config.getString("pinmap.samplingDayRange").getOrElse("30")
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
-
+  val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
+  val updateRate: Int = config.getInt("updateRate").getOrElse(3)                                     
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
