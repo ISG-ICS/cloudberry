@@ -66,7 +66,7 @@ object Migration_20170428 {
       |    "dimension":[
       |      {"name":"create_at","isOptional":false,"datatype":"Time"},
       |      {"name":"id","isOptional":false,"datatype":"Number"},
-      |      {"name":"coordinate","isOptional":false,"datatype":"Point"},
+      |      {"name":"coordinate","isOptional":true,"datatype":"Point"},
       |      {"name":"lang","isOptional":false,"datatype":"String"},
       |      {"name":"is_retweet","isOptional":false,"datatype":"Boolean"},
       |      {"name":"hashtags","isOptional":true,"datatype":"Bag","innerType":"String"},
@@ -74,9 +74,9 @@ object Migration_20170428 {
       |      {"name":"user.id","isOptional":false,"datatype":"Number"},
       |      {"name":"user.name","isOptional":false,"datatype":"String"},
       |      {"name":"user.profile_image_url","isOptional":false,"datatype":"String"},
-      |      {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
-      |      {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
-      |      {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo_tag.stateID","isOptional":true,"datatype":"Number"},
+      |      {"name":"geo_tag.countyID","isOptional":true,"datatype":"Number"},
+      |      {"name":"geo_tag.cityID","isOptional":true,"datatype":"Number"},
       |      {"name":"geo","isOptional":false,"datatype":"Hierarchy","innerType":"Number",
       |        "levels":[
       |          {"level":"state","field":"geo_tag.stateID"},

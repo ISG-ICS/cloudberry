@@ -1086,10 +1086,13 @@ object TestQuery {
 
   val twitterDataSetForSQL = TwitterDataStoreWithoutHashTag.DatasetName
   val twitterSchemaForSQL = TwitterDataStoreWithoutHashTag.TwitterSchemaForSQL
+  val twitterDataSetForOracle = TwitterDataStoreWithoutHashTagOracle.DatasetName
+  val twitterSchemaForOracle = TwitterDataStoreWithoutHashTagOracle.TwitterSchemaForOracle
   val twitterSchemaMapForSQL = Map(twitterDataSetForSQL -> twitterSchemaForSQL)
   val allSchemaMapForSQL = Map(twitterDataSetForSQL -> twitterSchemaForSQL)
   val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
   val zikaCreateQueryForSQL = Query(twitterDataSetForSQL, filter = Seq(zikaFilter))
+  val zikaCreateQueryForOracle = Query(twitterDataSetForOracle,filter = Seq(zikaFilter))
   val groupPopulationSumForSQL = GroupStatement(
     bys = Seq(byGeoState),
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))
