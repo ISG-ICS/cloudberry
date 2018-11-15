@@ -15,17 +15,7 @@ For developers please join our [slack group](https://cloudberry-uci.slack.com/)
 Prerequisites: scala, sbt, [AsterixDB](http://asterixdb.apache.org)
 
 ### Prepare the AsterixDB cluster
-Option 1: Follow the official [documentation](https://ci.apache.org/projects/asterixdb/install.html) to setup a fully functional cluster.
-
-Option 2: Use the prebuilt AsterixDB docker image to run a small test cluster locally.
-This approach serves the debug purpose.
-
-Assume you've already had docker(>1.10) installed on your local machine,
-you can simply run the following command to create an AsterixDB cluster locally.
-
-```
-> ./script/dockerRunAsterixDB.sh  
-```
+Follow the official [documentation](https://asterixdb.apache.org/docs/0.9.4/ncservice.html) to setup a fully functional cluster.
 
 ### To compile projects
 ```
