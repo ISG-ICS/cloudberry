@@ -12,6 +12,10 @@ class JSONParser extends IJSONParser {
 
   import JSONParser._
 
+  override  def getDeltaResult(json: JsValue): Seq[JsValue] = {
+    val deltaResult = (json \\ "deltaResult")
+    deltaResult
+  }
   override def getDatasets(json: JsValue): Set[String] = {
     val datasets = (json \\ "dataset").filter(_.isInstanceOf[JsString]).map(_.asInstanceOf[JsString].value)
     datasets.toSet

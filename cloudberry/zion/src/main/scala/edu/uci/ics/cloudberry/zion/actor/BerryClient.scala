@@ -40,6 +40,11 @@ class BerryClient(val jsonParser: JSONParser,
 
   private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
     val datasets = jsonParser.getDatasets(json).toSeq
+
+    var deltaResult = false
+    if (jsonParser.getDeltaResult(json).length>0 && jsonParser.getDeltaResult(json)(0).toString == "1") {
+      deltaResult = true
+    }
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
@@ -74,11 +79,7 @@ class BerryClient(val jsonParser: JSONParser,
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
 
-        var IsDelta = false
-        if (transform.toString.contains("pinMapResult")){
-          IsDelta = true
-        }
-        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, IsDelta)
+        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, deltaResult)
       }
     }
   }

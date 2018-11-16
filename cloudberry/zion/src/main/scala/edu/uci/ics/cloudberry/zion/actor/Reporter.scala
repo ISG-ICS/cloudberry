@@ -54,19 +54,11 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       context.become(receive)
     case fin : Fin => {
       if (queue.nonEmpty) {
-        if(fin.isDelta){
-          log.info("slow deque")
-          while(queue.isEmpty == false){
-
-            out ! Json.toJson(queue.dequeue().content)
-          }
-        }
-        else {
           out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
         }
         //TODO remove this special DONE message
         out ! fin.lastMsg // notifying the client the processing is done
-      }
+
       timer.cancel()
       context.become(receive)
     }
@@ -84,7 +76,7 @@ object Reporter {
 
   case class DeltaResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
 
-  case class Fin(lastMsg: JsValue, isDelta: Boolean)
+  case class Fin(lastMsg: JsValue)
 
   implicit val partialResultWriter: Writes[PartialResult] = Json.writes[PartialResult]
 

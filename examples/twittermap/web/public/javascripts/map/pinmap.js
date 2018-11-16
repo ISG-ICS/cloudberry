@@ -77,7 +77,8 @@ angular.module("cloudberry.map")
                     field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
                 },
                 option: {
-                    sliceMillis: cloudberryConfig.querySliceMills
+                    sliceMillis: 200,
+                    deltaResult: 1
                 }
             };
 

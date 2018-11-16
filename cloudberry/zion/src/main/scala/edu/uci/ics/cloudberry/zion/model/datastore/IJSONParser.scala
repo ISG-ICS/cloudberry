@@ -12,6 +12,7 @@ trait IJSONParser {
     */
   def getDatasets(json: JsValue): Set[String]
 
+  def getDeltaResult(json: JsValue): Seq[JsValue]
 
   /**
     * parses the json object into a sequence of [[Query]] with [[QueryExeOption]]
