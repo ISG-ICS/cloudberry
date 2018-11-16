@@ -424,20 +424,20 @@ class OracleGeneratorTest extends Specification {
           |group by "state"""".stripMargin.trim)
     }
 
+*/
     //32
-    "translate a group by geocell without filter" in {
-      val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
-      val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(group), None)
+    "translate a select 10 coordinates" in {
+      val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, Seq.empty, Seq.empty, None,Some(select10Coordinates))
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select st_astext(Point(truncate(st_x(t."coordinate"),3),truncate(st_y(t."coordinate"),3)))  as "cell",count(*) as "count"
+          |select concat(concat(concat('POINT(',t."coordinate".sdo_point.x),concat(', ',t."coordinate".sdo_point.y)),')') as "coordinate"
           |from "twitter.ds_tweet" t
-          |group by "cell"""".stripMargin.trim)
+          |fetch first 10 rows only""".stripMargin.trim)
     }
 
 
-   */
+
 
     //33
     "translate a text contain filter and select 10" in {

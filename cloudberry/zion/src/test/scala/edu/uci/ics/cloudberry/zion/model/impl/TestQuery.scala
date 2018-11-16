@@ -136,6 +136,7 @@ object TestQuery {
   val selectTagWithoutLimit = SelectStatement(Seq(count), Seq(SortOrder.DSC), Int.MaxValue, 0, Seq.empty)
   val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
   val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
+  val select10Coordinates = SelectStatement(Seq.empty, Seq.empty, 10, 0, Seq(coordinate))
 
   val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
   val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))

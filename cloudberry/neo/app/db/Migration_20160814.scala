@@ -2,10 +2,7 @@ package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
 import edu.uci.ics.cloudberry.zion.model.impl.{AsterixSQLPPConn, DataSetInfo, MySQLConn, OracleConn, PostgreSQLConn}
-import play.api.libs.json.{Json, _}
-import scala.concurrent.{Await, Future}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.duration._
 private[db] class Migration_20160814() {
 
   import Migration_20160814._
@@ -40,8 +37,6 @@ private[db] class Migration_20160814() {
              |""".stripMargin
         }
       case oracle: OracleConn =>
-
-
           conn.postControl {
             s"""
                |declare
@@ -63,11 +58,6 @@ private[db] class Migration_20160814() {
                |end;
                |/\n""".stripMargin
           }
-
-
-
-
-
       case sqlpp: AsterixSQLPPConn =>
         conn.postControl {
           s"""
@@ -82,7 +72,6 @@ private[db] class Migration_20160814() {
         }
     }
   }
-
 }
 
 object Migration_20160814 {

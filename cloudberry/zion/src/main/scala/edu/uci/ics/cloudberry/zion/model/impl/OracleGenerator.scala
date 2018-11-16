@@ -17,7 +17,6 @@ class OracleGenerator extends SQLGenerator {
 
   //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
   private val geoAsText: String = "st_astext"
-  //X/Y-coordinate value for the Point object in MySQL.
   private val pointGetCoord = Seq("st_x", "st_y")
 
   override protected def genDDL(name: String, schema: Schema): String = {
@@ -27,11 +26,9 @@ class OracleGenerator extends SQLGenerator {
         case e => s"  $quote$e$quote $typeStr"
       }
     }
-
     val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
       f => mkNestDDL(f.name, fieldType2SQLType(f) + (if (f.isOptional) " default null" else " not null"))
     }
-
     s"""
        |declare
        |    result1 number(8);
@@ -44,7 +41,6 @@ class OracleGenerator extends SQLGenerator {
        |end if;
        |end;
        |/\n""".stripMargin
-
   }
 
   override protected def parseSelect(selectOpt: Option[SelectStatement],
@@ -61,44 +57,32 @@ class OracleGenerator extends SQLGenerator {
             val orderStr = if (order == SortOrder.DSC) "desc" else ""
             s"${expr} $orderStr"
         }
-
         val orderStr =
           if (orderStrs.nonEmpty) {
             orderStrs.mkString("order by ", ",", "")
           } else {
             s""
           }
-
         val limitStr = s"fetch first ${select.limit} rows only"
         appendIfNotEmpty(queryBuilder, orderStr)
         if (select.limit != 0) {
           appendIfNotEmpty(queryBuilder, limitStr)
         }
-
         if (select.fields.isEmpty || query.hasUnnest || query.hasGroup) {
           producedExprs ++= exprMap
         } else {
           select.fields.foreach {
-
-
             field => {
               if (field.dataType != DataType.Point) {
-
                 producedExprs += field.name -> exprMap(field.name)
               }
               else{
-                //println("it is point")
                 val fieldExpr = exprMap(field.name)
-
                 producedExprs += field.name -> FieldExpr(field.name,s"""concat(concat(concat('POINT(',${fieldExpr.refExpr}.sdo_point.x),concat(', ',${fieldExpr.refExpr}.sdo_point.y)),')')""")
-
               }
-              //println(field.dataType + "--------field datatype" + " " + producedExprs)
-              //println(field.name+"======fieldname")
             }
           }
         }
-
         val newExprMap = producedExprs.result().toMap
         val projectStr = if (select.fields.isEmpty) {
           if (query.hasUnnest || query.hasGroup) {
@@ -111,7 +95,6 @@ class OracleGenerator extends SQLGenerator {
         }
         queryBuilder.insert(0, projectStr + "\n")
         ParsedResult(Seq.empty, newExprMap)
-
       case None =>
         val projectStr =
           if (query.hasUnnest || query.hasGroup) {
@@ -120,7 +103,6 @@ class OracleGenerator extends SQLGenerator {
             s"select *"
           }
         queryBuilder.insert(0, projectStr + "\n")
-      //  println(exprMap+"Expr map")
         ParsedResult(Seq.empty, exprMap)
     }
   }
@@ -179,11 +161,8 @@ class OracleGenerator extends SQLGenerator {
           producedExprs += (as.name -> FieldExpr(newExpr, groupExpr))
           s"$groupExpr"
         }
-
         val groupStr = s"group by ${groupStrs.mkString(",")}"
-
         appendIfNotEmpty(queryBuilder, groupStr)
-
         group.aggregates.foreach { aggr =>
           val fieldExpr = exprMap(aggr.field.name)
           val aggrExpr = parseAggregateFunc(aggr, fieldExpr.refExpr)
@@ -226,22 +205,13 @@ class OracleGenerator extends SQLGenerator {
     }
     var dimensionStrd:Seq[String] = Seq()
     for (d<- sourceSchema.dimension){
-
-     // println(d.dataType+"=========Datatype")
-      if (d.dataType == DataType.Hierarchy){
-       // println("hierarchy here======== "+d.name)
-
-      }
-      else {
-       // println("other types")
+      if (d.dataType != DataType.Hierarchy){
         dimensionStrd= dimensionStrd :+"d.\"" + d.name + "\""
       }
     }
     var dimensionStrs:Seq[String] = Seq()
     for (d<- sourceSchema.dimension){
-      //println(d.dataType+"=========Datatype")
       if (d.dataType == DataType.Hierarchy){
-       // println("hierarchy here======== "+d.name)
       }
       else {
         dimensionStrs = dimensionStrs:+"s.\"" + d.name + "\""
@@ -259,13 +229,7 @@ class OracleGenerator extends SQLGenerator {
                     |insert (${(dimensionStrd ++ measurementStrd).mkString(",")})
                     |values (${(dimensionStrs ++ measurementStrs).mkString(",")})
                     |""".stripMargin
-
-
-
-    //System.out.println("ddl + insert="+ddl+insert)
     ddl + insert
-
-
   }
 
   /**
@@ -297,16 +261,11 @@ class OracleGenerator extends SQLGenerator {
         val dataInterval: JsValue = (record \ "dataInterval").as[JsValue]
         val stats: JsValue = (record \ "stats").as[JsValue]
         val createTime: String = TimeField.TimeFormatForSQL.print(new DateTime((record \ "stats" \ "createTime").as[String])).split("\\.")(0)
-        //println("createtime",createTime)
-        //queryResult += (s"('${name}','${schema}','${dataInterval}','${stats}',to_date('${createTime}','yyyy-MM-dd hh24:mi:ss'))")
         queryResult += s"'${name}'"
         queryResult += s"'${schema}'"
         queryResult += s"'${dataInterval}'"
         queryResult += s"'${stats}'"
         queryResult += s"to_date('${createTime}','YYYY-MM-DD HH24:MI:SS')"
-
-
-      //  println(queryResult,"QUery result")
     }
     s"""
        |merge into $quote${q.dataset}$quote d
@@ -340,10 +299,6 @@ class OracleGenerator extends SQLGenerator {
     val sb = new StringBuilder(s"${fullTextMatch(0)}($fieldExpr, '")
     sb.append(wordsArr.mkString(" and ") + s"',1)>0")
     sb.toString()
-    //sample output
-    // contains(name,'test',1)>0 equivalent to match(name) against ('+test' in boolean mode);
-    // contains(name,'foo and bar',1)>0   equivalent to match(name) against ('+foo +bar' in boolean mode);
-    // contains(name,'foo and bar and test',1 ) > 0   equivalent to match(name) against ('+foo + bar +test' in boolean mode);
   }
 
 
@@ -414,9 +369,6 @@ class OracleGenerator extends SQLGenerator {
   }
 
 
-
-
-
   override protected def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
 
 
@@ -434,37 +386,6 @@ class OracleGenerator extends SQLGenerator {
 
 
   }
-
-
-
-  //  override protected def parseQuery(query: Query, schemaMap: Map[String, AbstractSchema]): String = {
-  //    val queryBuilder = new mutable.StringBuilder()
-  //   println("1 parse query",query,schemaMap)
-  //    val exprMap: Map[String, FieldExpr] = initExprMap(query.dataset, schemaMap)
-  //
-  //    val fromStr = s"from $quote${query.dataset}$quote $sourceVar".trim
-  //    queryBuilder.append(fromStr)
-  //    println("query.dataset",query.dataset)
-  //    println(fromStr,"fromstr","query builder",queryBuilder)
-  //    val resultAfterAppend = parseAppend(query.append, exprMap, queryBuilder)
-  //
-  //    val resultAfterLookup = parseLookup(query.lookup, resultAfterAppend.exprMap, queryBuilder, false)
-  //
-  //    val resultAfterUnnest = parseUnnest(query.unnest, resultAfterLookup.exprMap, queryBuilder)
-  //    val unnestTests = resultAfterUnnest.strs
-  //
-  //    val resultAfterFilter = parseFilter(query.filter, resultAfterUnnest.exprMap, unnestTests, queryBuilder)
-  //
-  //    val resultAfterGroup = parseGroupby(query.groups, resultAfterFilter.exprMap, queryBuilder)
-  //
-  //    val resultAfterSelect = parseSelect(query.select, resultAfterGroup.exprMap, query, queryBuilder)
-  //
-  //    val resultAfterGlobalAggr = parseGlobalAggr(query.globalAggr, resultAfterSelect.exprMap, queryBuilder)
-  //
-  //    println("Oracle SQL Generator="+queryBuilder.toString())
-  //
-  //    queryBuilder.toString
-  //  }
 
 
   /**
