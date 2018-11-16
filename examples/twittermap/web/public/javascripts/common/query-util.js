@@ -235,14 +235,78 @@ angular.module("cloudberry.common")
         };
       },
 
-      // Generate latest 10 sample tweet JSON request
-      getSampleTweetsRequest(parameters) {
+      // Get the tendency chart data for a specific hash tag
+      getHashTagChartDataRequest(parameters, hashtagName) {
+        var filter = queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, parameters.geoIds);
+        filter.push({
+          field: "tag",
+          relation: "matches",
+          values: [hashtagName]
+        });
+
         return {
           dataset: parameters.dataset,
-          filter: queryUtil.getFilter(parameters, queryUtil.defaultSamplingDayRange, parameters.geoIds),
+          filter: filter,
+          unnest: [{
+            hashtags: "tag"
+          }],
+          group: {
+            by: [
+              {
+              field: "create_at",
+              apply: {
+                name: "interval",
+                args: {
+                  unit: "month"
+                }
+              },
+              as: "month"
+            }],
+            aggregate: [{
+              field: "*",
+              apply: {
+                name: "count"
+              },
+              as: "count"
+            }]
+          }
+        };
+      },
+
+      // Generate latest 10 sample tweet JSON request
+      getSampleTweetsRequest(parameters, timeLowerBound, timeUpperBound, sampleSize = queryUtil.defaultSamplingSize) {
+        var spatialField = queryUtil.getLevel(parameters.geoLevel);
+        var keywords = [];
+        for(var i = 0; i < parameters.keywords.length; i++){
+          keywords.push(parameters.keywords[i].replace("\"", "").trim());
+        }
+        var geoIds = parameters.geoIds;
+        var filter = [
+          {
+            field: "create_at",
+            relation: "inRange",
+            values: [timeLowerBound, timeUpperBound]
+          }, {
+            field: "text",
+            relation: "contains",
+            values: keywords
+          }
+        ];
+        if (geoIds.length <= 2000){
+          filter.push(
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: geoIds
+            }
+          );
+        }
+        return {
+          dataset: parameters.dataset,
+          filter,
           select: {
             order: ["-create_at"],
-            limit: queryUtil.defaultSamplingSize,
+            limit: sampleSize,
             offset: 0,
             field: ["create_at", "id", "user.id"]
           }

@@ -1,11 +1,18 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
   .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
     var stopwordsMap = buildStopwordsMap();
-
-    $("#keyword-textbox").autocomplete({source:[]});
     //When user input keyword we will first send query to and get result to render auto-complete menu
     //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
-    $("#keyword-textbox").on("keyup",function(event){   
+    $("#keyword-textbox").autocomplete({source:[],disabled:true,delay:200});
+    
+    $("#keyword-textbox").on("keyup",function(event){
+      if(event.key!=="Enter"){
+        $("#keyword-textbox").autocomplete( "enable" );
+      }
+      else{
+        $("#keyword-textbox").autocomplete( "close" );
+        $("#keyword-textbox").autocomplete( "disable" );
+      }
       var q = $scope.keyword;
       var hostName = "http://"+window.location.hostname+":5000";
       var url = hostName+"/spoof?query="+q;
@@ -30,12 +37,13 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     //If keyword been selected and user pushed enter,then we perform search directly
     $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ){
       $scope.keyword = ui.item.value;
+      $("#keyword-textbox").autocomplete("close");  
       $scope.search();
       $scope.updateSearchBox($scope.keyword);
     });
 
     $scope.search = function() {
-      $("#keyword-textbox").autocomplete("close");
+      $("#keyword-textbox").autocomplete( "close" );
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
         //Splits out all individual words in the query keyword.
         var keywords = $scope.keyword.trim().split(/\s+/);
