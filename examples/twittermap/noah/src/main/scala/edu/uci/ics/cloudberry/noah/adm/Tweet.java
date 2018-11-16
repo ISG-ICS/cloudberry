@@ -207,7 +207,7 @@ public class Tweet {
     }
 
     protected static boolean exactPointLookup(StringBuilder sb, USGeoGnosis gnosis, Coordinate coordinate) {
-        if (coordinate.getcLat().equals("")) {
+        if (coordinate.getcLat() == null) {
             return false;
         }
         scala.Option<USGeoGnosis.USGeoTagInfo> info = gnosis.tagPoint(Double.parseDouble(coordinate.getcLong()), Double.parseDouble(coordinate.getcLat()));
