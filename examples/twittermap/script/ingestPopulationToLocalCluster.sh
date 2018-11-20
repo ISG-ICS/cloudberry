@@ -53,7 +53,7 @@ create dataset dsCityPopulation(typeCityPopulation) if not exists primary key ci
 
 create feed StatePopulationFeed with { 
     "adapter-name" : "socket_adapter", 
-    "sockets" : "asterix_nc1:10003", 
+    "sockets" : "${nc}:10003", 
     "address-type" : "nc", 
     "type-name" : "typeStatePopulation", 
     "format" : "adm", 
@@ -65,7 +65,7 @@ start feed StatePopulationFeed;
 
 create feed CountyPopulationFeed with { 
     "adapter-name" : "socket_adapter", 
-    "sockets" : "asterix_nc1:10004", 
+    "sockets" : "${nc}:10004", 
     "address-type" : "nc", 
     "type-name" : "typeCountyPopulation", 
     "format" : "adm", 
@@ -77,7 +77,7 @@ start feed CountyPopulationFeed;
 
 create feed CityPopulationFeed with { 
     "adapter-name" : "socket_adapter", 
-    "sockets" : "asterix_nc1:10005", 
+    "sockets" : "${nc}:10005", 
     "address-type" : "nc", 
     "type-name" : "typeCityPopulation", 
     "format" : "adm", 
