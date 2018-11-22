@@ -165,6 +165,7 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
 
   "Client" should {
     "slice the query into mini-queries and return the merged result incrementally" in {
+
       val sender = new TestProbe(system)
       val dataManager = new TestProbe(system)
       val parser = new JSONParser
@@ -270,7 +271,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
       dataManager.reply(Seq(TestQuery.sourceInfo))
 
       val slicedQ1 = dataManager.receiveOne(5 seconds).asInstanceOf[Query]
-
       val interval1 = slicedQ1.getTimeInterval(TimeField("create_at")).get
       interval1.getEnd must_== endTime
       interval1.toDurationMillis must_== Config.Default.FirstQueryTimeGap.toMillis
@@ -508,7 +508,6 @@ class ReactiveBerryClientTest extends TestkitExample with SpecificationLike with
         ))
       ))
       sender.expectMsg(result2)
-      println(result2.toString)
 
       dataManager.receiveOne(5 seconds).asInstanceOf[DataStoreManager.AskInfoAndViews]
       dataManager.reply(Seq(TestQuery.sourceInfo))

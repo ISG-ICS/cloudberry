@@ -330,10 +330,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     }
 
     var cloudberryService = {
-      
-        
-      layer:{ 
-      },
+
       commonTotalCount: 0,
       startDate: startDate,
       parameters: {

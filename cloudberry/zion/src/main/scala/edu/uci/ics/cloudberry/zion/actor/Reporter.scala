@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill}
 import edu.uci.ics.cloudberry.zion.TInterval
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json, Writes}
+
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
@@ -54,11 +55,10 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       context.become(receive)
     case fin : Fin => {
       if (queue.nonEmpty) {
-          out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
-        }
+        out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
         //TODO remove this special DONE message
         out ! fin.lastMsg // notifying the client the processing is done
-
+      }
       timer.cancel()
       context.become(receive)
     }
@@ -73,8 +73,6 @@ object Reporter {
   case class Reset(limit: FiniteDuration)
 
   case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
-
-  case class DeltaResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
 
   case class Fin(lastMsg: JsValue)
 
