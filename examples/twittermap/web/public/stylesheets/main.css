@@ -273,10 +273,16 @@ time-series {
   margin-left: 5px;
 }
 
+/* For hiding tweets in sidebar in order to avoid blink*/
+.twitter-tweet{
+  display: none !important;
+}
+
 /* For the hashtag trends in sidebar */
 .hashtagDiv{
   margin: 8% 0 0 0;
 }
+
 
 .hashtagEle{
   padding: 3% 0 3% 5%;

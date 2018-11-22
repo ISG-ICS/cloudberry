@@ -8,6 +8,7 @@ angular.module('cloudberry.map')
     $scope.chartDataMap = new HashMap();
     // The popup window shown now
     $scope.popUp = null;
+    $scope.checkIfQueryIsRequested = false;
 
     // Concat two hashmap results
     function concatHashmap(newMap, cachedMap) {
@@ -338,6 +339,7 @@ angular.module('cloudberry.map')
           }
         }, "batchWithPartialRequest");
       }
+      $scope.checkIfQueryIsRequested = true;
     }
 
     // Common event handler for Countmap
@@ -387,14 +389,14 @@ angular.module('cloudberry.map')
           $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
 
           // bind a pop up window
-          $scope.popUp = L.popup({autoPan:false});
-          layer.bindPopup($scope.popUp).openPopup();
-          $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
-
-          addPopupEvent();
-          chartUtil.drawChart($scope.chartData, "myChart", true, true);
-
-
+          if ($scope.checkIfQueryIsRequested === true) {
+            $scope.popUp = L.popup({autoPan:false});
+            layer.bindPopup($scope.popUp).openPopup();
+            $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+            
+            addPopupEvent();
+            chartUtil.drawChart($scope.chartData, "myChart", true, true);
+          }
         }
       }
 
