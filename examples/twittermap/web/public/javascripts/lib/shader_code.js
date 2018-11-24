@@ -1,3 +1,4 @@
+// noinspection JSAnnotator
 var vertCode = `
         uniform mat4 u_matrix;
         uniform float u_pointSize;
@@ -13,6 +14,7 @@ var vertCode = `
     `;
 
 
+// noinspection JSAnnotator
 var fragCode = `
         precision mediump float;
         uniform vec3 u_color;
@@ -41,6 +43,7 @@ var fragCode = `
     `;
 
 
+// noinspection JSAnnotator
 var fragCode2 = `
         precision mediump float;
         varying vec4 v_index;
