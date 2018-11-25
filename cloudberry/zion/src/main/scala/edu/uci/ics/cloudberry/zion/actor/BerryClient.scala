@@ -41,10 +41,6 @@ class BerryClient(val jsonParser: JSONParser,
   private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
     val datasets = jsonParser.getDatasets(json).toSeq
 
-    var deltaResult = false
-    if (jsonParser.getDeltaResult(json).length>0 && jsonParser.getDeltaResult(json)(0).toString == "1") {
-      deltaResult = true
-    }
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
@@ -62,6 +58,7 @@ class BerryClient(val jsonParser: JSONParser,
       } else {
         val paceMS = runOption.sliceMills
         val resultSizeLimit = runOption.limit
+        val returnDelta = runOption.returnDelta
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
 
         if (resultSizeLimit.nonEmpty && queries.size > 1) {
@@ -79,7 +76,7 @@ class BerryClient(val jsonParser: JSONParser,
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
 
-        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, deltaResult)
+        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, returnDelta)
       }
     }
   }
