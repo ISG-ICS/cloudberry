@@ -40,7 +40,6 @@ class BerryClient(val jsonParser: JSONParser,
 
   private def handleRequest(json: JsValue, transform: IPostTransform): Unit = {
     val datasets = jsonParser.getDatasets(json).toSeq
-
     val fDataInfos = Future.traverse(datasets) { dataset =>
       dataManager ? AskInfo(dataset)
     }.map(seq => seq.map(_.asInstanceOf[Option[DataSetInfo]]))
@@ -75,7 +74,6 @@ class BerryClient(val jsonParser: JSONParser,
           context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), actorName)
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
-
         child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, returnDelta)
       }
     }

@@ -1,7 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
 import edu.uci.ics.cloudberry.zion.model.datastore.JsonRequestException
-import edu.uci.ics.cloudberry.zion.model.schema
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.specs2.matcher.MatchResult
 import org.specs2.mutable.Specification

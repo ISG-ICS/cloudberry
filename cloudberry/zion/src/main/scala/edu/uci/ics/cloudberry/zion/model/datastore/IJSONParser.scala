@@ -12,6 +12,7 @@ trait IJSONParser {
     */
   def getDatasets(json: JsValue): Set[String]
 
+
   /**
     * parses the json object into a sequence of [[Query]] with [[QueryExeOption]]
     * @param json
