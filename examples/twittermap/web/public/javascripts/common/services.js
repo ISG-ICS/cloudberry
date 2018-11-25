@@ -1,8 +1,8 @@
 angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.timeseriescache'])
   .factory('cloudberryConfig', function(){
     return {
-      ws: "ws://" + location.host + "/ws",
-      checkQuerySolvableByView: "ws://" + location.host + "/checkQuerySolvableByView",
+      ws: "wss://" + location.host + "/ws",
+      checkQuerySolvableByView: "wss://" + location.host + "/checkQuerySolvableByView",
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
