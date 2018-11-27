@@ -79,7 +79,7 @@ create index text_idx if not exists on ds_tweet(text) type fulltext;
 
 create feed TweetFeed with { 
     "adapter-name" : "socket_adapter", 
-    "sockets" : "asterix_nc1:10001", 
+    "sockets" : "${nc}:10001", 
     "address-type" : "nc", 
     "type-name" : "typeTweet", 
     "format" : "adm", 
