@@ -21,7 +21,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     timeSeriesEnd.setHours(timeSeriesEnd.getHours() - timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
     var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
     var startDate = new Date(Date.now());
-    startDate.setSeconds(startDate.getSeconds() - sendQueryRate)
+    startDate.setSeconds(startDate.getSeconds() - sendQueryRate);
     var timeLowerBound = startDate.toISOString(); //lower bound of live tweets, the first lower bound will be current time - 1 day, to ensure there at least some contents
     var queryLimit = parseInt(sendQueryRate/updateRate);
     var queryOffset = config.liveTweetQueryOffset? config.liveTweetQueryOffset : 30;
