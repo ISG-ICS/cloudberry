@@ -346,6 +346,7 @@ class OracleGenerator extends SQLGenerator {
             interval.unit match {
               case TimeUnit.Day=>s"to_char(cast($fieldExpr as ${timeUnitFuncMap(interval.unit)}),'YYYY-MM-DD')"
               case _ => s"extract(${timeUnitFuncMap(interval.unit)} from $fieldExpr)"
+                
             }
           }
           case level: Level =>
