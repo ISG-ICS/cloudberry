@@ -139,7 +139,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     function stopLiveTweets() {
-      console.log("[!] stop Live Tweets ...")
       window.clearInterval($scope.liveTweetsConsumer);
       window.clearInterval($scope.liveTweetsProducer);
     }
