@@ -43,7 +43,7 @@ private[db] class Migration_20160814() {
                |  result1 number(8);
                |begin
                |
-               |  select count(*)into result1 from dba_tables where owner = 'BERRY' and table_name = 'berry.meta';
+               |  select count(*)into result1 from all_tables where owner = 'BERRY' and table_name = 'berry.meta';
                |
                |  if result1 = 0 then
                |    execute immediate '

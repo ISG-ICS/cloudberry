@@ -33,7 +33,7 @@ class OracleGenerator extends SQLGenerator {
        |declare
        |    result1 number(8);
        |begin
-       |    select count(*) into result1 from dba_tables where owner = 'BERRY' and table_name = '${name}';
+       |    select count(*) into result1 from all_tables where owner = 'BERRY' and table_name = '${name}';
        |if result1 = 0 then
        |execute immediate 'create table $quote${name}$quote (
        |${fields.mkString(",\n")}, primary key (${schema.primaryKey.map(key => key.name).mkString(s"$quote",s"$quote,$quote",s"$quote")})
@@ -73,13 +73,8 @@ class OracleGenerator extends SQLGenerator {
         } else {
           select.fields.foreach {
             field => {
-              if (field.dataType != DataType.Point) {
                 producedExprs += field.name -> exprMap(field.name)
-              }
-              else{
-                val fieldExpr = exprMap(field.name)
-                producedExprs += field.name -> FieldExpr(field.name,s"""concat(concat(concat('POINT(',${fieldExpr.refExpr}.sdo_point.x),concat(', ',${fieldExpr.refExpr}.sdo_point.y)),')')""")
-              }
+
             }
           }
         }
@@ -106,35 +101,50 @@ class OracleGenerator extends SQLGenerator {
         ParsedResult(Seq.empty, exprMap)
     }
   }
+  protected def upsertPrimarykey(sourceSchema:Schema):String = {
+
+
+    val primaryKeystr:Seq[String] = for (pk<- sourceSchema.primaryKey)yield{
+      pk.name
+    }
+    var conflictsting = ""
+    for (pkname<- primaryKeystr){
+      conflictsting += "d.\""+pkname+"\" = s.\"" + pkname+"\" and "
+    }
+    conflictsting
+
+  }
+
 
   override def parseAppend(append: AppendView, schemaMap: Map[String, AbstractSchema]): String ={
     val (temporalSchemaMap, lookupSchemaMap) = GeneratorUtil.splitSchemaMap(schemaMap)
     val sourceSchema = temporalSchemaMap(append.query.dataset)
-    val primaryKeystr:Seq[String] = for (pk<- sourceSchema.primaryKey)yield{
-      pk.name
-    }
     val measurementStrd:Seq[String] = for (d <- sourceSchema.measurement) yield {
       "d.\""+d.name+"\""
     }
     val measurementStrs:Seq[String] = for (d <- sourceSchema.measurement) yield {
       "s.\""+d.name+"\""
     }
+    var dimensionStrd:Seq[String] = Seq()
+    for (d<- sourceSchema.dimension){
+      if (d.dataType != DataType.Hierarchy){
+        dimensionStrd= dimensionStrd :+"d.\"" + d.name + "\""
+      }
+    }
+    var dimensionStrs:Seq[String] = Seq()
+    for (d<- sourceSchema.dimension){
+      if (d.dataType == DataType.Hierarchy){
+      }
+      else {
+        dimensionStrs = dimensionStrs:+"s.\"" + d.name + "\""
+      }
+    }
 
-    val dimensionStrd:Seq[String] = for (d<- sourceSchema.dimension)yield{
-      "d.\""+d.name+"\""
-    }
-    val dimensionStrs:Seq[String] = for (d<- sourceSchema.dimension)yield{
-      "s.\""+d.name+"\""
-    }
-    var conflictsting = ""
-    for (pkname<- primaryKeystr){
-      conflictsting += "d.\""+pkname+"\" = s.\"" + pkname+"\" and "
-    }
-
+    val conflictstring = upsertPrimarykey(sourceSchema)
     val insert = s"""
                     |merge into $quote${append.dataset}$quote d
                     |using (${parseQuery(append.query,schemaMap)}) s
-                    |on (${conflictsting.dropRight(5)})
+                    |on (${conflictstring.dropRight(5)})
                     |when not matched then
                     |insert (${(dimensionStrd ++ measurementStrd).mkString(",")})
                     |values (${(dimensionStrs ++ measurementStrs).mkString(",")})
@@ -194,9 +204,6 @@ class OracleGenerator extends SQLGenerator {
     val sourceSchema = temporalSchemaMap(create.query.dataset)
     val resultSchema = calcResultSchema(create.query, sourceSchema)
     val ddl: String = genDDL(create.dataset, sourceSchema)
-    val primaryKeystr:Seq[String] = for (pk<- sourceSchema.primaryKey)yield{
-      pk.name
-    }
     val measurementStrd:Seq[String] = for (d <- sourceSchema.measurement) yield {
       "d.\""+d.name+"\""
     }
@@ -217,14 +224,12 @@ class OracleGenerator extends SQLGenerator {
         dimensionStrs = dimensionStrs:+"s.\"" + d.name + "\""
       }
     }
-    var conflictsting = ""
-    for (pkname<- primaryKeystr){
-      conflictsting += "d.\""+pkname+"\" = s.\"" + pkname+"\" and "
-    }
+    val conflictstring = upsertPrimarykey(sourceSchema)
+
     val insert = s"""
                     |merge into $quote${create.dataset}$quote d
                     |using (${parseQuery(create.query,schemaMap)}) s
-                    |on (${conflictsting.dropRight(5)})
+                    |on (${conflictstring.dropRight(5)})
                     |when not matched then
                     |insert (${(dimensionStrd ++ measurementStrd).mkString(",")})
                     |values (${(dimensionStrs ++ measurementStrs).mkString(",")})
@@ -243,7 +248,7 @@ class OracleGenerator extends SQLGenerator {
       case DataType.Point => "SDO_GEOMETRY"
       case DataType.Boolean => "NUMBER(1)"
       case DataType.String => "VARCHAR2(255)"
-      case DataType.Text => "VARCHAR(1000)"
+      case DataType.Text => "CLOB"
       case DataType.Bag => "VARCHAR(1000)"//TODO: this is the way to avoid error
       case DataType.Hierarchy => ???
       case DataType.Record => ???
@@ -333,15 +338,6 @@ class OracleGenerator extends SQLGenerator {
     //return the empty result & exprMap for next step's process.
     ParsedResult((new ListBuffer[String]), exprMap)
   }
-  override protected def timeUnitFuncMap(unit: TimeUnit.Value): String = unit match {
-    case TimeUnit.Second => "second"
-    case TimeUnit.Minute => "minute"
-    case TimeUnit.Hour => "hour"
-    case TimeUnit.Day => "date"
-    case TimeUnit.Month => "month"
-    case TimeUnit.Year => "year"
-    case _ => throw new QueryParsingException(s"No implementation is provided for timeunit function ${unit.toString}")
-  }
   protected def parseGroupByFunc(groupBy: ByStatement, fieldExpr: String): String = {
     groupBy.funcOpt match {
       case Some(func) =>
@@ -376,7 +372,7 @@ class OracleGenerator extends SQLGenerator {
        |declare
        |     result1 number(8);
        |begin
-       |   select count(*)into result1 from dba_tables where owner = 'BERRY' and table_name = '${query.dataset}';
+       |   select count(*)into result1 from all_tables where owner = 'BERRY' and table_name = '${query.dataset}';
        |if result1 > 0 then
        |execute immediate 'drop table $quote${query.dataset}$quote ';
        |end if;
@@ -388,15 +384,7 @@ class OracleGenerator extends SQLGenerator {
   }
 
 
-  /**
-    * Process SDO_POINT_TYPE of ORACLE
-    * : return POINT field as text to avoid messy code. https://dev.mysql.com/doc/refman/5.7/en/gis-format-conversion-functions.html
-    * ST_X, ST_Y: get X/Y-coordinate of Point. https://dev.mysql.com/doc/refman/5.6/en/gis-point-property-functions.html
-    * truncate: a number truncated to a certain number of decimal places, mainly used in groupBy. http://www.w3resource.com/mysql/mathematical-functions/mysql-truncate-function.php
-    * @param scale
-    * @param fieldExpr
-    * @param dataType
-    */
+
   def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
     s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
   }

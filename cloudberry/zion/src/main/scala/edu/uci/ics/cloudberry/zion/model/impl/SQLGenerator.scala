@@ -463,7 +463,6 @@ abstract class SQLGenerator extends IQLGenerator {
             s"$quote${aggr.field.name}$quote"
           }
           else {
-            //println(s"${sourceVar}.$quote${aggr.field.name}$quote else ========")
             s"${sourceVar}.$quote${aggr.field.name}$quote"
 
           }
@@ -474,7 +473,7 @@ abstract class SQLGenerator extends IQLGenerator {
           s"""
              |select $funcName($newDefExpr) as $quote${aggr.as.name}$quote from
              |(""".stripMargin
-        //println(prepend+" ==prepend")
+
         val append =
           s""") ${sourceVar}""".stripMargin
         queryBuilder.insert(0, prepend)

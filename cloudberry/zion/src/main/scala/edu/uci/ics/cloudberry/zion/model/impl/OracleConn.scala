@@ -10,6 +10,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.Breaks.{break, breakable}
 import java.sql.{Connection, DriverManager, _}
 import oracle.sql._
+import oracle.spatial.geometry.JGeometry
 
 
 class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
@@ -49,7 +50,6 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value.toString.toDouble))
             case "DATE" =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(value.asInstanceOf[DATE].dateValue().getTime)))
-
             case "TIMESTAMP" =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(value.asInstanceOf[TIMESTAMP].dateValue().getTime)))
             case "BLOB" =>
@@ -62,18 +62,7 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "VARCHAR2" =>
               if (value != null) {
-                if (value.toString().contains("POINT(")) {
-                  if (value.toString == "POINT(, )"){
-                  }
-                  else {
-                    val coord = value.toString
-                    val coordx = coord.slice(6, coord.length - 2).split(", ")(0)
-                    val coordy = coord.slice(6, coord.length - 2).split(", ")(1)
-                    val s = Seq(coordx.toDouble, coordy.toDouble)
-                    rsJson = rsJson ++ Json.obj(columnLabel -> s)
-                  }
-                }
-                else if (value.toString.contains("LINESTRING(")) {
+                if (value.toString.contains("LINESTRING(")) {
                   val bound_boxStr = value.toString
                   val bound_boxFirstx = bound_boxStr.slice(11, bound_boxStr.length - 2).split(",")(0).split(" ")(0).toDouble
                   val bound_boxFirsty = bound_boxStr.slice(11, bound_boxStr.length - 2).split(",")(0).split(" ")(1).toDouble
@@ -91,12 +80,18 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
             case "VARCHAR" =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "NVARCHAR2" =>
-              println("my result nvarchar2")
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "NCLOB" => //large data
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "CLOB" =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
+            case "MDSYS.SDO_GEOMETRY"=>
+                if (value != null){
+                    val j_geom = JGeometry.load(value.asInstanceOf[STRUCT])
+                    val test = j_geom.getPoint
+                    val coordinates = Seq(test(0), test(1))
+                    rsJson = rsJson ++ Json.obj(columnLabel -> coordinates)
+              }
             case _ =>
               Logger.warn(s"type of value $value is not detectd")
               break
@@ -129,10 +124,9 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   def postControl(query: String) = {
-    //Oracle sql can not end with ;
     val statement = connection.createStatement
     query.split("/\n").foreach {
-      case q => println(q+" 1statement")
+      case q =>
         statement.executeUpdate(q)
     }
     Future(true)
