@@ -214,7 +214,7 @@ class JSONParserTest extends Specification {
         QueryExeOption.TagReturnDelta -> JsBoolean(true)
       )
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(1234, 4321, None, true)
+      option must_== QueryExeOption(1234, -1, None, true)
     }
     "parse estimable query if estimable field appears" in {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(true)), twitterSchemaMap)
