@@ -8,25 +8,21 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
-    var sampleTweets = [];
-    $scope.drawTweetMode = 2; //Initially set to 2 liveTweets Mode, change this variable to 1 to enable traditional draw
-    var sendQueryRate = config.liveTweetQueryInterval? config.liveTweetQueryInterval : 60; // Set length of time interval in seconds
-    var updateRate = config.updateRate? config.updateRate : 2;
-    var sendQueryLoop = {}; //Store variable for window.setInterval function, keep only one setInterval function avtive at a time
-    $scope.liveTweetsLoop = {};//Store variable for window.setInterval function, stop live tweets feeding when user specified a 
-                            //time interval in time bar
-    var secondLiveTweetQueryTimeOut = null;
-    var timeSeriesEnd = cloudberry.parameters.timeInterval.end ? new Date(cloudberry.parameters.timeInterval.end) : new Date();// This date will be the latest date of tweets been ingested, and time bar's end date when application is initializing
-    var timeZoneOffset = ((new Date).getTimezoneOffset()) / 60;
-    timeSeriesEnd.setHours(timeSeriesEnd.getHours() - timeZoneOffset);//consider the timezone, in order to get live tweets work in any circumstance
-    var timeUpperBound = timeSeriesEnd.toISOString(); //Upper time limit of live tweets, lower bound< create time of tweets < upper bound 
-    var startDate = new Date(Date.now());
-    startDate.setSeconds(startDate.getSeconds() - sendQueryRate);
-    var timeLowerBound = startDate.toISOString(); //lower bound of live tweets, the first lower bound will be current time - 1 day, to ensure there at least some contents
-    var queryLimit = parseInt(sendQueryRate/updateRate);
+    // live tweets queue
+    var liveTweetsQueue = [];
+    // queryInterval - Every how many seconds, we send a query to database to retrieve new tweets
+    var queryInterval = config.liveTweetQueryInterval? config.liveTweetQueryInterval : 60;
+    // query offset - Every time we query database the new tweets,
+    //                  how many seconds before now is the query's end time condition
     var queryOffset = config.liveTweetQueryOffset? config.liveTweetQueryOffset : 30;
+    // updateRate - Every how many seconds, we popup a tweet from queue and show it on page
+    var updateRate = config.liveTweetUpdateRate? config.liveTweetUpdateRate : 2;
+    // Store handle returned from window.setInterval function
+    var queryLimit = parseInt(queryInterval / updateRate);
+    $scope.liveTweetsProducer = {};
+    $scope.liveTweetsConsumer = {};
+    var timeZoneHoursOffset = ((new Date).getTimezoneOffset()) / 60;
 
-  
     // Timer for sending query to check whether it can be solved by view
     $scope.timerCheckQuerySolvableByView = null;
 
@@ -95,146 +91,88 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
-    function drawTweets(message) {           
+    function drawTweets(message) {
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
-      $http.jsonp(url).success(function (data) { 
+      $http.jsonp(url).success(function (data) {
         $(data.html).hide().prependTo("#tweet");
         $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
       });
-      
     }
   
-    function drawTweetsTraditional(){
-      $.each(sampleTweets, function (i, d) {
-      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
-      $http.jsonp(url).success(function (data) {
-          $(data.html).hide().prependTo("#tweet");
-        });
-      });
-    }
-  
-    function sendSampleTweetsQuery(timeLowerBound, timeUpperBound, sampleTweetSize) {
+    function sendLiveTweetsQuery(sampleTweetSize) {
+      // Construct time range condition for live tweets query
+      var tempDateTime = (new Date(Date.now()));
+      // 1. Get NOW considering time zone.
+      tempDateTime.setHours(tempDateTime.getHours() - timeZoneHoursOffset);
+      // 2. UpperBound = NOW - queryOffset
+      tempDateTime.setSeconds(tempDateTime.getSeconds() - queryOffset);
+      var timeUpperBound = tempDateTime.toISOString();
+      // 3. LowerBound = UpperBound - queryInterval
+      tempDateTime.setSeconds(tempDateTime.getSeconds()  - queryInterval);
+      var timeLowerBound = tempDateTime.toISOString();
+
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-          if($scope.drawTweetMode === 1){
-            sampleTweets = [];
-            sampleTweets = resultSet[0];
-            drawTweetsTraditional();
-            //To enable smoothly updating sample tweets, we wait 1 second for rendering twitterwidget
-            setTimeout(function(){
-                $("#tweet").children().filter("twitter-widget").removeClass("twitter-tweet").css("opacity","0").animate({opacity:1},1000);
-            },1000);
-          }
-          else{
-            sampleTweets = sampleTweets.concat(resultSet[0]);//oldest tweet will be at front
-            //Update 1 tweet immediately 
-            if(sampleTweets.length > 0){
-              var data = sampleTweets.pop();
-              drawTweets(data);
-            }
-          }
-          $scope.isSampleTweetsOutdated = false;
+        // new tweets retrieved push back to live tweets queue
+        liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+        $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");
-      
-      
     }
-   
-    //Constantly checking local tweets queue to draw tweet one by one
-    function startLiveTweet(){        
-      $scope.liveTweetsLoop = window.setInterval(function(){
-        if(sampleTweets.length > 0){
-          var data = sampleTweets.pop();
+
+    // Constantly checking live tweets queue to draw tweet one by one
+    function startLiveTweetsConsumer() {
+      $scope.liveTweetsConsumer = window.setInterval(function() {
+        if (liveTweetsQueue.length > 0){
+          var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
         if($("#tweet").children().length > 20)
         {
           $("#tweet").children().last().remove();
         }
-      },updateRate*1000);
+      }, updateRate * 1000);
     }
     
-    function startLiveTweetQuery(){
-          var tempDateTime = (new Date(Date.now()));
-          tempDateTime.setHours(tempDateTime.getHours() - timeZoneOffset);
-          tempDateTime.setSeconds(tempDateTime.getSeconds() - queryOffset);
-          timeUpperBound = tempDateTime.toISOString();
-          tempDateTime.setSeconds(tempDateTime.getSeconds()  - sendQueryRate);
-          timeLowerBound = tempDateTime.toISOString();
-          sendSampleTweetsQuery(timeLowerBound,timeUpperBound,queryLimit);
-          sendQueryLoop = window.setInterval(function(){
-            //Update time range of live tweets to avoid get repetitive tweets
-            var tempDateTime = (new Date(Date.now()));
-            tempDateTime.setHours(tempDateTime.getHours() - timeZoneOffset);
-            tempDateTime.setSeconds(tempDateTime.getSeconds() - queryOffset);
-            timeUpperBound = tempDateTime.toISOString();
-            tempDateTime.setSeconds(tempDateTime.getSeconds() - sendQueryRate);
-            timeLowerBound = tempDateTime.toISOString();
-            sendSampleTweetsQuery(timeLowerBound, timeUpperBound, queryLimit);
-          }, sendQueryRate*1000);//send query every second
-          startLiveTweet();        
+    function startLiveTweetsProducer() {
+      sendLiveTweetsQuery(queryLimit);
+      $scope.liveTweetsProducer = window.setInterval(function() {sendLiveTweetsQuery(queryLimit)}, queryInterval * 1000);
     }
-    function resumeLiveTweet(){
-      var timeBarMax = new Date(cloudberry.parameters.timeInterval.end);
-      if(timeBarMax >= timeSeriesEnd && $scope.isSampleTweetsOutdated === false ) 
-      {
-          startLiveTweetQuery();
-      }
+
+    function stopLiveTweets() {
+      console.log("[!] stop Live Tweets ...")
+      window.clearInterval($scope.liveTweetsConsumer);
+      window.clearInterval($scope.liveTweetsProducer);
     }
-  
-    function cleanLiveTweet(){
-      window.clearInterval($scope.liveTweetsLoop);
-      window.clearInterval(sendQueryLoop);
-      if($scope.isSampleTweetsOutdated){
-        $("#tweet").html("");//clean tweets in sidebar
-      }
-      sampleTweets=[];
+
+    function cleanLiveTweets() {
+      liveTweetsQueue = [];
+      $("#tweet").html("");
     };
 
-    function handleSidebarQuery(){  
-      var timeBarMin = new Date(cloudberry.parameters.timeInterval.start);//user specified time series start
-      var timeBarMax = new Date(cloudberry.parameters.timeInterval.end);//user specified time series end
-      //Clear both query and updating loop of live Tweets
-
-      if(secondLiveTweetQueryTimeOut && $scope.isSampleTweetsOutdated){
-        clearTimeout(secondLiveTweetQueryTimeOut);
-      }
-
+    function handleSidebarQuery(){
       if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {
         sendHashTagQuery();
       }
-      if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
-        
-        cleanLiveTweet();
-        //Do traditional sample tweets,when user specifed time interval, and the end of time interval is older than latest tweet
-        if(timeBarMax < timeSeriesEnd){
-          
-          $scope.drawTweetMode = 1;
-          sendSampleTweetsQuery(timeBarMin.toISOString(), timeBarMax.toISOString(), 10);
+      if ($scope.isSampleTweetsOpen) {
+        stopLiveTweets();
+        if ($scope.isSampleTweetsOutdated) {
+          cleanLiveTweets();
         }
-        else{          
-          $scope.drawTweetMode = 2;
-          startLiveTweetQuery();
-        }
-
-      }
-      else if ($scope.isSampleTweetsOutdated){
-        //Whenever new event occur sample tweet is outdated and should be cleaned
-        cleanLiveTweet();
+        startLiveTweetsConsumer();
+        startLiveTweetsProducer();
       }
     }
   
     $scope.showTab = function(tab) {
 
+      if (tab !== "sampletweetTab") {
+        stopLiveTweets();
+      }
+
       if (tab !== $scope.currentTab) {
         $scope.currentTab = tab;
       }
-      
-      if (tab !== "sampletweetTab"){
-        window.clearInterval(sendQueryLoop);
-        window.clearInterval($scope.liveTweetsLoop);
-        clearTimeout(secondLiveTweetQueryTimeOut);
-      }
-      
+
       switch (tab) {
         case "hashtagTab":
           $scope.isHashTagOpen = true;
@@ -243,7 +181,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         case "sampletweetTab":
           $scope.isSampleTweetsOpen = true;
           $scope.isHashTagOpen = false;
-          resumeLiveTweet();
           break;
         case "aboutTab":
           $scope.isHashTagOpen = false;
@@ -260,8 +197,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if (click === -1) {
         $scope.isSampleTweetsOpen = false;
         $scope.isHashTagOpen = false;
-        cleanLiveTweet();
-        clearTimeout(secondLiveTweetQueryTimeOut);
+        stopLiveTweets();
       }
       else {
         $scope.showTab($scope.currentTab);
