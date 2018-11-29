@@ -105,7 +105,10 @@ class ProgressiveSolver(val dataManager: ActorRef,
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        val infoValue = queryGroup.postTransform.transform(JsArray(returnedResult))
+        //val infoValue = queryGroup.postTransform.transform(JsArray(returnedResult))
+        val newresult = QueryPlanner.handleAvg(returnedResult)
+        val infoValue = queryGroup.postTransform.transform(JsArray(newresult))
+
         val results : JsValue = infoValue match {
           case _: JsArray =>
             Json.toJson(JsObject(Seq("value" -> infoValue)) ++ timeInterval)
@@ -133,7 +136,11 @@ class ProgressiveSolver(val dataManager: ActorRef,
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
+        //val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
+
+        val newresult = QueryPlanner.handleAvg(mergedResults)
+        val infoValue = queryGroup.postTransform.transform(JsArray(newresult))
+
         val results : JsValue = infoValue match {
           case _: JsArray =>
             Json.toJson(JsObject(Seq("value" -> infoValue)) ++ timeInterval)

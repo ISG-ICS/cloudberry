@@ -1,3 +1,0 @@
-This is a test for pr.
-
-push 2nd

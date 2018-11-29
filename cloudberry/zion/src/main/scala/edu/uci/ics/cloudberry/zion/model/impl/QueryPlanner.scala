@@ -285,4 +285,110 @@ object QueryPlanner {
     JsArray(jsArray.value.map(obj => JsObject(obj.asInstanceOf[JsObject].fields.filter(e => project.contains(e._1)))))
   }
 
+//hand avg function for ProgressiveSolver
+  def handleAvg(mergedResults:Seq[JsArray]):Seq[JsArray] =
+  {   
+    val newmergedresults = mergedResults.map(
+      x => {
+        val y = x.value.map(r => {
+          var mergfield : List[Array[String]]=List()
+          //System.out.println("--------------------------------r=-----------"+r)
+          val record = r.as[JsObject]
+          if (mergfield.size ==0)
+          {
+            record.keys.map(field =>{
+              if (field.startsWith("__count__") || field.startsWith("__sum__"))
+              {
+                val realfield = field.replaceAll("__sum__","").replaceAll("__count__","")
+                val newfield=  Array(realfield,"__count__"+realfield,"__sum__"+realfield)
+                var bExist =false
+                mergfield.map(a =>{
+                  if (a(0) == realfield)
+                  {
+                    bExist =true;
+                  }
+                })
+                if (! bExist)
+                  mergfield =  newfield +: mergfield
+              }
+            })
+          }
+          //merge sum and count to avg
+          if (mergfield.size  >0)
+          {
+            var outjson = r.toString()
+            mergfield.map(f =>{
+              val count = (r \ f(1)).as[JsNumber]
+              val sum = (r \ f(2)).as[JsNumber]
+              val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
+             // System.out.println("=====count="+count+",sum="+sum+",avg="+avg)
+              //remove count
+              outjson =  outjson.replaceAll("\""+f(1)+"\":"+count+",", "")
+              //replace sum with avg
+              outjson =  outjson.replaceAll("\""+f(2)+"\":"+sum, "\""+f(0)+"\":"+avg)
+            })
+            Json.parse(outjson)
+          }
+          else
+            r
+
+        })
+        JsArray(y)
+      }
+    )
+    //System.out.println("--------------------------------newmergedresults=-----------"+newmergedresults)
+    newmergedresults
+  }
+
+  //hand avg function for RESTSolver
+  def handleAvg(mergedResults:JsArray):JsValue =
+  {
+    //handle avg function, merge the __sum__ and __count__ fields into one   field
+    //{"dd":"2007-09","__count__v":5,"__sum__v":46.9} ==> {"dd":"2007- 09","v":46.9/5}
+    val y = mergedResults.value.map(rows => {
+      rows.as[JsArray].value.map( r => {
+        var mergfield : List[Array[String]]=List()
+        //System.out.println("--------------------------------r=-----------"+r)
+        val record = r.as[JsObject]
+        if (mergfield.size ==0)
+        {
+          record.keys.map(field =>{
+            if (field.startsWith("__count__") || field.startsWith("__sum__") )
+            {
+              val realfield = field.replaceAll("__sum__","").replaceAll("__count__","")
+              val newfield=  Array(realfield,"__count__"+realfield,"__sum__"+realfield)
+              var bExist =false
+              mergfield.map(a =>{
+                if (a(0) == realfield)
+                {
+                  bExist =true;
+                }
+              })
+              if (! bExist)
+                mergfield =  newfield +: mergfield
+            }
+          })
+        }
+        //merge sum and count to avg
+        if (mergfield.size > 0) {
+          var outjson = r.toString()
+          mergfield.map(f =>{
+            val count = (r \ f(1)).as[JsNumber]
+            val sum = (r \ f(2)).as[JsNumber]
+            val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
+           // System.out.println("=====count="+count+",sum="+sum+",avg="+avg)
+            //remove count
+            outjson =  outjson.replaceAll("\""+f(1)+"\":"+count+",", "")
+            //replace sum with avg
+            outjson =  outjson.replaceAll("\""+f(2)+"\":"+sum, "\""+f(0)+"\":"+avg)
+          })
+          Json.parse(outjson)
+        }
+        else
+          r
+      })
+    })
+    Json.parse(Json.toJson(y).toString())
+  }
+
 }
