@@ -63,6 +63,7 @@ object Dependencies {
     "org.webjars.bower" % "crossfilter" % "1.3.11",
     "org.webjars.bower" % "dc.js" % "1.7.5",
     "org.webjars" % "d3js" % "3.5.16",
+    "org.webjars" % "highcharts" % "6.1.4",
     // sidebar module
     "org.webjars" % "font-awesome" % "4.5.0",
     "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
