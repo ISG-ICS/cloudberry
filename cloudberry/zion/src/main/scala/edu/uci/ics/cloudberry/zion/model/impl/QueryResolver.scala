@@ -130,10 +130,10 @@ object QueryResolver {
 	   aggregate.func match {
             case Avg => {
               val avgSumName ="__sum__"+aggregate.as
-              val avgCountName="__count__"+aggregate.as
+              val avgCountName ="__count__"+aggregate.as
               val avg_sum_as_field = Field.as(Sum(field), avgSumName);
               val avg_count_as_field = Field.as(Count(field), avgCountName);
-              producedFields += avgSumName-> avg_sum_as_field
+              producedFields += avgSumName -> avg_sum_as_field
               producedFields += avgCountName -> avg_count_as_field
 
               resolvedAggrsWithSumCount = AggregateStatement(field, Sum, avg_sum_as_field) +: resolvedAggrsWithSumCount

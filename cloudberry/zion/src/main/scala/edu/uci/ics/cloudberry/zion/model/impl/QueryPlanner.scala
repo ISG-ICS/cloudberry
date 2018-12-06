@@ -291,20 +291,20 @@ object QueryPlanner {
     val newMergedResults = mergedResults.map(
       x => {
         val y = x.value.map(r => {
-          var mergField : List[Array[String]]=List()
+          var mergField : List[Array[String]]= List()
           val record = r.as[JsObject]
-          if (mergField.size ==0)
+          if (mergField.size == 0)
           {
             record.keys.map(field => {
               if (field.startsWith("__count__") || field.startsWith("__sum__"))
               {
                 val realField = field.replaceAll("__sum__","").replaceAll("__count__","")
                 val newField=  Array(realField,"__count__"+realField,"__sum__"+realField)
-                var bExist =false
-                mergField.map(a =>{
+                var bExist = false
+                mergField.map(a => {
                   if (a(0) == realField)
                   {
-                    bExist =true;
+                    bExist = true;
                   }
                 })
                 if (! bExist)
@@ -341,21 +341,21 @@ object QueryPlanner {
   def handleAvg(mergedResults:JsArray):JsValue =
   {
     val y = mergedResults.value.map(rows => {
-      rows.as[JsArray].value.map( r => {
-        var mergField : List[Array[String]]=List()
+      rows.as[JsArray].value.map(r => {
+        var mergField : List[Array[String]] = List()
         val record = r.as[JsObject]
-        if (mergField.size ==0)
+        if (mergField.size == 0)
         {
           record.keys.map(field => {
             if (field.startsWith("__count__") || field.startsWith("__sum__") )
             {
               val realField = field.replaceAll("__sum__","").replaceAll("__count__","")
-              val newField=  Array(realField,"__count__"+realField,"__sum__"+realField)
-              var bExist =false
-              mergField.map(a =>{
+              val newField =  Array(realField,"__count__"+realField,"__sum__"+realField)
+              var bExist = false
+              mergField.map(a => {
                 if (a(0) == realField)
                 {
-                  bExist =true;
+                  bExist = true;
                 }
               })
               if (! bExist)
@@ -366,7 +366,7 @@ object QueryPlanner {
         //merge sum and count to avg
         if (mergField.size > 0) {
           var outjson = r.toString()
-          mergField.map(f =>{
+          mergField.map(f => {
             val count = (r \ f(1)).as[JsNumber]
             val sum = (r \ f(2)).as[JsNumber]
             val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
