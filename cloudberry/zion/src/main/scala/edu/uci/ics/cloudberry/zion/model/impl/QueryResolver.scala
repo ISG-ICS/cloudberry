@@ -126,9 +126,8 @@ object QueryResolver {
         val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
           val field = resolveField(aggregate.field, fieldMap)
           val as = Field.as(aggregate.func(field), aggregate.as)
-          //producedFields += aggregate.as -> as
-          //AggregateStatement(field, aggregate.func, as)
-	  aggregate.func match {
+
+	   aggregate.func match {
             case Avg => {
               val avgSumName ="__sum__"+aggregate.as
               val avgCountName="__count__"+aggregate.as
@@ -139,7 +138,6 @@ object QueryResolver {
 
               resolvedAggrsWithSumCount = AggregateStatement(field, Sum, avg_sum_as_field) +: resolvedAggrsWithSumCount
               resolvedAggrsWithSumCount = AggregateStatement(field, Count, avg_count_as_field) +: resolvedAggrsWithSumCount
-              System.out.println("======resolvedAggrsWithSumCount.size======"+resolvedAggrsWithSumCount.size)
             }
             case _ => {
               producedFields += aggregate.as -> as
@@ -150,8 +148,7 @@ object QueryResolver {
         }
 
         val (resolvedLookups, newFieldMap) = resolveLookups(groupStatement.lookups, producedFields.result().toMap, schemaMap)
-
-        val resolved = GroupStatement(resolvedBys, resolvedAggrsWithSumCount , resolvedLookups)
+        val resolved = GroupStatement(resolvedBys, resolvedAggrsWithSumCount, resolvedLookups)
         (Some(resolved), newFieldMap)
       case None =>
         (None, fieldMap)

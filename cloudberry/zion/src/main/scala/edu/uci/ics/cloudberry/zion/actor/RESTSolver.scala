@@ -26,11 +26,9 @@ class RESTSolver(val dataManager: ActorRef,
       val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
       futureResult.map(result => (queries, result)).foreach { case (qs, r) =>
 
-        val newresult = QueryPlanner.handleAvg(r)
-        //System.out.println("-------------restsolver receive newresult="+newresult)
-        out ! transform.transform(newresult)
+        val avgHandledResult = QueryPlanner.handleAvg(r)
+        out ! transform.transform(avgHandledResult)
 
-        //out ! transform.transform(r)
         //Disabled this suggest views to avoid competing resources in DB with ongoing ProgressiveSolver.
         //TODO Once we have view management mechanism, could use a common service to request a view creation.
         //qs.foreach(suggestViews)

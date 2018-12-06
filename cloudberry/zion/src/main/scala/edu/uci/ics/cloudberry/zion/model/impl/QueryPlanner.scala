@@ -285,43 +285,41 @@ object QueryPlanner {
     JsArray(jsArray.value.map(obj => JsObject(obj.asInstanceOf[JsObject].fields.filter(e => project.contains(e._1)))))
   }
 
-//hand avg function for ProgressiveSolver
+  // Handle avg function for ProgressiveSolver
   def handleAvg(mergedResults:Seq[JsArray]):Seq[JsArray] =
-  {   
-    val newmergedresults = mergedResults.map(
+  {
+    val newMergedResults = mergedResults.map(
       x => {
         val y = x.value.map(r => {
-          var mergfield : List[Array[String]]=List()
-          //System.out.println("--------------------------------r=-----------"+r)
+          var mergField : List[Array[String]]=List()
           val record = r.as[JsObject]
-          if (mergfield.size ==0)
+          if (mergField.size ==0)
           {
-            record.keys.map(field =>{
+            record.keys.map(field => {
               if (field.startsWith("__count__") || field.startsWith("__sum__"))
               {
-                val realfield = field.replaceAll("__sum__","").replaceAll("__count__","")
-                val newfield=  Array(realfield,"__count__"+realfield,"__sum__"+realfield)
+                val realField = field.replaceAll("__sum__","").replaceAll("__count__","")
+                val newField=  Array(realField,"__count__"+realField,"__sum__"+realField)
                 var bExist =false
-                mergfield.map(a =>{
-                  if (a(0) == realfield)
+                mergField.map(a =>{
+                  if (a(0) == realField)
                   {
                     bExist =true;
                   }
                 })
                 if (! bExist)
-                  mergfield =  newfield +: mergfield
+                  mergField =  newField +: mergField
               }
             })
           }
           //merge sum and count to avg
-          if (mergfield.size  >0)
+          if (mergField.size  >0)
           {
             var outjson = r.toString()
-            mergfield.map(f =>{
+            mergField.map(f => {
               val count = (r \ f(1)).as[JsNumber]
               val sum = (r \ f(2)).as[JsNumber]
               val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
-             // System.out.println("=====count="+count+",sum="+sum+",avg="+avg)
               //remove count
               outjson =  outjson.replaceAll("\""+f(1)+"\":"+count+",", "")
               //replace sum with avg
@@ -336,47 +334,42 @@ object QueryPlanner {
         JsArray(y)
       }
     )
-    //System.out.println("--------------------------------newmergedresults=-----------"+newmergedresults)
-    newmergedresults
+    newMergedResults
   }
 
-  //hand avg function for RESTSolver
+  // Handle avg function for RESTSolver
   def handleAvg(mergedResults:JsArray):JsValue =
   {
-    //handle avg function, merge the __sum__ and __count__ fields into one   field
-    //{"dd":"2007-09","__count__v":5,"__sum__v":46.9} ==> {"dd":"2007- 09","v":46.9/5}
     val y = mergedResults.value.map(rows => {
       rows.as[JsArray].value.map( r => {
-        var mergfield : List[Array[String]]=List()
-        //System.out.println("--------------------------------r=-----------"+r)
+        var mergField : List[Array[String]]=List()
         val record = r.as[JsObject]
-        if (mergfield.size ==0)
+        if (mergField.size ==0)
         {
-          record.keys.map(field =>{
+          record.keys.map(field => {
             if (field.startsWith("__count__") || field.startsWith("__sum__") )
             {
-              val realfield = field.replaceAll("__sum__","").replaceAll("__count__","")
-              val newfield=  Array(realfield,"__count__"+realfield,"__sum__"+realfield)
+              val realField = field.replaceAll("__sum__","").replaceAll("__count__","")
+              val newField=  Array(realField,"__count__"+realField,"__sum__"+realField)
               var bExist =false
-              mergfield.map(a =>{
-                if (a(0) == realfield)
+              mergField.map(a =>{
+                if (a(0) == realField)
                 {
                   bExist =true;
                 }
               })
               if (! bExist)
-                mergfield =  newfield +: mergfield
+                mergField =  newField +: mergField
             }
           })
         }
         //merge sum and count to avg
-        if (mergfield.size > 0) {
+        if (mergField.size > 0) {
           var outjson = r.toString()
-          mergfield.map(f =>{
+          mergField.map(f =>{
             val count = (r \ f(1)).as[JsNumber]
             val sum = (r \ f(2)).as[JsNumber]
             val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
-           // System.out.println("=====count="+count+",sum="+sum+",avg="+avg)
             //remove count
             outjson =  outjson.replaceAll("\""+f(1)+"\":"+count+",", "")
             //replace sum with avg
