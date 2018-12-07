@@ -357,7 +357,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     //     }
     // };
 
-    // load geoJson to get city polygons
+    // load geoJson to get zipcode polygons
     $scope.loadZipcodeJsonByBound = function loadZipcodeJsonByBound(onEachFeature, fromEventName, fromEvent){
       var bounds = $scope.map.getBounds();
       var rteBounds = "zipcode/" + bounds._northEast.lat + "/" + bounds._southWest.lat + "/" + bounds._northEast.lng + "/" + bounds._southWest.lng;
