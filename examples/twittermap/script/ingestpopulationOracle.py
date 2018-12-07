@@ -87,7 +87,7 @@ def load_json_multiple(segments):
 
 population = open("populationingets.sql","w")
 
-with open("allCityPopulation.adm") as cityf:
+with open("./noah/src/main/resources/population/adm/allCityPopulation.adm") as cityf:
     count = 0
     for cityjson in load_json_multiple(cityf):
         if count % 1000==0:
@@ -116,7 +116,7 @@ with open("allCityPopulation.adm") as cityf:
 print("Ingesting of City Population Completed...")
 print("Start Ingesting County Population")
 
-with open("allCountyPopulation.adm") as countyf:
+with open("./noah/src/main/resources/population/adm/allCountyPopulation.adm") as countyf:
     count = 0
     for countyjson in load_json_multiple(countyf):
         if count % 1000==0:
@@ -142,7 +142,7 @@ with open("allCountyPopulation.adm") as countyf:
 print("Ingesting of County Population Completed...")
 print("Start Ingesting State Population...")
 
-with open("allStatePopulation.adm") as statef:
+with open("./noah/src/main/resources/population/adm/allStatePopulation.adm") as statef:
     count = 0
     for statejson in load_json_multiple(statef):
         count += 1
