@@ -431,7 +431,7 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select concat(concat(concat('POINT(',t."coordinate".sdo_point.x),concat(', ',t."coordinate".sdo_point.y)),')') as "coordinate"
+          |select t."coordinate" as "coordinate"
           |from "twitter.ds_tweet" t
           |fetch first 10 rows only""".stripMargin.trim)
     }
@@ -735,7 +735,7 @@ class OracleGeneratorTest extends Specification {
     }
 
   }
-//Progress
+   //49
   "OracleGenerator calcResultSchema" should {
     "return the input schema if the query is subset filter only" in {
       val schema = parser.calcResultSchema(zikaCreateQueryForOracle, TwitterDataStoreWithoutHashTagOracle.TwitterSchemaForOracle)
@@ -745,7 +745,7 @@ class OracleGeneratorTest extends Specification {
       ok
     }
   }
-
+  //50
   "OracleGenerator createView" should {
     "generate the ddl for the twitter dataset" in {
       val ddl = parser.generate(CreateView("zika", zikaCreateQueryForOracle), Map(twitterDataSetForOracle -> TwitterDataStoreWithoutHashTagOracle.TwitterSchemaForOracle))
@@ -792,7 +792,7 @@ class OracleGeneratorTest extends Specification {
           |""".stripMargin.trim)
     }
   }
-
+  //51
   "OracleGenerator deleteRecord" should {
     "generate the delete query " in {
       val sql = parser.generate(DeleteRecord(twitterDataSetForOracle, Seq(timeFilter)), Map(twitterDataSetForOracle -> TwitterDataStoreWithoutHashTagOracle.TwitterSchemaForOracle))
@@ -803,7 +803,7 @@ class OracleGeneratorTest extends Specification {
           |""".stripMargin.trim)
     }
   }
-
+  //52
   "OracleGenerator dropView" should {
     "generate the drop view query" in {
       val sql = parser.generate(DropView(twitterDataSetForOracle), Map(twitterDataSetForOracle -> TwitterDataStoreWithoutHashTagOracle.TwitterSchemaForOracle))

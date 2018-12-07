@@ -38,7 +38,7 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     val columnCount = resultMetadata.getColumnCount
     var qJsonArray: JsArray = Json.arr()
     while (result.next) {
-      var columnId = 0
+      val columnId = 0
       var rsJson: JsObject = Json.obj()
       breakable {
         for (columnId <- 1 to columnCount) {

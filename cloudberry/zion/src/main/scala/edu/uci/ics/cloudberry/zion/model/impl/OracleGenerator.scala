@@ -15,9 +15,6 @@ class OracleGenerator extends SQLGenerator {
   protected val truncate: String = "truncate"
   protected val fullTextMatch = Seq("contains", "")
 
-  //converts a value in internal geometry format to its plain text representation, e.g.: "POINT(1, 2)"
-  private val geoAsText: String = "st_astext"
-  private val pointGetCoord = Seq("st_x", "st_y")
 
   override protected def genDDL(name: String, schema: Schema): String = {
 
@@ -346,7 +343,7 @@ class OracleGenerator extends SQLGenerator {
             interval.unit match {
               case TimeUnit.Day=>s"to_char(cast($fieldExpr as ${timeUnitFuncMap(interval.unit)}),'YYYY-MM-DD')"
               case _ => s"extract(${timeUnitFuncMap(interval.unit)} from $fieldExpr)"
-                
+
             }
           }
           case level: Level =>
@@ -383,11 +380,10 @@ class OracleGenerator extends SQLGenerator {
 
 
   }
+  protected def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
 
 
-
-  def parseGeoCell(scale: Integer, fieldExpr: String, dataType: DataType.Value): String = {
-    s"$geoAsText($dataType($truncate(${pointGetCoord(0)}($fieldExpr),$scale),$truncate(${pointGetCoord(1)}($fieldExpr),$scale))) "
+    "hello"
   }
 
 }
