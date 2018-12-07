@@ -17,8 +17,8 @@
 #      REVISION:  ---
 #===============================================================================
 
-unzip sample.json.zip
+unzip ./script/sample.json.zip
 
-python ingestOracledata.py
+python ./script/ingestOracledata.py
 
-python ingestpopulationOracle.py
+python ./script/ingestpopulationOracle.py
