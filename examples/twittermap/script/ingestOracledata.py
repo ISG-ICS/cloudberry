@@ -43,20 +43,20 @@ cur.execute(createquery)
 print("Table created...")
 print("Start inserting data...")
 
-news = open("ingestion.sql",'w',encoding="utf-8")
+news = open("ingestion1.sql",'w',encoding="utf-8")
 with open("sample.json","r",encoding="utf-8",errors="ignore") as f:
     r = f.readlines()
     count = 0
     for i in r:
         if count %1000 == 0:
             print("send record: {}".format(count))
-        count+= 1
+
         try:
             tempJson = json.loads(r""+i)
         except json.decoder.JSONDecodeError as De:
             print(De)
             continue
-        
+        #print(tempJson)
         try:
 
             coordinate = '''SDO_GEOMETRY(
@@ -147,16 +147,21 @@ with open("sample.json","r",encoding="utf-8",errors="ignore") as f:
             "create_at","id","coordinate","lang","is_retweet","hashtags","user_mentions","user.id",
             "user.name","user.profile_image_url","geo_tag.stateID","geo_tag.countyID","geo_tag.cityID","place.bounding_box",
             "text","in_reply_to_status","in_reply_to_user","favorite_count","retweet_count","user.status_count") VALUES({},{},
-            {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{});\n
+            {},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{})\n
                   """.format(create_at,id,coordinate,lang,is_retweet,hashtags,user_mentions,user_id,user_name,user_profile_image_url,
                              geo_stateID,geo_countyID,geo_cityID,place_bounding_box,text,in_reply_to_status,in_reply_to_user,favorite_count,
                              retweet_count,user_statues_count)
         if count == 1:
             print(insertQuery)
-
-
+        try:
+            cur.execute(insertQuery)
+            count += 1
+        except Exception as e:
+            print(insertQuery)
+            print(e)
         news.write(insertQuery)
+con.commit()
 
-
+print("Ingestion Completed {} records ingested".format(count))
 
 news.close()
