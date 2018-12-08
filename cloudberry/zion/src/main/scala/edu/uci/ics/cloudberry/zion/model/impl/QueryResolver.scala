@@ -121,34 +121,34 @@ object QueryResolver {
           }
           ByStatement(field, by.funcOpt, as)
         }
-        var resolvedAggrsWithSumCount : List[AggregateStatement] = List()
+        var resolvedAggrs : List[AggregateStatement] = List()
 
-        val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
+        groupStatement.aggregates.map { aggregate =>
           val field = resolveField(aggregate.field, fieldMap)
           val as = Field.as(aggregate.func(field), aggregate.as)
 
 	   aggregate.func match {
             case Avg => {
-              val avgSumName ="__sum__"+aggregate.as
-              val avgCountName ="__count__"+aggregate.as
+              val avgSumName = "__sum__" + aggregate.as
+              val avgCountName = "__count__" + aggregate.as
               val avg_sum_as_field = Field.as(Sum(field), avgSumName);
               val avg_count_as_field = Field.as(Count(field), avgCountName);
               producedFields += avgSumName -> avg_sum_as_field
               producedFields += avgCountName -> avg_count_as_field
 
-              resolvedAggrsWithSumCount = AggregateStatement(field, Sum, avg_sum_as_field) +: resolvedAggrsWithSumCount
-              resolvedAggrsWithSumCount = AggregateStatement(field, Count, avg_count_as_field) +: resolvedAggrsWithSumCount
+              resolvedAggrs = AggregateStatement(field, Sum, avg_sum_as_field) +: resolvedAggrs
+              resolvedAggrs = AggregateStatement(field, Count, avg_count_as_field) +: resolvedAggrs
             }
             case _ => {
               producedFields += aggregate.as -> as
-              resolvedAggrsWithSumCount = AggregateStatement(field, aggregate.func, as) +: resolvedAggrsWithSumCount
+              resolvedAggrs = AggregateStatement(field, aggregate.func, as) +: resolvedAggrs
             }
           }
 
         }
 
         val (resolvedLookups, newFieldMap) = resolveLookups(groupStatement.lookups, producedFields.result().toMap, schemaMap)
-        val resolved = GroupStatement(resolvedBys, resolvedAggrsWithSumCount, resolvedLookups)
+        val resolved = GroupStatement(resolvedBys, resolvedAggrs, resolvedLookups)
         (Some(resolved), newFieldMap)
       case None =>
         (None, fieldMap)

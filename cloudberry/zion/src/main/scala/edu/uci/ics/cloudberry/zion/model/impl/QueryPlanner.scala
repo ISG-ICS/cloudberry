@@ -293,18 +293,18 @@ object QueryPlanner {
         val y = x.value.map(r => {
           var mergField : List[Array[String]]= List()
           val record = r.as[JsObject]
-          if (mergField.size == 0)
+          if (mergField.size == 0 )
           {
             record.keys.map(field => {
               if (field.startsWith("__count__") || field.startsWith("__sum__"))
               {
-                val realField = field.replaceAll("__sum__","").replaceAll("__count__","")
-                val newField=  Array(realField,"__count__"+realField,"__sum__"+realField)
+                val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
+                val newField=  Array(realField, "__count__" + realField, "__sum__" + realField)
                 var bExist = false
                 mergField.map(a => {
                   if (a(0) == realField)
                   {
-                    bExist = true;
+                    bExist = true
                   }
                 })
                 if (! bExist)
@@ -313,17 +313,17 @@ object QueryPlanner {
             })
           }
           //merge sum and count to avg
-          if (mergField.size  >0)
+          if (mergField.size  >0 )
           {
             var outjson = r.toString()
             mergField.map(f => {
               val count = (r \ f(1)).as[JsNumber]
               val sum = (r \ f(2)).as[JsNumber]
-              val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
+              val avg = (sum.toString().toDouble * 1.0 ) / count.toString().toDouble
               //remove count
-              outjson =  outjson.replaceAll("\""+f(1)+"\":"+count+",", "")
+              outjson =  outjson.replaceAll("\"" + f(1) + "\":" + count + ",", "")
               //replace sum with avg
-              outjson =  outjson.replaceAll("\""+f(2)+"\":"+sum, "\""+f(0)+"\":"+avg)
+              outjson =  outjson.replaceAll("\"" + f(2) + "\":" + sum, "\"" + f(0) + "\":" + avg)
             })
             Json.parse(outjson)
           }
@@ -344,36 +344,36 @@ object QueryPlanner {
       rows.as[JsArray].value.map(r => {
         var mergField : List[Array[String]] = List()
         val record = r.as[JsObject]
-        if (mergField.size == 0)
+        if (mergField.size == 0 ) 
         {
           record.keys.map(field => {
             if (field.startsWith("__count__") || field.startsWith("__sum__") )
             {
-              val realField = field.replaceAll("__sum__","").replaceAll("__count__","")
-              val newField =  Array(realField,"__count__"+realField,"__sum__"+realField)
+              val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
+              val newField =  Array(realField, "__count__" + realField, "__sum__" + realField)
               var bExist = false
               mergField.map(a => {
                 if (a(0) == realField)
                 {
-                  bExist = true;
+                  bExist = true
                 }
               })
-              if (! bExist)
+              if (!bExist)
                 mergField =  newField +: mergField
             }
           })
         }
         //merge sum and count to avg
-        if (mergField.size > 0) {
+        if (mergField.size > 0 ) {
           var outjson = r.toString()
           mergField.map(f => {
             val count = (r \ f(1)).as[JsNumber]
             val sum = (r \ f(2)).as[JsNumber]
-            val avg = (sum.toString().toDouble *1.0) / count.toString().toDouble
+            val avg = (sum.toString().toDouble * 1.0) / count.toString().toDouble
             //remove count
-            outjson =  outjson.replaceAll("\""+f(1)+"\":"+count+",", "")
+            outjson =  outjson.replaceAll("\"" + f(1) + "\":" + count + ",", "")
             //replace sum with avg
-            outjson =  outjson.replaceAll("\""+f(2)+"\":"+sum, "\""+f(0)+"\":"+avg)
+            outjson =  outjson.replaceAll("\"" + f(2) + "\":" + sum, "\"" + f(0) + "\":" + avg)
           })
           Json.parse(outjson)
         }
