@@ -39,6 +39,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               select: ["population"],
               as: ["population"]
             };
+          case "zipcode":
+            return {
+              joinKey: ["zipcode"],
+              dataset: "twitter.dsZipcodePopulation",
+              lookupKey: ["zipcodeID"],
+              select: ["population"],
+              as: ["population"]
+            };
         }
       }
     };
@@ -92,6 +100,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
         case "state" : return "stateID";
         case "county" : return "countyID";
         case "city" : return "cityID";
+        case "zipcode" : return "zipcodeID";
       }
     }
 

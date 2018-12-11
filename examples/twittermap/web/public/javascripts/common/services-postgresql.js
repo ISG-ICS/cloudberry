@@ -49,6 +49,7 @@ angular.module('cloudberry.common', [])
         case "state" : return "stateID";
         case "county" : return "countyID";
         case "city" : return "cityID";
+        case "zipcode" : return "zipcodeID";
       }
     }
 

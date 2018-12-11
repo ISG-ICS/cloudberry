@@ -4,6 +4,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
     .service('Cache', function ($window, $http, $compile, cloudberryConfig) {
 
         var cachedCityPolygonTree = rbush();
+        var cachedZipcodePolygonTree = rbush();
         var cachedRegion;
         var cacheSize = 0;
         var insertedTreeIDs = new Set();
@@ -26,76 +27,90 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
         /* Map controller calls this function and this function checks whether a requested region is present in the cache or not. If not,
          it gets the requested region data from the middleware.*/
         this.getCityPolygonsFromCache = function city(rteBounds) {
+            return cacheCode(rteBounds)
+        }
 
+        // zipcode
+        this.getZipcodePolygonsFromCache = function zipcode(rteBounds) {
+            return cacheCode(rteBounds)
+        }
+
+        function cacheCode(rteBounds) {
             var deferred = new $.Deferred();
             var data_response;
 
             var bounds = rteBounds.split("/");
+            var level = bounds[0];
             var bounds_northEast_lat = parseFloat(bounds[1]);
             var bounds_southWest_lat = parseFloat(bounds[2]);
             var bounds_northEast_lng = parseFloat(bounds[3]);
             var bounds_southWest_lng = parseFloat(bounds[4]);
             currentRequestPolygon = turf.polygon([[
-                [bounds_northEast_lng, bounds_northEast_lat],
-                [bounds_northEast_lng, bounds_southWest_lat],
-                [bounds_southWest_lng, bounds_southWest_lat],
-                [bounds_southWest_lng, bounds_northEast_lat],
-                [bounds_northEast_lng, bounds_northEast_lat]
+              [bounds_northEast_lng, bounds_northEast_lat],
+              [bounds_northEast_lng, bounds_southWest_lat],
+              [bounds_southWest_lng, bounds_southWest_lat],
+              [bounds_southWest_lng, bounds_northEast_lat],
+              [bounds_northEast_lng, bounds_northEast_lat]
             ]]);
-
 
             var bbox = turf.bbox(currentRequestPolygon);
             var extraBounds;
             currentReqMBR = bbox;
             // to search in Rbush Tree ,we need the MBR of the requested region.
             var item = {
-                minX: bbox[0],
-                minY: bbox[1],
-                maxX: bbox[2],
-                maxY: bbox[3]
+              minX: bbox[0],
+              minY: bbox[1],
+              maxX: bbox[2],
+              maxY: bbox[3]
             }
 
 
             if (typeof cachedRegion != "undefined" && typeof turf.difference(currentRequestPolygon, cachedRegion) == "undefined") {
-                //cache HIT
+              //cache HIT
 
+              if (level == "zipcode")
+                var result = cachedZipcodePolygonTree.search(item);
+              else if (level == "city")
                 var result = cachedCityPolygonTree.search(item);
-                data_response = turf.featureCollection(result);
-                RequestPolygonWithPrefetch = currentRequestPolygon;
-                console.log(data_response);
-                deferred.resolve(data_response);
-                return deferred.promise();
+              data_response = turf.featureCollection(result);
+              RequestPolygonWithPrefetch = currentRequestPolygon;
+              console.log(data_response);
+              deferred.resolve(data_response);
+              return deferred.promise();
 
             } else {
-                //cache MISS
-                Hit = false;
-                var centroidRequestPoly = turf.centroid(currentRequestPolygon);
+              //cache MISS
+              Hit = false;
+              var centroidRequestPoly = turf.centroid(currentRequestPolygon);
 
-                prefetch(currentRequestPolygon).done(function (newMBR) {
+              prefetch(currentRequestPolygon).done(function (newMBR) {
 
-                    RequestPolygonWithPrefetch = turf.bboxPolygon(newMBR);
-                    extraBounds = "city/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
-                    $http.get(extraBounds).success(function (data) {
+                RequestPolygonWithPrefetch = turf.bboxPolygon(newMBR);
+                if (level == "zipcode")
+                  extraBounds = "zipcode/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
+                else if (level == "city")
+                  extraBounds = "city/" + newMBR[3] + "/" + newMBR[1] + "/" + newMBR[2] + "/" + newMBR[0];
+                $http.get(extraBounds).success(function (data) {
 
-                        insertIntoTree(data.features, RequestPolygonWithPrefetch).done(function () {
+                  insertIntoTree(data.features, RequestPolygonWithPrefetch).done(function () {
 
-                            data_response = data;
+                    data_response = data;
 
-                            if (cachedRegion == undefined)
-                                cachedRegion = currentRequestPolygon;
-                            else
-                                cachedRegion = turf.union(RequestPolygonWithPrefetch, cachedRegion);
+                    if (cachedRegion == undefined)
+                      cachedRegion = currentRequestPolygon;
+                    else
+                      cachedRegion = turf.union(RequestPolygonWithPrefetch, cachedRegion);
 
-                            previousRequestCentroid = centroidRequestPoly;
-                            console.log(data_response);
-                            deferred.resolve(data_response);
-                        });
-                    }).error(function (data) {
-                        console.error("Load city data failure");
-                    });
+                    previousRequestCentroid = centroidRequestPoly;
+                    console.log(data_response);
+                    deferred.resolve(data_response);
+                  });
+                }).error(function (data) {
+                  console.error("Load city or zipcode data failure");
                 });
+              });
 
-                return deferred.promise();
+              return deferred.promise();
             }
         }
 

@@ -11,7 +11,7 @@ private[model] class Migration_20170428() {
 
   def up(wsClient: WSClient, cloudberryURL: String)(implicit ec: ExecutionContext): Future[Boolean] = {
 //    Future.traverse(Seq(TwitterDrugMapDDL, TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
-    Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
+    Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation, ZipcodePopulation)) { jsonStr =>
       wsClient.url(cloudberryURL).withHeaders("Content-Type" -> "application/json").post(jsonStr).map { response =>
         if (response.status % 100 == 2) {
           true
@@ -41,11 +41,13 @@ object Migration_20170428 {
       |      {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo_tag.zipcodeID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo","isOptional":false,"datatype":"Hierarchy","innerType":"Number",
       |        "levels":[
       |          {"level":"state","field":"geo_tag.stateID"},
       |          {"level":"county","field":"geo_tag.countyID"},
-      |          {"level":"city","field":"geo_tag.cityID"}]}
+      |          {"level":"city","field":"geo_tag.cityID"},
+      |          {"level":"zipcode","field":"geo_tag.zipcodeID"}]}
       |    ],
       |    "measurement":[
       |      {"name":"text","isOptional":false,"datatype":"Text"},
@@ -77,11 +79,13 @@ object Migration_20170428 {
       |      {"name":"geo_tag.stateID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo_tag.countyID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo_tag.cityID","isOptional":false,"datatype":"Number"},
+      |      {"name":"geo_tag.zipcodeID","isOptional":false,"datatype":"Number"},
       |      {"name":"geo","isOptional":false,"datatype":"Hierarchy","innerType":"Number",
       |        "levels":[
       |          {"level":"state","field":"geo_tag.stateID"},
       |          {"level":"county","field":"geo_tag.countyID"},
-      |          {"level":"city","field":"geo_tag.cityID"}]}
+      |          {"level":"city","field":"geo_tag.cityID"},
+      |          {"level":"zipcode","field":"geo_tag.zipcodeID"}]}
       |    ],
       |    "measurement":[
       |      {"name":"place.bounding_box","isOptional":false,"datatype":"String"},
@@ -151,6 +155,25 @@ object Migration_20170428 {
       |            { "name": "population", "isOptional": false, "datatype": "Number" }
       |        ],
       |        "primaryKey": ["cityID"]
+      |    }
+      |}
+    """.stripMargin
+
+  val ZipcodePopulation: String =
+    """
+      |{
+      |    "dataset": "twitter.dsZipcodePopulation",
+      |    "schema": {
+      |        "typeName": "twitter.typeZipcodePopulation",
+      |        "dimension": [
+      |            { "name": "name", "isOptional": false, "datatype": "String" },
+      |            { "name": "zipcodeID", "isOptional": false, "datatype": "Number" },
+      |            { "name": "create_at", "isOptional": false, "datatype": "Time" }
+      |        ],
+      |        "measurement": [
+      |            { "name": "population", "isOptional": false, "datatype": "Number" }
+      |        ],
+      |        "primaryKey": ["zipcodeID"]
       |    }
       |}
     """.stripMargin

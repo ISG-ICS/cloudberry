@@ -170,6 +170,13 @@ angular.module('cloudberry.map')
           color: '#92d1e1',
           fillOpacity: 0.5
         },
+        zipcodeStyle: {
+          fillColor: '#f7f7f7',
+          weight: 1.5,
+          opacity: 1,
+          color: '#92d1e1',
+          fillOpacity: 0.5
+        },
         hoverStyle: {
           weight: 5,
           color: '#666',
@@ -386,7 +393,7 @@ angular.module('cloudberry.map')
 
           // get selected geoID for the polygon
           $scope.selectedPlace = layer.feature;
-          $scope.selectedGeoID = $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
+          $scope.selectedGeoID = $scope.selectedPlace.properties.zipcodeID || $scope.selectedPlace.properties.cityID || $scope.selectedPlace.properties.countyID || $scope.selectedPlace.properties.stateID;
 
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {

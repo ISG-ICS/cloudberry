@@ -34,27 +34,41 @@ class USGeoGnosis(levelGeoPathMap: Map[TypeLevel, File]) extends IGnosis{
     levelShapeMap.get(CityLevel).get.entities.map(_.asInstanceOf[USCityEntity])
   }
 
+  lazy val zipcodes: Seq[USZipcodeEntity] = {
+    levelShapeMap.get(ZipcodeLevel).get.entities.map(_.asInstanceOf[USZipcodeEntity])
+  }
+
   lazy val cityByNameList: Map[String, List[USCityEntity]] = {
     val map = mutable.Map.empty[String, List[USCityEntity]]
     cities.foreach(city => map += (city.name -> (city :: (map.getOrElse(city.name, Nil)))))
     map.toMap
   }
 
+  lazy val zipcodesByNameList: Map[String, List[USZipcodeEntity]] = {
+    val map = mutable.Map.empty[String, List[USZipcodeEntity]]
+    zipcodes.foreach(zipcode => map += (zipcode.name -> (zipcode :: (map.getOrElse(zipcode.name, Nil)))))
+    map.toMap
+  }
+
   lazy val stateShapes: IGeoIndex = levelShapeMap.get(StateLevel).get
   lazy val countyShapes: IGeoIndex = levelShapeMap.get(CountyLevel).get
   lazy val cityShapes: IGeoIndex = levelShapeMap.get(CityLevel).get
+  lazy val zipcodeShapes: IGeoIndex = levelShapeMap.get(ZipcodeLevel).get
 
   // used in geo tag
   def tagNeighborhood(cityName: String, rectangle: Rectangle): Option[USGeoTagInfo] = {
     val box = new Envelope(rectangle.swLog, rectangle.neLog, rectangle.swLat, rectangle.neLat)
-    cityByNameList.get(cityName).flatMap(list => list.find(_.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_)))
+//    cityByNameList.get(cityName).flatMap(list => list.find(_.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_)))
+    zipcodesByNameList.get(cityName).flatMap(list => list.find(_.geometry.getEnvelopeInternal.covers(box)).map(USGeoTagInfo(_)))
   }
 
   // used in geo tag
   override def tagPoint(longitude: Double, latitude: Double): Option[USGeoTagInfo] = {
     val box = new Envelope(new Coordinate(longitude, latitude))
-    val cityOpt = cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
-    if (cityOpt.isDefined) return cityOpt
+    val zipcodeOpt = zipcodeShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USZipcodeEntity]))
+    if (zipcodeOpt.isDefined) return zipcodeOpt
+    //      val cityOpt = cityShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCityEntity]))
+    //      if (cityOpt.isDefined) return cityOpt
     countyShapes.search(box).headOption.map(entity => USGeoTagInfo(entity.asInstanceOf[USCountyEntity]))
   }
 
@@ -69,7 +83,8 @@ object USGeoGnosis {
 
   case class USGeoTagInfo(stateID: Int, stateName: String,
                           countyID: Option[Int], countyName: Option[String],
-                          cityID: Option[Int], cityName: Option[String]) extends IGeoTagInfo{
+                          cityID: Option[Int], cityName: Option[String],
+                          zipcodeID: Option[Int], zipcodeName: Option[String]) extends IGeoTagInfo{
     override def toString: String = Json.toJson(this).asInstanceOf[JsObject].toString()
   }
 
@@ -79,12 +94,15 @@ object USGeoGnosis {
     def apply(entity: IUSGeoJSONEntity): USGeoTagInfo = {
       entity match {
         case state: USStateEntity => USGeoTagInfo(stateID = state.stateID, stateName = state.name,
-                                                  countyID = None, countyName = None, cityID = None, cityName = None)
+                                                  countyID = None, countyName = None, cityID = None, cityName = None,
+                                                  zipcodeID = None, zipcodeName = None)
         case county: USCountyEntity => USGeoTagInfo(stateID = county.stateID, stateName = county.stateName,
                                                     countyID = Some(county.countyID), countyName = Some(county.name),
-                                                    cityID = None, cityName = None)
+                                                    cityID = None, cityName = None, zipcodeID = None, zipcodeName = None)
         case city: USCityEntity => USGeoTagInfo(city.stateID, city.stateName, Some(city.countyID), Some(city.countyName),
-                                                Some(city.cityID), Some(city.name))
+                                                Some(city.cityID), Some(city.name), None, None)
+        case zipcode: USZipcodeEntity => USGeoTagInfo(zipcode.stateID, zipcode.stateName, Some(zipcode.countyID), Some(zipcode.countyName),
+          None, None, Some(zipcode.zipcodeID), Some(zipcode.name))
       }
     }
   }

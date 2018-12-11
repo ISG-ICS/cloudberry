@@ -1,0 +1,14 @@
+{
+  "dataset": "twitter.dsZipcodePopulation",
+  "schema": {
+    "typeName": "twitter.typeZipcodePopulation",
+    "dimension": [
+      { "name": "name", "isOptional": false, "datatype": "String" },
+      { "name": "zipcodeID", "isOptional": false, "datatype": "Number" }
+    ],
+    "measurement": [
+      { "name": "population", "isOptional": false, "datatype": "Number" }
+    ],
+    "primaryKey": ["zipcodeID"]
+  }
+}

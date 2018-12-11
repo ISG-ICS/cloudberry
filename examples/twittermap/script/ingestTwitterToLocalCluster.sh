@@ -53,7 +53,9 @@ create type typeGeoTag if not exists as open {
     countyID: int32, 
     countyName: string, 
     cityID: int32?, 
-    cityName: string? 
+    cityName: string?,
+    zipcodeID: int32?,
+    zipcodeName: string?
 }; 
 create type typeTweet if not exists as open{ 
     create_at : datetime, 
@@ -94,7 +96,7 @@ EOF
 #[ -f ./script/sample.adm.gz ] || { echo "Downloading the data...";  ./script/getSampleTweetsFromGDrive.sh; }
 
 echo "Start ingestion ..." 
-gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh 127.0.0.1 10001
+gunzip -c ./script/new_sample.adm.gz | ./script/fileFeed.sh 127.0.0.1 10001
 echo "Ingested sample tweets."
 
 cat <<'EOF' | curl -XPOST --data-binary @- $host

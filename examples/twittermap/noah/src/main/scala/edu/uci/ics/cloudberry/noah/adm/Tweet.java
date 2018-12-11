@@ -107,6 +107,17 @@ public class Tweet {
         }
     }
 
+    public static void randomCoordinate(JsonNode rootNode, StringBuilder admSB, MyPlace places, Coordinate coordinate) {
+        StringBuilder sbRandomCoordinate = new StringBuilder();
+        Random random = new Random();
+        Double rangeLat = random.nextDouble() * (places.getbLat() - places.getaLat()) + places.getaLat();
+        Double rangeLong = random.nextDouble() * (places.getbLong() - places.getaLong()) + places.getaLong();
+        coordinate.setcLat(rangeLat.toString());
+        coordinate.setcLong(rangeLong.toString());
+        sbRandomCoordinate.append("point(\"").append(coordinate.getcLong()).append(",").append(coordinate.getcLat()).append("\")");
+        ADM.keyValueToSbWithComma(admSB, GEO_COORDINATE, sbRandomCoordinate.toString());
+    }
+
     public static void appendGeoTag(USGeoGnosis gnosis, boolean requireGeoField, StringBuilder admSB, MyPlace places, Coordinate coordinate) throws UnknownPlaceException {
         try {
             String geoTags = geoTag(gnosis, true, places, coordinate);
@@ -135,10 +146,10 @@ public class Tweet {
                 String coordStr = placeNode.path("bounding_box").path("coordinates").elements().next().toString();
                 String[] lats_longs = coordStr.split("\\[\\[|\\]\\]|\\],\\[|,");
                 if (lats_longs.length == 9) {
-                    place.setaLong(Double.parseDouble(lats_longs[2]));
-                    place.setaLat(Double.parseDouble(lats_longs[1]));
-                    place.setbLong(Double.parseDouble(lats_longs[6]));
-                    place.setbLat(Double.parseDouble(lats_longs[5]));
+                    place.setaLong(Double.parseDouble(lats_longs[1]));
+                    place.setaLat(Double.parseDouble(lats_longs[2]));
+                    place.setbLong(Double.parseDouble(lats_longs[5]));
+                    place.setbLat(Double.parseDouble(lats_longs[6]));
                     return true;
                 } else {
                     return false;
@@ -180,6 +191,8 @@ public class Tweet {
             }
             if (!rootNode.path("coordinates").isNull() && readCoordinate(rootNode.path("coordinates"), coordinate)) {
                 appendGeoCoordinate(rootNode, admSB, place, coordinate);
+            } else {
+                randomCoordinate(rootNode, admSB, place, coordinate);
             }
             appendGeoTag(gnosis, true, admSB, place, coordinate);
             appendUser(rootNode, admSB);
@@ -192,10 +205,10 @@ public class Tweet {
 
     public static String geoTag(USGeoGnosis gnosis, boolean requireGeoField, MyPlace place, Coordinate coordinate) throws UnknownPlaceException {
         StringBuilder sbGeoTag = new StringBuilder();
-        if (textMatchPlace(sbGeoTag, gnosis, place)) {
-            return sbGeoTag.toString();
-        }
-        sbGeoTag.delete(0, sbGeoTag.length());
+//        if (textMatchPlace(sbGeoTag, gnosis, place)) {
+//            return sbGeoTag.toString();
+//        }
+//        sbGeoTag.delete(0, sbGeoTag.length());
         if (exactPointLookup(sbGeoTag, gnosis, coordinate)) {
             return sbGeoTag.toString();
         }
