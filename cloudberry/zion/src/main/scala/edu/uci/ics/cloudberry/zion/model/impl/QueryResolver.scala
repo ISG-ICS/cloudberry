@@ -123,16 +123,16 @@ object QueryResolver {
         }
         var resolvedAggrs : List[AggregateStatement] = List()
 
-        groupStatement.aggregates.map { aggregate =>
+        groupStatement.aggregates.foreach { aggregate =>
           val field = resolveField(aggregate.field, fieldMap)
           val as = Field.as(aggregate.func(field), aggregate.as)
 
-	   aggregate.func match {
+          aggregate.func match {
             case Avg => {
               val avgSumName = "__sum__" + aggregate.as
               val avgCountName = "__count__" + aggregate.as
-              val avg_sum_as_field = Field.as(Sum(field), avgSumName);
-              val avg_count_as_field = Field.as(Count(field), avgCountName);
+              val avg_sum_as_field = Field.as(Sum(field), avgSumName)
+              val avg_count_as_field = Field.as(Count(field), avgCountName)
               producedFields += avgSumName -> avg_sum_as_field
               producedFields += avgCountName -> avg_count_as_field
 
