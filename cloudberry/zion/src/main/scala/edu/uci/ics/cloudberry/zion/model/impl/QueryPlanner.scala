@@ -291,7 +291,7 @@ object QueryPlanner {
     val newMergedResults = mergedResults.map(
       x => {
         val y = x.value.map(r => {
-          var mergField : List[Array[String]]= List()
+          var mergField : List[Array[String]] = List()
           val record = r.as[JsObject]
           if (mergField.size == 0 )
           {
