@@ -285,103 +285,42 @@ object QueryPlanner {
     JsArray(jsArray.value.map(obj => JsObject(obj.asInstanceOf[JsObject].fields.filter(e => project.contains(e._1)))))
   }
 
-  // Handle avg function for ProgressiveSolver
-  def handleAvg(mergedResults:Seq[JsArray]):Seq[JsArray] =
+  // Handle avg function
+  def handleAvg(result:JsArray):JsValue =
   {
-    val newMergedResults = mergedResults.map(
-      x => {
-        val y = x.value.map(r => {
-          var mergField : List[Array[String]] = List()
-          val record = r.as[JsObject]
-          if (mergField.size == 0 )
-          {
-            record.keys.map(field => {
-              if (field.startsWith("__count__") || field.startsWith("__sum__"))
-              {
-                val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
-                val newField=  Array(realField, "__count__" + realField, "__sum__" + realField)
-                var bExist = false
-                mergField.map(a => {
-                  if (a(0) == realField)
-                  {
-                    bExist = true
-                  }
-                })
-                if (! bExist)
-                  mergField =  newField +: mergField
-              }
-            })
-          }
-          //merge sum and count to avg
-          if (mergField.size  >0 )
-          {
-            var outjson = r.toString()
-            mergField.map(f => {
-              val count = (r \ f(1)).as[JsNumber]
-              val sum = (r \ f(2)).as[JsNumber]
-              val avg = (sum.toString().toDouble * 1.0 ) / count.toString().toDouble
-              //remove count
-              outjson =  outjson.replaceAll("\"" + f(1) + "\":" + count + ",", "")
-              //replace sum with avg
-              outjson =  outjson.replaceAll("\"" + f(2) + "\":" + sum, "\"" + f(0) + "\":" + avg)
-            })
-            Json.parse(outjson)
-          }
-          else
-            r
-
-        })
-        JsArray(y)
+    var mergedField: List[Array[String]] = List()
+    // Check whether this result contains "__count__[fieldName]" or "__sum__[fieldName]",
+    // and if yes, extract the field names to mergedField variable
+    val record = result.value(0).as[JsObject]
+    record.keys.foreach(field => {
+      if (field.startsWith("__count__") || field.startsWith("__sum__")) {
+        val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
+        val newField = Array(realField, "__count__" + realField, "__sum__" + realField)
+        mergedField = newField +: mergedField
       }
-    )
-    newMergedResults
-  }
-
-  // Handle avg function for RESTSolver
-  def handleAvg(mergedResults:JsArray):JsValue =
-  {
-    val y = mergedResults.value.map(rows => {
-      rows.as[JsArray].value.map(r => {
-        var mergField : List[Array[String]] = List()
-        val record = r.as[JsObject]
-        if (mergField.size == 0 ) 
-        {
-          record.keys.map(field => {
-            if (field.startsWith("__count__") || field.startsWith("__sum__") )
-            {
-              val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
-              val newField =  Array(realField, "__count__" + realField, "__sum__" + realField)
-              var bExist = false
-              mergField.map(a => {
-                if (a(0) == realField)
-                {
-                  bExist = true
-                }
-              })
-              if (!bExist)
-                mergField =  newField +: mergField
-            }
-          })
-        }
-        //merge sum and count to avg
-        if (mergField.size > 0 ) {
-          var outjson = r.toString()
-          mergField.map(f => {
-            val count = (r \ f(1)).as[JsNumber]
-            val sum = (r \ f(2)).as[JsNumber]
-            val avg = (sum.toString().toDouble * 1.0) / count.toString().toDouble
-            //remove count
-            outjson =  outjson.replaceAll("\"" + f(1) + "\":" + count + ",", "")
-            //replace sum with avg
-            outjson =  outjson.replaceAll("\"" + f(2) + "\":" + sum, "\"" + f(0) + "\":" + avg)
-          })
-          Json.parse(outjson)
-        }
-        else
-          r
-      })
     })
-    Json.parse(Json.toJson(y).toString())
+
+    // No avg fields need to be merged, return immediately
+    if (mergedField.isEmpty) {
+      result
+    }
+    else {
+      //merge sum and count to avg
+      val handledRows = result.value.map(row => {
+        var outJson = row.toString()
+        mergedField.foreach(f => {
+          val count = (row \ f(1)).as[JsNumber]
+          val sum = (row \ f(2)).as[JsNumber]
+          val avg = (sum.toString().toDouble * 1.0 ) / count.toString().toDouble
+          //remove count
+          outJson =  outJson.replaceAll("\"" + f(1) + "\":" + count + ",", "")
+          //replace sum with avg
+          outJson =  outJson.replaceAll("\"" + f(2) + "\":" + sum, "\"" + f(0) + "\":" + avg)
+        })
+        Json.parse(outJson)
+      })
+      JsArray(handledRows)
+    }
   }
 
 }

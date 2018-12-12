@@ -99,14 +99,20 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
+        // handle average results
+        val avgHandledResults = returnedResult.map(
+          mergedResult => {
+            QueryPlanner.handleAvg(mergedResult)
+          }
+        )
+
         val timeInterval = Json.obj(
           "timeInterval" -> Json.obj(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        val avgHandledResult = QueryPlanner.handleAvg(returnedResult)
-        val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResult))
+        val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResults))
 
         val results : JsValue = infoValue match {
           case _: JsArray =>
@@ -129,15 +135,20 @@ class ProgressiveSolver(val dataManager: ActorRef,
           curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
         }
 
+        // handle average results
+        val avgHandledResults = mergedResults.map(
+          mergedResult => {
+            QueryPlanner.handleAvg(mergedResult)
+          }
+        )
+
         val timeInterval = Json.obj(
           "timeInterval" -> Json.obj(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-
-        val avgHandledResult = QueryPlanner.handleAvg(mergedResults)
-        val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResult))
+        val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResults))
 
         val results : JsValue = infoValue match {
           case _: JsArray =>
