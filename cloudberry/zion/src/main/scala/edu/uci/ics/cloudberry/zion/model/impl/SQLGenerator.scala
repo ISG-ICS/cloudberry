@@ -462,8 +462,10 @@ abstract class SQLGenerator extends IQLGenerator {
           if (aggr.field.name == getAggregateStr(Count)){
             s"$quote${aggr.field.name}$quote"
           }
-          else
+          else {
             s"${sourceVar}.$quote${aggr.field.name}$quote"
+
+          }
         }
         val newRefExpr = s"$quote${aggr.as.name}$quote"
         producedExprs += aggr.as.name -> FieldExpr(newRefExpr, newDefExpr)
@@ -471,6 +473,7 @@ abstract class SQLGenerator extends IQLGenerator {
           s"""
              |select $funcName($newDefExpr) as $quote${aggr.as.name}$quote from
              |(""".stripMargin
+
         val append =
           s""") ${sourceVar}""".stripMargin
         queryBuilder.insert(0, prepend)

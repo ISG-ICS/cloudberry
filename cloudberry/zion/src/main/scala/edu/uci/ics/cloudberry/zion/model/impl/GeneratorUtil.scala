@@ -4,6 +4,7 @@ import edu.uci.ics.cloudberry.zion.model.schema.{AbstractSchema, LookupSchema, S
 
 
 object GeneratorUtil {
+
   def splitSchemaMap(schemaMap: Map[String, AbstractSchema]): (Map[String, Schema], Map[String, LookupSchema]) = {
     val temporalSchemaMap = scala.collection.mutable.Map[String, Schema]()
     val lookupSchemaMap = scala.collection.mutable.Map[String, LookupSchema]()

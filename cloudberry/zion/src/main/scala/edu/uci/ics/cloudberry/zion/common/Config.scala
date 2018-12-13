@@ -12,6 +12,8 @@ class Config(config: Configuration) {
 
   val MySqlURL = config.getString("mysqldb.url").getOrElse("testing")
 
+  val OracleURL = config.getString("oracledb.url").getOrElse("testing")
+
   val PostgreSqlURL = config.getString("postgresqldb.url").getOrElse("testing")
 
   val AsterixLang = config.getString("asterixdb.lang").getOrElse("sqlpp").toLowerCase
