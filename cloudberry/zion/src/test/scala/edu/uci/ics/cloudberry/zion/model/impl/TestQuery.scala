@@ -119,7 +119,8 @@ object TestQuery {
   val aggrAvg = AggregateStatement(id, Avg, Field.as(Avg(id), "avg"))
   val aggrPopulationMin = AggregateStatement(population, Min, Field.as(Min(population), "min"))
   val aggrAvgLangLen = AggregateStatement(langLen, Avg, Field.as(Avg(langLen), "avgLangLen"))
-
+  val aggrAvgSumLangLen = AggregateStatement(langLen, Sum, Field.as(Sum(langLen), "__sum__avgLangLen"))
+  val aggrAvgCountLangLen = AggregateStatement(langLen, Count, Field.as(Count(langLen), "__count__avgLangLen"))
 
   val groupPopulationSum = GroupStatement(
     bys = Seq(byState),

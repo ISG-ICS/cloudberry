@@ -172,11 +172,12 @@ class JSONParserTest extends Specification {
     }
 
 
-    "parse append with lookup inside group by state and sum" in {
+    "parse append with lookup inside group by state and avg" in {
       val populationDataSet = PopulationDataStore.DatasetName
       val populationSchema = PopulationDataStore.PopulationSchema
       val filter = Seq(textFilter)
-      val group = GroupStatement(Seq(byState), Seq(aggrAvgLangLen), Seq(lookupPopulationByState))
+      //val group = GroupStatement(Seq(byState), Seq(aggrAvgLangLen), Seq(lookupPopulationByState))
+      val group = GroupStatement(Seq(byState), Seq(aggrAvgCountLangLen ,aggrAvgSumLangLen), Seq(lookupPopulationByState))
       val expectedQuery = new Query(TwitterDataSet, Seq(appendLangLen), Seq.empty, filter, Seq.empty, Some(group))
       checkQueryOnly(appendGroupLookupJSON, allSchemaMap, expectedQuery)
     }
