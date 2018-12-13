@@ -1,0 +1,605 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+
+	<title>Cloudberry on Oracle Earthquake Time Serial Data</title>
+	<script type="text/javascript" src="js/jquery.min.js"></script>
+	<script type="text/javascript" src="js/cloudberry.js"></script>
+	<script type="text/javascript" src="js/highcharts-5.0.12/highcharts.js"></script>
+	<script type="text/javascript" src="js/highcharts-5.0.12/highcharts-more.js"></script>
+	<script type="text/javascript" src="js/highcharts-5.0.12/modules/data.js"></script>
+	<script type="text/javascript" src="js/highcharts-5.0.12/modules/exporting.js"></script>
+
+	<style type="text/css">
+			body{margin:0;padding:0;font-size:12px;font-family:"";color:#ffffff; background:#36a5bc}
+	</style>
+	<script>
+		var COLUDBERRYURL = "ws://localhost:9000/ws";
+		//var COLUDBERRYURL = "ws://128.195.52.124:9000/ws";
+		//Cloudberry Drum time
+		var sliceMillis= 2000;//ms
+		var MAX_TIMESERIALS =10;
+		var ws = new Array(MAX_TIMESERIALS);
+
+
+		var devices = [];
+		var samplerate ="day";
+		var aggregationfunction ="avg";
+		var rowsnumber =3000;
+
+		var stime;
+		var etime;
+		var currentdate;
+		var categories2 = [];
+		var data2 = [];
+		var chart2 = null;
+		var name;
+
+
+		InitWebSocket();
+		function InitWebSocket()
+		{
+			for (var i=0 ; i< MAX_TIMESERIALS; i++)
+			{
+				 if ('WebSocket' in window) {
+					 ws[i] = new WebSocket(COLUDBERRYURL);
+				 } else if ('MozWebSocket' in window) {
+					 ws[i] = new MozWebSocket(COLUDBERRYURL);
+				 } else {
+					 alert("You browser does not support WebSocket��");
+					 return ;
+				 }
+			}
+		}
+
+		function connectcloudberry(iSerials,startdate,enddate,timeInterval,json) {
+		   if (ws[iSerials] != null && ws[iSerials].readyState ==0) {
+				console.log("ws"+iSerials+ "Connected ..");
+				ws[iSerials].send(json);
+			}
+			else
+			{
+				 if ('WebSocket' in window) {
+					 ws[iSerials] = new WebSocket(COLUDBERRYURL);
+				 } else if ('MozWebSocket' in window) {
+					 ws[iSerials] = new MozWebSocket(COLUDBERRYURL);
+				 } else {
+					 alert("You browser does not support WebSocket.");
+					 return ;
+				 }
+
+				ws[iSerials].onopen = function() {
+					 console.log("ws "+iSerials+"   send="+json);
+						ws[iSerials].send(json);
+				 }
+			}
+
+			ws[iSerials].onmessage = function(e) {
+				//console.log("ws"+iSerials +" result="+e.data.toString());
+				if (e.data.indexOf("done") != -1)
+				{
+					console.log("receive done e.data="+e.data);
+					/* var testdata = chart2.series[0].data
+					console.log("testdata length="+testdata.length);
+					for(count=0;count<testdata.length;count++){
+						 console.log(testdata[count]);
+						} */
+					return;
+				}
+				else if (e.data.indexOf("error") != -1)
+				{
+					console.log("receive error e.data="+e.data);
+					return;
+				}
+				else
+				{
+					var obj = JSON.parse(e.data.toString());
+					var jsondata ;
+					//{"value":[[{"state":16,"hour":"2017-04-26T16:00:00.000Z","avg_stateid":16},{"state":17,"hour":"2017-04-28T08:00:00.000Z","avg_stateid":17}]],"timeInterval":{"start":1493190000000,"end":1493622000000}}
+					if ('value' in obj)
+						jsondata =obj.value[0];
+					else
+						jsondata =obj[0];
+
+					var strdata="";
+					var serialdata = new  Array();
+					 if (jsondata.length ==0)
+						 return;
+					console.log("ws"+iSerials +": receive data from cloudberry, received total number="+jsondata.length
+						+", data from "+jsondata[0].dd+"("+jsondata[0].v+")"+" to "+jsondata[jsondata.length-1].dd +"("+jsondata[0].v+")");
+					//console.log("receive data="+JSON.stringify(jsondata));
+
+					var nt=new Date(startdate.getFullYear(), startdate.getMonth(), startdate.getDate(), 0, 0, 0, 0);
+					var t_s=nt.getTime();
+					var cursorJsondata=0;
+
+					for (; nt < enddate ;)
+					{
+						var tDate=""
+						if (timeInterval=="second")
+						{
+							tDate=formatedate(nt,"yyyy-MM-dd HH:mm:ss");
+							if (cursorJsondata < jsondata.length && jsondata[cursorJsondata].dd == tDate)
+							{
+								var dd =parseFloat(jsondata[cursorJsondata].v).toFixed(3)
+								//console.log("dd="+dd)
+								serialdata.push(dd)
+								cursorJsondata++;
+							}
+							else
+							{
+								//console.log("dd="+dd)
+								serialdata.push(0)
+							}
+
+							t_s = t_s+1000*1
+							nt.setTime(t_s);
+
+						}
+						else if (timeInterval=="minute")
+						{
+							tDate=(formatedate(nt,"yyyy-MM-dd HH:mm") );
+							if (cursorJsondata < jsondata.length && jsondata[cursorJsondata].dd == tDate)
+							{
+								serialdata.push(jsondata[cursorJsondata].v)
+								cursorJsondata++;
+							}
+							else
+							{
+								serialdata.push(0)
+							}
+							t_s = t_s+1000*60
+							nt.setTime(t_s);
+						}
+						else if (timeInterval=="hour")
+						{
+							tDate=(formatedate(nt,"yyyy-MM-dd HH") );
+							if (cursorJsondata < jsondata.length  && jsondata[cursorJsondata].dd == tDate)
+							{
+								serialdata.push(jsondata[cursorJsondata].v)
+								cursorJsondata++;
+							}
+							else
+							{
+								//if (cursorJsondata < jsondata.length)
+								//	console.log(" dd  not equal. tDate="+tDate +",jsondata["+cursorJsondata+"].dd="+jsondata[cursorJsondata].dd )
+								serialdata.push(0)
+							}
+							t_s = t_s+1000*60*60
+							nt.setTime(t_s);
+						}
+						else if (timeInterval=="day")
+						{
+
+							tDate=formatedate(nt,"yyyy-MM-dd");
+							if (cursorJsondata < jsondata.length && jsondata[cursorJsondata].dd == tDate)
+							{
+								//console.log("day jsondata[cursorJsondata]="+jsondata[cursorJsondata].dd +",value="+jsondata[cursorJsondata].v )
+								serialdata.push(jsondata[cursorJsondata].v)
+
+								if (nt >= parseDate(jsondata[cursorJsondata].dd))
+									cursorJsondata++;
+							}
+							else
+							{
+
+								serialdata.push(0)
+							}
+							nt.setDate(nt.getDate() + 1);
+						}
+						else if (timeInterval=="month")
+						{
+							tDate=(formatedate(nt,"yyyy-MM") );
+							if (cursorJsondata < jsondata.length && jsondata[cursorJsondata].dd == tDate)
+							{
+								var dd =parseFloat(jsondata[cursorJsondata].v)
+								serialdata.push(dd)
+								cursorJsondata++;
+							}
+							else
+							{
+								serialdata.push(0)
+							}
+
+							nt.setMonth(nt.getMonth() + 1);
+						}
+						else if (timeInterval=="year")
+						{
+							tDate=(formatedate(nt,"yyyy") );
+							if (cursorJsondata < jsondata.length && jsondata[cursorJsondata].dd == tDate)
+							{
+								serialdata.push(jsondata[cursorJsondata].v)
+								cursorJsondata++;
+							}
+							else
+							{
+								serialdata.push(0)
+							}
+
+							nt.setFullYear(nt.getFullYear() + 1);
+						}
+						//console.log("d="+nt.toString()+",count="+xAxisArray.length);
+					}
+					//console.log("serialdata "+iSerials+" data="+serialdata.join(","));
+					if (serialdata.length >0)
+					{
+						//console.log("chart2.series[iSerials]="+iSerials+","+chart2.series[iSerials])
+						console.log(" draw chart serialdata length="+serialdata.length+",categories2 length="+categories2.length+", from "+categories2[0]+" to "+categories2[categories2.length-1]);
+						/* console.log("serial data=");
+						for(count=0;count<serialdata.length;count++){
+							 console.log(serialdata[count]);
+						} */
+							 
+						chart2.series[iSerials].setData(serialdata);
+						chart2.redraw();
+					}
+				}
+			}// end of onmessage
+			ws[iSerials].onclose = function(e) {
+				console.log("ws"+iSerials+" closed");
+				ws[iSerials] =null;
+			}
+			ws[iSerials].onerror = function(e) {
+				console.log("ws"+iSerials+" error");
+				ws[iSerials] =null;
+			}
+		}
+
+
+		function getXAxisdatas(startdate, enddate,timeInterval)
+		{
+			var xAxisArray = [];
+			var nt=new Date(startdate.getFullYear(), startdate.getMonth(), startdate.getDate(), 0, 0, 0, 0);//
+			//console.log("new start date="+formatedate(nt,"yyyy-MM-dd HH:mm:ss")+",enddate="+formatedate(enddate,"yyyy-MM-dd HH:mm:ss")+",interval="+timeInterval)
+			var t_s=nt.getTime();
+			for (;nt< enddate;)
+			{
+
+				if (timeInterval=="second")
+				{
+					xAxisArray.push(formatedate(nt,"yyyy-MM-dd HH:mm:ss") );
+					t_s = t_s+1000*1
+					nt.setTime(t_s);
+
+				}
+				else if (timeInterval=="minute")
+				{
+					xAxisArray.push(formatedate(nt,"yyyy-MM-dd HH:mm") );
+					t_s = t_s+1000*60
+					nt.setTime(t_s);
+				}
+				else if (timeInterval=="hour")
+				{
+					xAxisArray.push(formatedate(nt,"yyyy-MM-dd HH") );
+					t_s = t_s+1000*60*60*1
+					nt.setTime(t_s);
+				}
+				else if (timeInterval=="day")
+				{
+					xAxisArray.push(formatedate(nt,"yyyy-MM-dd") );
+					nt.setDate(nt.getDate() + 1);
+				}
+				else if (timeInterval=="month")
+				{
+					xAxisArray.push(formatedate(nt,"yyyy-MM") );
+					nt.setMonth(nt.getMonth() + 1);
+				}
+				else if (timeInterval=="year")
+				{
+					xAxisArray.push(formatedate(nt,"yyyy") );
+					nt.setFullYear(nt.getFullYear() + 1);
+				}
+			}
+			console.log("new start date="+formatedate(nt,"yyyy-MM-dd HH:mm:ss")
+					+",enddate="+formatedate(enddate,"yyyy-MM-dd HH:mm:ss")
+					+",interval="+timeInterval
+					+",total points="+xAxisArray.length)
+			
+			return xAxisArray;
+		}
+
+
+
+		function transferdata(startdate,enddate,interval) {
+			for (var i = 0; i < devices.length; i++) {
+				(function(i) {
+					console.log("device="+devices[i]
+					+"st="+formatedate(startdate,"yyyy-MM-ddTHH:mm:ss.sssZ")
+					+",et="+formatedate(enddate,"yyyy-MM-ddTHH:mm:ss.sssZ")
+					+",samplerate="+samplerate
+					+",aggregationfunction="+aggregationfunction);
+
+					var json= getQueryJson(devices[i],formatedate(startdate,"yyyy-MM-ddTHH:mm:ss.sssZ"),
+							formatedate(enddate,"yyyy-MM-ddTHH:mm:ss.sssZ"),samplerate,rowsnumber,aggregationfunction,sliceMillis);
+
+					//send cloudberry request
+					connectcloudberry(i,startdate,enddate,samplerate,json);
+
+				})(i);
+			}
+		}
+
+		function newChart(obj, container, title, unit) {
+			return new Highcharts.Chart({
+				chart : {
+					renderTo : container,
+					type : 'line',
+					//margin:[100,100,100,150]//up,right,down,left
+					marginBottom : 100,
+					marginTop : 100,
+				},
+				title : {
+					text : title,
+					x : -20
+				},
+				subtitle : {
+					text : 'Source: Test Serials Data',
+					x : -20
+				},
+				xAxis : {
+					title : {
+						text : 'Time'
+					},
+					categories : obj,
+					tickPosition : 'inside'
+				},
+				yAxis : {
+					title : {
+						text : 'value'//itemtext[0]
+					},
+					plotOptions : {
+						series : {
+							connectNulls : true
+						// by default
+						}
+					},
+					labels : {
+						format : '{value}' + unit,
+						style : {
+							color : Highcharts.getOptions().colors[0]
+						}
+					},
+					lineColor : Highcharts.getOptions().colors[0],
+					lineWidth : 1,
+					plotLines : [ {
+						value : 10,
+						width : 1,
+						color : '#FFFFFF'
+					} ]
+				},
+				legend : {
+					layout : 'vertical',
+					align : 'right',
+					verticalAlign : 'top',
+					borderWidth : 0,
+					floating : true
+				},
+				navigation : {
+					buttonOptions : {
+						align : 'left'
+					}
+				},
+				tooltip : {
+					valueSuffix : unit,
+					//shared:true,
+					formatter : function() {
+						currentdate = this.x;
+						return "Time="+this.x + '<br> Device ' + this.series.name + ',value=' + this.y
+								+ '<br/>'
+					}
+				}
+
+			});
+		}
+
+
+
+		function parseDate(dateStr){
+			var strArray = dateStr.split("-");
+			if(strArray.length == 3){
+				return new Date(strArray[0], strArray[1]-1, strArray[2]);
+			}
+			else
+			{
+				return new Date();
+			}
+		}
+
+		function formatedate (date, format) {
+			  var v = "";
+			  if (typeof date == "string" || typeof date != "object") {
+				return;
+			  }
+			  var year  = date.getFullYear();
+			  var month  = date.getMonth()+1;
+			  var day   = date.getDate();
+			  var hour  = date.getHours();
+			  var minute = date.getMinutes();
+			  var second = date.getSeconds();
+			  var weekDay = date.getDay();
+			  var ms   = date.getMilliseconds();
+			  var weekDayString = "";
+
+			  if (weekDay == 1) {
+				weekDayString = "Monday";
+			  } else if (weekDay == 2) {
+				weekDayString = "Tuesday";
+			  } else if (weekDay == 3) {
+				weekDayString = "Wednesday";
+			  } else if (weekDay == 4) {
+				weekDayString = "Thursday";
+			  } else if (weekDay == 5) {
+				weekDayString = "Friday";
+			  } else if (weekDay == 6) {
+				weekDayString = "Saturday";
+			  } else if (weekDay == 7) {
+				weekDayString = "Sunday";
+			  }
+
+			  v = format;
+			  //Year
+			  v = v.replace(/yyyy/g, year);
+			  v = v.replace(/YYYY/g, year);
+			  v = v.replace(/yy/g, (year+"").substring(2,4));
+			  v = v.replace(/YY/g, (year+"").substring(2,4));
+			  //Month
+			  var monthStr = ("0"+month);
+			  v = v.replace(/MM/g, monthStr.substring(monthStr.length-2));
+			  //Day
+			  var dayStr = ("0"+day);
+			  v = v.replace(/dd/g, dayStr.substring(dayStr.length-2));
+			  //hour
+			  var hourStr = ("0"+hour);
+			  v = v.replace(/HH/g, hourStr.substring(hourStr.length-2));
+			  v = v.replace(/hh/g, hourStr.substring(hourStr.length-2));
+			  //minute
+			  var minuteStr = ("0"+minute);
+			  v = v.replace(/mm/g, minuteStr.substring(minuteStr.length-2));
+			  //Millisecond
+			  v = v.replace(/sss/g, ms);
+			  v = v.replace(/SSS/g, ms);
+			  //second
+			  var secondStr = ("0"+second);
+			  v = v.replace(/ss/g, secondStr.substring(secondStr.length-2));
+			  v = v.replace(/SS/g, secondStr.substring(secondStr.length-2));
+			  //weekDay
+			  v = v.replace(/E/g, weekDayString);
+			  return v;
+			}
+
+		function showcloudberrychart(csvdata, z) {
+
+			data2 = [];
+			var x = csvdata.split("\r\n")
+			var j = 0;
+			for (var i = 0; i < x.length; i++) {
+					 if (x[i].length < 5)
+						continue;
+					var y = x[i].split(",");
+					data2[j] = parseFloat(y[1]);
+					j++;
+				}
+
+			chart2.series[z].setData(data2);
+			chart2.redraw();
+		}
+
+		function selectdevice()
+		{
+			devices =[];
+			var devs = document.getElementsByName("dev");
+			for(i=0;i<devs.length;i++){
+				if(devs[i].checked){
+					devices.push(devs[i].value)
+				}
+			}
+			console.log("devices="+devices)
+		}
+
+		function draw() {
+
+			selectdevice();
+			stime = document.getElementById("start").value  ;
+			etime = document.getElementById("end").value ;
+			rowsnumber=$('#amount').val();
+			samplerate = document.getElementById("sampleRate").value;
+			aggregationfunction = document.getElementById("aggregationfunction").value;
+
+			amounttext = document.getElementById("amount").value;
+
+
+			if (devices.length == 0 || samplerate.length ==0 || aggregationfunction.length==0) {
+				alert("please select devices,sample rate and aggregation function.");
+			} else {
+
+				categories2 = [];
+				var sdate = parseDate(stime);
+				var edate = parseDate(etime);
+
+				var tinterval =parseInt(samplerate);
+
+				//console.log("search......= from "+sdate+" to "+edate)
+				categories2 =getXAxisdatas(sdate,edate,samplerate)
+				chart2 = newChart(categories2, 'container', 'Earthquake Big Data Visualization', "");
+				for ( m=0 ;m < devices.length; m++)
+				{
+						chart2.addSeries({
+							name : devices[m],
+							data : null,
+							lineWidth : 1,
+							marker : {
+								radius : 2,
+							}
+						}, false);
+				}
+
+				transferdata(sdate,edate,samplerate);
+
+
+			}
+		}
+	</script>
+
+
+</head>
+<body  >
+<table style="width: 100%">
+				<tr>
+					<td style="width: 40%; align: center">
+						 Sampling  interval:<select name="sampleRate"
+								id="sampleRate">
+									<option value="year">Year</option>
+									<option value="month">Month</option>
+									<option value="day" selected>Day</option>
+									<option value="hour">Hour</option>
+									<option value="minute">Minute</option>								
+							</select>  
+						Aggregation Function:<select name="aggregationfunction" id="aggregationfunction">
+									<option value="sum">sum</option>
+									<option value="count">count</option>
+									<option value="min">min</option>
+									<option value="max" >max</option>
+									<option value="avg" selected>avg</option>
+							</select>
+					</td>
+
+					<td style="width: 40%; align: center">
+						Start Date:<input id="start" type="text" value="2000-01-01"
+							   required="required">
+						End Date:<input id="end" type="text"  value="2001-01-01"
+							required="required"><br>
+					</td>
+					<td style="width: 20%; align: center">
+						Limit: <input type="text" id="amount" style="width: 50px"
+							name="amount" value="3000"> <br>
+						
+					</td>				
+					
+				</tr>
+				<tr>
+					<td colspan="2">					
+					Select devices:
+						    <input type="checkbox" name="dev" value="1" checked>Device 1
+							<input type="checkbox" name="dev" value="2" checked>Device 2
+							<input type="checkbox" name="dev" value="3" checked>Device 3
+							<input type="checkbox" name="dev" value="4">Device 4	
+							<input type="checkbox" name="dev" value="5">Device 5	
+							<input type="checkbox" name="dev" value="6">Device 6	
+							<input type="checkbox" name="dev" value="7">Device 7	
+							<input type="checkbox" name="dev" value="8">Device 8	
+							<input type="checkbox" name="dev" value="9">Device 9	
+							<input type="checkbox" name="dev" value="10">Device 10					 
+					</td>					
+					<td  >
+					<input type="submit" id="bt" name="bt" value="Search" style="width: 80px"
+							  onclick="draw()" />
+					</td>
+				</tr>
+			</table> 
+ 
+	<div id="container"
+		style="width: 90%; height: 450px; marginRight: 5px; position: fixed;"></div>	
+ 
+
+</body>
+</html>
