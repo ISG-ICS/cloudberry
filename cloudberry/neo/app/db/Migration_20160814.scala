@@ -37,13 +37,14 @@ private[db] class Migration_20160814() {
              |""".stripMargin
         }
       case oracle: OracleConn =>
+        //remove "owner = 'BERRY' and " from where condition
           conn.postControl {
             s"""
                |declare
                |  result1 number(8);
                |begin
                |
-               |  select count(*)into result1 from all_tables where owner = 'BERRY' and table_name = 'berry.meta';
+               |  select count(*)into result1 from all_tables where  table_name = 'berry.meta';
                |
                |  if result1 = 0 then
                |    execute immediate '

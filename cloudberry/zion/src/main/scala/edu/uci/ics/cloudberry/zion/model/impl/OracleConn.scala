@@ -104,7 +104,6 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
   }
 
   protected def postBerryQuery(query: String): Future[JsValue] = {
-
     val statement = connection.createStatement
     val result = statement.executeQuery(query)
     var qJsonArray: JsArray = Json.arr()
