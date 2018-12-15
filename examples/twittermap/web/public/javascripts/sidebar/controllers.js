@@ -31,7 +31,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
+    // A WebSocket that send query to Cloudberry, get lastest tweets directly from twitter server
 
+  
+  
+  
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
       document.getElementById("sidebar").style.left = "100%";
@@ -98,6 +102,28 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
       });
     }
+    
+    var LTSocket = new WebSocket("ws://localhost:9001/liveTweets");
+    /* fetchTweetFromAPI sends a query to twittermap server through websocket
+     * to fetch recent tweets for liveTweet feature
+     * @param msg{String}, msg is the query send to twittermap server 
+     */
+    function fetchTweetFromAPI(msg) {
+      
+      if(LTSocket.readyState === LTSocket.OPEN){
+          LTSocket.send(msg);
+      }
+      LTSocket.onmessage = function(event){
+        let tweets = event.data.split(",");
+        for(var i = 0 ; i<tweets.length - 1;i++)
+        {
+          liveTweetsQueue.push({"id":tweets[i]})
+        }        
+      }
+    }
+  
+
+  
   
     function sendLiveTweetsQuery(sampleTweetSize) {
       // Construct time range condition for live tweets query
@@ -110,11 +136,14 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       // 3. LowerBound = UpperBound - queryInterval
       tempDateTime.setSeconds(tempDateTime.getSeconds()  - queryInterval);
       var timeLowerBound = tempDateTime.toISOString();
-
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
         // new tweets retrieved push back to live tweets queue
         liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+        // In case no tweets retrieved from DB, we fetch data directly from twitter API
+        if (resultSet[0].length==0){
+          fetchTweetFromAPI(cloudberry.parameters.keywords.toString());
+        }
         $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");
     }

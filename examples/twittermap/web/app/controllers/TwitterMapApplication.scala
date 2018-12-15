@@ -13,7 +13,12 @@ import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
+import twitter4j.TwitterFactory
+import twitter4j.conf.ConfigurationBuilder
+import twitter4j._
 import websocket.WebSocketFactory
+import play.api.mvc._
+import akka.stream.scaladsl._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -48,6 +53,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
   val liveTweetQueryOffset : Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
   val liveTweetUpdateRate: Int = config.getInt("liveTweetUpdateRate").getOrElse(2)
+  val liveTweetConsumerKey: String = config.getString("liveTweetConsumerKey").getOrElse(null)
+  val liveTweetConsumerSecret: String = config.getString("liveTweetConsumerSecret").getOrElse(null)
+  val liveTweetToken: String = config.getString("liveTweetToken").getOrElse(null)
+  val liveTweetTokenSecret: String = config.getString("liveTweetTokenSecret").getOrElse(null)
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
@@ -91,8 +100,87 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     }
   }
 
+
+  object LiveTweetActor {
+    def props(out: ActorRef) = Props(new LiveTweetActor(out))
+  }
+
+  class LiveTweetActor(out: ActorRef) extends Actor {
+    override def receive = {
+      case msg: String =>
+        val console = Logger
+
+        val query = Array(msg)
+        var tweetString = new StringBuilder()
+        val cb2 = new ConfigurationBuilder
+        cb2.setDebugEnabled(true)
+          .setOAuthConsumerKey(liveTweetConsumerKey)
+          .setOAuthConsumerSecret(liveTweetConsumerSecret)
+          .setOAuthAccessToken(liveTweetToken)
+          .setOAuthAccessTokenSecret(liveTweetTokenSecret)
+        val twitterStream = new TwitterStreamFactory(cb2.build)
+        val stream = twitterStream.getInstance
+        val streamQuery = new twitter4j.FilterQuery
+        streamQuery.track(query)
+        var recievedTweetAmount = 0
+        var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
+
+        var queryStartTime = System.currentTimeMillis()
+        val stListen = new StatusListener {
+          override def onStatus(status: twitter4j.Status): Unit = {
+            console.info(status.getCreatedAt.toString)
+            if (status.isRetweet == false){
+              tweetString++=status.getId.toString
+              tweetString++=","
+              recievedTweetAmount += 1
+            }
+            var currentTime = System.currentTimeMillis()
+            // Cease fetching data from tweet, when we collected enough data or timeout
+            if (recievedTweetAmount > desiredTweetAmount || ((currentTime - queryStartTime)>=(liveTweetQueryInterval/2).toInt*(1000) && recievedTweetAmount<desiredTweetAmount)){
+              stream.shutdown()
+              recievedTweetAmount = 0
+              out ! (tweetString.toString)
+            }
+          }
+
+          override def onDeletionNotice(statusDeletionNotice: StatusDeletionNotice): Unit = ???
+
+          override def onTrackLimitationNotice(numberOfLimitedStatuses: Int): Unit = ???
+
+          override def onScrubGeo(userId: Long, upToStatusId: Long): Unit = ???
+
+          override def onStallWarning(warning: StallWarning): Unit = ???
+
+          override def onException(ex: Exception): Unit = {
+
+          }
+        }
+
+        stream.addListener(stListen)
+
+        val tweetsStream = stream.filter(streamQuery)
+
+      case msg:Any =>
+        Logger.info("Invalid input")
+    }
+  }
+
+  /**
+    * liveTweets is a callback function
+    *
+    * @param query recieved from frontend request in String
+    * @return A list of tweet Id in string, each id seperated by , character
+    *
+    */
+  def liveTweets = WebSocket.accept[String,String] { request =>
+    ActorFlow.actorRef{ out =>
+      LiveTweetActor.props(out)
+    }
+  }
+
   def tweet(id: String) = Action.async {
     val url = "https://api.twitter.com/1/statuses/oembed.json?id=" + id
+
     wsClient.url(url).get().map { response =>
       Ok(response.json)
     }
