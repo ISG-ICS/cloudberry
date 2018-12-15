@@ -341,9 +341,13 @@ class OracleGenerator extends SQLGenerator {
         func match {
           case interval: Interval => {
             interval.unit match {
-              case TimeUnit.Day=>s"to_char(cast($fieldExpr as ${timeUnitFuncMap(interval.unit)}),'YYYY-MM-DD')"
+              case TimeUnit.Second => s"to_char($fieldExpr ,'yyyy-mm-dd hh24:mi:ss')"
+              case TimeUnit.Minute => s"to_char($fieldExpr,'yyyy-mm-dd hh24:mi')"
+              case TimeUnit.Hour => s"to_char($fieldExpr,'yyyy-mm-dd hh24')"
+              case TimeUnit.Day => s"to_char($fieldExpr,'yyyy-mm-dd')"
+              case TimeUnit.Month => s"to_char($fieldExpr,'yyyy-mm')"
+              case TimeUnit.Year => s"to_char($fieldExpr ,'yyyy')"
               case _ => s"extract(${timeUnitFuncMap(interval.unit)} from $fieldExpr)"
-
             }
           }
           case level: Level =>

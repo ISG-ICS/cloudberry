@@ -234,8 +234,10 @@ object QueryPlanner {
       func match {
         case Count | Sum =>
           name -> JsNumber((left \ name).as[JsNumber].value + (right \ name).as[JsNumber].value)
-        case Max => ???
-        case Min => ???
+        case Max =>
+          name ->  JsNumber((if ( (left \ name).as[JsNumber].value > (right \ name).as[JsNumber].value) (left \ name).as[JsNumber].value  else (right \ name).as[JsNumber].value))
+        case Min =>
+          name ->  JsNumber((if ( (left \ name).as[JsNumber].value < (right \ name).as[JsNumber].value) (left \ name).as[JsNumber].value  else (right \ name).as[JsNumber].value))
         case topk: TopK => ???
         case Avg => ???
         case DistinctCount => ???
