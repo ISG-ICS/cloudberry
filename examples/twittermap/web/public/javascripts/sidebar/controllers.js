@@ -31,11 +31,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
-    // A WebSocket that send query to Cloudberry, get lastest tweets directly from twitter server
-
-  
-  
-  
+    
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
       document.getElementById("sidebar").style.left = "100%";

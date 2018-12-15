@@ -17,8 +17,7 @@ import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j._
 import websocket.WebSocketFactory
-import play.api.mvc._
-import akka.stream.scaladsl._
+
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
