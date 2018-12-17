@@ -102,7 +102,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     var LTSocket = new WebSocket("ws://localhost:9001/liveTweets");
     /* fetchTweetFromAPI sends a query to twittermap server through websocket
      * to fetch recent tweets for liveTweet feature
-     * @param msg{String}, msg is the query send to twittermap server 
+     * @param msg{Object}, msg is the query send to twittermap server 
      */
     function fetchTweetFromAPI(query) {
       
