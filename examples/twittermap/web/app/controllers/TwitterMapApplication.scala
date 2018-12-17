@@ -168,7 +168,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     * liveTweets is a callback function
     *
     * @param query recieved from frontend request JsValue
-    * @return A list of tweet Id in string, each id seperated by , character
+    * @return A list of tweet object in JsValue
     *
     */
   def liveTweets = WebSocket.accept[JsValue,JsValue] { request =>
