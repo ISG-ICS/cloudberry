@@ -104,22 +104,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
      * to fetch recent tweets for liveTweet feature
      * @param msg{String}, msg is the query send to twittermap server 
      */
-    function fetchTweetFromAPI(msg) {
+    function fetchTweetFromAPI(query) {
+      
       
       if(LTSocket.readyState === LTSocket.OPEN){
-          LTSocket.send(msg);
+          LTSocket.send(query);
       }
       LTSocket.onmessage = function(event){
-        let tweets = event.data.split(",");
-        for(var i = 0 ; i<tweets.length - 1;i++)
-        {
-          liveTweetsQueue.push({"id":tweets[i]})
-        }        
+        let tweets = JSON.parse(event.data);
+        liveTweetsQueue = liveTweetsQueue.concat(tweets);                
       }
     }
-  
-
-  
   
     function sendLiveTweetsQuery(sampleTweetSize) {
       // Construct time range condition for live tweets query
@@ -138,7 +133,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
         // In case no tweets retrieved from DB, we fetch data directly from twitter API
         if (resultSet[0].length==0){
-          fetchTweetFromAPI(cloudberry.parameters.keywords.toString());
+          fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString()}));
         }
         $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");

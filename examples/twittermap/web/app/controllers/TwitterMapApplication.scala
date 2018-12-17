@@ -8,7 +8,7 @@ import akka.actor._
 import akka.stream.Materializer
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{JsValue, Json, _}
+import play.api.libs.json.{JsValue, Json,JsArray,JsObject,_}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -106,11 +106,9 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   class LiveTweetActor(out: ActorRef) extends Actor {
     override def receive = {
-      case msg: String =>
-        val console = Logger
-
-        val query = Array(msg)
-        var tweetString = new StringBuilder()
+      case msg: JsValue =>
+        val query = Array((msg \\ "keyword").head.as[String])
+        var tweetArray = Json.arr()
         val cb2 = new ConfigurationBuilder
         cb2.setDebugEnabled(true)
           .setOAuthConsumerKey(liveTweetConsumerKey)
@@ -127,19 +125,21 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         var queryStartTime = System.currentTimeMillis()
         val stListen = new StatusListener {
           override def onStatus(status: twitter4j.Status): Unit = {
-            console.info(status.getCreatedAt.toString)
             if (status.isRetweet == false){
-              tweetString++=status.getId.toString
-              tweetString++=","
               recievedTweetAmount += 1
+              tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
             }
             var currentTime = System.currentTimeMillis()
             // Cease fetching data from tweet, when we collected enough data or timeout
-            if (recievedTweetAmount > desiredTweetAmount || ((currentTime - queryStartTime)>=(liveTweetQueryInterval/2).toInt*(1000) && recievedTweetAmount<desiredTweetAmount)){
+            if (recievedTweetAmount >= desiredTweetAmount || ((currentTime - queryStartTime)>=(liveTweetQueryInterval/2).toInt*(1000) && recievedTweetAmount<desiredTweetAmount)){
               stream.shutdown()
               recievedTweetAmount = 0
-              out ! (tweetString.toString)
+              out ! (tweetArray)
             }
+            if ((currentTime - queryStartTime)>=(liveTweetQueryInterval)*1000){
+              stream.shutdown()
+            }
+
           }
 
           override def onDeletionNotice(statusDeletionNotice: StatusDeletionNotice): Unit = ???
@@ -167,11 +167,11 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   /**
     * liveTweets is a callback function
     *
-    * @param query recieved from frontend request in String
+    * @param query recieved from frontend request JsValue
     * @return A list of tweet Id in string, each id seperated by , character
     *
     */
-  def liveTweets = WebSocket.accept[String,String] { request =>
+  def liveTweets = WebSocket.accept[JsValue,JsValue] { request =>
     ActorFlow.actorRef{ out =>
       LiveTweetActor.props(out)
     }
