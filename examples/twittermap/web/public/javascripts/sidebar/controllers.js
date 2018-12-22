@@ -117,6 +117,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
   
     function sendLiveTweetsQuery(sampleTweetSize) {
+      console.log($scope)
+      console.log(cloudberry.parameters)
+      var centerCoordinate = [$scope.lng,$scope.lat];
+      fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
       // Construct time range condition for live tweets query
       var tempDateTime = (new Date(Date.now()));
       // 1. Get NOW considering time zone.
@@ -133,12 +137,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
         // In case no tweets retrieved from DB, we fetch data directly from twitter API
         if (resultSet[0].length==0){
-          fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString()}));
+          fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
         }
         $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");
     }
-
+  
     // Constantly checking live tweets queue to draw tweet one by one
     function startLiveTweetsConsumer() {
       $scope.liveTweetsConsumer = window.setInterval(function() {

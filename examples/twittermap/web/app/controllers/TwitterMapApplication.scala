@@ -8,7 +8,7 @@ import akka.actor._
 import akka.stream.Materializer
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import play.api.libs.json.{JsValue, Json,JsArray,JsObject,_}
+import play.api.libs.json.{JsValue, Json,_}
 import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
@@ -33,6 +33,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
   val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
+  val cldouberryLiveTweet: String = config.getString("cloudberry.liveTweet").getOrElse("ws://localhost:9001/liveTweets")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -107,7 +108,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   class LiveTweetActor(out: ActorRef) extends Actor {
     override def receive = {
       case msg: JsValue =>
-        val query = Array((msg \\ "keyword").head.as[String])
+        val queryWords = Array((msg \\ "keyword").head.as[String])
+        val location = (msg \\ "location")
+        
+        Logger.info(location.toString)
         var tweetArray = Json.arr()
         val cb2 = new ConfigurationBuilder
         cb2.setDebugEnabled(true)
@@ -118,7 +122,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         val twitterStream = new TwitterStreamFactory(cb2.build)
         val stream = twitterStream.getInstance
         val streamQuery = new twitter4j.FilterQuery
-        streamQuery.track(query)
+        streamQuery.track(queryWords)
         var recievedTweetAmount = 0
         var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
 
