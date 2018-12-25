@@ -3,7 +3,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                                   cloudberryConfig, Cache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
-
     // add an alert bar of IE
     if (L.Browser.ie) {
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
@@ -132,6 +131,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
@@ -386,6 +386,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
         $scope.bounds = $scope.map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         if ($scope.status.zoomLevel > 9) {
           $scope.resetGeoInfo("city");
           if ($scope.polygons.statePolygons) {
@@ -448,6 +449,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       // Original operations on dragend event
       if (!$scope.status.init) {
         $scope.bounds = $scope.map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         var geoData;
         if ($scope.status.logicLevel === "state") {
           geoData = $scope.geojsonData.state;

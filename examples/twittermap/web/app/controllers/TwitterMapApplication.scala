@@ -109,9 +109,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     override def receive = {
       case msg: JsValue =>
         val queryWords = Array((msg \\ "keyword").head.as[String])
-        val location = (msg \\ "location")
-        
-        Logger.info(location.toString)
+        val location = Array{(msg \\ "location").head.as[Array[Double]]}
+        val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
         var tweetArray = Json.arr()
         val cb2 = new ConfigurationBuilder
         cb2.setDebugEnabled(true)
@@ -123,6 +122,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         val stream = twitterStream.getInstance
         val streamQuery = new twitter4j.FilterQuery
         streamQuery.track(queryWords)
+        streamQuery.locations(locs)
         var recievedTweetAmount = 0
         var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
 

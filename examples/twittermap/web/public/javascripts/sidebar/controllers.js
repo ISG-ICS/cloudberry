@@ -1,5 +1,5 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
+  .controller("SidebarCtrl", function($rootScope,$scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
@@ -22,7 +22,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.liveTweetsProducer = {};
     $scope.liveTweetsConsumer = {};
     var timeZoneHoursOffset = ((new Date).getTimezoneOffset()) / 60;
-
     // Timer for sending query to check whether it can be solved by view
     $scope.timerCheckQuerySolvableByView = null;
 
@@ -115,11 +114,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         liveTweetsQueue = liveTweetsQueue.concat(tweets);                
       }
     }
-  
+    
     function sendLiveTweetsQuery(sampleTweetSize) {
-      console.log($scope)
-      console.log(cloudberry.parameters)
-      var centerCoordinate = [$scope.lng,$scope.lat];
+      var centerCoordinate = [cloudberry.parameters.bounds._southWest.lat,cloudberry.parameters.bounds._southWest.lng,cloudberry.parameters.bounds._northEast.lat,cloudberry.parameters.bounds._northEast.lng];
       fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
       // Construct time range condition for live tweets query
       var tempDateTime = (new Date(Date.now()));
