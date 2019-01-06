@@ -73,7 +73,9 @@ object Dependencies {
     // draw chart module
     "org.webjars.bower" % "chart.js" % "2.7.2",
     // Added jquery-ui theme for decorating auto-complete menu
-    "org.webjars" % "jquery-ui-themes" % "1.12.1"
+    "org.webjars" % "jquery-ui-themes" % "1.12.1",
+    // Added highcharts library for generating time bar
+    "org.webjars" % "highcharts" % "6.1.4"
 
   ) ++ testDeps
 }

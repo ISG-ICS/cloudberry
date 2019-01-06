@@ -291,14 +291,16 @@ object QueryPlanner {
     var mergedField: List[Array[String]] = List()
     // Check whether this result contains "__count__[fieldName]" or "__sum__[fieldName]",
     // and if yes, extract the field names to mergedField variable
-    val record = result.value(0).as[JsObject]
-    record.keys.foreach(field => {
-      if (field.startsWith("__count__") || field.startsWith("__sum__")) {
-        val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
-        val newField = Array(realField, "__count__" + realField, "__sum__" + realField)
-        mergedField = newField +: mergedField
-      }
-    })
+    if (result.value.nonEmpty){
+      val record = result.value(0).as[JsObject]
+      record.keys.foreach(field => {
+        if (field.startsWith("__count__") || field.startsWith("__sum__")) {
+          val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
+          val newField = Array(realField, "__count__" + realField, "__sum__" + realField)
+          mergedField = newField +: mergedField
+        }
+      })
+    }
 
     // No avg fields need to be merged, return immediately
     if (mergedField.isEmpty) {

@@ -1,16 +1,19 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
-  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry) {
+  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry, moduleManager) {
     $scope.ndx = null;
-    $scope.result = {};
     $scope.resultArray = [];
-    $scope.d3 = $window.d3;
-    $scope.dc = $window.dc;
     $scope.crossfilter = $window.crossfilter;
     $scope.empty = [];
     $scope.totalCount = 0;
     $scope.currentTweetCount = 0;
     $scope.queried = false;
     $scope.sumText = config.sumText;
+    $scope.drawTimeSereis = true;
+    const initialTimeBarStart = new Date(cloudberry.startDate);
+    initialTimeBarStart.setMonth(initialTimeBarStart.getMonth()-1);
+    const initialTimeBarEnd = new Date(cloudberry.parameters.timeInterval.end);
+    initialTimeBarEnd.setMonth(initialTimeBarEnd.getMonth()+1);
+
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
@@ -43,29 +46,189 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $compile(countDiv)($scope);
     stats.appendChild(countDiv);
 
+    // This function will redraw timebar whenever new event has been triggered
+    var enableTimebarChange = function(){
+        var min = new Date(initialTimeBarStart);
+        var max = new Date(initialTimeBarEnd);
+        if(!$scope.drawTimeSereis) {
+            $scope.drawTimeSereis = true;
+            requestFunc(min,max);
+        }
+    };
+
+    var requestFunc = function(min, max) {
+      cloudberry.parameters.timeInterval.start = min;
+      cloudberry.parameters.timeInterval.end = max;
+      moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min, max});
+    };
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL,enableTimebarChange);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG,enableTimebarChange);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD,enableTimebarChange);
+
+
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
         return cloudberry.commonTimeSeriesResult;
       },
-
       function(newResult) {
         if(newResult) {
-          $scope.result = newResult;
           $scope.resultArray = $scope.preProcess(newResult);
+            // created a new dict type to store the day and the count of data
+            $scope.newResultDict = {};
+            $scope.isDuplicated = [];
+            for (var i = 0; i < newResult.length; i++) {
+                if (!$scope.isDuplicated.includes(newResult[i].day.substring(0, 7))) {
+                    $scope.isDuplicated[i] = newResult[i].day.substring(0, 7);
+                    $scope.newResultDict[newResult[i].day.substring(0, 7)] = newResult[i].count;
+                }
+                else {
+                    $scope.newResultDict[newResult[i].day.substring(0, 7)] += newResult[i].count;
+                }
+            }
+
+            var temp = {};
+            Object.keys($scope.newResultDict).sort().forEach(function(key) {
+                temp[key] = $scope.newResultDict[key];
+            });
+
+
+            $scope.newResultDict = temp;
+
+            if($scope.drawTimeSereis) {
+                $scope.newResultsCount = Object.values($scope.newResultDict);
+                $scope.newResultsDay = Object.keys($scope.newResultDict).map(x=>x.replace(/-/g,'/'));
+                $scope.drawCharts($scope.newResultsDay, $scope.newResultsCount);
+            }
+
+
         } else {
-          $scope.result = {};
           $scope.resultArray = [];
         }
       }
     );
+      var margin = {
+          top: 10,
+          right: 30,
+          bottom: 40,
+          left: 40
+      };
+      // set the initial width of the timeline equal to the initial width of the browser window
+      var width = $(window).width() * 0.6 - margin.left - margin.right;
+      var height = 160 - margin.top - margin.bottom;
+      var minDate = cloudberry.startDate;
+      var maxDate = cloudberry.parameters.timeInterval.end;
+
+      var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
+      var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
+
+
+
+      $scope.drawCharts = function (day, count) {
+
+          var resetZoomButton = {
+              position:{
+                  y : 30
+              }
+          };
+          var chart = {
+              type: 'area',
+              resetZoomButton,
+              zoomType: 'x',
+              width: width,
+              height: height,
+              margin: [margin.top, margin.right, margin.bottom, margin.left],
+              backgroundColor: null,
+              events: {
+                  selection:function(event){
+                      if( !event.resetSelection ) {
+                          selectedMin = event.xAxis[0].min;
+                          selectedMax = event.xAxis[0].max;
+                          var left = Date.parse(cloudberry.parameters.timeInterval.start);
+                          var right = Date.parse(cloudberry.parameters.timeInterval.end);
+                          var timeBarRange  = event.xAxis[0].axis.getExtremes().max - event.xAxis[0].axis.getExtremes().min;
+                          var difference = right - left;
+                          var minRatio = selectedMin / (timeBarRange);
+                          var maxRatio = selectedMax / (timeBarRange);
+                          var min = new Date(left + minRatio * difference);
+                          var max = new Date(left + maxRatio * difference);
+                          $scope.drawTimeSereis = false;
+                          requestFunc(min, max);
+                      }
+                      else{
+                          enableTimebarChange();
+                      }
+
+                  }
+
+              }
+
+          };
+          // Set chart title to be empty
+          var title = {
+              text: ''
+          };
+          var xAxis = {
+              tickmarkPlacement: 'on',
+              title: {
+                  text: startDate + "   to   " + endDate
+              },
+              categories: day,
+              type: 'datetime'
+          };
+
+          var tooltip = {
+              crosshairs: true,
+              shared: true,
+              valueSuffix: ''
+          };
+          var rangeSelector = {
+              enabled: false
+          };
+          var plotOptions = {
+              area: {
+                  stacking: 'normal',
+                  lineColor: '#92d1e1',
+                  lineWidth: 1,
+
+                  marker: {
+                      lineWidth: 1,
+                      lineColor: '#92d1e1'
+                  }
+              }
+          };
+          var credits = {     // watermark
+              enabled: false
+          };
+          var series = [
+              {
+                  showInLegend: false,
+                  name: 'count',
+                  data: count
+              }
+          ];
+
+
+
+          var options = {
+              chart,
+              title,
+              xAxis,
+              tooltip,
+              rangeSelector,
+              plotOptions,
+              credits,
+              series,
+          };
+          $('#chart').highcharts(options);
+      }
 
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function () {
         return cloudberry.commonTotalCount;
       },
-
       function (newCount) {
         if(newCount) {
           $scope.totalCount = newCount;
@@ -75,20 +238,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
   })
   .directive('timeSeries', function (cloudberry, moduleManager) {
-    var margin = {
-      top: 10,
-      right: 30,
-      bottom: 30,
-      left: 40
-    };
-    // set the initial width of the timeline equal to the initial width of the browser window
-    var width = $(window).width() * 0.6 - margin.left - margin.right;
-    var height = 150 - margin.top - margin.bottom;
       return {
         restrict: "E",
         controller: 'TimeSeriesCtrl',
         link: function ($scope, $element, $attrs) {
-          var chart = d3.select($element[0]);
           $scope.$watch('resultArray', function (newVal, oldVal) {
 
             if(oldVal.length == 0)
@@ -96,119 +249,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 if(newVal.length == 0)
                   return;
             }
-            
             $scope.queried = true;
-            var ndx = $scope.ndx;
-            if (ndx) {
-              ndx.remove();
-              ndx.add($scope.empty);
-              dc.redrawAll();
-              ndx.add(newVal);
-              dc.redrawAll();
-              return;
-            }
-
-            $scope.ndx = crossfilter(newVal);
-            var timeDimension = $scope.ndx.dimension(function (d) {
-              return d3.time.week(d.time);
-            });
-            var timeGroup = timeDimension.group().reduceSum(function (d) {
-              return d.count;
-            });
-
-            var timeSeries = dc.lineChart(chart[0][0]);
-            var timeBrush = timeSeries.brush();
-            var resetClink = 0;
-
-            var requestFunc = function(min, max) {
-              cloudberry.parameters.timeInterval.start = min;
-              cloudberry.parameters.timeInterval.end = max;
-              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
-            };
-
-            // This function is to remove the "blue color" highlight of line chart in selected time range
-            // It happens when the time brush is moved by user
-            var removeHighlight = function() {
-              var panel = $(".chart-body")[0].firstChild;
-              while (panel.childElementCount !== 1) {
-                panel.removeChild(panel.lastChild);
-              }
-            };
-
-            // This function is to highlight the line chart in selected time range
-            // It happens when the chart has redrawn after the time brush in moved by user
-            var highlightChart = function() {
-              var chartBody = $(".chart-body")[0];
-              var extent = $(".extent")[0];
-              var panel = chartBody.firstChild;
-              var oldPath = panel.firstChild;
-              var newPath = oldPath.cloneNode(true);
-
-              // If user clink the "reset" button, the whole line will be highlighted, the function return.
-              if (resetClink === 1 || extent.getAttribute("width") === "0") {
-                resetClink += 2;
-                oldPath.setAttribute("stroke", "#1f77b4");
-                return ;
-              }
-
-              if (panel.childElementCount !== 1) {
-                removeHighlight();
-              }
-              var left = extent.getBoundingClientRect().left - chartBody.getBoundingClientRect().left;
-              var right = chartBody.getBoundingClientRect().right - extent.getBoundingClientRect().right;
-
-              // Dim the old line in chart by setting it to "grey color"
-              oldPath.setAttribute("stroke", "#ccc");
-              newPath.setAttribute("stroke", "#1f77b4");
-              newPath.style.clipPath = "inset(0px "+right+"px 0px "+left+"px)";
-
-              // Add the "blue color" highlight segment of line to the chart
-              panel.appendChild(newPath);
-            };
-
-            // set the times of resetClink to 0 if the keyword is change
-            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
-              resetClink = 0;
-            });
-
-            timeBrush.on('brushend', function (e) {
-              var extent = timeBrush.extent();
-              requestFunc(extent[0], extent[1])
-            });
-
-            var minDate = cloudberry.startDate;
-            var maxDate = cloudberry.parameters.timeInterval.end;
-            chart.selectAll('a').remove();
-            chart.append('a')
-                .text('Reset')
-                .attr('href',"#")
-                .on("click", function() { resetClink++; timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
-                .style("position", "absolute")
-                .style("bottom", "90%")
-                .style("left", "5%");
-
-
-            var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
-            var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
-
-
-            timeSeries
-              .width(width)
-              .height(height)
-              .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
-              .dimension(timeDimension)
-              .group(timeGroup)
-              .x(d3.time.scale().domain([minDate, maxDate]))
-              .xUnits(d3.time.days)
-              .xAxisLabel(startDate + "   to   " + endDate)
-              .elasticY(true)
-              .on("postRedraw", highlightChart)
-              .on("filtered", removeHighlight);
-
-
-
-            dc.renderAll();
-            timeSeries.filter([minDate, maxDate]);
 
           })
         }
