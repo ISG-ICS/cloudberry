@@ -97,8 +97,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
       });
     }
-    
-    var LTSocket = new WebSocket("ws://localhost:9001/liveTweets");
+
+    var LTSocket = new WebSocket(config.cloudberryLiveTweet);
     /* fetchTweetFromAPI sends a query to twittermap server through websocket
      * to fetch recent tweets for liveTweet feature
      * @param msg{Object}, msg is the query send to twittermap server 
@@ -134,7 +134,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
         // In case no tweets retrieved from DB, we fetch data directly from twitter API
         if (resultSet[0].length==0){
-          fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
+          if(config.enableLiveTweet){
+            fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
+          }
         }
         $scope.isSampleTweetsOutdated = false;
       }, "sampleTweetsRequest");

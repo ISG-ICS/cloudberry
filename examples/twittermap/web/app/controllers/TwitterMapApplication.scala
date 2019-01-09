@@ -33,7 +33,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
   val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
-  val cldouberryLiveTweet: String = config.getString("cloudberry.liveTweet").getOrElse("ws://localhost:9001/liveTweets")
+  val cloudberryLiveTweet: String = config.getString("cloudberry.liveTweet").getOrElse("ws://localhost:9001/liveTweets")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -57,6 +57,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val liveTweetConsumerSecret: String = config.getString("liveTweetConsumerSecret").getOrElse(null)
   val liveTweetToken: String = config.getString("liveTweetToken").getOrElse(null)
   val liveTweetTokenSecret: String = config.getString("liveTweetTokenSecret").getOrElse(null)
+  val enableLiveTweet : Boolean = config.getBoolean("enableLiveTweet").getOrElse(true)
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
@@ -108,7 +109,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   class LiveTweetActor(out: ActorRef) extends Actor {
     override def receive = {
       case msg: JsValue =>
-        val queryWords = Array((msg \\ "keyword").head.as[String])
+        val queryWords = (msg \\ "keyword").head.as[String]
         val location = Array{(msg \\ "location").head.as[Array[Double]]}
         val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
         var tweetArray = Json.arr()
@@ -118,50 +119,26 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
           .setOAuthConsumerSecret(liveTweetConsumerSecret)
           .setOAuthAccessToken(liveTweetToken)
           .setOAuthAccessTokenSecret(liveTweetTokenSecret)
-        val twitterStream = new TwitterStreamFactory(cb2.build)
-        val stream = twitterStream.getInstance
-        val streamQuery = new twitter4j.FilterQuery
-        streamQuery.track(queryWords)
-        streamQuery.locations(locs)
-        var recievedTweetAmount = 0
+        val tf = new TwitterFactory(cb2.build)
+        val twitterAPI = tf.getInstance
+        val query = new twitter4j.Query
         var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
+        val resultType = twitter4j.Query.ResultType.recent
+        query.setQuery(queryWords)
+        query.setCount(desiredTweetAmount)
+        query.setResultType(resultType)
 
-        var queryStartTime = System.currentTimeMillis()
-        val stListen = new StatusListener {
-          override def onStatus(status: twitter4j.Status): Unit = {
-            if (status.isRetweet == false){
-              recievedTweetAmount += 1
-              tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
-            }
-            var currentTime = System.currentTimeMillis()
-            // Cease fetching data from tweet, when we collected enough data or timeout
-            if (recievedTweetAmount >= desiredTweetAmount || ((currentTime - queryStartTime)>=(liveTweetQueryInterval/2).toInt*(1000) && recievedTweetAmount<desiredTweetAmount)){
-              stream.shutdown()
-              recievedTweetAmount = 0
-              out ! (tweetArray)
-            }
-            if ((currentTime - queryStartTime)>=(liveTweetQueryInterval)*1000){
-              stream.shutdown()
-            }
-
+        val tweetsResult = twitterAPI.search(query).getTweets
+        for(i <- 0 to tweetsResult.size()-1){
+          val status = tweetsResult.get(i)
+          if (status.isRetweet == false){
+            tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
           }
 
-          override def onDeletionNotice(statusDeletionNotice: StatusDeletionNotice): Unit = ???
-
-          override def onTrackLimitationNotice(numberOfLimitedStatuses: Int): Unit = ???
-
-          override def onScrubGeo(userId: Long, upToStatusId: Long): Unit = ???
-
-          override def onStallWarning(warning: StallWarning): Unit = ???
-
-          override def onException(ex: Exception): Unit = {
-
-          }
         }
 
-        stream.addListener(stListen)
+        out!tweetArray
 
-        val tweetsStream = stream.filter(streamQuery)
 
       case msg:Any =>
         Logger.info("Invalid input")
