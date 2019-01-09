@@ -42,8 +42,6 @@ print(createquery)
 cur.execute(createquery)
 print("Table created...")
 print("Start inserting data...")
-
-news = open("ingestion1.sql",'w',encoding="utf-8")
 with open("sample.json","r",encoding="utf-8",errors="ignore") as f:
     r = f.readlines()
     count = 0
@@ -56,7 +54,6 @@ with open("sample.json","r",encoding="utf-8",errors="ignore") as f:
         except json.decoder.JSONDecodeError as De:
             print(De)
             continue
-        #print(tempJson)
         try:
 
             coordinate = '''SDO_GEOMETRY(
@@ -159,9 +156,9 @@ with open("sample.json","r",encoding="utf-8",errors="ignore") as f:
         except Exception as e:
             print(insertQuery)
             print(e)
-        news.write(insertQuery)
+        
 con.commit()
 
 print("Ingestion Completed {} records ingested".format(count))
 
-news.close()
+
