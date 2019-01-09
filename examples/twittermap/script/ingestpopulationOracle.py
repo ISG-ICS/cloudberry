@@ -93,12 +93,12 @@ with open("./noah/src/main/resources/population/adm/allCityPopulation.adm") as c
         if count % 1000==0:
             print("send record: {}".format(count))
         count += 1
-        cityName = "'"+cityjson['name']+"'"
+        cityName = "'"+cityjson['name'].replace("'","''")+"'"
         cityPopulation = cityjson['population']
         cityID = cityjson['cityID']
-        cityCountyName = "'"+cityjson['countyName']+"'"
+        cityCountyName = "'"+cityjson['countyName'].replace("'","''")+"'"
         cityCountyID = cityjson['countyID']
-        cityStateName ="'"+ cityjson['stateName']+"'"
+        cityStateName ="'"+ cityjson['stateName'].replace("'","''")+"'"
         cityStateID = cityjson['stateID']
 
         insertCityQuery = """
@@ -122,10 +122,10 @@ with open("./noah/src/main/resources/population/adm/allCountyPopulation.adm") as
         if count % 1000==0:
             print("send record: {}".format(count))
         count += 1
-        countyName = "'"+countyjson['name']+"'"
+        countyName = "'"+countyjson['name'].replace("'","''")+"'"
         countyPopulation = countyjson['population']
         countyID = countyjson['countyID']
-        countyStateName ="'"+ countyjson['stateName']+"'"
+        countyStateName ="'"+ countyjson['stateName'].replace("'","''")+"'"
         countyStateID = countyjson['stateID']
 
         insertCountyQuery = """
@@ -146,7 +146,7 @@ with open("./noah/src/main/resources/population/adm/allStatePopulation.adm") as 
     count = 0
     for statejson in load_json_multiple(statef):
         count += 1
-        name = "'"+statejson['name'] + "'"
+        name = "'"+statejson['name'].replace("'","''") + "'"
         statePopulation = statejson['population']
         stateID = statejson['stateID']
 
