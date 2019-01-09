@@ -112,6 +112,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         val queryWords = (msg \\ "keyword").head.as[String]
         val location = Array{(msg \\ "location").head.as[Array[Double]]}
         val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
+        val center = Array((locs(0)(0) + locs(1)(0))/2.00,(locs(0)(1)+locs(1)(1))/2.00)
+        val centerLoc = new GeoLocation(center(1),center(0))
+        val unit = Query.Unit.km
+        //Radius equal to difference of latitude, since the ratio between latitude to KM is almost constant
+        //But ratio between Longitude to KM varies largerly
+        val radius = Math.abs(locs(0)(1) - locs(1)(1)) * 111
         var tweetArray = Json.arr()
         val cb2 = new ConfigurationBuilder
         cb2.setDebugEnabled(true)
@@ -127,7 +133,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         query.setQuery(queryWords)
         query.setCount(desiredTweetAmount)
         query.setResultType(resultType)
-
+        query.setGeoCode(centerLoc,radius,unit)
         val tweetsResult = twitterAPI.search(query).getTweets
         for(i <- 0 to tweetsResult.size()-1){
           val status = tweetsResult.get(i)
@@ -138,8 +144,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         }
 
         out!tweetArray
-
-
       case msg:Any =>
         Logger.info("Invalid input")
     }
