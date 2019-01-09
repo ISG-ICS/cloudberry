@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-os.environ['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.UTF8'
+os.environ['NLS_LANG'] = 'ENGLISH_AMERICA.UTF8'
 import cx_Oracle
 import json
 
