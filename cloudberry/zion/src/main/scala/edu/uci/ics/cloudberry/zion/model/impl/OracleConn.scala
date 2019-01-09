@@ -44,37 +44,25 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
         for (columnId <- 1 to columnCount) {
           val columnLabel = resultMetadata.getColumnLabel(columnId)
           val valueType = resultMetadata.getColumnTypeName(columnId)
-
+          val value = result.getObject(columnLabel)
           valueType match {
-            case "NUMBER" => {
-              val value = result.getDouble(columnLabel)
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value))
-            }
-            case "DATE" => {
-              val value = result.getDate(columnLabel)
-
+            case "NUMBER" =>
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value.toString.toDouble))
+            case "DATE" =>
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(value.asInstanceOf[DATE].dateValue().getTime)))
-            }
             case "TIMESTAMP" =>
-              val value = result.getTimestamp(columnLabel)
-
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(value.asInstanceOf[TIMESTAMP].dateValue().getTime)))
             case "BLOB" =>
-              val value = result.getBlob(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "LONG" =>
-              val value = result.getLong(columnLabel)
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value))
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value.toString.toLong))
             case "NCHAR" =>
-              val value = result.getNString(columnLabel)
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "CHAR" =>
-              val value = result.getString(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "VARCHAR2" =>
-              val value = result.getString(columnLabel)
               if (value != null) {
-                if (value.contains("LINESTRING(")) {
+                if (value.toString.contains("LINESTRING(")) {
                   val bound_boxStr = value.toString
                   val bound_boxFirstx = bound_boxStr.slice(11, bound_boxStr.length - 2).split(",")(0).split(" ")(0).toDouble
                   val bound_boxFirsty = bound_boxStr.slice(11, bound_boxStr.length - 2).split(",")(0).split(" ")(1).toDouble
@@ -90,19 +78,14 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
                 }
               }
             case "VARCHAR" =>
-              val value = result.getString(columnLabel)
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "NVARCHAR2" =>
-              val value = result.getString(columnLabel)
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "NCLOB" => //large data
-              val value = result.getClob(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "CLOB" =>
-              val value = result.getClob(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "MDSYS.SDO_GEOMETRY"=>
-              val value = result.getObject(columnLabel)
                 if (value != null){
                     val j_geom = JGeometry.load(value.asInstanceOf[STRUCT])
                     val test = j_geom.getPoint
@@ -110,7 +93,6 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
                     rsJson = rsJson ++ Json.obj(columnLabel -> coordinates)
               }
             case _ =>
-              val value = result.getObject(columnLabel)
               Logger.warn(s"type of value $value is not detectd")
               break
           }
