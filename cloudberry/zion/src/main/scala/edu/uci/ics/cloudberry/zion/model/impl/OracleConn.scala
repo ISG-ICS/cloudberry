@@ -44,26 +44,33 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
         for (columnId <- 1 to columnCount) {
           val columnLabel = resultMetadata.getColumnLabel(columnId)
           val valueType = resultMetadata.getColumnTypeName(columnId)
-          val value = result.getObject(columnLabel)
           valueType match {
             case "NUMBER" =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value.toString.toDouble))
+              val value = result.getDouble(columnLabel)
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value))
             case "DATE" =>
+              val value = result.getObject(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(value.asInstanceOf[DATE].dateValue().getTime)))
             case "TIMESTAMP" =>
+              val value = result.getObject(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(TimeField.TimeFormat.print(value.asInstanceOf[TIMESTAMP].dateValue().getTime)))
             case "BLOB" =>
+              val value = result.getBlob(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "LONG" =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value.toString.toLong))
+              val value = result.getLong(columnLabel)
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value))
             case "NCHAR" =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
+              val value = result.getString(columnLabel)
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
             case "CHAR" =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
+              val value = result.getString(columnLabel)
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
             case "VARCHAR2" =>
+              val value = result.getString(columnLabel)
               if (value != null) {
                 if (value.toString.contains("LINESTRING(")) {
-                  val bound_boxStr = value.toString
+                  val bound_boxStr = value
                   val bound_boxFirstx = bound_boxStr.slice(11, bound_boxStr.length - 2).split(",")(0).split(" ")(0).toDouble
                   val bound_boxFirsty = bound_boxStr.slice(11, bound_boxStr.length - 2).split(",")(0).split(" ")(1).toDouble
                   val firstBound_box = Seq(bound_boxFirstx, bound_boxFirsty)
@@ -78,14 +85,19 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
                 }
               }
             case "VARCHAR" =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
+              val value = result.getString(columnLabel)
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
             case "NVARCHAR2" =>
-              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
+              val value = result.getString(columnLabel)
+              rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value))
             case "NCLOB" => //large data
+              val value = result.getClob(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "CLOB" =>
+              val value = result.getClob(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsString(value.toString))
             case "MDSYS.SDO_GEOMETRY"=>
+              val value = result.getObject(columnLabel)
                 if (value != null){
                     val j_geom = JGeometry.load(value.asInstanceOf[STRUCT])
                     val test = j_geom.getPoint
@@ -93,6 +105,7 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
                     rsJson = rsJson ++ Json.obj(columnLabel -> coordinates)
               }
             case _ =>
+              val value = result.getObject(columnLabel)
               Logger.warn(s"type of value $value is not detectd")
               break
           }
