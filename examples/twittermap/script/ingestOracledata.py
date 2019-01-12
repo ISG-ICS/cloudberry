@@ -157,8 +157,11 @@ with open("sample.json","r",encoding="utf-8",errors="ignore") as f:
             print(insertQuery)
             print(e)
         
-con.commit()
+
 
 print("Ingestion Completed {} records ingested".format(count))
 
+cur.execute("""create index textindexnew on "twitter.ds_tweet"("text") indextype is CTXSYS.CONTEXT;""")
 
+print("Full text search index created")
+con.commit()
