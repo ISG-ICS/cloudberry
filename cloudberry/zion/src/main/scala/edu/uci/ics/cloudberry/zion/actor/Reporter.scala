@@ -21,7 +21,12 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
 
   override def receive: Actor.Receive = commonReceive orElse {
     case result: PartialResult =>
-      queue.enqueue(result)
+      if (result.returnDelta){
+        out ! Json.toJson(result.content)
+      }
+      else {
+        queue.enqueue(result)
+      }
     case TimeToReport => {
       if (queue.isEmpty) {
         timer.cancel()
@@ -72,7 +77,7 @@ object Reporter {
 
   case class Reset(limit: FiniteDuration)
 
-  case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
+  case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue, returnDelta: Boolean)
 
   case class Fin(lastMsg: JsValue)
 

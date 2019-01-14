@@ -128,7 +128,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
             Json.toJson(infoObject ++ timeInterval)
         }
 
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results, returnDelta)
         reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
@@ -164,7 +164,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
             Json.toJson(infoObject ++ timeInterval)
         }
 
-        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
+        reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results, returnDelta)
         issueQueryGroup(nextInterval, queryGroup)
         context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now, returnDelta), discardOld = true)
       }
