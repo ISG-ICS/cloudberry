@@ -24,7 +24,7 @@ class OracleGenerator extends SQLGenerator {
       }
     }
     val fields = schema.fieldMap.values.filter(f => f.dataType != DataType.Hierarchy && f != AllField).map {
-      f => mkNestDDL(f.name, fieldType2SQLType(f) + (if (f.isOptional) " default null" else " not null"))
+      f => mkNestDDL(f.name, fieldType2SQLType(f) + " default null")
     }
     s"""
        |declare

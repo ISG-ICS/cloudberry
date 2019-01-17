@@ -123,14 +123,14 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
     var qJsonArray: JsArray = Json.arr()
     while (result.next) {
       var rsJson: JsObject = Json.obj()
-      val name = result.getObject("name")
-      val schema = result.getObject("schema")
-      val stats = result.getObject("stats")
-      val dataInterval = result.getObject("dataInterval")
-      rsJson = rsJson ++ Json.obj("name" -> JsString(name.asInstanceOf[String]))
-      rsJson = rsJson ++ Json.obj("schema" -> Json.parse(schema.toString))
-      rsJson = rsJson ++ Json.obj("stats" -> Json.parse(stats.toString))
-      rsJson = rsJson ++ Json.obj("dataInterval" -> Json.parse(dataInterval.toString))
+      val name = result.getString("name")
+      val schema = result.getString("schema")
+      val stats = result.getString("stats")
+      val dataInterval = result.getString("dataInterval")
+      rsJson = rsJson ++ Json.obj("name" -> JsString(name))
+      rsJson = rsJson ++ Json.obj("schema" -> Json.parse(schema))
+      rsJson = rsJson ++ Json.obj("stats" -> Json.parse(stats))
+      rsJson = rsJson ++ Json.obj("dataInterval" -> Json.parse(dataInterval))
       qJsonArray = qJsonArray :+ rsJson
     }
     Future(Json.toJson(qJsonArray))
