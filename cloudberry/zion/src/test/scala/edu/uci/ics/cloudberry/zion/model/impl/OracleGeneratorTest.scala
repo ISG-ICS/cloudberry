@@ -18,10 +18,10 @@ class OracleGeneratorTest extends Specification {
       val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select extract(hour from t."create_at") as "hour",count(*) as "count"
+        """|select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
            |from "twitter.ds_tweet" t
            |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-           |group by extract(hour from t."create_at")
+           |group by to_char(t."create_at",'yyyy-mm-dd hh24')
            |""".stripMargin.trim)
 
     }
@@ -33,10 +33,10 @@ class OracleGeneratorTest extends Specification {
       val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select to_char(cast(t."create_at" as date),'YYYY-MM-DD') as "day",count(*) as "count"
+        """|select to_char(t."create_at",'yyyy-mm-dd') as "day",count(*) as "count"
            |from "twitter.ds_tweet" t
            |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-           |group by to_char(cast(t."create_at" as date),'YYYY-MM-DD')
+           |group by to_char(t."create_at",'yyyy-mm-dd')
            |""".stripMargin.trim)
     }
 
@@ -47,10 +47,10 @@ class OracleGeneratorTest extends Specification {
       val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select extract(month from t."create_at") as "month",count(*) as "count"
+        """|select to_char(t."create_at",'yyyy-mm') as "month",count(*) as "count"
            |from "twitter.ds_tweet" t
            |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-           |group by extract(month from t."create_at")
+           |group by to_char(t."create_at",'yyyy-mm')
            |""".stripMargin.trim)
     }
 
@@ -61,10 +61,10 @@ class OracleGeneratorTest extends Specification {
       val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), Some(selectCreateTimeByRange))
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
-        """|select extract(hour from t."create_at") as "hour",count(*) as "count"
+        """|select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
            |from "twitter.ds_tweet" t
            |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and contains(t."text", 'zika and virus',1)>0 and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
-           |group by extract(hour from t."create_at")
+           |group by to_char(t."create_at",'yyyy-mm-dd hh24')
            |""".stripMargin.trim)
     }
 
@@ -163,9 +163,9 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(minute from t."create_at") as "minute",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24:mi') as "minute",count(*) as "count"
           |from "twitter.ds_tweet" t
-          |group by extract(minute from t."create_at")""".stripMargin.trim)
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24:mi')""".stripMargin.trim)
     }
 
     //14
@@ -176,10 +176,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",max(t."id") as "max"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",max(t."id") as "max"
           |from "twitter.ds_tweet" t
           |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-          |group by extract(hour from t."create_at")""".stripMargin.trim)
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')""".stripMargin.trim)
     }
 
     //15 //TODO: parseUnnest
@@ -220,10 +220,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
           |from "twitter.ds_tweet" t
           |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-          |group by extract(hour from t."create_at")""".stripMargin.trim)
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')""".stripMargin.trim)
     }
 
     //18
@@ -234,10 +234,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
           |from "twitter.ds_tweet" t
           |where t."lang"!='en'
-          |group by extract(hour from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')
           |""".stripMargin.trim)
     }
 
@@ -249,10 +249,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
           |from "twitter.ds_tweet" t
           |where t."lang"='en'
-          |group by extract(hour from t."create_at")""".stripMargin.trim)
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')""".stripMargin.trim)
     }
 
     //20
@@ -263,10 +263,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
           |from "twitter.ds_tweet" t
           |where contains(t."text", 'zika and virus',1)>0
-          |group by extract(hour from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')
           |""".stripMargin.trim)
     }
 
@@ -278,10 +278,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",count(*) as "count"
           |from "twitter.ds_tweet" t
           |where t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
-          |group by extract(hour from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')
           | """.stripMargin.trim)
     }
 
@@ -293,10 +293,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",t."geo_tag.stateID" as "state",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",t."geo_tag.stateID" as "state",count(*) as "count"
           |from "twitter.ds_tweet" t
           |where contains(t."text", 'zika and virus',1)>0 and t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."geo_tag.stateID" in ( 37,51,24,11,10,34,42,9,44 )
-          |group by extract(hour from t."create_at"),t."geo_tag.stateID"
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24'),t."geo_tag.stateID"
           | """.stripMargin.trim)
     }
 
@@ -328,10 +328,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",min(t."id") as "min"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",min(t."id") as "min"
           |from "twitter.ds_tweet" t
           |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-          |group by extract(hour from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')
           | """.stripMargin.trim)
     }
 
@@ -343,10 +343,10 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",sum(t."id") as "sum"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",sum(t."id") as "sum"
           |from "twitter.ds_tweet" t
           |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-          |group by extract(hour from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')
           |  """.stripMargin.trim)
     }
 
@@ -358,73 +358,13 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(hour from t."create_at") as "hour",avg(t."id") as "avg"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24') as "hour",avg(t."id") as "avg"
           |from "twitter.ds_tweet" t
           |where t."create_at" >= to_date('2016-01-01 00:00:00','YYYY-MM-DD HH24:MI:SS') and t."create_at" < to_date('2016-12-01 00:00:00','YYYY-MM-DD HH24:MI:SS')
-          |group by extract(hour from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24')
           | """.stripMargin.trim)
     }
-   /*
-    //28
-    "translate a text contain filter and group by geocell 10th" in {
-      val filter = Seq(textFilter)
-      val group = GroupStatement(Seq(byGeocell10), Seq(aggrCount))
-      val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select st_astext(Point(truncate(st_x(t."coordinate"),1),truncate(st_y(t."coordinate"),1)))  as "cell",count(*) as "count"
-          |from "twitter.ds_tweet" t
-          |where match(t."text") against ('+zika +virus' in boolean mode)
-          |group by "cell"
-        """.stripMargin.trim)
-    }
 
-    //29
-    "translate a text contain filter and group by geocell 100th" in {
-      val filter = Seq(textFilter)
-      val group = GroupStatement(Seq(byGeocell100), Seq(aggrCount))
-      val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select st_astext(Point(truncate(st_x(t."coordinate"),2),truncate(st_y(t."coordinate"),2)))  as "cell",count(*) as "count"
-          |from "twitter.ds_tweet" t
-          |where match(t."text") against ('+zika +virus' in boolean mode)
-          |group by "cell"
-        """.stripMargin.trim)
-    }
-
-    //30  //TODO: return array instead of text. e.g., return [1,2] instead of "POINT(1,2)"
-    "translate a text contain filter and group by geocell 1000th" in {
-      val filter = Seq(textFilter)
-      val group = GroupStatement(Seq(byGeocell1000), Seq(aggrCount))
-      val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select st_astext(Point(truncate(st_x(t."coordinate"),3),truncate(st_y(t."coordinate"),3)))  as "cell",count(*) as "count"
-          |from "twitter.ds_tweet" t
-          |where match(t."text") against ('+zika +virus' in boolean mode)
-          |group by "cell"
-        """.stripMargin.trim)
-    }
-
-    //31
-    "translate a text contain filter and group by bin" in {
-      val filter = Seq(textFilter)
-      val group = GroupStatement(Seq(byBin), Seq(aggrCount))
-      val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, filter, Seq.empty, Some(group), None)
-      val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
-      removeEmptyLine(result) must_== unifyNewLine(
-        """
-          |select round(t."geo_tag.stateID"/10)*10 as "state",count(*) as "count"
-          |from "twitter.ds_tweet" t
-          |where match(t."text") against ('+zika +virus' in boolean mode)
-          |group by "state"""".stripMargin.trim)
-    }
-
-*/
     //32
     "translate a select 10 coordinates" in {
       val query = new Query(twitterDataSetForOracle, Seq.empty, Seq.empty, Seq.empty, Seq.empty, None,Some(select10Coordinates))
@@ -460,9 +400,9 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(second from t."create_at") as "sec",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd hh24:mi:ss') as "sec",count(*) as "count"
           |from "twitter.ds_tweet" t
-          |group by extract(second from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm-dd hh24:mi:ss')
           | """.stripMargin.trim)
     }
 
@@ -473,9 +413,9 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select to_char(cast(t."create_at" as date),'YYYY-MM-DD') as "day",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm-dd') as "day",count(*) as "count"
           |from "twitter.ds_tweet" t
-          |group by to_char(cast(t."create_at" as date),'YYYY-MM-DD')
+          |group by to_char(t."create_at",'yyyy-mm-dd')
           | """.stripMargin.trim)
     }
 
@@ -486,9 +426,9 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(month from t."create_at") as "month",count(*) as "count"
+          |select to_char(t."create_at",'yyyy-mm') as "month",count(*) as "count"
           |from "twitter.ds_tweet" t
-          |group by extract(month from t."create_at")
+          |group by to_char(t."create_at",'yyyy-mm')
           | """.stripMargin.trim)
     }
 
@@ -499,9 +439,9 @@ class OracleGeneratorTest extends Specification {
       val result = parser.generate(query, Map(twitterDataSetForOracle -> twitterSchemaForOracle))
       removeEmptyLine(result) must_== unifyNewLine(
         """
-          |select extract(year from t."create_at") as "year",count(*) as "count"
+          |select to_char(t."create_at",'yyyy') as "year",count(*) as "count"
           |from "twitter.ds_tweet" t
-          |group by extract(year from t."create_at")
+          |group by to_char(t."create_at",'yyyy')
           | """.stripMargin.trim)
     }
 
@@ -754,28 +694,28 @@ class OracleGeneratorTest extends Specification {
           |declare
           |    result1 number(8);
           |begin
-          |    select count(*) into result1 from dba_tables where owner = 'BERRY' and table_name = 'zika';
+          |    select count(*) into result1 from all_tables where owner = 'BERRY' and table_name = 'zika';
           |if result1 = 0 then
           |execute immediate 'create table "zika" (
           |  "place.bounding_box" VARCHAR2(255) default null,
-          |  "favorite_count" NUMBER not null,
+          |  "favorite_count" NUMBER default null,
           |  "geo_tag.countyID" NUMBER default null,
           |  "user_mentions" VARCHAR(1000) default null,
-          |  "user.id" NUMBER not null,
+          |  "user.id" NUMBER default null,
           |  "geo_tag.cityID" NUMBER default null,
-          |  "is_retweet" NUMBER(1) not null,
-          |  "text" VARCHAR(1000) not null,
-          |  "retweet_count" NUMBER not null,
-          |  "in_reply_to_user" NUMBER not null,
-          |  "id" NUMBER not null,
-          |  "coordinate" SDO_GEOMETRY not null,
-          |  "in_reply_to_status" NUMBER not null,
-          |  "user.status_count" NUMBER not null,
+          |  "is_retweet" NUMBER(1) default null,
+          |  "text" CLOB default null,
+          |  "retweet_count" NUMBER default null,
+          |  "in_reply_to_user" NUMBER default null,
+          |  "id" NUMBER default null,
+          |  "coordinate" SDO_GEOMETRY default null,
+          |  "in_reply_to_status" NUMBER default null,
+          |  "user.status_count" NUMBER default null,
           |  "geo_tag.stateID" NUMBER default null,
-          |  "create_at" TIMESTAMP not null,
-          |  "lang" VARCHAR2(255) not null,
-          |  "user.profile_image_url" VARCHAR2(255) not null,
-          |  "user.name" VARCHAR2(255) not null,
+          |  "create_at" TIMESTAMP default null,
+          |  "lang" VARCHAR2(255) default null,
+          |  "user.profile_image_url" VARCHAR2(255) default null,
+          |  "user.name" VARCHAR2(255) default null,
           |  "hashtags" VARCHAR(1000) default null, primary key ("id")
           |)';
           |end if;
@@ -812,7 +752,7 @@ class OracleGeneratorTest extends Specification {
           |declare
           |     result1 number(8);
           |begin
-          |   select count(*)into result1 from dba_tables where owner = 'BERRY' and table_name = 'twitter.ds_tweet';
+          |   select count(*)into result1 from all_tables where owner = 'BERRY' and table_name = 'twitter.ds_tweet';
           |if result1 > 0 then
           |execute immediate 'drop table "twitter.ds_tweet" ';
           |end if;
