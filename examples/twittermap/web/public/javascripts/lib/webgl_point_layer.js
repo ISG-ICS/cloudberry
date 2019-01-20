@@ -4,9 +4,20 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         // Call initialize() from the parent class
         L.CanvasLayer.prototype.initialize.call(this, options);
 
+        // # of records
+        this._dataLength = 0;
+        // Buffer of data for WebGL rendering,
+        // initial size 10M, can contain 2M records (each record occupies 5 cells)
+        this._verts = new Float32Array(10000000);
+        // Store points' IDs
+        this._pointsIDs = [];
+
         this._initGL();
         this._initTextures();
+        // Current mouse over point's id, x, y
         this._cid = 0;
+        this._cx = 0;
+        this._cy = 0;
         // Twitter Blue
         this._pointColorX = 29 / 255.0;
         this._pointColorY = 161 / 255.0;
@@ -22,32 +33,79 @@ var WebGLPointLayer = L.CanvasLayer.extend({
     },
 
 
+    /**
+     * setData
+     *  - render data after cleaning current buffer points
+     * @param data
+     *         - array of [x, y, id]
+     */
     setData: function(data) {
-        if ( this._checkData(data) ) {
-            this._data = data;
-            this._initBuffers();
-        }
+        if ( this._checkData(data) )
+            this._initBuffers(data);
     },
 
 
-    // ??? Never called
-    appendData: function(data) {
-        if ( this._checkData(data) ) {
-            this._data = this._data.concat(data);
-            this._initBuffers();
-        }
+    /**
+     * appendData
+     *  - render deltaData without wiping out currently rendered points
+     * @param deltaData
+     *         - array of [x, y, id]
+     */
+    appendData: function(deltaData) {
+        if ( this._checkData(deltaData) )
+            this._appendBuffers(deltaData);
     },
 
 
-    getCurrentPointID: function() {
-        if ( this._cid == 0 )
-            return "";
+    /**
+     * getCurrentPointID
+     *  - return the id of data at where mouse overs
+     *  - Note: The maximum number of records supported is 16M,
+     *          If # of rendered points exceeds 16M,
+     *          this function will not work!
+     * @param e - event object from mousemove event
+     * @returns int
+     */
+    getCurrentPointID: function(e) {
+        // Verify the distance between current mouse point and this._cid point
+        var canvas = this.getCanvas();
+        var rect = canvas.getBoundingClientRect();
+        var cx = Math.floor(e.originalEvent.clientX - rect.left + 0.5);
+        var cy = Math.floor(e.originalEvent.clientY - rect.top + 0.5);
+        var distance = Math.sqrt((cx - this._cx)^2 + (cy - this._cy)^2);
+
+        if ( this._cid === 0 || distance > 4.0)
+            return -1;
         else
-            return this._data[this._cid - 1][2];
+            return this._pointsIDs[this._cid];
     },
 
 
-    setCurrentPoint: function(x, y) {
+    /**
+     * setPointSize
+     *
+     * @param pointSize
+     */
+    setPointSize: function(pointSize) {
+        this._pointSize = pointSize;
+    },
+
+
+    /**
+     * setPointColor
+     *
+     * @param x
+     * @param y
+     * @param z
+     */
+    setPointColor: function(x, y, z) {
+        this._pointColorX = x / 255.0;
+        this._pointColorY = y / 255.0;
+        this._pointColorZ = z / 255.0;
+    },
+
+
+    _setCurrentPoint: function(x, y) {
         var gl = this._gl;
         if ( gl == null ) return;
 
@@ -56,28 +114,19 @@ var WebGLPointLayer = L.CanvasLayer.extend({
 
         gl.bindFramebuffer(gl.FRAMEBUFFER, this._fb);
         gl.readPixels(x, canvas.height - 1 - y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixel_value);
-        // console.log(pixel_value);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 
         var id = 0;
         for ( var i = 0; i < 3; ++i ) id = id*256 + pixel_value[i];
 
-        if ( id > 0 && id != this._cid ) {
+        if ( id > 0 && id !== this._cid ) {
             this._cid = id;
+            this._cx = x;
+            this._cy = y;
             this.render();
         }
     },
 
-
-    setPointSize: function(pointSize) {
-        this._pointSize = pointSize;
-    },
-
-    setPointColor: function(x, y, z) {
-        this._pointColorX = x / 255.0;
-        this._pointColorY = y / 255.0;
-        this._pointColorZ = z / 255.0;
-    },
 
     _initGL: function() {
         var canvas = this.getCanvas();
@@ -99,7 +148,6 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         }
 
         var gl = this._gl;
-        var pixel_value = new Uint8Array(4);
 
         // Shader setup
         this._programs = new Array(2);
@@ -178,30 +226,47 @@ var WebGLPointLayer = L.CanvasLayer.extend({
     },
 
 
-    _initBuffers: function() {
+    _initBuffers: function(buffer) {
+        this._dataLength = 0;
+        this._appendBuffers(buffer);
+    },
+
+
+    _appendBuffers: function(deltaBuffer) {
         var gl = this._gl;
-        if ( gl == null || this._data == null ) return;
+        if ( gl == null || deltaBuffer == null ) return;
 
-        var verts = [];
-        // ??? Why not id = 0; id < this._data.length
-        for ( var id = 1; id <= this._data.length; ++id ) {
-            var pixel = this._LatLongToPixel_XY(this._data[id - 1][0], this._data[id - 1][1]);
+        // if _verts buffer is not enough, double the size
+        if (5*this._dataLength + 5*deltaBuffer.length > this._verts.length) {
+            var _vertsTemp = this._verts;
+            this._verts = new Float32Array(2 * _vertsTemp.length);
+            this._verts.set(_vertsTemp);
+            delete _vertsTemp;
+        }
 
-            // ??? is r, g, b here the color? Or we just need to present the data in 3-dimensions?
-            ///// id = r + 256*g + 256^2*b
-            ///// id is up to 2^12 which is 1 billion
+        for ( var i = 0; i < deltaBuffer.length; i ++ ) {
+            var pixel = this._LatLongToPixel_XY(deltaBuffer[i][0], deltaBuffer[i][1]);
+
+            // id = r * 2^16 + g * 2^8 + b, [0, 2^24(16M)]
+            var id = this._dataLength + 1; // index in _pointsIDs starts from 1
             var r = Math.floor(id / (65536));
             var g = Math.floor((id % (65536)) / 256);
             var b = id % 256;
 
-            verts.push(pixel.x, pixel.y, r, g, b);
+            this._pointsIDs[id] = deltaBuffer[i][2];
+
+            this._verts[5*this._dataLength    ] = pixel.x;
+            this._verts[5*this._dataLength + 1] = pixel.y;
+            this._verts[5*this._dataLength + 2] = r;
+            this._verts[5*this._dataLength + 3] = g;
+            this._verts[5*this._dataLength + 4] = b;
+            this._dataLength = this._dataLength + 1;
         }
 
-        this._vertArray = new Float32Array(verts);
-        var fsize = this._vertArray.BYTES_PER_ELEMENT;
+        var fsize = this._verts.BYTES_PER_ELEMENT;
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this._vertBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, this._vertArray, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, this._verts.subarray(0, 5*this._dataLength), gl.STATIC_DRAW);
 
         gl.useProgram(this._programs[0]);
         gl.vertexAttribPointer(this._programs[0].vertLoc, 2, gl.FLOAT, false, fsize*5, 0);
@@ -224,7 +289,6 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         if ( gl == null ) return;
 
         var canvas = this.getCanvas();
-        // console.log(canvas.width + ' x ' + canvas.height);
 
         this._fbTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this._fbTexture);
@@ -258,7 +322,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
     _mousemove: function(e) {
         var canvas = this.getCanvas();
         var rect = canvas.getBoundingClientRect();
-        this.setCurrentPoint(Math.floor(e.originalEvent.clientX - rect.left + 0.5),
+        this._setCurrentPoint(Math.floor(e.originalEvent.clientX - rect.left + 0.5),
                              Math.floor(e.originalEvent.clientY - rect.top + 0.5));
     },
 
@@ -273,9 +337,6 @@ var WebGLPointLayer = L.CanvasLayer.extend({
 
         pixelsToWebGLMatrix.set([2 / canvas.width, 0, 0, 0, 0, -2 / canvas.height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
         var pointSize = Math.max(map.getZoom() - 4.0, this._pointSize);
-        //var pointSize = 20;
-        // var pointSize = Math.max(map.getZoom() - 4.0, 1.0);
-        console.log("map.getZoom() = " + map.getZoom() + ", pointSize = " + pointSize);
         mapMatrix.set(pixelsToWebGLMatrix);
         var bounds = map.getBounds();
         var topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
@@ -287,7 +348,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.viewport(0, 0, canvas.width, canvas.height);
 
         // Pass 1
-        // Draw the blue pinned points
+        // Draw the invisible image for encoding points' IDs
 
         gl.useProgram(this._programs[1]);
         gl.bindFramebuffer(this._gl.FRAMEBUFFER, this._fb);
@@ -296,17 +357,16 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // aPointSize seems to be never used; instead there is a this._programs[0].PointSize
-        gl.vertexAttrib1f(this._programs[1].aPointSize, pointSize);
+        gl.vertexAttrib1f(this._programs[1].pointSize, pointSize);
         gl.uniformMatrix4fv(this._programs[1].matLoc, false, mapMatrix);
         gl.uniform1f(this._programs[1].pointSize, 1.2*pointSize);
-        //gl.uniform1f(this._programs[1].pointSize, 12*pointSize);
 
-        if ( this._data )
-            gl.drawArrays(gl.POINTS, 0, this._data.length);
+        if ( this._dataLength > 0 ) {
+            gl.drawArrays(gl.POINTS, 0, this._dataLength);
+        }
 
         // Pass 2
-        // Compute the cursor location to pinned points/tweets map
+        // Draw the real visible points
 
         gl.useProgram(this._programs[0]);
         gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -316,11 +376,9 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.clearColor(0.0, 0.0, 0.0, 0.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
 
-        // aPointSize seems to be never used; instead there is a this._programs[0].PointSize
-        gl.vertexAttrib1f(this._programs[0].aPointSize, 10.0);
+        gl.vertexAttrib1f(this._programs[0].pointSize, 10.0);
         gl.uniformMatrix4fv(this._programs[0].matLoc, false, mapMatrix);
 
-        console.log("pointColor = [" + this._pointColorX + "," + this._pointColorY + "," + this._pointColorZ + "]");
         gl.uniform3f(this._programs[0].colorLoc,
           this._pointColorX,
           this._pointColorY,
@@ -328,8 +386,9 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         gl.uniform1f(this._programs[0].selectedLoc, this._cid);
         gl.uniform1f(this._programs[0].pointSize, pointSize);
 
-        if ( this._data )
-            gl.drawArrays(gl.POINTS, 0, this._data.length);
+        if ( this._dataLength > 0 ) {
+            gl.drawArrays(gl.POINTS, 0, this._dataLength);
+        }
     },
 
 

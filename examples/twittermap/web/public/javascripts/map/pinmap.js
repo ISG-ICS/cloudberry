@@ -187,7 +187,7 @@ angular.module("cloudberry.map")
         $scope.pointsLayer = new WebGLPointLayer();
         //$scope.pointsLayer.setPointSize(10);
         $scope.pointsLayer.setPointSize(3);
-        $scope.pointsLayer.setPointColor(29, 161, 242);
+        $scope.pointsLayer.setPointColor(0, 0, 255);
 
         $scope.map.addLayer($scope.pointsLayer);
 
@@ -202,10 +202,7 @@ angular.module("cloudberry.map")
             timer = null;
           }
           timer = setTimeout(L.Util.bind(function() {
-            this.fire("mouseintent", {
-              latlng : e.latlng,
-              layer : e.layer
-            });
+            this.fire("mouseintent", e);
             timer = null;
           }, this), duration);
         }
@@ -308,10 +305,10 @@ angular.module("cloudberry.map")
 
         function onMapMouseIntent(e) {
 
-          var pointID = $scope.pointsLayer.getCurrentPointID();
+          var pointID = $scope.pointsLayer.getCurrentPointID(e);
 
           //if mouse over a new point, show the Popup Tweet!
-          if (pointID !== 0 && $scope.mouseOverPointID !== pointID) {
+          if (pointID > 0 && $scope.mouseOverPointID !== pointID) {
             $scope.mouseOverPointID = pointID;
             //(1) If previous Marker is not null, destroy it.
             if ($scope.currentMarker != null) {
