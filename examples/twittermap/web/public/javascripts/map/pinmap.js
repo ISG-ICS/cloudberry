@@ -120,19 +120,9 @@ angular.module("cloudberry.map")
       }
     }
 
-    // additional operations required by pinmap for zoom event
-    // update the map boundary and x/y axis scale
-    function zoomPostProcess() {
-      //For rescaling the metric of distance between points and mouse cursor.
-      $scope.currentBounds = $scope.map.getBounds();
-      $scope.scale_x = Math.abs($scope.currentBounds.getEast() - $scope.currentBounds.getWest());
-      $scope.scale_y = Math.abs($scope.currentBounds.getNorth() - $scope.currentBounds.getSouth());
-    }
-
     // Event handler for zoom event
     function onZoomPinmap(event) {
       sendPinmapQuery();
-      zoomPostProcess();
     }
 
     // Common event handler for Countmap
@@ -194,14 +184,10 @@ angular.module("cloudberry.map")
       //To initialize the points layer
       if (!$scope.pointsLayer) {
        
-        $scope.pointsLayer = new L.TileLayer.MaskCanvas({
-          opacity: 0.8,
-          radius: 1.2,//80,
-          useAbsoluteRadius: false,//true,
-          color: "#00aced",//"#0084b4"
-          noMask: true,
-          lineColor: "#00aced"//"#00aced"
-        });
+        $scope.pointsLayer = new WebGLPointLayer();
+        //$scope.pointsLayer.setPointSize(10);
+        $scope.pointsLayer.setPointSize(3);
+        $scope.pointsLayer.setPointColor(0, 0, 255);
 
         $scope.map.addLayer($scope.pointsLayer);
 
@@ -216,17 +202,10 @@ angular.module("cloudberry.map")
             timer = null;
           }
           timer = setTimeout(L.Util.bind(function() {
-            this.fire("mouseintent", {
-              latlng : e.latlng,
-              layer : e.layer
-            });
+            this.fire("mouseintent", e);
             timer = null;
           }, this), duration);
         }
-
-        $scope.currentBounds = null;
-        $scope.scale_x = 0;
-        $scope.scale_y = 0;
 
         //shows each point's info in Front-end.
         function translateTweetDataToShow(tweetJSON) {
@@ -323,23 +302,14 @@ angular.module("cloudberry.map")
 
         $scope.currentMarker = null;
         $scope.points = [];
-        $scope.pointIDs = [];
 
         function onMapMouseIntent(e) {
-          //make sure the scale metrics are updated
-          if ($scope.currentBounds == null || $scope.scale_x == 0 || $scope.scale_y == 0) {
-            $scope.currentBounds = $scope.map.getBounds();
-            $scope.scale_x = Math.abs($scope.currentBounds.getEast()
-              - $scope.currentBounds.getWest());
-            $scope.scale_y = Math.abs($scope.currentBounds.getNorth()
-              - $scope.currentBounds.getSouth());
-          }
 
-          var i = isMouseOverAPoint(e.latlng.lat, e.latlng.lng);
+          var pointID = $scope.pointsLayer.getCurrentPointID(e);
 
           //if mouse over a new point, show the Popup Tweet!
-          if (i >= 0 && $scope.mouseOverPointI != i) {
-            $scope.mouseOverPointI = i;
+          if (pointID > 0 && $scope.mouseOverPointID !== pointID) {
+            $scope.mouseOverPointID = pointID;
             //(1) If previous Marker is not null, destroy it.
             if ($scope.currentMarker != null) {
               $scope.map.removeLayer($scope.currentMarker);
@@ -354,7 +324,7 @@ angular.module("cloudberry.map")
             }).addTo($scope.map);
 
             //send the query to cloudberry using string format.
-            var passID = "" + $scope.pointIDs[i];
+            var passID = "" + pointID;
             cloudberry.pinMapOneTweetLookUpQuery(passID);
           }
         }
@@ -373,37 +343,23 @@ angular.module("cloudberry.map")
                $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
            }
         });
-
-        function isMouseOverAPoint(x, y) {
-          for (var i = 0; i < $scope.points.length; i += 1) {
-            var dist_x = Math.abs(($scope.points[i][0] - x) / $scope.scale_x);
-            var dist_y = Math.abs(($scope.points[i][1] - y) / $scope.scale_y);
-            if (dist_x <= 0.01 && dist_y <= 0.01) {
-              return i;
-            }
-          }
-          return -1;
-        }
       }
 
       //Update the points data
       if (result.length > 0){
         $scope.points = [];
-        $scope.pointIDs = [];
         for (var i = 0; i < result.length; i++) {
           if (result[i].hasOwnProperty("coordinate")){
-            $scope.points.push([result[i].coordinate[1], result[i].coordinate[0]]);
+            $scope.points.push([result[i].coordinate[1], result[i].coordinate[0], result[i].id]);
           }
           else if (result[i].hasOwnProperty("place.bounding_box")){
-            $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0])]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
+            $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0]), result[i].id]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
           }
-          $scope.pointIDs.push(result[i].id);
         }
         $scope.pointsLayer.setData($scope.points);
       }
       else {
         $scope.points = [];
-        $scope.pointIDs = [];
         $scope.pointsLayer.setData($scope.points);
       }
     }
