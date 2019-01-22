@@ -127,17 +127,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       tempDateTime.setSeconds(tempDateTime.getSeconds()  - queryInterval);
       var timeLowerBound = tempDateTime.toISOString();
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
-      cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-        // new tweets retrieved push back to live tweets queue
-        liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
-        // In case no tweets retrieved from DB, we fetch data directly from twitter API
-        if (resultSet[0].length === 0) {
-          if (config.enableLiveTweet) {
-            fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
-          }
-        }
+      if (config.enableLiveTweet) {
+        fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
         $scope.isSampleTweetsOutdated = false;
-      }, "sampleTweetsRequest");
+      }
+      else {
+        cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
+          // new tweets retrieved push back to live tweets queue
+          liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+          $scope.isSampleTweetsOutdated = false;
+        }, "sampleTweetsRequest");
+      }
     }
   
     // Constantly checking live tweets queue to draw tweet one by one
