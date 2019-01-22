@@ -115,8 +115,20 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         val center = Array((locs(0)(0) + locs(1)(0))/2.00,(locs(0)(1)+locs(1)(1))/2.00)
         val centerLoc = new GeoLocation(center(1),center(0))
         val unit = Query.Unit.km
-        //Radius equal to difference of latitude, since the ratio between latitude to KM is almost constant
-        //But ratio between Longitude to KM varies largerly
+        /*
+        Note: Twitter Search API does not support bounding box, the Geo information can only be specified
+        By using center location and radius.
+        Center location is calculated by the center point of bounding box(rectangle)
+        Radius is calculated by the difference of latitude between left top corner and right bottom corner.
+        Using latitude rather than longitude
+        since the ratio between latitude to KM is almost constant
+        But ratio between Longitude to KM varies largerly.
+        ------------------
+        |     * * *      |
+        |    *     *     |
+        |      * *       |
+        ------------------
+        */
         val radius = Math.abs(locs(0)(1) - locs(1)(1)) * 111
         var tweetArray = Json.arr()
         val cb2 = new ConfigurationBuilder

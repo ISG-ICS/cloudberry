@@ -1,5 +1,5 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($rootScope,$scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
+  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
@@ -104,8 +104,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
      * @param msg{Object}, msg is the query send to twittermap server 
      */
     function fetchTweetFromAPI(query) {
-      
-      
+
       if(LTSocket.readyState === LTSocket.OPEN){
           LTSocket.send(query);
       }
@@ -117,7 +116,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     
     function sendLiveTweetsQuery(sampleTweetSize) {
       var centerCoordinate = [cloudberry.parameters.bounds._southWest.lat,cloudberry.parameters.bounds._southWest.lng,cloudberry.parameters.bounds._northEast.lat,cloudberry.parameters.bounds._northEast.lng];
-      fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
       // Construct time range condition for live tweets query
       var tempDateTime = (new Date(Date.now()));
       // 1. Get NOW considering time zone.
@@ -294,7 +292,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       ].join('')
     };
   })
-  .controller("choosemap", function ($scope, $window, cloudberry, $rootScope, moduleManager) {
+  .controller("choosemap", function ($scope, $window, cloudberry, moduleManager) {
 
     $scope.result = null;
     cloudberry.parameters.maptype = config.defaultMapType;
