@@ -131,8 +131,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         // new tweets retrieved push back to live tweets queue
         liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
         // In case no tweets retrieved from DB, we fetch data directly from twitter API
-        if (resultSet[0].length==0){
-          if(config.enableLiveTweet){
+        if (resultSet[0].length === 0) {
+          if (config.enableLiveTweet) {
             fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
           }
         }
