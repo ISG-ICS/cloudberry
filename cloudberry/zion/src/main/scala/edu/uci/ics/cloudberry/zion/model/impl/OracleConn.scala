@@ -46,7 +46,7 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
           val valueType = resultMetadata.getColumnTypeName(columnId)
           valueType match {
             case "NUMBER" =>
-              val value = result.getDouble(columnLabel)
+              val value = result.getBigDecimal(columnLabel)
               rsJson = rsJson ++ Json.obj(columnLabel -> JsNumber(value))
             case "DATE" =>
               val value = result.getObject(columnLabel)
@@ -110,9 +110,11 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               break
           }
         }
+
         qJsonArray = qJsonArray :+ rsJson
       }
     }
+    println(qJsonArray.toString)
     Future(Json.toJson(qJsonArray))
   }
 
