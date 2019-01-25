@@ -129,7 +129,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results, returnDelta)
-        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
+        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done), returnDelta)
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         unstashAll() // in case there are new queries
@@ -173,7 +173,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
     case _: SlicingRequest =>
       stash()
     case ProgressiveSolver.Cancel =>
-      reporter ! Reporter.Fin(JsNumber(0))
+      reporter ! Reporter.Fin(JsNumber(0), returnDelta)
       log.debug("askslice resceive cancel")
       unstashAll()
       context.become(receive, discardOld = true)

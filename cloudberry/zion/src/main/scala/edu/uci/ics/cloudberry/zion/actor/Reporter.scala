@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill}
 import edu.uci.ics.cloudberry.zion.TInterval
 import org.joda.time.DateTime
-import play.api.libs.json.{JsValue, Json, Writes}
+import play.api.libs.json.{JsObject, JsValue, Json, Writes}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -21,12 +21,7 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
 
   override def receive: Actor.Receive = commonReceive orElse {
     case result: PartialResult =>
-      if (result.returnDelta){
-        out ! Json.toJson(result.content)
-      }
-      else {
-        queue.enqueue(result)
-      }
+       queue.enqueue(result)
     case TimeToReport => {
       if (queue.isEmpty) {
         timer.cancel()
@@ -60,7 +55,33 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       context.become(receive)
     case fin : Fin => {
       if (queue.nonEmpty) {
-        out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        /*
+          Logistic Here is when we have delta result, we need to
+          merge these results in the queue. If we have accumulated result,
+          we just need to return the newest accumulated result.
+        */
+        if(fin.returnDelta){
+          var resultList = List[JsValue]()
+          val lastContent = queue.dequeueAll(resultSect=>
+          {
+            val resultContent = resultSect.content
+            resultContent.\\("value").head.as[Array[JsValue]].foreach(
+              v=> v.as[List[JsValue]].foreach( vc=> resultList = resultList :+ vc )
+            )
+            true
+          }
+          ).last.content
+          var wrap = Json.toJson(List[List[JsValue]](resultList))
+          var to_return = lastContent.as[JsObject]
+          to_return = to_return.-("value")
+
+          to_return = to_return.+("value",wrap)
+
+          out ! Json.toJson(to_return)
+        }
+        else{
+          out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        }
         //TODO remove this special DONE message
         out ! fin.lastMsg // notifying the client the processing is done
       }
@@ -79,7 +100,7 @@ object Reporter {
 
   case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue, returnDelta: Boolean)
 
-  case class Fin(lastMsg: JsValue)
+  case class Fin(lastMsg: JsValue, returnDelta: Boolean)
 
   implicit val partialResultWriter: Writes[PartialResult] = Json.writes[PartialResult]
 
