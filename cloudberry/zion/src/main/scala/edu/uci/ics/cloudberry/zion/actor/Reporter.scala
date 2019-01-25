@@ -98,7 +98,7 @@ object Reporter {
 
   case class Reset(limit: FiniteDuration)
 
-  case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue, returnDelta: Boolean)
+  case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
 
   case class Fin(lastMsg: JsValue, returnDelta: Boolean)
 
