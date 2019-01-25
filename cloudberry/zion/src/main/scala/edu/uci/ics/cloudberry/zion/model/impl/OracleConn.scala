@@ -110,11 +110,10 @@ class OracleConn(url: String)(implicit ec: ExecutionContext) extends IDataConn {
               break
           }
         }
-
         qJsonArray = qJsonArray :+ rsJson
       }
     }
-    println(qJsonArray.toString)
+
     Future(Json.toJson(qJsonArray))
   }
 
