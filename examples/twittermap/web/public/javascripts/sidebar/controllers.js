@@ -22,7 +22,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.liveTweetsProducer = {};
     $scope.liveTweetsConsumer = {};
     var timeZoneHoursOffset = ((new Date).getTimezoneOffset()) / 60;
-
     // Timer for sending query to check whether it can be solved by view
     $scope.timerCheckQuerySolvableByView = null;
 
@@ -31,7 +30,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
-
+    
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
       document.getElementById("sidebar").style.left = "100%";
@@ -98,8 +97,25 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
       });
     }
-  
+
+    var LTSocket = new WebSocket("ws://"+window.location.host+"/liveTweets");
+    /* fetchTweetFromAPI sends a query to twittermap server through websocket
+     * to fetch recent tweets for liveTweet feature
+     * @param msg{Object}, msg is the query send to twittermap server 
+     */
+    function fetchTweetFromAPI(query) {
+
+      if(LTSocket.readyState === LTSocket.OPEN){
+          LTSocket.send(query);
+      }
+      LTSocket.onmessage = function(event){
+        let tweets = JSON.parse(event.data);
+        liveTweetsQueue = liveTweetsQueue.concat(tweets);                
+      }
+    }
+    
     function sendLiveTweetsQuery(sampleTweetSize) {
+      var centerCoordinate = [cloudberry.parameters.bounds._southWest.lat,cloudberry.parameters.bounds._southWest.lng,cloudberry.parameters.bounds._northEast.lat,cloudberry.parameters.bounds._northEast.lng];
       // Construct time range condition for live tweets query
       var tempDateTime = (new Date(Date.now()));
       // 1. Get NOW considering time zone.
@@ -110,15 +126,20 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       // 3. LowerBound = UpperBound - queryInterval
       tempDateTime.setSeconds(tempDateTime.getSeconds()  - queryInterval);
       var timeLowerBound = tempDateTime.toISOString();
-
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
-      cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-        // new tweets retrieved push back to live tweets queue
-        liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+      if (config.enableLiveTweet) {
+        fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
         $scope.isSampleTweetsOutdated = false;
-      }, "sampleTweetsRequest");
+      }
+      else {
+        cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
+          // new tweets retrieved push back to live tweets queue
+          liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+          $scope.isSampleTweetsOutdated = false;
+        }, "sampleTweetsRequest");
+      }
     }
-
+  
     // Constantly checking live tweets queue to draw tweet one by one
     function startLiveTweetsConsumer() {
       $scope.liveTweetsConsumer = window.setInterval(function() {
@@ -271,7 +292,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       ].join('')
     };
   })
-  .controller("choosemap", function ($scope, $window, cloudberry, $rootScope, moduleManager) {
+  .controller("choosemap", function ($scope, $window, cloudberry, moduleManager) {
 
     $scope.result = null;
     cloudberry.parameters.maptype = config.defaultMapType;
