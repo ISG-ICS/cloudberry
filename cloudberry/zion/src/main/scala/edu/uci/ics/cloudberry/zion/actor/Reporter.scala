@@ -3,7 +3,7 @@ package edu.uci.ics.cloudberry.zion.actor
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, PoisonPill}
 import edu.uci.ics.cloudberry.zion.TInterval
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, JsValue, Json, Writes}
+import play.api.libs.json.{JsValue, Json, Writes}
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext
@@ -56,28 +56,17 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
     case fin : Fin => {
       if (queue.nonEmpty) {
         /*
-          Logistic Here is when we have delta result, we need to
-          merge these results in the queue. If we have accumulated result,
-          we just need to return the newest accumulated result.
+          Logistic Here is when query finished, but there are still some results in queue
+          we return them altogher.
         */
         if(fin.returnDelta){
-          var resultList = List[JsValue]()
-          val lastContent = queue.dequeueAll(resultSect=>
-          {
-            val resultContent = resultSect.content
-            resultContent.\\("value").head.as[Array[JsValue]].foreach(
-              v=> v.as[List[JsValue]].foreach( vc=> resultList = resultList :+ vc )
-            )
-            true
-          }
-          ).last.content
-          var wrap = Json.toJson(List[List[JsValue]](resultList))
-          var to_return = lastContent.as[JsObject]
-          to_return = to_return.-("value")
+          queue.dequeueAll(deltaResult=>
+            {
+              out ! Json.toJson(deltaResult.content)
+              true
+            }
+          )
 
-          to_return = to_return.+("value",wrap)
-
-          out ! Json.toJson(to_return)
         }
         else{
           out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
