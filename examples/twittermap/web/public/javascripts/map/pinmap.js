@@ -1,5 +1,5 @@
 angular.module("cloudberry.map")
-  .controller("pinMapCtrl", function($scope, $http, cloudberry, cloudberryConfig,
+  .controller("pinMapCtrl", function($rootScope, $scope, $http, cloudberry, cloudberryConfig,
                                      TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
     // set map styles for pinmap
     function setPinMapStyle() {
@@ -387,6 +387,67 @@ angular.module("cloudberry.map")
     }
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
+
+
+
+    //Dynamic generating points
+      var firefoxIcon = L.icon({
+          iconUrl: 'https://previews.dropbox.com/p/orig/AAXSfm4NT14_VdWZoCMFFRirItnpHGbAKHBXLwhlXe2Zk0l66eMCwBf4A-GZ5lJX5yvE08NAmZMMscMdmb0ge9tKMA5W3OSKUTCZtTA8KTDTYHtXQ0cJzifZtndqxHJhFrsmwQBczGArktoRgm1xzoSS61dJOV2_-v1ZDdO4Lws_pZ2JUcqoyQbS2ciecVi1_pxCza0Y7TprZU9Q4Uu6RA-g/p.gif?size=1600x1200&size_mode=3',
+          iconSize: [20, 20], // size of the icon
+          popupAnchor: [0,-15]
+      });
+
+      $scope.dMap = function (result){
+          var coordinates = result;
+
+
+
+          function transition(coordinate)
+          {
+              let stl = {
+                  radius: 1,//80,
+                  useAbsoluteRadius: false,//true,
+                  color: "#623cfc",//"#0084b4"
+                  noMask: true,
+                  lineColor: "#623cfc"//"#00aced"
+              }
+              var mark = L.marker([coordinate[0], coordinate[1]], {icon: firefoxIcon});
+              mark.addTo($scope.map);
+              setTimeout(function()
+              {
+                  $scope.map.removeLayer(mark);
+                  var mark2 = L.circleMarker([coordinate[0], coordinate[1]], stl);
+                  mark2.addTo($scope.map);
+
+              },10000)
+          }
+
+
+
+          function dynamicUpdate(){
+              console.log(coordinates.length);
+              coordinates.forEach(x=>transition(x))
+          }
+
+          dynamicUpdate();
+      }
+
+      $rootScope.$on("CallParentMethod", function(event,result){
+
+          var set1 = new Array();
+          for(var i=0;i<result.data.length;i++)
+          {
+              if(result.data[i]["coordinate"])
+                  set1.push(result.data[i]["coordinate"]);
+          }
+
+          $scope.dMap(set1);
+
+
+      });
+
+
+
 
     // TODO - get rid of this watch by doing work inside the callback function in sendPinmapQuery()
     // monitor the pinmap related variables, update the pinmap if necessary

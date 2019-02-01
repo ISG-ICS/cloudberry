@@ -143,14 +143,25 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
         val resultType = twitter4j.Query.ResultType.recent
         query.setQuery(queryWords)
-        query.setCount(desiredTweetAmount)
+        query.setCount(100)
         query.setResultType(resultType)
         query.setGeoCode(centerLoc,radius,unit)
         val tweetsResult = twitterAPI.search(query).getTweets
+        var count = 0
         for(i <- 0 to tweetsResult.size()-1){
           val status = tweetsResult.get(i)
           if (status.isRetweet == false){
-            tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
+
+            if(status.getPlace != null){
+              val coordinate = Array(status.getPlace.getBoundingBoxCoordinates.array(0)(0).getLatitude,status.getPlace.getBoundingBoxCoordinates.array(0)(0).getLongitude)
+              tweetArray = tweetArray :+ Json.obj(
+                "id" -> status.getId.toString,
+                "coordinate" -> Json.toJson(coordinate))
+
+            }
+            else{
+              tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
+            }
           }
 
         }

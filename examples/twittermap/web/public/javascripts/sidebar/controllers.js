@@ -1,5 +1,5 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
+  .controller("SidebarCtrl", function($rootScope, $scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
@@ -110,7 +110,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
-        liveTweetsQueue = liveTweetsQueue.concat(tweets);                
+        liveTweetsQueue = liveTweetsQueue.concat(tweets);
+        $rootScope.$emit("CallParentMethod", {"data":tweets});
       }
     }
     
@@ -134,7 +135,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       else {
         cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
           // new tweets retrieved push back to live tweets queue
-          liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+          liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);            
           $scope.isSampleTweetsOutdated = false;
         }, "sampleTweetsRequest");
       }
@@ -181,6 +182,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         startLiveTweetsConsumer();
         startLiveTweetsProducer();
       }
+        
+        
     }
   
     $scope.showTab = function(tab) {
@@ -292,7 +295,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       ].join('')
     };
   })
-  .controller("choosemap", function ($scope, $window, cloudberry, moduleManager) {
+  .controller("choosemap", function ($scope, $window, cloudberry, $rootScope, moduleManager) {
 
     $scope.result = null;
     cloudberry.parameters.maptype = config.defaultMapType;
