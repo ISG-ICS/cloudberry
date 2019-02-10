@@ -90,12 +90,14 @@ touchCloudberry()
 	echo "pre_cnt = " ${preCnt}
 	if [ "${cnt}" -gt "${preCnt}" ] ; then
 		echo "[Good!] Cloudberry is working properly."
-		preCnt=cnt
+		preCnt=${cnt}
 		return
 	fi
 	if [ "${cnt}" -le "${preCnt}" ] ; then
 	    echo "[Bad!] Twitter ingestion may stop or Cloudberry may malfunction."
 	    sendEmail "Twitter ingestion may stop or Cloudberry may malfunction." "Twitter ingestion may stop or Cloudberry may malfunction. The total count of ds_tweet retrieved is ${cnt} this time and ${preCnt} last time."
+	    preCnt=${cnt}
+	    return
 	fi
 	echo "[Bad!] Cloudberry is NOT working properly."
 	sendEmail "Cloudberry is NOT working properly." "The total count of ds_tweet retrieved is ${cnt}."
