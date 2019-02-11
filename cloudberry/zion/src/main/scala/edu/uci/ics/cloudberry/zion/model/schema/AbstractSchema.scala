@@ -121,7 +121,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
 }
 
 object TimeField {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
   val TimeFormatForSQL = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS")
 }
 

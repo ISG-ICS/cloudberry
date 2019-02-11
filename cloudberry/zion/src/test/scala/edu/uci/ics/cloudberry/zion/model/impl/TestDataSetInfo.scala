@@ -10,8 +10,8 @@ object TestDataSetInfo {
   DateTimeZone.setDefault(DateTimeZone.UTC)
   val starDateTime = new DateTime(2004, 12, 25, 0, 0, 0, 0)
   val endDateTime = new DateTime(2016, 1, 1, 0, 0, 0, 0)
-  val endTimeString = "2016-01-01T00:00:00.000+0000"
-  val startTimeString = "2004-12-25T00:00:00.000+0000"
+  val endTimeString = "2016-01-01T00:00:00.000Z"
+  val startTimeString = "2004-12-25T00:00:00.000Z"
 
   val interval = new Interval(starDateTime, endDateTime)
   val globalAggr = GlobalAggregateStatement(aggrCount)
@@ -227,11 +227,11 @@ object TestDataSetInfo {
        |      {"name":"retweet_count","isOptional":false,"datatype":"Number"},
        |      {"name":"user.status_count","isOptional":false,"datatype":"Number"}],
        |   "primaryKey":["id"],"timeField":"create_at"},
-       |"dataInterval":{"start":"2015-01-01T00:00:00.000+0000",
-       |                "end":"2017-01-01T00:00:00.000+0000"},
-       |"stats":{"createTime":"2015-01-01T00:00:00.000+0000",
-       |         "lastModifyTime":"2017-01-01T00:00:00.000+0000",
-       |         "lastReadTime":"2017-01-01T00:00:00.000+0000",
+       |"dataInterval":{"start":"2015-01-01T00:00:00.000Z",
+       |                "end":"2017-01-01T00:00:00.000Z"},
+       |"stats":{"createTime":"2015-01-01T00:00:00.000Z",
+       |         "lastModifyTime":"2017-01-01T00:00:00.000Z",
+       |         "lastReadTime":"2017-01-01T00:00:00.000Z",
        |         "cardinality":10000
        |         }
        |}
@@ -267,11 +267,11 @@ object TestDataSetInfo {
        |      {"name":"retweet_count","isOptional":false,"datatype":"Number"},
        |      {"name":"user.status_count","isOptional":false,"datatype":"Number"}],
        |   "primaryKey":["id"],"timeField":"create_at"},
-       |"dataInterval":{"start":"2015-01-01T00:00:00.000+0000",
-       |                "end":"2016-06-01T00:00:00.000+0000"},
-       |"stats":{"createTime":"2015-01-01T00:00:00.000+0000",
-       |         "lastModifyTime":"2016-06-01T00:00:00.000+0000",
-       |         "lastReadTime":"2016-06-01T00:00:00.000+0000",
+       |"dataInterval":{"start":"2015-01-01T00:00:00.000Z",
+       |                "end":"2016-06-01T00:00:00.000Z"},
+       |"stats":{"createTime":"2015-01-01T00:00:00.000Z",
+       |         "lastModifyTime":"2016-06-01T00:00:00.000Z",
+       |         "lastReadTime":"2016-06-01T00:00:00.000Z",
        |         "cardinality":50
        |         }
        |}
