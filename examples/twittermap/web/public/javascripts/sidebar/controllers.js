@@ -8,6 +8,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
+    // live tweets set
+    var liveTweetSet = new Set()
     // live tweets queue
     var liveTweetsQueue = [];
     // queryInterval - Every how many seconds, we send a query to database to retrieve new tweets
@@ -110,7 +112,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
-        liveTweetsQueue = liveTweetsQueue.concat(tweets);                
+        for (var i = 0 ; i<tweets.length; i++ )
+        {
+            if (!liveTweetSet.has(tweets[i]["id"])){
+                liveTweetsQueue.push(tweets[i]);
+                liveTweetSet.add(tweets[i]["id"]);
+            }
+        }
       }
     }
     
@@ -227,6 +235,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function eventHandler(event) {
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
+      liveTweetSet = new Set();
       handleSidebarQuery();
     }
 
