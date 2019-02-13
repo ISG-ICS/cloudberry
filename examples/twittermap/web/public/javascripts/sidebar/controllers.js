@@ -9,7 +9,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
     // live tweets set
-    var liveTweetSet = new Set()
+    var liveTweetSet = new Set();
     // live tweets queue
     var liveTweetsQueue = [];
     // queryInterval - Every how many seconds, we send a query to database to retrieve new tweets
