@@ -45,11 +45,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
 
     function enableHashtagButton() {
-      $("#hashtag").removeClass("disableHashtag");
+      $("#Hashtag").removeClass("disableHashtag");
     }
 
     function disableHashtagButton() {
-      $("#hashtag").addClass("disableHashtag");
+      $("#Hashtag").addClass("disableHashtag");
     }
 
     // When receiving messages from websocket, check its queryID and result.
@@ -241,8 +241,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       
       setTimerToCheckQuery();
-      $scope.closeRightMenu();
-      //disableHashtagButton();
+      disableHashtagButton();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
       handleSidebarQuery();
