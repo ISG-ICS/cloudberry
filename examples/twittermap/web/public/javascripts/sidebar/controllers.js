@@ -98,11 +98,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       });
     }
 
-<<<<<<< HEAD
-    var LTSocket = new WebSocket(config.cloudberryLiveTweet);
-=======
     var LTSocket = new WebSocket("ws://"+window.location.host+"/liveTweets");
->>>>>>> remotes/origin/master
     /* fetchTweetFromAPI sends a query to twittermap server through websocket
      * to fetch recent tweets for liveTweet feature
      * @param msg{Object}, msg is the query send to twittermap server 
@@ -114,12 +110,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
-<<<<<<< HEAD
         liveTweetsQueue = liveTweetsQueue.concat(tweets);
         $rootScope.$emit("CallParentMethod", {"data":tweets});
-=======
-        liveTweetsQueue = liveTweetsQueue.concat(tweets);                
->>>>>>> remotes/origin/master
       }
     }
     
@@ -143,11 +135,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       else {
         cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
           // new tweets retrieved push back to live tweets queue
-<<<<<<< HEAD
-          liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);            
-=======
           liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
->>>>>>> remotes/origin/master
           $scope.isSampleTweetsOutdated = false;
         }, "sampleTweetsRequest");
       }
