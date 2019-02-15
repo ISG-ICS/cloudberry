@@ -156,8 +156,12 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
               val coordinate = Array(status.getPlace.getBoundingBoxCoordinates.array(0)(0).getLatitude,status.getPlace.getBoundingBoxCoordinates.array(0)(0).getLongitude)
               tweetArray = tweetArray :+ Json.obj(
                 "id" -> status.getId.toString,
-                "coordinate" -> Json.toJson(coordinate))
-
+                "coordinate" -> Json.toJson(coordinate),
+                "user.name"  -> Json.toJson(status.getUser.getName),
+                "user.profile_image_url" -> Json.toJson(status.getUser.getProfileImageURL),
+                "text" -> Json.toJson(status.getText),
+                "create_at" -> Json.toJson(status.getCreatedAt)
+              )
             }
             else{
               tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))

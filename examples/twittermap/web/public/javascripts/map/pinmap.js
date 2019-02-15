@@ -54,6 +54,8 @@ angular.module("cloudberry.map")
       });
     }
 
+    $scope.livePinLayer = L.layerGroup()
+
     // Send query to cloudberry
     function sendPinmapQuery() {
 
@@ -127,6 +129,9 @@ angular.module("cloudberry.map")
 
     // Common event handler for Countmap
     function pinMapCommonEventHandler(event) {
+        $scope.livePinLayer.eachLayer(m=>{
+          $scope.map.removeLayer(m);
+        })
         sendPinmapQuery();
     }
 
@@ -143,6 +148,9 @@ angular.module("cloudberry.map")
         $scope.currentMarker = null;
       }
 
+      $scope.livePinLayer.eachLayer(m=>{
+        $scope.map.removeLayer(m);
+      })
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, pinMapCommonEventHandler);
@@ -208,7 +216,7 @@ angular.module("cloudberry.map")
         }
 
         //shows each point's info in Front-end.
-        function translateTweetDataToShow(tweetJSON) {
+        $scope.translateTweetDataToShow = function (tweetJSON) {
             var tweetid = "";
             try {
                 tweetid = tweetJSON["id"];
@@ -332,7 +340,7 @@ angular.module("cloudberry.map")
         $scope.$watch(function () {
            return cloudberryConfig.pinMapOneTweetLookUpResult;
         }, function (newVal) {
-           var tweetContent = translateTweetDataToShow(newVal);
+           var tweetContent = $scope.translateTweetDataToShow(newVal);
            $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
            $scope.popUpTweet.setContent(tweetContent);
            if($scope.currentMarker === null)
@@ -398,38 +406,39 @@ angular.module("cloudberry.map")
       });
 
       $scope.dMap = function (result){
-          var coordinates = result;
+        var coordinates = result;
+        var markList = []
+        function transition(tweet)
+        {
+            coordinate = tweet["coordinate"]
+            let stl = {
+                radius: 1,//80,
+                useAbsoluteRadius: false,//true,
+                color: "#623cfc",//"#0084b4"
+                noMask: true,
+                lineColor: "#623cfc"//"#00aced"
+            }
+            var mark = L.marker([coordinate[0], coordinate[1]], {icon: firefoxIcon});
+            mark.addTo($scope.map);
+            markList.push(mark)
+            var tweetContent = $scope.translateTweetDataToShow(tweet);
+            $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+            $scope.popUpTweet.setContent(tweetContent);
+            var mark2 = L.circleMarker([coordinate[0], coordinate[1]], stl).bindPopup($scope.popUpTweet);
 
+            $scope.livePinLayer.addLayer(mark2).addTo($scope.map)
+            setTimeout(function()
+            {
+                markList.forEach(m=>$scope.map.removeLayer(m));
+            },10000)
 
+        }
 
-          function transition(coordinate)
-          {
-              let stl = {
-                  radius: 1,//80,
-                  useAbsoluteRadius: false,//true,
-                  color: "#623cfc",//"#0084b4"
-                  noMask: true,
-                  lineColor: "#623cfc"//"#00aced"
-              }
-              var mark = L.marker([coordinate[0], coordinate[1]], {icon: firefoxIcon});
-              mark.addTo($scope.map);
-              setTimeout(function()
-              {
-                  $scope.map.removeLayer(mark);
-                  var mark2 = L.circleMarker([coordinate[0], coordinate[1]], stl);
-                  mark2.addTo($scope.map);
+        function dynamicUpdate(){
+            coordinates.forEach(x=>transition(x))
+        }
 
-              },10000)
-          }
-
-
-
-          function dynamicUpdate(){
-              console.log(coordinates.length);
-              coordinates.forEach(x=>transition(x))
-          }
-
-          dynamicUpdate();
+        dynamicUpdate();
       }
 
       $rootScope.$on("CallParentMethod", function(event,result){
@@ -438,7 +447,7 @@ angular.module("cloudberry.map")
           for(var i=0;i<result.data.length;i++)
           {
               if(result.data[i]["coordinate"])
-                  set1.push(result.data[i]["coordinate"]);
+                  set1.push(result.data[i]);
           }
 
           $scope.dMap(set1);
