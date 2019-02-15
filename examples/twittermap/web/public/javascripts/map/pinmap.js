@@ -441,18 +441,8 @@ angular.module("cloudberry.map")
         dynamicUpdate();
       }
 
-      $rootScope.$on("CallParentMethod", function(event,result){
-
-          var set1 = new Array();
-          for(var i=0;i<result.data.length;i++)
-          {
-              if(result.data[i]["coordinate"])
-                  set1.push(result.data[i]);
-          }
-
-          $scope.dMap(set1);
-
-
+      $rootScope.$on("drawLivePin", function(event,result){
+          $scope.dMap(result["data"]);
       });
 
 

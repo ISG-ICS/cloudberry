@@ -8,6 +8,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
+    $scope.receivedCount = 1;
+    $scope.accumulateTweets = new Set();
     // live tweets queue
     var liveTweetsQueue = [];
     // queryInterval - Every how many seconds, we send a query to database to retrieve new tweets
@@ -111,7 +113,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
         liveTweetsQueue = liveTweetsQueue.concat(tweets);
-        $rootScope.$emit("CallParentMethod", {"data":tweets});
+        tweets.forEach(x=>{
+          if(x["coordinate"]){
+            $scope.accumulateTweets.add(x)
+          }
+        });
+        $scope.receivedCount += 1;
+        if(cloudberry.parameters.maptype === "pinmap" && $scope.receivedCount === 3) {
+          $rootScope.$emit("drawLivePin", {"data": $scope.accumulateTweets});
+          $scope.accumulateTweets = new Set();
+          $scope.receivedCount = 0;
+        }
       }
     }
     
