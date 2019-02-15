@@ -53,7 +53,6 @@ angular.module("cloudberry.common")
         var queryID = "defaultID";
 
         if (ws.readyState !== ws.OPEN) {
-          console.log("ws state is not ready...");
           return false;
         }
 
