@@ -239,9 +239,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if($scope.timerCheckQuerySolvableByView) {
         clearInterval($scope.timerCheckQuerySolvableByView);
       }
-      
+
       setTimerToCheckQuery();
       disableHashtagButton();
+      $scope.openRightMenu();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
       handleSidebarQuery();
