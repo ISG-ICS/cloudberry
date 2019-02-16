@@ -14,7 +14,8 @@ import java.util.Date;
 public class ADM {
 
     public static final SimpleDateFormat ADMDateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    public static final SimpleDateFormat ADMTimeFormat = new SimpleDateFormat("HH:mm:ss.SSS");
+    // ADM Time formatter needs to contain the timezone information to make AsterixDB consistent with Cloudberry
+    public static final SimpleDateFormat ADMTimeFormat = new SimpleDateFormat("HH:mm:ss.SSSZZZZ");
 
     public static String mkADMConstructor(String constructor, String content) {
         return constructor + "(\"" + content + "\")";

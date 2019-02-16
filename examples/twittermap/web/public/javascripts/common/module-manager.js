@@ -52,7 +52,8 @@ angular.module("cloudberry.common")
         CHANGE_TIME_SERIES_RANGE: "CHANGE_TIME_SERIES_RANGE",
         CHANGE_ZOOM_LEVEL: "CHANGE_ZOOM_LEVEL",
         CHANGE_REGION_BY_DRAG: "CHANGE_REGION_BY_DRAG",
-        CHANGE_MAP_TYPE: "CHANGE_MAP_TYPE"
+        CHANGE_MAP_TYPE: "CHANGE_MAP_TYPE",
+        WS_READY: "WS_READY"
       },
 
       /**
