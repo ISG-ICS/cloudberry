@@ -6,7 +6,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOutdated = false;
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
-    $scope.isSampleTweetsOpen = true;
+    $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
     // live tweets queue
     var liveTweetsQueue = [];
@@ -241,6 +241,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       
       setTimerToCheckQuery();
+      $scope.closeRightMenu();
       disableHashtagButton();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
