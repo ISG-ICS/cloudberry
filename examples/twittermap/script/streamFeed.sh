@@ -3,6 +3,8 @@
 #
 #          FILE: streamFeed.sh
 #
+#         REFER: https://github.com/ISG-ICS/cloudberry/wiki/Start-realtime-twitter-stream-ingestion-into-local-AsterixDB
+#
 #         USAGE: (1) Fill in your own Twitter API access keys and tokens
 #                (2) Run the script from parent path
 #                ./script/streamFeed.sh
