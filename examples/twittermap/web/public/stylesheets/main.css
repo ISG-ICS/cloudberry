@@ -350,14 +350,3 @@ div[aria-expanded=true] .glyphicon-triangle-right {
 div[aria-expanded=false] .glyphicon-triangle-bottom {
     display: none;
 }
-.striped
-{
-  background-color: #F1F1F1;
-}
-
-div[aria-expanded=true] .glyphicon-triangle-right {
-    display: none;
-}
-div[aria-expanded=false] .glyphicon-triangle-bottom {
-    display: none;
-}
