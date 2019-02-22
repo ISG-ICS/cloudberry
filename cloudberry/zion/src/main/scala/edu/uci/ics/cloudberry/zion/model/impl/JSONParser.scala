@@ -59,19 +59,19 @@ object JSONParser {
 
   def parseLimit(json: JsValue, option: QueryExeOption): (JsValue, QueryExeOption) = {
     if (option.sliceMills <= 0) { // non-slicing query
-      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None, option.returnDelta))
     }
     if ((json \ "batch").toOption.isEmpty && (json \\ "limit").isEmpty) { // single slicing query without limit
-      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None, option.returnDelta))
     }
     if ((json \ "batch").toOption.isEmpty && (json \\ "limit").nonEmpty) { // single slicing query with limit
       val limit = (json \ "select" \ "limit").as[Int]
       val updatedSelectJson = (json \ "select").as[JsObject] ++ Json.obj("limit" -> Int.MaxValue)
       val updatedJson = json.as[JsObject] ++ Json.obj("select" -> updatedSelectJson)
-      return (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit)))
+      return (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit), option.returnDelta))
     }
     if ((json \\ "limit").isEmpty || ((json \\ "limit").nonEmpty && (json \\ "aggregate").nonEmpty)) {
-      (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+      (json, QueryExeOption(option.sliceMills, option.continueSeconds, None, option.returnDelta))
     } else {
       // TODO send error messages to user
       throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
@@ -83,25 +83,24 @@ object JSONParser {
       json.asOpt[JsArray] match {
         case Some(array) =>
           JsSuccess {
-            var (allInt, allLong) = (0, 0)
+            var (allInt, allLong, allNumber) = (0, 0, 0)
             val ret = array.value.map {
               case jsBoolean: JsBoolean => jsBoolean.value
               case jsNumber: JsNumber =>
                 if (jsNumber.value.isValidInt) {
                   allInt += 1
-                  jsNumber.value.toIntExact
                 } else if (jsNumber.value.isValidLong) {
                   allLong += 1
-                  jsNumber.value.toLongExact
-                } else {
-                  jsNumber.value.toDouble
                 }
+                allNumber +=1
+                jsNumber.value
               case jsString: JsString => jsString.value
               case other: JsValue => throw JsonRequestException(s"unknown data type: $other")
             }.toList
             //Scala upgrade the type to Double for the mixing case. Here we downgrade it to Int or Long.
-            if (ret.size == allInt) ret.map(_.asInstanceOf[Double].toInt)
-            else if (ret.size == allLong) ret.map(_.asInstanceOf[Double].toLong)
+            if (ret.size == allInt) ret.map(_.asInstanceOf[BigDecimal].toIntExact)
+            else if (ret.size == allLong) ret.map(_.asInstanceOf[BigDecimal].toLongExact)
+            else if (ret.size == allNumber) ret.map(_.asInstanceOf[BigDecimal].toDouble)
             else ret
           }
         case None => JsSuccess(Seq.empty)
@@ -286,7 +285,8 @@ object JSONParser {
     (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
       (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1)) and
       // this "limit" value will be discarded, real limit value is parsed from request
-      (__ \ QueryExeOption.TagLimit).readNullable[Int]
+      (__ \ QueryExeOption.TagLimit).readNullable[Int] and
+      (__ \ QueryExeOption.TagReturnDelta).readNullable[Boolean].map(_.getOrElse(false))
     ) (QueryExeOption.apply _)
 
 

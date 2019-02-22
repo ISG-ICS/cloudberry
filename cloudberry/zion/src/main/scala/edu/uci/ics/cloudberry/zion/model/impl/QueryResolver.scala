@@ -84,7 +84,7 @@ object QueryResolver {
     val producedFields = mutable.Map.newBuilder[String, Field]
     val resolved = unnests.map { unnest =>
       val field = resolveField(unnest.field, fieldMap)
-      val asField = Field.as(field, unnest.as)
+      val asField = Field.asInnerType(field, unnest.as)
       producedFields += unnest.as -> asField
       UnnestStatement(field, asField)
     }
@@ -121,15 +121,33 @@ object QueryResolver {
           }
           ByStatement(field, by.funcOpt, as)
         }
-        val resolvedAggrs = groupStatement.aggregates.map { aggregate =>
+        var resolvedAggrs : List[AggregateStatement] = List()
+
+        groupStatement.aggregates.foreach { aggregate =>
           val field = resolveField(aggregate.field, fieldMap)
           val as = Field.as(aggregate.func(field), aggregate.as)
-          producedFields += aggregate.as -> as
-          AggregateStatement(field, aggregate.func, as)
+
+          aggregate.func match {
+            case Avg => {
+              val avgSumName = "__sum__" + aggregate.as
+              val avgCountName = "__count__" + aggregate.as
+              val avg_sum_as_field = Field.as(Sum(field), avgSumName)
+              val avg_count_as_field = Field.as(Count(field), avgCountName)
+              producedFields += avgSumName -> avg_sum_as_field
+              producedFields += avgCountName -> avg_count_as_field
+
+              resolvedAggrs = AggregateStatement(field, Sum, avg_sum_as_field) +: resolvedAggrs
+              resolvedAggrs = AggregateStatement(field, Count, avg_count_as_field) +: resolvedAggrs
+            }
+            case _ => {
+              producedFields += aggregate.as -> as
+              resolvedAggrs = AggregateStatement(field, aggregate.func, as) +: resolvedAggrs
+            }
+          }
+
         }
 
         val (resolvedLookups, newFieldMap) = resolveLookups(groupStatement.lookups, producedFields.result().toMap, schemaMap)
-
         val resolved = GroupStatement(resolvedBys, resolvedAggrs, resolvedLookups)
         (Some(resolved), newFieldMap)
       case None =>

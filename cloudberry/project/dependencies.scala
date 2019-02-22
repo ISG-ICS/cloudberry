@@ -26,6 +26,8 @@ object Dependencies {
   val zionDependencies: Seq[ModuleID] = Seq(
     "joda-time" % "joda-time" % "2.9.3",
     "com.typesafe.akka" %% "akka-actor" % "2.4.4",
+    "oracle" % "ojdbc6" % "11.2.0.3",
+    "oracle" % "sdoapi" % "11.2.0",
     "mysql" % "mysql-connector-java" % "5.1.24",
     "org.postgresql" % "postgresql" % "9.3-1102-jdbc41",
     "org.apache.spark" % "spark-core_2.11" % "2.1.0" exclude("org.slf4j", "slf4j-log4j12"),

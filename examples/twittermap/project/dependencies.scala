@@ -66,7 +66,16 @@ object Dependencies {
     "org.webjars" % "d3js" % "3.5.16",
     // sidebar module
     "org.webjars" % "font-awesome" % "4.5.0",
-    "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1"
-    // other module
+    "org.webjars.bower" % "bootstrap-vertical-tabs" % "1.2.1",
+    // Added jquery-ui for showing/hiding the time series histogram.
+    "org.webjars.bower" % "jquery-ui" % "1.12.1",
+    // draw chart module
+    "org.webjars.bower" % "chart.js" % "2.7.2",
+    // Added jquery-ui theme for decorating auto-complete menu
+    "org.webjars" % "jquery-ui-themes" % "1.12.1",
+    // Added twitter4j for twittermap
+    "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion
+
   ) ++ testDeps
 }

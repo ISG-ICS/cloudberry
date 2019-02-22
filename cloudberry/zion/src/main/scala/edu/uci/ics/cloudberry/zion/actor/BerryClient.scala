@@ -57,6 +57,7 @@ class BerryClient(val jsonParser: JSONParser,
       } else {
         val paceMS = runOption.sliceMills
         val resultSizeLimit = runOption.limit
+        val returnDelta = runOption.returnDelta
         val mapInfos = seqInfos.map(_.get).map(info => info.name -> info).toMap
 
         if (resultSizeLimit.nonEmpty && queries.size > 1) {
@@ -73,7 +74,7 @@ class BerryClient(val jsonParser: JSONParser,
           context.actorOf(Props(new ProgressiveSolver(dataManager, planner, config, out)), actorName)
         )
         child ! ProgressiveSolver.Cancel // Cancel ongoing slicing work if any
-        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform)
+        child ! ProgressiveSolver.SlicingRequest(paceMS, resultSizeLimit, queries, mapInfos, transform, returnDelta)
       }
     }
   }

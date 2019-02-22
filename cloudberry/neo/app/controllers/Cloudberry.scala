@@ -10,7 +10,7 @@ import akka.stream.{Materializer, OverflowStrategy}
 import akka.util.Timeout
 import db.Migration_20160814
 import edu.uci.ics.cloudberry.zion.actor.DataStoreManager.{DataManagerResponse, Register, _}
-import edu.uci.ics.cloudberry.zion.actor.{BerryClient, DataStoreManager}
+import edu.uci.ics.cloudberry.zion.actor.{BerryClient, ViewStatusClient, DataStoreManager}
 import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.impl._
 import play.Logger
@@ -43,6 +43,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
       case "postgresql" => (new PostgreSQLConn(config.PostgreSqlURL), PostgreSQLGenerator)
       case "aql" => (new AsterixAQLConn(config.AsterixURL, wsClient), AQLGenerator)
       case "sqlpp" => (new AsterixSQLPPConn(config.AsterixURL, wsClient), SQLPPGenerator)
+      case "oracle" => (new OracleConn(config.OracleURL), OracleGenerator)
       case _ => throw new IllegalArgumentException(s"unknown asterixdb.lang option:${config.AsterixLang}")
     }
 
@@ -85,6 +86,13 @@ class Cloudberry @Inject()(val wsClient: WSClient,
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
       RequestRouter.props(BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)
+    }
+  }
+
+  // A WebSocket for checking whether a query is solvable by view
+  def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef { out =>
+      RequestRouter.props(ViewStatusClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)
     }
   }
 
