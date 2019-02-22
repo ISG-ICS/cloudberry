@@ -120,6 +120,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         });
         $scope.receivedCount += 1;
         if(cloudberry.parameters.maptype === "pinmap" && $scope.receivedCount === 3) {
+          console.log("emit")
+          console.log("result size "+$scope.accumulateTweets.size);
           $rootScope.$emit("drawLivePin", {"data": $scope.accumulateTweets});
           $scope.accumulateTweets = new Set();
           $scope.receivedCount = 0;
