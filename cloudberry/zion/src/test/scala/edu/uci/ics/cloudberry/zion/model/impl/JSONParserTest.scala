@@ -193,13 +193,13 @@ class JSONParserTest extends Specification {
       val millis = 1234
       val optionJson = Json.obj(QueryExeOption.TagSliceMillis -> JsNumber(millis))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(millis, -1, None)
+      option must_== QueryExeOption(millis, -1, None, false)
     }
     "parse continue option" in {
       val seconds = 4321
       val optionJson = Json.obj(QueryExeOption.TagContinueSeconds -> JsNumber(4321))
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(-1, seconds, None)
+      option must_== QueryExeOption(-1, seconds, None, false)
     }
     "parse slicing and continue option" in {
       val optionJson = Json.obj(
@@ -207,7 +207,15 @@ class JSONParserTest extends Specification {
         QueryExeOption.TagContinueSeconds -> JsNumber(4321)
       )
       val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(1234, 4321, None)
+      option must_== QueryExeOption(1234, 4321, None, false)
+    }
+    "parse slicing and returnDelta option" in {
+      val optionJson = Json.obj(
+        QueryExeOption.TagSliceMillis -> JsNumber(1234),
+        QueryExeOption.TagReturnDelta -> JsBoolean(true)
+      )
+      val (_, option) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("option" -> optionJson), twitterSchemaMap)
+      option must_== QueryExeOption(1234, -1, None, true)
     }
     "parse estimable query if estimable field appears" in {
       val (queries, _) = parser.parse(hourCountJSON.asInstanceOf[JsObject] + ("estimable" -> JsBoolean(true)), twitterSchemaMap)
@@ -229,7 +237,7 @@ class JSONParserTest extends Specification {
       val expectQuery = Query(TwitterDataSet, Seq.empty, Seq.empty, filter, Seq(unnestHashTag), Some(group), Some(selectTagWithoutLimit))
 
       val (actualQuery, option) = parser.parse(topKHashTagJSON.as[JsObject] + ("option" -> optionJson), twitterSchemaMap)
-      option must_== QueryExeOption(1234, -1, Some(10))
+      option must_== QueryExeOption(1234, -1, Some(10), false)
       actualQuery.size must_== 1
       actualQuery.head must_== expectQuery
       ok
@@ -274,13 +282,14 @@ class JSONParserTest extends Specification {
     "parse a batch of queries with option" in {
       val batchQueryJson = Json.obj("batch" -> JsArray(Seq(hourCountJSON, groupByBinJSON)))
       val optionJson = Json.obj(
-        QueryExeOption.TagSliceMillis -> JsNumber(1234)
+        QueryExeOption.TagSliceMillis -> JsNumber(1234),
+        QueryExeOption.TagReturnDelta -> JsBoolean(true)
       )
       val (query, option) = parser.parse(batchQueryJson + ("option" -> optionJson), twitterSchemaMap)
       query.size must_== 2
       query.head must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byHour), Seq(aggrCount))), None)
       query.last must_== Query(TwitterDataSet, Seq.empty, Seq.empty, Seq.empty, Seq.empty, Some(GroupStatement(Seq(byBin), Seq(aggrCount))), None)
-      option must_== QueryExeOption(1234, -1, None)
+      option must_== QueryExeOption(1234, -1, None, true)
     }
   }
 

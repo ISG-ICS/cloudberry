@@ -1,5 +1,5 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
-  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
+  .controller('SearchCtrl', function($scope, $window, $location, cloudberry, cloudberryConfig, moduleManager) {
     var stopwordsMap = buildStopwordsMap();
     //When user input keyword we will first send query to and get result to render auto-complete menu
     //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
@@ -73,15 +73,29 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         cloudberry.parameters.keywords = [];
       }
     };
+
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
+
     $scope.updateSearchBox = function (keyword) {
       $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');
     };
+
     $scope.predefinedSearch = function (keyword) {
       $scope.keyword = keyword;
       $scope.search();
       $scope.updateSearchBox(keyword);
     };
+
+    // If url indicates keyword, search it immediately.
+    // e.g. url = http://localhost:9001/#?keyword=hurricane
+    var defaultKeyword = $location.search().keyword;
+    if (defaultKeyword) {
+      var onWSReady = function(event) {
+        $scope.predefinedSearch(defaultKeyword);
+        moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+      };
+      moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+    }
   })
   .directive('searchBar', function (cloudberryConfig) {
     if(cloudberryConfig.removeSearchBar) {
