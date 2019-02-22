@@ -59,19 +59,19 @@ object JSONParser {
 
   def parseLimit(json: JsValue, option: QueryExeOption): (JsValue, QueryExeOption) = {
     if (option.sliceMills <= 0) { // non-slicing query
-      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None, option.returnDelta))
     }
     if ((json \ "batch").toOption.isEmpty && (json \\ "limit").isEmpty) { // single slicing query without limit
-      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+      return (json, QueryExeOption(option.sliceMills, option.continueSeconds, None, option.returnDelta))
     }
     if ((json \ "batch").toOption.isEmpty && (json \\ "limit").nonEmpty) { // single slicing query with limit
       val limit = (json \ "select" \ "limit").as[Int]
       val updatedSelectJson = (json \ "select").as[JsObject] ++ Json.obj("limit" -> Int.MaxValue)
       val updatedJson = json.as[JsObject] ++ Json.obj("select" -> updatedSelectJson)
-      return (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit)))
+      return (updatedJson, QueryExeOption(option.sliceMills, option.continueSeconds, Some(limit), option.returnDelta))
     }
     if ((json \\ "limit").isEmpty || ((json \\ "limit").nonEmpty && (json \\ "aggregate").nonEmpty)) {
-      (json, QueryExeOption(option.sliceMills, option.continueSeconds, None))
+      (json, QueryExeOption(option.sliceMills, option.continueSeconds, None, option.returnDelta))
     } else {
       // TODO send error messages to user
       throw JsonRequestException("Batch Requests cannot contain \"limit\" field")
@@ -285,7 +285,8 @@ object JSONParser {
     (__ \ QueryExeOption.TagSliceMillis).readNullable[Int].map(_.getOrElse(-1)) and
       (__ \ QueryExeOption.TagContinueSeconds).readNullable[Int].map(_.getOrElse(-1)) and
       // this "limit" value will be discarded, real limit value is parsed from request
-      (__ \ QueryExeOption.TagLimit).readNullable[Int]
+      (__ \ QueryExeOption.TagLimit).readNullable[Int] and
+      (__ \ QueryExeOption.TagReturnDelta).readNullable[Boolean].map(_.getOrElse(false))
     ) (QueryExeOption.apply _)
 
 

@@ -6,6 +6,7 @@ import java.util.concurrent.Executors
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.noah.adm.Tweet
 import edu.uci.ics.cloudberry.util.Profile._
+import twitter4j.TwitterObjectFactory
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -40,12 +41,9 @@ object TwitterJSONTagToADM {
 
   def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = {
     try {
-      val admJacksonJson = Tweet.toADM(ln, usGeoGnosis, true)
-      if (admJacksonJson.length > 0) {
-        println(admJacksonJson)
-      }
-    }
-    catch {
+      val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
+      if (adm.length > 0) println(adm)
+    } catch {
       case e: Throwable => {
         if (isDebug) {
           e.printStackTrace(System.err)

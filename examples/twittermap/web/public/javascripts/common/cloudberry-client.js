@@ -15,9 +15,20 @@
  *      }
  */
 angular.module("cloudberry.common")
-  .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig) {
+  .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
 
     var ws = new WebSocket(cloudberryConfig.ws);
+
+    var waitForWS = function() {
+      if (ws.readyState !== ws.OPEN) {
+        window.setTimeout(waitForWS, 1000);
+      }
+      else {
+        moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
+      }
+    };
+
+    waitForWS();
 
     var cloudberryClient = {
 
