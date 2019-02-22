@@ -126,9 +126,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
         }
         
-        tweets.forEach(x=>{
+        tweets.forEach((x) => {
           if(x["coordinate"]){
-            $scope.accumulateTweets.add(x)
+            $scope.accumulateTweets.add(x);
           }
         });
         $scope.receivedCount += 1;

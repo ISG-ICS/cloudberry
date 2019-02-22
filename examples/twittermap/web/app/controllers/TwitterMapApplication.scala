@@ -147,7 +147,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         query.setResultType(resultType)
         query.setGeoCode(centerLoc,radius,unit)
         val tweetsResult = twitterAPI.search(query).getTweets
-        var count = 0
         for(i <- 0 to tweetsResult.size()-1){
           val status = tweetsResult.get(i)
           if (status.isRetweet == false){
