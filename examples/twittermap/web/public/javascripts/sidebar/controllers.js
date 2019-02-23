@@ -6,7 +6,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isSampleTweetsOutdated = false;
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
-    $scope.isSampleTweetsOpen = true;
+    $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
     // live tweets set
     var liveTweetSet = new Set();
