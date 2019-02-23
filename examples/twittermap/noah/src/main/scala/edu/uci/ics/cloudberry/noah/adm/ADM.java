@@ -33,11 +33,11 @@ public class ADM {
     public static String mkFloatConstructor(String value) {
         return mkADMConstructor("float", (Float.toString(Float.parseFloat(value))) + "f");
     }
-    public static String mkDateConstructor(Date jdate) {
+    public synchronized static String mkDateConstructor(Date jdate) {
         return "date(\"" + ADMDateFormat.format(jdate) + "\")";
     }
 
-    public static String mkDateTimeConstructor(Date jdate) {
+    public synchronized static String mkDateTimeConstructor(Date jdate) {
         return "datetime(\"" + ADMDateFormat.format(jdate) + "T" + ADMTimeFormat.format(jdate) + "\")";
     }
 
