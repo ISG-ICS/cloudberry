@@ -294,6 +294,11 @@ time-series {
   margin-top: 4%;
 }
 
+.disableHashtag{
+  pointer-events: none;
+  color: #555555;
+}
+
 #popup-info {
   margin-top: 7%;
   margin-bottom: 5%;
