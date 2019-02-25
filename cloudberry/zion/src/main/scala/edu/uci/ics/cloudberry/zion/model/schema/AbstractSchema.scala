@@ -75,7 +75,7 @@ object Field {
       case DataType.String => StringField(name, field.isOptional)
       case DataType.Text => TextField(name, field.isOptional)
       case DataType.Point => PointField(name, field.isOptional)
-      case DataType.Boolean => PointField(name, field.isOptional)
+      case DataType.Boolean => BooleanField(name, field.isOptional)
       case DataType.Hierarchy =>
         val hierarchyField = field.asInstanceOf[HierarchyField]
         HierarchyField(name, hierarchyField.innerType, hierarchyField.levels, hierarchyField.isOptional)
@@ -121,7 +121,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
 }
 
 object TimeField {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
   val TimeFormatForSQL = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS")
 }
 

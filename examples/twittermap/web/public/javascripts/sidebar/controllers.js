@@ -1,15 +1,89 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($scope, cloudberry, moduleManager, cloudberryClient, queryUtil) {
-
+  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
+    
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
-    $scope.isSampleTweetsOutdated = true;
-
+    $scope.isSampleTweetsOutdated = false;
     // Flag whether sidebar tab is open
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
+    $scope.currentTab = "sampletweetTab";
+    // live tweets set
+    var liveTweetSet = new Set();
+    // live tweets queue
+    var liveTweetsQueue = [];
+    // queryInterval - Every how many seconds, we send a query to database to retrieve new tweets
+    var queryInterval = config.liveTweetQueryInterval? config.liveTweetQueryInterval : 60;
+    // query offset - Every time we query database the new tweets,
+    //                  how many seconds before now is the query's end time condition
+    var queryOffset = config.liveTweetQueryOffset? config.liveTweetQueryOffset : 30;
+    // updateRate - Every how many seconds, we popup a tweet from queue and show it on page
+    var updateRate = config.liveTweetUpdateRate? config.liveTweetUpdateRate : 2;
+    // Store handle returned from window.setInterval function
+    var queryLimit = parseInt(queryInterval / updateRate);
+    $scope.liveTweetsProducer = {};
+    $scope.liveTweetsConsumer = {};
+    var timeZoneHoursOffset = ((new Date).getTimezoneOffset()) / 60;
+    // Timer for sending query to check whether it can be solved by view
+    $scope.timerCheckQuerySolvableByView = null;
 
-    $scope.currentTab = "aboutTab";
+    // queryID used to identify a query, which is sent by timer
+    $scope.nowQueryID = null;
+
+    // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
+    var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
+    
+    //Function for the button for close the sidebar, and change the flags
+    $scope.closeRightMenu = function() {
+      document.getElementById("sidebar").style.left = "100%";
+      $scope.showOrHideSidebar(-1);
+    };
+
+    // Function for the button that open the sidebar, and change the flags
+    $scope.openRightMenu = function() {
+      document.getElementById("sidebar").style.left = "76%";
+      $scope.showOrHideSidebar(1);
+    };
+
+
+    function enableHashtagButton() {
+      $("#Hashtag").removeClass("disableHashtag");
+    }
+
+    function disableHashtagButton() {
+      $("#Hashtag").addClass("disableHashtag");
+    }
+
+    // When receiving messages from websocket, check its queryID and result.
+    // If queryID is matched and result is true, enable the sidebar button and clear timer.
+    wsCheckQuerySolvableByView.onmessage = function(event) {
+      $timeout(function() {
+        var result = JSON.parse(event.data);
+        if (result.id === $scope.nowQueryID && result.value[0]) {
+          clearInterval($scope.timerCheckQuerySolvableByView);
+          enableHashtagButton();
+        }
+      });
+    };
+
+    // Set a timer to sending query to check whether it is solvable, every one second
+    function setTimerToCheckQuery() {
+      var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
+
+      // Add the queryID for a query in to request
+      queryToCheck["transform"] = {
+        wrap: {
+          id: cloudberry.parameters.keywords.toString(),
+          category: "checkQuerySolvableByView"
+        }
+      };
+      $scope.nowQueryID = cloudberry.parameters.keywords.toString();
+      $scope.timerCheckQuerySolvableByView = setInterval(function(){
+        if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
+          wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
+        }
+      }, 1000);
+    }
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
@@ -19,26 +93,110 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.isHashTagOutdated = false;
     }
 
-    function sendSampleTweetsQuery() {
-      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters);
-      cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
-        cloudberry.commonTweetResult = resultSet[0];
-      }, "sampleTweetsRequest");
-      $scope.isSampleTweetsOutdated = false;
+    function drawTweets(message) {
+      var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
+      $http.jsonp(url).success(function (data) {
+        $(data.html).hide().prependTo("#tweet");
+        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+      });
     }
 
-    function handleSidebarQuery() {
+    var LTSocket = new WebSocket("ws://"+window.location.host+"/liveTweets");
+    /* fetchTweetFromAPI sends a query to twittermap server through websocket
+     * to fetch recent tweets for liveTweet feature
+     * @param msg{Object}, msg is the query send to twittermap server 
+     */
+    function fetchTweetFromAPI(query) {
 
+      if(LTSocket.readyState === LTSocket.OPEN){
+          LTSocket.send(query);
+      }
+      LTSocket.onmessage = function(event){
+        let tweets = JSON.parse(event.data);
+        for (var i = 0 ; i<tweets.length; i++ )
+        {
+            if (!liveTweetSet.has(tweets[i]["id"])){
+                liveTweetsQueue.push(tweets[i]);
+                liveTweetSet.add(tweets[i]["id"]);
+            }
+        }
+      }
+    }
+    
+    function sendLiveTweetsQuery(sampleTweetSize) {
+      var centerCoordinate = [cloudberry.parameters.bounds._southWest.lat,cloudberry.parameters.bounds._southWest.lng,cloudberry.parameters.bounds._northEast.lat,cloudberry.parameters.bounds._northEast.lng];
+      // Construct time range condition for live tweets query
+      var tempDateTime = (new Date(Date.now()));
+      // 1. Get NOW considering time zone.
+      tempDateTime.setHours(tempDateTime.getHours() - timeZoneHoursOffset);
+      // 2. UpperBound = NOW - queryOffset
+      tempDateTime.setSeconds(tempDateTime.getSeconds() - queryOffset);
+      var timeUpperBound = tempDateTime.toISOString();
+      // 3. LowerBound = UpperBound - queryInterval
+      tempDateTime.setSeconds(tempDateTime.getSeconds()  - queryInterval);
+      var timeLowerBound = tempDateTime.toISOString();
+      var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
+      if (config.enableLiveTweet) {
+        fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
+        $scope.isSampleTweetsOutdated = false;
+      }
+      else {
+        cloudberryClient.send(sampleTweetsRequest, function(id, resultSet) {
+          // new tweets retrieved push back to live tweets queue
+          liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
+          $scope.isSampleTweetsOutdated = false;
+        }, "sampleTweetsRequest");
+      }
+    }
+  
+    // Constantly checking live tweets queue to draw tweet one by one
+    function startLiveTweetsConsumer() {
+      $scope.liveTweetsConsumer = window.setInterval(function() {
+        if (liveTweetsQueue.length > 0){
+          var data = liveTweetsQueue.pop();
+          drawTweets(data);
+        }
+        if($("#tweet").children().length > 20)
+        {
+          $("#tweet").children().last().remove();
+        }
+      }, updateRate * 1000);
+    }
+    
+    function startLiveTweetsProducer() {
+      sendLiveTweetsQuery(queryLimit);
+      $scope.liveTweetsProducer = window.setInterval(function() {sendLiveTweetsQuery(queryLimit)}, queryInterval * 1000);
+    }
+
+    function stopLiveTweets() {
+      window.clearInterval($scope.liveTweetsConsumer);
+      window.clearInterval($scope.liveTweetsProducer);
+    }
+
+    function cleanLiveTweets() {
+      liveTweetsQueue = [];
+      $("#tweet").html("");
+    };
+
+    function handleSidebarQuery(){
       if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {
         sendHashTagQuery();
       }
-
-      if ($scope.isSampleTweetsOpen && $scope.isSampleTweetsOutdated) {
-        sendSampleTweetsQuery();
+      if ($scope.isSampleTweetsOpen) {
+        stopLiveTweets();
+        if ($scope.isSampleTweetsOutdated) {
+          cleanLiveTweets();
+        }
+        startLiveTweetsConsumer();
+        startLiveTweetsProducer();
       }
     }
-
+  
     $scope.showTab = function(tab) {
+
+      if (tab !== "sampletweetTab") {
+        stopLiveTweets();
+      }
 
       if (tab !== $scope.currentTab) {
         $scope.currentTab = tab;
@@ -53,7 +211,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           $scope.isSampleTweetsOpen = true;
           $scope.isHashTagOpen = false;
           break;
-        case "about":
+        case "aboutTab":
           $scope.isHashTagOpen = false;
           $scope.isSampleTweetsOpen = false;
           break;
@@ -66,27 +224,49 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     $scope.showOrHideSidebar = function(click) {
       if (click === -1) {
-        cloudberry.parameters.isSampleTweetsOpen = false;
-        cloudberry.parameters.isHashTagOpen = false;
+        $scope.isSampleTweetsOpen = false;
+        $scope.isHashTagOpen = false;
+        stopLiveTweets();
       }
       else {
         $scope.showTab($scope.currentTab);
       }
     };
 
+
+
     function eventHandler(event) {
+      $scope.isHashTagOutdated = true;
+      $scope.isSampleTweetsOutdated = true;
+      liveTweetSet = new Set();
+      handleSidebarQuery();
+    }
+
+    // When the keywords changed, we need to:
+    // 1. clear previous timer 2. close and disable sidebar 3. set a new timer for new keywords
+    function keywordsEventHandler(event) {
+      if($scope.timerCheckQuerySolvableByView) {
+        clearInterval($scope.timerCheckQuerySolvableByView);
+      }
+      
+      setTimerToCheckQuery();
+      $scope.closeRightMenu();
+      disableHashtagButton();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
       handleSidebarQuery();
     }
 
+
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, keywordsEventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
   })
-  .controller("HashTagCtrl", function ($scope, $window, cloudberry) {
+  .controller("HashTagCtrl", function ($scope, $window, cloudberry, queryUtil, cloudberryClient, chartUtil) {
     $scope.hashTagsList = null;
+    $scope.selectedHashtag = null;
+
     // TODO - get rid of this watch by doing work inside the callback function in sendHashTagQuery()
     $scope.$watch(
       function () {
@@ -96,54 +276,36 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         $scope.hashTagsList = newResult;
       }
     );
+
+    // send query of hashtag, and draw the line chart when collapse is expanded
+    $("#AllCollapse").on("shown.bs.collapse", function(e) {
+      $scope.selectedHashtag = e.target.firstChild.id.substring(7);
+      if ($scope.selectedHashtag) {
+        // send query to cloudberry
+        var hashtagChartDataRequest = queryUtil.getHashTagChartDataRequest(cloudberry.parameters,$scope.selectedHashtag);
+        cloudberryClient.send(hashtagChartDataRequest, function(id, resultSet) {
+          if (angular.isArray(resultSet)) {
+            chartUtil.drawChart(chartUtil.preProcessByMonthResult(resultSet[0]), "myChart" + $scope.selectedHashtag, false, false);
+          }
+        }, "hashtagChartDataRequest");
+      }
+    });
   })
   .directive("hashtag", function () {
     return {
       restrict: "E",
       controller: "HashTagCtrl",
       template: [
-        '<table class="table" id="hashcount">',
-        '<thead>',
-        '<tr ng-repeat="r in hashTagsList | orderBy:\'-count\'"><td># {{r.tag}}</td><br/><td>{{r.count}}</td></tr>',
-        '</thead>',
-        '</table>'
+        "<div id=\"AllCollapse\" class=\"hashtagDiv\">" +
+        "<div ng-repeat=\"r in hashTagsList | orderBy:\'-count\'\" class=\"accordion-toggle hashtagEle\"  data-toggle=\"collapse\"  data-target=\"#collapse{{r.tag}}\">" +
+        "<div class=\"row\"><div class=\"col-xs-8\"># {{r.tag}}</div><div class=\"col-xs-4\">{{r.count}}</div></div> " +
+        "<div id=\"collapse{{r.tag}}\" class=\"collapse hashtagChart\"><canvas id=\"myChart{{r.tag}}\" height=\"130\" ></canvas></div>"+
+        "</div>" +
+        "</div>"
       ].join('')
     };
   })
-  .controller("TweetCtrl", function ($scope, $window, $http, cloudberry) {
-    $scope.results = {};
-
-    function drawTweets(message) {
-      $('#tweet').html("");
-      if (message) {
-        $.each(message, function (i, d) {
-          var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + d.id;
-          $http.jsonp(url).success(function (data) {
-            $("#tweet").append(data.html);
-          });
-        });
-      }
-    }
-
-    // TODO - get rid of this watch by doing work inside the callback function in sendSampleTweetsQuery()
-    $scope.$watch(
-      function () {
-        return cloudberry.commonTweetResult;
-      },
-      function (newResult) {
-        $scope.results = newResult;
-        drawTweets($scope.results);
-      }
-    );
-  })
-  .directive("tweet", function () {
-    return {
-      restrict: "E",
-      controller: "TweetCtrl"
-    };
-  })
-
-  .controller("choosemap", function ($scope, $window, cloudberry, $rootScope, moduleManager) {
+  .controller("choosemap", function ($scope, $window, cloudberry, moduleManager) {
 
     $scope.result = null;
     cloudberry.parameters.maptype = config.defaultMapType;

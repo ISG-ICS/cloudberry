@@ -3,7 +3,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                                   cloudberryConfig, Cache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
-
     // add an alert bar of IE
     if (L.Browser.ie) {
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
@@ -132,6 +131,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
@@ -201,6 +201,33 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
         features[id].properties["centerLog"] = (maxLog + minLog) / 2;
         features[id].properties["centerLat"] = (maxLat + minLat) / 2;
+        features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
+        features[id].properties["popUpLat"] = maxLat;
+
+        // Set the position of popup window for special case, eg. "Alaska" State
+        if( maxLog > 0 && minLog < 0) {
+          minLog = Number.POSITIVE_INFINITY;
+          maxLog = Number.NEGATIVE_INFINITY;
+          if(features[id].geometry.type === "Polygon") {
+            features[id].geometry.coordinates[0].forEach(function(pair) {
+              if (pair[0] < 0) {
+                minLog = Math.min(minLog, pair[0]);
+                maxLog = Math.max(maxLog, pair[0]);
+              }
+            });
+          } else if( features[id].geometry.type === "MultiPolygon") {
+            features[id].geometry.coordinates.forEach(function(array){
+              array[0].forEach(function(pair){
+                if (pair[0] < 0) {
+                  minLog = Math.min(minLog, pair[0]);
+                  maxLog = Math.max(maxLog, pair[0]);
+                }
+              });
+            });
+          }
+          features[id].properties["popUpLog"] = (maxLog + minLog) / 2;
+          features[id].properties["popUpLat"] = (maxLat + minLat) / 2;
+        }
       }
     }
     
@@ -321,8 +348,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     
     // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
-      if (leafletEvent)
+      if (leafletEvent){
+        $scope.map.closePopup();
         $scope.map.fitBounds(leafletEvent.target.getBounds());
+      }
+
     };
     
     // For randomize coordinates by bounding_box
@@ -356,6 +386,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
         $scope.bounds = $scope.map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         if ($scope.status.zoomLevel > 9) {
           $scope.resetGeoInfo("city");
           if ($scope.polygons.statePolygons) {
@@ -418,6 +449,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       // Original operations on dragend event
       if (!$scope.status.init) {
         $scope.bounds = $scope.map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         var geoData;
         if ($scope.status.logicLevel === "state") {
           geoData = $scope.geojsonData.state;

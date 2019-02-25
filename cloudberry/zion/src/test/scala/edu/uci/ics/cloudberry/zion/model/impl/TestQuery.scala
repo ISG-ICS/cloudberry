@@ -119,7 +119,8 @@ object TestQuery {
   val aggrAvg = AggregateStatement(id, Avg, Field.as(Avg(id), "avg"))
   val aggrPopulationMin = AggregateStatement(population, Min, Field.as(Min(population), "min"))
   val aggrAvgLangLen = AggregateStatement(langLen, Avg, Field.as(Avg(langLen), "avgLangLen"))
-
+  val aggrAvgSumLangLen = AggregateStatement(langLen, Sum, Field.as(Sum(langLen), "__sum__avgLangLen"))
+  val aggrAvgCountLangLen = AggregateStatement(langLen, Count, Field.as(Count(langLen), "__count__avgLangLen"))
 
   val groupPopulationSum = GroupStatement(
     bys = Seq(byState),
@@ -136,6 +137,7 @@ object TestQuery {
   val selectTagWithoutLimit = SelectStatement(Seq(count), Seq(SortOrder.DSC), Int.MaxValue, 0, Seq.empty)
   val selectAllOrderByTimeDesc = SelectStatement(Seq(createAt), Seq(SortOrder.DSC), 100, 0, Seq.empty)
   val selectCreateTimeByRange = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(createAt))
+  val select10Coordinates = SelectStatement(Seq.empty, Seq.empty, 10, 0, Seq(coordinate))
 
   val selectPopulation = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population))
   val selectPopulationLiteracy = SelectStatement(Seq.empty, Seq.empty, 0, 0, Seq(all, population, literacy))
@@ -1086,10 +1088,13 @@ object TestQuery {
 
   val twitterDataSetForSQL = TwitterDataStoreWithoutHashTag.DatasetName
   val twitterSchemaForSQL = TwitterDataStoreWithoutHashTag.TwitterSchemaForSQL
+  val twitterDataSetForOracle = TwitterDataStoreWithoutHashTagOracle.DatasetName
+  val twitterSchemaForOracle = TwitterDataStoreWithoutHashTagOracle.TwitterSchemaForOracle
   val twitterSchemaMapForSQL = Map(twitterDataSetForSQL -> twitterSchemaForSQL)
   val allSchemaMapForSQL = Map(twitterDataSetForSQL -> twitterSchemaForSQL)
   val byGeoState = ByStatement(geoStateID, None, Some(Field.as(geoStateID, "state")))
   val zikaCreateQueryForSQL = Query(twitterDataSetForSQL, filter = Seq(zikaFilter))
+  val zikaCreateQueryForOracle = Query(twitterDataSetForOracle,filter = Seq(zikaFilter))
   val groupPopulationSumForSQL = GroupStatement(
     bys = Seq(byGeoState),
     aggregates = Seq(AggregateStatement(population, Sum, Field.as(Sum(population), "sum")))

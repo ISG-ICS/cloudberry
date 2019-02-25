@@ -12,10 +12,19 @@ class QueryPlanner {
 
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): (Seq[Query], IMerger) = {
 
-    val matchedViews = views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
     //TODO currently only get the best one
-    val bestView = selectBestView(matchedViews)
+    val bestView = selectBestView(findMatchedViews(query, source, views))
     splitQuery(query, source, bestView)
+  }
+
+  // Return whether there is matched views for a query, and it is used by the ViewStatusClient
+  def requestViewForQuery(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Boolean = {
+    findMatchedViews(query, source, views).nonEmpty
+  }
+
+  // Find the matched views for a query
+  def findMatchedViews(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[DataSetInfo] = {
+    views.filter(view => view.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))
   }
 
   def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
@@ -274,6 +283,48 @@ object QueryPlanner {
 
   private def projectArray(jsArray: JsArray, project: Set[String]): JsArray = {
     JsArray(jsArray.value.map(obj => JsObject(obj.asInstanceOf[JsObject].fields.filter(e => project.contains(e._1)))))
+  }
+
+  // Handle avg function
+  def handleAvg(result:JsArray):JsValue =
+  {
+    // If result is empty, return immediately
+    if (result.value.isEmpty) {
+      return result
+    }
+
+    var mergedField: List[Array[String]] = List()
+    // Check whether this result contains "__count__[fieldName]" or "__sum__[fieldName]",
+    // and if yes, extract the field names to mergedField variable
+    val record = result.value(0).as[JsObject]
+    record.keys.foreach(field => {
+      if (field.startsWith("__count__") || field.startsWith("__sum__")) {
+        val realField = field.replaceAll("__sum__", "").replaceAll("__count__", "")
+        val newField = Array(realField, "__count__" + realField, "__sum__" + realField)
+        mergedField = newField +: mergedField
+      }
+    })
+
+    // No avg fields need to be merged, return immediately
+    if (mergedField.isEmpty) {
+      return result
+    }
+
+    //merge sum and count to avg
+    val handledRows = result.value.map(row => {
+      var outJson = row.toString()
+      mergedField.foreach(f => {
+        val count = (row \ f(1)).as[JsNumber]
+        val sum = (row \ f(2)).as[JsNumber]
+        val avg = (sum.toString().toDouble * 1.0 ) / count.toString().toDouble
+        //remove count
+        outJson =  outJson.replaceAll("\"" + f(1) + "\":" + count + ",", "")
+        //replace sum with avg
+        outJson =  outJson.replaceAll("\"" + f(2) + "\":" + sum, "\"" + f(0) + "\":" + avg)
+      })
+      Json.parse(outJson)
+    })
+    JsArray(handledRows)
   }
 
 }

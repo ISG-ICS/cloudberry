@@ -64,7 +64,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
       val initResult = Seq.fill(queryInfos.size)(JsArray())
       issueQueryGroup(interval, queryGroup)
       val drumEstimator = new Drum(boundary.toDuration.getStandardHours.toInt, alpha = 0.00001, minimumDuration.toHours.toInt)
-      context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now), discardOld = true)
+      context.become(askSlice(request.resultSizeLimitOpt, request.intervalMS, request.intervalMS, interval, drumEstimator, Int.MaxValue, boundary, queryGroup, initResult, issuedTimestamp = DateTime.now, request.returnDelta), discardOld = true)
     case _: MiniQueryResult =>
       // do nothing
       log.debug(s"receive: obsolete query result")
@@ -82,11 +82,17 @@ class ProgressiveSolver(val dataManager: ActorRef,
                        boundary: TInterval,
                        queryGroup: QueryGroup,
                        accumulateResults: Seq[JsArray],
-                       issuedTimestamp: DateTime): Receive = {
+                       issuedTimestamp: DateTime,
+                       returnDelta : Boolean): Receive = {
     case result: MiniQueryResult if result.key == ts =>
       val mergedResults = queryGroup.queries.zipWithIndex.map {
         case (q, idx) =>
-          q.merger(Seq(accumulateResults(idx), result.jsons(idx)))
+          if(returnDelta){
+            q.merger(Seq(result.jsons(idx)))
+          }
+          else {
+            q.merger(Seq(accumulateResults(idx), result.jsons(idx)))
+          }
       }
 
       val timeSpend = DateTime.now.getMillis - issuedTimestamp.getMillis
@@ -99,13 +105,21 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val limitResultOpt = resultSizeLimitOpt.map(limit => Seq(JsArray(mergedResults.head.value.take(limit))))
         val returnedResult = limitResultOpt.getOrElse(mergedResults)
 
+        // handle average results
+        val avgHandledResults = returnedResult.map(
+          mergedResult => {
+            QueryPlanner.handleAvg(mergedResult)
+          }
+        )
+
         val timeInterval = Json.obj(
           "timeInterval" -> Json.obj(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        val infoValue = queryGroup.postTransform.transform(JsArray(returnedResult))
+        val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResults))
+
         val results : JsValue = infoValue match {
           case _: JsArray =>
             Json.toJson(JsObject(Seq("value" -> infoValue)) ++ timeInterval)
@@ -115,7 +129,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         }
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, 1.0, results)
-        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done))
+        reporter ! Reporter.Fin(queryGroup.postTransform.transform(BerryClient.Done), returnDelta)
 
         queryGroup.queries.foreach(qinfo => suggestViews(qinfo.query))
         unstashAll() // in case there are new queries
@@ -127,13 +141,21 @@ class ProgressiveSolver(val dataManager: ActorRef,
           curInterval.withEnd(boundary.getEnd).toDurationMillis.toDouble / boundary.toDurationMillis
         }
 
+        // handle average results
+        val avgHandledResults = mergedResults.map(
+          mergedResult => {
+            QueryPlanner.handleAvg(mergedResult)
+          }
+        )
+
         val timeInterval = Json.obj(
           "timeInterval" -> Json.obj(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
             "end" -> JsNumber(boundary.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
-        val infoValue = queryGroup.postTransform.transform(JsArray(mergedResults))
+        val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResults))
+
         val results : JsValue = infoValue match {
           case _: JsArray =>
             Json.toJson(JsObject(Seq("value" -> infoValue)) ++ timeInterval)
@@ -144,14 +166,14 @@ class ProgressiveSolver(val dataManager: ActorRef,
 
         reporter ! Reporter.PartialResult(curInterval.getStartMillis, boundary.getEndMillis, progress, results)
         issueQueryGroup(nextInterval, queryGroup)
-        context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now), discardOld = true)
+        context.become(askSlice(resultSizeLimitOpt, paceMS, nextLimit, nextInterval, estimator, nextEstimateMS, boundary, queryGroup, mergedResults, DateTime.now, returnDelta), discardOld = true)
       }
     case result: MiniQueryResult =>
       log.debug(s"old result: $result")
     case _: SlicingRequest =>
       stash()
     case ProgressiveSolver.Cancel =>
-      reporter ! Reporter.Fin(JsNumber(0))
+      reporter ! Reporter.Fin(JsNumber(0), returnDelta)
       log.debug("askslice resceive cancel")
       unstashAll()
       context.become(receive, discardOld = true)
@@ -202,7 +224,7 @@ object ProgressiveSolver {
 
   case object Cancel
 
-  case class SlicingRequest(intervalMS: Long, resultSizeLimitOpt: Option[Int], queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform)
+  case class SlicingRequest(intervalMS: Long, resultSizeLimitOpt: Option[Int], queries: Seq[Query], infos: Map[String, DataSetInfo], postTransform: IPostTransform, returnDelta: Boolean)
 
   private case class MiniQueryResult(key: Long, queryGroup: QueryGroup, jsons: Seq[JsArray])
 
