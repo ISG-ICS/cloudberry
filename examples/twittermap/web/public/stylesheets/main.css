@@ -317,8 +317,8 @@ time-series {
 
 mapchoose {
   position: absolute;
-  left: 80%;
-  bottom: 0;
+  left: 5%;
+  top: 1.5%;
   background-color: white;
   opacity: 0.8;
   border-radius: 10px;
