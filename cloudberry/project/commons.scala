@@ -16,7 +16,6 @@ object Commons {
     javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
     resolvers ++= Seq(
       Opts.resolver.mavenLocalFile,
-      "Datanuleus" at "http://www.datanucleus.org/downloads/maven2/",
       "ossrh" at "https://oss.sonatype.org/content/repositories/releases"
     )
   )
