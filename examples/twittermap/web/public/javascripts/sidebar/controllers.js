@@ -297,8 +297,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       controller: "HashTagCtrl",
       template: [
         "<div id=\"AllCollapse\" class=\"hashtagDiv\">" +
-        "<div ng-repeat=\"r in hashTagsList | orderBy:\'-count\'\" class=\"accordion-toggle hashtagEle\"  data-toggle=\"collapse\"  data-target=\"#collapse{{r.tag}}\">" +
-        "<div class=\"row\"><div class=\"col-xs-8\"># {{r.tag}}</div><div class=\"col-xs-4\">{{r.count}}</div></div> " +
+        "<div ng-repeat=\"r in hashTagsList | orderBy:\'-count\'\" ng-class-odd=\"'striped'\" class=\"accordion-toggle hashtagEle\" aria-expanded=\"false\" data-toggle=\"collapse\"  data-target=\"#collapse{{r.tag}}\">" +
+        "<div class=\"row\"><div class=\"col-xs-8\"><a><span class=\"glyphicon glyphicon-triangle-right\"></span><span class=\"glyphicon glyphicon-triangle-bottom\"></span></a># {{r.tag}}</div><div class=\"col-xs-4\">{{r.count}}</div></div> " +
         "<div id=\"collapse{{r.tag}}\" class=\"collapse hashtagChart\"><canvas id=\"myChart{{r.tag}}\" height=\"130\" ></canvas></div>"+
         "</div>" +
         "</div>"
