@@ -105,13 +105,6 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       }
     });
 
-    function requestLiveCounts() {
-      if(ws.readyState === ws.OPEN){
-        ws.send(countRequest);
-      }
-    }
-    var myVar = setInterval(requestLiveCounts, 1000);
-
     function getLevel(level){
       switch(level){
         case "state" : return "stateID";
@@ -559,6 +552,12 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
 
     wsConn.done(function(pws) {
       ws = pws;
+      function requestLiveCounts() {
+        if(ws.readyState === ws.OPEN){
+          ws.send(countRequest);
+        }
+      }
+      setInterval(requestLiveCounts, 1000);
       ws.onmessage = function(event) {
         $timeout(function() {
           var result = JSONbig.parse(event.data);
