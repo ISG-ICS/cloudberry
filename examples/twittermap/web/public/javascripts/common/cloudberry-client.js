@@ -17,7 +17,7 @@
 angular.module("cloudberry.common")
   .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
 
-    var ws = new WebSocket(cloudberryConfig.ws);
+    var ws = new ReconnectingWebSocket(cloudberryConfig.ws);
 
     var waitForWS = function() {
       if (ws.readyState !== ws.OPEN) {

@@ -53,7 +53,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
     var defaultPinmapSamplingDayRange = parseInt(config.pinmapSamplingDayRange);
     var defaultPinmapLimit = parseInt(config.pinmapSamplingLimit);
-    var ws = new WebSocket(cloudberryConfig.ws);
+    var ws = new ReconnectingWebSocket(cloudberryConfig.ws);
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
     var geoIdsNotInCache = [];

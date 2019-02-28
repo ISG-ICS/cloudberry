@@ -31,7 +31,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.nowQueryID = null;
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
-    var wsCheckQuerySolvableByView = new WebSocket(cloudberryConfig.checkQuerySolvableByView);
+    var wsCheckQuerySolvableByView = new ReconnectingWebSocket(cloudberryConfig.checkQuerySolvableByView);
     
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
@@ -101,7 +101,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       });
     }
 
-    var LTSocket = new WebSocket("ws://"+window.location.host+"/liveTweets");
+    var LTSocket = new ReconnectingWebSocket("ws://"+window.location.host+"/liveTweets");
     /* fetchTweetFromAPI sends a query to twittermap server through websocket
      * to fetch recent tweets for liveTweet feature
      * @param msg{Object}, msg is the query send to twittermap server 
