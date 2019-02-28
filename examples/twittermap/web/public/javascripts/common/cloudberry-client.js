@@ -17,9 +17,9 @@
 angular.module("cloudberry.common")
   .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
 
-    var ws;
-
     var cloudberryClient = {
+
+      ws: {},
 
       queryToResultHandlerMap: {},
 
@@ -58,7 +58,7 @@ angular.module("cloudberry.common")
         if (!(queryCategory in cloudberryClient.queryToResultHandlerMap)) {
           cloudberryClient.queryToResultHandlerMap[queryCategory] = {};
         }
-        
+
         // The first time registering queryID inside queryCategory
         if (!(queryID in cloudberryClient.queryToResultHandlerMap[queryCategory])) {
           cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
@@ -109,11 +109,10 @@ angular.module("cloudberry.common")
     var wsConnection = cloudberryClient.connectWS(cloudberryConfig.ws);
 
     wsConnection.done(function (pws) {
-      ws = pws;
+      cloudberryClient.ws = pws;
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
-
-      ws.onmessage = function (event) {
+      cloudberryClient.ws.onmessage = function (event) {
         $timeout(function () {
           var result = JSONbig.parse(event.data);
           var category = result.category;
@@ -131,4 +130,5 @@ angular.module("cloudberry.common")
     });
 
     return cloudberryClient;
+
   });

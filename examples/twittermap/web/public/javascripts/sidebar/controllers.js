@@ -120,17 +120,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           }
         }
       }
-    });
 
-    /* fetchTweetFromAPI sends a query to twittermap server through websocket
-     * to fetch recent tweets for liveTweet feature
-     * @param msg{Object}, msg is the query send to twittermap server 
-     */
-    function fetchTweetFromAPI(query) {
-      if(LTSocket.readyState === LTSocket.OPEN){
+      /* fetchTweetFromAPI sends a query to twittermap server through websocket
+       * to fetch recent tweets for liveTweet feature
+       * @param msg{Object}, msg is the query send to twittermap server
+       */
+      $scope.fetchTweetFromAPI = function (query) {
+        if(LTSocket.readyState === LTSocket.OPEN){
           LTSocket.send(query);
+        }
       }
-    }
+    });
     
     function sendLiveTweetsQuery(sampleTweetSize) {
       var centerCoordinate = [cloudberry.parameters.bounds._southWest.lat,cloudberry.parameters.bounds._southWest.lng,cloudberry.parameters.bounds._northEast.lat,cloudberry.parameters.bounds._northEast.lng];
@@ -146,7 +146,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var timeLowerBound = tempDateTime.toISOString();
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       if (config.enableLiveTweet) {
-        fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
+        $scope.fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
         $scope.isSampleTweetsOutdated = false;
       }
       else {
