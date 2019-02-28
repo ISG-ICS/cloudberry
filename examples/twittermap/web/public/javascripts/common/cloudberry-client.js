@@ -17,46 +17,7 @@
 angular.module("cloudberry.common")
   .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
 
-    var ws = null;
-
-    function connectWS(url) {
-      console.log("[cloudberry-client] connecting to " + url);
-
-      try {
-        ws = new WebSocket(url);
-      }
-      catch(err) {
-        connectWS(url);
-      }
-
-      ws.onopen = function () {
-        console.log("[cloudberry-client] ws " + url + " connected...");
-      };
-
-      ws.onerror = function (err) {
-        console.log(err);
-        ws.close();
-      };
-
-      ws.onclose = function (e) {
-        setTimeout(function () {
-          connectWS(url);
-        }, 500);
-      };
-    }
-
-    connectWS(cloudberryConfig.ws);
-
-    var waitForWS = function() {
-      if (ws.readyState !== ws.OPEN) {
-        window.setTimeout(waitForWS, 1000);
-      }
-      else {
-        moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
-      }
-    };
-
-    waitForWS();
+    var ws;
 
     var cloudberryClient = {
 
@@ -116,25 +77,58 @@ angular.module("cloudberry.common")
         ws.send(request);
 
         return true;
+      },
+
+      connectWS(url) {
+        console.log("[cloudberry-client] connecting to " + url);
+
+        var deferred = new $.Deferred();
+        var ws = new WebSocket(url);
+
+        ws.onopen = function () {
+          console.log("[cloudberry-client] ws " + url + " connected...");
+          deferred.resolve(ws);
+        };
+
+        ws.onerror = function (err) {
+          console.log(err);
+          ws.close();
+        };
+
+        ws.onclose = function (e) {
+          setTimeout(function () {
+            cloudberryClient.connectWS(url);
+          }, 500);
+        };
+
+        return deferred.promise();
       }
 
     };
 
-    ws.onmessage = function(event) {
-      $timeout(function() {
-        var result = JSONbig.parse(event.data);
-        var category = result.category;
-        var id = result.id;
-        var timeInterval = JSON.stringify({
-          start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
-          end: new Date(cloudberry.parameters.timeInterval.end.getTime())
+    var wsConnection = cloudberryClient.connectWS(cloudberryConfig.ws);
+
+    wsConnection.done(function (pws) {
+      ws = pws;
+
+      moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
+
+      ws.onmessage = function (event) {
+        $timeout(function () {
+          var result = JSONbig.parse(event.data);
+          var category = result.category;
+          var id = result.id;
+          var timeInterval = JSON.stringify({
+            start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
+            end: new Date(cloudberry.parameters.timeInterval.end.getTime())
+          });
+          if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
+            timeInterval = result.timeInterval;
+          }
+          cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);
         });
-        if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
-          timeInterval = result.timeInterval;
-        }
-        cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);
-      });
-    };
+      };
+    });
 
     return cloudberryClient;
   });

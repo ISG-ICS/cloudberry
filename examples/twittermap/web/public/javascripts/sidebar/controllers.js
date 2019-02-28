@@ -31,32 +31,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.nowQueryID = null;
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
-    var wsCheckQuerySolvableByView = null;
-    function connectWSCheckQuerySolvableByView(url) {
-      console.log("[sidebar] connecting to " + url);
-      try {
-        wsCheckQuerySolvableByView = new WebSocket(url);
-      }
-      catch(err) {
-        connectWSCheckQuerySolvableByView(url);
-      }
-
-      wsCheckQuerySolvableByView.onopen = function () {
-        console.log("[sidebar] ws " + url + " connected...");
-      };
-
-      wsCheckQuerySolvableByView.onerror = function (err) {
-        console.log(err);
-        wsCheckQuerySolvableByView.close();
-      };
-
-      wsCheckQuerySolvableByView.onclose = function (e) {
-        setTimeout(function () {
-          connectWSCheckQuerySolvableByView(url);
-        }, 500);
-      };
-    }
-    connectWSCheckQuerySolvableByView(cloudberryConfig.checkQuerySolvableByView);
+    var wsCheckQuerySolvableByView;
+    var wsCheckQuerySolvableByViewConn = cloudberryClient.connectWS(cloudberryConfig.checkQuerySolvableByView);
     
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
@@ -81,15 +57,19 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // When receiving messages from websocket, check its queryID and result.
     // If queryID is matched and result is true, enable the sidebar button and clear timer.
-    wsCheckQuerySolvableByView.onmessage = function(event) {
-      $timeout(function() {
-        var result = JSON.parse(event.data);
-        if (result.id === $scope.nowQueryID && result.value[0]) {
-          clearInterval($scope.timerCheckQuerySolvableByView);
-          enableHashtagButton();
-        }
-      });
-    };
+    wsCheckQuerySolvableByViewConn.done(function(pws) {
+      wsCheckQuerySolvableByView = pws;
+      wsCheckQuerySolvableByView.onmessage = function(event) {
+        $timeout(function() {
+          var result = JSON.parse(event.data);
+          if (result.id === $scope.nowQueryID && result.value[0]) {
+            clearInterval($scope.timerCheckQuerySolvableByView);
+            enableHashtagButton();
+          }
+        });
+      };
+    });
+
 
     // Set a timer to sending query to check whether it is solvable, every one second
     function setTimerToCheckQuery() {
@@ -126,50 +106,29 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       });
     }
 
-    var LTSocket = null;
-    function connectLTSocket(url) {
-      console.log("[sideber] connecting to " + url);
-      try {
-        LTSocket = new WebSocket(url);
+    var LTSocket;
+    var LTSocketConn = cloudberryClient.connectWS("ws://"+window.location.host+"/liveTweets");
+    LTSocketConn.done(function(pws) {
+      LTSocket = pws;
+      LTSocket.onmessage = function(event){
+        let tweets = JSON.parse(event.data);
+        for (var i = 0 ; i<tweets.length; i++ )
+        {
+          if (!liveTweetSet.has(tweets[i]["id"])){
+            liveTweetsQueue.push(tweets[i]);
+            liveTweetSet.add(tweets[i]["id"]);
+          }
+        }
       }
-      catch(err) {
-        connectLTSocket(url);
-      }
+    });
 
-      LTSocket.onopen = function () {
-        console.log("[sidebar] ws " + url + " connected...");
-      };
-
-      LTSocket.onerror = function (err) {
-        console.log(err);
-        LTSocket.close();
-      };
-
-      LTSocket.onclose = function (e) {
-        setTimeout(function () {
-          connectLTSocket(url);
-        }, 500);
-      };
-    }
-    connectLTSocket("ws://"+window.location.host+"/liveTweets");
     /* fetchTweetFromAPI sends a query to twittermap server through websocket
      * to fetch recent tweets for liveTweet feature
      * @param msg{Object}, msg is the query send to twittermap server 
      */
     function fetchTweetFromAPI(query) {
-
       if(LTSocket.readyState === LTSocket.OPEN){
           LTSocket.send(query);
-      }
-      LTSocket.onmessage = function(event){
-        let tweets = JSON.parse(event.data);
-        for (var i = 0 ; i<tweets.length; i++ )
-        {
-            if (!liveTweetSet.has(tweets[i]["id"])){
-                liveTweetsQueue.push(tweets[i]);
-                liveTweetSet.add(tweets[i]["id"]);
-            }
-        }
       }
     }
     
