@@ -55,7 +55,14 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     var defaultPinmapLimit = parseInt(config.pinmapSamplingLimit);
     function connectWS(url) {
       console.log("[cloudberry] connecting to " + url);
-      var ws = new WebSocket(url);
+
+      var ws = null;
+      try {
+        ws = new WebSocket(url);
+      }
+      catch(err) {
+        connectWS(url);
+      }
 
       ws.onopen = function () {
         console.log("[cloudberry] ws " + url + " connected...");
