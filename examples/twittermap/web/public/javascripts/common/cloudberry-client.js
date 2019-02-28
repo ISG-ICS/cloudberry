@@ -53,13 +53,13 @@ angular.module("cloudberry.common")
       }
 
       // The first time registering queryCategory
-      if (!(queryCategory in cloudberryClient.queryToResultHandlerMap)) {
-        cloudberryClient.queryToResultHandlerMap[queryCategory] = {};
+      if (!(queryCategory in queryToResultHandlerMap)) {
+        queryToResultHandlerMap[queryCategory] = {};
       }
 
       // The first time registering queryID inside queryCategory
-      if (!(queryID in cloudberryClient.queryToResultHandlerMap[queryCategory])) {
-        cloudberryClient.queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
+      if (!(queryID in queryToResultHandlerMap[queryCategory])) {
+        queryToResultHandlerMap[queryCategory][queryID] = resultHandler;
       }
 
       // Add "transform" attribute to the query JSON
@@ -95,14 +95,14 @@ angular.module("cloudberry.common")
 
       lws.onclose = function (e) {
         setTimeout(function () {
-          cloudberryClient.connectWS(url);
+          connectWS(url);
         }, 500);
       };
 
       return deferred.promise();
     };
 
-    var wsConnection = cloudberryClient.connectWS(cloudberryConfig.ws);
+    var wsConnection = connectWS(cloudberryConfig.ws);
 
     wsConnection.done(function (pws) {
       ws = pws;
@@ -121,7 +121,7 @@ angular.module("cloudberry.common")
           if (typeof result.timeInterval !== "undefined" && result.timeInterval !== null) {
             timeInterval = result.timeInterval;
           }
-          cloudberryClient.queryToResultHandlerMap[category][id](id, result.value, timeInterval);
+          queryToResultHandlerMap[category][id](id, result.value, timeInterval);
         });
       };
     });
