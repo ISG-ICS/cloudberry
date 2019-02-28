@@ -17,9 +17,9 @@
 angular.module("cloudberry.common")
   .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
 
-    var cloudberryClient = {
+    var ws;
 
-      ws: {},
+    var cloudberryClient = {
 
       queryToResultHandlerMap: {},
 
@@ -41,7 +41,7 @@ angular.module("cloudberry.common")
         var queryCategory = category;
         var queryID = "defaultID";
 
-        if (cloudberryClient.ws.readyState !== cloudberryClient.ws.OPEN) {
+        if (ws.readyState !== ws.OPEN) {
           return false;
         }
 
@@ -74,7 +74,7 @@ angular.module("cloudberry.common")
 
         var request = JSON.stringify(query);
 
-        cloudberryClient.ws.send(request);
+        ws.send(request);
 
         return true;
       },
@@ -83,19 +83,19 @@ angular.module("cloudberry.common")
         console.log("[cloudberry-client] connecting to " + url);
 
         var deferred = new $.Deferred();
-        var ws = new WebSocket(url);
+        var lws = new WebSocket(url);
 
-        ws.onopen = function () {
+        lws.onopen = function () {
           console.log("[cloudberry-client] ws " + url + " connected...");
-          deferred.resolve(ws);
+          deferred.resolve(lws);
         };
 
-        ws.onerror = function (err) {
+        lws.onerror = function (err) {
           console.log(err);
-          ws.close();
+          lws.close();
         };
 
-        ws.onclose = function (e) {
+        lws.onclose = function (e) {
           setTimeout(function () {
             cloudberryClient.connectWS(url);
           }, 500);
@@ -109,10 +109,11 @@ angular.module("cloudberry.common")
     var wsConnection = cloudberryClient.connectWS(cloudberryConfig.ws);
 
     wsConnection.done(function (pws) {
-      cloudberryClient.ws = pws;
+      ws = pws;
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
-      cloudberryClient.ws.onmessage = function (event) {
+
+      ws.onmessage = function (event) {
         $timeout(function () {
           var result = JSONbig.parse(event.data);
           var category = result.category;
