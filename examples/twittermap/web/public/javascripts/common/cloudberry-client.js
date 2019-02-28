@@ -41,7 +41,7 @@ angular.module("cloudberry.common")
         var queryCategory = category;
         var queryID = "defaultID";
 
-        if (ws.readyState !== ws.OPEN) {
+        if (cloudberryClient.ws.readyState !== cloudberryClient.ws.OPEN) {
           return false;
         }
 
@@ -74,7 +74,7 @@ angular.module("cloudberry.common")
 
         var request = JSON.stringify(query);
 
-        ws.send(request);
+        cloudberryClient.ws.send(request);
 
         return true;
       },
