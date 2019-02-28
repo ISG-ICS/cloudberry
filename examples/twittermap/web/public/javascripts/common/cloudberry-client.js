@@ -17,6 +17,47 @@
 angular.module("cloudberry.common")
   .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
 
+    var ws = null;
+
+    function connectWS(url) {
+      console.log("[cloudberry-client] connecting to " + url);
+
+      try {
+        ws = new WebSocket(url);
+      }
+      catch(err) {
+        connectWS(url);
+      }
+
+      ws.onopen = function () {
+        console.log("[cloudberry-client] ws " + url + " connected...");
+      };
+
+      ws.onerror = function (err) {
+        console.log(err);
+        ws.close();
+      };
+
+      ws.onclose = function (e) {
+        setTimeout(function () {
+          connectWS(url);
+        }, 500);
+      };
+    }
+
+    connectWS(cloudberryConfig.ws);
+
+    var waitForWS = function() {
+      if (ws.readyState !== ws.OPEN) {
+        window.setTimeout(waitForWS, 1000);
+      }
+      else {
+        moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
+      }
+    };
+
+    waitForWS();
+
     var cloudberryClient = {
 
       queryToResultHandlerMap: {},
@@ -75,51 +116,9 @@ angular.module("cloudberry.common")
         ws.send(request);
 
         return true;
-      },
-
-      connectWS(url) {
-        console.log("[cloudberry-client] connecting to " + url);
-
-        var ws = null;
-        try {
-          ws = new WebSocket(url);
-        }
-        catch(err) {
-          cloudberryClient.connectWS(url);
-        }
-
-        ws.onopen = function () {
-          console.log("[cloudberry-client] ws " + url + " connected...");
-        };
-
-        ws.onerror = function (err) {
-          console.log(err);
-          ws.close();
-        };
-
-        ws.onclose = function (e) {
-          setTimeout(function () {
-            cloudberryClient.connectWS(url);
-          }, 1000);
-        };
-
-        return ws;
       }
 
     };
-
-    var ws = cloudberryClient.connectWS(cloudberryConfig.ws);
-
-    var waitForWS = function() {
-      if (ws.readyState !== ws.OPEN) {
-        window.setTimeout(waitForWS, 1000);
-      }
-      else {
-        moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
-      }
-    };
-
-    waitForWS();
 
     ws.onmessage = function(event) {
       $timeout(function() {

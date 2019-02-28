@@ -31,7 +31,32 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.nowQueryID = null;
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
-    var wsCheckQuerySolvableByView = cloudberryClient.connectWS(cloudberryConfig.checkQuerySolvableByView);
+    var wsCheckQuerySolvableByView = null;
+    function connectWSCheckQuerySolvableByView(url) {
+      console.log("[sidebar] connecting to " + url);
+      try {
+        wsCheckQuerySolvableByView = new WebSocket(url);
+      }
+      catch(err) {
+        connectWSCheckQuerySolvableByView(url);
+      }
+
+      wsCheckQuerySolvableByView.onopen = function () {
+        console.log("[sidebar] ws " + url + " connected...");
+      };
+
+      wsCheckQuerySolvableByView.onerror = function (err) {
+        console.log(err);
+        wsCheckQuerySolvableByView.close();
+      };
+
+      wsCheckQuerySolvableByView.onclose = function (e) {
+        setTimeout(function () {
+          connectWSCheckQuerySolvableByView(url);
+        }, 500);
+      };
+    }
+    connectWSCheckQuerySolvableByView(cloudberryConfig.checkQuerySolvableByView);
     
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
@@ -101,7 +126,32 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       });
     }
 
-    var LTSocket = cloudberryClient.connectWS("ws://"+window.location.host+"/liveTweets");
+    var LTSocket = null;
+    function connectLTSocket(url) {
+      console.log("[sideber] connecting to " + url);
+      try {
+        LTSocket = new WebSocket(url);
+      }
+      catch(err) {
+        connectLTSocket(url);
+      }
+
+      LTSocket.onopen = function () {
+        console.log("[sidebar] ws " + url + " connected...");
+      };
+
+      LTSocket.onerror = function (err) {
+        console.log(err);
+        LTSocket.close();
+      };
+
+      LTSocket.onclose = function (e) {
+        setTimeout(function () {
+          connectLTSocket(url);
+        }, 500);
+      };
+    }
+    connectLTSocket("ws://"+window.location.host+"/liveTweets");
     /* fetchTweetFromAPI sends a query to twittermap server through websocket
      * to fetch recent tweets for liveTweet feature
      * @param msg{Object}, msg is the query send to twittermap server 
