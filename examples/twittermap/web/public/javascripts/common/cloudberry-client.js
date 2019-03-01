@@ -85,22 +85,23 @@ angular.module("cloudberry.common")
       var lws = null;
 
       function connect(url) {
-        console.log("[cloudberry-client] connecting to " + url);
 
         lws = new WebSocket(url);
 
         lws.onopen = function () {
-          console.log("[cloudberry-client] ws " + url + " connected...");
+          console.log("[cloudberry-client] connecting to [" + url + "] succeed!");
           deferred.resolve(lws);
         };
 
         lws.onerror = function (err) {
-          console.log(err);
+          console.log("[cloudberry-client] connecting to [" + url + "] fail!");
           lws.close();
         };
 
         lws.onclose = function (e) {
+          console.log("[cloudberry-client] will reconnect to [" + url + "] in 500 ms.");
           setTimeout(function () {
+            console.log("[cloudberry-client] reconnecting to [" + url + "] ...");
             connect(url);
           }, 500);
         };

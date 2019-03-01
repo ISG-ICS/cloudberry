@@ -30,10 +30,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     // queryID used to identify a query, which is sent by timer
     $scope.nowQueryID = null;
 
-    // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
-    var wsCheckQuerySolvableByView;
-    var wsCheckQuerySolvableByViewConn = cloudberryClient.connectWS(cloudberryConfig.checkQuerySolvableByView);
-    
     //Function for the button for close the sidebar, and change the flags
     $scope.closeRightMenu = function() {
       document.getElementById("sidebar").style.left = "100%";
@@ -55,10 +51,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $("#Hashtag").addClass("disableHashtag");
     }
 
-    // When receiving messages from websocket, check its queryID and result.
-    // If queryID is matched and result is true, enable the sidebar button and clear timer.
-    wsCheckQuerySolvableByViewConn.done(function(pws) {
+    // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
+    var wsCheckQuerySolvableByView;
+    cloudberryClient.connectWS(cloudberryConfig.checkQuerySolvableByView).done(function(pws) {
       wsCheckQuerySolvableByView = pws;
+
+      // When receiving messages from websocket, check its queryID and result.
+      // If queryID is matched and result is true, enable the sidebar button and clear timer.
       wsCheckQuerySolvableByView.onmessage = function(event) {
         $timeout(function() {
           var result = JSON.parse(event.data);
@@ -68,27 +67,26 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           }
         });
       };
-    });
 
+      // Set a timer to sending query to check whether it is solvable, every one second
+      $scope.setTimerToCheckQuery = function() {
+        var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
 
-    // Set a timer to sending query to check whether it is solvable, every one second
-    function setTimerToCheckQuery() {
-      var queryToCheck = queryUtil.getHashTagRequest(cloudberry.parameters);
-
-      // Add the queryID for a query in to request
-      queryToCheck["transform"] = {
-        wrap: {
-          id: cloudberry.parameters.keywords.toString(),
-          category: "checkQuerySolvableByView"
-        }
+        // Add the queryID for a query in to request
+        queryToCheck["transform"] = {
+          wrap: {
+            id: cloudberry.parameters.keywords.toString(),
+            category: "checkQuerySolvableByView"
+          }
+        };
+        $scope.nowQueryID = cloudberry.parameters.keywords.toString();
+        $scope.timerCheckQuerySolvableByView = setInterval(function () {
+          if (wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN) {
+            wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
+          }
+        }, 1000);
       };
-      $scope.nowQueryID = cloudberry.parameters.keywords.toString();
-      $scope.timerCheckQuerySolvableByView = setInterval(function(){
-        if(wsCheckQuerySolvableByView.readyState === wsCheckQuerySolvableByView.OPEN){
-          wsCheckQuerySolvableByView.send(JSON.stringify(queryToCheck));
-        }
-      }, 1000);
-    }
+    });
 
     function sendHashTagQuery() {
       var hashtagRequest = queryUtil.getHashTagRequest(cloudberry.parameters);
@@ -107,9 +105,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     var LTSocket;
-    var LTSocketConn = cloudberryClient.connectWS("ws://"+window.location.host+"/liveTweets");
-    LTSocketConn.done(function(pws) {
+    cloudberryClient.connectWS("ws://"+window.location.host+"/liveTweets").done(function(pws) {
       LTSocket = pws;
+
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
         for (var i = 0 ; i<tweets.length; i++ )
@@ -119,7 +117,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             liveTweetSet.add(tweets[i]["id"]);
           }
         }
-      }
+      };
 
       /* fetchTweetFromAPI sends a query to twittermap server through websocket
        * to fetch recent tweets for liveTweet feature
@@ -258,7 +256,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         clearInterval($scope.timerCheckQuerySolvableByView);
       }
 
-      setTimerToCheckQuery();
+      $scope.setTimerToCheckQuery();
       disableHashtagButton();
       $scope.openRightMenu();
       $scope.isHashTagOutdated = true;
