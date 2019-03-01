@@ -77,7 +77,7 @@ angular.module("cloudberry.common")
       return true;
     };
 
-    this.connectWS = function(url) {
+    function connect(url) {
       console.log("[cloudberry-client] connecting to " + url);
 
       var deferred = new $.Deferred();
@@ -95,11 +95,15 @@ angular.module("cloudberry.common")
 
       lws.onclose = function (e) {
         setTimeout(function () {
-          this.connectWS(url);
+          connect(url);
         }, 500);
       };
 
       return deferred.promise();
+    }
+
+    this.connectWS = function(url) {
+      return connect(url);
     };
 
     var wsConnection = this.connectWS(cloudberryConfig.ws);
