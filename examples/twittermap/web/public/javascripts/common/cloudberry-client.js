@@ -39,8 +39,6 @@ angular.module("cloudberry.common")
       var queryCategory = category;
       var queryID = "defaultID";
 
-      console.log("[send] ws = " + ws);
-
       if (ws.readyState !== ws.OPEN) {
         return false;
       }
