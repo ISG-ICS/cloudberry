@@ -79,36 +79,35 @@ angular.module("cloudberry.common")
       return true;
     };
 
-    function connect(url) {
-      console.log("[cloudberry-client] connecting to " + url);
-
-      var deferred = new $.Deferred();
-      var lws = new WebSocket(url);
-
-      lws.onopen = function () {
-        console.log("[cloudberry-client] ws " + url + " connected...");
-        deferred.resolve(lws);
-      };
-
-      lws.onerror = function (err) {
-        console.log(err);
-        lws.close();
-      };
-
-      lws.onclose = function (e) {
-        setTimeout(function () {
-          connect(url);
-        }, 500);
-      };
-
-      return deferred.promise();
-    }
-
     this.connectWS = function(url) {
+
       var deferred = new $.Deferred();
-      connect(url).done(function(pws) {
-        deferred.resolve(pws);
-      });
+      var lws = null;
+
+      function connect(url) {
+        console.log("[cloudberry-client] connecting to " + url);
+
+        lws = new WebSocket(url);
+
+        lws.onopen = function () {
+          console.log("[cloudberry-client] ws " + url + " connected...");
+          deferred.resolve(lws);
+        };
+
+        lws.onerror = function (err) {
+          console.log(err);
+          lws.close();
+        };
+
+        lws.onclose = function (e) {
+          setTimeout(function () {
+            connect(url);
+          }, 500);
+        };
+      }
+
+      connect(url);
+
       return deferred.promise();
     };
 
