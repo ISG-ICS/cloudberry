@@ -95,14 +95,14 @@ angular.module("cloudberry.common")
 
       lws.onclose = function (e) {
         setTimeout(function () {
-          connectWS(url);
+          this.connectWS(url);
         }, 500);
       };
 
       return deferred.promise();
     };
 
-    var wsConnection = connectWS(cloudberryConfig.ws);
+    var wsConnection = this.connectWS(cloudberryConfig.ws);
 
     wsConnection.done(function (pws) {
       ws = pws;
