@@ -72,6 +72,12 @@ angular.module("cloudberry.common")
 
       var request = JSON.stringify(query);
 
+      // Special operation only for individual pin look up query,
+      // change id from string to int64
+      if (category === "pinResult") {
+        request = request.replace(/"(\d+)"/,"[$1]");
+      }
+
       ws.send(request);
 
       return true;

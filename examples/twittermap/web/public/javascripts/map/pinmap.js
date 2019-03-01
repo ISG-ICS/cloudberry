@@ -328,7 +328,7 @@ angular.module("cloudberry.map")
               filter: [{
                 field: "id",
                 relation: "=",
-                values: pointID
+                values: "" + pointID
               }],
               select:{
                 order: ["-create_at"],
