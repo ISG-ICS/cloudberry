@@ -39,6 +39,8 @@ angular.module("cloudberry.common")
       var queryCategory = category;
       var queryID = "defaultID";
 
+      console.log("[send] ws = " + ws);
+
       if (ws.readyState !== ws.OPEN) {
         return false;
       }
@@ -103,7 +105,11 @@ angular.module("cloudberry.common")
     }
 
     this.connectWS = function(url) {
-      return connect(url);
+      var deferred = new $.Deferred();
+      connect(url).done(function(pws) {
+        deferred.resolve(pws);
+      });
+      return deferred.promise();
     };
 
     var wsConnection = this.connectWS(cloudberryConfig.ws);
@@ -111,6 +117,7 @@ angular.module("cloudberry.common")
     wsConnection.done(function (pws) {
       ws = pws;
 
+      console.log("connection done.  ws = " + ws);
       moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
 
       ws.onmessage = function (event) {
