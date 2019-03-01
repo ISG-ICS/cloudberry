@@ -1,5 +1,5 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
-  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry, cloudberryClient) {
+  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry, cloudberryClient, moduleManager) {
     $scope.ndx = null;
     $scope.result = {};
     $scope.resultArray = [];
@@ -60,19 +60,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       }
     );
 
-    // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
-    // $scope.$watch(
-    //   function () {
-    //     return cloudberry.commonTotalCount;
-    //   },
-    //
-    //   function (newCount) {
-    //     if(newCount) {
-    //       $scope.totalCount = newCount;
-    //     }
-    //   }
-    // );
-
     // send total count request periodically
     $scope.totalCountJson = {
       dataset: "twitter.ds_tweet",
@@ -99,7 +86,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       }, "totalCountResult");
     };
 
-    setInterval($scope.sendTotalCountQuery, 1000);
+    var onWSReady = function(event) {
+      setInterval($scope.sendTotalCountQuery, 1000);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+    };
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
 
   })
   .directive('timeSeries', function (cloudberry, moduleManager) {
