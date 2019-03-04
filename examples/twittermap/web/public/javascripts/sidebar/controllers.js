@@ -45,12 +45,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.showOrHideSidebar(1);
     };
 
-    function enableHamburgerButton() {
-      document.getElementById("hamburgerButton").disabled = false;
+
+    function enableHashtagButton() {
+      $("#Hashtag").removeClass("disableHashtag");
     }
 
-    function disableHamburgerButton() {
-      document.getElementById("hamburgerButton").disabled = true;
+    function disableHashtagButton() {
+      $("#Hashtag").addClass("disableHashtag");
     }
 
     // When receiving messages from websocket, check its queryID and result.
@@ -60,7 +61,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         var result = JSON.parse(event.data);
         if (result.id === $scope.nowQueryID && result.value[0]) {
           clearInterval($scope.timerCheckQuerySolvableByView);
-          enableHamburgerButton();
+          enableHashtagButton();
         }
       });
     };
@@ -232,6 +233,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     };
 
+
+
     function eventHandler(event) {
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
@@ -245,14 +248,15 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       if($scope.timerCheckQuerySolvableByView) {
         clearInterval($scope.timerCheckQuerySolvableByView);
       }
-      
+
       setTimerToCheckQuery();
-      $scope.closeRightMenu();
-      disableHamburgerButton();
+      disableHashtagButton();
+      $scope.openRightMenu();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
       handleSidebarQuery();
     }
+
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
@@ -293,8 +297,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       controller: "HashTagCtrl",
       template: [
         "<div id=\"AllCollapse\" class=\"hashtagDiv\">" +
-        "<div ng-repeat=\"r in hashTagsList | orderBy:\'-count\'\" class=\"accordion-toggle hashtagEle\"  data-toggle=\"collapse\"  data-target=\"#collapse{{r.tag}}\">" +
-        "<div class=\"row\"><div class=\"col-xs-8\"># {{r.tag}}</div><div class=\"col-xs-4\">{{r.count}}</div></div> " +
+        "<div ng-repeat=\"r in hashTagsList | orderBy:\'-count\'\" ng-class-odd=\"'striped'\" class=\"accordion-toggle hashtagEle\" aria-expanded=\"false\" data-toggle=\"collapse\"  data-target=\"#collapse{{r.tag}}\">" +
+        "<div class=\"row\"><div class=\"col-xs-8\"><a><span class=\"glyphicon glyphicon-triangle-right\"></span><span class=\"glyphicon glyphicon-triangle-bottom\"></span></a># {{r.tag}}</div><div class=\"col-xs-4\">{{r.count}}</div></div> " +
         "<div id=\"collapse{{r.tag}}\" class=\"collapse hashtagChart\"><canvas id=\"myChart{{r.tag}}\" height=\"130\" ></canvas></div>"+
         "</div>" +
         "</div>"
