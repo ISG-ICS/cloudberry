@@ -1,18 +1,10 @@
 /**
  * cloudberryClient - A service of AngularJS
  *  This service provides a common interface for modules to send a JSON query to Cloudberry.
- *  It provides 1 API function:
+ *  It provides 2 API functions:
  *   - send(query, resultHandler, category, id)
- *  Example:
- *  In "heatmap.js":
- *      function sendHeatmapQuery() {
- *        var heatJson = { JSON query in Cloudberry's format };
- *        cloudberryClient.send(heatJson, function(id, resultSet, timeInterval){
- *          ...
- *          cloudberry.heatmapMapResult = resultSet[0];
- *        }, "heatMapResult");
- *        ...
- *      }
+ *   - newWebSocket(url)
+ *  For usage information and examples, refer to the comments of the functions.
  */
 angular.module("cloudberry.common")
   .service("cloudberryClient", function($timeout, cloudberry, cloudberryConfig, moduleManager) {
@@ -23,6 +15,17 @@ angular.module("cloudberry.common")
 
     /**
      * send a query to Cloudberry
+     *
+     * Example:
+     *  In "heatmap.js":
+     *      function sendHeatmapQuery() {
+     *        var heatJson = { JSON query in Cloudberry's format };
+     *        cloudberryClient.send(heatJson, function(id, resultSet, timeInterval){
+     *          ...
+     *          cloudberry.heatmapMapResult = resultSet[0];
+     *        }, "heatMapResult");
+     *        ...
+     *      }
      *
      * @param query JSON object, query JSON for Cloudberry
      * @param resultHandler function, callback function(id, resultSet, timeInterval),
@@ -83,7 +86,36 @@ angular.module("cloudberry.common")
       return true;
     };
 
-    this.connectWS = function(url) {
+    /**
+     * new a WebSocket
+     *
+     * This interface is for create a new WebSocket for your module that
+     * wants to talk to other than Cloudberry's query entry point
+     * provided by this cloudberryClient service by default.
+     *
+     * Example:
+     *   // Handle to the new websocket instance
+     *   var ws;
+     *   // Use this interface to create a new websocket instance
+     *   var wsConn = cloudberryClient.newWebSocket("ws://"+window.location.host+"/liveTweets");
+     *   // Do anything to the websocket in the .done() callback function
+     *   // This will make sure the instance you got is connected and referable
+     *   wsConn.done(function(pws) {
+     *     // Assign the handle to the websocket instance from the parameter in callback function
+     *     ws = pws;
+     *     // Add your own onmessage listener to the websocket instance
+     *     ws.onmessage = function(event) {
+     *       //handle the results received from this websocket
+     *     };
+     *   });
+     *
+     * @param url full url for the WebSocket
+     *
+     * @returns handle to deferred.promise()
+     *            use this handle's done(callback(pws)) function to
+     *            get the handle to the new websocket instance
+     */
+    this.newWebSocket = function(url) {
 
       var deferred = new $.Deferred();
       var lws = null;
@@ -116,7 +148,8 @@ angular.module("cloudberry.common")
       return deferred.promise();
     };
 
-    var wsConnection = this.connectWS(cloudberryConfig.ws);
+    // Create a native websocket connection used by this client's send interface
+    var wsConnection = this.newWebSocket(cloudberryConfig.ws);
 
     wsConnection.done(function (pws) {
       ws = pws;

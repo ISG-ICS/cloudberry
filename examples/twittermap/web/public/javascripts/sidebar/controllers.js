@@ -53,7 +53,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView;
-    cloudberryClient.connectWS(cloudberryConfig.checkQuerySolvableByView).done(function(pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.checkQuerySolvableByView).done(function(pws) {
       wsCheckQuerySolvableByView = pws;
 
       // When receiving messages from websocket, check its queryID and result.
@@ -105,7 +105,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     }
 
     var LTSocket;
-    cloudberryClient.connectWS("ws://"+window.location.host+"/liveTweets").done(function(pws) {
+    cloudberryClient.newWebSocket("ws://"+window.location.host+"/liveTweets").done(function(pws) {
       LTSocket = pws;
 
       LTSocket.onmessage = function(event){
