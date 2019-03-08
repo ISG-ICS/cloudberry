@@ -213,8 +213,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         startLiveTweetsConsumer();
         startLiveTweetsProducer();
       }
-        
-        
     }
   
     $scope.showTab = function(tab) {
