@@ -54,7 +54,6 @@ angular.module("cloudberry.map")
       });
     }
 
-    $scope.livePinLayer = L.layerGroup();
 
     // Send query to cloudberry
     function sendPinmapQuery() {
@@ -129,9 +128,6 @@ angular.module("cloudberry.map")
 
     // Common event handler for Countmap
     function pinMapCommonEventHandler(event) {
-        $scope.livePinLayer.eachLayer(m=>{
-          $scope.map.removeLayer(m);
-        })
         sendPinmapQuery();
     }
 
@@ -148,9 +144,6 @@ angular.module("cloudberry.map")
         $scope.currentMarker = null;
       }
 
-      $scope.livePinLayer.eachLayer((m) => {
-        $scope.map.removeLayer(m);
-      });
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, pinMapCommonEventHandler);
@@ -421,15 +414,11 @@ angular.module("cloudberry.map")
           var mark = L.marker([coordinate[0], coordinate[1]], {icon: firefoxIcon});
           mark.addTo($scope.map);
           markList.push(mark);
-          var tweetContent = $scope.translateTweetDataToShow(tweet);
-          $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-          $scope.popUpTweet.setContent(tweetContent);
-          var mark2 = L.circleMarker([coordinate[0], coordinate[1]], pinStyle).bindPopup($scope.popUpTweet);
-
-          $scope.livePinLayer.addLayer(mark2).addTo($scope.map);
+          var deltaPin = [coordinate[0], coordinate[1],tweet["id"]]
           setTimeout(function()
           {
-              markList.forEach( (m) => $scope.map.removeLayer(m));
+            markList.forEach( (m) => $scope.map.removeLayer(m));
+            $scope.pointsLayer.appendData(deltaPin);
           },10000);
 
       }
