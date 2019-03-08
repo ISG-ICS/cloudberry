@@ -3,6 +3,27 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                                   cloudberryConfig, Cache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
+  
+    // add an alert window for gecko-based browsers like Firefox
+    // refer to Leaflet documentation: https://leafletjs.com/reference-1.0.2.html#browser
+    // L.Browser.gecko: true for gecko-based browsers like Firefox.
+    // L.Browser.gecko3d: true for gecko-based browsers supporting CSS transforms.
+    if (L.Browser.gecko || L.Browser.gecko3d) {
+      var alertDiv = document.getElementsByTagName("alert-bar")[0];
+      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
+      div.innerHTML = [
+        '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
+        '<p>TwitterMap currently doesn\'t support time series chart on Firefox.</p>',
+        '<p>To enable live tweets, make sure to go to <a href="about:config?filter=privacy.trackingprotection.enabled">about:config</a> and change the value of <code>privacy.trackingprotection.enabled</code> to false.</p>'
+      ].join('');
+      div.style.position = 'absolute';
+      div.style.top = '0%';
+      div.style.width = '100%';
+      div.style.zIndex = '9999';
+      div.style.fontSize = '23px';
+      alertDiv.appendChild(div);
+    }
+  
     // add an alert bar of IE
     if (L.Browser.ie) {
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
