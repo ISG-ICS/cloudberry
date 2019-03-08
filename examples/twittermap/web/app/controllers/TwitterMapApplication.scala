@@ -33,7 +33,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
   val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
-  val cloudberryLiveTweet: String = config.getString("cloudberry.liveTweet").getOrElse("ws://localhost:9001/liveTweets")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -143,7 +142,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
         val resultType = twitter4j.Query.ResultType.recent
         query.setQuery(queryWords)
-        query.setCount(100)
+        query.setCount(100)  //Let's set Count to maximum value that search API allowed
         query.setResultType(resultType)
         query.setGeoCode(centerLoc,radius,unit)
         val tweetsResult = twitterAPI.search(query).getTweets

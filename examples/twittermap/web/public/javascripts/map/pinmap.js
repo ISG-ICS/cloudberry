@@ -399,51 +399,48 @@ angular.module("cloudberry.map")
 
 
     //Dynamic generating points
-      var firefoxIcon = L.icon({
-          iconUrl: "https://previews.dropbox.com/p/orig/AAXSfm4NT14_VdWZoCMFFRirItnpHGbAKHBXLwhlXe2Zk0l66eMCwBf4A-GZ5lJX5yvE08NAmZMMscMdmb0ge9tKMA5W3OSKUTCZtTA8KTDTYHtXQ0cJzifZtndqxHJhFrsmwQBczGArktoRgm1xzoSS61dJOV2_-v1ZDdO4Lws_pZ2JUcqoyQbS2ciecVi1_pxCza0Y7TprZU9Q4Uu6RA-g/p.gif?size=1600x1200&size_mode=3",
-          iconSize: [20, 20], // size of the icon
-          popupAnchor: [0,-15]
-      });
+    var firefoxIcon = L.icon({
+        iconUrl: "/assets/images/pinmap_new_tweet_animation.gif",
+        iconSize: [20, 20], // size of the icon
+        popupAnchor: [0,-15]
+    });
 
-      $scope.dMap = function (result){
-        var coordinates = result;
-        var markList = [];
-        function transition(tweet)
-        {
-            var coordinate = tweet["coordinate"];
-            let stl = {
-                radius: 1,//80,
-                useAbsoluteRadius: false,//true,
-                color: "#623cfc",//"#0084b4"
-                noMask: true,
-                lineColor: "#623cfc"//"#00aced"
-            }
-            var mark = L.marker([coordinate[0], coordinate[1]], {icon: firefoxIcon});
-            mark.addTo($scope.map);
-            markList.push(mark);
-            var tweetContent = $scope.translateTweetDataToShow(tweet);
-            $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-            $scope.popUpTweet.setContent(tweetContent);
-            var mark2 = L.circleMarker([coordinate[0], coordinate[1]], stl).bindPopup($scope.popUpTweet);
+    $scope.dynamicMapAnimation = function (result){
+      var coordinates = result;
+      var markList = [];
+      let pinStyle = {
+        radius: 1,//80,
+        useAbsoluteRadius: false,//true,
+        color: "#623cfc",//"#0084b4"
+        noMask: true,
+        lineColor: "#623cfc"//"#00aced"
+      }
+      function transition(tweet)
+      {
+          var coordinate = tweet["coordinate"];
+          var mark = L.marker([coordinate[0], coordinate[1]], {icon: firefoxIcon});
+          mark.addTo($scope.map);
+          markList.push(mark);
+          var tweetContent = $scope.translateTweetDataToShow(tweet);
+          $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+          $scope.popUpTweet.setContent(tweetContent);
+          var mark2 = L.circleMarker([coordinate[0], coordinate[1]], pinStyle).bindPopup($scope.popUpTweet);
 
-            $scope.livePinLayer.addLayer(mark2).addTo($scope.map);
-            setTimeout(function()
-            {
-                markList.forEach( (m) => $scope.map.removeLayer(m));
-            },10000);
+          $scope.livePinLayer.addLayer(mark2).addTo($scope.map);
+          setTimeout(function()
+          {
+              markList.forEach( (m) => $scope.map.removeLayer(m));
+          },10000);
 
-        }
+      }
 
-        function dynamicUpdate(){
-            coordinates.forEach( (x) => transition(x));
-        }
+      coordinates.forEach( (x) => transition(x));
 
-        dynamicUpdate();
-      };
+    };
 
-      $rootScope.$on("drawLivePin", function(event,result){
-          $scope.dMap(result["data"]);
-      });
+    $rootScope.$on("drawLivePin", function(event,result){
+        $scope.dynamicMapAnimation(result["data"]);
+    });
 
 
 

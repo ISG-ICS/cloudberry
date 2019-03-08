@@ -117,13 +117,18 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
+        let tweetsEnqueued = 0;
         for (var i = 0 ; i<tweets.length; i++ )
         {
             if (!liveTweetSet.has(tweets[i]["id"])){
                 liveTweetsQueue.push(tweets[i]);
                 liveTweetSet.add(tweets[i]["id"]);
+                tweetsEnqueued+=1
             }
 
+            if(tweetsEnqueued>=(queryInterval/updateRate)){
+              break;
+            }
         }
         
         tweets.forEach((x) => {
@@ -133,8 +138,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         });
         $scope.receivedCount += 1;
         if(cloudberry.parameters.maptype === "pinmap" && $scope.receivedCount === 3) {
-          console.log("emit")
-          console.log("result size "+$scope.accumulateTweets.size);
           $rootScope.$emit("drawLivePin", {"data": $scope.accumulateTweets});
           $scope.accumulateTweets = new Set();
           $scope.receivedCount = 0;
