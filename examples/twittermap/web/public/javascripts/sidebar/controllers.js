@@ -50,12 +50,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.showOrHideSidebar(1);
     };
 
-    function enableHamburgerButton() {
-      document.getElementById("hamburgerButton").disabled = false;
+
+    function enableHashtagButton() {
+      $("#Hashtag").removeClass("disableHashtag");
     }
 
-    function disableHamburgerButton() {
-      document.getElementById("hamburgerButton").disabled = true;
+    function disableHashtagButton() {
+      $("#Hashtag").addClass("disableHashtag");
     }
 
     // When receiving messages from websocket, check its queryID and result.
@@ -65,7 +66,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         var result = JSON.parse(event.data);
         if (result.id === $scope.nowQueryID && result.value[0]) {
           clearInterval($scope.timerCheckQuerySolvableByView);
-          enableHamburgerButton();
+          enableHashtagButton();
         }
       });
     };
@@ -257,6 +258,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       }
     };
 
+
+
     function eventHandler(event) {
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
@@ -273,11 +276,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       
       setTimerToCheckQuery();
       $scope.closeRightMenu();
-      disableHamburgerButton();
+      disableHashtagButton();
       $scope.isHashTagOutdated = true;
       $scope.isSampleTweetsOutdated = true;
       handleSidebarQuery();
     }
+
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
