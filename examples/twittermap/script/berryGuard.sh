@@ -88,12 +88,12 @@ touchCloudberry()
 	local cnt=$(echo $result | python -c "import sys, json; print json.load(sys.stdin)['count']")
 	echo "cnt = " ${cnt}
 	echo "pre_cnt = " ${preCnt}
-	if [ "${cnt}" -gt "${preCnt}" ] ; then
+	if [ "${cnt}" -ne "${preCnt}" ] ; then
 		echo "[Good!] Cloudberry is working properly."
 		preCnt=${cnt}
 		return
 	fi
-	if [ "${cnt}" -le "${preCnt}" ] ; then
+	if [ "${cnt}" -eq "${preCnt}" ] ; then
 	    echo "[Bad!] Twitter ingestion may stop or Cloudberry may malfunction."
 	    sendEmail "Twitter ingestion may stop or Cloudberry may malfunction." "Twitter ingestion may stop or Cloudberry may malfunction. The total count of ds_tweet retrieved is ${cnt} this time and ${preCnt} last time."
 	    preCnt=${cnt}
