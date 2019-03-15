@@ -8,6 +8,7 @@ GET        /ws                                  controllers.TwitterMapApplicatio
 GET        /drugmap                             controllers.TwitterMapApplication.drugmap
 GET        /checkQuerySolvableByView            controllers.TwitterMapApplication.checkQuerySolvableByView
 GET        /liveTweets                          controllers.TwitterMapApplication.liveTweets
+GET        /autoComplete                        controllers.TwitterMapApplication.autoComplete
 GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
 
 

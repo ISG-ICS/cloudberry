@@ -17,10 +17,12 @@ import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j._
 import websocket.WebSocketFactory
-
+import java.net.{URL, HttpURLConnection}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.io.Source
+
 
 @Singleton
 class TwitterMapApplication @Inject()(val wsClient: WSClient,
@@ -156,9 +158,49 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
         out!tweetArray
       case msg:Any =>
-        Logger.info("Invalid input")
+        Logger.info("Invalid input for LiveTweet")
     }
   }
+
+  object autoCompleteActor{
+    def props(out: ActorRef) = Props(new autoCompleteActor(out))
+  }
+
+  class autoCompleteActor(out:ActorRef) extends Actor{
+    override def receive = {
+      case msg:JsValue =>
+        try{
+          val keyword = (msg \\ "keyword").head.as[String]
+          val url = "https://twitter.com/i/search/typeahead.json?count=10&filters=true&q=" + keyword +"&result_type=topics"
+          val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
+          connection.setRequestMethod("GET")
+          val inputStream = connection.getInputStream
+          val content = Source.fromInputStream(inputStream).mkString
+          if (inputStream != null) inputStream.close
+          out!Json.toJson(content)
+        }
+        catch{
+          case e=>e.printStackTrace()
+        }
+      case msg:Any=>
+        Logger.info("Invalid input for autocomplete")
+    }
+  }
+
+
+  /**
+    * autoComplete is a callback function for twittermap's search box autocomplete
+    *
+    * * @param query recieved from frontend request JsValue
+    * * @return A list of topics object in JsValue
+    *
+    */
+  def autoComplete = WebSocket.accept[JsValue,JsValue]{ request =>
+    ActorFlow.actorRef{
+      out=>autoCompleteActor.props(out)
+    }
+  }
+
 
   /**
     * liveTweets is a callback function

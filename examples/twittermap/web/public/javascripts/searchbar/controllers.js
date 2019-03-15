@@ -4,7 +4,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     //When user input keyword we will first send query to and get result to render auto-complete menu
     //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
     $("#keyword-textbox").autocomplete({source:[],disabled:true,delay:200});
-    
+    var ACSocket = new WebSocket("ws://"+window.location.host+"/autoComplete");
+
     $("#keyword-textbox").on("keyup",function(event){
       if(event.key!=="Enter"){
         $("#keyword-textbox").autocomplete( "enable" );
@@ -16,22 +17,30 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       var q = $scope.keyword;
       var hostName = "http://"+window.location.hostname+":5000";
       var url = hostName+"/spoof?query="+q;
-      try{
-        $.ajax({url:url}).done(function(data){
-          data = JSON.parse(data);
-          var suggestion = [];
-          for(var i=0;i<data.topics.length;i++)
-          {
-            var value = String(data.topics[i].topic);
-            //Exclude hashtag topic and repetitive topic
-            if(value[0] !== "#" && !suggestion.includes(value)){
-              suggestion.push(value);
-            }
-          }
-          $("#keyword-textbox").autocomplete({source:suggestion});
-        });
+      var obj = {
+        "keyword":q
+      };
+
+      if(ACSocket.readyState==ACSocket.OPEN){
+        ACSocket.send(JSON.stringify(obj))
       }
-      catch(err){}
+
+      ACSocket.onmessage = function(event){
+
+        var suggestion = [];
+        var data = JSON.parse(event.data)
+        data = JSON.parse(data)
+        for(var i=0;i<data.topics.length;i++)
+        {
+          var value = String(data.topics[i].topic);
+          //Exclude hashtag topic and repetitive topic
+          if(value[0] !== "#" && !suggestion.includes(value)){
+            suggestion.push(value);
+          }
+        }
+        $("#keyword-textbox").autocomplete({source:suggestion});
+        $("#keyword-textbox").autocomplete( "enable" );
+      }
     });
 
     //If keyword been selected and user pushed enter,then we perform search directly
