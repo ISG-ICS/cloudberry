@@ -323,26 +323,31 @@ angular.module("cloudberry.map")
               fillOpacity : 1.0
             }).addTo($scope.map);
 
-            //send the query to cloudberry using string format.
-            var passID = "" + pointID;
-            cloudberry.pinMapOneTweetLookUpQuery(passID);
+            var pinJson = {
+              dataset:"twitter.ds_tweet",
+              filter: [{
+                field: "id",
+                relation: "=",
+                values: "" + pointID
+              }],
+              select:{
+                order: ["-create_at"],
+                limit: 1,
+                offset: 0,
+                field: ["id","text","user.id","create_at","user.name","user.profile_image_url"]
+              }
+            };
+
+            cloudberryClient.send(pinJson, function(id, resultSet, resultTimeInterval) {
+              var tweetContent = translateTweetDataToShow(resultSet[0][0]);
+              $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
+              $scope.popUpTweet.setContent(tweetContent);
+              if($scope.currentMarker) {
+                $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
+              }
+            }, "pinResult");
           }
         }
-        //monitors and receives the result with updating content of each pin tweet.
-        $scope.$watch(function () {
-           return cloudberryConfig.pinMapOneTweetLookUpResult;
-        }, function (newVal) {
-           var tweetContent = translateTweetDataToShow(newVal);
-           $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
-           $scope.popUpTweet.setContent(tweetContent);
-           if($scope.currentMarker === null)
-           {
-               //pass
-           }
-           else {
-               $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
-           }
-        });
       }
 
       //Update the points data
