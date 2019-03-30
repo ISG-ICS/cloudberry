@@ -19,6 +19,7 @@ object TwitterJSONTagToADM {
   val shapeMap = mutable.Map.empty[TypeLevel, String]
   var threadNumber = 2
   var isDebug = false
+  val bufferSize = 100
 
   val usage =
     """
@@ -63,11 +64,12 @@ object TwitterJSONTagToADM {
     val thpool = Executors.newFixedThreadPool(threadNumber)
     implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(thpool)
 
-    val buffer = new ArrayBuffer[String](threadNumber)
+    //We use a buffer to store a batch of records for multiple threads to process
+    val buffer = new ArrayBuffer[String](bufferSize)
 
     for (ln <- scala.io.Source.stdin.getLines()) {
       buffer += ln
-      if (buffer.size == threadNumber) {
+      if (buffer.size == bufferSize) {
         val f = Future.traverse(buffer) { tw => Future(tagOneTweet(tw, usGeoGnosis)) }
         Await.result(f, scala.concurrent.duration.Duration.Inf)
         buffer.clear()
