@@ -3,8 +3,8 @@
  * middle ware and the time-series cache.
  */
 'use strict';
-angular.module('cloudberry.timeseriescache', [])
-    .service('TimeSeriesCache', function () {
+angular.module('cloudberry.timeseriescache', ['cloudberry.populationcache'])
+    .service('TimeSeriesCache', ['PopulationCache', function (PopulationCache) {
 
         // The key-value stores time series results of a query.
         var timeseriesStore = new HashMap();
@@ -63,7 +63,7 @@ angular.module('cloudberry.timeseriescache', [])
         };
 
         /**
-         * Retrieves time-series data from the cache; ignores empty objects
+         * Retrieves time-series data from the cache; ignores empty objects.
          */
         this.getTimeSeriesValues = function (geoIds, geoLevel, timeInterval) {
             var resultArray = [];
@@ -118,21 +118,21 @@ angular.module('cloudberry.timeseriescache', [])
         /**
          * Convert byTimeSeries result array to timeseriesStore HashMap format.
          */
-        this.arrayToStore = function (geoIds, timeseriesResult, currentGeoLevel) {
+        this.arrayToStore = function (geoIds, timeseriesResult, geoLevel) {
             var store = new HashMap();
             var geoIdSet = new Set(geoIds);
 
             for (var i = 0; i < timeseriesResult.length; i++) {
                 var currVal = {day:timeseriesResult[i]["day"], count:timeseriesResult[i]["count"]};
-                var values = store.get(timeseriesResult[i][currentGeoLevel]);
+                var values = store.get(timeseriesResult[i][geoLevel]);
                 // First updates the store with geoIds that have results.
                 if (values !== undefined && values !== INVALID_VALUE) { // when one geoIds has more than one value
                     values.push(currVal);
-                    store.set(timeseriesResult[i][currentGeoLevel], values);
-                    geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
+                    store.set(timeseriesResult[i][geoLevel], values);
+                    geoIdSet.delete(timeseriesResult[i][geoLevel]);
                 } else { // first value of current geoId
-                    store.set(timeseriesResult[i][currentGeoLevel], [currVal]);
-                    geoIdSet.delete(timeseriesResult[i][currentGeoLevel]);
+                    store.set(timeseriesResult[i][geoLevel], [currVal]);
+                    geoIdSet.delete(timeseriesResult[i][geoLevel]);
                 }
             }
             // Mark other results as checked: these are geoIds with no results
@@ -147,7 +147,7 @@ angular.module('cloudberry.timeseriescache', [])
          * Updates the store with time-series result each time the middleware responds to the json request preloadRequest,
          * returns histogram data.
          */
-        // TODO: combine geoIds and timeInterval dimensions in the time-series and map-rsult cache modules.
+        // TODO: combine geoIds and timeInterval dimensions in the time-series and map-result cache modules.
         this.putTimeSeriesValues = function (geoIds, timeseriesResult, timeInterval) {
             var store = this.arrayToStore(geoIds, timeseriesResult, currentGeoLevel);
             if (timeseriesStore.count() === 0) {
@@ -162,4 +162,76 @@ angular.module('cloudberry.timeseriescache', [])
                 // Result is not added to cache because it has a shorter time interval than older cached results.
             }
         };
-    });
+
+        /*
+         * Accumulate and return map result data {geoID, count, population} from byGeoTimeRequest sliced result.
+         */
+        this.getCountMapValues = function (geoIds, geoLevel, timeInterval, timeseriesPartialStore) {
+            var resultArray = [];
+
+            for (var i = 0; i < geoIds.length; i++) {
+                // Cache hit case: geoID's byGeoTimeRequest results in time series cache case.
+                var {values, count} = this.getGeoRegionValues(geoIds[i], timeInterval);
+                // Cache miss case: geoID's byGeoTimeRequest results in new request sliced result case.
+                if (values === INVALID_VALUE && timeseriesPartialStore.has(geoIds[i])) {
+                    values = timeseriesPartialStore.get(geoIds[i]);
+                    count = this.getCurrentSum(values, timeInterval);
+                }
+                if (values !== undefined && values !== INVALID_VALUE) {
+                    var population = PopulationCache.getGeoIdPop(geoLevel, geoIds[i])
+                    switch (geoLevel){
+                      case "state":
+                        resultArray.push({"state":geoIds[i], "count":count, "population":population});
+                      case "county":
+                        resultArray.push({"county":geoIds[i], "count":count, "population":population});
+                      case "city":
+                        resultArray.push({"city":geoIds[i], "count":count, "population":population});
+                    }
+                }
+            }
+
+            return resultArray;
+        };
+
+        /**
+         * For other service to obtain some geoId's values in timeInterval from timeSeriesStore.
+         */
+        this.getGeoRegionValues = function(geoId, timeInterval) {
+            var inRangeValues = [];
+            var sum = 0;
+
+            if (timeseriesStore.has(geoId)) {
+                var values = timeseriesStore.get(geoId);
+                for (var i = 0; (values !== undefined && values !== INVALID_VALUE) && i < values.length; i++) {
+                    var day = new Date(values[i]["day"]);
+                    if (day >= timeInterval.start && day <= timeInterval.end) {
+                        inRangeValues.push(values[i]);
+                        sum += values[i]["count"];
+                    }
+                }
+
+                return {values: inRangeValues, count: sum};
+            }
+            return {values: INVALID_VALUE, count: sum};
+        };
+
+        /**
+         * Return sum all "count" in values with variables {day, count}.
+         */
+        this.getCurrentSum = function(values, timeInterval) {
+            var sum = 0;
+
+            if (values === INVALID_VALUE) {
+              return 0;
+            }
+            for (var j = 0; j < values.length; j++) {
+                var currVal = values[j];
+                var day = new Date(currVal["day"]);
+                if (day >= timeInterval.start && day <= timeInterval.end) {
+                    sum += currVal["count"];
+                }
+            }
+
+            return sum;
+        };
+    }]);
