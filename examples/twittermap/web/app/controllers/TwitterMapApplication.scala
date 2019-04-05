@@ -1,8 +1,8 @@
 package controllers
 
-import java.io.{File, FileInputStream}
-import javax.inject.{Inject, Singleton}
+import java.io.{File, FileInputStream, IOException}
 
+import javax.inject.{Inject, Singleton}
 import actor.TwitterMapPigeon
 import akka.actor._
 import akka.stream.Materializer
@@ -17,7 +17,7 @@ import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
 import twitter4j._
 import websocket.WebSocketFactory
-import java.net.{URL, HttpURLConnection}
+import java.net.{HttpURLConnection, URL, URLEncoder}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -164,27 +164,27 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     }
   }
 
-  object autoCompleteActor{
+  object autoCompleteActor {
     def props(out: ActorRef) = Props(new autoCompleteActor(out))
   }
 
-  class autoCompleteActor(out:ActorRef) extends Actor{
+  class autoCompleteActor(out:ActorRef) extends Actor {
     override def receive = {
-      case msg:JsValue =>
-        try{
+      case msg: JsValue =>
+        try {
           val keyword = (msg \\ "keyword").head.as[String]
-          val url = "https://twitter.com/i/search/typeahead.json?count=10&filters=true&q=" + keyword +"&result_type=topics"
-          val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
+          val url = "https://twitter.com/i/search/typeahead.json?count=10&filters=true&q=" + URLEncoder.encode(keyword, "UTF-8") + "&result_type=topics"
+          val connection = new URL(url).openConnection.asInstanceOf[HttpURLConnection]
           connection.setRequestMethod("GET")
           val inputStream = connection.getInputStream
           val content = Source.fromInputStream(inputStream).mkString
-          if (inputStream != null) inputStream.close
-          out!Json.toJson(content)
+          if (inputStream != null) inputStream.close()
+          out ! Json.toJson(content)
         }
-        catch{
-          case e=>e.printStackTrace()
+        catch {
+          case e: IOException => e.printStackTrace()
         }
-      case msg:Any=>
+      case _ =>
         Logger.info("Invalid input for autocomplete")
     }
   }
@@ -193,8 +193,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   /**
     * autoComplete is a callback function for twittermap's search box autocomplete
     *
-    * * @param query recieved from frontend request JsValue
-    * * @return A list of topics object in JsValue
+    * @param query recieved from frontend request JsValue
+    * @return A list of topics object in JsValue
     *
     */
   def autoComplete = WebSocket.accept[JsValue,JsValue]{ request =>
