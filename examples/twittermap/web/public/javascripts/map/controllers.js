@@ -1,6 +1,6 @@
-angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
+angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache', 'cloudberry.populationcache'])
   .controller('MapCtrl', function($scope, $http, cloudberry, leafletData,
-                                  cloudberryConfig, Cache, moduleManager) {
+                                  cloudberryConfig, Cache, PopulationCache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
     // add an alert bar of IE
@@ -297,7 +297,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 style: $scope.styles.cityStyle,
                 onEachFeature: onEachFeature
               });
-
               for (i = 0; i < $scope.geojsonData.city.features.length; i++) {
                 $scope.cityIdSet.add($scope.geojsonData.city.features[i].properties.cityID);
               }
@@ -345,7 +344,30 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             });
         }
     };
-    
+
+    // load population Json to get state and county polygons, store in countmap cache.
+    $scope.loadPopJsonFiles = function loadPopJsonFiles() {
+      $scope.popjsonData = {};
+      if (PopulationCache.statePopulationCached() === false){
+        $http.get("assets/data/allStatePopulation.json")
+        .success(function(data) {
+          PopulationCache.putPopValues(data, "state");
+        })
+        .error(function(data) {
+          console.error("Load state population data failure");
+        });
+      }
+      if (PopulationCache.countyPopulationCached() === false){
+        $http.get("assets/data/allCountyPopulation.json")
+        .success(function(data) {
+          PopulationCache.putPopValues(data, "county");
+        })
+        .error(function(data) {
+          console.error("Load county population data failure");
+        });
+      }
+    };
+
     // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent){
