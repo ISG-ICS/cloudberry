@@ -32,6 +32,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                       implicit val system: ActorSystem) extends Controller {
 
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
+  val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
   val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
@@ -42,6 +43,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
   val endDate : Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
+  val citiesPopulation: List[JsValue] = TwitterMapApplication.loadCityPop(environment.getFile(USCityPopDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
   val heatmapSamplingDayRange: String = config.getString("heatmap.samplingDayRange").getOrElse("30")
@@ -227,6 +229,9 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     Ok(TwitterMapApplication.findCity(neLat, swLat, neLng, swLng, cities))
   }
 
+  def getCityPop(cityIds: String) = Action {
+    Ok(TwitterMapApplication.findCityPop(cityIds, citiesPopulation))
+  }
 }
 
 object TwitterMapApplication {
@@ -283,6 +288,13 @@ object TwitterMapApplication {
     newValues.sortWith((x, y) => (x \ CentroidLongitude).as[Double] < (y \ CentroidLongitude).as[Double])
   }
 
+  def loadCityPop(file: File): List[JsValue] = {
+    val stream = new FileInputStream(file)
+    val json = Json.parse(stream)
+    stream.close()
+    (json).as[List[JsObject]]
+  }
+
   /** Use binary search twice to find two breakpoints (startIndex and endIndex) to take out all cities whose longitude are in the range,
     * then scan those cities one by one for latitude.
     *
@@ -328,6 +340,49 @@ object TwitterMapApplication {
         binarySearch(cities, thisIndex + 1, endIndex, targetLng)
       } else {
         thisIndex
+      }
+    }
+  }
+
+  /** Find cities' population whose cityID are in cityIDs.
+    *
+    * @param cityIds List of cities in current boundary in String
+    * @param citiesPopulation List of all cities' population data
+    * @return List of cities population which centroids is in current boundary
+    */
+  def findCityPop(cityIds: String, citiesPopulation: List[JsValue]): JsArray = {
+    val cityIdsList : List[Int] = cityIds.split(",").map(_.toInt).toList
+    val incCityIdsList = cityIdsList.sortWith(_<_)
+    sortedListBinarySearch(citiesPopulation, 0, 29833, incCityIdsList, 0, Json.arr())
+  }
+
+  /**
+    * Find the population data data for each geoId in from the sorted geoIds list.
+    *
+    * @param sortedCityIds Sorted list of cities in current boundary
+    * @param citiesPopulation List of all cities' population data
+    * @return List of cities in sortedCityIds' population data
+    */
+  def sortedListBinarySearch(citiesPopulation: List[JsValue], startIndex: Int, endIndex: Int,
+                             sortedCityIds: List[Int], sortedCityIndex: Int, resultArr: JsArray): JsArray = {
+    if (startIndex == endIndex) {
+        resultArr
+    } else {
+      val thisIndex = (startIndex + endIndex) / 2
+      val thisCityId = (citiesPopulation(thisIndex) \ "cityID").as[Int]
+      if (thisCityId > sortedCityIds(sortedCityIndex)) {
+        sortedListBinarySearch(citiesPopulation, startIndex, thisIndex, sortedCityIds, sortedCityIndex, resultArr)
+      } else if (thisCityId < sortedCityIds(sortedCityIndex)) {
+        sortedListBinarySearch(citiesPopulation, thisIndex + 1, endIndex, sortedCityIds, sortedCityIndex, resultArr)
+      } else { // Current cityId sortedCityIds(sortedCityIndex) is find in citiesPopulation
+        val currPop : JsValue = JsObject(Seq("cityID" -> JsNumber(thisCityId),
+                                             "population" -> JsNumber((citiesPopulation(thisIndex) \ "population").as[Int])
+                                            ))
+        if (sortedCityIndex < sortedCityIds.length - 1) {
+          sortedListBinarySearch(citiesPopulation, thisIndex + 1, 29833, sortedCityIds, sortedCityIndex + 1, resultArr :+ currPop)
+        } else {
+          resultArr :+ currPop
+        }
       }
     }
   }

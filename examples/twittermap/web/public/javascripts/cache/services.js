@@ -258,7 +258,7 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
         }
 
         function findNewDirection(nearestPoint) {
-            console.log("Finding  new direction");
+            console.log("Finding new direction");
 
             if (nearestPoint == UpperRightPoint) {
                 return "SW";
