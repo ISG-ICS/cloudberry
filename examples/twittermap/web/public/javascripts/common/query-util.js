@@ -58,7 +58,7 @@ angular.module("cloudberry.common")
         return filter;
       },
 
-      byTimeRequest(parameters, geoIds) {
+      byGeoTimeRequest(parameters, geoIds) {
         return {
           dataset: parameters.dataset,
           filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
@@ -91,82 +91,6 @@ angular.module("cloudberry.common")
             }]
           }
         };
-      },
-
-      byGeoRequest(parameters, geoIds) {
-        if (cloudberryConfig.sentimentEnabled) {
-          return {
-            dataset: parameters.dataset,
-            append: [{
-              field: "text",
-              definition: cloudberryConfig.sentimentUDF,
-              type: "Number",
-              as: "sentimentScore"
-            }],
-            filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
-            group: {
-              by: [{
-                field: "geo",
-                apply: {
-                  name: "level",
-                  args: {
-                    level: parameters.geoLevel
-                  }
-                },
-                as: parameters.geoLevel
-              }],
-              aggregate: [{
-                field: "*",
-                apply: {
-                  name: "count"
-                },
-                as: "count"
-              }, {
-                field: "sentimentScore",
-                apply: {
-                  name: "sum"
-                },
-                as: "sentimentScoreSum"
-              }, {
-                field: "sentimentScore",
-                apply: {
-                  name: "count"
-                },
-                as: "sentimentScoreCount"
-              }],
-              lookup: [
-                cloudberryConfig.getPopulationTarget(parameters)
-              ]
-            }
-          };
-        } else {
-          return {
-            dataset: parameters.dataset,
-            filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
-            group: {
-              by: [{
-                field: "geo",
-                apply: {
-                  name: "level",
-                  args: {
-                    level: parameters.geoLevel
-                  }
-                },
-                as: parameters.geoLevel
-              }],
-              aggregate: [{
-                field: "*",
-                apply: {
-                  name: "count"
-                },
-                as: "count"
-              }],
-              lookup: [
-                cloudberryConfig.getPopulationTarget(parameters)
-              ]
-            }
-          };
-        }
       },
 
       getTimeBarRequest(parameters, geoIds) {
