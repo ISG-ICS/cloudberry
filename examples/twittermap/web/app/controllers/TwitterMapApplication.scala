@@ -1,8 +1,8 @@
 package controllers
 
 import java.io.{File, FileInputStream}
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import actor.TwitterMapPigeon
 import akka.actor._
 import akka.stream.Materializer
@@ -13,15 +13,14 @@ import play.api.libs.streams.ActorFlow
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
-import twitter4j.TwitterFactory
-import twitter4j.conf.ConfigurationBuilder
 import twitter4j._
 import websocket.WebSocketFactory
-import java.net.{URL, HttpURLConnection}
+import java.net.{HttpURLConnection, URL}
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
+import scala.util.matching.Regex
 
 
 @Singleton
@@ -54,10 +53,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
   val liveTweetQueryOffset : Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
   val liveTweetUpdateRate: Int = config.getInt("liveTweetUpdateRate").getOrElse(2)
-  val liveTweetConsumerKey: String = config.getString("liveTweetConsumerKey").getOrElse(null)
-  val liveTweetConsumerSecret: String = config.getString("liveTweetConsumerSecret").getOrElse(null)
-  val liveTweetToken: String = config.getString("liveTweetToken").getOrElse(null)
-  val liveTweetTokenSecret: String = config.getString("liveTweetTokenSecret").getOrElse(null)
   val enableLiveTweet : Boolean = config.getBoolean("enableLiveTweet").getOrElse(true)
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
@@ -111,50 +106,25 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     override def receive = {
       case msg: JsValue =>
         val queryWords = (msg \\ "keyword").head.as[String]
-        val location = Array{(msg \\ "location").head.as[Array[Double]]}
-        val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
-        val center = Array((locs(0)(0) + locs(1)(0))/2.00,(locs(0)(1)+locs(1)(1))/2.00)
-        val centerLoc = new GeoLocation(center(1),center(0))
-        val unit = Query.Unit.km
-        /*
-        Note: Twitter Search API does not support bounding box, the Geo information can only be specified
-        By using center location and radius.
-        Center location is calculated by the center point of bounding box(rectangle)
-        Radius is calculated by the difference of latitude between left top corner and right bottom corner.
-        Using latitude rather than longitude
-        since the ratio between latitude to KM is almost constant
-        But ratio between Longitude to KM varies largerly.
-        ------------------
-        |     * * *      |
-        |    *     *     |
-        |      * *       |
-        ------------------
-        */
-        val radius = Math.abs(locs(0)(1) - locs(1)(1)) * 111
-        var tweetArray = Json.arr()
-        val cb2 = new ConfigurationBuilder
-        cb2.setDebugEnabled(true)
-          .setOAuthConsumerKey(liveTweetConsumerKey)
-          .setOAuthConsumerSecret(liveTweetConsumerSecret)
-          .setOAuthAccessToken(liveTweetToken)
-          .setOAuthAccessTokenSecret(liveTweetTokenSecret)
-        val tf = new TwitterFactory(cb2.build)
-        val twitterAPI = tf.getInstance
-        val query = new twitter4j.Query
-        var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
-        val resultType = twitter4j.Query.ResultType.recent
-        query.setQuery(queryWords)
-        query.setCount(desiredTweetAmount)
-        query.setResultType(resultType)
-        query.setGeoCode(centerLoc,radius,unit)
-        val tweetsResult = twitterAPI.search(query).getTweets
-        for(i <- 0 to tweetsResult.size()-1){
-          val status = tweetsResult.get(i)
-          if (status.isRetweet == false){
-            tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
-          }
 
+        val url = "https://twitter.com/i/search/timeline?f=tweets&vertical=news&q="+queryWords+"&src=typd"
+        val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
+
+        connection.setRequestMethod("GET")
+        connection.setRequestProperty("user-agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36")
+        val inputStream = connection.getInputStream
+        val pattern = new Regex("""dataitemid(\d+)""")
+        val digitOnly = new Regex("""(\d+)""")
+        var htmlContent = Source.fromInputStream(inputStream).mkString
+
+        htmlContent = htmlContent.replaceAll("""[\p{Punct}&&[^.]]""", "")
+
+        var tweetArray = Json.arr()
+        for(m <- pattern.findAllIn(htmlContent)) {
+          val idString = m.replaceAll("dataitemid", "")
+          tweetArray = tweetArray :+ (Json.obj("id" -> idString))
         }
+
 
         out!tweetArray
       case msg:Any =>
