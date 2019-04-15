@@ -54,7 +54,7 @@ angular.module("cloudberry.map")
       });
     }
 
-    // Send query to cloudberry
+    // Send pinmap query to cloudberry
     function sendPinmapQuery() {
 
       if (typeof(cloudberry.parameters.keywords) === "undefined"
@@ -66,10 +66,6 @@ angular.module("cloudberry.map")
       if ($scope.status.zoomLevel < $scope.currentKeywordMinZoomLevel) {
         $scope.currentKeywordMinZoomLevel = $scope.status.zoomLevel;
       }
-
-      // For time-series histogram, get geoIds not in the time series cache.
-      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
-        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
 
       var pinsJson = {
         dataset: cloudberry.parameters.dataset,
@@ -86,14 +82,28 @@ angular.module("cloudberry.map")
         }
       };
 
-      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
-
       cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
           cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
           cloudberry.pinmapMapResult = resultSet[0];
         }
       }, "pinMapResult");
+    }
+
+    // send time series query to Cloudberry
+    function sendPinmapTimeQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords === null
+        || cloudberry.parameters.keywords.length === 0) {
+        return;
+      }
+
+      // For time-series histogram, get geoIds not in the time series cache.
+      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
       // Complete time series cache hit case - exclude time series request
       if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
@@ -140,6 +150,7 @@ angular.module("cloudberry.map")
         }
       }
       $scope.previousZoomLevel = event.level;
+      sendPinmapTimeQuery();
     }
 
     // Event handler for drag event
@@ -147,37 +158,49 @@ angular.module("cloudberry.map")
       if ($scope.currentPointsCount < $scope.maxPointsCount) {
         sendPinmapQuery();
       }
+      sendPinmapTimeQuery();
     }
 
     // Event handler for search keyword event
     function onSearchKeyword(event) {
       drawPinMap([]);
+      cleanPinmapMarker();
       $scope.currentKeywordMinZoomLevel = $scope.status.zoomLevel;
       sendPinmapQuery();
+      sendPinmapTimeQuery();
     }
 
     // Event handler for time series range event
     function onTimeSeriesRange(event) {
       drawPinMap([]);
       sendPinmapQuery();
+      sendPinmapTimeQuery();
     }
 
-    // clear pinmap specific data
-    function cleanPinMap() {
+    function cleanPinmapLayer() {
       $scope.points = [];
       $scope.pointIDs = [];
       if($scope.pointsLayer != null) {
         $scope.map.removeLayer($scope.pointsLayer);
         $scope.pointsLayer = null;
       }
+    }
+
+    function cleanPinmapMarker() {
       if ($scope.currentMarker != null) {
         $scope.map.removeLayer($scope.currentMarker);
         $scope.currentMarker = null;
       }
+    }
+
+    function cleanPinmapTimer() {
       if ($scope.timer != null) {
         clearTimeout($scope.timer);
         $scope.timer = null;
       }
+    }
+
+    function cleanPinmapEventHandlers() {
       $scope.map.off("mousemove");
 
       // Unsubscribe to moduleManager's events
@@ -185,6 +208,14 @@ angular.module("cloudberry.map")
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, onSearchKeyword);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, onTimeSeriesRange);
+    }
+
+    // clear pinmap specific data
+    function cleanPinMap() {
+      cleanPinmapLayer();
+      cleanPinmapMarker();
+      cleanPinmapTimer();
+      cleanPinmapEventHandlers();
     }
 
     // initialize pinmap
@@ -221,11 +252,6 @@ angular.module("cloudberry.map")
     
     // function for drawing pinmap
     function drawPinMap(result) {
-
-      if ($scope.currentMarker != null) {
-        $scope.map.removeLayer($scope.currentMarker);
-        $scope.currentMarker = null;
-      }
 
       // initialize the points layer
       if (!$scope.pointsLayer) {
@@ -355,10 +381,7 @@ angular.module("cloudberry.map")
           if (pointID > 0 && $scope.mouseOverPointID !== pointID) {
             $scope.mouseOverPointID = pointID;
             // (1) if previous Marker is not null, destroy it.
-            if ($scope.currentMarker != null) {
-              $scope.map.removeLayer($scope.currentMarker);
-              $scope.currentMarker = null;
-            }
+            cleanPinmapMarker();
             // (2) create a new Marker to highlight the point.
             $scope.currentMarker = L.circleMarker(e.latlng, {
               radius : 6,
