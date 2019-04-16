@@ -43,6 +43,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $compile(countDiv)($scope);
     stats.appendChild(countDiv);
 
+    var timeSlider = document.createElement("div");
+    timeSlider.id = "time-slider";
+    stats.appendChild(timeSlider);
+
+    var width = $(window).width();
+    var height = $(window).height();   
+
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
@@ -227,10 +234,120 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
 
 
-            dc.renderAll();
-            timeSeries.filter([minDate, maxDate]);
+            // time slider started here
+            var formatDateIntoMonth = d3version4.timeFormat("%B");  
+            var currentValue = 0;
+            var targetValue = width-100;
+            var svg = d3version4.select("#time-slider").append("svg")
+                        .attr("width", width)
+                        .attr("height", height);
+            var x = d3version4.scaleTime()
+                                .domain([minDate, maxDate])
+                                .range([0, targetValue])
+                                .clamp(true);
+          
+                    var slider = svg.append("g")
+                        .attr("class", "slider")
+                        .attr("transform", "translate(" + 25 + "," + 15 + ")");
+          
+                    slider.append("line")
+                    
+                        .attr("class", "track")
+                        .attr("x1", x.range()[0])
+                        .attr("x2", x.range()[1])
+                    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                        .attr("class", "track-inset")
+                    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                        .attr("class", "track-overlay")
+                        .call(d3version4.drag()
+                            .on("start.interrupt", function() { slider.interrupt(); })
+                            .on("start drag", function() {
+                            currentValue = d3version4.event.x;
+                            update(x.invert(currentValue)); 
+                            })
+                        );
+          
+                    slider.insert("g", ".track-overlay")
+                        .attr("class", "ticks")
+                        .attr("transform", "translate(0," + 18 + ")")
+                    .selectAll("text")
+                        .data(x.ticks(20))
+                        .enter()
+                        .append("text")
+                        .attr("x", x)
+                        .attr("y", 10)
+                        .attr("text-anchor", "middle")
+                        //.text(function(d) { return formatDateIntoMonth(d); });
+          
+                    var handle = slider.insert("circle", ".track-overlay")
+                        .attr("class", "handle")
+                        .attr("r", 9);
+          
+                    var label = slider.append("text")  
+                        .attr("class", "label")
+                        .attr("text-anchor", "middle")
+                        .text(2001)
+                        .attr("transform", "translate(0," + (-25) + ")")
 
-          })
-        }
-      };
-  });
+                    function update(t) {
+                      //var stopDate = new Date(maxDate);
+                      //stopDate.setMonth(stopDate.getMonth() - 1); 
+                    
+                        var month = formatDateIntoMonth(t);
+                        handle.attr("cx", x(t));
+                        label
+                            .attr("x", x(t))
+                            .text(month);
+                        var newDate = new Date(t);
+                        newDate.setMonth(t.getMonth() + 1);
+                        if(newDate <= maxDate) {
+                        requestFunc(t, newDate); }
+                        else {
+                          requestFunc(t, maxDate);
+                        } 
+                        console.log(t);
+                        console.log(newDate);
+                                             
+                    }
+
+                    var playButton = d3version4.select("#play-button");
+                    
+                    playButton
+                      .on("click", function() {
+                      var button = d3version4.select(this);
+                      onPlay = true;
+                      if (button.text() == "Pause") {
+                      moving = false;
+                      clearInterval(timer);
+                      // timer = 0;
+                      button.text("Play");
+                      } else {
+                      moving = true;
+                      timer = setInterval(step, 800);
+                      button.text("Pause");
+                      }
+                      console.log("Slider moving: " + moving);
+                  });
+
+                  function step() {
+                      update(x.invert(currentValue));
+                      currentValue = currentValue + (targetValue/27);
+                      if (currentValue > targetValue) {
+                          onPlay = false;
+                          moving = false;
+                          currentValue = 0;
+                          clearInterval(timer);
+                          // timer = 0;
+                          playButton.text("Play");
+                          requestFunc(minDate, maxDate);
+                          console.log("Slider moving: " + moving);
+                      }
+                  }
+
+          dc.renderAll();
+          timeSeries.filter([minDate, maxDate]);
+
+        })
+      }
+    };
+});
