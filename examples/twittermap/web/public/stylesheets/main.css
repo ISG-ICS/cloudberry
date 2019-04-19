@@ -373,6 +373,12 @@ div[aria-expanded=false] .glyphicon-triangle-bottom {
   z-index: 10;
   }
 
+#play-button:disabled,
+button[disabled]{
+  background-color: #837f81;
+  color: white;
+}
+
   .ticks {
     font-size: 10px;
     }

@@ -102,6 +102,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
   })
   .directive('timeSeries', function (cloudberry, moduleManager) {
+    var onPlay = false;
     var margin = {
       top: 10,
       right: 30,
@@ -127,12 +128,14 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
-              ndx.remove();
-              ndx.add($scope.empty);
-              dc.redrawAll();
-              ndx.add(newVal);
-              dc.redrawAll();
-              return;
+              if (!onPlay) {
+                ndx.remove();
+                ndx.add($scope.empty);
+                dc.redrawAll();
+                ndx.add(newVal);
+                dc.redrawAll();
+              }
+                return;
             }
 
             $scope.ndx = crossfilter(newVal);
@@ -193,18 +196,28 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               panel.appendChild(newPath);
             };
 
+            var minDate = cloudberry.startDate;
+            var maxDate = cloudberry.parameters.timeInterval.end;
+
             // set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
               resetClink = 0;
+              onPlay = false;
+              requestFunc(minDate, maxDate);
+              handle.attr("cx", x(minDate));
             });
+
+            var brushInterval = {start: new Date(), end: new Date()};
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
-              requestFunc(extent[0], extent[1])
+              brushInterval.start = extent[0];
+              brushInterval.end = extent[1];
+              requestFunc(extent[0], extent[1]);
+              handle.attr("cx", x(extent[0]));
+              currentValue = x(extent[0]);
             });
 
-            var minDate = cloudberry.startDate;
-            var maxDate = cloudberry.parameters.timeInterval.end;
             chart.selectAll('a').remove();
             chart.append('a')
                 .text('Reset')
@@ -235,7 +248,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
 
             // time slider started here
-            var formatDateIntoMonth = d3version4.timeFormat("%B");  
+            var formatDateIntoMonth = d3version4.timeFormat("%B");
             var currentValue = 0;
             var targetValue = width-100;
             var svg = d3version4.select("#time-slider").append("svg")
@@ -317,30 +330,35 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                       var button = d3version4.select(this);
                       onPlay = true;
                       if (button.text() == "Pause") {
-                      moving = false;
-                      clearInterval(timer);
-                      // timer = 0;
-                      button.text("Play");
+                        clearInterval(timer);
+                        // timer = 0;
+                        button.text("Play");
                       } else {
-                      moving = true;
-                      timer = setInterval(step, 800);
-                      button.text("Pause");
+                        timer = setInterval(step, 800);
+                        button.text("Pause");
                       }
-                      console.log("Slider moving: " + moving);
                   });
 
                   function step() {
                       update(x.invert(currentValue));
                       currentValue = currentValue + (targetValue/27);
+                      if (x.invert(currentValue) >= brushInterval.end) {
+                          onPlay = false;
+                          currentValue = x(brushInterval.start);
+                          clearInterval(timer);
+                          // timer = 0;
+                          playButton.text("Play");
+                          handle.attr("cx", x(brushInterval.start));
+                          requestFunc(brushInterval.start, brushInterval.end);
+                      }
                       if (currentValue > targetValue) {
                           onPlay = false;
-                          moving = false;
                           currentValue = 0;
                           clearInterval(timer);
                           // timer = 0;
                           playButton.text("Play");
+                          handle.attr("cx", x(minDate));
                           requestFunc(minDate, maxDate);
-                          console.log("Slider moving: " + moving);
                       }
                   }
 

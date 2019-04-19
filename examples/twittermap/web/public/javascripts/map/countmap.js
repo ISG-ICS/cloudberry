@@ -218,6 +218,7 @@ angular.module('cloudberry.map')
         redrawPopup();
         
       } else { // Partial time series cache hit case.
+        document.getElementById("play-button").disabled = true;
         $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval);
 
         cloudberryClient.send(byGeoTimeRequestJson, function(id, resultSet, resultTimeInterval){
@@ -248,6 +249,7 @@ angular.module('cloudberry.map')
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
+              document.getElementById("play-button").disabled = false;
               TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInCache,
                 cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
