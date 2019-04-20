@@ -160,6 +160,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function startLiveTweetsConsumer() {
       $scope.liveTweetsConsumer = window.setInterval(function() {
         if (liveTweetsQueue.length > 0){
+          if($("#loadingAnime").length!=0){
+            $("#tweet").html("");
+          }
           var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
@@ -193,6 +196,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         stopLiveTweets();
         if ($scope.isSampleTweetsOutdated) {
           cleanLiveTweets();
+        }
+        //Adding loading animation before the first tweet arrive
+        if($("#loadingAnime").length==0) {
+          $("#tweet").append("<div id='loadingAnime' class='lds-ring'><div></div><div></div><div></div><div></div><p>Loading Tweets</p></div>");
         }
         startLiveTweetsConsumer();
         startLiveTweetsProducer();
