@@ -13,7 +13,7 @@ private[model] class Migration_20170428() {
 //    Future.traverse(Seq(TwitterDrugMapDDL, TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
     Future.traverse(Seq(TwitterMapDDL, StatePopulation, CountyPopulation, CityPopulation)) { jsonStr =>
       wsClient.url(cloudberryURL).withHeaders("Content-Type" -> "application/json").post(jsonStr).map { response =>
-        if (response.status % 100 == 2) {
+        if (response.status / 100 == 2) {
           true
         } else {
           Logger.info(response.statusText + ":" + response.body)
