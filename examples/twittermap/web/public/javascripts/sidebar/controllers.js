@@ -165,7 +165,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         if (liveTweetsQueue.length > 0){
           //reset the count since there is result
           noSampleTweetsCount = 0;
-          if($("#loadingAnime").length!=0){
+          if ($("#loadingAnime").length !== 0) {
             $("#tweet").html("");
           }
           var data = liveTweetsQueue.pop();
