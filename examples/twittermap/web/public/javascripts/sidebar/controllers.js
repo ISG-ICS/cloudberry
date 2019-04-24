@@ -171,7 +171,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
-        else{
+        else {
           noSampleTweetsCount++;
         }
 
