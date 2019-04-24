@@ -180,7 +180,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           $("#tweet").children().last().remove();
         }
 
-        if($("#loadingAnime").length!=0 && noSampleTweetsCount>=10){
+        if ($("#loadingAnime").length !== 0 && noSampleTweetsCount >= 10) {
           $("#loadingMsg").html("<p>Keyword maybe two rare, expecting longer time to see sample tweets</p>")
         }
 
