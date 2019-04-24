@@ -181,7 +181,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         }
 
         if ($("#loadingAnime").length !== 0 && noSampleTweetsCount >= 10) {
-          $("#loadingMsg").html("<p>Keyword maybe two rare, expecting longer time to see sample tweets</p>")
+          $("#loadingMsg").html("<p>Keyword may be too rare, expecting longer time to see sample tweets</p>")
         }
 
       }, updateRate * 1000);
