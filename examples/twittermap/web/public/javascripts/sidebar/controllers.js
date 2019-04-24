@@ -172,7 +172,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           drawTweets(data);
         }
         else {
-          noSampleTweetsCount++;
+          noSampleTweetsCount ++;
         }
 
         if($("#tweet").children().length > 20)
