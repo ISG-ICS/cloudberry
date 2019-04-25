@@ -8,6 +8,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
+
+    // Count the number of times that there's no sample tweets returned from API
+    var noSampleTweetsCount = 0;
     // live tweets set
     var liveTweetSet = new Set();
     // live tweets queue
@@ -160,13 +163,27 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function startLiveTweetsConsumer() {
       $scope.liveTweetsConsumer = window.setInterval(function() {
         if (liveTweetsQueue.length > 0){
+          //reset the count since there is result
+          noSampleTweetsCount = 0;
+          if ($("#loadingAnime").length !== 0) {
+            $("#tweet").html("");
+          }
           var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
+        else {
+          noSampleTweetsCount ++;
+        }
+
         if($("#tweet").children().length > 20)
         {
           $("#tweet").children().last().remove();
         }
+
+        if ($("#loadingAnime").length !== 0 && noSampleTweetsCount >= 10) {
+          $("#loadingMsg").html("<p>Keyword may be too rare, expecting longer time to see sample tweets</p>")
+        }
+
       }, updateRate * 1000);
     }
     
@@ -194,6 +211,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         if ($scope.isSampleTweetsOutdated) {
           cleanLiveTweets();
         }
+        //Adding loading animation before the first tweet arrive
+        if($("#loadingAnime").length==0) {
+          $("#tweet").prepend("<div id='loadingAnime' class='lds-ring'><div></div><div></div><div></div><div></div><p id='loadingMsg'>Loading Tweets</p></div>");
+        }
+        //reset the count everytime a new event is fired.
+        noSampleTweetsCount = 0;
         startLiveTweetsConsumer();
         startLiveTweetsProducer();
       }
