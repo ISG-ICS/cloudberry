@@ -63,7 +63,7 @@ object TwitterJSONTagToADM {
 
     val thpool = Executors.newFixedThreadPool(threadNumber)
     implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(thpool)
-    
+
     //We use a buffer to store a batch of records for multiple threads to process
     val buffer = new ArrayBuffer[String](bufferSize)
 
