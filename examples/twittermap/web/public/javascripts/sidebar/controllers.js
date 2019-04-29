@@ -103,7 +103,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
         $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide(0,function(){
+          if ($("#loadingAnime").length !== 0) {
+            $("#loadingAnime").remove();
+          }
+        }).slideDown(1000);
       });
     }
 
@@ -165,9 +169,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         if (liveTweetsQueue.length > 0){
           //reset the count since there is result
           noSampleTweetsCount = 0;
-          if ($("#loadingAnime").length !== 0) {
-            $("#tweet").html("");
-          }
           var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
