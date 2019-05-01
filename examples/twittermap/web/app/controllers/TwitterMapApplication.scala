@@ -165,7 +165,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         }
         else{
           //Thi url is used by twitter lastest timeline page to get the lastest tweets from their server
-          val url = "https://twitter.com/i/search/timeline?f=tweets&vertical=news&q="+queryWords+"%20near%3A\"United%20States\"%20within%3A8000mi&src=typd"
+          val url = "https://twitter.com/i/search/timeline?f=tweets&vertical=news&q="+queryWords+"%20near%3A\"United%20States\"%20within%3A8000mi&l=en&src=typd"
           val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
           connection.setRequestMethod("GET")
           //This header must be added, otherwise we will get empty response
