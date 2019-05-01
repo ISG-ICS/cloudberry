@@ -22,6 +22,7 @@ import java.net.{HttpURLConnection, URL, URLEncoder}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
+import scala.util.matching.Regex
 
 
 @Singleton
@@ -61,6 +62,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val liveTweetToken: String = config.getString("liveTweetToken").getOrElse(null)
   val liveTweetTokenSecret: String = config.getString("liveTweetTokenSecret").getOrElse(null)
   val enableLiveTweet : Boolean = config.getBoolean("enableLiveTweet").getOrElse(true)
+  val useDirectSource : Boolean = config.getBoolean("useDirectSource").getOrElse(true)
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
@@ -112,50 +114,70 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   class LiveTweetActor(out: ActorRef) extends Actor {
     override def receive = {
       case msg: JsValue =>
-        val queryWords = (msg \\ "keyword").head.as[String]
-        val location = Array{(msg \\ "location").head.as[Array[Double]]}
-        val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
-        val center = Array((locs(0)(0) + locs(1)(0))/2.00,(locs(0)(1)+locs(1)(1))/2.00)
-        val centerLoc = new GeoLocation(center(1),center(0))
-        val unit = Query.Unit.km
-        /*
-        Note: Twitter Search API does not support bounding box, the Geo information can only be specified
-        By using center location and radius.
-        Center location is calculated by the center point of bounding box(rectangle)
-        Radius is calculated by the difference of latitude between left top corner and right bottom corner.
-        Using latitude rather than longitude
-        since the ratio between latitude to KM is almost constant
-        But ratio between Longitude to KM varies largerly.
-        ------------------
-        |     * * *      |
-        |    *     *     |
-        |      * *       |
-        ------------------
-        */
-        val radius = Math.abs(locs(0)(1) - locs(1)(1)) * 111
         var tweetArray = Json.arr()
-        val cb2 = new ConfigurationBuilder
-        cb2.setDebugEnabled(true)
-          .setOAuthConsumerKey(liveTweetConsumerKey)
-          .setOAuthConsumerSecret(liveTweetConsumerSecret)
-          .setOAuthAccessToken(liveTweetToken)
-          .setOAuthAccessTokenSecret(liveTweetTokenSecret)
-        val tf = new TwitterFactory(cb2.build)
-        val twitterAPI = tf.getInstance
-        val query = new twitter4j.Query
-        var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
-        val resultType = twitter4j.Query.ResultType.recent
-        query.setQuery(queryWords)
-        query.setCount(desiredTweetAmount)
-        query.setResultType(resultType)
-        query.setGeoCode(centerLoc,radius,unit)
-        val tweetsResult = twitterAPI.search(query).getTweets
-        for(i <- 0 to tweetsResult.size()-1){
-          val status = tweetsResult.get(i)
-          if (status.isRetweet == false){
-            tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
-          }
+        val queryWords = (msg \\ "keyword").head.as[String]
 
+        //If useDirectSource set to false, we just use traditional search API to provide sample tweets
+        if(!useDirectSource){
+          val location = Array{(msg \\ "location").head.as[Array[Double]]}
+          val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
+          val center = Array((locs(0)(0) + locs(1)(0))/2.00,(locs(0)(1)+locs(1)(1))/2.00)
+          val centerLoc = new GeoLocation(center(1),center(0))
+          val unit = Query.Unit.km
+          /*
+          Note: Twitter Search API does not support bounding box, the Geo information can only be specified
+          By using center location and radius.
+          Center location is calculated by the center point of bounding box(rectangle)
+          Radius is calculated by the difference of latitude between left top corner and right bottom corner.
+          Using latitude rather than longitude
+          since the ratio between latitude to KM is almost constant
+          But ratio between Longitude to KM varies largerly.
+          ------------------
+          |     * * *      |
+          |    *     *     |
+          |      * *       |
+          ------------------
+          */
+          val radius = Math.abs(locs(0)(1) - locs(1)(1)) * 111
+          val cb2 = new ConfigurationBuilder
+          cb2.setDebugEnabled(true)
+            .setOAuthConsumerKey(liveTweetConsumerKey)
+            .setOAuthConsumerSecret(liveTweetConsumerSecret)
+            .setOAuthAccessToken(liveTweetToken)
+            .setOAuthAccessTokenSecret(liveTweetTokenSecret)
+          val tf = new TwitterFactory(cb2.build)
+          val twitterAPI = tf.getInstance
+          val query = new twitter4j.Query
+          var desiredTweetAmount = (liveTweetQueryInterval / liveTweetUpdateRate).toInt
+          val resultType = twitter4j.Query.ResultType.recent
+          query.setQuery(queryWords)
+          query.setCount(desiredTweetAmount)
+          query.setResultType(resultType)
+          query.setGeoCode(centerLoc,radius,unit)
+          val tweetsResult = twitterAPI.search(query).getTweets
+          for(i <- 0 to tweetsResult.size()-1){
+            val status = tweetsResult.get(i)
+            if (status.isRetweet == false){
+              tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
+            }
+
+          }
+        }
+        else{
+          //Thi url is used by twitter lastest timeline page to get the lastest tweets from their server
+          val url = "https://twitter.com/i/search/timeline?f=tweets&vertical=news&q="+queryWords+"%20near%3A\"United%20States\"%20within%3A8000mi&l=en&src=typd"
+          val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
+          connection.setRequestMethod("GET")
+          //This header must be added, otherwise we will get empty response
+          connection.setRequestProperty("user-agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36")
+          val inputStream = connection.getInputStream
+          val pattern = new Regex("""dataitemid(\d+)""")
+          var htmlContent = Source.fromInputStream(inputStream).mkString
+          htmlContent = htmlContent.replaceAll("""[\p{Punct}&&[^.]]""", "")
+          for(m <- pattern.findAllIn(htmlContent)) {
+            val idString = m.replaceAll("dataitemid", "")
+            tweetArray = tweetArray :+ (Json.obj("id" -> idString))
+          }
         }
 
         out!tweetArray
