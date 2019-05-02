@@ -103,7 +103,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
         $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+        window.setTimeout(function(){
+          $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide(0,function(){
+            if ($("#loadingAnime").length !== 0) {
+              $("#loadingAnime").remove();
+            }
+          }).slideDown(1000);
+        },1000);
       });
     }
 
@@ -119,6 +125,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             liveTweetsQueue.push(tweets[i]);
             liveTweetSet.add(tweets[i]["id"]);
           }
+        }
+        if(liveTweetsQueue.length > 0){
+          //draw a tweet immediately when there's new result
+          drawTweets(liveTweetsQueue.pop());
         }
       };
 
@@ -155,6 +165,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           // new tweets retrieved push back to live tweets queue
           liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
           $scope.isSampleTweetsOutdated = false;
+          if(liveTweetsQueue.length > 0){
+            //draw a tweet immediately when there's new result
+            drawTweets(liveTweetsQueue.pop());
+          }
         }, "sampleTweetsRequest");
       }
     }
@@ -165,9 +179,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         if (liveTweetsQueue.length > 0){
           //reset the count since there is result
           noSampleTweetsCount = 0;
-          if ($("#loadingAnime").length !== 0) {
-            $("#tweet").html("");
-          }
           var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
@@ -282,9 +293,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.setTimerToCheckQuery();
       disableHashtagButton();
       $scope.openRightMenu();
-      $scope.isHashTagOutdated = true;
-      $scope.isSampleTweetsOutdated = true;
-      handleSidebarQuery();
     }
 
 
