@@ -126,6 +126,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             liveTweetSet.add(tweets[i]["id"]);
           }
         }
+        if(liveTweetsQueue.length > 0){
+          //draw a tweet immediately when there's new result
+          drawTweets(liveTweetsQueue.pop());
+        }
       };
 
       /* fetchTweetFromAPI sends a query to twittermap server through websocket
@@ -161,6 +165,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           // new tweets retrieved push back to live tweets queue
           liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
           $scope.isSampleTweetsOutdated = false;
+          if(liveTweetsQueue.length > 0){
+            //draw a tweet immediately when there's new result
+            drawTweets(liveTweetsQueue.pop());
+          }
         }, "sampleTweetsRequest");
       }
     }
@@ -285,9 +293,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.setTimerToCheckQuery();
       disableHashtagButton();
       $scope.openRightMenu();
-      $scope.isHashTagOutdated = true;
-      $scope.isSampleTweetsOutdated = true;
-      handleSidebarQuery();
     }
 
 
