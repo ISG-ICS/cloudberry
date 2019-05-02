@@ -103,11 +103,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
         $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide(0,function(){
-          if ($("#loadingAnime").length !== 0) {
-            $("#loadingAnime").remove();
-          }
-        }).slideDown(1000);
+        window.setTimeout(function(){
+          $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide(0,function(){
+            if ($("#loadingAnime").length !== 0) {
+              $("#loadingAnime").remove();
+            }
+          }).slideDown(1000);
+        },1000);
       });
     }
 
