@@ -477,8 +477,6 @@ angular.module("cloudberry.map")
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
             drawPinMap($scope.result);
-          } else {
-            drawPinMap($scope.result);
           }
         }
       }
