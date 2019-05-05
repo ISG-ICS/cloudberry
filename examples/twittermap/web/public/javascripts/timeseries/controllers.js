@@ -327,6 +327,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                     
                     playButton
                       .on("click", function() {
+                      /*console.log(cloudberry.heatMapMinDate);
+                      var heatMapDay = new Date(cloudberry.heatMapMinDate);
+                      if (heatMapDay != undefined && heatMapDay > minDate){
+                        handle.attr("cx", x(heatMapDay));
+                      }*/
                       var button = d3version4.select(this);
                       onPlay = true;
                       if (button.text() == "Pause") {

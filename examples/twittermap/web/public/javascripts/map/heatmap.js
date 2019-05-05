@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
   .controller("heatMapCtrl", function($scope, cloudberry, cloudberryConfig,
-                                      TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
+                                      TimeSeriesCache, heatMapResultCache, moduleManager, cloudberryClient, queryUtil) {
     function setHeatMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -80,21 +80,30 @@ angular.module("cloudberry.map")
         }
       };
 
-      var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
-
-      cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
-        if(angular.isArray(resultSet)) {
-          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
-          cloudberry.heatmapMapResult = resultSet[0];
-        }
-      }, "heatMapResult");
 
       // Complete time series cache hit case - exclude time series request
       if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
+        console.log("case 1");
+        //We need to get data from cache
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
+        cloudberry.heatmapMapResult = heatMapResultCache.getValues(cloudberry.parameters.timeInterval);
       }
       // Partial time series cache hit case
       else {
+        console.log("case 2");
+        //We need add to cache here
+        var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
+      
+        cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
+          if(angular.isArray(resultSet)) {
+            cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+            cloudberry.heatmapMapResult = resultSet[0];
+            console.log(cloudberry.heatmapMapResult);
+          }
+          heatMapResultCache.putValues(cloudberry.heatmapMapResult)
+          cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
+        }, "heatMapResult");
+
         cloudberryClient.send(heatTimeJson, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
             var requestTimeRange = {
@@ -112,9 +121,10 @@ angular.module("cloudberry.map")
           // When the query is executed completely, we update the time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
+            document.getElementById("play-button").disabled = false;
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
-          }
+            }
         }, "heatTime");
       }
     }
