@@ -36,6 +36,10 @@ object Dependencies {
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 
+  val guardianDependencies: Seq[ModuleID] = Seq(
+    "com.typesafe.play" %% "play-json" % playVersion
+  ) ++ testDeps
+
   val utilDependencies: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-logback" % playVersion
   ) ++ testDeps
