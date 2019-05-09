@@ -210,7 +210,7 @@ angular.module("cloudberry.map")
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, onTimeSeriesRange);
     }
 
-    // clear pinmap specific data
+    // clean pinmap related data structures
     function cleanPinMap() {
       cleanPinmapLayer();
       cleanPinmapMarker();
