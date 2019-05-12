@@ -54,7 +54,7 @@ angular.module("cloudberry.map")
       });
     }
 
-    // Send query to cloudberry
+    // Send pinmap query to cloudberry
     function sendPinmapQuery() {
 
       if (typeof(cloudberry.parameters.keywords) === "undefined"
@@ -63,9 +63,9 @@ angular.module("cloudberry.map")
         return;
       }
 
-      // For time-series histogram, get geoIds not in the time series cache.
-      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
-        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+      if ($scope.status.zoomLevel < $scope.currentKeywordMinZoomLevel) {
+        $scope.currentKeywordMinZoomLevel = $scope.status.zoomLevel;
+      }
 
       var pinsJson = {
         dataset: cloudberry.parameters.dataset,
@@ -77,11 +77,10 @@ angular.module("cloudberry.map")
           field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
         },
         option: {
-          sliceMillis: cloudberryConfig.querySliceMills
+          sliceMillis: cloudberryConfig.querySliceMills,
+          returnDelta: true
         }
       };
-
-      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
       cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
@@ -89,6 +88,22 @@ angular.module("cloudberry.map")
           cloudberry.pinmapMapResult = resultSet[0];
         }
       }, "pinMapResult");
+    }
+
+    // send time series query to Cloudberry
+    function sendPinmapTimeQuery() {
+
+      if (typeof(cloudberry.parameters.keywords) === "undefined"
+        || cloudberry.parameters.keywords === null
+        || cloudberry.parameters.keywords.length === 0) {
+        return;
+      }
+
+      // For time-series histogram, get geoIds not in the time series cache.
+      $scope.geoIdsNotInTimeSeriesCache = TimeSeriesCache.getGeoIdsNotInCache(cloudberry.parameters.keywords,
+        cloudberry.parameters.timeInterval, cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel);
+
+      var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
       // Complete time series cache hit case - exclude time series request
       if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
@@ -122,32 +137,85 @@ angular.module("cloudberry.map")
 
     // Event handler for zoom event
     function onZoomPinmap(event) {
-      sendPinmapQuery();
+      // if zoom in, send new query if points are not too many
+      if (event.level > $scope.previousZoomLevel) {
+        if ($scope.currentPointsCount < $scope.maxPointsCount) {
+          sendPinmapQuery();
+        }
+      }
+      // if zoom out, send new query if current keyword does not contain results of higher (vertical) level
+      else if (event.level < $scope.previousZoomLevel) {
+        if (event.level < $scope.currentKeywordMinZoomLevel) {
+          sendPinmapQuery();
+        }
+      }
+      $scope.previousZoomLevel = event.level;
+      sendPinmapTimeQuery();
     }
 
-    // Common event handler for Countmap
-    function pinMapCommonEventHandler(event) {
+    // Event handler for drag event
+    function onDragPinmap(event) {
+      if ($scope.currentPointsCount < $scope.maxPointsCount) {
         sendPinmapQuery();
+      }
+      sendPinmapTimeQuery();
     }
 
-    // clear pinmap specific data
-    function cleanPinMap() {
+    // Event handler for search keyword event
+    function onSearchKeyword(event) {
+      drawPinMap([]);
+      cleanPinmapMarker();
+      $scope.currentKeywordMinZoomLevel = $scope.status.zoomLevel;
+      sendPinmapQuery();
+      sendPinmapTimeQuery();
+    }
+
+    // Event handler for time series range event
+    function onTimeSeriesRange(event) {
+      drawPinMap([]);
+      sendPinmapQuery();
+      sendPinmapTimeQuery();
+    }
+
+    function cleanPinmapLayer() {
       $scope.points = [];
       $scope.pointIDs = [];
       if($scope.pointsLayer != null) {
         $scope.map.removeLayer($scope.pointsLayer);
         $scope.pointsLayer = null;
       }
+    }
+
+    function cleanPinmapMarker() {
       if ($scope.currentMarker != null) {
         $scope.map.removeLayer($scope.currentMarker);
         $scope.currentMarker = null;
       }
+    }
+
+    function cleanPinmapTimer() {
+      if ($scope.timer != null) {
+        clearTimeout($scope.timer);
+        $scope.timer = null;
+      }
+    }
+
+    function cleanPinmapEventHandlers() {
+      $scope.map.off("mousemove");
 
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, pinMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, pinMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, pinMapCommonEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, onSearchKeyword);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, onTimeSeriesRange);
+    }
+
+    // clean pinmap related data structures
+    function cleanPinMap() {
+      cleanPinmapLayer();
+      cleanPinmapMarker();
+      cleanPinmapTimer();
+      cleanPinmapEventHandlers();
     }
 
     // initialize pinmap
@@ -167,47 +235,50 @@ angular.module("cloudberry.map")
 
       // Subscribe to moduleManager's events
       moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, pinMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, pinMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, pinMapCommonEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, onDragPinmap);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, onSearchKeyword);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, onTimeSeriesRange);
 
-      $scope.mouseOverPointI = 0;
+      $scope.mouseOverPointID = -1;
+      // number of points shown now
+      $scope.currentPointsCount = 0;
+      // maximum number of points can be shown, 10 million
+      $scope.maxPointsCount = 10000000;
+      // current keyword min zoom level
+      $scope.currentKeywordMinZoomLevel = -1;
+      // previous zoom level
+      $scope.previousZoomLevel = $scope.status.zoomLevel;
     }
     
     // function for drawing pinmap
     function drawPinMap(result) {
 
-      if ($scope.currentMarker != null) {
-        $scope.map.removeLayer($scope.currentMarker);
-      }
-
-      //To initialize the points layer
+      // initialize the points layer
       if (!$scope.pointsLayer) {
        
         $scope.pointsLayer = new WebGLPointLayer();
-        //$scope.pointsLayer.setPointSize(10);
         $scope.pointsLayer.setPointSize(3);
         $scope.pointsLayer.setPointColor(0, 0, 255);
 
         $scope.map.addLayer($scope.pointsLayer);
 
-        //Create a new event called "mouseintent" by listening to "mousemove".
+        // register listener to "mousemove" event on map
         $scope.map.on("mousemove", onMapMouseMove);
-        var timer = null;
-        //If user hang the mouse cursor for 300ms, fire a "mouseintent" event.
+        $scope.timer = null;
+        // if user mouses over one place for 300ms, fire a "mouseintent" event.
         function onMapMouseMove(e) {
-          var duration = 300;
-          if (timer !== null) {
-            clearTimeout(timer);
-            timer = null;
+          $scope.currentMousePosition = e;
+          if ($scope.timer != null) {
+            clearTimeout($scope.timer);
+            $scope.timer = null;
           }
-          timer = setTimeout(L.Util.bind(function() {
+          $scope.timer = setTimeout(L.Util.bind(function() {
             this.fire("mouseintent", e);
-            timer = null;
-          }, this), duration);
+            $scope.timer = null;
+          }, this), 300);
         }
 
-        //shows each point's info in Front-end.
+        // translate individual tweet from JSON to html element
         function translateTweetDataToShow(tweetJSON) {
             var tweetid = "";
             try {
@@ -261,7 +332,7 @@ angular.module("cloudberry.map")
             var tweetTemplate;
 
             //handles exceptions:
-            if(tweetText == "" || null || undefined){
+            if (tweetText == "" || null || undefined) {
                 tweetTemplate = "\n"
                 + "<div>"
                 + "Fail to get Tweets data."
@@ -300,21 +371,18 @@ angular.module("cloudberry.map")
 
         $scope.map.on("mouseintent", onMapMouseIntent);
 
-        $scope.currentMarker = null;
         $scope.points = [];
 
         function onMapMouseIntent(e) {
 
           var pointID = $scope.pointsLayer.getCurrentPointID(e);
 
-          //if mouse over a new point, show the Popup Tweet!
+          // if mouse intent a new point, show the Popup Tweet!
           if (pointID > 0 && $scope.mouseOverPointID !== pointID) {
             $scope.mouseOverPointID = pointID;
-            //(1) If previous Marker is not null, destroy it.
-            if ($scope.currentMarker != null) {
-              $scope.map.removeLayer($scope.currentMarker);
-            }
-            //(2) Create a new Marker to highlight the point.
+            // (1) if previous Marker is not null, destroy it.
+            cleanPinmapMarker();
+            // (2) create a new Marker to highlight the point.
             $scope.currentMarker = L.circleMarker(e.latlng, {
               radius : 6,
               color : "#0d3e99",
@@ -342,7 +410,9 @@ angular.module("cloudberry.map")
               var tweetContent = translateTweetDataToShow(resultSet[0][0]);
               $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
               $scope.popUpTweet.setContent(tweetContent);
-              if($scope.currentMarker) {
+              // in case the results comes late, only show the popup if mouse position is still at the point
+              if ($scope.currentMarker &&
+                $scope.mouseOverPointID === $scope.pointsLayer.getCurrentPointID($scope.currentMousePosition)) {
                 $scope.currentMarker.bindPopup($scope.popUpTweet).openPopup();
               }
             }, "pinResult");
@@ -351,17 +421,18 @@ angular.module("cloudberry.map")
       }
 
       //Update the points data
-      if (result.length > 0){
+      if (result.length > 0) {
+        $scope.currentPointsCount += result.length;
         $scope.points = [];
         for (var i = 0; i < result.length; i++) {
-          if (result[i].hasOwnProperty("coordinate")){
+          if (result[i].hasOwnProperty("coordinate")) {
             $scope.points.push([result[i].coordinate[1], result[i].coordinate[0], result[i].id]);
           }
-          else if (result[i].hasOwnProperty("place.bounding_box")){
+          else if (result[i].hasOwnProperty("place.bounding_box")) {
             $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0]), result[i].id]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
           }
         }
-        $scope.pointsLayer.setData($scope.points);
+        $scope.pointsLayer.appendData($scope.points);
       }
       else {
         $scope.points = [];
@@ -370,7 +441,7 @@ angular.module("cloudberry.map")
     }
     
     // initialize if the default map type is pinmap
-    if (cloudberry.parameters.maptype === "pinmap"){
+    if (cloudberry.parameters.maptype === "pinmap") {
       setPinMapStyle();
       $scope.resetPolygonLayers();
       setInfoControlPinMap();
@@ -386,7 +457,7 @@ angular.module("cloudberry.map")
         setInfoControlPinMap();
         sendPinmapQuery();
       }
-      else if (event.previousMapType === "pinmap"){
+      else if (event.previousMapType === "pinmap") {
         cleanPinMap();
       }
     }
@@ -405,8 +476,6 @@ angular.module("cloudberry.map")
           $scope.result = newResult;
           if (Object.keys($scope.result).length !== 0) {
             $scope.status.init = false;
-            drawPinMap($scope.result);
-          } else {
             drawPinMap($scope.result);
           }
         }
