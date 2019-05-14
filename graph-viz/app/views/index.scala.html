@@ -17,8 +17,6 @@ body {
   height: 100%;
 }
 
-
-
 </style>
 
 <body>
@@ -26,8 +24,8 @@ body {
 <br><br><br><br>
 <p id="content">Reply Tweets Dataset</p>
 <br><br>
-<input type="text" class="div" style="width: 45%" id="numberOfNodes"
-       placeholder="Search number of nodes, range from 1-10000, e.g.500. The default value is 5.">
+<input type="text" class="div" style="width: 45%" id="query"
+       placeholder="Search number for tweets and their replies">
 <button onclick="drawGraph()">submit</button>
 
 
@@ -36,12 +34,12 @@ body {
 <script src='/assets/javascripts/mapbox-gl.js'></script>
 <link href='/assets/stylesheets/mapbox-gl.css' rel='stylesheet' />
 <script>
-var numOftweets = 5;
+var query = "";
 function drawGraph(){
-  numOftweets = document.getElementById("numberOfNodes").value;
+  query = document.getElementById("query").value;
   document.getElementById('container').innerHTML = "";
   var request = new XMLHttpRequest();
-  request.open('GET', 'http://localhost:9000/replies?numReplies='+numOftweets, false);//for async
+  request.open('GET', 'http://localhost:9000/replies?query='+query, false);//for blocking
   request.send(null);
   if (request.status === 200) {
     var data = JSON.parse(request.responseText);
