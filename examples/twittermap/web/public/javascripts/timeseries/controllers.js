@@ -223,7 +223,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .xAxisLabel(startDate + "   to   " + endDate)
               .elasticY(true)
               .on("postRedraw", highlightChart)
-              .on("filtered", removeHighlight);
+              .on("filtered", removeHighlight)
+              .yAxis().ticks(4);
 
 
 
