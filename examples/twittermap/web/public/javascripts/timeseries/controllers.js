@@ -123,8 +123,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       controller: 'TimeSeriesCtrl',
       link: function ($scope, $element, $attrs) {
         var chart = d3.select($element[0]);
-
-
         $scope.$watch('resultArray', function (newVal, oldVal) {
           if($scope.timeseriesState >= 2){
             $scope.queried = true;
