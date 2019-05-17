@@ -11,6 +11,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.currentTweetCount = 0;
     $scope.queried = false;
     $scope.sumText = config.sumText;
+    //Used to control behavior of time bar, time bar should start to draw diagram when received second result,
+    //Otherwise there will be a blink line.
+    $scope.timeseriesState = 0;
+
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
     }
@@ -80,6 +84,16 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       }
     };
 
+    function eventHandler(){
+      //reset time series state
+      $scope.timeseriesState = 1;
+    }
+
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
+
     $scope.sendTotalCountQuery = function() {
       cloudberryClient.send($scope.totalCountJson, function(id, resultSet, resultTimeInterval){
         $scope.totalCount = resultSet[0][0].count;
@@ -109,126 +123,121 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       controller: 'TimeSeriesCtrl',
       link: function ($scope, $element, $attrs) {
         var chart = d3.select($element[0]);
+
+
         $scope.$watch('resultArray', function (newVal, oldVal) {
-
-          if(oldVal.length == 0)
-          {
-            if(newVal.length == 0)
+          if($scope.timeseriesState >= 2){
+            $scope.queried = true;
+            var ndx = $scope.ndx;
+            if (ndx) {
+              ndx.remove();
+              ndx.add($scope.empty);
+              dc.redrawAll();
+              ndx.add(newVal);
+              dc.redrawAll();
               return;
+            }
+
+            $scope.ndx = crossfilter(newVal);
+            var timeDimension = $scope.ndx.dimension(function (d) {
+              return d3.time.week(d.time);
+            });
+            var timeGroup = timeDimension.group().reduceSum(function (d) {
+              return d.count;
+            });
+
+            var timeSeries = dc.lineChart(chart[0][0]);
+            var timeBrush = timeSeries.brush();
+            var resetClink = 0;
+
+            var requestFunc = function(min, max) {
+              cloudberry.parameters.timeInterval.start = min;
+              cloudberry.parameters.timeInterval.end = max;
+              moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
+            };
+
+            // This function is to remove the "blue color" highlight of line chart in selected time range
+            // It happens when the time brush is moved by user
+            var removeHighlight = function() {
+              var panel = $(".chart-body")[0].firstChild;
+              while (panel.childElementCount !== 1) {
+                panel.removeChild(panel.lastChild);
+              }
+            };
+
+            // This function is to highlight the line chart in selected time range
+            // It happens when the chart has redrawn after the time brush in moved by user
+            var highlightChart = function() {
+              var chartBody = $(".chart-body")[0];
+              var extent = $(".extent")[0];
+              var panel = chartBody.firstChild;
+              var oldPath = panel.firstChild;
+              var newPath = oldPath.cloneNode(true);
+
+              // If user clink the "reset" button, the whole line will be highlighted, the function return.
+              if (resetClink === 1 || extent.getAttribute("width") === "0") {
+                resetClink += 2;
+                oldPath.setAttribute("stroke", "#1f77b4");
+                return ;
+              }
+
+              if (panel.childElementCount !== 1) {
+                removeHighlight();
+              }
+              var left = extent.getBoundingClientRect().left - chartBody.getBoundingClientRect().left;
+              var right = chartBody.getBoundingClientRect().right - extent.getBoundingClientRect().right;
+
+              // Dim the old line in chart by setting it to "grey color"
+              oldPath.setAttribute("stroke", "#ccc");
+              newPath.setAttribute("stroke", "#1f77b4");
+              newPath.style.clipPath = "inset(0px "+right+"px 0px "+left+"px)";
+
+              // Add the "blue color" highlight segment of line to the chart
+              panel.appendChild(newPath);
+            };
+
+            // set the times of resetClink to 0 if the keyword is change
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
+              resetClink = 0;
+            });
+
+            timeBrush.on('brushend', function (e) {
+              var extent = timeBrush.extent();
+              requestFunc(extent[0], extent[1])
+            });
+
+            var minDate = cloudberry.startDate;
+            var maxDate = cloudberry.parameters.timeInterval.end;
+            chart.selectAll('a').remove();
+            chart.append('a')
+              .text('Reset')
+              .attr('href',"#")
+              .on("click", function() { resetClink++; timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
+              .style("position", "absolute")
+              .style("bottom", "90%")
+              .style("left", "5%");
+
+            var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
+            var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
+
+            timeSeries
+              .width(width)
+              .height(height)
+              .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
+              .dimension(timeDimension)
+              .group(timeGroup)
+              .x(d3.time.scale().domain([minDate, maxDate]))
+              .xUnits(d3.time.days)
+              .xAxisLabel(startDate + "   to   " + endDate)
+              .elasticY(true)
+              .on("postRedraw", highlightChart)
+              .on("filtered", removeHighlight);
+
+            dc.renderAll();
+            timeSeries.filter([minDate, maxDate]);
           }
 
-          $scope.queried = true;
-          var ndx = $scope.ndx;
-          if (ndx) {
-            ndx.remove();
-            ndx.add($scope.empty);
-            dc.redrawAll();
-            ndx.add(newVal);
-            dc.redrawAll();
-            return;
-          }
-
-          $scope.ndx = crossfilter(newVal);
-          var timeDimension = $scope.ndx.dimension(function (d) {
-            return d3.time.week(d.time);
-          });
-          var timeGroup = timeDimension.group().reduceSum(function (d) {
-            return d.count;
-          });
-
-          var timeSeries = dc.lineChart(chart[0][0]);
-          var timeBrush = timeSeries.brush();
-          var resetClink = 0;
-
-          var requestFunc = function(min, max) {
-            cloudberry.parameters.timeInterval.start = min;
-            cloudberry.parameters.timeInterval.end = max;
-            moduleManager.publishEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, {min: min, max: max});
-          };
-
-          // This function is to remove the "blue color" highlight of line chart in selected time range
-          // It happens when the time brush is moved by user
-          var removeHighlight = function() {
-            var panel = $(".chart-body")[0].firstChild;
-            while (panel.childElementCount !== 1) {
-              panel.removeChild(panel.lastChild);
-            }
-          };
-
-          // This function is to highlight the line chart in selected time range
-          // It happens when the chart has redrawn after the time brush in moved by user
-          var highlightChart = function() {
-            var chartBody = $(".chart-body")[0];
-            var extent = $(".extent")[0];
-            var panel = chartBody.firstChild;
-            var oldPath = panel.firstChild;
-            var newPath = oldPath.cloneNode(true);
-
-            // If user clink the "reset" button, the whole line will be highlighted, the function return.
-            if (resetClink === 1 || extent.getAttribute("width") === "0") {
-              resetClink += 2;
-              oldPath.setAttribute("stroke", "#1f77b4");
-              return ;
-            }
-
-            if (panel.childElementCount !== 1) {
-              removeHighlight();
-            }
-            var left = extent.getBoundingClientRect().left - chartBody.getBoundingClientRect().left;
-            var right = chartBody.getBoundingClientRect().right - extent.getBoundingClientRect().right;
-
-            // Dim the old line in chart by setting it to "grey color"
-            oldPath.setAttribute("stroke", "#ccc");
-            newPath.setAttribute("stroke", "#1f77b4");
-            newPath.style.clipPath = "inset(0px "+right+"px 0px "+left+"px)";
-
-            // Add the "blue color" highlight segment of line to the chart
-            panel.appendChild(newPath);
-          };
-
-          // set the times of resetClink to 0 if the keyword is change
-          moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
-            resetClink = 0;
-          });
-
-          timeBrush.on('brushend', function (e) {
-            var extent = timeBrush.extent();
-            requestFunc(extent[0], extent[1])
-          });
-
-          var minDate = cloudberry.startDate;
-          var maxDate = cloudberry.parameters.timeInterval.end;
-          chart.selectAll('a').remove();
-          chart.append('a')
-            .text('Reset')
-            .attr('href',"#")
-            .on("click", function() { resetClink++; timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
-            .style("position", "absolute")
-            .style("bottom", "90%")
-            .style("left", "5%");
-
-
-          var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
-          var endDate = (maxDate.getFullYear()+"-"+(maxDate.getMonth()+1));
-
-
-          timeSeries
-            .width(width)
-            .height(height)
-            .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
-            .dimension(timeDimension)
-            .group(timeGroup)
-            .x(d3.time.scale().domain([minDate, maxDate]))
-            .xUnits(d3.time.days)
-            .xAxisLabel(startDate + "   to   " + endDate)
-            .elasticY(true)
-            .on("postRedraw", highlightChart)
-            .on("filtered", removeHighlight);
-
-
-
-          dc.renderAll();
-          timeSeries.filter([minDate, maxDate]);
+          $scope.timeseriesState += 1;
 
         })
       }
