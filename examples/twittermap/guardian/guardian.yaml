@@ -1,0 +1,6 @@
+guardianConfig:
+  initialDelay: 0
+  heartBeatRate: 3600
+
+asterixdbConfig:
+  queryURL: http://localhost:19002/query/service

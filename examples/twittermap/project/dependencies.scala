@@ -37,7 +37,8 @@ object Dependencies {
   ) ++ testDeps
 
   val guardianDependencies: Seq[ModuleID] = Seq(
-    "com.typesafe.play" %% "play-json" % playVersion
+    "com.typesafe.play" %% "play-json" % playVersion,
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.1.1"
   ) ++ testDeps
 
   val utilDependencies: Seq[ModuleID] = Seq(
