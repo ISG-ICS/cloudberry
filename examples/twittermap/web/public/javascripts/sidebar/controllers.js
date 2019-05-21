@@ -8,6 +8,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     $scope.isHashTagOpen = false;
     $scope.isSampleTweetsOpen = false;
     $scope.currentTab = "sampletweetTab";
+
+    // Count the number of times that there's no sample tweets returned from API
+    var noSampleTweetsCount = 0;
     // live tweets set
     var liveTweetSet = new Set();
     // live tweets queue
@@ -100,7 +103,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var url = "https://api.twitter.com/1/statuses/oembed.json?callback=JSON_CALLBACK&id=" + message["id"];
       $http.jsonp(url).success(function (data) {
         $(data.html).hide().prependTo("#tweet");
-        $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide().slideDown(1000);
+        window.setTimeout(function(){
+          $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide(0,function(){
+            if ($("#loadingAnime").length !== 0) {
+              $("#loadingAnime").remove();
+            }
+          }).slideDown(1000);
+        },1000);
       });
     }
 
@@ -116,6 +125,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             liveTweetsQueue.push(tweets[i]);
             liveTweetSet.add(tweets[i]["id"]);
           }
+        }
+        if(liveTweetsQueue.length > 0){
+          //draw a tweet immediately when there's new result
+          drawTweets(liveTweetsQueue.pop());
         }
       };
 
@@ -152,6 +165,10 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           // new tweets retrieved push back to live tweets queue
           liveTweetsQueue = liveTweetsQueue.concat(resultSet[0]);
           $scope.isSampleTweetsOutdated = false;
+          if(liveTweetsQueue.length > 0){
+            //draw a tweet immediately when there's new result
+            drawTweets(liveTweetsQueue.pop());
+          }
         }, "sampleTweetsRequest");
       }
     }
@@ -160,13 +177,24 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function startLiveTweetsConsumer() {
       $scope.liveTweetsConsumer = window.setInterval(function() {
         if (liveTweetsQueue.length > 0){
+          //reset the count since there is result
+          noSampleTweetsCount = 0;
           var data = liveTweetsQueue.pop();
           drawTweets(data);
         }
+        else {
+          noSampleTweetsCount ++;
+        }
+
         if($("#tweet").children().length > 20)
         {
           $("#tweet").children().last().remove();
         }
+
+        if ($("#loadingAnime").length !== 0 && noSampleTweetsCount >= 10) {
+          $("#loadingMsg").html("<p>Keyword may be too rare, expecting longer time to see sample tweets</p>")
+        }
+
       }, updateRate * 1000);
     }
     
@@ -194,6 +222,12 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
         if ($scope.isSampleTweetsOutdated) {
           cleanLiveTweets();
         }
+        //Adding loading animation before the first tweet arrive
+        if($("#loadingAnime").length==0) {
+          $("#tweet").prepend("<div id='loadingAnime' class='lds-ring'><div></div><div></div><div></div><div></div><p id='loadingMsg'>Loading Tweets</p></div>");
+        }
+        //reset the count everytime a new event is fired.
+        noSampleTweetsCount = 0;
         startLiveTweetsConsumer();
         startLiveTweetsProducer();
       }
@@ -259,9 +293,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $scope.setTimerToCheckQuery();
       disableHashtagButton();
       $scope.openRightMenu();
-      $scope.isHashTagOutdated = true;
-      $scope.isSampleTweetsOutdated = true;
-      handleSidebarQuery();
     }
 
 
