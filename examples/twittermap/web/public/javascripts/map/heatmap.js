@@ -85,14 +85,12 @@ angular.module("cloudberry.map")
 
       // Complete time series cache hit case - exclude time series request
       if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
-        //console.log("case 1");
         //We need to get data from cache
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
 
         if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
           document.getElementById("play-button").disabled = true;
           cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
-            console.log(resultSet);
             if(angular.isArray(resultSet)) {
               cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
               cloudberry.heatmapMapResult = resultSet[0];
@@ -104,7 +102,6 @@ angular.module("cloudberry.map")
               resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
               document.getElementById("play-button").disabled = false;
               }
-  
           }, "heatMapResult");
         } else{
           cloudberry.heatmapMapResult = heatMapResultCache.getValues(cloudberry.parameters.timeInterval);
@@ -114,12 +111,10 @@ angular.module("cloudberry.map")
       // Partial time series cache hit case
       else {
         document.getElementById("play-button").disabled = true;
-        //console.log("case 2");
         //We need add to cache here
         var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
       
         cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
-          console.log(resultSet);
           if(angular.isArray(resultSet)) {
             cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
             cloudberry.heatmapMapResult = resultSet[0];
@@ -241,6 +236,10 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "heatmap") {
+        //document.getElementById("play-button").disabled = true;
+        console.log("aaa"); 
+        document.getElementById("time-slider").style.display = "none";
+        document.getElementById("play-button").style.display = "none";
         points = [];
         if (cloudberry.parameters.keywords != previousKeywords){
           heatMapResultCache.emptyStore();
@@ -258,7 +257,6 @@ angular.module("cloudberry.map")
     }
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
-    
     // TODO - get rid of this watch by doing work inside the callback function in sendHeatmapQuery()
     $scope.$watch(
       function() {

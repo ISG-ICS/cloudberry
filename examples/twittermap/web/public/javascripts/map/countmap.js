@@ -218,7 +218,7 @@ angular.module('cloudberry.map')
         redrawPopup();
         
       } else { // Partial time series cache hit case.
-        document.getElementById("play-button").disabled = true;
+        document.getElementById("play-button").style.display = "none";
         $scope.chartDataMap = TimeSeriesCache.getInViewTimeSeriesStore(cloudberry.parameters.geoIds,cloudberry.parameters.timeInterval);
 
         cloudberryClient.send(byGeoTimeRequestJson, function(id, resultSet, resultTimeInterval){
@@ -249,7 +249,9 @@ angular.module('cloudberry.map')
           // When the query is executed completely, we update the map result cache and time series cache.
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
-              document.getElementById("play-button").disabled = false;
+              if (cloudberry.parameters.maptype == 'countmap'){
+                document.getElementById("play-button").style.display = "block";
+              }
               TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInCache,
                 cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
           }
@@ -670,6 +672,8 @@ angular.module('cloudberry.map')
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "countmap") {
+        document.getElementById("time-slider").style.display = "block";
+        document.getElementById("play-button").style.display = "block";
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();

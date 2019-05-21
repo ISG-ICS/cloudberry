@@ -34,7 +34,6 @@ angular.module('cloudberry.heatMapResult', ['cloudberry.common'])
          * Retrieves map results data from the cache; ignores empty objects
          */
         this.getValues = function (timeInterval) {
-            console.log(timeInterval)
 
             var resultArray = [];
             for (var j = 0; j < store.length; j++) {

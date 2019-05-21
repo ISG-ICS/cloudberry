@@ -46,10 +46,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     var timeSlider = document.createElement("div");
     timeSlider.id = "time-slider";
     stats.appendChild(timeSlider);
-
-    var width = $(window).width();
-    var height = $(window).height();   
-
+  
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
@@ -259,113 +256,82 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                                 .range([0, targetValue])
                                 .clamp(true);
           
-                    var slider = svg.append("g")
-                        .attr("class", "slider")
-                        .attr("transform", "translate(" + 25 + "," + 15 + ")");
+            var slider = svg.append("g")
+                .attr("class", "slider")
+                .attr("transform", "translate(" + 25 + "," + 15 + ")");
+  
+            slider.append("line")
+            
+                .attr("class", "track")
+                .attr("x1", x.range()[0])
+                .attr("x2", x.range()[1])
+                .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                .attr("class", "track-inset")
+                .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                .attr("class", "track-overlay")
+                .call(d3version4.drag()
+                    .on("start.interrupt", function() { slider.interrupt(); })
+                    .on("start drag", function() {
+                    currentValue = d3version4.event.x;
+                    update(x.invert(currentValue)); 
+                    })
+                );
           
-                    slider.append("line")
-                    
-                        .attr("class", "track")
-                        .attr("x1", x.range()[0])
-                        .attr("x2", x.range()[1])
-                    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-                        .attr("class", "track-inset")
-                    .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-                        .attr("class", "track-overlay")
-                        .call(d3version4.drag()
-                            .on("start.interrupt", function() { slider.interrupt(); })
-                            .on("start drag", function() {
-                            currentValue = d3version4.event.x;
-                            update(x.invert(currentValue)); 
-                            })
-                        );
-          
-                    slider.insert("g", ".track-overlay")
-                        .attr("class", "ticks")
-                        .attr("transform", "translate(0," + 18 + ")")
-                    .selectAll("text")
-                        .data(x.ticks(20))
-                        .enter()
-                        .append("text")
-                        .attr("x", x)
-                        .attr("y", 10)
-                        .attr("text-anchor", "middle")
-                        //.text(function(d) { return formatDateIntoMonth(d); });
-          
-                    var handle = slider.insert("circle", ".track-overlay")
-                        .attr("class", "handle")
-                        .attr("r", 9);
-          
-                    var label = slider.append("text")  
-                        .attr("class", "label")
-                        .attr("text-anchor", "middle")
-                        .text(2001)
-                        .attr("transform", "translate(0," + (-25) + ")")
+            slider.insert("g", ".track-overlay")
+                .attr("class", "ticks")
+                .attr("transform", "translate(0," + 18 + ")")
 
-                    function update(t) {
-                      //var stopDate = new Date(maxDate);
-                      //stopDate.setMonth(stopDate.getMonth() - 1); 
-                    
-                        var month = formatDateIntoMonth(t);
-                        handle.attr("cx", x(t));
-                        label
-                            .attr("x", x(t))
-                            .text(month);
-                        var newDate = new Date(t);
-                        newDate.setMonth(t.getMonth() + 1);
-                        if(newDate <= maxDate) {
-                        requestFunc(t, newDate); }
-                        else {
-                          requestFunc(t, maxDate);
-                        } 
-                        console.log(t);
-                        console.log(newDate);
-                                             
-                    }
+            var handle = slider.insert("circle", ".track-overlay")
+                .attr("class", "handle")
+                .attr("r", 9);
+  
+            function update(t) {            
+                var month = formatDateIntoMonth(t);
+                handle.attr("cx", x(t));
+                var newDate = new Date(t);
+                newDate.setMonth(t.getMonth() + 1);
+                if(newDate <= maxDate) {
+                requestFunc(t, newDate); }
+                else {
+                  requestFunc(t, maxDate);
+                }               
+            }
 
-                    var playButton = d3version4.select("#play-button");
-                    
-                    playButton
-                      .on("click", function() {
-                      /*console.log(cloudberry.heatMapMinDate);
-                      var heatMapDay = new Date(cloudberry.heatMapMinDate);
-                      if (heatMapDay != undefined && heatMapDay > minDate){
-                        handle.attr("cx", x(heatMapDay));
-                      }*/
-                      var button = d3version4.select(this);
-                      onPlay = true;
-                      if (button.text() == "Pause") {
-                        clearInterval(timer);
-                        // timer = 0;
-                        button.text("Play");
-                      } else {
-                        timer = setInterval(step, 800);
-                        button.text("Pause");
-                      }
-                  });
+            var playButton = d3version4.select("#play-button");
+            
+            playButton
+              .on("click", function() {
+              var button = d3version4.select(this);
+              onPlay = true;
+              if (button.text() == "Pause") {
+                clearInterval(timer);
+                button.text("Play");
+              } else {
+                timer = setInterval(step, 800);
+                button.text("Pause");
+              }
+            });
 
-                  function step() {
-                      update(x.invert(currentValue));
-                      currentValue = currentValue + (targetValue/27);
-                      if (x.invert(currentValue) >= brushInterval.end) {
-                          onPlay = false;
-                          currentValue = x(brushInterval.start);
-                          clearInterval(timer);
-                          // timer = 0;
-                          playButton.text("Play");
-                          handle.attr("cx", x(brushInterval.start));
-                          requestFunc(brushInterval.start, brushInterval.end);
-                      }
-                      if (currentValue > targetValue) {
-                          onPlay = false;
-                          currentValue = 0;
-                          clearInterval(timer);
-                          // timer = 0;
-                          playButton.text("Play");
-                          handle.attr("cx", x(minDate));
-                          requestFunc(minDate, maxDate);
-                      }
-                  }
+            function step() {
+              update(x.invert(currentValue));
+              currentValue = currentValue + (targetValue/27);
+              if (x.invert(currentValue) >= brushInterval.end) {
+                  onPlay = false;
+                  currentValue = x(brushInterval.start);
+                  clearInterval(timer);
+                  playButton.text("Play");
+                  handle.attr("cx", x(brushInterval.start));
+                  requestFunc(brushInterval.start, brushInterval.end);
+              }
+              if (currentValue > targetValue) {
+                  onPlay = false;
+                  currentValue = 0;
+                  clearInterval(timer);
+                  playButton.text("Play");
+                  handle.attr("cx", x(minDate));
+                  requestFunc(minDate, maxDate);
+                }
+              }
 
           dc.renderAll();
           timeSeries.filter([minDate, maxDate]);
