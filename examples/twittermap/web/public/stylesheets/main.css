@@ -148,6 +148,17 @@ search-bar {
   width: 100%;
 }
 
+#time-slider {
+  position: absolute;
+  top: 0%; 
+  left: 22%;
+  z-index: 0.5;
+  pointer-events: auto;
+  display: inline-block;
+  width: 600px;
+  height: 100px;
+}
+
 time-series {
   z-index: 1;
   pointer-events: auto;
@@ -418,17 +429,6 @@ button[disabled]{
   stroke-width: 1.25px;
   }
 
-  #time-slider {
-    position: absolute;
-    top: 0px;
-    left: 300px;
-    z-index: 0.5;
-    pointer-events: auto;
-    display: inline-block;
-    width: 600px;
-    cursor: pointer;
-    height: 100px;
-  }
 
   .leaflet-container path{ 
     transition: fill .50s;

@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
   .controller("heatMapCtrl", function($scope, cloudberry, cloudberryConfig,
-                                      TimeSeriesCache, heatMapResultCache, moduleManager, cloudberryClient, queryUtil) {
+                                      TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
     function setHeatMapStyle() {
       $scope.setStyles({
         initStyle: {
@@ -52,8 +52,7 @@ angular.module("cloudberry.map")
         sentimentColors: ["#ff0000", "#C0C0C0", "#00ff00"]
       });
     }
-    var previousKeywords = [];
-    var points = [];
+
     // Send query to cloudberry
     function sendHeatmapQuery() {
 
@@ -77,59 +76,25 @@ angular.module("cloudberry.map")
           field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
         },
         option: {
-          sliceMillis: cloudberryConfig.querySliceMills,
-          returnDelta: true
+          sliceMillis: cloudberryConfig.querySliceMills
         }
       };
 
+      var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
+
+      cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
+        if(angular.isArray(resultSet)) {
+          cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+          cloudberry.heatmapMapResult = resultSet[0];
+        }
+      }, "heatMapResult");
 
       // Complete time series cache hit case - exclude time series request
       if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
-        //We need to get data from cache
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
-
-        if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
-          document.getElementById("play-button").disabled = true;
-          cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
-            if(angular.isArray(resultSet)) {
-              cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
-              cloudberry.heatmapMapResult = resultSet[0];
-              heatMapResultCache.putValues(cloudberry.heatmapMapResult, cloudberry.parameters.timeInterval)
-              cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
-            }
-            
-            if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-              resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
-              document.getElementById("play-button").disabled = false;
-              }
-          }, "heatMapResult");
-        } else{
-          cloudberry.heatmapMapResult = heatMapResultCache.getValues(cloudberry.parameters.timeInterval);
-        }
       }
-    
       // Partial time series cache hit case
       else {
-        document.getElementById("play-button").disabled = true;
-        //We need add to cache here
-        var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
-      
-        cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
-          if(angular.isArray(resultSet)) {
-            cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
-            cloudberry.heatmapMapResult = resultSet[0];
-            heatMapResultCache.putValues(cloudberry.heatmapMapResult, cloudberry.parameters.timeInterval)
-            cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
-          }
-          
-          
-          if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
-            resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
-            document.getElementById("play-button").disabled = false;
-            }
-
-        }, "heatMapResult");
-
         cloudberryClient.send(heatTimeJson, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
             var requestTimeRange = {
@@ -149,7 +114,7 @@ angular.module("cloudberry.map")
             resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
-            }
+          }
         }, "heatTime");
       }
     }
@@ -157,12 +122,6 @@ angular.module("cloudberry.map")
     // Common event handler for Heatmap
     function heatMapCommonEventHandler(event) {
         sendHeatmapQuery();
-        points = [];
-    }
-
-    function heatMapKeywordEventHandler(event) {
-      heatMapCommonEventHandler(event);
-      heatMapResultCache.emptyStore();
     }
 
     function cleanHeatMap() {
@@ -174,7 +133,7 @@ angular.module("cloudberry.map")
       // Unsubscribe to moduleManager's events
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, heatMapCommonEventHandler);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, heatMapCommonEventHandler);
-      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, heatMapKeywordEventHandler);
+      moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, heatMapCommonEventHandler);
       moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, heatMapCommonEventHandler);
     }
     
@@ -192,7 +151,7 @@ angular.module("cloudberry.map")
       // Subscribe to moduleManager's events
       moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, heatMapCommonEventHandler);
       moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, heatMapCommonEventHandler);
-      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, heatMapKeywordEventHandler);
+      moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, heatMapCommonEventHandler);
       moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, heatMapCommonEventHandler);
 
       if (!$scope.heat){
@@ -213,6 +172,7 @@ angular.module("cloudberry.map")
       }
       
       var unitIntensity = parseInt(config.heatmapUnitIntensity); // getting the default intensity for a tweet
+      var points = [];
       for (var i = 0; i < result.length; i++) {
         if (result[i].hasOwnProperty("coordinate")){
           points.push([result[i].coordinate[1], result[i].coordinate[0], unitIntensity]);
@@ -236,27 +196,20 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "heatmap") {
-        //document.getElementById("play-button").disabled = true;
-        console.log("aaa"); 
         document.getElementById("time-slider").style.display = "none";
         document.getElementById("play-button").style.display = "none";
-        points = [];
-        if (cloudberry.parameters.keywords != previousKeywords){
-          heatMapResultCache.emptyStore();
-        };
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();
         sendHeatmapQuery();
       }
       else if (event.previousMapType === "heatmap"){
-        points = [];
-        previousKeywords = cloudberry.parameters.keywords;
         cleanHeatMap();
       }
     }
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, onMapTypeChange);
+    
     // TODO - get rid of this watch by doing work inside the callback function in sendHeatmapQuery()
     $scope.$watch(
       function() {
