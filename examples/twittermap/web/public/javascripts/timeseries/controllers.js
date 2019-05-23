@@ -196,11 +196,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var minDate = cloudberry.startDate;
             var maxDate = cloudberry.parameters.timeInterval.end;
 
-            // set the times of resetClink to 0 if the keyword is change
+            // Set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
               resetClink = 0;
               onPlay = false;
               requestFunc(minDate, maxDate);
+              // Move the handle to the start when keyword changed
               handle.attr("cx", x(minDate));
             });
 
@@ -211,6 +212,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               brushInterval.start = extent[0];
               brushInterval.end = extent[1];
               requestFunc(extent[0], extent[1]);
+              // Move the handle to the beginning of the brush
               handle.attr("cx", x(extent[0]));
               currentValue = x(extent[0]);
             });
@@ -244,9 +246,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
 
 
-            // time slider starts here
+            // Time slider starts here
             var currentValue = 0;
-            var targetValue = width-100;
+            var targetValue = width - 85;
             var svg = d3version4.select("#time-slider").append("svg")
                         .attr("width", width)
                         .attr("height", height);
@@ -311,7 +313,16 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             function step() {
               update(x.invert(currentValue));
-              currentValue = currentValue + (targetValue/27);
+              var numberOfMonth;
+              // Determine the step (one step per month)
+              if (brushInterval.start == brushInterval.end) {
+                numberOfMonth = brushInterval.end.getMonth() - brushInterval.start.getMonth() +
+                  (12 * (brushInterval.end.getFullYear() - brushInterval.start.getFullYear()));
+              } else {
+                numberOfMonth = maxDate.getMonth() - minDate.getMonth() +
+                (12 * (maxDate.getFullYear() - minDate.getFullYear()));
+              }
+              currentValue = currentValue + (targetValue/numberOfMonth);
               if (x.invert(currentValue) >= brushInterval.end) {
                   onPlay = false;
                   currentValue = x(brushInterval.start);
