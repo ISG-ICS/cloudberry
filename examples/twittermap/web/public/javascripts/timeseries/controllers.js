@@ -244,24 +244,22 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
 
 
-            // time slider started here
-            var formatDateIntoMonth = d3version4.timeFormat("%B");
+            // time slider starts here
             var currentValue = 0;
             var targetValue = width-100;
             var svg = d3version4.select("#time-slider").append("svg")
                         .attr("width", width)
                         .attr("height", height);
             var x = d3version4.scaleTime()
-                                .domain([minDate, maxDate])
-                                .range([0, targetValue])
-                                .clamp(true);
+                              .domain([minDate, maxDate])
+                              .range([0, targetValue])
+                              .clamp(true);
           
             var slider = svg.append("g")
-                .attr("class", "slider")
-                .attr("transform", "translate(" + 25 + "," + 15 + ")");
+                            .attr("class", "slider")
+                            .attr("transform", "translate(" + 40 + "," + 10 + ")");
   
             slider.append("line")
-            
                 .attr("class", "track")
                 .attr("x1", x.range()[0])
                 .attr("x2", x.range()[1])
@@ -272,8 +270,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .call(d3version4.drag()
                     .on("start.interrupt", function() { slider.interrupt(); })
                     .on("start drag", function() {
-                    currentValue = d3version4.event.x;
-                    update(x.invert(currentValue)); 
+                      currentValue = d3version4.event.x;
+                      update(x.invert(currentValue));
                     })
                 );
           
@@ -285,14 +283,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .attr("class", "handle")
                 .attr("r", 9);
   
-            function update(t) {            
-                var month = formatDateIntoMonth(t);
+            function update(t) {
                 handle.attr("cx", x(t));
                 var newDate = new Date(t);
                 newDate.setMonth(t.getMonth() + 1);
                 if(newDate <= maxDate) {
-                requestFunc(t, newDate); }
-                else {
+                  requestFunc(t, newDate);
+                } else {
                   requestFunc(t, maxDate);
                 }               
             }

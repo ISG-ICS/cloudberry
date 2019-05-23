@@ -367,10 +367,12 @@ div[aria-expanded=false] .glyphicon-triangle-bottom {
     display: none;
 }
 
+/* These styles are for map naimation. */
+
 #play-button {
   position: absolute;
-  top: 83%;
-  left: 80%;
+  top: 76%;
+  left: 69%;
   background: #337ab7;
   padding-right: 26px;
   border-radius: 3px;
@@ -397,42 +399,39 @@ button[disabled]{
   font-size: 10px;
   }
 
-  .track,
-  .track-inset,
-  .track-overlay {
+.track,
+.track-inset,
+.track-overlay {
   stroke-linecap: round;
-  }
+}
 
-  .track {
+.track {
   stroke: #000;
   stroke-opacity: 0.3;
   stroke-width: 10px;
-  }
+}
 
-  .track-inset {
+.track-inset {
   stroke: #dcdcdc;
   stroke-width: 8px;
-  }
+}
 
-  .track-overlay {
+.track-overlay {
   pointer-events: stroke;
   stroke-width: 50px;
   stroke: transparent;
   cursor: crosshair;
   z-index: 10;
-  }
+}
 
-  .handle {
+.handle {
   fill: #fff;
   stroke: #000;
   stroke-opacity: 0.5;
   stroke-width: 1.25px;
-  }
+}
 
 
-  .leaflet-container path{ 
-    transition: fill .50s;
-  }
 /*These styles are solely for loading animation*/
 
 #loadingAnime {
