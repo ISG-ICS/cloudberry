@@ -24,4 +24,4 @@ Relevant files:
 Group 1: movies.txt, movieWDC.js, movieWDC.html
 Group 2: stars.txt, starWDC.js, starWDC.html
 
-Python Generators (getting data from MySQL and outputting them in JSON format): json_generator.py, json_generator_limit_1000.py
+Python Generators (getting data from MySQL and outputting them in JSON format): json_generator.py
