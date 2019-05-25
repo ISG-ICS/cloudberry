@@ -7,7 +7,7 @@ To use run these files:
 
 1. Download Tableau Desktop (Free Trial Version) (https://www.tableau.com/products/desktop) or Tableau Public (Free Version) (https://public.tableau.com/en-us/s/)
 
-2. Run the Python scripts to get data from the local MySQL database (the data I used for these two specific WDC connectors are already stored in movies.txt and stars.txt in JSON format)
+2. Create a file to store the data used by Tableau WDC (I used the Python script to get data from the local MySQL database and store them in movies.txt and stars.txt in JSON format). (Note: Tableau WDC does not make a connection to the database. It only retrieves extracted data from a file (JSON, CSV, etc.))
 
 3. Modify the JavaScript files according to your data (My two JavaScript files are made specifically for movies.txt and stars.txt respectively)
 
@@ -24,4 +24,4 @@ Relevant files:
 Group 1: movies.txt, movieWDC.js, movieWDC.html
 Group 2: stars.txt, starWDC.js, starWDC.html
 
-Python Generators (getting data from MySQL and outputting them in JSON format): json_generator.py
+Optional Python Generators (getting data from MySQL and outputting them in JSON format): json_generator.py
