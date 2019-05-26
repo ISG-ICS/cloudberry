@@ -15,8 +15,9 @@
   height: 100%;
   }
 
-#query{
+#search{
 left:500px;
+width: 50%;
 top:0px;
 position:absolute;
 
@@ -26,10 +27,10 @@ position:absolute;
 
 <body>
 <div id="map" style="width:100vw; height: 100vh"></div>
-<div id = "query">
+<div id = "search">
 <p id="content">Reply Tweets Dataset</p>
-<input type="text" class="div" id="numberOfNodes"
-       placeholder="Search number of nodes, range from 1-10000, e.g.500. The default value is 5.">
+<input type="text" class="div" style="width: 45%" id="query"
+       placeholder="Search keywords e.g hurricane">
 <button onclick="drawGraph()">submit</button>
 </div>
 </body>
@@ -47,16 +48,18 @@ const map = new mapboxgl.Map({
       center: [-96.35,39.5],
       zoom: 3.7
     });
-;
+
+var query = "";
 function drawGraph(){
   if(map.getLayer('arc')!=undefined){
      map.removeLayer('arc')
   }
   
-  numOftweets = document.getElementById("numberOfNodes").value;
+  query = document.getElementById("query").value;
+  
   
   var request = new XMLHttpRequest();
-  request.open('GET', 'http://localhost:9000/replies?numReplies='+numOftweets, false);//for async
+  request.open('GET', 'http://localhost:9000/replies?query='+query, false);//for blocking
   request.send(null);
   if (request.status === 200) {
      var data = JSON.parse(request.responseText);
