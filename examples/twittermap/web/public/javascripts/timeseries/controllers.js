@@ -132,7 +132,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 ndx.add(newVal);
                 dc.redrawAll();
               }
-                return;
+              return;
             }
 
             $scope.ndx = crossfilter(newVal);
@@ -224,7 +224,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .on("click", function() { resetClink++; timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
                 .style("position", "absolute")
                 .style("bottom", "90%")
-                .style("left", "5%");
+                .style("left", "1%");
 
 
             var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
