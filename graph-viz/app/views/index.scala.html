@@ -4,59 +4,61 @@
 @defining(play.core.PlayVersion.current) { version =>
 
 <html>
+
 <title>Reply Tweets Deck.GL</title>
+<meta name='viewport' />
+
 <style type="text/css">
-body {
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  text-align:center;
-}
 #container {
   width: 100%;
   height: 100%;
+  }
+#search{
+left:500px;
+top:0px;
+position:absolute;
 }
-
-
-
 </style>
 
 <body>
+<div id="map" style="width:100vw; height: 100vh"></div>
+<div id = "search">
+    <p id="content">Reply Tweets Dataset</p>
+    <input type="text" class="div" id="query"
+           placeholder="Search number of nodes, range from 1-10000, e.g.500. The default value is 5.">
+    <button onclick="drawGraph()">submit</button>
+</div>
+</body>
 
-<br><br><br><br>
-<p id="content">Reply Tweets Dataset</p>
-<br><br>
-<input type="text" class="div" style="width: 45%" id="numberOfNodes"
-       placeholder="Search number of nodes, range from 1-10000, e.g.500. The default value is 5.">
-<button onclick="drawGraph()">submit</button>
 
 
-<div id="container"></div>
 <script src="/assets/javascripts/deckgl.min.js"></script>
-<script src='/assets/javascripts/mapbox-gl.js'></script>
-<link href='/assets/stylesheets/mapbox-gl.css' rel='stylesheet' />
+<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js'></script>
+<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.css' rel='stylesheet' />
 <script>
-var numOftweets = 5;
+mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
+const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/light-v9',
+      center: [-96.35,39.5],
+      zoom: 3.7
+    });
+;
 function drawGraph(){
-  numOftweets = document.getElementById("numberOfNodes").value;
-  document.getElementById('container').innerHTML = "";
+  if(map.getLayer('arc')!=undefined){
+     map.removeLayer('arc')
+  }
+
+  query = document.getElementById("query").value;
+
   var request = new XMLHttpRequest();
-  request.open('GET', 'http://localhost:9000/replies?numReplies='+numOftweets, false);//for async
+  request.open('GET', 'http://localhost:9000/replies?query='+query, false);//for async
   request.send(null);
   if (request.status === 200) {
-    var data = JSON.parse(request.responseText);
-
-  new deck.DeckGL({
-      container: document.getElementById('container'),
-      longitude: 20,
-      latitude: 10,
-      zoom: 1,
-      maxZoom: 50,
-      pitch: 0,
-      bearing: 0, //turn the graph to specific angle
-      layers: [
-      new deck.ArcLayer({
+     var data = JSON.parse(request.responseText);
+     const myArcLayer = new MapboxLayer({
         id: 'arc',
+		type: ArcLayer,
         pickable: true,
         data: data,
         getSourcePosition: d => d.source,
@@ -64,17 +66,12 @@ function drawGraph(){
         getSourceColor: [12, 44, 132],
         getTargetColor: [177, 0, 38],
         gettrokeWidth: 3
-      })
-    ]
-  });
+      });
+
+    map.addLayer(myArcLayer);
 }
 }
-
-
-
 </script>
-
-</body>
 
 </html>
 

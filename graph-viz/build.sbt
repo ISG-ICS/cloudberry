@@ -1,5 +1,5 @@
-name := """play-java-hello-world-web"""
-organization := "com.example"
+name := """graph-viz"""
+organization := "edu.uci.ics"
 
 version := "1.0-SNAPSHOT"
 
