@@ -200,21 +200,21 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
               resetClink = 0;
               onPlay = false;
-              requestFunc(minDate, maxDate);
+              requestFunc(brushInterval.start, brushInterval.end);
               // Move the handle to the start when keyword changed
-              handle.attr("cx", x(minDate));
+              handle.attr("cx", x(brushInterval.start));
               currentValue = x(brushInterval.start);
             });
 
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function(event) {
-              if (event.currentMapType != "countmap") {
-                if (playButton.text() == "Pause") {
+              if (event.currentMapType !== "countmap") {
+                if (playButton.text() === "Pause") {
                   document.getElementById("play-button").click();
                 }
                 onPlay = false;
-                requestFunc(minDate, maxDate);
+                requestFunc(brushInterval.start, brushInterval.end);
                 // Move the handle to the start when map type changed
-                handle.attr("cx", x(minDate));
+                handle.attr("cx", x(brushInterval.start));
                 currentValue = x(brushInterval.start);
               }
             });
