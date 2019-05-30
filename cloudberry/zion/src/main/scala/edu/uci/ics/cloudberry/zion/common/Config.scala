@@ -10,6 +10,8 @@ class Config(config: Configuration) {
 
   val AsterixURL = config.getString("asterixdb.url").getOrElse("testing")
 
+  val ElasticsearchURL = config.getString("elasticsearch.url").getOrElse("testing")
+
   val MySqlURL = config.getString("mysqldb.url").getOrElse("testing")
 
   val OracleURL = config.getString("oracledb.url").getOrElse("testing")

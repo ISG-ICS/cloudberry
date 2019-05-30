@@ -1,7 +1,7 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.impl.{AsterixSQLPPConn, DataSetInfo, MySQLConn, OracleConn, PostgreSQLConn}
+import edu.uci.ics.cloudberry.zion.model.impl.{AsterixSQLPPConn, DataSetInfo, MySQLConn, OracleConn, PostgreSQLConn, ElasticsearchConn}
 import scala.concurrent.{ExecutionContext, Future}
 private[db] class Migration_20160814() {
 
@@ -69,6 +69,32 @@ private[db] class Migration_20160814() {
              |
              |create dataset $berryMeta(berry.metaType) if not exists primary key name;
        """.stripMargin
+        }
+      case elasticsearch: ElasticsearchConn =>
+        conn.postControl {
+          s"""
+             |{"mappings" : {
+             |  "_doc" : {
+             |    "properties" : {
+             |      "dataInterval.start" : { "type" : "date", "format": "strict_date_time" },
+             |      "dataInterval.end": { "type" : "date", "format": "strict_date_time" },
+             |      "stats.createTime": { "type" : "date", "format": "strict_date_time" },
+             |      "stats.lastModifyTime": { "type" : "date", "format": "strict_date_time" },
+             |      "stats.lastReadTime": { "type" : "date", "format": "strict_date_time" }
+             |    }
+             |  }
+             |},
+             |"settings": {
+             |  "index": {
+             |    "max_result_window": 2147483647,
+             |    "number_of_shards" : 1,
+             |    "number_of_replicas" : 0
+             |  }
+             |},
+             |"method": "create",
+             |"dataset": "berry.meta"
+             |}
+           """.stripMargin
         }
     }
   }
