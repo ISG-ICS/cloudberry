@@ -6,7 +6,9 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.Statement;
+
 import java.util.HashSet;
+
 
 import play.libs.Json;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -30,7 +32,9 @@ public class GraphController extends Controller {
 
 
     public Result index(String query) {
+
         long startIndex = System.currentTimeMillis();
+
         ArrayNode replies = Json.newArray();
         try {
             Class.forName("org.postgresql.Driver");
@@ -46,7 +50,9 @@ public class GraphController extends Controller {
                     "@@ to_tsquery('"+query+"') or " +
                     "to_tsvector('english', to_text) " +
                     "@@ to_tsquery('"+query+"');");
+
             long startParse = System.currentTimeMillis();
+
 
             while (resultSet.next()) {
                 ObjectNode reply = Json.newObject();
@@ -65,6 +71,7 @@ public class GraphController extends Controller {
             resultSet.close();
             statement.close();
             conn.close();
+
             System.out.print("Total time in parsing data from Json is " + (endIndex - startParse) + " ms\n" );
             System.out.print("Total time in executing query in database is " + (startParse - startIndex) + " ms\n" );
             System.out.print("Total time in running index() is " + (endIndex - startIndex) + " ms\n" );
