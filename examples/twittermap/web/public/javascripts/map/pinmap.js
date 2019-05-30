@@ -252,7 +252,6 @@ angular.module("cloudberry.map")
     
     // function for drawing pinmap
     function drawPinMap(result) {
-
       // initialize the points layer
       if (!$scope.pointsLayer) {
        

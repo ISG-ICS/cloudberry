@@ -215,11 +215,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 requestFunc(minDate, maxDate);
                 // Move the handle to the start when map type changed
                 handle.attr("cx", x(minDate));
-                currentValue = x(minDate);
+                currentValue = x(brushInterval.start);
               }
             });
 
-            var brushInterval = {start: new Date(), end: new Date()};
+            var brushInterval = {start: minDate, end: maxDate};
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -311,7 +311,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             }
 
             var playButton = d3version4.select("#play-button");
-            
+
             playButton
               .on("click", function() {
               var button = d3version4.select(this);
@@ -327,15 +327,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             function step() {
               update(x.invert(currentValue));
-              var numberOfMonth;
               // Determine the step (one step per month)
-              if (brushInterval.start == brushInterval.end) {
-                numberOfMonth = brushInterval.end.getMonth() - brushInterval.start.getMonth() +
-                  (12 * (brushInterval.end.getFullYear() - brushInterval.start.getFullYear()));
-              } else {
-                numberOfMonth = maxDate.getMonth() - minDate.getMonth() +
+              var numberOfMonth = maxDate.getMonth() - minDate.getMonth() +
                 (12 * (maxDate.getFullYear() - minDate.getFullYear()));
-              }
               currentValue = currentValue + (targetValue/numberOfMonth);
               if (x.invert(currentValue) >= brushInterval.end) {
                   onPlay = false;
