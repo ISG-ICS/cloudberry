@@ -196,10 +196,8 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "heatmap") {
-        var time_slider = document.getElementById("time-slider")
-        time_slider.style.display = "none";
-        var play_button = document.getElementById("play-button");
-        play_button.style.display = "none";
+        document.getElementById("time-slider").style.display = "none";
+        document.getElementById("play-button").style.display = "none";
         setHeatMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlHeatMap();

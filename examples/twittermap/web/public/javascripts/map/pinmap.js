@@ -81,7 +81,7 @@ angular.module("cloudberry.map")
           returnDelta: true
         }
       };
-
+      
       cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
           cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
@@ -451,10 +451,8 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "pinmap") {
-        var time_slider = document.getElementById("time-slider")
-        time_slider.style.display = "none";
-        var play_button = document.getElementById("play-button");
-        play_button.style.display = "none";
+        document.getElementById("time-slider").style.display = "none";
+        document.getElementById("play-button").style.display = "none";
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
