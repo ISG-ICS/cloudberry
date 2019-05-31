@@ -18,7 +18,6 @@ left:500px;
 top:0px;
 position:absolute;
 }
-
 </style>
 
 <body>
@@ -32,44 +31,11 @@ position:absolute;
 </body>
 
 
-<br><br><br><br>
-<p id="content">Reply Tweets Dataset</p>
-<br><br>
-<input type="text" class="div" style="width: 45%" id="query"
-       placeholder="Search keywords e.g hurricane">
-<button onclick="drawGraph()">submit</button>
-
-
 
 <script src="/assets/javascripts/deckgl.min.js"></script>
 <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js'></script>
 <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.css' rel='stylesheet' />
 <script>
-
-var query = "";
-function drawGraph(){
-  var fstart = performance.now();
-
-  query = document.getElementById("query").value;
-  document.getElementById('container').innerHTML = "";
-  var request = new XMLHttpRequest();
-  request.open('GET', 'http://localhost:9000/replies?query='+query, false);//for blocking
-  request.send(null);
-  if (request.status === 200) {
-    var requestTimeStart = performance.now();
-    var data = JSON.parse(request.responseText);
-    var parseTimeEnd = performance.now();
-
-  new deck.DeckGL({
-      container: document.getElementById('container'),
-      longitude: 20,
-      latitude: 10,
-      zoom: 1,
-      maxZoom: 50,
-      pitch: 0,
-      bearing: 0, //turn the graph to specific angle
-      layers: [
-      new deck.ArcLayer({
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
 const map = new mapboxgl.Map({
       container: 'map',
@@ -79,19 +45,23 @@ const map = new mapboxgl.Map({
     });
 ;
 function drawGraph(){
+
+  var fstart = performance.now();
+  
   if(map.getLayer('arc')!=undefined){
      map.removeLayer('arc')
   }
-
   query = document.getElementById("query").value;
-
   var request = new XMLHttpRequest();
   request.open('GET', 'http://localhost:9000/replies?query='+query, false);//for async
   request.send(null);
   if (request.status === 200) {
+     var requestTimeStart = performance.now();
      var data = JSON.parse(request.responseText);
-     const myArcLayer = new MapboxLayer({
 
+     var parseTimeEnd = performance.now();
+
+     const myArcLayer = new MapboxLayer({
         id: 'arc',
 		type: ArcLayer,
         pickable: true,
@@ -101,21 +71,17 @@ function drawGraph(){
         getSourceColor: [12, 44, 132],
         getTargetColor: [177, 0, 38],
         gettrokeWidth: 3
-
-      })
-    ]
-  });
-  var requestTimeEnd = performance.now();
       });
-
     map.addLayer(myArcLayer);
-
+    var requestTimeEnd = performance.now();
 }
+
 var fend = performance.now();
 console.log("Total time of creating DeckGL is " + (requestTimeEnd- parseTimeEnd) + " ms");
 console.log("Total itme of parsing is " + (parseTimeEnd - requestTimeStart) + " ms");
 console.log("Total time of receiving data and finishing in deckGL is " + (requestTimeEnd-requestTimeStart) + " ms");
 console.log("Total time of drawGraph() is " + (fend-fstart) + " ms");
+
 }
 </script>
 
