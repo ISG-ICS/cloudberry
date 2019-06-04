@@ -81,6 +81,7 @@ angular.module("cloudberry.map")
           returnDelta: true
         }
       };
+
       cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
         if(angular.isArray(resultSet)) {
           cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
@@ -251,8 +252,10 @@ angular.module("cloudberry.map")
     
     // function for drawing pinmap
     function drawPinMap(result) {
+
       // initialize the points layer
       if (!$scope.pointsLayer) {
+
         $scope.pointsLayer = new WebGLPointLayer();
         $scope.pointsLayer.setPointSize(3);
         $scope.pointsLayer.setPointColor(0, 0, 255);
