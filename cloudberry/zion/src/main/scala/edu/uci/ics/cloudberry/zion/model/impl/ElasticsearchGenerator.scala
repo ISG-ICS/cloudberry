@@ -35,6 +35,7 @@ object ElasticImpl extends ElasticImpl {
 
 class ElasticsearchGenerator extends IQLGenerator {
 
+  import ElasticsearchGenerator._
   /**
     * represent the expression for a [[Field]]
     *
@@ -65,6 +66,8 @@ class ElasticsearchGenerator extends IQLGenerator {
       case q: CreateView => parseCreate(q, temporalSchemaMap)
       case q: AppendView => parseAppend(q, temporalSchemaMap)
       case q: UpsertRecord => parseUpsert(q, schemaMap)
+      case q: DropView => parseDrop(q, schemaMap)
+      case q: DeleteRecord => parseDelete(q, schemaMap)
       case _ => ???
     }
     result
@@ -123,7 +126,7 @@ class ElasticsearchGenerator extends IQLGenerator {
 
   private def parseAppend(append: AppendView, schemaMap: Map[String, Schema]): String = {
     val selectStatement = Json.parse(parseQuery(append.query, schemaMap)).as[JsObject]
-    val dest = Json.parse(s""" { "index": "${append.dataset}" } """)
+    val dest = Json.parse(s"""{ "index": "${append.dataset}"}""")
     var reindexStatement = Json.obj()
     var source = Json.obj()
 
@@ -161,6 +164,27 @@ class ElasticsearchGenerator extends IQLGenerator {
     queryBuilder += ("dataset" -> JsString(q.dataset))
     queryBuilder += ("records" -> recordBuilder)
     queryBuilder.toString()
+  }
+
+  private def parseDrop(query: DropView, schemaMap: Map[String, AbstractSchema]): String = {
+    val dataset = query.dataset
+    val dropStatement = Json.parse(s"""{ "method": "drop", "dataset": "$dataset" }""")
+
+    dropStatement.toString()
+  }
+
+  private def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
+    //    AsterixDB Implementation:
+    //    if (delete.filters.isEmpty) {
+    //      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
+    //    }
+    //    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
+    //    val queryBuilder = new StringBuilder()
+    //    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
+    //    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
+    //    queryBuilder.toString
+    // TODO: Elasticsearch implementation
+    ""
   }
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
@@ -202,7 +226,7 @@ class ElasticsearchGenerator extends IQLGenerator {
       case Some(group) =>
         shallowQueryAfterAppend += ("size" -> JsNumber(0))
         val groupStr = new mutable.StringBuilder()
-        val isLookUp = group.lookups.isEmpty
+        val isLookUp = group.lookups.nonEmpty
         var groupAsArray = Json.arr()
         for (i <- group.bys.indices) {
           val by = group.bys(i)
@@ -227,7 +251,7 @@ class ElasticsearchGenerator extends IQLGenerator {
           queryArray = queryArray :+ Json.obj("index" -> selectDataset)
           queryArray = queryArray :+ shallowQueryAfterAppend
           val body = group.lookups.head
-          val joinQuery = Json.parse(s"""{"_source": "${body.selectValues.head.name}", "size": 2147483647, "sort": {"${body.lookupKeys.head.name}": { "order": "asc" }}, "query": {"bool": {"must": {"terms": { "${body.lookupKeys.head.name}" : ${joinTermsFilter.mkString("[", ",", "]")} } } } } }""").as[JsObject]
+          val joinQuery = Json.parse(s"""{"_source": "${body.selectValues.head.name}", "size": $MAX_RESULT_WINDOW, "sort": {"${body.lookupKeys.head.name}": { "order": "asc" }}, "query": {"bool": {"must": {"terms": { "${body.lookupKeys.head.name}" : ${joinTermsFilter.mkString("[", ",", "]")} } } } } }""").as[JsObject]
           queryArray = queryArray :+ Json.obj("index" -> JsString(body.dataset.toLowerCase())) // The name of dataset in Elasticsearch must be in lowercase.
           queryArray = queryArray :+ joinQuery
 
@@ -410,9 +434,9 @@ class ElasticsearchGenerator extends IQLGenerator {
             val hierarchyField = by.field.asInstanceOf[HierarchyField]
             val field = hierarchyField.levels.find(_._1 == level.levelTag).get._2
             if (isLookUp) {
-              groupStr.append(s""" "terms": {"field": "${field}", "size": 2147483647} """.stripMargin)
+              groupStr.append(s""" "terms": {"field": "${field}", "size": $MAX_RESULT_WINDOW, "order": {"_key":"asc"}} """.stripMargin)
             } else {
-              groupStr.append(s""" "terms": {"field": "${field}", "size": 2147483647, "order": {"_key":"asc"}} """.stripMargin)
+              groupStr.append(s""" "terms": {"field": "${field}", "size": $MAX_RESULT_WINDOW} """.stripMargin)
             }
           }
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
@@ -427,4 +451,14 @@ class ElasticsearchGenerator extends IQLGenerator {
 
 object ElasticsearchGenerator extends IQLGeneratorFactory {
   override def apply(): IQLGenerator = new ElasticsearchGenerator()
+
+  /**
+    * In Elasticsearch, pagination of results can be done by using the `from` and `size` parameters.
+    * By default, `from` and `size` are set to 0 and 10, respectively. To get all results for our queries,
+    * we need to set the size to the largest number that Elasticsearch can support.
+    * This largest number is predefined to be 2147483647 when each index is created.
+    *
+    * Related documentation: https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-from-size.html
+    */
+  val MAX_RESULT_WINDOW = 2147483647;
 }

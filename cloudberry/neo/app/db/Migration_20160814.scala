@@ -71,6 +71,11 @@ private[db] class Migration_20160814() {
        """.stripMargin
         }
       case elasticsearch: ElasticsearchConn =>
+        /**
+          * In Elasticsearch, each index has a setting: max_result_window which limits the maximum number results for searches.
+          * Related documentation: https://www.elastic.co/guide/en/elasticsearch/reference/6.7/index-modules.html
+          */
+        val MAX_RESULT_WINDOW = 2147483647
         conn.postControl {
           s"""
              |{"mappings" : {
@@ -86,7 +91,7 @@ private[db] class Migration_20160814() {
              |},
              |"settings": {
              |  "index": {
-             |    "max_result_window": 2147483647,
+             |    "max_result_window": $MAX_RESULT_WINDOW,
              |    "number_of_shards" : 1,
              |    "number_of_replicas" : 0
              |  }
