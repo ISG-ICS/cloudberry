@@ -28,7 +28,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
 
   private def postWithCheckingStatus[T](query: String, succeedHandler: (WSResponse, String) => T, failureHandler: WSResponse => T): Future[T] = {
     post(query).map { wsResponse =>
-      if (wsResponse.status == SUCCESSFUl || (wsResponse.json \ "error" \ "type").get == (JsString(INDEX_EXIST_ERROR_TYPE))) {
+      if (wsResponse.status == SUCCESSFUL || (wsResponse.json \ "error" \ "type").get == JsString(INDEX_EXIST_ERROR_TYPE)) {
         succeedHandler(wsResponse, query)
       }
       else {
@@ -44,14 +44,14 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
       val headQuery = jsonQuery.head.toString()
       jsonQuery = jsonQuery.drop(1)
       post(headQuery).map { wsResponse =>
-        if (wsResponse.status != SUCCESSFUl && (wsResponse.json \ "error" \ "type").get != JsString(INDEX_NOT_EXIST_ERROR_TYPE)) {
+        if (wsResponse.status != SUCCESSFUL && (wsResponse.json \ "error" \ "type").get != JsString(INDEX_NOT_EXIST_ERROR_TYPE)) {
           Logger.error("Transaction query failed: " + Json.prettyPrint(wsResponse.json))
           return Future.successful(false)
         }
       }
     }
     post(jsonQuery.head.toString()).map { wsResponse =>
-      if (wsResponse.status == SUCCESSFUl) {
+      if (wsResponse.status == SUCCESSFUL) {
         true
       } else{
         Logger.error("Transaction's last query failed: " + Json.prettyPrint(wsResponse.json))
@@ -107,6 +107,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
       case "reindex" => wSClient.url(queryURL).withHeaders(("Content-Type", "application/json")).withRequestTimeout(Duration.Inf).post(jsonQuery)
       case "create" => wSClient.url(queryURL).withHeaders(("Content-Type", "application/json")).withRequestTimeout(Duration.Inf).put(jsonQuery)
       case "drop" => wSClient.url(queryURL).withRequestTimeout(Duration.Inf).delete()
+      case "delete" => wSClient.url(queryURL + "/_delete_by_query").withHeaders(("Content-Type", "application/json")).withRequestTimeout(Duration.Inf).post(jsonQuery)
       case "upsert" => {
         val records = (jsonQuery \ "records").get.as[List[JsValue]].mkString("", "\n", "\n") // Queries must be terminated by a new line character
         wSClient.url(queryURL + "/_doc" + "/_bulk?refresh").withHeaders(("Content-Type", "application/json")).withRequestTimeout(Duration.Inf).post(records)
@@ -221,7 +222,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
     }
   }
 
-  private def parseSource(source: JsObject): JsValue = { // Parse "_source" field in Elasticsearch response for heat map and pin map
+  private def parseSource(source: JsObject): JsValue = { // Parse the "_source" field in Elasticsearch's response
     var returnSource = Json.obj()
     source.keys.foreach(key => {
       var curKey = key
@@ -267,7 +268,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
 
 object ElasticsearchConn {
   val defaultEmptyResponse = Json.toJson(Seq(Seq.empty[JsValue]))
-  val SUCCESSFUl = 200
+  val SUCCESSFUL = 200
   val INDEX_EXIST_ERROR_TYPE = "resource_already_exists_exception"
   val INDEX_NOT_EXIST_ERROR_TYPE = "index_not_found_exception"
 }

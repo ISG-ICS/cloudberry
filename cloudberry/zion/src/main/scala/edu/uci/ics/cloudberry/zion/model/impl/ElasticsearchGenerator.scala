@@ -151,10 +151,10 @@ class ElasticsearchGenerator extends IQLGenerator {
       var docBuilder = Json.obj()
       // Assume primary key is not a subfield of JSON data
       for (field <- primaryKeyList) {
-        val id = (record \ (field.name)).get.toString()
+        val id = (record \ field.name).get.toString()
         idBuilder.append(id)
       }
-      recordBuilder = recordBuilder :+ Json.obj(("update" -> Json.obj("_id" -> Json.parse(idBuilder.toString))))
+      recordBuilder = recordBuilder :+ Json.obj("update" -> Json.obj("_id" -> Json.parse(idBuilder.toString)))
       docBuilder += ("doc" -> record)
       docBuilder += ("doc_as_upsert" -> JsBoolean(true))
       recordBuilder = recordBuilder :+ docBuilder
@@ -174,17 +174,17 @@ class ElasticsearchGenerator extends IQLGenerator {
   }
 
   private def parseDelete(delete: DeleteRecord, schemaMap: Map[String, AbstractSchema]): String = {
-    //    AsterixDB Implementation:
-    //    if (delete.filters.isEmpty) {
-    //      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
-    //    }
-    //    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
-    //    val queryBuilder = new StringBuilder()
-    //    queryBuilder.append(s"delete from ${delete.dataset} $sourceVar")
-    //    parseFilter(delete.filters, exprMap, Seq.empty, queryBuilder)
-    //    queryBuilder.toString
-    // TODO: Elasticsearch implementation
-    ""
+    if (delete.filters.isEmpty) {
+      throw new QueryParsingException("Filter condition is required for DeleteRecord query.")
+    }
+
+    val exprMap: Map[String, FieldExpr] = initExprMap(delete.dataset, schemaMap)
+    val queryAfterFilter = parseFilter(delete.filters, exprMap, Json.obj())._2
+    var queryBuilder = queryAfterFilter
+
+    queryBuilder += ("method" -> JsString("delete"))
+    queryBuilder += ("dataset" -> JsString(delete.dataset))
+    queryBuilder.toString()
   }
 
   private def parseUnnest(unnest: Seq[UnnestStatement],
@@ -460,5 +460,5 @@ object ElasticsearchGenerator extends IQLGeneratorFactory {
     *
     * Related documentation: https://www.elastic.co/guide/en/elasticsearch/reference/6.8/search-request-from-size.html
     */
-  val MAX_RESULT_WINDOW = 2147483647;
+  val MAX_RESULT_WINDOW = 2147483647
 }
