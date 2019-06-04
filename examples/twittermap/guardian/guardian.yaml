@@ -3,4 +3,7 @@ guardianConfig:
   heartBeatRate: 3600
 
 asterixdbConfig:
-  queryURL: http://localhost:19002/query/service
+  queryURL: http://ipubmed2.ics.uci.edu:19002/query/service
+
+cloudberryConfig:
+  queryURL: ws://ochca.ics.uci.edu/ws

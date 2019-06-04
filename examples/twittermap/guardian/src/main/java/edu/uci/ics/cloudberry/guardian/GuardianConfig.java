@@ -5,16 +5,21 @@ import java.util.Map;
 public class GuardianConfig {
     public final static String DEFAULT_INITIAL_DELAY = "0";
     public final static String DEFAULT_HEART_BEAT_RATE = "3600";
-    public final static String DEFAUTL_ASTERIXDB_QUERY_URL = "http://localhost:19002/query/service";
+    public final static String DEFAULT_ASTERIXDB_QUERY_URL = "http://localhost:19002/query/service";
+    public final static String DEFAULT_CLOUDBERRY_QUERY_URL = "ws://localhost:9001/ws";
 
     private Map<String, String> guardianConfig;
     private Map<String, String> asterixdbConfig;
+    private Map<String, String> cloudberryConfig;
 
     public GuardianConfig() {}
 
-    public GuardianConfig(Map<String, String> guardianConfig, Map<String, String> asterixdbConfig) {
+    public GuardianConfig(Map<String, String> guardianConfig,
+                          Map<String, String> asterixdbConfig,
+                          Map<String, String> cloudberryConfig) {
         this.guardianConfig = guardianConfig;
         this.asterixdbConfig = asterixdbConfig;
+        this.cloudberryConfig = cloudberryConfig;
     }
 
     public Map<String, String> getGuardianConfig() {
@@ -25,6 +30,10 @@ public class GuardianConfig {
         return asterixdbConfig;
     }
 
+    public Map<String, String> getCloudberryConfig() {
+        return cloudberryConfig;
+    }
+
     public boolean validate() {
         System.out.println("Loading guardian config file successfully! ");
         System.out.println("We will be using the following configurations for the guardian service:");
@@ -33,7 +42,9 @@ public class GuardianConfig {
         System.out.println("    initialDelay: " + guardianConfig.getOrDefault("initialDelay", DEFAULT_INITIAL_DELAY));
         System.out.println("    heartBeatRate: " + guardianConfig.getOrDefault("heartBeatRate", DEFAULT_HEART_BEAT_RATE));
         System.out.println("asterixdbConfig:");
-        System.out.println("    queryURL: " + asterixdbConfig.getOrDefault("queryURL", DEFAUTL_ASTERIXDB_QUERY_URL));
+        System.out.println("    queryURL: " + asterixdbConfig.getOrDefault("queryURL", DEFAULT_ASTERIXDB_QUERY_URL));
+        System.out.println("cloudberryConfig:");
+        System.out.println("    queryURL: " + cloudberryConfig.getOrDefault("queryURL", DEFAULT_CLOUDBERRY_QUERY_URL));
         System.out.println("--------------------------------------------------");
         return true;
     }
@@ -45,7 +56,9 @@ public class GuardianConfig {
         System.out.println("    initialDelay: [integer] [required] [seconds to be delayed before the first heart beat] [default: " + DEFAULT_INITIAL_DELAY + "]");
         System.out.println("    heartBeatRate: [integer] [required] [seconds between each heart beat] [default: " + DEFAULT_HEART_BEAT_RATE + "]");
         System.out.println("asterixdbConfig:");
-        System.out.println("    queryURL: [string] [required] [url for AsterixDB REST API query] [default: " + DEFAUTL_ASTERIXDB_QUERY_URL + "]" );
+        System.out.println("    queryURL: [string] [required] [url for AsterixDB REST API query] [default: " + DEFAULT_ASTERIXDB_QUERY_URL + "]" );
+        System.out.println("cloudberryConfig:");
+        System.out.println("    queryURL: [string] [required] [url for Cloudberry REST API query] [default: " + DEFAULT_CLOUDBERRY_QUERY_URL + "]" );
         System.out.println("--------------------------------------------------");
     }
 }
