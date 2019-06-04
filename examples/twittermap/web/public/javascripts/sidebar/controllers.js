@@ -1,5 +1,5 @@
 angular.module("cloudberry.sidebar", ["cloudberry.common"])
-  .controller("SidebarCtrl", function($scope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
+  .controller("SidebarCtrl", function($scope, $rootScope, $timeout, cloudberry, moduleManager, cloudberryClient, queryUtil, cloudberryConfig, $http) {
     
     // Flag whether current result is outdated
     $scope.isHashTagOutdated = true;
@@ -38,6 +38,11 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       document.getElementById("sidebar").style.left = "100%";
       $scope.showOrHideSidebar(-1);
     };
+
+  
+    $rootScope.$on("CallCloseMethod", function(){
+         $scope.closeRightMenu();
+      });
 
     // Function for the button that open the sidebar, and change the flags
     $scope.openRightMenu = function() {

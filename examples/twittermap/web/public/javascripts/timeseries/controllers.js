@@ -1,5 +1,5 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
-  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry, cloudberryClient, moduleManager) {
+  .controller('TimeSeriesCtrl', function ($scope, $rootScope, $window, $compile, cloudberry, cloudberryClient, moduleManager) {
     $scope.ndx = null;
     $scope.result = {};
     $scope.resultArray = [];
@@ -98,7 +98,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
 
   })
-  .directive('timeSeries', function (cloudberry, moduleManager) {
+  .directive('timeSeries', function (cloudberry, moduleManager,$rootScope) {
     var onPlay = false;
     var margin = {
       top: 10,
@@ -263,7 +263,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .on("filtered", removeHighlight);
 
 
-
+            
             // Time slider starts here
             var currentValue = 0;
             var targetValue = width - 85;
@@ -322,9 +322,14 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               onPlay = true;
               if (button.text() == "Pause") {
                 clearInterval(timer);
+                //Enable sidebar when time slider on "pause" mode
+                document.getElementById("hamburgerButton").disabled = false;
                 button.text("Play");
               } else {
                 timer = setInterval(step, 800);
+                //Disable sidebar when time slider on "play" mode
+                document.getElementById("hamburgerButton").disabled = true;
+                $rootScope.$emit("CallCloseMethod", {});
                 button.text("Pause");
               }
             });
@@ -336,6 +341,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 (12 * (maxDate.getFullYear() - minDate.getFullYear()));
               currentValue = currentValue + (targetValue/numberOfMonth);
               if (x.invert(currentValue) >= brushInterval.end) {
+                  //Enable sidebar when time slider done playing
+                  document.getElementById("hamburgerButton").disabled = false;
                   onPlay = false;
                   currentValue = x(brushInterval.start);
                   clearInterval(timer);
@@ -344,6 +351,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                   requestFunc(brushInterval.start, brushInterval.end);
               }
               if (currentValue > targetValue) {
+                  //Enable sidebar when time slider done playing
+                  document.getElementById("hamburgerButton").disabled = false;
                   onPlay = false;
                   currentValue = 0;
                   clearInterval(timer);
@@ -353,6 +362,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 }
               }
 
+              
           dc.renderAll();
           timeSeries.filter([minDate, maxDate]);
 
