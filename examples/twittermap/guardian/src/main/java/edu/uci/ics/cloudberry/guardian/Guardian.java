@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -40,6 +41,7 @@ public final class Guardian implements Runnable {
     private long heartBeatRate;
     private String asterixDBQueryURL;
     private String cloudberryServerURL;
+    private String twittermapURL;
 
     Guardian (GuardianConfig guardianConfig) {
         this.initialDelay = Integer.valueOf(guardianConfig.getGuardianConfig()
@@ -50,6 +52,8 @@ public final class Guardian implements Runnable {
                 .getOrDefault("queryURL", GuardianConfig.DEFAULT_ASTERIXDB_QUERY_URL);
         this.cloudberryServerURL = guardianConfig.getCloudberryConfig()
                 .getOrDefault("queryURL", GuardianConfig.DEFAULT_CLOUDBERRY_QUERY_URL);
+        this.twittermapURL = guardianConfig.getTwittermapConfig()
+                .getOrDefault("url", GuardianConfig.DEFAULT_TWITTERMAP_URL);
 
         this.scheduler = Executors.newScheduledThreadPool(NUM_THREADS);
     }
@@ -65,10 +69,13 @@ public final class Guardian implements Runnable {
         boolean success = false;
         // touch AsterixDB
         success = touchAsterixDB(asterixDBQueryURL);
-        System.out.println("[guardian] touch AsterixDB: " + success);
+        System.out.println("touch AsterixDB: " + success);
         // touch Cloudberry
         success = touchCloudberry(this.cloudberryServerURL);
-        System.out.println("[guardian] touch Cloudberry: " + success);
+        System.out.println("touch Cloudberry: " + success);
+        // touch Twittermap
+        success = touchTwittermap(this.twittermapURL);
+        System.out.println("touch Twittermap: " + success);
     }
 
     public static void main(String[] args) {
@@ -128,9 +135,9 @@ public final class Guardian implements Runnable {
         try {
             String querySQL = "select count(*) from berry.meta;";
 
-            System.out.println("[touchAsterixDB] touching AsterixDB ... ...");
-            System.out.println("[touchAsterixDB]    queryURL: " + queryURL);
-            System.out.println("[touchAsterixDB]    querySQL:" + querySQL);
+            System.out.println("    [touchAsterixDB] touching AsterixDB ... ...");
+            System.out.println("    [touchAsterixDB]    queryURL: " + queryURL);
+            System.out.println("    [touchAsterixDB]    querySQL:" + querySQL);
             // prepare post data
             byte[] postData = ("statement=" + querySQL).getBytes(StandardCharsets.UTF_8);
             int postDataLength = postData.length;
@@ -156,10 +163,10 @@ public final class Guardian implements Runnable {
             // receive data
             int responseCode = con.getResponseCode();
 
-            System.out.println("[touchAsterixDB] responseCode = " + responseCode);
+            System.out.println("    [touchAsterixDB] responseCode = " + responseCode);
 
             if (responseCode != 200) {
-                System.err.println("[touchAsterixDB] failed! ==> HTTP responseCode = " + responseCode);
+                System.err.println("    [touchAsterixDB] failed! ==> HTTP responseCode = " + responseCode);
                 return false;
             }
 
@@ -168,14 +175,14 @@ public final class Guardian implements Runnable {
             Map<String, Object> jsonMap = mapper.readValue(con.getInputStream(), Map.class);
             String status = (String) jsonMap.get("status");
 
-            System.out.println("[touchAsterixDB] response Json = \n" + jsonMap);
-            System.out.println("[touchAsterixDB] status = " + status);
+            System.out.println("    [touchAsterixDB] response Json = \n" + jsonMap);
+            System.out.println("    [touchAsterixDB] status = " + status);
 
             if (status.equals("success")) {
                 return true;
             }
             else {
-                System.err.println("[touchAsterixDB] failed! ==> query status = " + status);
+                System.err.println("    [touchAsterixDB] failed! ==> query status = " + status);
                 return false;
             }
 
@@ -192,26 +199,59 @@ public final class Guardian implements Runnable {
 
         String queryJSON = "{\"dataset\":\"twitter.ds_tweet\",\"global\":{\"globalAggregate\":{\"field\":\"*\",\"apply\":{\"name\":\"count\"},\"as\":\"count\"}},\"estimable\":true}";
 
-        System.out.println("[touchCloudberry] touching Cloudberry ... ...");
-        System.out.println("[touchCloudberry]    queryURL: " + cloudberryServerURL);
-        System.out.println("[touchCloudberry]    queryJSON:" + queryJSON);
+        System.out.println("    [touchCloudberry] touching Cloudberry ... ...");
+        System.out.println("    [touchCloudberry]    queryURL: " + cloudberryServerURL);
+        System.out.println("    [touchCloudberry]    queryJSON:" + queryJSON);
         final CloudberryWSClient cloudberryWSClient = new CloudberryWSClient(cloudberryServerURL);
         boolean success = cloudberryWSClient.connect();
         if (!success) {
-            System.err.println("[touchCloudberry] failed! ==> Can not establish connection.");
+            System.err.println("    [touchCloudberry] failed! ==> Can not establish connection.");
             return false;
         }
-        System.out.println("[touchCloudberry] connect to server successfully...");
+        System.out.println("    [touchCloudberry] connect to server successfully...");
         String response = cloudberryWSClient.sendMessage(queryJSON, 5000);
         if (response == null) {
-            System.err.println("[touchCloudberry] failed! ==> response is null.");
+            System.err.println("    [touchCloudberry] failed! ==> response is null.");
             return false;
         }
-        System.out.println("[touchCloudberry] get response from cloudberry:");
-        System.out.println("[touchCloudberry] response Json = \n" + response);
+        System.out.println("    [touchCloudberry] get response from cloudberry:");
+        System.out.println("    [touchCloudberry] response Json = \n" + response);
 
         cloudberryWSClient.disconnect();
 
         return true;
+    }
+
+    public boolean touchTwittermap(String twittermapServerURL) {
+        try {
+            URL url = new URL(twittermapServerURL);
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
+            con.setRequestMethod("GET");
+            con.setRequestProperty("Accept", "*/*");
+            con.setConnectTimeout(3000);
+            con.setReadTimeout(15000);
+            con.setDoOutput(true);
+
+            // receive data
+            int responseCode = con.getResponseCode();
+            System.out.println("    [touchTwittermap] responseCode = " + responseCode);
+
+            if (responseCode != 200) {
+                System.err.println("    [touchTwittermap] failed! ==> HTTP responseCode = " + responseCode);
+                return false;
+            }
+
+            return true;
+
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+            return false;
+        } catch (ProtocolException e) {
+            e.printStackTrace();
+            return false;
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 }

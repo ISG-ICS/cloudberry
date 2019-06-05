@@ -28,15 +28,15 @@ public class CloudberryWSClient {
 
         try {
             WebSocketContainer container = ContainerProvider.getWebSocketContainer();
-            System.out.println("[CloudberryWSClient] connecting to cloudberry [" + this.serverURL + "]......");
+            System.out.println("        [CloudberryWSClient] connecting to cloudberry [" + this.serverURL + "]......");
             container.connectToServer(this, new URI(this.serverURL));
-            System.out.println("[CloudberryWSClient] server connected.");
+            System.out.println("        [CloudberryWSClient] server connected.");
             return true;
         } catch (DeploymentException | IOException e) {
-            System.out.println("[CloudberryWSClient] exception:");
+            System.out.println("        [CloudberryWSClient] exception:");
             e.printStackTrace();
             try {
-                System.out.println("[CloudberryWSClient] will retry in 3 seconds.");
+                System.out.println("        [CloudberryWSClient] will retry in 3 seconds.");
                 TimeUnit.SECONDS.sleep(3);
                 this.countRetry ++;
                 return connect();
@@ -46,17 +46,17 @@ public class CloudberryWSClient {
             }
         } catch (URISyntaxException e) {
             e.printStackTrace();
-            System.err.println("[CloudberryWSClient] the serverURL provided is not correct!");
+            System.err.println("        [CloudberryWSClient] the serverURL provided is not correct!");
             return false;
         } catch (RuntimeException e) {
             e.printStackTrace();
-            System.err.println("[CloudberryWSClient] establishing websocket connection failed!");
+            System.err.println("        [CloudberryWSClient] establishing websocket connection failed!");
             return false;
         }
     }
 
     public void disconnect() {
-        System.out.println("[CloudberryWSClient] disconnecting from cloudberry ......");
+        System.out.println("        [CloudberryWSClient] disconnecting from cloudberry ......");
         if (this.userSession != null) {
             try {
                 this.userSession.close();
@@ -64,7 +64,7 @@ public class CloudberryWSClient {
                 e.printStackTrace();
             }
         }
-        System.out.println("[CloudberryWSClient] server disconnected.");
+        System.out.println("        [CloudberryWSClient] server disconnected.");
     }
 
     @OnOpen
@@ -87,7 +87,7 @@ public class CloudberryWSClient {
     public void onError(Throwable t) {
         this.userSession = null;
         try {
-            System.out.println("[CloudberryWSClient] will retry in 3 seconds.");
+            System.out.println("        [CloudberryWSClient] will retry in 3 seconds.");
             TimeUnit.SECONDS.sleep(3);
             connect();
         } catch (InterruptedException e1) {
@@ -102,7 +102,7 @@ public class CloudberryWSClient {
             int stopWatch = timeout;
             while(this.syncWating) {
                 if (stopWatch <= 0) {
-                    System.err.println("[CloudberryWSClient] sendMessage " + timeout + "ms time out!");
+                    System.err.println("        [CloudberryWSClient] sendMessage " + timeout + "ms time out!");
                     return null;
                 }
                 Thread.sleep(500);
@@ -112,7 +112,7 @@ public class CloudberryWSClient {
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            System.err.println("[CloudberryWSClient] sendMessage Exception.");
+            System.err.println("        [CloudberryWSClient] sendMessage Exception.");
             return null;
         }
     }
