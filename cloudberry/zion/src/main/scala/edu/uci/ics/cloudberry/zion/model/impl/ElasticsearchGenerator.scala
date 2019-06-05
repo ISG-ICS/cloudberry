@@ -320,11 +320,12 @@ class ElasticsearchGenerator extends IQLGenerator {
               shallowQueryAfterSelect += ("_source" -> Json.arr(JsString(field)))
             }
           }
-          case Min | Max => {
+          case Min | Max | Sum | Avg => {
             shallowQueryAfterSelect += ("aggregation" -> aggregatedJson)
             shallowQueryAfterSelect += ("size" -> JsNumber(0))
             shallowQueryAfterSelect += ("aggs" -> Json.obj( as -> Json.obj(funcName -> Json.obj("field" -> JsString(field)))))
           }
+          case _ => throw new QueryParsingException("Aggregation function not supported.")
         }
       case None => return shallowQueryAfterSelect
     }
@@ -338,7 +339,7 @@ class ElasticsearchGenerator extends IQLGenerator {
       f.dataType match {
         case DataType.Record => FieldExpr(allFieldVar, allFieldVar)
         case DataType.Hierarchy => FieldExpr(allFieldVar, allFieldVar)
-        case _ => { FieldExpr(f.name, f.name) }
+        case _ => FieldExpr(f.name, f.name)
       }
     }
   }
@@ -439,6 +440,7 @@ class ElasticsearchGenerator extends IQLGenerator {
               groupStr.append(s""" "terms": {"field": "${field}", "size": $MAX_RESULT_WINDOW} """.stripMargin)
             }
           }
+          // TODO: Parsing response of Sum, Avg, Max, Min aggregation query will be implemented in later PR.
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
         }
       case None => {

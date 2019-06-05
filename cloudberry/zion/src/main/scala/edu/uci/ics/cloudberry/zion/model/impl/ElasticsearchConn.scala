@@ -154,7 +154,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
         val joinValue = (joinBucket(keyIndex) \ "_source" \ joinSelectFieldString).get.as[Int]
 
         var tmp_json = Json.obj(groupAsList.head -> JsNumber(key))
-        tmp_json += ("count" -> JsNumber(count))
+        tmp_json += ("count" -> JsNumber(count)) // TODO: Sum, Avg, Max, Min funtions will be implemented in later PR.
         tmp_json += (joinSelectFieldString -> JsNumber(joinValue))
         resArray = resArray.append(tmp_json)
       }
@@ -170,7 +170,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
             var tmp_json = Json.obj()
             tmp_json += (groupAsList.head -> keyValue)
             tmp_json += (groupAsList.last -> JsString((drop \ "key_as_string").get.as[String]))
-            tmp_json += ("count" -> JsNumber((drop \ "doc_count").get.as[Int]))
+            tmp_json += ("count" -> JsNumber((drop \ "doc_count").get.as[Int])) // TODO: Sum, Avg, Max, Min functions will be implemented in later PR.
             resArray = resArray.append(tmp_json)
           }
         }
@@ -205,7 +205,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
         val count = (response.asInstanceOf[JsObject] \ "hits" \ "total").get.as[JsNumber]
         return Json.arr(Json.obj(asField -> count))
       }
-      case "min" | "max" => {
+      case "min" | "max" | "avg" | "sum" => {
         val asField = (jsonQuery \ "aggregation" \ "as").get.toString().stripPrefix("\"").stripSuffix("\"")
 
         if (response.as[JsObject].keys.nonEmpty) {
