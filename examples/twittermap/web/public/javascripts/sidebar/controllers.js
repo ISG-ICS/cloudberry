@@ -42,7 +42,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
   
     $rootScope.$on("CallCloseMethod", function(){
          $scope.closeRightMenu();
-      });
+    });
 
     // Function for the button that open the sidebar, and change the flags
     $scope.openRightMenu = function() {
