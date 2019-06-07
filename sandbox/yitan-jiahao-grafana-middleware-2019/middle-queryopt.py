@@ -1,5 +1,7 @@
-## Use sample() in the query to get sample data from influxdb
-
+'''
+Query-opt Middleware
+    A middleware that optimizes query using random sampling when data is large
+'''
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from optparse import OptionParser
 import urllib.parse as up
@@ -85,37 +87,14 @@ class RequestHandler(BaseHTTPRequestHandler):
         gres = gzip.compress(res)
         self.wfile.write(gres)               
             
-##        print("----received data END")
         doGet_end = timeit.default_timer()
         print("Total time in middleware: ",doGet_end-doGet_start)
         
-
-
-        
-    def do_POST(self):
-        
-        request_path = self.path
-        
-        print("\n----- Request Start ----->\n")
-        print("Request path:", request_path)
-        
-        request_headers = self.headers
-        content_length = request_headers.get('Content-Length')
-        length = int(content_length) if content_length else 0
-        
-        print("Content Length:", length)
-        print("Request headers:", request_headers)
-        print("Request payload:", self.rfile.read(length))
-        print("<----- Request End -----\n")
-        
-        self.send_response(200)
-        self.end_headers()
-    
     do_PUT = do_POST
     do_DELETE = do_GET
+
         
 def main():
-
     port = 8080
     print('Listening on localhost:%s' % port)
     server = HTTPServer(('', port), RequestHandler)

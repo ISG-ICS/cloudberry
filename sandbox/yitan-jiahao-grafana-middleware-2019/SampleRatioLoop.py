@@ -1,3 +1,14 @@
+'''
+Find the best sampling ratio given a dataset. Built based on the SampleRatio.py
+
+We did experiments on three datasets:
+    "NOAA_water_database" h2o_temeperature: a real dataset with no pattern
+    "NOAA_water_database" h2o_feet: a real dataset that has a obvious pattern
+    "test_quarter": random number between 60-80
+    "test3": a dataset that has the sine pattern
+
+'''
+
 import requests
 import json
 import numpy
@@ -193,9 +204,6 @@ def main():
 
     plotdist(ratiolist,distlist)
 
-
-    
-##        plot(sample_fit, sampled_data, lst2)
     #PLOT the three dataset
 ##    plot(sample_fit, sampled_data, lst2)
     

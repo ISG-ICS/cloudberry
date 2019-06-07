@@ -1,4 +1,8 @@
-## Forwarding the query and return it to the grafana
+"""
+Simple Forwarding Middleware
+    A simple middleware that forwards the query to influxdb,
+    gets the data from db, and passes it back to grafana
+"""
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from optparse import OptionParser
@@ -20,8 +24,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         print("<----- Request End -----\n")
         
         influx_url = "http://localhost:8086"+request_path
-
-
         start = timeit.default_timer()
         r = requests.get(influx_url)
         stop = timeit.default_timer()
@@ -41,28 +43,12 @@ class RequestHandler(BaseHTTPRequestHandler):
         doGet_end = timeit.default_timer()
         print("Total Time in middleware: ",doGet_end-doGet_start)
         
- 
-    def do_POST(self):       
-        request_path = self.path       
-        print("\n----- Request Start ----->\n")
-        print("Request path:", request_path)
-        
-        request_headers = self.headers
-        content_length = request_headers.get('Content-Length')
-        length = int(content_length) if content_length else 0
-        
-        print("Content Length:", length)
-        print("Request headers:", request_headers)
-        print("Request payload:", self.rfile.read(length))
-        print("<----- Request End -----\n")
-        
-        self.send_response(200)
-        self.end_headers()
     
     do_PUT = do_POST
     do_DELETE = do_GET
         
 def main():
+## Listening on port 8080
     port = 8080
     print('Listening on localhost:%s' % port)
     server = HTTPServer(('', port), RequestHandler)
@@ -76,6 +62,4 @@ if __name__ == "__main__":
                     "Run:\n\n"
                     "   reflect")
     (options, args) = parser.parse_args()
-
-## 
     main()

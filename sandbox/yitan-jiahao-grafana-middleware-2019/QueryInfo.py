@@ -1,7 +1,8 @@
-## A little parser for query
-## The current solution does not work well with all the query.
-## May use flex&bison to make a better parser.
-
+'''
+A simple parser for query
+    NOTE: The current solution does not work well on all the query.
+    May use flex&bison to make a better parser.
+'''
 class QueryInfo:
     def __init__(self, query:str):
 ##  query:  SELECT mean("degrees")

@@ -1,3 +1,12 @@
+'''
+Compare similarity between original data and a sampled data using SAX distance function
+
+We did experiments on three datasets:
+    "NOAA_water_database": a real dataset that has a obvious pattern
+    "test_quarter": random number between 60-80
+    "test3": a dataset that has the sine pattern
+
+'''
 import requests
 import json
 import numpy
@@ -67,7 +76,6 @@ def main():
     print(len(sampled_data))
    
     sample = [item[1] for item in sampled_data] #[value,...]
-   # print(sample)
 
 
     #fill the sample data with a linear model

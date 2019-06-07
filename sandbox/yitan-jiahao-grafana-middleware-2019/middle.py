@@ -1,5 +1,7 @@
-## Get all the data point requested from influxdb and sent part of 
-## data to the frontend. 
+'''
+    A middleware that fetches all the data points requested from influxdb
+    and only send partial data to Grafana.
+'''
 
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from optparse import OptionParser
@@ -9,13 +11,13 @@ import json
 import math
 import timeit
 
-
 class RequestHandler(BaseHTTPRequestHandler):
     
     def do_GET(self):
         doGet_start = timeit.default_timer()
         request_path = self.path
-        
+
+##  Note: comment out 'print' lines when doing tests        
 ##        print("\n----- Request Start ----->\n")
 ##        print("Request path:", request_path)
 ##        print("Request headers:", self.headers)
@@ -39,11 +41,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         count_query = requests.get(count_url)
         jdict = json.loads(count_query.content)
         count = jdict["results"][0]["series"][0]["values"][0][1]
-##        print("COUNT", jdict["results"][0]["series"][0]["values"][0][1])
-
-##        print("----received data")
-##        print("r.header")
-##        print(r.headers)      
+        
         json_dict = json.loads(r.content)        
         data = json_dict["results"][0]["series"][0]["values"]
         
@@ -59,14 +57,11 @@ class RequestHandler(BaseHTTPRequestHandler):
         if count <= max_point:
             res = r.content
             gres = gzip.compress(res)
- 
         else:
             batchsize = math.floor(count/max_point)
             newlist = []
             for i in range(0,len(data),batchsize):
                 newlist.append(data[i])
-
-##            print("SIZE OF THE NEW LIST ",len(newlist))
 
             json_dict["results"][0]["series"][0]["values"] = newlist
 
@@ -76,27 +71,9 @@ class RequestHandler(BaseHTTPRequestHandler):
             gres = gzip.compress(byte_dict)
 
         self.wfile.write(gres)           
-##        print("----received data END")
         doGet_end = timeit.default_timer()
         print("doGet Time: ",doGet_end-doGet_start)
         
-        
-    def do_POST(self):       
-        request_path = self.path       
-        print("\n----- Request Start ----->\n")
-        print("Request path:", request_path)
-        
-        request_headers = self.headers
-        content_length = request_headers.get('Content-Length')
-        length = int(content_length) if content_length else 0
-        
-        print("Content Length:", length)
-        print("Request headers:", request_headers)
-        print("Request payload:", self.rfile.read(length))
-        print("<----- Request End -----\n")
-        
-        self.send_response(200)
-        self.end_headers()
     
     do_PUT = do_POST
     do_DELETE = do_GET

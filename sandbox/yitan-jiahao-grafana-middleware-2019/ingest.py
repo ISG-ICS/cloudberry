@@ -1,4 +1,4 @@
-# Ingest random data into influxdb
+# Ingest random data between 60 and 80 into influxdb
 
 from influxdb import InfluxDBClient
 from time import time,sleep
