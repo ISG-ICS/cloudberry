@@ -361,11 +361,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                   requestFunc(minDate, maxDate);
                 }
               }
-
-              
+   
           dc.renderAll();
           timeSeries.filter([minDate, maxDate]);
-
         })
       }
     };
