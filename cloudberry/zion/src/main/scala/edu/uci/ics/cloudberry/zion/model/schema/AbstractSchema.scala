@@ -220,6 +220,7 @@ abstract class AbstractSchema(typeName: String,
   def getTypeName: String = typeName
   def copySchema: AbstractSchema
   def toUnresolved: UnresolvedSchema
+  def getPrimaryKey: Seq[Field] = primaryKey
 }
 
 case class Schema(typeName: String,
