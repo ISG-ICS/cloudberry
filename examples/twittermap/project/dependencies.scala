@@ -39,7 +39,7 @@ object Dependencies {
   val guardianDependencies: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-json" % playVersion,
     "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.1.1",
-    "jakarta.websocket" % "jakarta.websocket-client-api" % "1.1.1",
+    "javax.websocket" % "javax.websocket-client-api" % "1.1",
     "org.glassfish.tyrus" % "tyrus-client" % "1.15",
     "org.glassfish.tyrus" % "tyrus-container-grizzly-client" % "1.15",
     "javax.mail" % "mail" % "1.4",
