@@ -7,6 +7,7 @@ public class GuardianConfig {
     public final static String DEFAULT_HEART_BEAT_RATE = "3600";
     public final static String DEFAULT_ASTERIXDB_QUERY_URL = "http://localhost:19002/query/service";
     public final static String DEFAULT_CLOUDBERRY_QUERY_URL = "ws://localhost:9000/ws";
+    public final static String DEFAULT_CLOUDBERRY_INGESTION_CHECK = "true";
     public final static String DEFAULT_TWITTERMAP_URL = "http://localhost:9001";
 
     private Map<String, String> guardianConfig;
@@ -63,6 +64,7 @@ public class GuardianConfig {
         System.out.println("    queryURL: " + asterixdbConfig.getOrDefault("queryURL", DEFAULT_ASTERIXDB_QUERY_URL));
         System.out.println("cloudberryConfig:");
         System.out.println("    queryURL: " + cloudberryConfig.getOrDefault("queryURL", DEFAULT_CLOUDBERRY_QUERY_URL));
+        System.out.println("    ingestionCheck: " + cloudberryConfig.getOrDefault("ingestionCheck", DEFAULT_CLOUDBERRY_INGESTION_CHECK));
         System.out.println("twittermapConfig:");
         System.out.println("    url: " + twittermapConfig.getOrDefault("queryURL", DEFAULT_TWITTERMAP_URL));
         notificationConfig.print();
@@ -80,6 +82,7 @@ public class GuardianConfig {
         System.out.println("    queryURL: [string] [required] [url for AsterixDB REST API query] [default: " + DEFAULT_ASTERIXDB_QUERY_URL + "]" );
         System.out.println("cloudberryConfig:");
         System.out.println("    queryURL: [string] [required] [url for Cloudberry REST API query] [default: " + DEFAULT_CLOUDBERRY_QUERY_URL + "]" );
+        System.out.println("    ingestionCheck: [boolean] [required] [whether to check the count is increasing] [default: " + DEFAULT_CLOUDBERRY_INGESTION_CHECK + "]" );
         System.out.println("twittermapConfig:");
         System.out.println("    url: [string] [required] [url for Twittermap] [default: " + DEFAULT_TWITTERMAP_URL + "]" );
         notificationConfig.printTemplate();

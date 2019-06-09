@@ -7,6 +7,7 @@ asterixdbConfig:
 
 cloudberryConfig:
   queryURL: ws://localhost:9000/ws
+  ingestionCheck: true
 
 twittermapConfig:
   url: http://localhost:9001

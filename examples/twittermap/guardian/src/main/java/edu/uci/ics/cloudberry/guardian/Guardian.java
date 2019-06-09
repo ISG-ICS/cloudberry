@@ -45,6 +45,7 @@ public final class Guardian implements Runnable {
     private long heartBeatRate;
     private String asterixDBQueryURL;
     private String cloudberryServerURL;
+    private boolean ingestionCheck;
     private String twittermapURL;
     private String publisherEmail;
     private String publisherEmailPrefix;
@@ -59,6 +60,8 @@ public final class Guardian implements Runnable {
                 .getOrDefault("queryURL", GuardianConfig.DEFAULT_ASTERIXDB_QUERY_URL);
         this.cloudberryServerURL = guardianConfig.getCloudberryConfig()
                 .getOrDefault("queryURL", GuardianConfig.DEFAULT_CLOUDBERRY_QUERY_URL);
+        this.ingestionCheck = Boolean.valueOf(guardianConfig.getCloudberryConfig()
+                .getOrDefault("ingestionCheck", GuardianConfig.DEFAULT_CLOUDBERRY_INGESTION_CHECK));
         this.twittermapURL = guardianConfig.getTwittermapConfig()
                 .getOrDefault("url", GuardianConfig.DEFAULT_TWITTERMAP_URL);
         this.publisherEmail = guardianConfig.getNotificationConfig().getPublisherEmail();
@@ -250,33 +253,39 @@ public final class Guardian implements Runnable {
                     "Cloudberry returns null response: " + cloudberryServerURL);
             return false;
         }
-        // parse received data to JSON
-        ObjectMapper mapper = new ObjectMapper();
-        Map<String, Object> jsonMap = null;
-        try {
-            jsonMap = mapper.readValue(response, Map.class);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("    [touchCloudberry] failed! ==> response JSON can not be parsed.");
-            sendEmail("Cloudberry is not working properly.",
-                    "Cloudberry response JSON can not be parsed: " + cloudberryServerURL);
-            return false;
-        }
 
         System.out.println("    [touchCloudberry] get response from cloudberry:");
-        System.out.println("    [touchCloudberry] response Json = \n" + jsonMap);
+        System.out.println("    [touchCloudberry] response Json = \n" + response);
 
-        // Check whether the result count is changing
-        int count = (int) jsonMap.get("count");
-        if (count ==  preCount) {
-            System.err.println("    [touchCloudberry] [Bad!] Twitter ingestion may stop or Cloudberry may malfunction.");
-            sendEmail("Twitter ingestion may stop or Cloudberry may malfunction.",
-                    "Twitter ingestion may stop or Cloudberry may malfunction. " +
-                            "The total count of ds_tweet retrieved is: " + count +
-                            "this time and " + preCount + " last time.");
-            return false;
+        if (ingestionCheck) {
+            System.out.println("    [touchCloudberry] checking ingestion Count...");
+            // parse received data to JSON
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object>[][] jsonMap = null;
+            try {
+                jsonMap = mapper.readValue(response, Map[][].class);
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.err.println("    [touchCloudberry] failed! ==> response JSON can not be parsed.");
+                sendEmail("Cloudberry is not working properly.",
+                        "Cloudberry response JSON can not be parsed: " + cloudberryServerURL);
+                return false;
+            }
+
+            // Check whether the result count is changing
+            int count = (int) jsonMap[0][0].get("count");
+            System.out.println("    [touchCloudberry] last time preCount = " + preCount);
+            System.out.println("    [touchCloudberry] this time Count = " + count);
+            if (count == preCount) {
+                System.err.println("    [touchCloudberry] [Bad!] Twitter ingestion may stop or Cloudberry may malfunction.");
+                sendEmail("Twitter ingestion may stop or Cloudberry may malfunction.",
+                        "Twitter ingestion may stop or Cloudberry may malfunction. " +
+                                "The total count of ds_tweet retrieved is: " + count +
+                                "this time and " + preCount + " last time.");
+                return false;
+            }
+            preCount = count;
         }
-        preCount = count;
 
         cloudberryWSClient.disconnect();
         return true;
