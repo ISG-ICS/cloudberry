@@ -3,19 +3,22 @@ package edu.uci.ics.cloudberry.guardian;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.ProtocolException;
-import java.net.URL;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,12 +39,16 @@ public final class Guardian implements Runnable {
 
     private final static int NUM_THREADS = 1;
     private final ScheduledExecutorService scheduler;
+    private static long preCount = 0;
 
     private long initialDelay;
     private long heartBeatRate;
     private String asterixDBQueryURL;
     private String cloudberryServerURL;
     private String twittermapURL;
+    private String publisherEmail;
+    private String publisherEmailPrefix;
+    private String[] subscriberEmails;
 
     Guardian (GuardianConfig guardianConfig) {
         this.initialDelay = Integer.valueOf(guardianConfig.getGuardianConfig()
@@ -54,28 +61,53 @@ public final class Guardian implements Runnable {
                 .getOrDefault("queryURL", GuardianConfig.DEFAULT_CLOUDBERRY_QUERY_URL);
         this.twittermapURL = guardianConfig.getTwittermapConfig()
                 .getOrDefault("url", GuardianConfig.DEFAULT_TWITTERMAP_URL);
+        this.publisherEmail = guardianConfig.getNotificationConfig().getPublisherEmail();
+        this.publisherEmailPrefix = guardianConfig.getNotificationConfig().getPublisherEmailPrefix();
+        this.subscriberEmails = guardianConfig.getNotificationConfig().getSubscriberEmails();
 
         this.scheduler = Executors.newScheduledThreadPool(NUM_THREADS);
     }
 
     public void start() {
-        ScheduledFuture<?> soundAlarmFuture = scheduler.scheduleWithFixedDelay(
+        scheduler.scheduleWithFixedDelay(
                 this, initialDelay, heartBeatRate, TimeUnit.SECONDS
         );
     }
 
     @Override public void run() {
         System.out.println("heart beat -- " + new Date());
-        boolean success = false;
+        boolean success;
+
         // touch AsterixDB
         success = touchAsterixDB(asterixDBQueryURL);
-        System.out.println("touch AsterixDB: " + success);
+        if (success) {
+            System.out.println("[Good!] AsterixDB is alive.");
+        }
+        else {
+            System.err.println("[Bad!] AsterixDB maybe down!");
+            sendEmail("AsterixDB maybe down.", "Please check here: " + asterixDBQueryURL);
+            return;
+        }
+
         // touch Cloudberry
         success = touchCloudberry(this.cloudberryServerURL);
-        System.out.println("touch Cloudberry: " + success);
+        if (success) {
+            System.out.println("[Good!] Cloudberry is working properly.");
+        }
+        else {
+            // emails are sent inside touchCloudberry function.
+            return;
+        }
+
         // touch Twittermap
         success = touchTwittermap(this.twittermapURL);
-        System.out.println("touch Twittermap: " + success);
+        if (success) {
+            System.out.println("[Good!] Twittermap is accessible.");
+        }
+        else {
+            System.err.println("[Bad!] Twittermap is NOT accessible!");
+            sendEmail("Twittermap is NOT accessible.", "Please check here: " + twittermapURL);
+        }
     }
 
     public static void main(String[] args) {
@@ -206,19 +238,47 @@ public final class Guardian implements Runnable {
         boolean success = cloudberryWSClient.connect();
         if (!success) {
             System.err.println("    [touchCloudberry] failed! ==> Can not establish connection.");
+            sendEmail("Cannot connect to Cloudberry.",
+                    "Can not establish connection to Cloudberry even after 5 trials: " + cloudberryServerURL);
             return false;
         }
         System.out.println("    [touchCloudberry] connect to server successfully...");
         String response = cloudberryWSClient.sendMessage(queryJSON, 5000);
         if (response == null) {
             System.err.println("    [touchCloudberry] failed! ==> response is null.");
+            sendEmail("Cloudberry is not working properly.",
+                    "Cloudberry returns null response: " + cloudberryServerURL);
             return false;
         }
+        // parse received data to JSON
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> jsonMap = null;
+        try {
+            jsonMap = mapper.readValue(response, Map.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.err.println("    [touchCloudberry] failed! ==> response JSON can not be parsed.");
+            sendEmail("Cloudberry is not working properly.",
+                    "Cloudberry response JSON can not be parsed: " + cloudberryServerURL);
+            return false;
+        }
+
         System.out.println("    [touchCloudberry] get response from cloudberry:");
-        System.out.println("    [touchCloudberry] response Json = \n" + response);
+        System.out.println("    [touchCloudberry] response Json = \n" + jsonMap);
+
+        // Check whether the result count is changing
+        int count = (int) jsonMap.get("count");
+        if (count ==  preCount) {
+            System.err.println("    [touchCloudberry] [Bad!] Twitter ingestion may stop or Cloudberry may malfunction.");
+            sendEmail("Twitter ingestion may stop or Cloudberry may malfunction.",
+                    "Twitter ingestion may stop or Cloudberry may malfunction. " +
+                            "The total count of ds_tweet retrieved is: " + count +
+                            "this time and " + preCount + " last time.");
+            return false;
+        }
+        preCount = count;
 
         cloudberryWSClient.disconnect();
-
         return true;
     }
 
@@ -252,6 +312,44 @@ public final class Guardian implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public void sendEmail(String title, String content) {
+        String subject = "[" + publisherEmailPrefix + "] " + title;
+        System.out.println("Sending email:");
+        System.out.println(" - subject: " + subject);
+        System.out.println(" - content: " + content);
+        for (int i = 0; i < subscriberEmails.length; i ++) {
+
+            String to = subscriberEmails[i];
+            String from = publisherEmail;
+
+            // Get system properties
+            Properties properties = System.getProperties();
+            // Setup mail server
+            properties.setProperty("mail.smtp.host", "localhost");
+            // Get the default Session object.
+            Session session = Session.getDefaultInstance(properties);
+
+            try {
+                // Create a default MimeMessage object.
+                MimeMessage message = new MimeMessage(session);
+                // Set From: header field of the header.
+                message.setFrom(new InternetAddress(from));
+                // Set To: header field of the header.
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+                // Set Subject: header field
+                message.setSubject(subject);
+                // Now set the actual message
+                message.setText(content);
+                // Send message
+                Transport.send(message);
+                System.out.println("to [" + to + "] successfully...");
+            } catch (MessagingException mex) {
+                System.out.println("to [" + to + "] failed...");
+                mex.printStackTrace();
+            }
         }
     }
 }

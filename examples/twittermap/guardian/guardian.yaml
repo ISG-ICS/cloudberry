@@ -10,3 +10,9 @@ cloudberryConfig:
 
 twittermapConfig:
   url: http://localhost:9001
+
+notificationConfig:
+  publisherEmail: cloudberry@localhost
+  publisherEmailPrefix: ProductionServer
+  subscriberEmails:
+    - someboday@gmail.com
