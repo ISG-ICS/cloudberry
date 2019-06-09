@@ -50,6 +50,8 @@ public final class Guardian implements Runnable {
     private String publisherEmailPrefix;
     private String[] subscriberEmails;
 
+    private String myHostName = "localhost";
+
     Guardian (GuardianConfig guardianConfig) {
         this.initialDelay = Integer.valueOf(guardianConfig.getGuardianConfig()
                 .getOrDefault("initialDelay", GuardianConfig.DEFAULT_INITIAL_DELAY));
@@ -64,6 +66,12 @@ public final class Guardian implements Runnable {
         this.publisherEmail = guardianConfig.getNotificationConfig().getPublisherEmail();
         this.publisherEmailPrefix = guardianConfig.getNotificationConfig().getPublisherEmailPrefix();
         this.subscriberEmails = guardianConfig.getNotificationConfig().getSubscriberEmails();
+
+        try {
+            this.myHostName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
 
         this.scheduler = Executors.newScheduledThreadPool(NUM_THREADS);
     }
@@ -328,7 +336,7 @@ public final class Guardian implements Runnable {
             // Get system properties
             Properties properties = System.getProperties();
             // Setup mail server
-            properties.setProperty("mail.smtp.host", "localhost");
+            properties.setProperty("mail.smtp.host", myHostName);
             // Get the default Session object.
             Session session = Session.getDefaultInstance(properties);
 
