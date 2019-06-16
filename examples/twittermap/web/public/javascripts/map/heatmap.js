@@ -236,8 +236,6 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "heatmap") {
-        //document.getElementById("play-button").disabled = true;
-        console.log("aaa"); 
         document.getElementById("time-slider").style.display = "none";
         document.getElementById("play-button").style.display = "none";
         points = [];

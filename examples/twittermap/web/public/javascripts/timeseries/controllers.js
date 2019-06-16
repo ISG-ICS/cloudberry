@@ -1,5 +1,5 @@
 angular.module('cloudberry.timeseries', ['cloudberry.common'])
-  .controller('TimeSeriesCtrl', function ($scope, $window, $compile, cloudberry, cloudberryClient, moduleManager) {
+  .controller('TimeSeriesCtrl', function ($scope, $rootScope, $window, $compile, cloudberry, cloudberryClient, moduleManager) {
     $scope.ndx = null;
     $scope.result = {};
     $scope.resultArray = [];
@@ -98,7 +98,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
 
   })
-  .directive('timeSeries', function (cloudberry, moduleManager) {
+  .directive('timeSeries', function (cloudberry, moduleManager,$rootScope) {
     var onPlay = false;
     var margin = {
       top: 10,
@@ -132,7 +132,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 ndx.add(newVal);
                 dc.redrawAll();
               }
-                return;
+              return;
             }
 
             $scope.ndx = crossfilter(newVal);
@@ -196,13 +196,34 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var minDate = cloudberry.startDate;
             var maxDate = cloudberry.parameters.timeInterval.end;
 
-            // set the times of resetClink to 0 if the keyword is change
+            // Set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function(){
               resetClink = 0;
+              
+              if (playButton.text() === "Pause") {
+                document.getElementById("play-button").click();
+              }
               onPlay = false;
-              requestFunc(minDate, maxDate);
-              handle.attr("cx", x(minDate));
+              requestFunc(brushInterval.start, brushInterval.end);
+              // Move the handle to the start when keyword changed
+              handle.attr("cx", x(brushInterval.start));
+              currentValue = x(brushInterval.start);
             });
+            
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function(event) {
+              if (event.currentMapType !== "countmap") {
+                if (playButton.text() === "Pause") {
+                  document.getElementById("play-button").click();
+                }
+                onPlay = false;
+                requestFunc(brushInterval.start, brushInterval.end);
+                // Move the handle to the start when map type changed
+                handle.attr("cx", x(brushInterval.start));
+                currentValue = x(brushInterval.start);
+              }
+            });
+            
+            var brushInterval = {start: minDate, end: maxDate};
 
             var brushInterval = {start: new Date(), end: new Date()};
 
@@ -211,6 +232,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               brushInterval.start = extent[0];
               brushInterval.end = extent[1];
               requestFunc(extent[0], extent[1]);
+              // Move the handle to the beginning of the brush
               handle.attr("cx", x(extent[0]));
               currentValue = x(extent[0]);
             });
@@ -221,8 +243,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .attr('href',"#")
                 .on("click", function() { resetClink++; timeSeries.filterAll(); dc.redrawAll(); requestFunc(minDate, maxDate);})
                 .style("position", "absolute")
-                .style("bottom", "90%")
-                .style("left", "5%");
+                .style("bottom", "95%")
+                .style("left", "1%");
 
 
             var startDate = (minDate.getFullYear()+"-"+(minDate.getMonth()+1));
@@ -243,25 +265,23 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .on("filtered", removeHighlight);
 
 
-
-            // time slider started here
-            var formatDateIntoMonth = d3version4.timeFormat("%B");
+            
+            // Time slider starts here
             var currentValue = 0;
-            var targetValue = width-100;
+            var targetValue = width - 85;
             var svg = d3version4.select("#time-slider").append("svg")
                         .attr("width", width)
                         .attr("height", height);
             var x = d3version4.scaleTime()
-                                .domain([minDate, maxDate])
-                                .range([0, targetValue])
-                                .clamp(true);
+                              .domain([minDate, maxDate])
+                              .range([0, targetValue])
+                              .clamp(true);
           
             var slider = svg.append("g")
-                .attr("class", "slider")
-                .attr("transform", "translate(" + 25 + "," + 15 + ")");
+                            .attr("class", "slider")
+                            .attr("transform", "translate(" + 40 + "," + 10 + ")");
   
             slider.append("line")
-            
                 .attr("class", "track")
                 .attr("x1", x.range()[0])
                 .attr("x2", x.range()[1])
@@ -272,8 +292,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .call(d3version4.drag()
                     .on("start.interrupt", function() { slider.interrupt(); })
                     .on("start drag", function() {
-                    currentValue = d3version4.event.x;
-                    update(x.invert(currentValue)); 
+                      currentValue = d3version4.event.x;
+                      update(x.invert(currentValue));
                     })
                 );
           
@@ -285,37 +305,46 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 .attr("class", "handle")
                 .attr("r", 9);
   
-            function update(t) {            
-                var month = formatDateIntoMonth(t);
+            function update(t) {
                 handle.attr("cx", x(t));
                 var newDate = new Date(t);
                 newDate.setMonth(t.getMonth() + 1);
                 if(newDate <= maxDate) {
-                requestFunc(t, newDate); }
-                else {
+                  requestFunc(t, newDate);
+                } else {
                   requestFunc(t, maxDate);
                 }               
             }
 
             var playButton = d3version4.select("#play-button");
-            
+
             playButton
               .on("click", function() {
               var button = d3version4.select(this);
               onPlay = true;
               if (button.text() == "Pause") {
                 clearInterval(timer);
+                //Enable sidebar when time slider on "pause" mode
+                document.getElementById("hamburgerButton").disabled = false;
                 button.text("Play");
               } else {
                 timer = setInterval(step, 800);
+                //Disable sidebar when time slider on "play" mode
+                document.getElementById("hamburgerButton").disabled = true;
+                $rootScope.$emit("CallCloseMethod", {});
                 button.text("Pause");
               }
             });
 
             function step() {
               update(x.invert(currentValue));
-              currentValue = currentValue + (targetValue/27);
+              // Determine the step (one step per month)
+              var numberOfMonth = maxDate.getMonth() - minDate.getMonth() +
+                (12 * (maxDate.getFullYear() - minDate.getFullYear()));
+              currentValue = currentValue + (targetValue/numberOfMonth);
               if (x.invert(currentValue) >= brushInterval.end) {
+                  //Enable sidebar when time slider done playing
+                  document.getElementById("hamburgerButton").disabled = false;
                   onPlay = false;
                   currentValue = x(brushInterval.start);
                   clearInterval(timer);
@@ -324,6 +353,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                   requestFunc(brushInterval.start, brushInterval.end);
               }
               if (currentValue > targetValue) {
+                  //Enable sidebar when time slider done playing
+                  document.getElementById("hamburgerButton").disabled = false;
                   onPlay = false;
                   currentValue = 0;
                   clearInterval(timer);
@@ -332,10 +363,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                   requestFunc(minDate, maxDate);
                 }
               }
-
+   
           dc.renderAll();
           timeSeries.filter([minDate, maxDate]);
-
         })
       }
     };
