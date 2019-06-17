@@ -225,8 +225,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             
             var brushInterval = {start: minDate, end: maxDate};
 
-            var brushInterval = {start: new Date(), end: new Date()};
-
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
               brushInterval.start = extent[0];

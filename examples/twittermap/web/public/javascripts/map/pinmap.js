@@ -83,7 +83,6 @@ angular.module("cloudberry.map")
       };
 
       cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
-        console.log(resultSet);
         if(angular.isArray(resultSet)) {
           cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
           cloudberry.pinmapMapResult = resultSet[0];
