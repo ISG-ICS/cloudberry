@@ -383,7 +383,7 @@ div[aria-expanded=false] .glyphicon-triangle-bottom {
   cursor: pointer;
   height: 30px;
   z-index: 10;
-}
+  }
 
 #play-button{
   display: none;
@@ -397,7 +397,7 @@ button[disabled]{
 
 .ticks {
   font-size: 10px;
-}
+  }
 
 .track,
 .track-inset,

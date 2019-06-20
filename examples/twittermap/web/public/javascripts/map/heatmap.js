@@ -89,7 +89,6 @@ angular.module("cloudberry.map")
 
         // Partial heatmap cache hit hit case
         if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
-          document.getElementById("play-button").disabled = true;
           cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
             if(angular.isArray(resultSet)) {
               cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
@@ -108,7 +107,6 @@ angular.module("cloudberry.map")
     
       // Partial time series cache hit case
       else {
-        document.getElementById("play-button").disabled = true;
         var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
       
         cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval) {
