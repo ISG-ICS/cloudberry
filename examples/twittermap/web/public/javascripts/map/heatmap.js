@@ -87,7 +87,7 @@ angular.module("cloudberry.map")
       if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
         cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
 
-        // Partial heatmap cache hit hit case
+        // Partial heatmap cache hit case
         if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
           cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval){
             if(angular.isArray(resultSet)) {
@@ -108,16 +108,21 @@ angular.module("cloudberry.map")
       // Partial time series cache hit case
       else {
         var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
-      
-        cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval) {
-          if(angular.isArray(resultSet)) {
-            cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
-            cloudberry.heatmapMapResult = resultSet[0];
-            heatMapResultCache.putValues(cloudberry.heatmapMapResult, cloudberry.parameters.timeInterval)
-            cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
-          }
-        }, "heatMapResult");
+        if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
 
+          cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval) {
+            if(angular.isArray(resultSet)) {
+              cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+              cloudberry.heatmapMapResult = resultSet[0];
+              heatMapResultCache.putValues(cloudberry.heatmapMapResult, cloudberry.parameters.timeInterval)
+              cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
+              }
+            }, "heatMapResult");
+        }
+        else {
+          cloudberry.heatmapMapResult = heatMapResultCache.getValues(cloudberry.parameters.timeInterval);
+        }
+        
         cloudberryClient.send(heatTimeJson, function(id, resultSet, resultTimeInterval){
           if(angular.isArray(resultSet)) {
             var requestTimeRange = {
