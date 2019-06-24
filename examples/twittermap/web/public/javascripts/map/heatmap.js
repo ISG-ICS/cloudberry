@@ -93,7 +93,7 @@ angular.module("cloudberry.map")
             if(angular.isArray(resultSet)) {
               cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
               cloudberry.heatmapMapResult = resultSet[0];
-              heatMapResultCache.putValues(cloudberry.heatmapMapResult, cloudberry.parameters.timeInterval)
+              heatMapResultCache.putValues(cloudberry.heatmapMapResult, resultTimeInterval);
               cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
             }
           }, "heatMapResult");
@@ -108,18 +108,20 @@ angular.module("cloudberry.map")
       // Partial time series cache hit case
       else {
         var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
-        if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
 
+        // Partial heatmap cache hit case
+        if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {   
           cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval) {
             if(angular.isArray(resultSet)) {
               cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
               cloudberry.heatmapMapResult = resultSet[0];
-              heatMapResultCache.putValues(cloudberry.heatmapMapResult, cloudberry.parameters.timeInterval)
+              heatMapResultCache.putValues(cloudberry.heatmapMapResult, resultTimeInterval);
               cloudberry.heatMapMinDate = cloudberry.heatmapMapResult[cloudberry.heatmapMapResult.length-1]["create_at"];
-              }
-            }, "heatMapResult");
+            }
+          }, "heatMapResult");
         }
         else {
+          // Complete heatmap cache hit case
           cloudberry.heatmapMapResult = heatMapResultCache.getValues(cloudberry.parameters.timeInterval);
         }
         
