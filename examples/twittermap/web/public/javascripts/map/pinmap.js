@@ -255,7 +255,7 @@ angular.module("cloudberry.map")
 
       // initialize the points layer
       if (!$scope.pointsLayer) {
-       
+
         $scope.pointsLayer = new WebGLPointLayer();
         $scope.pointsLayer.setPointSize(3);
         $scope.pointsLayer.setPointColor(0, 0, 255);
@@ -452,6 +452,8 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "pinmap") {
+        document.getElementById("time-slider").style.display = "none";
+        document.getElementById("play-button").style.display = "none";
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();
