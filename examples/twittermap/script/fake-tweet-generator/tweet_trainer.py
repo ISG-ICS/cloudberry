@@ -17,8 +17,8 @@ def process_tweet_text(text):
     text = re.sub(r'&amp;', '&', text)
     return text
 
-def train_model(server, keyword, k):
-    cfg = {'num_epochs': 5,
+def train_model(server, keyword, k, epoch):
+    cfg = {'num_epochs': epoch,
            'gen_epochs': 1,
            'batch_size': 128,
            'train_size': 1.0,
@@ -94,13 +94,16 @@ def train_model(server, keyword, k):
 @click.option('--size', '-k', type = click.INT,
               required=True,
               help='Enter the training sample size.')
-def main(server, keyword, size):
+@click.option('--epoch', '-e', type = click.INT,
+              required=True,
+              help='Enter the training epoch.')
+def main(server, keyword, size, epoch):
     # training tweets with keyword
     for w in tqdm(keyword):
         print('Training tweets with keyword {} and sample size k = {}...'.format(w, size))
         start_time = time.time()
         try:
-            train_model(server = server, keyword = w, k = size)
+            train_model(server = server, keyword = w, k = size, epoch = epoch)
         except ValueError:
             pass
         print("Training time: {} seconds".format(time.time() - start_time))
@@ -109,7 +112,7 @@ def main(server, keyword, size):
     print('Training general tweets with sample size k = {}...'.format(size))
     start_time = time.time()
     try:
-        train_model(server = server, keyword = None, k = size)
+        train_model(server = server, keyword = None, k = size, epoch = epoch)
     except ValueError:
         pass
     print("Training time: {} seconds".format(time.time() - start_time))

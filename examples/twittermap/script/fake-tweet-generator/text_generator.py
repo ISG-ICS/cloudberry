@@ -24,7 +24,10 @@ def generate(k):
 @click.option('--infile', '-i',
               required=True,
               help='Enter the filename storing the keyword json (e.g. local_keyword.json).')
-def main(server, keyword, infile):
+@click.option('--outfile', '-o',
+              required=True,
+              help='Enter the filename to store the complete text json (e.g. local_text.json).')
+def main(server, keyword, infile, outfile):
     print('Connection to server: ' + server + '...')
     asterix_conn = AsterixConnection(server = server)
     
@@ -58,21 +61,9 @@ def main(server, keyword, infile):
             text = ftext[i]
             i += 1
         fake_text.append({'id':s,'text':text})
-    
-    response = asterix_conn.query('''use twitter;
-        create type typeFtext if not exists as open {
-            id: int64,
-            text: string
-        };
-        drop dataset ftext if exists;
-        create dataset ftext (typeFtext) if not exists primary key id;''')
-    print('Inserting fake texts into database...')
-    start_time = time.time()
-    for i in tqdm(range(0,len(fake_text),200000)):
-        insert_query = 'use twitter; insert into ftext({});'.format(fake_text[i:min(len(fake_text),i+200000)])
-        print('Inserting records {} to {}...'.format(i+1,min(len(fake_text),i+200000)))
-        response = asterix_conn.query(insert_query)
-    print('Insert time: {} seconds'.format(time.time() - start_time))
+
+    with open(outfile,'w') as f:
+        json.dump(fake_text, f)
 
 
 if __name__ == '__main__':
