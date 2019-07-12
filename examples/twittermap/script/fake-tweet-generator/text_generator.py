@@ -4,8 +4,8 @@ import multiprocessing as mp
 import time
 import itertools
 import json
-from tqdm import tqdm
 import click
+
 
 def generate(k):
     textgen = textgenrnn('./weights/twitter_general_weights.hdf5')
@@ -28,11 +28,10 @@ def generate(k):
               required=True,
               help='Enter the filename to store the complete text json (e.g. local_text.json).')
 def main(server, keyword, infile, outfile):
-    print('Connection to server: ' + server + '...')
-    asterix_conn = AsterixConnection(server = server)
+    asterix_conn = AsterixConnection(server=server)
     
     keyword = list(keyword)
-    query = 'use twitter; select value count(1) from (select d.id from ds_tweet_coord d where ftcontains(d.text, ' + str(keyword) +", {'mode':'any'})) t;"
+    query = 'use twitter; select value count(1) from (select d.id from ds_tweet_coord d where ftcontains(d.text, ' + str(keyword) + ", {'mode':'any'})) t;"
     response = asterix_conn.query(query)
     l = response.results[0]
     response = asterix_conn.query('select value id from twitter.ds_tweet_coord;')
@@ -40,12 +39,12 @@ def main(server, keyword, infile, outfile):
     start_time = time.time()
     k = (len(response.results)-l) // mp.cpu_count() + 1
     pool = mp.Pool(mp.cpu_count())
-    ftext = pool.map(generate, [k for i in range(mp.cpu_count())])
+    ftext = pool.map(generate, [k for _ in range(mp.cpu_count())])
     pool.close()
     ftext = list(itertools.chain.from_iterable(ftext))
     print('Generate time: {} seconds'.format(time.time() - start_time))
 
-    with open(infile,'r') as f:
+    with open(infile, 'r') as f:
         d = json.load(f)
     
     fake_text = []
@@ -60,9 +59,9 @@ def main(server, keyword, infile, outfile):
         if flag:
             text = ftext[i]
             i += 1
-        fake_text.append({'id':s,'text':text})
+        fake_text.append({'id': s, 'text': text})
 
-    with open(outfile,'w') as f:
+    with open(outfile, 'w') as f:
         json.dump(fake_text, f)
 
 

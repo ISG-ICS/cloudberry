@@ -1,6 +1,7 @@
 from urllib import parse, request
 import json
 
+
 class QueryResponse:
     def __init__(self, raw_response):
         self._json = json.loads(raw_response)
@@ -13,17 +14,16 @@ class QueryResponse:
 
 
 class AsterixConnection:
-    def __init__(self, server = 'http://localhost', port = 19002):
+    def __init__(self, server='http://localhost', port=19002):
         self._server = server
         self._port = port
-        self._url_base = self._server +':'+ str(port)
+        self._url_base = self._server + ':' + str(port)
+        print('Connecting to ' + self._url_base + '...')
 
     def query(self, statement, pretty=False, client_context_id=None):
         endpoint = '/query/service'
 
         url = self._url_base + endpoint
-        
-        # print('Connecting to ' + url + '...')
 
         payload = {
             'statement': statement,

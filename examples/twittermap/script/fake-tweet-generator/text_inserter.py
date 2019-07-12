@@ -1,8 +1,11 @@
 from asterixdb_connector import AsterixConnection
 import time
 import json
-from tqdm import tqdm
 import click
+import urllib
+from tqdm import tqdm
+import re
+
 
 @click.command()
 @click.option('--server', '-s',
@@ -12,13 +15,17 @@ import click
               required=True,
               help='Enter the filename storing the complete text json (e.g. local_text.json).')
 def main(server, infile):
-    print('Connection to server: ' + server + '...')
-    asterix_conn = AsterixConnection(server = server)
+    asterix_conn = AsterixConnection(server=server)
     
     with open(infile,'r') as f:
         fake_text = json.load(f)
-    
-    response = asterix_conn.query('''use twitter;
+
+    start_time = time.time()
+    for i in range(len(fake_text)):
+        fake_text[i]['text'] = fake_text[i]['text'].encode('ascii', errors='ignore').decode()
+    print('Pre-process time: {} seconds'.format(time.time() - start_time))
+
+    asterix_conn.query('''use twitter;
         create type typeFtext if not exists as open {
             id: int64,
             text: string
@@ -27,10 +34,11 @@ def main(server, infile):
         create dataset ftext (typeFtext) if not exists primary key id;''')
     print('Inserting fake texts into database...')
     start_time = time.time()
-    for i in tqdm(range(0,len(fake_text),200000)):
-        insert_query = 'use twitter; insert into ftext({});'.format(fake_text[i:min(len(fake_text),i+200000)])
-        print('Inserting records {} to {}...'.format(i+1,min(len(fake_text),i+200000)))
-        response = asterix_conn.query(insert_query)
+    n = 10000
+    for i in tqdm(range(0, len(fake_text), n)):
+        print('Inserting records {} to {}...'.format(i + 1, min(len(fake_text), i + n)))
+        insert_query = 'use twitter; insert into ftext({});'.format(fake_text[i:min(len(fake_text), i+n)])
+        asterix_conn.query(insert_query)
     print('Insert time: {} seconds'.format(time.time() - start_time))
 
 

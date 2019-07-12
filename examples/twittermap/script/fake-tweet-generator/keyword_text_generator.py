@@ -6,7 +6,8 @@ import time
 import json
 import click
 
-def generate(k,w):
+
+def generate(k, w):
     textgen = textgenrnn('./weights/twitter_{}_weights.hdf5'.format(w))
     text = textgen.generate(n = k, max_gen_length = 140, return_as_list = True)
     return text
@@ -24,8 +25,7 @@ def generate(k,w):
               required=True,
               help='Enter the filename to store the keyword json (e.g. local_keyword.json).')
 def main(server, keyword, outfile):
-    print('Connection to server: ' + server + '...')
-    asterix_conn = AsterixConnection(server = server)
+    asterix_conn = AsterixConnection(server=server)
     
     print('Generating fake texts with keywords...')
     start_time = time.time()
@@ -37,13 +37,13 @@ def main(server, keyword, outfile):
         id_list = response.results
         k = len(id_list) // mp.cpu_count() + 1
         pool = mp.Pool(mp.cpu_count())
-        text = pool.starmap(generate, zip([k for i in range(mp.cpu_count())],[w for i in range(mp.cpu_count())]))
+        text = pool.starmap(generate, zip([k for _ in range(mp.cpu_count())], [w for _ in range(mp.cpu_count())]))
         pool.close()
         text = list(itertools.chain.from_iterable(text))
         d[w] = dict(zip(id_list, text[:len(id_list)]))
     print('Generate time: {} seconds'.format(time.time() - start_time))
 
-    with open(outfile,'w') as f:
+    with open(outfile, 'w') as f:
         json.dump(d, f)
 
 

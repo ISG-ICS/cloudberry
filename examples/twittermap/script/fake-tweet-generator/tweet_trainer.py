@@ -5,6 +5,7 @@ import time
 from tqdm import tqdm
 import click
 
+
 def process_tweet_text(text):
     text = re.sub(r'http\S+', '', text)   # Remove URLs
     text = re.sub(r'@[a-zA-Z0-9_]+', '', text)  # Remove @ mentions
@@ -16,6 +17,7 @@ def process_tweet_text(text):
     text = re.sub(r'&gt;', '>', text)
     text = re.sub(r'&amp;', '&', text)
     return text
+
 
 def train_model(server, keyword, k, epoch):
     cfg = {'num_epochs': epoch,
@@ -103,7 +105,7 @@ def main(server, keyword, size, epoch):
         print('Training tweets with keyword {} and sample size k = {}...'.format(w, size))
         start_time = time.time()
         try:
-            train_model(server = server, keyword = w, k = size, epoch = epoch)
+            train_model(server=server, keyword=w, k=size, epoch=epoch)
         except ValueError:
             pass
         print("Training time: {} seconds".format(time.time() - start_time))
@@ -112,7 +114,7 @@ def main(server, keyword, size, epoch):
     print('Training general tweets with sample size k = {}...'.format(size))
     start_time = time.time()
     try:
-        train_model(server = server, keyword = None, k = size, epoch = epoch)
+        train_model(server=server, keyword=None, k=size, epoch=epoch)
     except ValueError:
         pass
     print("Training time: {} seconds".format(time.time() - start_time))
