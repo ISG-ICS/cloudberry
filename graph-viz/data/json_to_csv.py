@@ -8,18 +8,18 @@ eps = 1e-5
 status = 1
 
 
-def detail_error_detect(data, label, i):
+def detail_error_detect(data, label):
     try:
-        _ = data[i]['ds_tweet_reply_graph'][label]
+        _ = data[0]['ds_tweet_reply_graph'][label]
         return True
     except KeyError:
         return False
 
 
-def key_error_detect(data, i):
+def key_error_detect(data):
     global status
-    has_from_coordinate = detail_error_detect(data, 'from_coordinate', i)
-    has_to_coordinate = detail_error_detect(data, 'to_coordinate', i)
+    has_from_coordinate = detail_error_detect(data[0], 'from_coordinate')
+    has_to_coordinate = detail_error_detect(data[0], 'to_coordinate')
     if has_from_coordinate and has_to_coordinate:
         status = 1
     elif has_from_coordinate and not has_to_coordinate:
@@ -30,67 +30,87 @@ def key_error_detect(data, i):
         status = 4
 
 
+def line_strip(line):
+    # strip out extra white spaces, commas and brackets
+    line = line.strip()
+    if line.startswith('['):
+        line = line.lstrip('[')
+    if line.startswith(','):
+        line = line.lstrip(',')
+    if line.endswith(']'):
+        line = line.rstrip(']')
+    line = '[' + line + ']'
+    return line
+
+
 def create_list_from_json(json_file):
     with open(json_file) as f:
-        data = json.load(f)
+        all_data = []
+        for line in f:
+            line = line_strip(line)
+            data = json.loads(line)
+            try:
+                _ = data[0]
+            except IndexError:
+                continue
+            key_error_detect(data)
+            x_from_box = (data[0]['ds_tweet_reply_graph']['from_bounding_box'][0][0] +
+                          data[0]['ds_tweet_reply_graph']['from_bounding_box'][1][0]) / 2
+            x_to_box = (data[0]['ds_tweet_reply_graph']['to_bounding_box'][0][0] +
+                        data[0]['ds_tweet_reply_graph']['to_bounding_box'][1][0]) / 2
+            y_from_box = (data[0]['ds_tweet_reply_graph']['from_bounding_box'][0][1] +
+                          data[0]['ds_tweet_reply_graph']['from_bounding_box'][1][1]) / 2
+            y_to_box = (data[0]['ds_tweet_reply_graph']['to_bounding_box'][0][1] +
+                        data[0]['ds_tweet_reply_graph']['to_bounding_box'][1][1]) / 2
+            source = []
+            target = []
+            # if source and target are the same, don't add the record
+            if status == 1:
+                source = [data[0]['ds_tweet_reply_graph']['from_coordinate'][0],
+                          data[0]['ds_tweet_reply_graph']['from_coordinate'][1]]
+                target = [data[0]['ds_tweet_reply_graph']['to_coordinate'][0],
+                          data[0]['ds_tweet_reply_graph']['to_coordinate'][1]]
+            elif status == 2:
+                source = [data[0]['ds_tweet_reply_graph']['from_coordinate'][0],
+                          data[0]['ds_tweet_reply_graph']['from_coordinate'][1]]
+                target = [x_to_box, y_to_box]
+            elif status == 3:
+                source = [x_from_box, y_from_box]
+                target = [data[0]['ds_tweet_reply_graph']['to_coordinate'][0],
+                          data[0]['ds_tweet_reply_graph']['to_coordinate'][1]]
+            elif status == 4:
+                source = [x_from_box, y_from_box]
+                target = [x_to_box, y_to_box]
+            if abs(source[0] - target[0]) <= eps \
+                    and abs(source[1] - target[1]) <= eps:
+                continue
 
-    all_data = []
-    for i in range(len(data)):
-        key_error_detect(data, i)
-        x_from_box = (data[i]['ds_tweet_reply_graph']['from_bounding_box'][0][0] +
-                      data[i]['ds_tweet_reply_graph']['from_bounding_box'][1][0]) / 2
-        x_to_box = (data[i]['ds_tweet_reply_graph']['to_bounding_box'][0][0] +
-                    data[i]['ds_tweet_reply_graph']['to_bounding_box'][1][0]) / 2
-        y_from_box = (data[i]['ds_tweet_reply_graph']['from_bounding_box'][0][1] +
-                      data[i]['ds_tweet_reply_graph']['from_bounding_box'][1][1]) / 2
-        y_to_box = (data[i]['ds_tweet_reply_graph']['to_bounding_box'][0][1] +
-                    data[i]['ds_tweet_reply_graph']['to_bounding_box'][1][1]) / 2
-        source = []
-        target = []
-        # if source and target are the same, don't add the record
-        if status == 1:
-            source = [data[i]['ds_tweet_reply_graph']['from_coordinate'][0],
-                      data[i]['ds_tweet_reply_graph']['from_coordinate'][1]]
-            target = [data[i]['ds_tweet_reply_graph']['to_coordinate'][0],
-                      data[i]['ds_tweet_reply_graph']['to_coordinate'][1]]
-        elif status == 2:
-            source = [data[i]['ds_tweet_reply_graph']['from_coordinate'][0],
-                      data[i]['ds_tweet_reply_graph']['from_coordinate'][1]]
-            target = [x_to_box, y_to_box]
-        elif status == 3:
-            source = [x_from_box, y_from_box]
-            target = [data[i]['ds_tweet_reply_graph']['to_coordinate'][0],
-                      data[i]['ds_tweet_reply_graph']['to_coordinate'][1]]
-        elif status == 4:
-            source = [x_from_box, y_from_box]
-            target = [x_to_box, y_to_box]
-        if abs(source[0] - target[0]) <= eps \
-                and abs(source[1] - target[1]) <= eps:
-            continue
+            # ignore "\n" and "|" in texts
+            data[0]['ds_tweet_reply_graph']['from_text'] = data[0]['ds_tweet_reply_graph']['from_text'].replace(
+                "\n", " ")
+            data[0]['ds_tweet_reply_graph']['from_text'] = data[0]['ds_tweet_reply_graph']['from_text'].replace("|",
+                                                                                                                "")
+            data[0]['ds_tweet_reply_graph']['to_text'] = data[0]['ds_tweet_reply_graph']['to_text'].replace("\n",
+                                                                                                            " ")
+            data[0]['ds_tweet_reply_graph']['to_text'] = data[0]['ds_tweet_reply_graph']['to_text'].replace("|", "")
 
-        # ignore "\n" and "|" in texts
-        data[i]['ds_tweet_reply_graph']['from_text'] = data[i]['ds_tweet_reply_graph']['from_text'].replace("\n", " ")
-        data[i]['ds_tweet_reply_graph']['from_text'] = data[i]['ds_tweet_reply_graph']['from_text'].replace("|", "")
-        data[i]['ds_tweet_reply_graph']['to_text'] = data[i]['ds_tweet_reply_graph']['to_text'].replace("\n", " ")
-        data[i]['ds_tweet_reply_graph']['to_text'] = data[i]['ds_tweet_reply_graph']['to_text'].replace("|", "")
+            # form a line of data[0]
+            data_line = [data[0]['ds_tweet_reply_graph']['tweet_from'],
+                         data[0]['ds_tweet_reply_graph']['from_user'],
+                         data[0]['ds_tweet_reply_graph']['from_create_at'],
+                         data[0]['ds_tweet_reply_graph']['from_text'],
+                         source[0],
+                         source[1],
+                         data[0]['ds_tweet_reply_graph']['tweet_to'],
+                         data[0]['ds_tweet_reply_graph']['to_user'],
+                         data[0]['ds_tweet_reply_graph']['to_create_at'],
+                         data[0]['ds_tweet_reply_graph']['to_text'],
+                         target[0],
+                         target[1]]
 
-        # form a line of data
-        data_line = [data[i]['ds_tweet_reply_graph']['tweet_from'],
-                     data[i]['ds_tweet_reply_graph']['from_user'],
-                     data[i]['ds_tweet_reply_graph']['from_create_at'],
-                     data[i]['ds_tweet_reply_graph']['from_text'],
-                     source[0],
-                     source[1],
-                     data[i]['ds_tweet_reply_graph']['tweet_to'],
-                     data[i]['ds_tweet_reply_graph']['to_user'],
-                     data[i]['ds_tweet_reply_graph']['to_create_at'],
-                     data[i]['ds_tweet_reply_graph']['to_text'],
-                     target[0],
-                     target[1]]
+            all_data.append(data_line)
 
-        all_data.append(data_line)
-
-    return all_data
+        return all_data
 
 
 def write_csv(path):
