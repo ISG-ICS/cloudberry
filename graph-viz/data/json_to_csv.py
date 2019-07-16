@@ -43,9 +43,9 @@ def line_strip(line):
     return line
 
 
-def create_list_from_json(json_file):
-    with open(json_file) as f:
-        all_data = []
+def create_csv_from_json(json_file):
+    with open(json_file) as f, open('user_id.csv', 'w', newline='') as csv_file:
+        writer = csv.writer(csv_file, delimiter='|', quoting=csv.QUOTE_MINIMAL)
         for line in f:
             line = line_strip(line)
             data = json.loads(line)
@@ -108,20 +108,8 @@ def create_list_from_json(json_file):
                          target[0],
                          target[1]]
 
-            all_data.append(data_line)
-
-        return all_data
-
-
-def write_csv(path):
-    rows = create_list_from_json(path)
-    with open('user_id.csv', 'w', newline='') as csv_file:
-        # csv.QUOTE_MINIMAL means only when required.
-        # csv.QUOTE_NONE means that quotes are never placed around fields.
-        writer = csv.writer(csv_file, delimiter='|', quoting=csv.QUOTE_MINIMAL)
-        for row in rows:
-            writer.writerow(row)
+            writer.writerow(data_line)
 
 
 if __name__ == '__main__':
-    write_csv('user_id.json')
+    create_csv_from_json('user_id.json')
