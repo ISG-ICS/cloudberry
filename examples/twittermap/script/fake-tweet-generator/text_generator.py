@@ -5,9 +5,11 @@ import time
 import itertools
 import json
 import click
+import numpy as np
 
 
 def generate(k):
+    np.random.seed()
     textgen = textgenrnn('./weights/twitter_general_weights.hdf5')
     text = textgen.generate(n = k, max_gen_length = 140, return_as_list = True)
     return text
