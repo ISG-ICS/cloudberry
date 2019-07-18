@@ -13,7 +13,7 @@ import numpy as np
 def generate(k, w):
     np.random.seed()
     textgen = textgenrnn('./weights/twitter_{}_weights.hdf5'.format(w))
-    text = textgen.generate(n = k, max_gen_length = 140, return_as_list = True)
+    text = textgen.generate(n=k, max_gen_length=140, return_as_list=True)
     return text
 
 
@@ -30,7 +30,7 @@ def generate(k, w):
               help='Enter the filename to store the keyword json (e.g. local_keyword.json).')
 def main(server, keyword, outfile):
     # silence tensorflow
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    tf.logging.set_verbosity(tf.logging.ERROR)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
     asterix_conn = AsterixConnection(server=server)

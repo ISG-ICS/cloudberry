@@ -103,7 +103,7 @@ def train_model(server, keyword, k, epoch):
               help='Enter the training epoch.')
 def main(server, keyword, size, epoch):
     # silence tensorflow
-    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    tf.logging.set_verbosity(tf.logging.ERROR)
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
     # training tweets with keyword
