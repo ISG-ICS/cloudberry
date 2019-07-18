@@ -2,9 +2,7 @@ from asterixdb_connector import AsterixConnection
 import time
 import json
 import click
-import urllib
 from tqdm import tqdm
-import re
 
 
 @click.command()

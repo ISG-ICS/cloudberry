@@ -1,3 +1,5 @@
+import tensorflow as tf
+import os
 import re
 from textgenrnn import textgenrnn
 from asterixdb_connector import AsterixConnection
@@ -100,6 +102,10 @@ def train_model(server, keyword, k, epoch):
               required=True,
               help='Enter the training epoch.')
 def main(server, keyword, size, epoch):
+    # silence tensorflow
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
     # training tweets with keyword
     for w in tqdm(keyword):
         print('Training tweets with keyword {} and sample size k = {}...'.format(w, size))

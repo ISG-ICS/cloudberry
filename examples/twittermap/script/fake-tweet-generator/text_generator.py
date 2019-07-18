@@ -1,3 +1,5 @@
+import tensorflow as tf
+import os
 from asterixdb_connector import AsterixConnection
 from textgenrnn import textgenrnn
 import multiprocessing as mp
@@ -30,6 +32,10 @@ def generate(k):
               required=True,
               help='Enter the filename to store the complete text json (e.g. local_text.json).')
 def main(server, keyword, infile, outfile):
+    # silence tensorflow
+    tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
+    os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
     asterix_conn = AsterixConnection(server=server)
     
     keyword = list(keyword)
