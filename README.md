@@ -1,71 +1,23 @@
-# Cloudberry Matrix
+# Cloudberry - Big Data Visualization
 
+[Cloudberry](http://cloudberry.ics.uci.edu) is heavily designed and implemented by the [Actor model](http://doc.akka.io/docs/akka/current/scala/actors.html) using the [Play! Framework](https://www.playframework.com/) and [Angular JS](https://angular.io/)
 
-[Cloudberry](http://cloudberry.ics.uci.edu) is now using the [Play! Framework](https://www.playframework.com/) and [Angular JS](https://angular.io/)
+[![Build Status](https://travis-ci.org/ISG-ICS/cloudberry.svg?branch=master)](https://travis-ci.org/ISG-ICS/cloudberry) [![codecov](https://codecov.io/gh/ISG-ICS/cloudberry/branch/master/graph/badge.svg)](https://codecov.io/gh/ISG-ICS/cloudberry)
 
-[![Build Status](https://travis-ci.org/ISG-ICS/cloudberry.svg?branch=master)](https://travis-ci.org/ISG-ICS/cloudberry)
-[![codecov](https://codecov.io/gh/ISG-ICS/cloudberry/branch/master/graph/badge.svg)](https://codecov.io/gh/ISG-ICS/cloudberry)
+![software architecture](https://docs.google.com/drawings/d/1nTrEvJbfmy9NObda2cojzxSnnSDwYCePBflJVZFElqI/pub?w=960&h=720)
+[edit](https://docs.google.com/drawings/d/1nTrEvJbfmy9NObda2cojzxSnnSDwYCePBflJVZFElqI/edit)
 
-Users are welcome to join our online chat forum :[![Join the chat at https://gitter.im/ISG-ICS/cloudberry](https://badges.gitter.im/ISG-ICS/cloudberry.svg)](https://gitter.im/ISG-ICS/cloudberry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+# About
+Cloudberry is a general-purpose middleware system to support visualization on large amounts of data. It communicates with backend data management systems via adapters. It supports various frontend interfaces by providing a RESTful interface.
 
-For developers please join our [slack group](https://cloudberry-uci.slack.com/)
+# More information
+* [Quick-start Guide](https://github.com/ISG-ICS/cloudberry/wiki/quick-start)
+* [API Reference](https://github.com/ISG-ICS/cloudberry/wiki/RESTful-API-to-Cloudberry)
+* [How to Contribute](https://github.com/ISG-ICS/cloudberry/wiki/Setting-up-the-development-environment)
+* [Software docs](https://github.com/ISG-ICS/cloudberry/wiki/Software-Documentation)
+  * [Cloudberry Middleware](https://github.com/ISG-ICS/cloudberry/wiki/Cloudberry-Middleware)
+  * [TwitterMap documentation](https://github.com/ISG-ICS/cloudberry/wiki/TwitterMap-documentation)
+  * [How to update the Cloudberry's homepage](https://github.com/ISG-ICS/cloudberry/wiki/How-to-update-the-Cloudberry's-homepage)
+* [Research](https://github.com/ISG-ICS/cloudberry/wiki/research)
 
-## Build
-
-Prerequisites: scala, sbt, [AsterixDB](http://asterixdb.apache.org)
-
-### Prepare the AsterixDB cluster
-Follow the official [documentation](https://asterixdb.apache.org/docs/0.9.4/ncservice.html) to setup a fully functional cluster.
-
-### To compile projects
-```
-> cd cloudberry
-> sbt compile
-```
-
-### Run Cloudberry service
-You will need to give the AsterixDB cluster link to `neo` by change the `asterixdb.url` configuration in `neo/conf/application.conf` file.
-The default value points to the localhost docker cluster
-```
-> sbt "project neo" "run"
-```
-
-### Run TwitterMap demo
-TwitterMap is a demonstration application that shows how front-end services communicate with Cloudberry.
-You can run the following command in a separate command line window.
-```
-> cd examples/twittermap
-> ./script/ingestAllTwitterToLocalCluster.sh
-> sbt "project web" "run 9001"
-```
-You should see the TwitterMap demo on [http://localhost:9001](http://localhost:9001)
-
-## Deploy Cloudberry
-Use `sbt dist` to make a Cloudberry package as follows:
-```
-> sbt "project neo" "clean" "dist"
-```
-
-There should be one zip file called `neo-1.0-SNAPSHOT.zip` generated under `cloudberry/neo/target/universal/`. 
-
-You can copy the file to where you want to run the Cloudberry, unzip it, and run the instance in the background as follows:
-```
-> cd neo-1.0-SNAPSHOT
-> bin/neo -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=/full/path/to/production.conf  &
-```
-
-The `application.secret` value should be the same as the one in the application.conf when you run the `sbt dist` command. You can find more in the Play! framework [documentation page](https://www.playframework.com/documentation/2.6.x/Deploying)
-
-When it runs, there will be one `RUNNING_PID` file generated that includes the PID of the instance. You can kill the corresponding process to stop the instance. 
-
-You can run the *TwitterMap* application in the same way by running the following command:
-```
-> cd examples/twittermap
-> sbt "project web" "clean" "dist"
-```
-, and run the server on a different port `9001`: 
-```
-> cd web-1.0-SNAPSHOT
-> bin/web -Dapplication.secret='Yf]0bsdO2ckhJd]^sQ^IPISElBrfy<XWdTWukRwJK8KKc3rFG>Cn;nnaX:N/=R1<' -Dconfig.file=/full/path/to/production.conf -Dhttp.port=9001 &
-```
-
+Online public discussion: [![Join the chat at https://gitter.im/ISG-ICS/cloudberry](https://badges.gitter.im/ISG-ICS/cloudberry.svg)](https://gitter.im/ISG-ICS/cloudberry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
