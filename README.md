@@ -17,7 +17,6 @@ Cloudberry is a general-purpose middleware system to support visualization on la
 * [Software docs](https://github.com/ISG-ICS/cloudberry/wiki/Software-Documentation)
   * [Cloudberry Middleware](https://github.com/ISG-ICS/cloudberry/wiki/Cloudberry-Middleware)
   * [TwitterMap documentation](https://github.com/ISG-ICS/cloudberry/wiki/TwitterMap-documentation)
-  * [How to update the Cloudberry's homepage](https://github.com/ISG-ICS/cloudberry/wiki/How-to-update-the-Cloudberry's-homepage)
 * [Research](https://github.com/ISG-ICS/cloudberry/wiki/research)
 
 Online public discussion: [![Join the chat at https://gitter.im/ISG-ICS/cloudberry](https://badges.gitter.im/ISG-ICS/cloudberry.svg)](https://gitter.im/ISG-ICS/cloudberry?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
