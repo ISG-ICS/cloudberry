@@ -2,6 +2,7 @@ from asterixdb_connector import AsterixConnection
 import time
 import json
 import click
+import urllib
 from tqdm import tqdm
 
 
@@ -20,7 +21,7 @@ def main(server, infile):
 
     start_time = time.time()
     for i in range(len(fake_text)):
-        fake_text[i]['text'] = fake_text[i]['text'].encode('ascii', errors='ignore').decode()
+        fake_text[i]['text'] = fake_text[i]['text'].encode(encoding='ascii', errors='ignore').decode().replace('\x7f', '')
     print('Pre-process time: {} seconds'.format(time.time() - start_time))
 
     asterix_conn.query('''use twitter;
@@ -36,7 +37,11 @@ def main(server, infile):
     for i in tqdm(range(0, len(fake_text), n)):
         print('Inserting records {} to {}...'.format(i + 1, min(len(fake_text), i + n)))
         insert_query = 'use twitter; insert into ftext({});'.format(fake_text[i:min(len(fake_text), i+n)])
-        asterix_conn.query(insert_query)
+        try:
+            asterix_conn.query(insert_query)
+        except urllib.error.HTTPError:
+            print(insert_query)
+            break
     print('Insert time: {} seconds'.format(time.time() - start_time))
 
 
