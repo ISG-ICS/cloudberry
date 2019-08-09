@@ -11,7 +11,12 @@
 Cloudberry is a general-purpose middleware system to support visualization on large amounts of data. It communicates with backend data management systems via adapters. It supports various frontend interfaces by providing a RESTful interface.
 
 # More information
-* [Quick-start Guide](https://github.com/ISG-ICS/cloudberry/wiki/quick-start)
+* [Quick-start](https://github.com/ISG-ICS/cloudberry/wiki/quick-start)
+* Build Your Own Application using Cloudberry
+  * [Prepare Database](https://github.com/ISG-ICS/cloudberry/wiki/prepare-database)
+  * [Register Dataset](https://github.com/ISG-ICS/cloudberry/wiki/register-dataset)
+  * [Query Cloudberry](https://github.com/ISG-ICS/cloudberry/wiki/query-cloudberry)
+  * [Deregister Dataset](https://github.com/ISG-ICS/cloudberry/wiki/deregister-dataset)
 * [API Reference](https://github.com/ISG-ICS/cloudberry/wiki/RESTful-API-to-Cloudberry)
   * Cloudberry Configuration
     * Database Adapters
