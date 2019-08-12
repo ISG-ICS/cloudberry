@@ -24,7 +24,7 @@
 * Advanced topics
   * Database Adapters (Replace backend database!)
     * [Elasticsearch](https://github.com/ISG-ICS/cloudberry/wiki/Elasticsearch-Adapter-Quick-Start-Guide)
-    * [Oracle](https://github.com/ISG-ICS/cloudberry/pull/617)
+    * [Oracle](https://github.com/ISG-ICS/cloudberry/wiki/Oracle-Adapter)
     * [PostgreSQL]()
     * [MySQL](https://github.com/ISG-ICS/cloudberry/wiki/Documentation-for-Cloudberry-(Using-SQL-Database))
     * [SparkSQL](https://github.com/ISG-ICS/cloudberry/wiki/Connect-to-SparkSQL)
