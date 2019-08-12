@@ -23,7 +23,7 @@
   * [Deregister Dataset](https://github.com/ISG-ICS/cloudberry/wiki/deregister-dataset)
 * Advanced topics
   * Database Adapters (Replace backend database!)
-    * [Elasticsearch](https://github.com/ISG-ICS/cloudberry/wiki/Elasticsearch-Adapter-Quick-Start-Guide)
+    * [Elasticsearch](https://github.com/ISG-ICS/cloudberry/wiki/Elasticsearch-Adapter)
     * [Oracle](https://github.com/ISG-ICS/cloudberry/wiki/Oracle-Adapter)
     * [MySQL](https://github.com/ISG-ICS/cloudberry/wiki/MySQL-Adapter)
     * [PostgreSQL](https://github.com/ISG-ICS/cloudberry/wiki/PostgreSQL-Adapter)
