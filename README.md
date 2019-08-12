@@ -5,15 +5,14 @@
 [![Build Status](https://travis-ci.org/ISG-ICS/cloudberry.svg?branch=master)](https://travis-ci.org/ISG-ICS/cloudberry) 
 [![code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg?style=flat-square)](https://github.com/prettier/prettier)
 
-![twittermap demo](https://github.com/ISG-ICS/cloudberry/blob/master/docs/Twittermap%20demo.gif)
-[live demo](http://cloudberry.ics.uci.edu/apps/twittermap)
-
 # About
 Cloudberry is a general-purpose middleware system to support visualization on large amounts of data. It communicates with backend data management systems via adapters. It supports various frontend interfaces by providing a RESTful interface.
 
 ![software architecture](https://docs.google.com/drawings/d/e/2PACX-1vT0SZxo6i5eIvtBOYmKUkZyrK5dawUy4mYcHHE4G4PjLeFRVdg5_PI-wgHJHb0S0VTWdDN-2vUE2OrQ/pub?w=960&h=720)
 
 Twittermap ([live demo](http://cloudberry.ics.uci.edu/apps/twittermap)) is an application that utilizes Cloudberry's RESTful API to support interactive analytics and visualization on more than one billion tweets with new data continuously being ingested.
+
+![twittermap demo](https://github.com/ISG-ICS/cloudberry/blob/master/docs/Twittermap%20demo.gif)
 
 # More information
 * [Quick Start](https://github.com/ISG-ICS/cloudberry/wiki/quick-start) (Run Twittermap on your own computer!)
