@@ -25,9 +25,8 @@
   * Database Adapters (Replace backend database!)
     * [Elasticsearch](https://github.com/ISG-ICS/cloudberry/wiki/Elasticsearch-Adapter-Quick-Start-Guide)
     * [Oracle](https://github.com/ISG-ICS/cloudberry/wiki/Oracle-Adapter)
-    * [PostgreSQL]()
-    * [MySQL](https://github.com/ISG-ICS/cloudberry/wiki/Documentation-for-Cloudberry-(Using-SQL-Database))
-    * [SparkSQL](https://github.com/ISG-ICS/cloudberry/wiki/Connect-to-SparkSQL)
+    * [MySQL](https://github.com/ISG-ICS/cloudberry/wiki/MySQL-Adapter)
+    * [PostgreSQL](https://github.com/ISG-ICS/cloudberry/wiki/PostgreSQL-Adapter)
   * [Realtime Tweets' Ingestion](https://github.com/ISG-ICS/cloudberry/wiki/Start-realtime-twitter-stream-ingestion-into-local-AsterixDB)
 * How to Contribute
   * [Deploy Environment](https://github.com/ISG-ICS/cloudberry/wiki/Setting-up-the-development-environment)
