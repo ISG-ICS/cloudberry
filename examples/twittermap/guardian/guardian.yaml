@@ -1,0 +1,19 @@
+guardianConfig:
+  initialDelay: 0
+  heartBeatRate: 3600
+
+asterixdbConfig:
+  queryURL: http://localhost:19002/query/service
+
+cloudberryConfig:
+  queryURL: ws://localhost:9000/ws
+  ingestionCheck: true
+
+twittermapConfig:
+  url: http://localhost:9001
+
+notificationConfig:
+  publisherEmail: cloudberry@localhost
+  publisherEmailPrefix: ProductionServer
+  subscriberEmails:
+    - someboday@gmail.com

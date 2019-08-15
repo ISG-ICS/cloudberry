@@ -36,6 +36,16 @@ object Dependencies {
     ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 
+  val guardianDependencies: Seq[ModuleID] = Seq(
+    "com.typesafe.play" %% "play-json" % playVersion,
+    "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.1.1",
+    "jakarta.websocket" % "jakarta.websocket-client-api" % "1.1.1",
+    "org.glassfish.tyrus" % "tyrus-client" % "1.15",
+    "org.glassfish.tyrus" % "tyrus-container-grizzly-client" % "1.15",
+    "javax.mail" % "mail" % "1.4",
+    "javax.activation" % "activation" % "1.1.1"
+  ) ++ testDeps
+
   val utilDependencies: Seq[ModuleID] = Seq(
     "com.typesafe.play" %% "play-logback" % playVersion
   ) ++ testDeps
