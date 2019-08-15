@@ -10,7 +10,7 @@
 
 ![software architecture](https://docs.google.com/drawings/d/e/2PACX-1vT0SZxo6i5eIvtBOYmKUkZyrK5dawUy4mYcHHE4G4PjLeFRVdg5_PI-wgHJHb0S0VTWdDN-2vUE2OrQ/pub?w=960&h=720)
 
-**Twittermap** ([live demo](http://cloudberry.ics.uci.edu/apps/twittermap)) is an application that utilizes Cloudberry's RESTful API to support interactive analytics and visualization on more than one billion tweets with new data continuously being ingested.
+**Twittermap** ([live demo](http://cloudberry.ics.uci.edu/apps/twittermap)) is an application that utilizes Cloudberry's RESTful API to support interactive analytics and visualization on more than **1.6 billion tweets (2TB)** with new data continuously being ingested.
 
 ![twittermap demo](https://github.com/ISG-ICS/cloudberry/blob/master/docs/Twittermap%20demo.gif)
 
