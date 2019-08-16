@@ -28,6 +28,7 @@
     * [MySQL](https://github.com/ISG-ICS/cloudberry/wiki/MySQL-Adapter)
     * [PostgreSQL](https://github.com/ISG-ICS/cloudberry/wiki/PostgreSQL-Adapter)
     * [Develop New Adapters](https://github.com/ISG-ICS/cloudberry/wiki/Develop-New-Adapters)
+  * [Enable Sidebar Live Tweets](https://github.com/ISG-ICS/cloudberry/wiki/Enable-Sidebar-Live-Tweets)
   * [Realtime Tweets' Ingestion](https://github.com/ISG-ICS/cloudberry/wiki/Start-realtime-twitter-stream-ingestion-into-local-AsterixDB)
 * How to Contribute
   * [Deploy Environment](https://github.com/ISG-ICS/cloudberry/wiki/Setting-up-the-development-environment)
