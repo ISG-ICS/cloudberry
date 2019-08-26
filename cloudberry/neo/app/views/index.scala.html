@@ -76,6 +76,9 @@
                 <div class="col-sm-1"></div>
             </div>
             <script>
+                var queryStart = 0;
+                var querySent = 0;
+
                 var url = "ws://" + location.host + "/ws";
 
                 console.log("connecting to [" + url + "] ...");
@@ -95,6 +98,11 @@
                 };
 
                 ws.onmessage = function (event) {
+
+                    var d = new Date();
+                    var queryTime = (d.getTime() - queryStart) / 1000;
+                    var queryTotalTime = (d.getTime() - querySent) / 1000;
+
                     var result = JSON.parse(event.data);
 
                     console.log("result received:");
@@ -124,10 +132,13 @@
                             }
                         }
                         show_data += "]";
+
+                        queryStart = d.getTime();
                     }
 
                     $('#response').append("<h6>[Result] received ("
-                            + length.toString() + "):</h6><pre class=\"prettyprint\">" + show_data + "</pre>");
+                            + length.toString() + "), mini query time: " + queryTime.toFixed(2) + " s, total query time: "
+                            + queryTotalTime.toFixed(2) + " s:</h6><pre class=\"prettyprint\">" + show_data + "</pre>");
                 };
 
                 (function($){
@@ -160,6 +171,10 @@
                         console.log("query = " + query);
 
                         ws.send(query);
+
+                        var d = new Date();
+                        queryStart = d.getTime();
+                        querySent = queryStart;
 
                         console.log("query sent!");
 
