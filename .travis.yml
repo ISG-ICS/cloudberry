@@ -33,3 +33,5 @@ script:
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 
+# fixed the issue of installing oraclejdk8 failed during building
+dist: trusty
