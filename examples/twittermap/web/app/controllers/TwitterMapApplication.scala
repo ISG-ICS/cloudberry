@@ -75,7 +75,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     case DBType.PostgreSQL => PostgreSqlMigration_20172829.migration.up(wsClient, cloudberryRegisterURL)
     case _ => Migration_20170428.migration.up(wsClient, cloudberryRegisterURL)
   }
-  Await.result(register, 1 minutes)
+  Await.result(register, 5 minutes)
 
   def index = Action { request =>
     val remoteAddress = request.remoteAddress
