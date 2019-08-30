@@ -250,7 +250,7 @@ angular.module('cloudberry.map')
           if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
             resultSet['key'] === "done") || cloudberryConfig.querySliceMills <= 0) {
               if (cloudberry.parameters.maptype == 'countmap'){
-                document.getElementById("play-button").style.display = "block";
+                document.getElementById("play-button").style.display = "none";
               }
               TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInCache,
                 cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
@@ -672,8 +672,8 @@ angular.module('cloudberry.map')
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "countmap") {
-        document.getElementById("time-slider").style.display = "block";
-        document.getElementById("play-button").style.display = "block";
+        document.getElementById("time-slider").style.display = "none";
+        document.getElementById("play-button").style.display = "none";
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();
