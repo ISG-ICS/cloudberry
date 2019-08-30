@@ -28,11 +28,9 @@ class RESTSolver(val dataManager: ActorRef,
         // handle average results
         val avgHandledResult = r.value.map(rows => QueryPlanner.handleAvg(rows.as[JsArray]))
         out ! transform.transform(Json.parse(Json.toJson(avgHandledResult).toString()))
-        //Disabled this suggest views to avoid competing resources in DB with ongoing ProgressiveSolver.
-        //TODO Once we have view management mechanism, could use a common service to request a view creation.
-        //qs.foreach(suggestViews)
+        // suggest view to QueryPlanner
+        qs.foreach(suggestViews)
       }
   }
 
 }
-

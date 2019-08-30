@@ -292,7 +292,9 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
       $scope.setTimerToCheckQuery();
       disableHashtagButton();
-      $scope.openRightMenu();
+      if (config.enableLiveTweet) {
+        $scope.openRightMenu();
+      }
     }
 
 
