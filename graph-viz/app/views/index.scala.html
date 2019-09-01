@@ -1,125 +1,489 @@
 @()
 
 
+
 @defining(play.core.PlayVersion.current) { version =>
 
-<html>
+    <html>
 
-<title>Reply Tweets Deck.GL</title>
-<meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+        <title>Reply Tweets Deck.GL</title>
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
 
-<style type="text/css">
-  #container {
-    width: 100%;
-    height: 100%;
-  }
+        <style type="text/css">
+                #container {
+                    width: 100%;
+                    height: 100%;
+                }
 
-  #search {
-    width: 100%;
-    top: 10px;
-    position: absolute;
-  }
+                #search {
+                    width: 100%;
+                    top: 10px;
+                    position: absolute;
+                }
 
-  #info {
-    left: 0px display: block;
-    position: relative;
-    margin: 0px auto;
-    width: 50%;
-    padding: 10px;
-    border: none;
-    border-radius: 3px;
-    font-size: 12px;
-    text-align: center;
-    color: #222;
-    background: #fff;
-  }
-</style>
+                #info {
+                    left: 0px;
+                    display: block;
+                    position: relative;
+                    margin: 0px auto;
+                    width: 50%;
+                    padding: 10px;
+                    border: none;
+                    border-radius: 3px;
+                    font-size: 12px;
+                    text-align: center;
+                    color: #222;
+                    background: #fff;
+                }
+        </style>
 
-<body style="line-height: 0;">
-  <div id="map" style="width:100vw; height: 100vh"></div>
-  <div id="search">
-    <div class="row"></div>
-    <div class="row">
-      <div class="col-sm-2"></div>
-      <input type="text" style="width: 40%"
-        class="form-control col-sm-4 ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required"
-        id="keyword-textbox" placeholder="Search keywords e.g hurricane">
-      <div class="col-sm-1"></div><span class="col-sm-1 input-group-btn">
-        <button type="submit" onclick="drawGraph()" class=" btn btn-primary" id="submit-button">Submit</button></span>
-    </div>
-  </div>
-</body>
+        <style>
+                .bottomleft {
+                    position: absolute;
+                    bottom: 32px;
+                    left: 24px;
+                    font-style: italic;
+                    font-size: 18px;
+                }
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
-<link href='assets/lib/bootstrap/css/bootstrap.css' rel='stylesheet' />
-<script src="/assets/javascripts/deckgl.min.js"></script>
-<script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js'></script>
-<link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.css' rel='stylesheet' />
+                .bottomleft p {
+                    margin: 0px 0px 25px;
+                }
 
-<script>
-  mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
-  const map = new mapboxgl.Map({
-    container: 'map',
-    style: 'mapbox://styles/mapbox/light-v9',
-    center: [-96.35, 39.5],
-    zoom: 3.7,
-    maxZoom: 5,
-    minZoom: 2
-  });
-  let myArcLayer
-
-  var query = "";
-  function drawGraph() {
-    var fstart = performance.now();
-
-    if (map.getLayer('arc') != undefined) {
-      map.removeLayer('arc')
-    }
-
-    query = document.getElementById("keyword-textbox").value;
+                html {
+                    overflow-y: scroll;
+                }
+        </style>
 
 
-    var bounds = map.getBounds();
-    var ne = bounds.getNorthEast();
-    var sw = bounds.getSouthWest();
-    var ne_lng = ne.lng
-    var ne_lat = ne.lat
-    var sw_lng = sw.lng
-    var sw_lat = sw.lat
+        <body style="line-height: 0;">
+            <div id="map" style="width: 100vw;
+                height: 100vh"></div>
+            <div id="search">
+                <div class="row"></div>
+                <div class="row">
+                    <div class="col-sm-1"></div>
+                    <input type="text" style="width: 40%"
+                    class="form-control col-sm-4 ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required"
+                    id="keyword-textbox" placeholder="Search keywords e.g hurricane">
+                    <div class="col-sm-1" style="padding: 0 5px 0 15px">
+                        <div class="form-check" style="margin: 10px 0 0 0">
+                            <input type="checkbox" class="form-check-input" id="edge" onchange="edge_change()">
+                            <label class="form-check-label" for="exampleCheck1" >Edge</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-1" style="padding: 0 5px">
+                        <div class="form-check" style="margin: 10px 0 0 0">
+                            <input type="checkbox" class="form-check-input" id="bundle" onchange="bundle_change()">
+                            <label class="form-check-label" for="exampleCheck1" >Bundle</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-1" style="padding: 0 5px">
+                        <div class="form-check" style="margin: 10px 0 0 0">
+                            <input type="checkbox" class="form-check-input" id="point" onchange="point_change()" checked>
+                            <label class="form-check-label" for="exampleCheck1" >Point</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-1" style="padding: 0 5px">
+                        <div class="form-check" style="margin: 10px 0 0 0">
+                            <input type="checkbox" class="form-check-input" id="cluster" onchange="cluster_change()" checked>
+                            <label class="form-check-label" for="exampleCheck1" >Cluster</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-1" style="padding: 0 5px">
+                        <div class="form-check" style="margin: 10px 0 0 0">
+                            <input type="checkbox" class="form-check-input" id="tree_cut" onchange="bundle_change()" checked>
+                            <label class="form-check-label" for="exampleCheck1" >Tree cut</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-1">
+                        <button type="submit" onclick="drawGraph()" class=" btn btn-primary" id="submit-button">
+                            Show</button>
+                    </div>
+                </div>
+            </div>
+            <div id="stats">
+                <div class="bottomleft">
+                    <p id="repliesCnt">Reply Tweets Count: 0 / 15722639</p>
+                    <p id="pointsCnt">Points Count: 0</p>
+                    <p id="clustersCnt">Clusters Count: 0</p>
+                    <p id="edgesCnt">Edges Count: 0</p>
+                    <p id="bundledEdgesCnt">Bundled Edges Count: 0</p>
+                    <form>
+                        Clustering Algorithm:
+                        <select id="clusteringAlgorithm" onchange="drawGraph()">
+                            <option value="HGC">HGC</option>
+                            <option value="I-KMeans">I-KMeans</option>
+                            <option value="KMeans">KMeans</option>
+                        </select>
+                    </form>
+                    <form>
+                        Bundling Algorithm:
+                        <select id="bundlingAlgo">
+                            <option value="FDEB">FDEB</option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+        </body>
 
-    var request = new XMLHttpRequest();
-    request.open('GET', 'http://localhost:9000/replies?query=' + query + '&lowerLongitude=' + sw_lng + '&upperLongitude=' + ne_lng + '&lowerLatitude=' + sw_lat + '&upperLatitude=' + ne_lat, false);//for blocking
-    request.send(null);
-    if (request.status === 200) {
-      var requestTimeStart = performance.now();
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+        <link href='assets/lib/bootstrap/css/bootstrap.css' rel='stylesheet' />
 
-      var data = JSON.parse(request.responseText);
-      var parseTimeEnd = performance.now();
+        <script src="https://unpkg.com/deck.gl@@7.1.10/dist.min.js"></script>
 
-      const myArcLayer = new MapboxLayer({
-        id: 'arc',
-        type: ArcLayer,
-        pickable: true,
-        data: data,
-        getSourcePosition: d => d.source,
-        getTargetPosition: d => d.target,
-        getSourceColor: [12, 44, 132],
-        getTargetColor: [177, 0, 38],
-        gettrokeWidth: 3
-      });
+        <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.js"></script>
+        <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v1.0.0/mapbox-gl.css' rel='stylesheet' />
 
-      map.addLayer(myArcLayer);
-      var requestTimeEnd = performance.now();
+        <script>
+                mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
+                const map = new mapboxgl.Map({
+                    container: 'map',
+                    style: 'mapbox://styles/mapbox/light-v9',
+                    center: [-96.35, 39.5],
+                    zoom: 3.7,
+                    maxZoom: 17,
+                    minZoom: 0
+                });
 
-    }
-    var fend = performance.now();
-    console.log("Time to render graph  " + (requestTimeEnd - parseTimeEnd) + " ms");
-    console.log("Time to parse JSON " + (parseTimeEnd - requestTimeStart) + " ms");
-    //console.log("Total time of receiving data and finishing in deckGL is " + (requestTimeEnd-requestTimeStart) + " ms");
-    //console.log("Total time of drawGraph() is " + (fend-fstart) + " ms");
-  };
-</script>
+                // use timestamp to label every sending request
+                let current_timestamp;
+                let socket;
+                // zoom level after last time
+                let zoomLevel = Math.floor(map.getZoom());
+                // id for the timer used to send heartbeat pack of WebSocket
+                let timerId = 0;
+                let query = "";
 
-</html>
+                function getScreenStatus() {
+                    let bounds = map.getBounds();
+                    let ne = bounds.getNorthEast();
+                    let sw = bounds.getSouthWest();
+                    return {
+                        "currentZoom": Math.floor(map.getZoom()),
+                        "maxLng": ne.lng,
+                        "maxLat": ne.lat,
+                        "minLng": sw.lng,
+                        "minLat":  sw.lat
+                    };
+                }
+
+                map.on("moveend", () => {
+                    let status = getScreenStatus();
+                    if (document.getElementById("point").checked === true) {
+                        renderClusterPoints(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    } else {
+                        removeClusterLayer();
+                    }
+                    if (document.getElementById("edge").checked === true) {
+                        renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    } else {
+                        removeEdgeClusterLayer();
+                    }
+                });
+
+                map.on('zoomend', () => {
+                    let status = getScreenStatus();
+                    if (zoomLevel !== status['currentZoom']) {
+                        if (document.getElementById("point").checked === true) {
+                            renderClusterPoints(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                        } else {
+                            removeClusterLayer();
+                        }
+                        if (document.getElementById("edge").checked === true) {
+                            renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                        } else {
+                            removeEdgeClusterLayer();
+                        }
+                        zoomLevel = status['currentZoom'];
+                    }
+                });
+
+                function getClusteringAlgorithm() {
+                    const algorithms = {
+                        "HGC": 0,
+                        "I-KMeans": 1,
+                        "KMeans": 2
+                    };
+                    return algorithms[document.getElementById("clusteringAlgorithm").value];
+                }
+
+                function getChoice(elementId) {
+                    let choices = {
+                        true: 1,
+                        false: 0
+                    };
+                    return choices[document.getElementById(elementId).checked];
+                }
+
+                function renderClusterEdges(minLng, minLat, maxLng, maxLat, zoom) {
+                    if (socket === undefined) {
+                        return;
+                    }
+                    let clusteringAlgorithm = getClusteringAlgorithm();
+                    let clustering_control = getChoice("cluster");
+                    let bundling_control = getChoice("bundle");
+                    let cut_control = getChoice("tree_cut");
+                    if (clustering_control === 0 && cut_control === 1) {
+                        alert("Please select tree cut with cluster.");
+                        $('#tree_cut').prop('checked', false);
+                    }
+                    const sendingObj = {
+                        query: query,
+                        lowerLongitude: minLng,
+                        upperLongitude: maxLng,
+                        lowerLatitude: minLat,
+                        upperLatitude: maxLat,
+                        clusteringAlgorithm: clusteringAlgorithm,
+                        bundling: bundling_control,
+                        treeCut: cut_control,
+                        clustering: clustering_control,
+                        zoom: zoom,
+                        timestamp: current_timestamp,
+                        option: 2
+                    };
+                    const sendingJSON = JSON.stringify(sendingObj);
+                    socket.send(sendingJSON);
+                }
+
+                function receiveClusterEdges(data) {
+                    const iconLayer = new MapboxLayer({
+                        id: 'edgeCluster',
+                        type: LineLayer,
+                        opacity: 0.1,
+                        data: data,
+                        getSourcePosition: d => d.from,
+                        getTargetPosition: d => d.to,
+                        getWidth: d => {
+                            let temp = Math.min(15, Math.ceil(Math.pow(d.width, 1 / 2)));
+                            return Math.max(temp, 3);
+                        },
+                        getColor: [57, 73, 171]
+                    });
+                    removeEdgeClusterLayer();
+                    map.addLayer(iconLayer);
+                }
+
+                function updateStatsDetail(s1, s2, s3) {
+                    document.getElementById('repliesCnt').innerHTML = s1;
+                    document.getElementById('pointsCnt').innerHTML = s2;
+                    document.getElementById('clustersCnt').innerHTML = s3;
+                }
+
+                function updatePointsStats(json) {
+                    let s1 = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
+                    let s2 = "Points Count: " + json['pointsCnt'];
+                    let s3 = "Clusters Count: " + json['clustersCnt'];
+                    updateStatsDetail(s1, s2, s3);
+                }
+
+                function updateEdgesStats(json) {
+                    let s1 = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
+                    let s2 = "Edges Count: " + json['edgesCnt'];
+                    let s3 = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
+                    updateStatsDetail(s1, s2, s3);
+                }
+
+                function renderClusterPoints(minLng, minLat, maxLng, maxLat, zoom) {
+                    if (socket === undefined) {
+                        return;
+                    }
+                    const clusteringAlgorithm = getClusteringAlgorithm();
+                    let clustering_control = getChoice("cluster");
+                    if (clustering_control === 0) {
+                        zoom = 18;
+                    }
+                    const sendingObj = {
+                        query: query,
+                        lowerLongitude: minLng,
+                        upperLongitude: maxLng,
+                        lowerLatitude: minLat,
+                        upperLatitude: maxLat,
+                        clusteringAlgorithm: clusteringAlgorithm,
+                        clustering: clustering_control,
+                        zoom: zoom,
+                        timestamp: current_timestamp,
+                        bundling: 0,
+                        treeCut: 0,
+                        option: 1
+                    };
+                    const sendingJSON = JSON.stringify(sendingObj);
+                    socket.send(sendingJSON);
+                }
+
+                function receiveClusterPoints(data) {
+                    const iconLayer = new MapboxLayer({
+                        id: 'cluster',
+                        type: ScatterplotLayer,
+                        data: data,
+                        pickable: true,
+                        opacity: 0.8,
+                        stroked: false,
+                        filled: true,
+                        radiusScale: 100,
+                        radiusMinPixels: 5,
+                        radiusMaxPixels: 25,
+                        getPosition: d => d.coordinates,
+                        getRadius: d => d.size,
+                        getFillColor: d => [57, 73, 171],
+                    });
+                    removeClusterLayer();
+                    map.addLayer(iconLayer);
+                }
+
+
+                function removeEdgeClusterLayer() {
+                    if (map.getLayer('edgeCluster') !== undefined) {
+                        map.removeLayer('edgeCluster');
+                    }
+                }
+
+                function removeClusterLayer() {
+                    if (map.getLayer('cluster') !== undefined) {
+                        map.removeLayer('cluster');
+                    }
+                }
+
+                function removeLayer() {
+                    removeEdgeClusterLayer();
+                    removeClusterLayer();
+                }
+
+                function drawGraph() {
+                    removeLayer();
+                    query = document.getElementById("keyword-textbox").value;
+
+                    socket = new WebSocket("ws://localhost:9000/replies");
+
+                    socket.onopen = function (e) {
+                        current_timestamp = Date.now();
+                        const clusteringAlgorithm = getClusteringAlgorithm();
+                        const sendingObj = {
+                            query: query, clusteringAlgorithm: clusteringAlgorithm, timestamp: current_timestamp, option: 0
+                        };
+                        const sendingJSON = JSON.stringify(sendingObj);
+                        socket.send(sendingJSON);
+                        keepAlive();
+                    };
+
+                    socket.onmessage = function (event) {
+                        let status = getScreenStatus();
+                        let json = JSON.parse(event.data);
+                        let option = json['option'];
+                        let timestamp = json['timestamp'];
+                        if (timestamp !== current_timestamp.toString()) {
+                            console.log('data is dropped');
+                            return;
+                        }
+                        if (option === 0) {
+                            let stopStatus = json['flag'];
+                            let date = json['date'];
+                            let clusteringAlgorithm = getClusteringAlgorithm();
+                            if (stopStatus !== 'Y') {
+                                const sendingObj = {
+                                    query: query,
+                                    clusteringAlgorithm: clusteringAlgorithm,
+                                    date: date,
+                                    timestamp: current_timestamp,
+                                    option: 0
+                                };
+                                const sendingJSON = JSON.stringify(sendingObj);
+                                socket.send(sendingJSON);
+                            }
+                            renderClusterPoints(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                            if (document.getElementById("edge").checked === true) {
+                                renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                            }
+                        } else if (option === 1) {
+                            updatePointsStats(json);
+                            data = JSON.parse(json['data']);
+                            receiveClusterPoints(data);
+                        } else {
+                            updateEdgesStats(json);
+                            data = JSON.parse(json['data']);
+                            receiveClusterEdges(data);
+                        }
+                    };
+
+                    socket.onclose = function (event) {
+                        cancelKeepAlive();
+                    }
+                }
+
+                function edge_change() {
+                    let status = getScreenStatus();
+                    if (document.getElementById("edge").checked === true) {
+                        renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    } else {
+                        if (document.getElementById("bundle").checked === true) {
+                            $('#bundle').prop('checked', false);
+                        }
+                        removeEdgeClusterLayer();
+                    }
+                }
+
+                function bundle_change() {
+                    let status = getScreenStatus();
+                    if (document.getElementById("edge").checked === false) {
+                        $('#bundle').prop('checked', false);
+                        alert("Please check with edge.");
+                        return;
+                    }
+                    if (document.getElementById("bundle").checked === true) {
+                        renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    } else {
+                        if (document.getElementById("edge").checked === false) {
+                            removeEdgeClusterLayer();
+                        } else {
+                            renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                        }
+                    }
+                }
+
+                function point_change() {
+                    let status = getScreenStatus();
+                    if (document.getElementById("point").checked === true) {
+                        renderClusterPoints(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    } else {
+                        removeClusterLayer();
+                        $('#cluster').prop('checked', false);
+                    }
+                }
+
+                function cluster_change() {
+                    let status = getScreenStatus();
+                    if (document.getElementById("cluster").checked === true) {
+                        document.getElementById("point").checked = true;
+                    } else {
+                        removeClusterLayer();
+                    }
+                    if (document.getElementById("point").checked === true) {
+                        renderClusterPoints(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    }
+                    if (document.getElementById("edge").checked === true) {
+                        renderClusterEdges(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
+                    }
+                }
+
+                // send heartbeat package to keep the connection alive
+                function keepAlive() {
+                    // console.log("send heartbeat pack.");
+                    const timeout = 20000;
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send('');
+                    }
+                    timerId = setTimeout(keepAlive, timeout);
+                }
+
+                function cancelKeepAlive() {
+                    if (timerId) {
+                        clearTimeout(timerId);
+                    }
+                }
+
+
+        </script>
+
+    </html>
 
 }

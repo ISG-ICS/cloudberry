@@ -1,4 +1,6 @@
 package controllers;
+import models.Edge;
+
 import java.util.HashSet;
 import java.util.Set;
 public class EdgeTest{
