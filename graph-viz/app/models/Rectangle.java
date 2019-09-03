@@ -1,10 +1,10 @@
 package models;
 
 public class Rectangle {
-    private final double xmin, ymin;   // minimum x- and y-coordinates
-    private final double xmax, ymax;   // maximum x- and y-coordinates
+    private final double xmin, ymin;   // minimum getX- and y-coordinates
+    private final double xmax, ymax;   // maximum getX- and y-coordinates
 
-    // construct the axis-aligned rectangle [xmin, xmax] x [ymin, ymax]
+    // construct the axis-aligned rectangle [xmin, xmax] getX [ymin, ymax]
     public Rectangle(double xmin, double ymin, double xmax, double ymax) {
         this.xmin = xmin;
         this.ymin = ymin;
@@ -53,8 +53,8 @@ public class Rectangle {
     // distance squared from p to closest point on this axis-aligned rectangle
     public double distanceSquaredTo(Cluster p) {
         double dx = 0.0, dy = 0.0;
-        if (p.x() < xmin) dx = p.x() - xmin;
-        else if (p.x() > xmax) dx = p.x() - xmax;
+        if (p.getX() < xmin) dx = p.getX() - xmin;
+        else if (p.getX() > xmax) dx = p.getX() - xmax;
         if (p.y() < ymin) dy = p.y() - ymin;
         else if (p.y() > ymax) dy = p.y() - ymax;
         return dx * dx + dy * dy;
@@ -62,7 +62,7 @@ public class Rectangle {
 
     // does this axis-aligned rectangle contain p?
     public boolean contains(Cluster p) {
-        return (p.x() >= xmin) && (p.x() <= xmax)
+        return (p.getX() >= xmin) && (p.getX() <= xmax)
                 && (p.y() >= ymin) && (p.y() <= ymax);
     }
 
@@ -81,7 +81,7 @@ public class Rectangle {
 
     // return a string representation of this axis-aligned rectangle
     public String toString() {
-        return "[" + xmin + ", " + xmax + "] x [" + ymin + ", " + ymax + "]";
+        return "[" + xmin + ", " + xmax + "] getX [" + ymin + ", " + ymax + "]";
     }
 
 }

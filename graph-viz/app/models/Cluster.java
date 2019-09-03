@@ -1,13 +1,13 @@
 package models;
 
-import clustering.PointCluster;
+import clustering.Clustering;
 
 import java.util.Comparator;
 
 public class Cluster implements Comparable<Cluster> {
     // TODO don't use zoom in Kmeans class, in Kmeans, just use this class
     /**
-     * Compares two points by x-coordinate.
+     * Compares two points by getX-coordinate.
      */
     public static final Comparator<Cluster> X_ORDER = new XOrder();
 
@@ -16,7 +16,7 @@ public class Cluster implements Comparable<Cluster> {
      */
     public static final Comparator<Cluster> Y_ORDER = new YOrder();
     //TODO using Point class
-    private double x;    // x coordinate
+    private double x;    // getX coordinate
     private double y;    // y coordinate
     private int numPoints = 0;
     private int zoom = 0;
@@ -60,11 +60,11 @@ public class Cluster implements Comparable<Cluster> {
     }
 
     /**
-     * Returns the x-coordinate.
+     * Returns the getX-coordinate.
      *
-     * @return the x-coordinate
+     * @return the getX-coordinate
      */
-    public double x() {
+    public double getX() {
         return x;
     }
 
@@ -99,7 +99,7 @@ public class Cluster implements Comparable<Cluster> {
         return 0;
     }
 
-    // compare points according to their x-coordinate
+    // compare points according to their getX-coordinate
     private static class XOrder implements Comparator<Cluster> {
         public int compare(Cluster p, Cluster q) {
             if (p.x < q.x) return -1;
@@ -126,7 +126,7 @@ public class Cluster implements Comparable<Cluster> {
     }
 
     public String toString() {
-        return String.format("(%.2f, %.2f), zoom: %d, numPoints: %d", PointCluster.xLng(x), PointCluster.yLat(y), zoom, numPoints);
+        return String.format("(%.2f, %.2f), zoom: %d, numPoints: %d", Clustering.xLng(x), Clustering.yLat(y), zoom, numPoints);
     }
 
     public int hashCode() {

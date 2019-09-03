@@ -120,8 +120,8 @@ public class ForceBundling {
      */
     private double computeDividedEdgeLength(int e_ind) {
         double length = 0;
-        for (int i = 1; i < subdivisionPoints.get(e_ind).getAlv().size(); i++) {
-            double segmentLength = euclideanDistance(subdivisionPoints.get(e_ind).getAlv().get(i), subdivisionPoints.get(e_ind).getAlv().get(i - 1));
+        for (int i = 1; i < subdivisionPoints.get(e_ind).getPath().size(); i++) {
+            double segmentLength = euclideanDistance(subdivisionPoints.get(e_ind).getPath().get(i), subdivisionPoints.get(e_ind).getPath().get(i - 1));
             length += segmentLength;
         }
         return length;
@@ -169,12 +169,12 @@ public class ForceBundling {
      * @return force vector.
      */
     private Point applySpringForce(int e_ind, int cp_ind, double kP) {
-        if (subdivisionPoints.get(e_ind).getAlv().size() <= 2) {
+        if (subdivisionPoints.get(e_ind).getPath().size() <= 2) {
             return new Point(0, 0);
         }
-        Point prev = subdivisionPoints.get(e_ind).getAlv().get(cp_ind - 1);
-        Point next = subdivisionPoints.get(e_ind).getAlv().get(cp_ind + 1);
-        Point crnt = subdivisionPoints.get(e_ind).getAlv().get(cp_ind);
+        Point prev = subdivisionPoints.get(e_ind).getPath().get(cp_ind - 1);
+        Point next = subdivisionPoints.get(e_ind).getPath().get(cp_ind + 1);
+        Point crnt = subdivisionPoints.get(e_ind).getPath().get(cp_ind);
         double x = prev.getX() - crnt.getX() + next.getX() - crnt.getX();
         double y = prev.getY() - crnt.getY() + next.getY() - crnt.getY();
         x *= kP;
@@ -192,12 +192,12 @@ public class ForceBundling {
         Point sumOfForces = new Point(0, 0);
         ArrayList<Integer> compatibleEdgeList = compatibilityList.get(e_ind);
         for (int oe = 0; oe < compatibleEdgeList.size(); oe++) {
-            double x = subdivisionPoints.get(compatibleEdgeList.get(oe)).getAlv().get(i).getX() - subdivisionPoints.get(e_ind).getAlv().get(i).getX();
-            double y = subdivisionPoints.get(compatibleEdgeList.get(oe)).getAlv().get(i).getY() - subdivisionPoints.get(e_ind).getAlv().get(i).getY();
+            double x = subdivisionPoints.get(compatibleEdgeList.get(oe)).getPath().get(i).getX() - subdivisionPoints.get(e_ind).getPath().get(i).getX();
+            double y = subdivisionPoints.get(compatibleEdgeList.get(oe)).getPath().get(i).getY() - subdivisionPoints.get(e_ind).getPath().get(i).getY();
             Point force = new Point(x, y);
             if ((Math.abs(force.getX()) > eps || Math.abs(force.getY()) > eps)) {
-                Point source = subdivisionPoints.get(compatibleEdgeList.get(oe)).getAlv().get(i);
-                Point target = subdivisionPoints.get(e_ind).getAlv().get(i);
+                Point source = subdivisionPoints.get(compatibleEdgeList.get(oe)).getPath().get(i);
+                Point target = subdivisionPoints.get(e_ind).getPath().get(i);
                 double diff = euclideanDistance(source, target);
                 sumOfForces.setX(sumOfForces.getX() + force.getX() / diff);
                 sumOfForces.setY(sumOfForces.getY() + force.getY() / diff);
@@ -236,9 +236,9 @@ public class ForceBundling {
     private void updateEdgeDivisions(int P) {
         for (int e_ind = 0; e_ind < dataEdges.size(); e_ind++) {
             if (P == 1) {
-                subdivisionPoints.get(e_ind).getAlv().add(dataNodes.get(dataEdges.get(e_ind).getSourceNodeInd()));
-                subdivisionPoints.get(e_ind).getAlv().add(edgeMidPoint(dataEdges.get(e_ind)));
-                subdivisionPoints.get(e_ind).getAlv().add(dataNodes.get(dataEdges.get(e_ind).getTargetNodeInd()));
+                subdivisionPoints.get(e_ind).getPath().add(dataNodes.get(dataEdges.get(e_ind).getSourceNodeInd()));
+                subdivisionPoints.get(e_ind).getPath().add(edgeMidPoint(dataEdges.get(e_ind)));
+                subdivisionPoints.get(e_ind).getPath().add(dataNodes.get(dataEdges.get(e_ind).getTargetNodeInd()));
             } else {
                 double dividedEdgeLength = computeDividedEdgeLength(e_ind);
                 double segmentLength = dividedEdgeLength / (P + 1);
@@ -246,14 +246,14 @@ public class ForceBundling {
                 ArrayList<Point> newDivisionPoints = new ArrayList<>();
                 newDivisionPoints.add(dataNodes.get(dataEdges.get(e_ind).getSourceNodeInd()));
                 // TODO revise the meaning they are iteratively dividing the edges again
-                for (int i = 1; i < subdivisionPoints.get(e_ind).getAlv().size(); i++) {
-                    double oldSegmentLength = euclideanDistance(subdivisionPoints.get(e_ind).getAlv().get(i), subdivisionPoints.get(e_ind).getAlv().get(i - 1));
+                for (int i = 1; i < subdivisionPoints.get(e_ind).getPath().size(); i++) {
+                    double oldSegmentLength = euclideanDistance(subdivisionPoints.get(e_ind).getPath().get(i), subdivisionPoints.get(e_ind).getPath().get(i - 1));
                     while (oldSegmentLength > currentSegmentLength) {
                         double percentPosition = currentSegmentLength / oldSegmentLength;
-                        double newDivisionPointX = subdivisionPoints.get(e_ind).getAlv().get(i - 1).getX();
-                        double newDivisionPointY = subdivisionPoints.get(e_ind).getAlv().get(i - 1).getY();
-                        newDivisionPointX += percentPosition * (subdivisionPoints.get(e_ind).getAlv().get(i).getX() - subdivisionPoints.get(e_ind).getAlv().get(i - 1).getX());
-                        newDivisionPointY += percentPosition * (subdivisionPoints.get(e_ind).getAlv().get(i).getY() - subdivisionPoints.get(e_ind).getAlv().get(i - 1).getY());
+                        double newDivisionPointX = subdivisionPoints.get(e_ind).getPath().get(i - 1).getX();
+                        double newDivisionPointY = subdivisionPoints.get(e_ind).getPath().get(i - 1).getY();
+                        newDivisionPointX += percentPosition * (subdivisionPoints.get(e_ind).getPath().get(i).getX() - subdivisionPoints.get(e_ind).getPath().get(i - 1).getX());
+                        newDivisionPointY += percentPosition * (subdivisionPoints.get(e_ind).getPath().get(i).getY() - subdivisionPoints.get(e_ind).getPath().get(i - 1).getY());
                         newDivisionPoints.add(new Point(newDivisionPointX, newDivisionPointY));
                         oldSegmentLength -= currentSegmentLength;
                         currentSegmentLength = segmentLength;
@@ -261,7 +261,7 @@ public class ForceBundling {
                     currentSegmentLength -= oldSegmentLength;
                 }
                 newDivisionPoints.add(dataNodes.get(dataEdges.get(e_ind).getTargetNodeInd()));
-                subdivisionPoints.get(e_ind).setAlv(newDivisionPoints);
+                subdivisionPoints.get(e_ind).setPath(newDivisionPoints);
             }
         }
     }
@@ -394,8 +394,8 @@ public class ForceBundling {
                 }
                 for (int e = 0; e < dataEdges.size(); e++) {
                     for (int i = 0; i < P + 1; i++) {
-                        subdivisionPoints.get(e).getAlv().get(i).setX(subdivisionPoints.get(e).getAlv().get(i).getX() + forces.get(e).get(i).getX());
-                        subdivisionPoints.get(e).getAlv().get(i).setY(subdivisionPoints.get(e).getAlv().get(i).getY() + forces.get(e).get(i).getY());
+                        subdivisionPoints.get(e).getPath().get(i).setX(subdivisionPoints.get(e).getPath().get(i).getX() + forces.get(e).get(i).getX());
+                        subdivisionPoints.get(e).getPath().get(i).setY(subdivisionPoints.get(e).getPath().get(i).getY() + forces.get(e).get(i).getY());
                     }
                 }
             }

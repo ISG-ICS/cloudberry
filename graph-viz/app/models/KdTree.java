@@ -4,13 +4,31 @@ import java.util.Comparator;
 import java.util.ArrayList;
 
 public class KdTree {
+
+    /**
+     * node in kd-tree
+     */
     public static class Node {
+        // cluster of this node
         private Cluster point;
+        // the rectangle this node contains
         private Rectangle rect;
+        // whether this node is in vertical version or not
         private boolean isVertical;
+        // left son of this node
         private Node left;
+        // right son of this node
         private Node right;
 
+        /**
+         * constructor of node
+         *
+         * @param p         cluster of this node
+         * @param vertical  whether this node is in vertical version or not
+         * @param left      left son of this node
+         * @param right     right son of this node
+         * @param rectangle the rectangle this node contains
+         */
         private Node(Cluster p, boolean vertical, Node left, Node right, Rectangle rectangle) {
             this.point = p;
             this.isVertical = vertical;
@@ -19,7 +37,7 @@ public class KdTree {
             this.rect = rectangle;
         }
 
-        public Rectangle getRect() {
+        Rectangle getRect() {
             return this.rect;
         }
 
@@ -27,7 +45,7 @@ public class KdTree {
             return point;
         }
 
-        public boolean vertical() {
+        boolean vertical() {
             return isVertical;
         }
 
@@ -39,16 +57,18 @@ public class KdTree {
             return right;
         }
 
-        public void setLeftNode(Node leftNode) {
+        void setLeftNode(Node leftNode) {
             this.left = leftNode;
         }
 
-        public void setRightNode(Node rightNode) {
+        void setRightNode(Node rightNode) {
             this.right = rightNode;
         }
     }
 
+    // the root of kd-tree
     private Node root;
+    // the number of nodes
     private int size;
 
     /**
@@ -93,9 +113,13 @@ public class KdTree {
 
         // point at root initially
         Node n = root;
+        // split the tree
+        split(p, n);
+    }
 
+    private void split(Cluster p, Node n) {
         Comparator<Cluster> comparator;
-
+        // go to the left if point left to vertical point or below a horizontal point
         while (n != null) {
             // if we are at a vertical node
             if (n.vertical()) {
@@ -103,15 +127,13 @@ public class KdTree {
             } else {
                 comparator = Cluster.Y_ORDER;
             }
-            // TODO create a new method split
-            // go to the left if point left to vertical point or below a horizontal point
             if (comparator.compare(p, n.getPoint()) < 0) {
                 // if the left point is null then create new node and set it
                 if (n.getLeft() == null) {
-                    Rectangle rect = null;
+                    Rectangle rect;
                     if (n.vertical()) {
                         // point to left of current point
-                        rect = new Rectangle(n.getRect().xmin(), n.getRect().ymin(), n.getPoint().x(), n.getRect().ymax());
+                        rect = new Rectangle(n.getRect().xmin(), n.getRect().ymin(), n.getPoint().getX(), n.getRect().ymax());
                     } else {
                         // point at bottom of current point
                         rect = new Rectangle(n.getRect().xmin(), n.getRect().ymin(), n.getRect().xmax(), n.getPoint().y());
@@ -127,11 +149,10 @@ public class KdTree {
             } else {
                 // reached end so insert new node to right
                 if (n.getRight() == null) {
-                    Rectangle rect = null;
-
+                    Rectangle rect;
                     if (n.vertical()) {
                         // right to vertical point
-                        rect = new Rectangle(n.getPoint().x(), n.getRect().ymin(), n.getRect().xmax(), n.getRect().ymax());
+                        rect = new Rectangle(n.getPoint().getX(), n.getRect().ymin(), n.getRect().xmax(), n.getRect().ymax());
                     } else {
                         // top of horizontal point
                         rect = new Rectangle(n.getRect().xmin(), n.getPoint().y(), n.getRect().xmax(), n.getRect().ymax());
@@ -237,7 +258,7 @@ public class KdTree {
         double rectMin = rect.ymin();
         double rectMax = rect.ymax();
         if (n.vertical()) {
-            pointCoord = p.x();
+            pointCoord = p.getX();
             rectMin = rect.xmin();
             rectMax = rect.xmax();
         }
@@ -251,7 +272,7 @@ public class KdTree {
     /**
      * find all the cluster in certain circle
      *
-     * @param x x coordinate of center of circle
+     * @param x getX coordinate of center of circle
      * @param y y coordinate of center of circle
      * @param r radius of circle
      * @return array of cluster
@@ -274,7 +295,7 @@ public class KdTree {
         double circleMin = y - r;
         double circleMax = y + r;
         if (n.vertical()) {
-            pointCoord = p.x();
+            pointCoord = p.getX();
             circleMin = x - r;
             circleMax = x + r;
         }

@@ -6,17 +6,24 @@ import models.Rectangle;
 
 import java.util.ArrayList;
 
-// TODO try thinking about adding the degree into the cluster which would help in the tree cut
-// TODO try to make the cluster not imaginary to make the incremental bundling easier
-public class PointCluster {
+public class Clustering {
 
+    // min zoom level in clustering tree
     private int minZoom;
+    // max zoom level in clustering tree
     private int maxZoom;
-    // TODO understand radius
+    // radius in max zoom level
     private double radius = 80;
-    // TODO explain and add comment for extent
+    // extent used to calculate the radius in different zoom level
     private double extent = 512;
+    // kd-trees in different zoom level
     private KdTree[] trees;
+    // max longitude
+    private static final int MAX_LONGITUDE = 180;
+    // max latitude
+    private static final int MAX_LATITUDE = 90;
+    // max degree
+    private static final int MAX_DEGREE = 360;
 
     /**
      * Create an instance of hierarchical greedy clustering
@@ -24,7 +31,7 @@ public class PointCluster {
      * @param minZoom the minimum zoom level
      * @param maxZoom the maximum zoom level
      */
-    public PointCluster(int minZoom, int maxZoom) {
+    public Clustering(int minZoom, int maxZoom) {
         this.minZoom = minZoom;
         this.maxZoom = maxZoom;
         trees = new KdTree[maxZoom + 2];
@@ -48,7 +55,7 @@ public class PointCluster {
      */
     public void load(ArrayList<Cluster> points) {
         for (Cluster point : points) {
-            insert(new Cluster(lngX(point.x()), latY(point.y()), null, 1));
+            insert(new Cluster(lngX(point.getX()), latY(point.y()), null, 1));
         }
     }
 
@@ -60,26 +67,29 @@ public class PointCluster {
     public void insert(Cluster point) {
         trees[maxZoom + 1].insert(point);
         for (int z = maxZoom; z >= minZoom; z--) {
-            ArrayList<Cluster> neighbors = trees[z].rangeRadius(point.x(), point.y(), getZoomRadius(z));
+            // search if there are any neighbor near this point
+            ArrayList<Cluster> neighbors = trees[z].rangeRadius(point.getX(), point.y(), getZoomRadius(z));
+            // if no, insert it into kd-tree
             if (neighbors.isEmpty()) {
-                Cluster c = new Cluster(point.x(), point.y());
+                Cluster c = new Cluster(point.getX(), point.y());
                 c.setZoom(z);
                 point.parent = c;
                 trees[z].insert(c);
                 point = c;
+                // if have, choose which cluster this point belongs to
             } else {
                 Cluster neighbor = null;
                 point.setZoom(z + 1);
                 int totNumOfPoints = 0;
                 for (int i = 0; i < neighbors.size(); i++) {
                     neighbor = neighbors.get(i);
-                    if (neighbor.x() != point.x() || neighbor.y() != point.y()) continue;
+                    if (neighbor.getX() != point.getX() || neighbor.y() != point.y()) continue;
                     totNumOfPoints += neighbor.getNumPoints();
                 }
                 double rand = Math.random();
                 for (int i = 0; i < neighbors.size(); i++) {
                     neighbor = neighbors.get(i);
-                    if (neighbor.x() != point.x() || neighbor.y() != point.y()) continue;
+                    if (neighbor.getX() != point.getX() || neighbor.y() != point.y()) continue;
                     double probability = neighbor.getNumPoints() * 1.0 / totNumOfPoints;
                     if (rand < probability) {
                         break;
@@ -87,9 +97,11 @@ public class PointCluster {
                         rand -= probability;
                     }
                 }
+                // let this cluster be its parent
                 point.parent = neighbor;
+                // update its parents
                 while (neighbor != null) {
-                    double wx = neighbor.x() * neighbor.getNumPoints() + point.x();
+                    double wx = neighbor.getX() * neighbor.getNumPoints() + point.getX();
                     double wy = neighbor.y() * neighbor.getNumPoints() + point.y();
                     neighbor.setNumPoints(neighbor.getNumPoints() + 1);
                     neighbor.setX(wx / neighbor.getNumPoints());
@@ -117,16 +129,16 @@ public class PointCluster {
      * @return all the clusters within this bounding box and this zoom level
      */
     public ArrayList<Cluster> getClusters(double[] bbox, int zoom) {
-        double minLongitude = ((bbox[0] + 180) % 360 + 360) % 360 - 180;
-        double minLatitude = Math.max(-90, Math.min(90, bbox[1]));
-        double maxLongitude = bbox[2] == 180 ? 180 : ((bbox[2] + 180) % 360 + 360) % 360 - 180;
-        double maxLatitude = Math.max(-90, Math.min(90, bbox[3]));
-        if (bbox[2] - bbox[0] >= 360) {
-            minLongitude = -180;
-            maxLongitude = 180;
+        double minLongitude = ((bbox[0] + MAX_LONGITUDE) % (MAX_LONGITUDE * 2) + MAX_LONGITUDE * 2) % (MAX_LONGITUDE * 2) - MAX_LONGITUDE;
+        double minLatitude = Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, bbox[1]));
+        double maxLongitude = bbox[2] == MAX_LONGITUDE ? MAX_LONGITUDE : ((bbox[2] + MAX_LONGITUDE) % (MAX_LONGITUDE * 2) + (MAX_LONGITUDE * 2)) % (MAX_LONGITUDE * 2) - MAX_LONGITUDE;
+        double maxLatitude = Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, bbox[3]));
+        if (bbox[2] - bbox[0] >= MAX_LONGITUDE * 2) {
+            minLongitude = -MAX_LONGITUDE;
+            maxLongitude = MAX_LONGITUDE;
         } else if (minLongitude > maxLongitude) {
-            ArrayList<Cluster> results = getClusters(new double[]{minLongitude, minLatitude, 180, maxLatitude}, zoom);
-            results.addAll(getClusters(new double[]{-180, minLatitude, maxLongitude, maxLatitude}, zoom));
+            ArrayList<Cluster> results = getClusters(new double[]{minLongitude, minLatitude, MAX_LONGITUDE, maxLatitude}, zoom);
+            results.addAll(getClusters(new double[]{-MAX_LONGITUDE, minLatitude, maxLongitude, maxLatitude}, zoom));
             return results;
         }
         KdTree kdTree = trees[limitZoom(zoom)];
@@ -172,7 +184,7 @@ public class PointCluster {
      * @return a number in [0..1] range
      */
     public static double lngX(double lng) {
-        return lng / 360 + 0.5;
+        return lng / (MAX_LONGITUDE * 2) + 0.5;
     }
 
     /**
@@ -182,7 +194,7 @@ public class PointCluster {
      * @return a number in [0..1] range
      */
     public static double latY(double lat) {
-        double sin = Math.sin(lat * Math.PI / 180);
+        double sin = Math.sin(lat * Math.PI / (MAX_LATITUDE * 2));
         double y = (0.5 - 0.25 * Math.log((1 + sin) / (1 - sin)) / Math.PI);
         return y < 0 ? 0 : y > 1 ? 1 : y;
     }
@@ -194,7 +206,7 @@ public class PointCluster {
      * @return longitude
      */
     public static double xLng(double x) {
-        return (x - 0.5) * 360;
+        return (x - 0.5) * (MAX_LONGITUDE * 2);
     }
 
 
@@ -205,7 +217,7 @@ public class PointCluster {
      * @return latitude
      */
     public static double yLat(double y) {
-        double y2 = (180 - y * 360) * Math.PI / 180;
-        return 360 * Math.atan(Math.exp(y2)) / Math.PI - 90;
+        double y2 = (MAX_LATITUDE * 2 - y * 360) * Math.PI / 180;
+        return MAX_DEGREE * Math.atan(Math.exp(y2)) / Math.PI - MAX_LATITUDE;
     }
 }
