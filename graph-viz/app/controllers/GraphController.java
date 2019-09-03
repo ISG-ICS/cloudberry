@@ -67,7 +67,7 @@ public class GraphController extends Controller {
                 IncrementalQuery incrementalQuery = new IncrementalQuery();
                 incrementalQuery.readProperties(parser.getEndDate());
                 try {
-                    doQuery(parser.getQuery(), incrementalQuery.getStart(), incrementalQuery.getEnd());
+                    doQuery(incrementalQuery.getStart(), incrementalQuery.getEnd());
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
@@ -83,40 +83,33 @@ public class GraphController extends Controller {
                 break;
         }
         dataNode.put("option", parser.getOption());
+        dataNode.put("timestamp", parser.getTimestamp());
         actor.returnData(dataNode.toString());
     }
 
-    private void doQuery(String query, String start, String end)
-            throws SQLException {
+    private void doQuery(String start, String end) throws SQLException {
         Connection conn = DatabaseUtils.getConnection();
-        PreparedStatement state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, end, start);
+        PreparedStatement state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, start, end);
         ResultSet resultSet = null;
         try {
             resultSet = state.executeQuery();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        bindFields(parser.getTimestamp(), end);
-        loadCluster(query, parser.getClusteringAlgorithm(), parser.getTimestamp(), conn, state, resultSet);
-    }
-
-    private void loadCluster(String query, int clusteringAlgorithm, String timestamp,
-                             Connection conn, PreparedStatement state, ResultSet resultSet) throws SQLException {
-        String start;
-        String end;
-        if (clusteringAlgorithm == 0) {
-            loadHGC(resultSet);
-        } else if (clusteringAlgorithm == 1) {
-            loadIKmeans(resultSet);
-        } else if (clusteringAlgorithm == 2) {
-            start = PropertiesUtil.firstDate;
-            end = PropertiesUtil.lastDate;
-            bindFields(timestamp, end);
-            state = DatabaseUtils.prepareStatement(query, conn, end, start);
-            resultSet = state.executeQuery();
-            loadKmeans(resultSet);
+        bindFields(end);
+        if (resultSet != null) {
+            if (parser.getClusteringAlgorithm() == 0) {
+                loadHGC(resultSet);
+            } else if (parser.getClusteringAlgorithm() == 1) {
+                loadIKmeans(resultSet);
+            } else if (parser.getClusteringAlgorithm() == 2) {
+                bindFields(PropertiesUtil.lastDate);
+                state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, PropertiesUtil.firstDate, PropertiesUtil.lastDate);
+                resultSet = state.executeQuery();
+                loadKmeans(resultSet);
+            }
+            resultSet.close();
         }
-        resultSet.close();
         state.close();
     }
 
@@ -182,9 +175,8 @@ public class GraphController extends Controller {
         return calendar;
     }
 
-    private void bindFields(String timestamp, String end) {
+    private void bindFields(String end) {
         dataNode.put("date", end);
-        dataNode.put("timestamp", timestamp);
         Calendar endCalendar = getCalendar(end);
         if (!endCalendar.before(PropertiesUtil.lastDateCalender)) {
             System.out.println(finished + end);
@@ -195,10 +187,9 @@ public class GraphController extends Controller {
         }
     }
 
-    public void drawPoints() {
-        int pointsCnt = 0;
-        int clustersCnt = 0;
-        int repliesCnt = resultSetSize;
+    private void drawPoints() {
+        int pointsCnt;
+        int clustersCnt;
         ArrayNode arrayNode = objectMapper.createArrayNode();
         if (parser.getClusteringAlgorithm() == 0) {
             ArrayList<Cluster> points = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, 18);
@@ -255,8 +246,7 @@ public class GraphController extends Controller {
             }
         }
         dataNode.put("data", arrayNode.toString());
-        dataNode.put("timestamp", parser.getTimestamp());
-        dataNode.put("repliesCnt", repliesCnt);
+        dataNode.put("repliesCnt", resultSetSize);
         dataNode.put("pointsCnt", pointsCnt);
         dataNode.put("clustersCnt", clustersCnt);
     }
@@ -280,6 +270,7 @@ public class GraphController extends Controller {
                 HashSet<Cluster> internalCluster = new HashSet<>();
                 generateExternalEdgeSet(parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 TreeCut treeCutInstance = new TreeCut();
+                System.out.println(parser.getTreeCutting());
                 if (parser.getTreeCutting() == 1) {
                     treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 } else {
@@ -299,7 +290,6 @@ public class GraphController extends Controller {
             getKmeansEdges(parser.getZoom(), parser.getBundling(), parser.getClustering(), kmeans.getParents(), kmeans.getCenters());
         }
         dataNode.put("repliesCnt", repliesCnt);
-        dataNode.put("timestamp", parser.getTimestamp());
     }
 
     private void generateExternalEdgeSet(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom,

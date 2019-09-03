@@ -38,7 +38,7 @@ public class DatabaseUtils {
      * @param start query start date
      * @return constructed statement
      */
-    public static PreparedStatement prepareStatement(String query, Connection conn, String end, String start) {
+    public static PreparedStatement prepareStatement(String query, Connection conn, String start, String end) {
         PreparedStatement state = null;
         try {
             String searchQuery = QueryStatement.incrementalStatement;
