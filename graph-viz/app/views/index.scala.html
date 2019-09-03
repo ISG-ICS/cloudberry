@@ -86,7 +86,7 @@
                     </div>
                     <div class="col-sm-1" style="padding: 0 5px">
                         <div class="form-check" style="margin: 10px 0 0 0">
-                            <input type="checkbox" class="form-check-input" id="cluster" onchange="cluster_change()" checked>
+                            <input type="checkbox" class="form-check-input" id="drawPoints" onchange="cluster_change()" checked>
                             <label class="form-check-label" for="exampleCheck1" >Cluster</label>
                         </div>
                     </div>
@@ -221,11 +221,11 @@
                         return;
                     }
                     let clusteringAlgorithm = getClusteringAlgorithm();
-                    let clustering_control = getChoice("cluster");
+                    let clustering_control = getChoice("drawPoints");
                     let bundling_control = getChoice("bundle");
                     let cut_control = getChoice("tree_cut");
                     if (clustering_control === 0 && cut_control === 1) {
-                        alert("Please select tree cut with cluster.");
+                        alert("Please select tree cut with drawPoints.");
                         $('#tree_cut').prop('checked', false);
                     }
                     const sendingObj = {
@@ -281,7 +281,7 @@
                         return;
                     }
                     const clusteringAlgorithm = getClusteringAlgorithm();
-                    let clustering_control = getChoice("cluster");
+                    let clustering_control = getChoice("drawPoints");
                     if (clustering_control === 0) {
                         zoom = 18;
                     }
@@ -305,7 +305,7 @@
 
                 function receiveClusterPoints(data) {
                     const iconLayer = new MapboxLayer({
-                        id: 'cluster',
+                        id: 'drawPoints',
                         type: ScatterplotLayer,
                         data: data,
                         pickable: true,
@@ -331,8 +331,8 @@
                 }
 
                 function removeClusterLayer() {
-                    if (map.getLayer('cluster') !== undefined) {
-                        map.removeLayer('cluster');
+                    if (map.getLayer('drawPoints') !== undefined) {
+                        map.removeLayer('drawPoints');
                     }
                 }
 
@@ -438,13 +438,13 @@
                         renderClusterPoints(status['minLng'], status['minLat'],status['maxLng'], status['maxLat'], status['currentZoom']);
                     } else {
                         removeClusterLayer();
-                        $('#cluster').prop('checked', false);
+                        $('#drawPoints').prop('checked', false);
                     }
                 }
 
                 function cluster_change() {
                     let status = getScreenStatus();
-                    if (document.getElementById("cluster").checked === true) {
+                    if (document.getElementById("drawPoints").checked === true) {
                         document.getElementById("point").checked = true;
                     } else {
                         removeClusterLayer();

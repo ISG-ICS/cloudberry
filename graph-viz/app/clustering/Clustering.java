@@ -78,7 +78,7 @@ public class Clustering {
                 point.parent = c;
                 trees[z].insert(c);
                 point = c;
-                // if have, choose which cluster this point belongs to
+                // if have, choose which drawPoints this point belongs to
             } else {
                 Cluster neighbor = null;
                 point.setZoom(z + 1);
@@ -99,7 +99,7 @@ public class Clustering {
                         rand -= probability;
                     }
                 }
-                // let this cluster be its parent
+                // let this drawPoints be its parent
                 point.parent = neighbor;
                 // update its parents
                 while (neighbor != null) {
@@ -162,11 +162,11 @@ public class Clustering {
     }
 
     /**
-     * get the parent cluster in certain zoom level
+     * get the parent drawPoints in certain zoom level
      *
-     * @param cluster the input cluster
+     * @param cluster the input drawPoints
      * @param zoom    the zoom level of its parent
-     * @return the parent cluster of this cluster
+     * @return the parent drawPoints of this drawPoints
      */
     public Cluster parentCluster(Cluster cluster, int zoom) {
         Cluster c = trees[maxZoom + 1].findPoint(cluster);

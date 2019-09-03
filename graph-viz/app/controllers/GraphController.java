@@ -3,7 +3,6 @@ package controllers;
 import clustering.IKmeans;
 import clustering.Kmeans;
 import clustering.Clustering;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -15,7 +14,6 @@ import treeCut.TreeCut;
 import utils.DatabaseUtils;
 import utils.PropertiesUtil;
 
-import java.io.IOException;
 import java.sql.*;
 import java.text.ParseException;
 import java.util.*;
@@ -37,10 +35,9 @@ public class GraphController extends Controller {
     private Kmeans kmeans;
     // Incremental edge data
     private Set<Edge> edgeSet = new HashSet<>();
-    private WebSocketActor webSocketActor;
     private ObjectMapper objectMapper = new ObjectMapper();
-    ObjectNode dataNode;
-    Parser parser = new Parser();
+    private ObjectNode dataNode;
+    private Parser parser = new Parser();
     // Size of resultSet
     private int resultSetSize = 0;
 
@@ -51,7 +48,6 @@ public class GraphController extends Controller {
      * @param actor WebSocket actor to return response.
      */
     public void dispatcher(String query, WebSocketActor actor) {
-        webSocketActor = actor;
         // Heartbeat package handler
         // WebSocket will automatically close after several seconds
         // To keep the state, maintain WebSocket connection is a must
@@ -60,99 +56,52 @@ public class GraphController extends Controller {
         }
         dataNode = objectMapper.createObjectNode();
         // Parse the request message with JSON structure
-        JsonNode jsonNode = null;
+        parser.parse(query);
         // Option indicates the request type
         // 1: incremental data query
-        // 2: point and cluster
+        // 2: point and drawPoints
         // 3: edge and bundled edge and tree cut
         // others: invalid
-        int option = -1;
-        String endDate = null;
-        try {
-            jsonNode = objectMapper.readTree(query);
-            option = Integer.parseInt(jsonNode.get("option").asText());
-            if (jsonNode.has("date")) {
-                endDate = jsonNode.get("date").asText();
-            }
-        } catch (IOException e) {
-            System.err.println("Invalid Request received.");
-            e.printStackTrace();
-        }
-        double lowerLongitude = 0;
-        double upperLongitude = 0;
-        double lowerLatitude = 0;
-        double upperLatitude = 0;
-        int clustering = 0;
-        int clusteringAlgorithm = 0;
-        int bundling = 0;
-        String timestamp = null;
-        int zoom = 0;
-        int treeCutting = 0;
-        try {
-            lowerLongitude = Double.parseDouble(jsonNode.get("lowerLongitude").asText());
-            upperLongitude = Double.parseDouble(jsonNode.get("upperLongitude").asText());
-            lowerLatitude = Double.parseDouble(jsonNode.get("lowerLatitude").asText());
-            upperLatitude = Double.parseDouble(jsonNode.get("upperLatitude").asText());
-            clusteringAlgorithm = Integer.parseInt(jsonNode.get("clusteringAlgorithm").asText());
-            timestamp = jsonNode.get("timestamp").asText();
-            zoom = Integer.parseInt(jsonNode.get("zoom").asText());
-            bundling = Integer.parseInt(jsonNode.get("bundling").asText());
-            clustering = Integer.parseInt(jsonNode.get("clustering").asText());
-            treeCutting = Integer.parseInt(jsonNode.get("treeCut").asText());
-        } catch (NullPointerException ignored) {
-
-        }
-
-        switch (option) {
+        switch (parser.getOption()) {
             case 0:
                 IncrementalQuery incrementalQuery = new IncrementalQuery();
-                incrementalQuery.readProperties(endDate);
+                incrementalQuery.readProperties(parser.getEndDate());
                 try {
-                    doIncrementalQuery(query, incrementalQuery.getStart(), incrementalQuery.getEnd());
-                } catch (SQLException | ParseException e) {
+                    doQuery(parser.getQuery(), incrementalQuery.getStart(), incrementalQuery.getEnd());
+                } catch (SQLException e) {
                     e.printStackTrace();
                 }
                 break;
             case 1:
-                cluster(lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, clustering, clusteringAlgorithm, timestamp, zoom);
+                drawPoints();
                 break;
             case 2:
-                edgeCluster(lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, clusteringAlgorithm, timestamp, zoom, bundling, clustering, treeCutting);
+                drawEdges();
                 break;
             default:
                 System.err.println("Internal error: no option included");
                 break;
         }
+        dataNode.put("option", parser.getOption());
+        actor.returnData(dataNode.toString());
     }
 
-    //TODO change to doQuery
-    private void doIncrementalQuery(String query, String start, String end)
-            throws SQLException, ParseException {
+    private void doQuery(String query, String start, String end)
+            throws SQLException {
         Connection conn = DatabaseUtils.getConnection();
-        JsonNode jsonNode;
-        int clusteringAlgorithm = -1;
-        String timestamp = null;
-        try {
-            jsonNode = objectMapper.readTree(query);
-            clusteringAlgorithm = Integer.parseInt(jsonNode.get("clusteringAlgorithm").asText());
-            timestamp = jsonNode.get("timestamp").asText();
-            query = jsonNode.get("query").asText();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        PreparedStatement state = DatabaseUtils.prepareStatement(query, conn, end, start);
+        PreparedStatement state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, end, start);
         ResultSet resultSet = null;
         try {
             resultSet = state.executeQuery();
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        bindFields(timestamp, end);
-        loadCluster(query, clusteringAlgorithm, timestamp, conn, state, resultSet);
+        bindFields(parser.getTimestamp(), end);
+        loadCluster(query, parser.getClusteringAlgorithm(), parser.getTimestamp(), conn, state, resultSet);
     }
 
     private void loadCluster(String query, int clusteringAlgorithm, String timestamp,
-                             Connection conn, PreparedStatement state, ResultSet resultSet) throws ParseException, SQLException {
+                             Connection conn, PreparedStatement state, ResultSet resultSet) throws SQLException {
         String start;
         String end;
         if (clusteringAlgorithm == 0) {
@@ -167,8 +116,6 @@ public class GraphController extends Controller {
             resultSet = state.executeQuery();
             loadKmeans(resultSet);
         }
-        dataNode.put("option", 0);
-        webSocketActor.returnData(dataNode.toString());
         resultSet.close();
         state.close();
     }
@@ -248,14 +195,14 @@ public class GraphController extends Controller {
         }
     }
 
-    public void cluster(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int clustering, int clusteringAlgorithm, String timestamp, int zoom) {
+    public void drawPoints() {
         int pointsCnt = 0;
         int clustersCnt = 0;
         int repliesCnt = resultSetSize;
         ArrayNode arrayNode = objectMapper.createArrayNode();
-        if (clusteringAlgorithm == 0) {
-            ArrayList<Cluster> points = this.clustering.getClusters(new double[]{lowerLongitude, lowerLatitude, upperLongitude, upperLatitude}, 18);
-            ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{lowerLongitude, lowerLatitude, upperLongitude, upperLatitude}, zoom);
+        if (parser.getClusteringAlgorithm() == 0) {
+            ArrayList<Cluster> points = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, 18);
+            ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, parser.getZoom());
             pointsCnt = points.size();
             clustersCnt = clusters.size();
             for (Cluster cluster : clusters) {
@@ -264,8 +211,8 @@ public class GraphController extends Controller {
                 objectNode.put("size", cluster.getNumPoints());
                 arrayNode.add(objectNode);
             }
-        } else if (clusteringAlgorithm == 1) {
-            if (clustering == 0) {
+        } else if (parser.getClusteringAlgorithm() == 1) {
+            if (parser.getClustering() == 0) {
                 pointsCnt = iKmeans.getPointsCnt();
                 clustersCnt = pointsCnt;
                 for (int i = 0; i < iKmeans.getK(); i++) {
@@ -286,8 +233,8 @@ public class GraphController extends Controller {
                     arrayNode.add(objectNode);
                 }
             }
-        } else if (clusteringAlgorithm == 2) {
-            if (clustering == 0) {
+        } else {
+            if (parser.getClustering() == 0) {
                 pointsCnt = kmeans.getDataSetLength();
                 clustersCnt = pointsCnt;
                 for (int i = 0; i < kmeans.getDataSetLength(); i++) {
@@ -307,21 +254,19 @@ public class GraphController extends Controller {
                 }
             }
         }
-        dataNode.put("option", 1);
         dataNode.put("data", arrayNode.toString());
-        dataNode.put("timestamp", timestamp);
+        dataNode.put("timestamp", parser.getTimestamp());
         dataNode.put("repliesCnt", repliesCnt);
         dataNode.put("pointsCnt", pointsCnt);
         dataNode.put("clustersCnt", clustersCnt);
-        webSocketActor.returnData(dataNode.toString());
     }
 
-    private void edgeCluster(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int clusteringAlgorithm, String timestamp, int zoom, int bundling, int clustering, int treeCutting) {
+    private void drawEdges() {
         int edgesCnt;
         int repliesCnt = resultSetSize;
-        if (clusteringAlgorithm == 0) {
+        if (parser.getClusteringAlgorithm() == 0) {
             HashMap<Edge, Integer> edges = new HashMap<>();
-            if (clustering == 0) {
+            if (parser.getClustering() == 0) {
                 for (Edge edge : edgeSet) {
                     if (edges.containsKey(edge)) {
                         edges.put(edge, edges.get(edge) + 1);
@@ -333,30 +278,28 @@ public class GraphController extends Controller {
                 HashSet<Edge> externalEdgeSet = new HashSet<>();
                 HashSet<Cluster> externalCluster = new HashSet<>();
                 HashSet<Cluster> internalCluster = new HashSet<>();
-                generateExternalEdgeSet(lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet, externalCluster, internalCluster);
+                generateExternalEdgeSet(parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 TreeCut treeCutInstance = new TreeCut();
-                if (treeCutting == 1) {
-                    treeCutInstance.treeCut(this.clustering, lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet, externalCluster, internalCluster);
+                if (parser.getTreeCutting() == 1) {
+                    treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 } else {
-                    treeCutInstance.nonTreeCut(this.clustering, zoom, edges, externalEdgeSet);
+                    treeCutInstance.nonTreeCut(this.clustering, parser.getZoom(), edges, externalEdgeSet);
                 }
             }
             edgesCnt = edges.size();
             dataNode.put("edgesCnt", edgesCnt);
-            if (bundling == 0) {
+            if (parser.getBundling() == 0) {
                 noBundling(edges);
             } else {
-                runFDEB(zoom, edges);
+                runFDEB(parser.getZoom(), edges);
             }
-        } else if (clusteringAlgorithm == 1) {
-            getKmeansEdges(zoom, bundling, clustering, iKmeans.getParents(), iKmeans.getCenters());
-        } else if (clusteringAlgorithm == 2) {
-            getKmeansEdges(zoom, bundling, clustering, kmeans.getParents(), kmeans.getCenters());
+        } else if (parser.getClusteringAlgorithm() == 1) {
+            getKmeansEdges(parser.getZoom(), parser.getBundling(), parser.getBundling(), iKmeans.getParents(), iKmeans.getCenters());
+        } else {
+            getKmeansEdges(parser.getZoom(), parser.getBundling(), parser.getClustering(), kmeans.getParents(), kmeans.getCenters());
         }
         dataNode.put("repliesCnt", repliesCnt);
-        dataNode.put("option", 2);
-        dataNode.put("timestamp", timestamp);
-        webSocketActor.returnData(dataNode.toString());
+        dataNode.put("timestamp", parser.getTimestamp());
     }
 
     private void generateExternalEdgeSet(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom,

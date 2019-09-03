@@ -8,7 +8,7 @@ public class KdTree {
      * node in kd-tree
      */
     public static class Node {
-        // cluster of this node
+        // drawPoints of this node
         private Cluster point;
         // the rectangle this node contains
         private Rectangle rect;
@@ -22,7 +22,7 @@ public class KdTree {
         /**
          * constructor of node
          *
-         * @param p         cluster of this node
+         * @param p         drawPoints of this node
          * @param vertical  whether this node is in vertical version or not
          * @param left      left son of this node
          * @param right     right son of this node
@@ -97,9 +97,9 @@ public class KdTree {
     }
 
     /**
-     * Insert a cluster into kd tree
+     * Insert a drawPoints into kd tree
      *
-     * @param p cluster
+     * @param p drawPoints
      */
     public void insert(Cluster p) {
         // base case: empty tree
@@ -169,9 +169,9 @@ public class KdTree {
     }
 
     /**
-     * find if tree contains this cluster
+     * find if tree contains this drawPoints
      *
-     * @param p cluster
+     * @param p drawPoints
      * @return if tree contains this custer
      */
     public boolean contains(Cluster p) {
@@ -203,10 +203,10 @@ public class KdTree {
     }
 
     /**
-     * find the cluster in tree
+     * find the drawPoints in tree
      *
-     * @param point cluster
-     * @return the cluster in tree
+     * @param point drawPoints
+     * @return the drawPoints in tree
      */
     public Cluster findPoint(Cluster point) {
         return findPointRecursive(root, point);
@@ -235,10 +235,10 @@ public class KdTree {
     }
 
     /**
-     * find all the cluster in certain rectangle
+     * find all the drawPoints in certain rectangle
      *
      * @param rect rectangle
-     * @return array of cluster
+     * @return array of drawPoints
      */
     public ArrayList<Cluster> range(Rectangle rect) {
         ArrayList<Cluster> pointsInRange = new ArrayList<>();
@@ -270,12 +270,12 @@ public class KdTree {
     }
 
     /**
-     * find all the cluster in certain circle
+     * find all the drawPoints in certain circle
      *
      * @param x getX coordinate of center of circle
      * @param y getY coordinate of center of circle
      * @param r radius of circle
-     * @return array of cluster
+     * @return array of drawPoints
      */
     public ArrayList<Cluster> rangeRadius(double x, double y, double r) {
         ArrayList<Cluster> pointsInRange = new ArrayList<>();

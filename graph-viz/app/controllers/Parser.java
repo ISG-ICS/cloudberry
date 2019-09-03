@@ -17,38 +17,39 @@ public class Parser {
     private String timestamp = null;
     private int zoom = 0;
     private int treeCutting = 0;
+    private String query = "";
 
     private String endDate = null;
 
-    public int getOption() {
+    int getOption() {
         return option;
     }
 
-    public double getLowerLongitude() {
+    double getLowerLongitude() {
         return lowerLongitude;
     }
 
-    public double getUpperLongitude() {
+    double getUpperLongitude() {
         return upperLongitude;
     }
 
-    public double getLowerLatitude() {
+    double getLowerLatitude() {
         return lowerLatitude;
     }
 
-    public double getUpperLatitude() {
+    double getUpperLatitude() {
         return upperLatitude;
     }
 
-    public int getClustering() {
+    int getClustering() {
         return clustering;
     }
 
-    public int getClusteringAlgorithm() {
+    int getClusteringAlgorithm() {
         return clusteringAlgorithm;
     }
 
-    public int getBundling() {
+    int getBundling() {
         return bundling;
     }
 
@@ -60,12 +61,16 @@ public class Parser {
         return zoom;
     }
 
-    public int getTreeCutting() {
+    int getTreeCutting() {
         return treeCutting;
     }
 
-    public String getEndDate() {
+    String getEndDate() {
         return endDate;
+    }
+
+    public String getQuery() {
+        return query;
     }
 
     public void parse(String query) {
@@ -76,21 +81,41 @@ public class Parser {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        try {
-            endDate = jsonNode.get("date").asText();
-            option = Integer.parseInt(jsonNode.get("option").asText());
-            lowerLongitude = Double.parseDouble(jsonNode.get("lowerLongitude").asText());
-            upperLongitude = Double.parseDouble(jsonNode.get("upperLongitude").asText());
-            lowerLatitude = Double.parseDouble(jsonNode.get("lowerLatitude").asText());
-            upperLatitude = Double.parseDouble(jsonNode.get("upperLatitude").asText());
-            clusteringAlgorithm = Integer.parseInt(jsonNode.get("clusteringAlgorithm").asText());
-            timestamp = jsonNode.get("timestamp").asText();
-            zoom = Integer.parseInt(jsonNode.get("zoom").asText());
-            bundling = Integer.parseInt(jsonNode.get("bundling").asText());
-            clustering = Integer.parseInt(jsonNode.get("clustering").asText());
-            treeCutting = Integer.parseInt(jsonNode.get("treeCut").asText());
-        } catch (NullPointerException ignored) {
-
+        if (jsonNode != null) {
+            if (jsonNode.has("date")) {
+                endDate = jsonNode.get("date").asText();
+            }
+            if (jsonNode.has("query")) {
+                this.query = jsonNode.get("query").asText();
+            }
+            if (jsonNode.has("timestamp")) {
+                timestamp = jsonNode.get("timestamp").asText();
+            }
+            if (jsonNode.has("option")) {
+                option = Integer.parseInt(jsonNode.get("option").asText());
+            }
+            if (jsonNode.has("clusteringAlgorithm")) {
+                clusteringAlgorithm = Integer.parseInt(jsonNode.get("clusteringAlgorithm").asText());
+            }
+            if (jsonNode.has("lowerLongitude"))
+                lowerLongitude = Double.parseDouble(jsonNode.get("lowerLongitude").asText());
+            if (jsonNode.has("upperLongitude")) {
+                upperLongitude = Double.parseDouble(jsonNode.get("upperLongitude").asText());
+            }
+            if (jsonNode.has("lowerLatitude")) {
+                lowerLatitude = Double.parseDouble(jsonNode.get("lowerLatitude").asText());
+            }
+            if (jsonNode.has("upperLatitude")) {
+                upperLatitude = Double.parseDouble(jsonNode.get("upperLatitude").asText());
+            }
+            if (jsonNode.has("zoom"))
+                zoom = Integer.parseInt(jsonNode.get("zoom").asText());
+            if (jsonNode.has("bundling"))
+                bundling = Integer.parseInt(jsonNode.get("bundling").asText());
+            if (jsonNode.has("clustering"))
+                clustering = Integer.parseInt(jsonNode.get("clustering").asText());
+            if (jsonNode.has("treeCutting"))
+                treeCutting = Integer.parseInt(jsonNode.get("treeCut").asText());
         }
     }
 }
