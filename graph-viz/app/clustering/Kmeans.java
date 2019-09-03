@@ -12,7 +12,6 @@ public class Kmeans {
     private int I; // the number of iterations
     private List<Point> dataSet; // the dataset for clustering
     private ArrayList<Point> centers; // the list of centers of clusters
-    // TODO use list of cluster class
     private List<List<Point>> clusters; // the list of clusters for the whole dataset
     private double lastSquaredErrorSum;
     private HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
@@ -151,7 +150,6 @@ public class Kmeans {
     /**
      * Add each point to its closest cluster
      */
-    // TODO change to Math.random()
     private void clusterSet() {
         for (int i = 0; i < getDataSetLength(); i++) {
             double currentDistance;

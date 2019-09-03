@@ -143,7 +143,10 @@ public class GraphController extends Controller {
         if (iKmeans == null) {
             iKmeans = new IKmeans(17);
             iKmeans.setDataSet(points);
-            iKmeans.init();
+            iKmeans.updateK();
+            if (iKmeans.getDataSetLength() != 0) {
+                iKmeans.init();
+            }
         }
         iKmeans.execute(points);
     }

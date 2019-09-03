@@ -20,11 +20,24 @@ public class IKmeans {
     private int pointsCnt; // the count of points in all accumulated data
     private HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
 
+    /**
+     * Constructor for k
+     *
+     * @param k Number of clusters
+     */
+    public IKmeans(int k) {
+        if (k <= 0) {
+            k = 1;
+        }
+        this.k = k;
+        kmeans = new Kmeans(k);
+    }
+
     public void setDataSet(List<Point> dataSet) {
         this.dataSet = dataSet;
     }
 
-    private int getDataSetLength() {
+    public int getDataSetLength() {
         if (dataSet == null || dataSet.size() == 0) {
             return 0;
         } else {
@@ -52,36 +65,27 @@ public class IKmeans {
         return pointsCnt;
     }
 
-    /**
-     * Constructor for k
-     *
-     * @param k Number of clusters
-     */
-    public IKmeans(int k) {
-        if (k <= 0) {
-            k = 1;
+    public void updateK() {
+        int dataSetLength = getDataSetLength();
+        if (k > dataSetLength) {
+            k = dataSetLength;
+            kmeans.setK(dataSetLength);
+        } else if (k == 0) {
+            k = dataSetLength;
+            kmeans.setK(dataSetLength);
         }
-        this.k = k;
-        kmeans = new Kmeans(k);
     }
 
     /**
      * Initialization of the whole I-KMeans process
      */
     public void init() {
-        int dataSetLength = getDataSetLength();
-        if (k > dataSetLength) {
-            k = dataSetLength;
-            kmeans.setK(dataSetLength);
+        allClusters = new ArrayList<>();
+        for (int i = 0; i < k; i++) {
+            allClusters.add(new ArrayList<>());
         }
-        if (dataSet != null && dataSet.size() != 0) {
-            allClusters = new ArrayList<>();
-            for (int i = 0; i < k; i++) {
-                allClusters.add(new ArrayList<>());
-            }
-            centers = kmeans.initCenters(dataSetLength, dataSet);
-            clusters = kmeans.initCluster();
-        }
+        centers = kmeans.initCenters(getDataSetLength(), dataSet);
+        clusters = kmeans.initCluster();
     }
 
     /**
@@ -132,21 +136,6 @@ public class IKmeans {
     }
 
     /**
-     * Re-initialize the data structure when the latest batch size is no longer zero
-     */
-    private void reInit() {
-        int dataSetLength = getDataSetLength();
-        k = dataSetLength;
-        kmeans.setK(dataSetLength);
-        allClusters = new ArrayList<>();
-        for (int i = 0; i < k; i++) {
-            allClusters.add(new ArrayList<>());
-        }
-        centers = kmeans.initCenters(dataSetLength, dataSet);
-        clusters = kmeans.initCluster();
-    }
-
-    /**
      * load the new batch of data and do incremental K-Means
      *
      * @param data the new batch of data
@@ -154,11 +143,11 @@ public class IKmeans {
     // TODO call init instead of reinit
     public void execute(List<Point> data) {
         setDataSet(data);
-        if (dataSet == null || dataSet.size() == 0) {
+        if (getDataSetLength() == 0) {
             return;
-        }
-        if (k == 0 && getDataSetLength() > 0) {
-            reInit();
+        } else if (k == 0) {
+            updateK();
+            init();
         }
         clusterSet();
         setNewCenter();
