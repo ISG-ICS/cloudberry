@@ -116,6 +116,7 @@ public class KdTree {
         split(p, n);
     }
 
+    // TODO revert split method
     private void split(Cluster p, Node n) {
         boolean flag;
         // go to the left if point left to vertical point or below a horizontal point

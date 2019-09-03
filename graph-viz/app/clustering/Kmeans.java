@@ -153,6 +153,7 @@ public class Kmeans {
     /**
      * Add each point to its closest cluster
      */
+    // TODO change to Math.random()
     private void clusterSet() {
         Random random = new Random();
         for (int i = 0; i < getDataSetLength(); i++) {
