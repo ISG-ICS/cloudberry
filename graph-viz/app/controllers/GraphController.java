@@ -274,9 +274,9 @@ public class GraphController extends Controller {
                     pointsCnt = iKmeans.getPointsCnt();
                     clustersCnt = pointsCnt;
                     for (int i = 0; i < iKmeans.getK(); i++) {
-                        for (int j = 0; j < iKmeans.getAllCluster().get(i).size(); j++) {
+                        for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
                             ObjectNode objectNode = objectMapper.createObjectNode();
-                            objectNode.putArray("coordinates").add(iKmeans.getAllCluster().get(i).get(j)[0]).add(iKmeans.getAllCluster().get(i).get(j)[1]);
+                            objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j)[0]).add(iKmeans.getAllClusters().get(i).get(j)[1]);
                             objectNode.put("size", 1);
                             arrayNode.add(objectNode);
                         }
@@ -288,8 +288,8 @@ public class GraphController extends Controller {
                     clustersCnt = iKmeans.getK();
                     for (int i = 0; i < iKmeans.getK(); i++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(iKmeans.getCenter().get(i)[0]).add(iKmeans.getCenter().get(i)[1]);
-                        objectNode.put("size", iKmeans.getAllCluster().get(i).size());
+                        objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i)[0]).add(iKmeans.getCenters().get(i)[1]);
+                        objectNode.put("size", iKmeans.getAllClusters().get(i).size());
                         arrayNode.add(objectNode);
                     }
                     json = arrayNode.toString();
@@ -314,8 +314,8 @@ public class GraphController extends Controller {
                     clustersCnt = kmeans.getK();
                     for (int i = 0; i < kmeans.getK(); i++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(kmeans.getCenter().get(i)[0]).add(kmeans.getCenter().get(i)[1]);
-                        objectNode.put("size", kmeans.getCluster().get(i).size());
+                        objectNode.putArray("coordinates").add(kmeans.getCenters().get(i)[0]).add(kmeans.getCenters().get(i)[1]);
+                        objectNode.put("size", kmeans.getClusters().get(i).size());
                         arrayNode.add(objectNode);
                     }
                     json = arrayNode.toString();
@@ -369,10 +369,10 @@ public class GraphController extends Controller {
             }
         } else if (clusteringAlgorithm == 1) {
             if (iKmeans != null)
-                getKmeansEdges(zoom, bundling, clustering, objectNode, iKmeans.getParents(), iKmeans.getCenter());
+                getKmeansEdges(zoom, bundling, clustering, objectNode, iKmeans.getParents(), iKmeans.getCenters());
         } else if (clusteringAlgorithm == 2) {
             if (kmeans != null)
-                getKmeansEdges(zoom, bundling, clustering, objectNode, kmeans.getParents(), kmeans.getCenter());
+                getKmeansEdges(zoom, bundling, clustering, objectNode, kmeans.getParents(), kmeans.getCenters());
         }
         objectNode.put("repliesCnt", repliesCnt);
         objectNode.put("option", 2);

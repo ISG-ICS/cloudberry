@@ -2,8 +2,6 @@ package clustering;
 
 import models.Point;
 
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.*;
 
 /**
@@ -11,64 +9,15 @@ import java.util.*;
  */
 public class Kmeans {
     private int k; // the number of clusters desired
-    // TODO change m to I
-    private int m; // the number of iterations
-    // TODO remove datasetlength
-    private int dataSetLength; // the number of points in the dataset
+    private int I; // the number of iterations
     // TODO use the dataset from Point class
     private List<double[]> dataSet; // the dataset for clustering
-    // TODO add "s"
-    private ArrayList<double[]> center; // the list of centers of clusters
+    private ArrayList<double[]> centers; // the list of centers of clusters
     // TODO use list of cluster class
-    private List<List<double[]>> cluster; // the list of clusters for the whole dataset
-    // TODO change arraylist to a double value
-    private ArrayList<Double> squaredErrorSums; // the sum of squared errors
-    // TODO remove random
-    private Random random;
+    private List<List<double[]>> clusters; // the list of clusters for the whole dataset
+    private double lastSquaredErrorSum;
     private HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
 
-    public List<double[]> getDataSet() {
-        return dataSet;
-    }
-
-    public HashMap<Point, Integer> getParents() {
-        return parents;
-    }
-
-    public ArrayList<double[]> getCenter() {
-        return center;
-    }
-
-    // TODO return the datasetlength, when dataset is null, return 0
-    public int getDataSetLength() {
-        return dataSetLength;
-    }
-
-    public int getK() {
-        return k;
-    }
-
-    public void setK(int k) {
-        this.k = k;
-    }
-
-    public void setDataSet(List<double[]> dataSet) {
-        this.dataSet = dataSet;
-        if (dataSet == null || dataSet.size() == 0) {
-            System.out.println("No data for this batch.");
-            dataSetLength = 0;
-        }
-        else {
-            dataSetLength = dataSet.size();
-        }
-    }
-
-    // TODO add an "s"
-    public List<List<double[]>> getCluster() {
-        return cluster;
-    }
-
-    // TODO move the constructor up
     /**
      * Constructor for k
      *
@@ -81,21 +30,58 @@ public class Kmeans {
         this.k = k;
     }
 
+    public List<double[]> getDataSet() {
+        return dataSet;
+    }
+
+    public HashMap<Point, Integer> getParents() {
+        return parents;
+    }
+
+    public ArrayList<double[]> getCenters() {
+        return centers;
+    }
+
+    public int getDataSetLength() {
+        if (dataSet == null || dataSet.size() == 0) {
+            return 0;
+        } else {
+            return dataSet.size();
+        }
+    }
+
+    public int getK() {
+        return k;
+    }
+
+    public void setK(int k) {
+        this.k = k;
+    }
+
+    private void setDataSet(List<double[]> dataSet) {
+        this.dataSet = dataSet;
+    }
+
+    public List<List<double[]>> getClusters() {
+        return clusters;
+    }
+
+
     /**
      * Initialization of the whole K-Means process
      */
     private void init() {
-        m = 0;
-        random = new Random();
+        I = 0;
+        int dataSetLength = getDataSetLength();
         if (k > dataSetLength) {
             k = dataSetLength;
         }
         if (dataSet == null || dataSet.size() == 0) {
             return;
         }
-        center = initCenters(dataSetLength, dataSet, random);
-        cluster = initCluster();
-        squaredErrorSums = new ArrayList<>();
+        centers = initCenters(dataSetLength, dataSet);
+        clusters = initCluster();
+        lastSquaredErrorSum = 0;
     }
 
     /**
@@ -103,7 +89,8 @@ public class Kmeans {
      *
      * @return the list of centers
      */
-    ArrayList<double[]> initCenters(int dataSetLength, List<double[]> dataSet, Random random) {
+    ArrayList<double[]> initCenters(int dataSetLength, List<double[]> dataSet) {
+        Random random = new Random();
         ArrayList<double[]> center = new ArrayList<>();
         int[] randoms = new int[k];
         boolean flag;
@@ -164,41 +151,26 @@ public class Kmeans {
     }
 
     /**
-     * Get the index of the center closest to a point
-     *
-     * @param distance distance array
-     * @return the index of the closest center in the distance array
-     */
-    // TODO choose the first point instead of a random one
-    int minDistance(double[] distance, Random random) {
-        double minDistance = distance[0];
-        int minLocation = 0;
-        for (int i = 1; i < distance.length; i++) {
-            if (distance[i] < minDistance) {
-                minDistance = distance[i];
-                minLocation = i;
-            } else if (distance[i] == minDistance)
-            {
-                if (random.nextInt(10) < 5) {
-                    minLocation = i;
-                }
-            }
-        }
-        return minLocation;
-    }
-
-    /**
      * Add each point to its closest cluster
      */
-    // TODO change the distance array to a single value
     private void clusterSet() {
-        double[] distance = new double[k];
-        for (int i = 0; i < dataSetLength; i++) {
-            for (int j = 0; j < k; j++) {
-                distance[j] = distance(dataSet.get(i), center.get(j));
+        Random random = new Random();
+        for (int i = 0; i < getDataSetLength(); i++) {
+            double currentDistance;
+            double minDistance = distance(dataSet.get(i), centers.get(0));
+            int minLocation = 0;
+            for (int j = 1; j < k; j++) {
+                currentDistance = distance(dataSet.get(i), centers.get(j));
+                if (currentDistance < minDistance) {
+                    minDistance = currentDistance;
+                    minLocation = j;
+                } else if (currentDistance == minDistance) {
+                    if (random.nextInt(10) < 5) {
+                        minLocation = j;
+                    }
+                }
             }
-            int minLocation = minDistance(distance, random);
-            cluster.get(minLocation).add(dataSet.get(i)); // add each point to its closest cluster
+            clusters.get(minLocation).add(dataSet.get(i)); // add each point to its closest cluster
         }
     }
 
@@ -206,40 +178,25 @@ public class Kmeans {
      * Map each point to the cluster it belongs to
      */
     private void findParents() {
-        for (int i = 0; i < cluster.size(); i++) {
-            for (int j = 0; j < cluster.get(i).size(); j++) {
-                Point point = new Point(cluster.get(i).get(j)[0], cluster.get(i).get(j)[1]);
+        for (int i = 0; i < clusters.size(); i++) {
+            for (int j = 0; j < clusters.get(i).size(); j++) {
+                Point point = new Point(clusters.get(i).get(j)[0], clusters.get(i).get(j)[1]);
                 parents.put(point, i);
             }
         }
     }
 
     /**
-     * Calculate the squared error between two points
-     *
-     * @param element points in dataset
-     * @param center  centers of clusters
-     * @return the computed squared error
-     */
-    // TODO change it to the square of distance
-    private double errorSquare(double[] element, double[] center) {
-        double x = element[0] - center[0];
-        double y = element[1] - center[1];
-
-        return x * x + y * y;
-    }
-
-    /**
      * Calculate the sum of the squared error
      */
-    private void countRule() {
+    private double countRule() {
         double squaredErrorSum = 0;
-        for (int i = 0; i < cluster.size(); i++) {
-            for (int j = 0; j < cluster.get(i).size(); j++) {
-                squaredErrorSum += errorSquare(cluster.get(i).get(j), center.get(i));
+        for (int i = 0; i < clusters.size(); i++) {
+            for (int j = 0; j < clusters.get(i).size(); j++) {
+                squaredErrorSum += Math.pow(distance(clusters.get(i).get(j), centers.get(i)), 2);
             }
         }
-        squaredErrorSums.add(squaredErrorSum);
+        return squaredErrorSum;
     }
 
     /**
@@ -247,17 +204,17 @@ public class Kmeans {
      */
     private void setNewCenter() {
         for (int i = 0; i < k; i++) {
-            int n = cluster.get(i).size();
+            int n = clusters.get(i).size();
             if (n != 0) {
                 double[] newCenter = {0, 0};
                 for (int j = 0; j < n; j++) {
-                    newCenter[0] += cluster.get(i).get(j)[0];
-                    newCenter[1] += cluster.get(i).get(j)[1];
+                    newCenter[0] += clusters.get(i).get(j)[0];
+                    newCenter[1] += clusters.get(i).get(j)[1];
                 }
                 // Calculate the average coordinate of all points in the cluster
                 newCenter[0] = newCenter[0] / n;
                 newCenter[1] = newCenter[1] / n;
-                center.set(i, newCenter);
+                centers.set(i, newCenter);
             }
         }
     }
@@ -272,19 +229,21 @@ public class Kmeans {
             return;
         }
         // iterate until no change in the sum of squared errors
+        double currentSquaredErrorSum;
         while (true) {
             clusterSet();
-            countRule();
-            if (m != 0) {
-                if (squaredErrorSums.get(m) - squaredErrorSums.get(m - 1) == 0) {
+            currentSquaredErrorSum = countRule();
+            if (I != 0) {
+                if (currentSquaredErrorSum == lastSquaredErrorSum) {
                     findParents();
                     break;
                 }
             }
             setNewCenter();
-            m++;
-            cluster.clear();
-            cluster = initCluster();
+            I++;
+            clusters.clear();
+            clusters = initCluster();
+            lastSquaredErrorSum = currentSquaredErrorSum;
         }
     }
 }
