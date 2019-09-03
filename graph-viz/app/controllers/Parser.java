@@ -114,7 +114,7 @@ public class Parser {
                 bundling = Integer.parseInt(jsonNode.get("bundling").asText());
             if (jsonNode.has("clustering"))
                 clustering = Integer.parseInt(jsonNode.get("clustering").asText());
-            if (jsonNode.has("treeCutting"))
+            if (jsonNode.has("treeCut"))
                 treeCutting = Integer.parseInt(jsonNode.get("treeCut").asText());
         }
     }
