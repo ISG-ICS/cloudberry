@@ -133,10 +133,10 @@ public class KdTree {
                     Rectangle rect;
                     if (n.vertical()) {
                         // point to left of current point
-                        rect = new Rectangle(n.getRect().xmin(), n.getRect().ymin(), n.getPoint().getX(), n.getRect().ymax());
+                        rect = new Rectangle(n.getRect().getMinX(), n.getRect().getMinY(), n.getPoint().getX(), n.getRect().getMaxY());
                     } else {
                         // point at bottom of current point
-                        rect = new Rectangle(n.getRect().xmin(), n.getRect().ymin(), n.getRect().xmax(), n.getPoint().y());
+                        rect = new Rectangle(n.getRect().getMinX(), n.getRect().getMinY(), n.getRect().getMaxX(), n.getPoint().y());
                     }
                     // create new node to be inserted to
                     Node leftNode = new Node(p, !n.vertical(), null, null, rect);
@@ -152,10 +152,10 @@ public class KdTree {
                     Rectangle rect;
                     if (n.vertical()) {
                         // right to vertical point
-                        rect = new Rectangle(n.getPoint().getX(), n.getRect().ymin(), n.getRect().xmax(), n.getRect().ymax());
+                        rect = new Rectangle(n.getPoint().getX(), n.getRect().getMinY(), n.getRect().getMaxX(), n.getRect().getMaxY());
                     } else {
                         // top of horizontal point
-                        rect = new Rectangle(n.getRect().xmin(), n.getPoint().y(), n.getRect().xmax(), n.getRect().ymax());
+                        rect = new Rectangle(n.getRect().getMinX(), n.getPoint().y(), n.getRect().getMaxX(), n.getRect().getMaxY());
                     }
                     Node rightNode = new Node(p, !n.vertical(), null, null, rect);
                     n.setRightNode(rightNode);
@@ -255,12 +255,12 @@ public class KdTree {
             rangeList.add(p);
 
         double pointCoord = p.y();
-        double rectMin = rect.ymin();
-        double rectMax = rect.ymax();
+        double rectMin = rect.getMinY();
+        double rectMax = rect.getMaxY();
         if (n.vertical()) {
             pointCoord = p.getX();
-            rectMin = rect.xmin();
-            rectMax = rect.xmax();
+            rectMin = rect.getMinX();
+            rectMax = rect.getMaxX();
         }
 
         if (pointCoord > rectMin)
