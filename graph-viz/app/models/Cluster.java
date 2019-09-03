@@ -69,9 +69,7 @@ public class Cluster implements Comparable<Cluster> {
     }
 
     public double distanceTo(Cluster that) {
-        double dx = this.getX() - that.getX();
-        double dy = this.getY() - that.getY();
-        return Math.sqrt(dx * dx + dy * dy);
+        return point.distanceTo(that.point);
     }
 
     public int compareTo(Cluster that) {

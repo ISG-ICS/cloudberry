@@ -46,5 +46,7 @@ public class Point {
         return 31 * hashX + hashY;
     }
 
-
+    public double distanceTo(Point point) {
+        return Math.sqrt(Math.pow(x - point.x, 2) + Math.pow(y - point.y, 2));
+    }
 }
