@@ -1,4 +1,4 @@
-package algorithms;
+package controllers;
 
 import utils.PropertiesUtil;
 

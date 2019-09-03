@@ -1,13 +1,17 @@
 package controllers;
 
-import algorithms.*;
+import clustering.IKmeans;
+import clustering.Kmeans;
+import clustering.PointCluster;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import edgeBundling.ForceBundling;
 import models.*;
 import play.mvc.*;
-import actors.BundleActor;
+import actors.WebSocketActor;
+import treeCut.TreeCut;
 import utils.DatabaseUtils;
 import utils.PropertiesUtil;
 
@@ -33,7 +37,7 @@ public class GraphController extends Controller {
     private Kmeans kmeans;
     // Incremental edge data
     private Set<Edge> edgeSet = new HashSet<>();
-    private BundleActor bundleActor;
+    private WebSocketActor webSocketActor;
     private ObjectMapper objectMapper = new ObjectMapper();
     // Size of resultSet
     private int resultSetSize = 0;
@@ -44,8 +48,8 @@ public class GraphController extends Controller {
      * @param query received query message
      * @param actor WebSocket actor to return response.
      */
-    public void dispatcher(String query, BundleActor actor) {
-        bundleActor = actor;
+    public void dispatcher(String query, WebSocketActor actor) {
+        webSocketActor = actor;
         // Heartbeat package handler
         // WebSocket will automatically close after several seconds
         // To keep the state, maintain WebSocket connection is a must
@@ -163,7 +167,7 @@ public class GraphController extends Controller {
         }
         objectNode.put("option", 0);
         String json = objectNode.toString();
-        bundleActor.returnData(json);
+        webSocketActor.returnData(json);
         resultSet.close();
         state.close();
     }
@@ -325,7 +329,7 @@ public class GraphController extends Controller {
         objectNode.put("repliesCnt", repliesCnt);
         objectNode.put("pointsCnt", pointsCnt);
         objectNode.put("clustersCnt", clustersCnt);
-        bundleActor.returnData(objectNode.toString());
+        webSocketActor.returnData(objectNode.toString());
     }
 
     private void edgeCluster(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int clusteringAlgorithm, String timestamp, int zoom, int bundling, int clustering, int treeCutting) {
@@ -373,7 +377,7 @@ public class GraphController extends Controller {
         objectNode.put("repliesCnt", repliesCnt);
         objectNode.put("option", 2);
         objectNode.put("timestamp", timestamp);
-        bundleActor.returnData(objectNode.toString());
+        webSocketActor.returnData(objectNode.toString());
     }
 
     private void generateExternalEdgeSet(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom,

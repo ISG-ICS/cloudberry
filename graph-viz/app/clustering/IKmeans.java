@@ -1,4 +1,4 @@
-package algorithms;
+package clustering;
 
 import models.Point;
 

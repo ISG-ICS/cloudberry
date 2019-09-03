@@ -1,6 +1,6 @@
 package controllers;
 
-import actors.BundleActor;
+import actors.WebSocketActor;
 import akka.actor.ActorSystem;
 import akka.stream.Materializer;
 import play.libs.streams.ActorFlow;
@@ -13,13 +13,13 @@ import javax.inject.Inject;
  * This class works as the controller of the WebSocket.
  */
 // TODO rename the class and the methods
-public class EdgeController extends Controller {
+public class WebSocketController extends Controller {
 
     private final ActorSystem actorSystem;
     private final Materializer materializer;
 
     @Inject
-    public EdgeController(ActorSystem actorSystem, Materializer materializer) {
+    public WebSocketController(ActorSystem actorSystem, Materializer materializer) {
         this.actorSystem = actorSystem;
         this.materializer = materializer;
     }
@@ -27,8 +27,8 @@ public class EdgeController extends Controller {
     /**
      * Forwards requests to the bundle actor.
      */
-    public WebSocket bundle() {
+    public WebSocket socket() {
         return WebSocket.Text.accept(
-                request -> ActorFlow.actorRef(BundleActor::props, actorSystem, materializer));
+                request -> ActorFlow.actorRef(WebSocketActor::props, actorSystem, materializer));
     }
 }

@@ -9,7 +9,7 @@ import controllers.GraphController;
  * This class works as the actor of the WebSocket.
  * For each WebSocket connection, there will be one actor object.
  */
-public class BundleActor extends AbstractActor {
+public class WebSocketActor extends AbstractActor {
 
     /**
      * For each actor, there will be one GraphController object.
@@ -27,14 +27,14 @@ public class BundleActor extends AbstractActor {
      * @return the configuration object using in creating an actor.
      */
     public static Props props(ActorRef out) {
-        return Props.create(BundleActor.class, () -> new BundleActor(out));
+        return Props.create(WebSocketActor.class, () -> new WebSocketActor(out));
     }
 
     /**
      * Constructor for bundle actor.
      * @param out The corresponding handler.
      */
-    private BundleActor(ActorRef out) {
+    private WebSocketActor(ActorRef out) {
         this.out = out;
     }
 

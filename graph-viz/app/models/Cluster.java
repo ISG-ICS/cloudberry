@@ -1,6 +1,6 @@
 package models;
 
-import algorithms.PointCluster;
+import clustering.PointCluster;
 
 import java.util.Comparator;
 

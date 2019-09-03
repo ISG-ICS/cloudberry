@@ -1,4 +1,4 @@
-package algorithms;
+package edgeBundling;
 
 import models.EdgeVector;
 import models.Path;

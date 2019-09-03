@@ -1,5 +1,6 @@
-package algorithms;
+package treeCut;
 
+import clustering.PointCluster;
 import models.Cluster;
 import models.Edge;
 
@@ -42,7 +43,7 @@ public class TreeCut {
         addExternalClusterHierarchy(externalCluster, externalHierarchy, externalClusterMap);
         addInternalClusterHierarchy(internalCluster, internalHierarchy);
         // TODO change breaking clause
-        while (true) {
+        while (externalHierarchy.size() != 0) {
             // The ancestors has conflict
             ArrayList<Cluster> removeAncestors = new ArrayList<>();
             // Find clusters has common ancestor with internal clusters at this level
@@ -59,9 +60,6 @@ public class TreeCut {
             // remove all clusters stop at this level
             for (Cluster c : removeAncestors) {
                 externalHierarchy.remove(c);
-            }
-            if (externalHierarchy.size() == 0) {
-                break;
             }
             // elevate all remaining clusters to a higher level
             externalHierarchy = elevateExternalHierarchy(externalHierarchy, externalClusterMap);
