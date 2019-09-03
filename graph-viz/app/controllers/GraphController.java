@@ -39,6 +39,8 @@ public class GraphController extends Controller {
     private Set<Edge> edgeSet = new HashSet<>();
     private WebSocketActor webSocketActor;
     private ObjectMapper objectMapper = new ObjectMapper();
+    ObjectNode dataNode;
+    Parser parser = new Parser();
     // Size of resultSet
     private int resultSetSize = 0;
 
@@ -56,6 +58,7 @@ public class GraphController extends Controller {
         if (query.equals("")) {
             return;
         }
+        dataNode = objectMapper.createObjectNode();
         // Parse the request message with JSON structure
         JsonNode jsonNode = null;
         // Option indicates the request type
@@ -122,10 +125,10 @@ public class GraphController extends Controller {
         }
     }
 
+    //TODO change to doQuery
     private void doIncrementalQuery(String query, String start, String end)
             throws SQLException, ParseException {
         Connection conn = DatabaseUtils.getConnection();
-        ObjectNode objectNode = objectMapper.createObjectNode();
         JsonNode jsonNode;
         int clusteringAlgorithm = -1;
         String timestamp = null;
@@ -144,13 +147,12 @@ public class GraphController extends Controller {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        bindFields(objectNode, timestamp, end);
-        loadCluster(query, clusteringAlgorithm, timestamp, objectNode, conn, state, resultSet);
+        bindFields(timestamp, end);
+        loadCluster(query, clusteringAlgorithm, timestamp, conn, state, resultSet);
     }
 
-
-    private void loadCluster(String query, int clusteringAlgorithm, String timestamp, ObjectNode objectNode,
-                            Connection conn, PreparedStatement state, ResultSet resultSet) throws ParseException, SQLException {
+    private void loadCluster(String query, int clusteringAlgorithm, String timestamp,
+                             Connection conn, PreparedStatement state, ResultSet resultSet) throws ParseException, SQLException {
         String start;
         String end;
         if (clusteringAlgorithm == 0) {
@@ -160,14 +162,13 @@ public class GraphController extends Controller {
         } else if (clusteringAlgorithm == 2) {
             start = PropertiesUtil.firstDate;
             end = PropertiesUtil.lastDate;
-            bindFields(objectNode, timestamp, end);
+            bindFields(timestamp, end);
             state = DatabaseUtils.prepareStatement(query, conn, end, start);
             resultSet = state.executeQuery();
             loadKmeans(resultSet);
         }
-        objectNode.put("option", 0);
-        String json = objectNode.toString();
-        webSocketActor.returnData(json);
+        dataNode.put("option", 0);
+        webSocketActor.returnData(dataNode.toString());
         resultSet.close();
         state.close();
     }
@@ -234,150 +235,128 @@ public class GraphController extends Controller {
         return calendar;
     }
 
-    private void bindFields(ObjectNode objectNode, String timestamp, String end) {
-        objectNode.put("date", end);
-        objectNode.put("timestamp", timestamp);
+    private void bindFields(String timestamp, String end) {
+        dataNode.put("date", end);
+        dataNode.put("timestamp", timestamp);
         Calendar endCalendar = getCalendar(end);
         if (!endCalendar.before(PropertiesUtil.lastDateCalender)) {
             System.out.println(finished + end);
-            objectNode.put("flag", finished);
+            dataNode.put("flag", finished);
         } else {
             System.out.println(unfinished + end);
-            objectNode.put("flag", unfinished);
+            dataNode.put("flag", unfinished);
         }
     }
 
     public void cluster(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int clustering, int clusteringAlgorithm, String timestamp, int zoom) {
-        String json = "";
         int pointsCnt = 0;
         int clustersCnt = 0;
         int repliesCnt = resultSetSize;
+        ArrayNode arrayNode = objectMapper.createArrayNode();
         if (clusteringAlgorithm == 0) {
-            if (this.clustering != null) {
-                ArrayNode arrayNode = objectMapper.createArrayNode();
-                ArrayList<Cluster> points = this.clustering.getClusters(new double[]{lowerLongitude, lowerLatitude, upperLongitude, upperLatitude}, 18);
-                ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{lowerLongitude, lowerLatitude, upperLongitude, upperLatitude}, zoom);
-                pointsCnt = points.size();
-                clustersCnt = clusters.size();
-                for (Cluster cluster : clusters) {
-                    ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.getY()));
-                    objectNode.put("size", cluster.getNumPoints());
-                    arrayNode.add(objectNode);
-                }
-                json = arrayNode.toString();
+            ArrayList<Cluster> points = this.clustering.getClusters(new double[]{lowerLongitude, lowerLatitude, upperLongitude, upperLatitude}, 18);
+            ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{lowerLongitude, lowerLatitude, upperLongitude, upperLatitude}, zoom);
+            pointsCnt = points.size();
+            clustersCnt = clusters.size();
+            for (Cluster cluster : clusters) {
+                ObjectNode objectNode = objectMapper.createObjectNode();
+                objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.getY()));
+                objectNode.put("size", cluster.getNumPoints());
+                arrayNode.add(objectNode);
             }
         } else if (clusteringAlgorithm == 1) {
-            if (iKmeans != null) {
-                if (clustering == 0) {
-                    ArrayNode arrayNode = objectMapper.createArrayNode();
-                    pointsCnt = iKmeans.getPointsCnt();
-                    clustersCnt = pointsCnt;
-                    for (int i = 0; i < iKmeans.getK(); i++) {
-                        for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
-                            ObjectNode objectNode = objectMapper.createObjectNode();
-                            objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j).getX()).add(iKmeans.getAllClusters().get(i).get(j).getY());
-                            objectNode.put("size", 1);
-                            arrayNode.add(objectNode);
-                        }
-                    }
-                    json = arrayNode.toString();
-                } else {
-                    ArrayNode arrayNode = objectMapper.createArrayNode();
-                    pointsCnt = iKmeans.getPointsCnt();
-                    clustersCnt = iKmeans.getK();
-                    for (int i = 0; i < iKmeans.getK(); i++) {
+            if (clustering == 0) {
+                pointsCnt = iKmeans.getPointsCnt();
+                clustersCnt = pointsCnt;
+                for (int i = 0; i < iKmeans.getK(); i++) {
+                    for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i).getX()).add(iKmeans.getCenters().get(i).getY());
-                        objectNode.put("size", iKmeans.getAllClusters().get(i).size());
-                        arrayNode.add(objectNode);
-                    }
-                    json = arrayNode.toString();
-                }
-            }
-        } else if (clusteringAlgorithm == 2) {
-            if (kmeans != null) {
-                if (clustering == 0) {
-                    ArrayNode arrayNode = objectMapper.createArrayNode();
-                    pointsCnt = kmeans.getDataSetLength();
-                    clustersCnt = pointsCnt;
-                    for (int i = 0; i < kmeans.getDataSetLength(); i++) {
-                        ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i).getX()).add(kmeans.getDataSet().get(i).getY());
+                        objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j)[0]).add(iKmeans.getAllClusters().get(i).get(j)[1]);
                         objectNode.put("size", 1);
                         arrayNode.add(objectNode);
                     }
-                    json = arrayNode.toString();
-                } else {
-                    ArrayNode arrayNode = objectMapper.createArrayNode();
-                    pointsCnt = kmeans.getDataSetLength();
-                    clustersCnt = kmeans.getK();
-                    for (int i = 0; i < kmeans.getK(); i++) {
-                        ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(kmeans.getCenters().get(i).getX()).add(kmeans.getCenters().get(i).getY());
-                        objectNode.put("size", kmeans.getClusters().get(i).size());
-                        arrayNode.add(objectNode);
-                    }
-                    json = arrayNode.toString();
+                }
+            } else {
+                pointsCnt = iKmeans.getPointsCnt();
+                clustersCnt = iKmeans.getK();
+                for (int i = 0; i < iKmeans.getK(); i++) {
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i)[0]).add(iKmeans.getCenters().get(i)[1]);
+                    objectNode.put("size", iKmeans.getAllClusters().get(i).size());
+                    arrayNode.add(objectNode);
+                }
+            }
+        } else if (clusteringAlgorithm == 2) {
+            if (clustering == 0) {
+                pointsCnt = kmeans.getDataSetLength();
+                clustersCnt = pointsCnt;
+                for (int i = 0; i < kmeans.getDataSetLength(); i++) {
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i)[0]).add(kmeans.getDataSet().get(i)[1]);
+                    objectNode.put("size", 1);
+                    arrayNode.add(objectNode);
+                }
+            } else {
+                pointsCnt = kmeans.getDataSetLength();
+                clustersCnt = kmeans.getK();
+                for (int i = 0; i < kmeans.getK(); i++) {
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.putArray("coordinates").add(kmeans.getCenters().get(i)[0]).add(kmeans.getCenters().get(i)[1]);
+                    objectNode.put("size", kmeans.getClusters().get(i).size());
+                    arrayNode.add(objectNode);
                 }
             }
         }
-        ObjectNode objectNode = objectMapper.createObjectNode();
-        objectNode.put("option", 1);
-        objectNode.put("data", json);
-        objectNode.put("timestamp", timestamp);
-        objectNode.put("repliesCnt", repliesCnt);
-        objectNode.put("pointsCnt", pointsCnt);
-        objectNode.put("clustersCnt", clustersCnt);
-        webSocketActor.returnData(objectNode.toString());
+        dataNode.put("option", 1);
+        dataNode.put("data", arrayNode.toString());
+        dataNode.put("timestamp", timestamp);
+        dataNode.put("repliesCnt", repliesCnt);
+        dataNode.put("pointsCnt", pointsCnt);
+        dataNode.put("clustersCnt", clustersCnt);
+        webSocketActor.returnData(dataNode.toString());
     }
 
     private void edgeCluster(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int clusteringAlgorithm, String timestamp, int zoom, int bundling, int clustering, int treeCutting) {
-        ObjectNode objectNode = objectMapper.createObjectNode();
         int edgesCnt;
         int repliesCnt = resultSetSize;
         if (clusteringAlgorithm == 0) {
-            if (this.clustering != null) {
-                HashMap<Edge, Integer> edges = new HashMap<>();
-                if (clustering == 0) {
-                    for (Edge edge : edgeSet) {
-                        if (edges.containsKey(edge)) {
-                            edges.put(edge, edges.get(edge) + 1);
-                        } else {
-                            edges.put(edge, 1);
-                        }
-                    }
-                } else {
-                    HashSet<Edge> externalEdgeSet = new HashSet<>();
-                    HashSet<Cluster> externalCluster = new HashSet<>();
-                    HashSet<Cluster> internalCluster = new HashSet<>();
-                    generateExternalEdgeSet(lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet, externalCluster, internalCluster);
-                    TreeCut treeCutInstance = new TreeCut();
-                    if (treeCutting == 1) {
-                        treeCutInstance.treeCut(this.clustering, lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet, externalCluster, internalCluster);
+            HashMap<Edge, Integer> edges = new HashMap<>();
+            if (clustering == 0) {
+                for (Edge edge : edgeSet) {
+                    if (edges.containsKey(edge)) {
+                        edges.put(edge, edges.get(edge) + 1);
                     } else {
-                        treeCutInstance.nonTreeCut(this.clustering, zoom, edges, externalEdgeSet);
+                        edges.put(edge, 1);
                     }
                 }
-                edgesCnt = edges.size();
-                objectNode.put("edgesCnt", edgesCnt);
-                if (bundling == 0) {
-                    noBundling(objectNode, edges);
+            } else {
+                HashSet<Edge> externalEdgeSet = new HashSet<>();
+                HashSet<Cluster> externalCluster = new HashSet<>();
+                HashSet<Cluster> internalCluster = new HashSet<>();
+                generateExternalEdgeSet(lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet, externalCluster, internalCluster);
+                TreeCut treeCutInstance = new TreeCut();
+                if (treeCutting == 1) {
+                    treeCutInstance.treeCut(this.clustering, lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet, externalCluster, internalCluster);
                 } else {
-                    runFDEB(zoom, objectNode, edges);
+                    treeCutInstance.nonTreeCut(this.clustering, zoom, edges, externalEdgeSet);
                 }
             }
+            edgesCnt = edges.size();
+            dataNode.put("edgesCnt", edgesCnt);
+            if (bundling == 0) {
+                noBundling(edges);
+            } else {
+                runFDEB(zoom, edges);
+            }
         } else if (clusteringAlgorithm == 1) {
-            if (iKmeans != null)
-                getKmeansEdges(zoom, bundling, clustering, objectNode, iKmeans.getParents(), iKmeans.getCenters());
+            getKmeansEdges(zoom, bundling, clustering, iKmeans.getParents(), iKmeans.getCenters());
         } else if (clusteringAlgorithm == 2) {
-            if (kmeans != null)
-                getKmeansEdges(zoom, bundling, clustering, objectNode, kmeans.getParents(), kmeans.getCenters());
+            getKmeansEdges(zoom, bundling, clustering, kmeans.getParents(), kmeans.getCenters());
         }
-        objectNode.put("repliesCnt", repliesCnt);
-        objectNode.put("option", 2);
-        objectNode.put("timestamp", timestamp);
-        webSocketActor.returnData(objectNode.toString());
+        dataNode.put("repliesCnt", repliesCnt);
+        dataNode.put("option", 2);
+        dataNode.put("timestamp", timestamp);
+        webSocketActor.returnData(dataNode.toString());
     }
 
     private void generateExternalEdgeSet(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom,
@@ -415,7 +394,7 @@ public class GraphController extends Controller {
     }
 
 
-    private void getKmeansEdges(int zoom, int bundling, int clustering, ObjectNode objectNode, HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
+    private void getKmeansEdges(int zoom, int bundling, int clustering, HashMap<models.Point, Integer> parents, ArrayList<double[]> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
         if (clustering == 0) {
             for (Edge edge : edgeSet) {
@@ -445,16 +424,15 @@ public class GraphController extends Controller {
                 }
             }
         }
-        objectNode.put("edgesCnt", edges.size());
+        dataNode.put("edgesCnt", edges.size());
         if (bundling == 0) {
-            noBundling(objectNode, edges);
+            noBundling(edges);
         } else {
-            runFDEB(zoom, objectNode, edges);
+            runFDEB(zoom, edges);
         }
     }
 
-    private void runFDEB(int zoom, ObjectNode objectNode, HashMap<Edge, Integer> edges) {
-        String json;
+    private void runFDEB(int zoom, HashMap<Edge, Integer> edges) {
         ArrayList<Point> dataNodes = new ArrayList<>();
         ArrayList<EdgeVector> dataEdges = new ArrayList<>();
         ArrayList<Integer> closeEdgeList = new ArrayList<>();
@@ -489,13 +467,11 @@ public class GraphController extends Controller {
             }
             edgeNum++;
         }
-        json = pathJson.toString();
-        objectNode.put("data", json);
-        objectNode.put("isolatedEdgesCnt", isolatedEdgesCnt);
+        dataNode.put("data", pathJson.toString());
+        dataNode.put("isolatedEdgesCnt", isolatedEdgesCnt);
     }
 
-    private void noBundling(ObjectNode objectNode, HashMap<Edge, Integer> edges) {
-        String json;
+    private void noBundling(HashMap<Edge, Integer> edges) {
         ArrayNode arrayNode = objectMapper.createArrayNode();
         for (Map.Entry<Edge, Integer> entry : edges.entrySet()) {
             ObjectNode lineNode = objectMapper.createObjectNode();
@@ -504,8 +480,7 @@ public class GraphController extends Controller {
             lineNode.put("width", entry.getValue());
             arrayNode.add(lineNode);
         }
-        json = arrayNode.toString();
-        objectNode.put("data", json);
-        objectNode.put("isolatedEdgesCnt", edges.size());
+        dataNode.put("data", arrayNode.toString());
+        dataNode.put("isolatedEdgesCnt", edges.size());
     }
 }

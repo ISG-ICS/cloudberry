@@ -32,6 +32,7 @@ public class Cluster implements Comparable<Cluster> {
             throw new IllegalArgumentException("Coordinates cannot be NaN");
         this.point = new Point(x, y);
         this.numPoints = 1;
+        this.parent = null;
         this.zoom = Integer.MAX_VALUE;
     }
 

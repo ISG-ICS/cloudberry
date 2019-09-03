@@ -12,6 +12,8 @@ public class Clustering {
     private int minZoom;
     // max zoom level in clustering tree
     private int maxZoom;
+
+    // TODO understand the number chosen
     // radius in max zoom level
     private double radius = 80;
     // extent used to calculate the radius in different zoom level
