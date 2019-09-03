@@ -172,8 +172,8 @@ public class GraphController extends Controller {
         state.close();
     }
 
-    private List<double[]> getKmeansData(ResultSet resultSet) throws SQLException {
-        List<double[]> data = new ArrayList<>();
+    private List<Point> getKmeansData(ResultSet resultSet) throws SQLException {
+        List<Point> points = new ArrayList<>();
         while (resultSet.next()) {
             resultSetSize++;
             double fromLongitude = resultSet.getDouble("from_longitude");
@@ -182,29 +182,29 @@ public class GraphController extends Controller {
             double toLatitude = resultSet.getDouble("to_latitude");
             Edge currentEdge = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
             if (edgeSet.contains(currentEdge)) continue;
-            data.add(new double[]{fromLongitude, fromLatitude});
-            data.add(new double[]{toLongitude, toLatitude});
+            points.add(new Point(fromLongitude, fromLatitude));
+            points.add(new Point(toLongitude, toLatitude));
             edgeSet.add(currentEdge);
         }
-        return data;
+        return points;
     }
 
     private void loadKmeans(ResultSet resultSet) throws SQLException {
-        List<double[]> data = getKmeansData(resultSet);
+        List<Point> points = getKmeansData(resultSet);
         if (kmeans == null) {
             kmeans = new Kmeans(17);
         }
-        kmeans.execute(data);
+        kmeans.execute(points);
     }
 
     private void loadIKmeans(ResultSet resultSet) throws SQLException {
-        List<double[]> data = getKmeansData(resultSet);
+        List<Point> points = getKmeansData(resultSet);
         if (iKmeans == null) {
             iKmeans = new IKmeans(17);
-            iKmeans.setDataSet(data);
+            iKmeans.setDataSet(points);
             iKmeans.init();
         }
-        iKmeans.execute(data);
+        iKmeans.execute(points);
     }
 
     private void loadHGC(ResultSet resultSet) throws SQLException {
@@ -276,7 +276,7 @@ public class GraphController extends Controller {
                     for (int i = 0; i < iKmeans.getK(); i++) {
                         for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
                             ObjectNode objectNode = objectMapper.createObjectNode();
-                            objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j)[0]).add(iKmeans.getAllClusters().get(i).get(j)[1]);
+                            objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j).getX()).add(iKmeans.getAllClusters().get(i).get(j).getY());
                             objectNode.put("size", 1);
                             arrayNode.add(objectNode);
                         }
@@ -288,7 +288,7 @@ public class GraphController extends Controller {
                     clustersCnt = iKmeans.getK();
                     for (int i = 0; i < iKmeans.getK(); i++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i)[0]).add(iKmeans.getCenters().get(i)[1]);
+                        objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i).getX()).add(iKmeans.getCenters().get(i).getY());
                         objectNode.put("size", iKmeans.getAllClusters().get(i).size());
                         arrayNode.add(objectNode);
                     }
@@ -303,7 +303,7 @@ public class GraphController extends Controller {
                     clustersCnt = pointsCnt;
                     for (int i = 0; i < kmeans.getDataSetLength(); i++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i)[0]).add(kmeans.getDataSet().get(i)[1]);
+                        objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i).getX()).add(kmeans.getDataSet().get(i).getY());
                         objectNode.put("size", 1);
                         arrayNode.add(objectNode);
                     }
@@ -314,7 +314,7 @@ public class GraphController extends Controller {
                     clustersCnt = kmeans.getK();
                     for (int i = 0; i < kmeans.getK(); i++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(kmeans.getCenters().get(i)[0]).add(kmeans.getCenters().get(i)[1]);
+                        objectNode.putArray("coordinates").add(kmeans.getCenters().get(i).getX()).add(kmeans.getCenters().get(i).getY());
                         objectNode.put("size", kmeans.getClusters().get(i).size());
                         arrayNode.add(objectNode);
                     }
@@ -415,7 +415,7 @@ public class GraphController extends Controller {
     }
 
 
-    private void getKmeansEdges(int zoom, int bundling, int clustering, ObjectNode objectNode, HashMap<models.Point, Integer> parents, ArrayList<double[]> center) {
+    private void getKmeansEdges(int zoom, int bundling, int clustering, ObjectNode objectNode, HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
         if (clustering == 0) {
             for (Edge edge : edgeSet) {
@@ -435,8 +435,8 @@ public class GraphController extends Controller {
                 models.Point toPoint = new models.Point(toLongitude, toLatitude);
                 int fromCluster = parents.get(fromPoint);
                 int toCluster = parents.get(toPoint);
-                Edge e = new Edge(center.get(fromCluster)[0], center.get(fromCluster)[1],
-                        center.get(toCluster)[0], center.get(toCluster)[1]
+                Edge e = new Edge(center.get(fromCluster).getX(), center.get(fromCluster).getY(),
+                        center.get(toCluster).getX(), center.get(toCluster).getY()
                 );
                 if (edges.containsKey(e)) {
                     edges.put(e, edges.get(e) + 1);

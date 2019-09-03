@@ -14,18 +14,18 @@ import java.util.Random;
 public class IKmeans {
     private Kmeans kmeans;
     private int k; // the number of clusters desired
-    private List<double[]> dataSet; // the dataset for clustering
-    private ArrayList<double[]> centers; // the list of centers of clusters
-    private List<List<double[]>> clusters; // the list of clusters for the current batch of data
-    private List<List<double[]>> allClusters; // the list of clusters for all accumulated data
+    private List<Point> dataSet; // the dataset for clustering
+    private ArrayList<Point> centers; // the list of centers of clusters
+    private List<List<Point>> clusters; // the list of clusters for the current batch of data
+    private List<List<Point>> allClusters; // the list of clusters for all accumulated data
     private int pointsCnt; // the count of points in all accumulated data
     private HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
 
-    public void setDataSet(List<double[]> dataSet) {
+    public void setDataSet(List<Point> dataSet) {
         this.dataSet = dataSet;
     }
 
-    public int getDataSetLength() {
+    private int getDataSetLength() {
         if (dataSet == null || dataSet.size() == 0) {
             return 0;
         } else {
@@ -37,11 +37,11 @@ public class IKmeans {
         return k;
     }
 
-    public List<List<double[]>> getAllClusters() {
+    public List<List<Point>> getAllClusters() {
         return allClusters;
     }
 
-    public ArrayList<double[]> getCenters() {
+    public ArrayList<Point> getCenters() {
         return centers;
     }
 
@@ -106,7 +106,7 @@ public class IKmeans {
                 }
             }
             clusters.get(minLocation).add(dataSet.get(i)); // add each point to its closest cluster
-            Point point = new Point(dataSet.get(i)[0], dataSet.get(i)[1]);
+            Point point = new Point(dataSet.get(i).getX(), dataSet.get(i).getY());
             parents.put(point, minLocation); // Map each point to the cluster it belongs to
         }
     }
@@ -118,16 +118,16 @@ public class IKmeans {
         for (int i = 0; i < k; i++) {
             int n = clusters.get(i).size();
             if (n != 0) {
-                double[] newCenter = {0, 0};
+                Point newCenter = new Point(0, 0);
                 for (int j = 0; j < n; j++) {
-                    newCenter[0] += clusters.get(i).get(j)[0];
-                    newCenter[1] += clusters.get(i).get(j)[1];
+                    newCenter.setX(newCenter.getX() + clusters.get(i).get(j).getX());
+                    newCenter.setY(newCenter.getY() + clusters.get(i).get(j).getY());
                 }
                 // Calculate the average coordinate of all points in the cluster
-                newCenter[0] += centers.get(i)[0] * allClusters.get(i).size();
-                newCenter[0] = newCenter[0] / (n + allClusters.get(i).size());
-                newCenter[1] += centers.get(i)[1] * allClusters.get(i).size();
-                newCenter[1] = newCenter[1] / (n + allClusters.get(i).size());
+                newCenter.setX(newCenter.getX() + centers.get(i).getX() * allClusters.get(i).size());
+                newCenter.setX(newCenter.getX() / (n + allClusters.get(i).size()));
+                newCenter.setY(newCenter.getY() + centers.get(i).getY() * allClusters.get(i).size());
+                newCenter.setY(newCenter.getY() / (n + allClusters.get(i).size()));
                 centers.set(i, newCenter);
             }
         }
@@ -154,7 +154,7 @@ public class IKmeans {
      * @param data the new batch of data
      */
     // TODO call init instead of reinit
-    public void execute(List<double[]> data) {
+    public void execute(List<Point> data) {
         setDataSet(data);
         if (dataSet == null || dataSet.size() == 0) {
             return;
