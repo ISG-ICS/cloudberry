@@ -264,24 +264,16 @@
                     map.addLayer(iconLayer);
                 }
 
-                function updateStatsDetail(s1, s2, s3) {
-                    document.getElementById('repliesCnt').innerHTML = s1;
-                    document.getElementById('pointsCnt').innerHTML = s2;
-                    document.getElementById('clustersCnt').innerHTML = s3;
-                }
-
                 function updatePointsStats(json) {
-                    let s1 = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
-                    let s2 = "Points Count: " + json['pointsCnt'];
-                    let s3 = "Clusters Count: " + json['clustersCnt'];
-                    updateStatsDetail(s1, s2, s3);
+                    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
+                    document.getElementById('pointsCnt').innerHTML = "Points Count: " + json['pointsCnt'];
+                    document.getElementById('clustersCnt').innerHTML = "Clusters Count: " + json['clustersCnt'];
                 }
 
                 function updateEdgesStats(json) {
-                    let s1 = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
-                    let s2 = "Edges Count: " + json['edgesCnt'];
-                    let s3 = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
-                    updateStatsDetail(s1, s2, s3);
+                    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
+                    document.getElementById('edgesCnt').innerHTML = "Edges Count: " + json['edgesCnt'];
+                    document.getElementById('bundledEdgesCnt').innerHTML = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
                 }
 
                 function renderClusterPoints(minLng, minLat, maxLng, maxLat, zoom) {
