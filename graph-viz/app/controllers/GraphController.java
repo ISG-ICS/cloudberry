@@ -460,7 +460,7 @@ public class GraphController extends Controller {
         ArrayList<Integer> closeEdgeList = new ArrayList<>();
         for (Map.Entry<Edge, Integer> entry : edges.entrySet()) {
             Edge edge = entry.getKey();
-            if (sqDistance(edge.getFromX(), edge.getFromY(), edge.getToX(), edge.getToY()) <= 0.001)
+            if (Math.pow(edge.length(), 2) <= 0.001)
                 continue;
             dataNodes.add(new Point(edge.getFromX(), edge.getFromY()));
             dataNodes.add(new Point(edge.getToX(), edge.getToY()));
@@ -507,9 +507,5 @@ public class GraphController extends Controller {
         json = arrayNode.toString();
         objectNode.put("data", json);
         objectNode.put("isolatedEdgesCnt", edges.size());
-    }
-
-    private double sqDistance(double x1, double y1, double x2, double y2) {
-        return Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2);
     }
 }

@@ -69,6 +69,10 @@ public class Edge {
                 "}";
     }
 
+    public double length() {
+        return from.distanceTo(to);
+    }
+
     public double getDegree() {
         return Math.toDegrees(Math.atan((getToY() - getFromY()) / (getToX() - getFromX())));
     }
