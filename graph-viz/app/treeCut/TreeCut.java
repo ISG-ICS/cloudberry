@@ -184,8 +184,8 @@ public class TreeCut {
      * @param edge returning edge set
      */
     private void updateEdgeSet(Clustering clustering, double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom, HashMap<Edge, Integer> edges, HashMap<Cluster, Cluster> externalClusterMap, Edge edge) {
-        Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromLongitude()), Clustering.latY(edge.getFromLatitude())), zoom);
-        Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToLongitude()), Clustering.latY(edge.getToLatitude())), zoom);
+        Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), zoom);
+        Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), zoom);
         double fromLongitude = Clustering.xLng(fromCluster.getX());
         double fromLatitude = Clustering.yLat(fromCluster.getY());
         double insideLat, insideLng, outsideLat, outsideLng;
@@ -202,7 +202,7 @@ public class TreeCut {
         }
         outsideLng = Clustering.xLng(elevatedCluster.getX());
         outsideLat = Clustering.yLat(elevatedCluster.getY());
-        Edge e = new Edge(insideLat, insideLng, outsideLat, outsideLng);
+        Edge e = new Edge(insideLng, insideLat, outsideLng, outsideLat);
         if (edges.containsKey(e)) {
             edges.put(e, edges.get(e) + 1);
         } else {
@@ -221,13 +221,13 @@ public class TreeCut {
      */
     public void nonTreeCut(Clustering clustering, int zoom, HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet) {
         for (Edge edge : externalEdgeSet) {
-            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromLongitude()), Clustering.latY(edge.getFromLatitude())), zoom);
-            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToLongitude()), Clustering.latY(edge.getToLatitude())), zoom);
+            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), zoom);
+            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), zoom);
             double fromLongitude = Clustering.xLng(fromCluster.getX());
             double fromLatitude = Clustering.yLat(fromCluster.getY());
             double toLongitude = Clustering.xLng(toCluster.getX());
             double toLatitude = Clustering.yLat(toCluster.getY());
-            Edge e = new Edge(fromLatitude, fromLongitude, toLatitude, toLongitude);
+            Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
             if (edges.containsKey(e)) {
                 edges.put(e, edges.get(e) + 1);
             } else {
