@@ -10,7 +10,6 @@ import java.util.*;
 public class Kmeans {
     private int k; // the number of clusters desired
     private int I; // the number of iterations
-    // TODO use the dataset from Point class
     private List<Point> dataSet; // the dataset for clustering
     private ArrayList<Point> centers; // the list of centers of clusters
     // TODO use list of cluster class
@@ -90,16 +89,15 @@ public class Kmeans {
      * @return the list of centers
      */
     ArrayList<Point> initCenters(int dataSetLength, List<Point> dataSet) {
-        Random random = new Random();
         ArrayList<Point> center = new ArrayList<>();
         int[] randoms = new int[k];
         boolean flag;
-        int temp = random.nextInt(dataSetLength);
+        int temp = (int) (Math.random() * dataSetLength);
         randoms[0] = temp;
         for (int i = 1; i < k; i++) {
             flag = true;
             while (flag) {
-                temp = random.nextInt(dataSetLength);
+                temp = (int) (Math.random() * dataSetLength);
                 int j = 0;
                 while (j < i) {
                     if (temp == randoms[j]) {
@@ -155,7 +153,6 @@ public class Kmeans {
      */
     // TODO change to Math.random()
     private void clusterSet() {
-        Random random = new Random();
         for (int i = 0; i < getDataSetLength(); i++) {
             double currentDistance;
             double minDistance = distance(dataSet.get(i), centers.get(0));
@@ -166,7 +163,7 @@ public class Kmeans {
                     minDistance = currentDistance;
                     minLocation = j;
                 } else if (currentDistance == minDistance) {
-                    if (random.nextInt(10) < 5) {
+                    if (Math.random() < 0.5) {
                         minLocation = j;
                     }
                 }

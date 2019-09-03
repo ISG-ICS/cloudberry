@@ -5,7 +5,6 @@ import models.Point;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Incremental K-Means Algorithm
@@ -89,7 +88,6 @@ public class IKmeans {
      * Add each point to its closest cluster
      */
     private void clusterSet() {
-        Random random = new Random();
         for (int i = 0; i < getDataSetLength(); i++) {
             double currentDistance;
             double minDistance = kmeans.distance(dataSet.get(i), centers.get(0));
@@ -100,7 +98,7 @@ public class IKmeans {
                     minDistance = currentDistance;
                     minLocation = j;
                 } else if (currentDistance == minDistance) {
-                    if (random.nextInt(10) < 5) {
+                    if (Math.random() < 0.5) {
                         minLocation = j;
                     }
                 }
