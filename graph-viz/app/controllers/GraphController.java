@@ -271,7 +271,7 @@ public class GraphController extends Controller {
                 for (int i = 0; i < iKmeans.getK(); i++) {
                     for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
                         ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j)[0]).add(iKmeans.getAllClusters().get(i).get(j)[1]);
+                        objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j).getX()).add(iKmeans.getAllClusters().get(i).get(j).getY());
                         objectNode.put("size", 1);
                         arrayNode.add(objectNode);
                     }
@@ -281,7 +281,7 @@ public class GraphController extends Controller {
                 clustersCnt = iKmeans.getK();
                 for (int i = 0; i < iKmeans.getK(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i)[0]).add(iKmeans.getCenters().get(i)[1]);
+                    objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i).getX()).add(iKmeans.getCenters().get(i).getY());
                     objectNode.put("size", iKmeans.getAllClusters().get(i).size());
                     arrayNode.add(objectNode);
                 }
@@ -292,7 +292,7 @@ public class GraphController extends Controller {
                 clustersCnt = pointsCnt;
                 for (int i = 0; i < kmeans.getDataSetLength(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i)[0]).add(kmeans.getDataSet().get(i)[1]);
+                    objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i).getX()).add(kmeans.getDataSet().get(i).getY());
                     objectNode.put("size", 1);
                     arrayNode.add(objectNode);
                 }
@@ -301,7 +301,7 @@ public class GraphController extends Controller {
                 clustersCnt = kmeans.getK();
                 for (int i = 0; i < kmeans.getK(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(kmeans.getCenters().get(i)[0]).add(kmeans.getCenters().get(i)[1]);
+                    objectNode.putArray("coordinates").add(kmeans.getCenters().get(i).getX()).add(kmeans.getCenters().get(i).getY());
                     objectNode.put("size", kmeans.getClusters().get(i).size());
                     arrayNode.add(objectNode);
                 }
@@ -394,7 +394,7 @@ public class GraphController extends Controller {
     }
 
 
-    private void getKmeansEdges(int zoom, int bundling, int clustering, HashMap<models.Point, Integer> parents, ArrayList<double[]> center) {
+    private void getKmeansEdges(int zoom, int bundling, int clustering, HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
         if (clustering == 0) {
             for (Edge edge : edgeSet) {
