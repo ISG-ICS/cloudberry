@@ -136,7 +136,7 @@ public class KdTree {
                         rect = new Rectangle(n.getRect().getMinX(), n.getRect().getMinY(), n.getPoint().getX(), n.getRect().getMaxY());
                     } else {
                         // point at bottom of current point
-                        rect = new Rectangle(n.getRect().getMinX(), n.getRect().getMinY(), n.getRect().getMaxX(), n.getPoint().y());
+                        rect = new Rectangle(n.getRect().getMinX(), n.getRect().getMinY(), n.getRect().getMaxX(), n.getPoint().getY());
                     }
                     // create new node to be inserted to
                     Node leftNode = new Node(p, !n.vertical(), null, null, rect);
@@ -155,7 +155,7 @@ public class KdTree {
                         rect = new Rectangle(n.getPoint().getX(), n.getRect().getMinY(), n.getRect().getMaxX(), n.getRect().getMaxY());
                     } else {
                         // top of horizontal point
-                        rect = new Rectangle(n.getRect().getMinX(), n.getPoint().y(), n.getRect().getMaxX(), n.getRect().getMaxY());
+                        rect = new Rectangle(n.getRect().getMinX(), n.getPoint().getY(), n.getRect().getMaxX(), n.getRect().getMaxY());
                     }
                     Node rightNode = new Node(p, !n.vertical(), null, null, rect);
                     n.setRightNode(rightNode);
@@ -254,7 +254,7 @@ public class KdTree {
         if (rect.contains(p))
             rangeList.add(p);
 
-        double pointCoord = p.y();
+        double pointCoord = p.getY();
         double rectMin = rect.getMinY();
         double rectMax = rect.getMaxY();
         if (n.vertical()) {
@@ -273,7 +273,7 @@ public class KdTree {
      * find all the cluster in certain circle
      *
      * @param x getX coordinate of center of circle
-     * @param y y coordinate of center of circle
+     * @param y getY coordinate of center of circle
      * @param r radius of circle
      * @return array of cluster
      */
@@ -291,7 +291,7 @@ public class KdTree {
         if (p.distanceTo(new Cluster(x, y)) <= r) {
             rangeList.add(p);
         }
-        double pointCoord = p.y();
+        double pointCoord = p.getY();
         double circleMin = y - r;
         double circleMax = y + r;
         if (n.vertical()) {

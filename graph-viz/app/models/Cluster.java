@@ -9,17 +9,15 @@ public class Cluster implements Comparable<Cluster> {
     /**
      * Compares two points by getX-coordinate.
      */
-    public static final Comparator<Cluster> X_ORDER = new XOrder();
+    static final Comparator<Cluster> X_ORDER = new XOrder();
 
     /**
-     * Compares two points by y-coordinate.
+     * Compares two points by getY-coordinate.
      */
-    public static final Comparator<Cluster> Y_ORDER = new YOrder();
-    //TODO using Point class
-    private double x;    // getX coordinate
-    private double y;    // y coordinate
-    private int numPoints = 0;
-    private int zoom = 0;
+    static final Comparator<Cluster> Y_ORDER = new YOrder();
+    private Point point;
+    private int numPoints;
+    private int zoom;
     public Cluster parent;
 
     public int getZoom() {
@@ -43,17 +41,13 @@ public class Cluster implements Comparable<Cluster> {
             throw new IllegalArgumentException("Coordinates must be finite");
         if (Double.isNaN(x) || Double.isNaN(y))
             throw new IllegalArgumentException("Coordinates cannot be NaN");
-        if (x == 0.0) x = 0.0;  // convert -0.0 to +0.0
-        if (y == 0.0) y = 0.0;  // convert -0.0 to +0.0
-        this.x = x;
-        this.y = y;
+        this.point = new Point(x, y);
         this.numPoints = 1;
         this.zoom = Integer.MAX_VALUE;
     }
 
     public Cluster(double x, double y, Cluster parent, int numPoints) {
-        this.x = x;
-        this.y = y;
+        this.point = new Point(x, y);
         this.parent = parent;
         this.numPoints = numPoints;
         this.zoom = Integer.MAX_VALUE;
@@ -65,54 +59,54 @@ public class Cluster implements Comparable<Cluster> {
      * @return the getX-coordinate
      */
     public double getX() {
-        return x;
+        return point.getX();
     }
 
     /**
-     * Returns the y-coordinate.
+     * Returns the getY-coordinate.
      *
-     * @return the y-coordinate
+     * @return the getY-coordinate
      */
-    public double y() {
-        return y;
+    public double getY() {
+        return point.getY();
     }
 
     public void setX(double x) {
-        this.x = x;
+        this.point.setX(x);
     }
 
     public void setY(double y) {
-        this.y = y;
+        this.point.setY(y);
     }
 
     public double distanceTo(Cluster that) {
-        double dx = this.x - that.x;
-        double dy = this.y - that.y;
+        double dx = this.getX() - that.getX();
+        double dy = this.getY() - that.getY();
         return Math.sqrt(dx * dx + dy * dy);
     }
 
     public int compareTo(Cluster that) {
-        if (this.y < that.y) return -1;
-        if (this.y > that.y) return +1;
-        if (this.x < that.x) return -1;
-        if (this.x > that.x) return +1;
+        if (this.getY() < that.getY()) return -1;
+        if (this.getY() > that.getY()) return +1;
+        if (this.getX() < that.getX()) return -1;
+        if (this.getX() > that.getX()) return +1;
         return 0;
     }
 
     // compare points according to their getX-coordinate
     private static class XOrder implements Comparator<Cluster> {
         public int compare(Cluster p, Cluster q) {
-            if (p.x < q.x) return -1;
-            if (p.x > q.x) return +1;
+            if (p.getX() < q.getX()) return -1;
+            if (p.getX() > q.getX()) return +1;
             return 0;
         }
     }
 
-    // compare points according to their y-coordinate
+    // compare points according to their getY-coordinate
     private static class YOrder implements Comparator<Cluster> {
         public int compare(Cluster p, Cluster q) {
-            if (p.y < q.y) return -1;
-            if (p.y > q.y) return +1;
+            if (p.getY() < q.getY()) return -1;
+            if (p.getY() > q.getY()) return +1;
             return 0;
         }
     }
@@ -122,16 +116,16 @@ public class Cluster implements Comparable<Cluster> {
         if (other == null) return false;
         if (other.getClass() != this.getClass()) return false;
         Cluster that = (Cluster) other;
-        return this.x == that.x && this.y == that.y;
+        return this.getX() == that.getX() && this.getY() == that.getY();
     }
 
     public String toString() {
-        return String.format("(%.2f, %.2f), zoom: %d, numPoints: %d", Clustering.xLng(x), Clustering.yLat(y), zoom, numPoints);
+        return String.format("(%.2f, %.2f), zoom: %d, numPoints: %d", Clustering.xLng(getX()), Clustering.yLat(getY()), zoom, numPoints);
     }
 
     public int hashCode() {
-        int hashX = ((Double) x).hashCode();
-        int hashY = ((Double) y).hashCode();
+        int hashX = ((Double) getX()).hashCode();
+        int hashY = ((Double) getY()).hashCode();
         return 31 * hashX + hashY;
     }
 }

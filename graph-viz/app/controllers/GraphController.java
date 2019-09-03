@@ -261,7 +261,7 @@ public class GraphController extends Controller {
                 clustersCnt = clusters.size();
                 for (Cluster cluster : clusters) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.y()));
+                    objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.getY()));
                     objectNode.put("size", cluster.getNumPoints());
                     arrayNode.add(objectNode);
                 }
@@ -387,9 +387,9 @@ public class GraphController extends Controller {
             Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromLongitude()), Clustering.latY(edge.getFromLatitude())), zoom);
             Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToLongitude()), Clustering.latY(edge.getToLatitude())), zoom);
             double fromLongitude = Clustering.xLng(fromCluster.getX());
-            double fromLatitude = Clustering.yLat(fromCluster.y());
+            double fromLatitude = Clustering.yLat(fromCluster.getY());
             double toLongitude = Clustering.xLng(toCluster.getX());
-            double toLatitude = Clustering.yLat(toCluster.y());
+            double toLatitude = Clustering.yLat(toCluster.getY());
             boolean fromWithinRange = lowerLongitude <= fromLongitude && fromLongitude <= upperLongitude
                     && lowerLatitude <= fromLatitude && fromLatitude <= upperLatitude;
             boolean toWithinRange = lowerLongitude <= toLongitude && toLongitude <= upperLongitude

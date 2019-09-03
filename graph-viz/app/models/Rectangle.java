@@ -14,19 +14,19 @@ public class Rectangle {
     }
 
     // accessor methods for 4 coordinates
-    public double getMinX() {
+    double getMinX() {
         return minPoint.getX();
     }
 
-    public double getMinY() {
+    double getMinY() {
         return minPoint.getY();
     }
 
-    public double getMaxX() {
+    double getMaxX() {
         return maxPoint.getX();
     }
 
-    public double getMaxY() {
+    double getMaxY() {
         return maxPoint.getY();
     }
 
@@ -45,19 +45,19 @@ public class Rectangle {
     }
 
     // distance squared from p to closest point on this axis-aligned rectangle
-    public double distanceSquaredTo(Cluster p) {
+    private double distanceSquaredTo(Cluster p) {
         double dx = 0.0, dy = 0.0;
         if (p.getX() < getMinX()) dx = p.getX() - getMinX();
         else if (p.getX() > getMaxX()) dx = p.getX() - getMaxX();
-        if (p.y() < getMinY()) dy = p.y() - getMinY();
-        else if (p.y() > getMaxY()) dy = p.y() - getMaxY();
+        if (p.getY() < getMinY()) dy = p.getY() - getMinY();
+        else if (p.getY() > getMaxY()) dy = p.getY() - getMaxY();
         return dx * dx + dy * dy;
     }
 
     // does this axis-aligned rectangle contain p?
     public boolean contains(Cluster p) {
         return (p.getX() >= getMinX()) && (p.getX() <= getMaxX())
-                && (p.y() >= getMinY()) && (p.y() <= getMaxY());
+                && (p.getY() >= getMinY()) && (p.getY() <= getMaxY());
     }
 
     // are the two axis-aligned rectangles equal?
@@ -66,9 +66,7 @@ public class Rectangle {
         if (y == null) return false;
         if (y.getClass() != this.getClass()) return false;
         Rectangle that = (Rectangle) y;
-        if (this.minPoint != that.minPoint) return false;
-        if (this.maxPoint != that.maxPoint) return false;
-        return true;
+        return this.minPoint == that.minPoint && this.maxPoint == that.maxPoint;
     }
 
     // return a string representation of this axis-aligned rectangle

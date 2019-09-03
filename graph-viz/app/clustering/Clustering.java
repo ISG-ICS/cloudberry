@@ -55,7 +55,7 @@ public class Clustering {
      */
     public void load(ArrayList<Cluster> points) {
         for (Cluster point : points) {
-            insert(new Cluster(lngX(point.getX()), latY(point.y()), null, 1));
+            insert(new Cluster(lngX(point.getX()), latY(point.getY()), null, 1));
         }
     }
 
@@ -68,10 +68,10 @@ public class Clustering {
         trees[maxZoom + 1].insert(point);
         for (int z = maxZoom; z >= minZoom; z--) {
             // search if there are any neighbor near this point
-            ArrayList<Cluster> neighbors = trees[z].rangeRadius(point.getX(), point.y(), getZoomRadius(z));
+            ArrayList<Cluster> neighbors = trees[z].rangeRadius(point.getX(), point.getY(), getZoomRadius(z));
             // if no, insert it into kd-tree
             if (neighbors.isEmpty()) {
-                Cluster c = new Cluster(point.getX(), point.y());
+                Cluster c = new Cluster(point.getX(), point.getY());
                 c.setZoom(z);
                 point.parent = c;
                 trees[z].insert(c);
@@ -83,13 +83,13 @@ public class Clustering {
                 int totNumOfPoints = 0;
                 for (int i = 0; i < neighbors.size(); i++) {
                     neighbor = neighbors.get(i);
-                    if (neighbor.getX() != point.getX() || neighbor.y() != point.y()) continue;
+                    if (neighbor.getX() != point.getX() || neighbor.getY() != point.getY()) continue;
                     totNumOfPoints += neighbor.getNumPoints();
                 }
                 double rand = Math.random();
                 for (int i = 0; i < neighbors.size(); i++) {
                     neighbor = neighbors.get(i);
-                    if (neighbor.getX() != point.getX() || neighbor.y() != point.y()) continue;
+                    if (neighbor.getX() != point.getX() || neighbor.getY() != point.getY()) continue;
                     double probability = neighbor.getNumPoints() * 1.0 / totNumOfPoints;
                     if (rand < probability) {
                         break;
@@ -102,7 +102,7 @@ public class Clustering {
                 // update its parents
                 while (neighbor != null) {
                     double wx = neighbor.getX() * neighbor.getNumPoints() + point.getX();
-                    double wy = neighbor.y() * neighbor.getNumPoints() + point.y();
+                    double wy = neighbor.getY() * neighbor.getNumPoints() + point.getY();
                     neighbor.setNumPoints(neighbor.getNumPoints() + 1);
                     neighbor.setX(wx / neighbor.getNumPoints());
                     neighbor.setY(wy / neighbor.getNumPoints());

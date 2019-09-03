@@ -187,7 +187,7 @@ public class TreeCut {
         Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromLongitude()), Clustering.latY(edge.getFromLatitude())), zoom);
         Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToLongitude()), Clustering.latY(edge.getToLatitude())), zoom);
         double fromLongitude = Clustering.xLng(fromCluster.getX());
-        double fromLatitude = Clustering.yLat(fromCluster.y());
+        double fromLatitude = Clustering.yLat(fromCluster.getY());
         double insideLat, insideLng, outsideLat, outsideLng;
         Cluster elevatedCluster;
         if (lowerLongitude <= fromLongitude && fromLongitude <= upperLongitude
@@ -197,11 +197,11 @@ public class TreeCut {
             elevatedCluster = externalClusterMap.get(toCluster);
         } else {
             insideLng = Clustering.xLng(toCluster.getX());
-            insideLat = Clustering.yLat(toCluster.y());
+            insideLat = Clustering.yLat(toCluster.getY());
             elevatedCluster = externalClusterMap.get(fromCluster);
         }
         outsideLng = Clustering.xLng(elevatedCluster.getX());
-        outsideLat = Clustering.yLat(elevatedCluster.y());
+        outsideLat = Clustering.yLat(elevatedCluster.getY());
         Edge e = new Edge(insideLat, insideLng, outsideLat, outsideLng);
         if (edges.containsKey(e)) {
             edges.put(e, edges.get(e) + 1);
@@ -224,9 +224,9 @@ public class TreeCut {
             Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromLongitude()), Clustering.latY(edge.getFromLatitude())), zoom);
             Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToLongitude()), Clustering.latY(edge.getToLatitude())), zoom);
             double fromLongitude = Clustering.xLng(fromCluster.getX());
-            double fromLatitude = Clustering.yLat(fromCluster.y());
+            double fromLatitude = Clustering.yLat(fromCluster.getY());
             double toLongitude = Clustering.xLng(toCluster.getX());
-            double toLatitude = Clustering.yLat(toCluster.y());
+            double toLatitude = Clustering.yLat(toCluster.getY());
             Edge e = new Edge(fromLatitude, fromLongitude, toLatitude, toLongitude);
             if (edges.containsKey(e)) {
                 edges.put(e, edges.get(e) + 1);
