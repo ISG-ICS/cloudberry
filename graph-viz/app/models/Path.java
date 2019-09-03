@@ -3,18 +3,17 @@ package models;
 import java.util.ArrayList;
 
 public class Path {
-    // TODO rename alv
-    private ArrayList<Point> alv;
+    private ArrayList<Point> path;
 
     public Path() {
-        alv = new ArrayList<>();
+        path = new ArrayList<>();
     }
 
-    public void setAlv(ArrayList<Point> alv) {
-        this.alv = alv;
+    public void setPath(ArrayList<Point> path) {
+        this.path = path;
     }
 
-    public ArrayList<Point> getAlv() {
-        return alv;
+    public ArrayList<Point> getPath() {
+        return path;
     }
 }
