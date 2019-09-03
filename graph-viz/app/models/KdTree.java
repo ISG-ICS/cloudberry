@@ -1,6 +1,5 @@
 package models;
 
-import java.util.Comparator;
 import java.util.ArrayList;
 
 public class KdTree {
@@ -118,16 +117,16 @@ public class KdTree {
     }
 
     private void split(Cluster p, Node n) {
-        Comparator<Cluster> comparator;
+        boolean flag;
         // go to the left if point left to vertical point or below a horizontal point
         while (n != null) {
             // if we are at a vertical node
             if (n.vertical()) {
-                comparator = Cluster.X_ORDER;
+                flag = p.getX() < n.getPoint().getX();
             } else {
-                comparator = Cluster.Y_ORDER;
+                flag = p.getY() < n.getPoint().getY();
             }
-            if (comparator.compare(p, n.getPoint()) < 0) {
+            if (flag) {
                 // if the left point is null then create new node and set it
                 if (n.getLeft() == null) {
                     Rectangle rect;
@@ -188,14 +187,14 @@ public class KdTree {
             return true;
         }
 
-        Comparator<Cluster> comparator;
+        boolean flag;
         if (node.vertical()) {
-            comparator = Cluster.X_ORDER;
+            flag = point.getX() < nPoint.getX();
         } else {
-            comparator = Cluster.Y_ORDER;
+            flag = point.getY() < nPoint.getY();
         }
 
-        if (comparator.compare(point, nPoint) < 0) {
+        if (flag) {
             return containsRecursive(node.getLeft(), point);
         } else {
             return containsRecursive(node.getRight(), point);
@@ -220,14 +219,14 @@ public class KdTree {
         if (node.getPoint().equals(point)) {
             return node.getPoint();
         }
-        Comparator<Cluster> comparator;
+        boolean flag;
         if (node.vertical()) {
-            comparator = Cluster.X_ORDER;
+            flag = point.getX() < nPoint.getX();
         } else {
-            comparator = Cluster.Y_ORDER;
+            flag = point.getY() < nPoint.getY();
         }
 
-        if (comparator.compare(point, nPoint) < 0) {
+        if (flag) {
             return findPointRecursive(node.getLeft(), point);
         } else {
             return findPointRecursive(node.getRight(), point);

@@ -2,19 +2,8 @@ package models;
 
 import clustering.Clustering;
 
-import java.util.Comparator;
-
 public class Cluster implements Comparable<Cluster> {
     // TODO don't use zoom in Kmeans class, in Kmeans, just use this class
-    /**
-     * Compares two points by getX-coordinate.
-     */
-    static final Comparator<Cluster> X_ORDER = new XOrder();
-
-    /**
-     * Compares two points by getY-coordinate.
-     */
-    static final Comparator<Cluster> Y_ORDER = new YOrder();
     private Point point;
     private int numPoints;
     private int zoom;
@@ -91,24 +80,6 @@ public class Cluster implements Comparable<Cluster> {
         if (this.getX() < that.getX()) return -1;
         if (this.getX() > that.getX()) return +1;
         return 0;
-    }
-
-    // compare points according to their getX-coordinate
-    private static class XOrder implements Comparator<Cluster> {
-        public int compare(Cluster p, Cluster q) {
-            if (p.getX() < q.getX()) return -1;
-            if (p.getX() > q.getX()) return +1;
-            return 0;
-        }
-    }
-
-    // compare points according to their getY-coordinate
-    private static class YOrder implements Comparator<Cluster> {
-        public int compare(Cluster p, Cluster q) {
-            if (p.getY() < q.getY()) return -1;
-            if (p.getY() > q.getY()) return +1;
-            return 0;
-        }
     }
 
     public boolean equals(Object other) {

@@ -4,7 +4,9 @@ import java.util.Objects;
 
 public class Edge {
 
+    // from Point of edge
     private Point from;
+    // to Point of edge
     private Point to;
 
     public Edge(double fromX, double fromY, double toX, double toY) {
