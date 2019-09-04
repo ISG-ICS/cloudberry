@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  *
  * For this screen: data structures in this algorithm have the following value:
  * externalCluster: [E, G, H]
- * internalCluster: [A, B, C, D]
+ * internalCluster: [A, B, C, D, F]
  * externalAncestorToChildren: [X->(E), Y->(G), V->(H)]
  * internalAncestor: [W, X, Y, Z]
  * externalChildToAncestor: [E -> E, G -> G, H->V]

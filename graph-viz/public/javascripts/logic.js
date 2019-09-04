@@ -1,4 +1,7 @@
+/* specify mapbox token */
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
+
+/* mapbox object */
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v9',
@@ -7,15 +10,21 @@ const map = new mapboxgl.Map({
     maxZoom: 17,
     minZoom: 0
 });
-// use timestamp to label every sending request
+
+/* use timestamp to label every sending request */
 let currentTimestamp;
+/* WebSocket object */
 let socket;
-// zoom level after last time
+/* zoom level after last time */
 let zoomLevel = Math.floor(map.getZoom());
-// id for the timer used to send heartbeat pack of WebSocket
+/* id for the timer used to send heartbeat pack of WebSocket */
 let timerId = 0;
+/* keyword of query */
 let query = "";
 
+/**
+ * get the screen status and store the result in a json
+ */
 function getScreenStatus() {
     let bounds = map.getBounds();
     let ne = bounds.getNorthEast();
@@ -29,14 +38,23 @@ function getScreenStatus() {
     };
 }
 
-let x;
+/**
+ binding function to move end action
+ */
 map.on("moveend", () => {
     statusChange("move");
 });
+
+/**
+ * binding function to zoom end action
+ */
 map.on('zoomend', () => {
     statusChange("zoom");
 });
 
+/**
+ * get the clustering algorithm
+ */
 function getClusteringAlgorithm() {
     const algorithms = {
         "HGC": 0,
@@ -46,6 +64,10 @@ function getClusteringAlgorithm() {
     return algorithms[document.getElementById("clusteringAlgorithm").value];
 }
 
+/**
+ * get the choice for certain checkbox with id = elementId
+ * @param elementId id of the target html element
+ */
 function getChoice(elementId) {
     let choices = {
         true: 1,
@@ -53,28 +75,42 @@ function getChoice(elementId) {
     };
     return choices[document.getElementById(elementId).checked];
 }
-
-function sendEdgesRequest(minLng, minLat, maxLng, maxLat, zoom) {
-    sendingRequest(minLng, minLat, maxLng, maxLat, zoom, 2);
+/**
+ * send the edge (bundle, tree cut) request to the middle layer
+ */
+function sendEdgesRequest() {
+    sendingRequest(undefined, undefined, 2);
 }
 
-function sendClusterRequest(minLng, minLat, maxLng, maxLat, zoom) {
+/**
+ * send the cluster (point) request to the middle layer
+ */
+function sendClusterRequest() {
     let clusteringControl = getChoice("cluster");
+    let zoom = undefined;
+    // if cluster is not selected, directly use the lowest zoom level
     if (clusteringControl === 0) {
         zoom = 18;
     }
-    sendingRequest(minLng, minLat, maxLng, maxLat, zoom, 1);
+    sendingRequest(zoom, undefined, 1);
 }
 
-function sendingRequest(minLng, minLat, maxLng, maxLat, zoom, option) {
-    if (socket === undefined) {
-        return;
-    }
+/**
+ * construct and send the request's json string
+ */
+function sendingRequest(zoom, date, option) {
+    let status = getScreenStatus();
+    let minLng = status['minLng'];
+    let minLat = status['minLat'];
+    let maxLng = status['maxLng'];
+    let maxLat = status['maxLat'];
+    if (zoom === undefined) zoom = status['currentZoom'];
+    if (socket === undefined) return;
     const clusteringAlgorithm = getClusteringAlgorithm();
     let clusteringControl = getChoice("cluster");
     let bundlingControl = getChoice("bundle");
     let cutControl = getChoice("treeCut");
-    const sendingObj = {
+    let sendingObj = {
         query: query,
         lowerLongitude: minLng,
         upperLongitude: maxLng,
@@ -88,13 +124,20 @@ function sendingRequest(minLng, minLat, maxLng, maxLat, zoom, option) {
         timestamp: currentTimestamp,
         option: option
     };
+    if (date !== undefined) {
+        sendingObj['date'] = date;
+    }
     const sendingJSON = JSON.stringify(sendingObj);
     socket.send(sendingJSON);
 }
 
-function receiveClusterEdges(data) {
-    const iconLayer = new MapboxLayer({
-        id: 'edgeCluster',
+/**
+ * Draw the layer after receiving edge data
+ * @param data received edge data
+ */
+function receiveEdges(data) {
+    const edgeLayer = new MapboxLayer({
+        id: 'edge',
         type: LineLayer,
         opacity: 0.1,
         data: data,
@@ -106,10 +149,14 @@ function receiveClusterEdges(data) {
         },
         getColor: [57, 73, 171]
     });
-    removeEdgeClusterLayer();
-    map.addLayer(iconLayer);
+    removeEdgeLayer();
+    map.addLayer(edgeLayer);
 }
 
+/**
+ * Draw the layer after receiving cluster data
+ * @param data received cluster data
+ */
 function receiveClusterPoints(data) {
     const iconLayer = new MapboxLayer({
         id: 'cluster',
@@ -130,91 +177,111 @@ function receiveClusterPoints(data) {
     map.addLayer(iconLayer);
 }
 
+/**
+ *
+ * @param json
+ */
 function updatePointsStats(json) {
     document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
     document.getElementById('pointsCnt').innerHTML = "Points Count: " + json['pointsCnt'];
     document.getElementById('clustersCnt').innerHTML = "Clusters Count: " + json['clustersCnt'];
 }
 
+/**
+ *
+ * @param json
+ */
 function updateEdgesStats(json) {
     document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
     document.getElementById('edgesCnt').innerHTML = "Edges Count: " + json['edgesCnt'];
     document.getElementById('bundledEdgesCnt').innerHTML = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
 }
 
-function removeEdgeClusterLayer() {
-    if (map.getLayer('edgeCluster') !== undefined) {
-        map.removeLayer('edgeCluster');
+/**
+ * remove edge layer from the map
+ */
+function removeEdgeLayer() {
+    if (map.getLayer('edge') !== undefined) {
+        map.removeLayer('edge');
     }
 }
 
+/**
+ * remove cluster layer from the map
+ */
 function removeClusterLayer() {
     if (map.getLayer('cluster') !== undefined) {
         map.removeLayer('cluster');
     }
 }
 
+/**
+ * remove both layers
+ */
 function removeLayer() {
-    removeEdgeClusterLayer();
+    removeEdgeLayer();
     removeClusterLayer();
 }
 
+/**
+ * draw graph function associated with the show button in the main page
+ */
 function drawGraph() {
     removeLayer();
     query = document.getElementById("keyword-textbox").value;
     socket = new WebSocket("ws://localhost:9000/replies");
 
-    socket.onopen = function (e) {
+    /**
+     * socket on open function, sending the first batch request of the incremental query
+     */
+    socket.onopen = function () {
         currentTimestamp = Date.now();
-        const clusteringAlgorithm = getClusteringAlgorithm();
-        const sendingObj = {
-            query: query,
-            clusteringAlgorithm: clusteringAlgorithm,
-            timestamp: currentTimestamp,
-            option: 0
-        };
-        const sendingJSON = JSON.stringify(sendingObj);
-        socket.send(sendingJSON);
+        sendingRequest(undefined, undefined, 0);
         keepAlive();
     };
 
+    /**
+     * function for socket open event, sending the first batch request of the incremental query
+     * @param event the event associated with the message receiving action, which carries the data
+     */
     socket.onmessage = function (event) {
         let json = JSON.parse(event.data);
         let option = json['option'];
         let timestamp = json['timestamp'];
-        // deal with package that has wrong timestamp (outdated packages)
+        // drop packages that has wrong timestamp (outdated packages)
         if (timestamp !== currentTimestamp.toString()) {
             console.log('data is dropped');
             return;
         }
+        // incremental response result
         if (option === 0) {
             let stopStatus = json['flag'];
             let date = json['date'];
-            let clusteringAlgorithm = getClusteringAlgorithm();
+            // not finished, continue sending request
             if (stopStatus !== 'Y') {
-                const sendingObj = {
-                    query: query,
-                    clusteringAlgorithm: clusteringAlgorithm,
-                    date: date,
-                    timestamp: currentTimestamp,
-                    option: 0
-                };
-                const sendingJSON = JSON.stringify(sendingObj);
-                socket.send(sendingJSON);
+                sendingRequest(undefined, date, 0);
             }
             statusChange("incremental");
-        } else if (option === 1) {
+        }
+        // cluster response result
+        else if (option === 1) {
             updatePointsStats(json);
             data = JSON.parse(json['data']);
             receiveClusterPoints(data);
-        } else {
+        }
+        // edge response result
+        else {
             updateEdgesStats(json);
             data = JSON.parse(json['data']);
-            receiveClusterEdges(data);
+            receiveEdges(data);
         }
     };
 }
 
+/**
+ * handler function for all events associated with the checkbox / map
+ * @param changeEvent
+ */
 function statusChange(changeEvent) {
     let status = getScreenStatus();
     let pointStatus = getChoice("point");
@@ -225,33 +292,44 @@ function statusChange(changeEvent) {
     let pointDraw = 0;
     let edgeDraw = 0;
     if (changeEvent === 'point' || changeEvent === 'cluster' || changeEvent === 'treeCut' || changeEvent === 'incremental') {
+        // select cluster checkbox without select point, uncheck the cluster and send alert
         if (clusterStatus && !pointStatus) {
             alert("Please check cluster with points.");
             $('#cluster').prop('checked', false);
             clusterStatus = 0;
         }
+        // select treecut checkbox without select cluster, uncheck the treecut and send alert
         if (!clusterStatus && treeCutStatus) {
             alert("Please select tree cut with cluster and edge.");
             $('#treeCut').prop('checked', false);
         }
+        // if cluster or point checkbox is selected, call the function to send cluster request
+        // otherwise remove the cluster layer
         if (clusterStatus || pointStatus) pointDraw = 1;
         else removeClusterLayer();
+        // when conversion happens between cluster and point, edge need to be redrawed, call the function to send edge request
         if (edgeStatus) edgeDraw = 1;
     }
     if (changeEvent === 'edge' || changeEvent === 'bundle' || changeEvent === 'treeCut' || changeEvent === 'incremental') {
+        // select bundle checkbox without select edge, uncheck the bundle and send alert
         if (bundleStatus && !edgeStatus) {
             alert("Please check bundle with edge.");
             $('#bundle').prop('checked', false);
             bundleStatus = 0;
         }
+        // select tree cut checkbox without select edge, uncheck the tree cut and send alert
         if (!edgeStatus && treeCutStatus) {
             alert("Please select tree cut with cluster and edge.");
             $('#treeCut').prop('checked', false);
             treeCutStatus = 0;
         }
+        // if bundle or edge or tree cut checkbox is selected, call the function to send edge request
+        // otherwise remove the edge layer
         if (bundleStatus || edgeStatus || treeCutStatus) edgeDraw = 1;
-        else removeEdgeClusterLayer();
+        else removeEdgeLayer();
     }
+    // for map status change event, call the function to send edge request, meanwhile record the current zoom level
+    // the recorded zoom level will be used for the detection of the zoom level change
     if (changeEvent === 'move' || (changeEvent === 'zoom' && zoomLevel !== status['currentZoom'])) {
         if (pointStatus) pointDraw = 1;
         if (edgeStatus) edgeDraw = 1;
