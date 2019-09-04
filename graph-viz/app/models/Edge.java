@@ -6,6 +6,15 @@ public class Edge {
 
     // from Point of edge
     private Point from;
+
+    public Point getFromPoint() {
+        return from;
+    }
+
+    public Point getToPoint() {
+        return to;
+    }
+
     // to Point of edge
     private Point to;
 

@@ -365,19 +365,16 @@ public class GraphController extends Controller {
     }
 
     private void runFDEB(HashMap<Edge, Integer> edges) {
-        ArrayList<Point> dataNodes = new ArrayList<>();
-        ArrayList<EdgeVector> dataEdges = new ArrayList<>();
+        ArrayList<Edge> dataEdges = new ArrayList<>();
         ArrayList<Integer> closeEdgeList = new ArrayList<>();
         for (Map.Entry<Edge, Integer> entry : edges.entrySet()) {
             Edge edge = entry.getKey();
             if (Math.pow(edge.length(), 2) <= 0.001)
                 continue;
-            dataNodes.add(new Point(edge.getFromX(), edge.getFromY()));
-            dataNodes.add(new Point(edge.getToX(), edge.getToY()));
-            dataEdges.add(new EdgeVector(dataNodes.size() - 2, dataNodes.size() - 1));
+            dataEdges.add(edge);
             closeEdgeList.add(entry.getValue());
         }
-        ForceBundling forceBundling = new ForceBundling(dataNodes, dataEdges);
+        ForceBundling forceBundling = new ForceBundling(dataEdges);
         forceBundling.setS(parser.getZoom());
         ArrayList<Path> pathResult = forceBundling.forceBundle();
         int isolatedEdgesCnt = forceBundling.getIsolatedEdgesCnt();
