@@ -281,4 +281,12 @@ public class Kmeans {
         }
         return arrayNode;
     }
+
+    public HashMap<Point, Integer> getClustersSizes() {
+        HashMap<Point, Integer> clustersSizes = new HashMap<>();
+        for (int i = 0; i < getK(); i++) {
+            clustersSizes.put(getCenters().get(i), getClusters().get(i).size());
+        }
+        return clustersSizes;
+    }
 }
