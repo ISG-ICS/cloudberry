@@ -8,13 +8,13 @@ import java.util.*;
  * K-Means algorithm
  */
 public class Kmeans {
-    private int k; // the number of clusters desired
-    private int I; // the number of iterations
-    private List<Point> dataSet; // the dataset for clustering
-    private ArrayList<Point> centers; // the list of centers of clusters
-    private List<List<Point>> clusters; // the list of clusters for the whole dataset
+    int k; // the number of clusters desired
+    List<Point> dataSet; // the dataset for clustering
+    ArrayList<Point> centers; // the list of centers of clusters
+    List<List<Point>> clusters; // the list of clusters for the whole dataset
+    HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
     private double lastSquaredErrorSum;
-    private HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
+    private int I; // the number of iterations
 
     /**
      * Constructor for k
@@ -56,7 +56,7 @@ public class Kmeans {
         this.k = k;
     }
 
-    private void setDataSet(List<Point> dataSet) {
+    public void setDataSet(List<Point> dataSet) {
         this.dataSet = dataSet;
     }
 
@@ -68,7 +68,7 @@ public class Kmeans {
     /**
      * Initialization of the whole K-Means process
      */
-    private void init() {
+    void init() {
         I = 0;
         int dataSetLength = getDataSetLength();
         if (k > dataSetLength) {
@@ -137,7 +137,7 @@ public class Kmeans {
      * @param center  centers of clusters
      * @return the computed distance
      */
-    double distance(Point element, Point center) {
+    private double distance(Point element, Point center) {
         double distance;
         double x = element.getX() - center.getX();
         double y = element.getY() - center.getY();
@@ -148,26 +148,36 @@ public class Kmeans {
     }
 
     /**
-     * Add each point to its closest cluster
+     * Add all points to their closest clusters
      */
-    private void clusterSet() {
+    void clusterSet() {
         for (int i = 0; i < getDataSetLength(); i++) {
-            double currentDistance;
-            double minDistance = distance(dataSet.get(i), centers.get(0));
-            int minLocation = 0;
-            for (int j = 1; j < k; j++) {
-                currentDistance = distance(dataSet.get(i), centers.get(j));
-                if (currentDistance < minDistance) {
-                    minDistance = currentDistance;
+            assignPoint(i);
+        }
+    }
+
+    /**
+     * Add each point to its closest cluster
+     * @param pointIdx point index
+     * @return closest cluster index
+     */
+    int assignPoint(int pointIdx) {
+        double currentDistance;
+        double minDistance = distance(dataSet.get(pointIdx), centers.get(0));
+        int minLocation = 0;
+        for (int j = 1; j < k; j++) {
+            currentDistance = distance(dataSet.get(pointIdx), centers.get(j));
+            if (currentDistance < minDistance) {
+                minDistance = currentDistance;
+                minLocation = j;
+            } else if (currentDistance == minDistance) {
+                if (Math.random() < 0.5) {
                     minLocation = j;
-                } else if (currentDistance == minDistance) {
-                    if (Math.random() < 0.5) {
-                        minLocation = j;
-                    }
                 }
             }
-            clusters.get(minLocation).add(dataSet.get(i)); // add each point to its closest cluster
         }
+        clusters.get(minLocation).add(dataSet.get(pointIdx)); // add each point to its closest cluster
+        return minLocation;
     }
 
     /**
@@ -198,21 +208,32 @@ public class Kmeans {
     /**
      * Set the new center for each cluster
      */
-    private void setNewCenter() {
+    void setNewCenter() {
         for (int i = 0; i < k; i++) {
             int n = clusters.get(i).size();
             if (n != 0) {
-                Point newCenter = new Point(0, 0);
-                for (int j = 0; j < n; j++) {
-                    newCenter.setX(newCenter.getX() + clusters.get(i).get(j).getX());
-                    newCenter.setY(newCenter.getY() + clusters.get(i).get(j).getY());
-                }
+                Point newCenter = initNewCenter(i, n);
                 // Calculate the average coordinate of all points in the cluster
                 newCenter.setX(newCenter.getX() / n);
                 newCenter.setY(newCenter.getY() / n);
                 centers.set(i, newCenter);
             }
         }
+    }
+
+    /**
+     * Initialize the new position for the cluster
+     * @param clusterIdx the index of the cluster
+     * @param clusterSize the size of the cluster
+     * @return the initialized position for the cluster
+     */
+    Point initNewCenter(int clusterIdx, int clusterSize) {
+        Point newCenter = new Point(0, 0);
+        for (int j = 0; j < clusterSize; j++) {
+            newCenter.setX(newCenter.getX() + clusters.get(clusterIdx).get(j).getX());
+            newCenter.setY(newCenter.getY() + clusters.get(clusterIdx).get(j).getY());
+        }
+        return newCenter;
     }
 
     /**
