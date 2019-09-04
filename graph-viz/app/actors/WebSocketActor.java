@@ -22,7 +22,7 @@ public class WebSocketActor extends AbstractActor {
     private final ActorRef out;
 
     /**
-     * Construct bundle actor with handler.
+     * Construct WebSocket actor with handler.
      * @param out The corresponding handler.
      * @return the configuration object using in creating an actor.
      */
@@ -31,7 +31,7 @@ public class WebSocketActor extends AbstractActor {
     }
 
     /**
-     * Constructor for bundle actor.
+     * Constructor for WebSocket actor.
      * @param out The corresponding handler.
      */
     private WebSocketActor(ActorRef out) {

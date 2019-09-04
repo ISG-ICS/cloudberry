@@ -12,6 +12,7 @@ import play.mvc.*;
 import actors.WebSocketActor;
 import treeCut.TreeCut;
 import utils.DatabaseUtils;
+import utils.IncrementalQuery;
 import utils.PropertiesUtil;
 
 import java.sql.*;
@@ -270,7 +271,7 @@ public class GraphController extends Controller {
                 generateEdgeSet(edges, externalEdgeSet, externalCluster, internalCluster);
                 TreeCut treeCutInstance = new TreeCut();
                 if (parser.getTreeCutting() == 1) {
-                    treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
+                    treeCutInstance.execute(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 }
             }
             dataNode.put("edgesCnt", edges.size());
@@ -287,6 +288,14 @@ public class GraphController extends Controller {
         dataNode.put("repliesCnt", resultSetSize);
     }
 
+    /**
+     * prepares external egde set for tree cut.
+     * @param edges the returning edge set, if tree cut is enabled, it contains only the internal edges.
+     *              Otherwise, it contains all the edges.
+     * @param externalEdgeSet the returning external edge set
+     * @param externalCluster outside cluster corresponding to edge set with only one node inside screen
+     * @param internalCluster inside screen clusters
+     */
     private void generateEdgeSet(HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
                                  HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
         for (Edge edge : edgeSet) {

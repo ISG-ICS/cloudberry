@@ -24,7 +24,7 @@ public class WebSocketController extends Controller {
     }
 
     /**
-     * Forwards requests to the bundle actor.
+     * Forwards requests to the WebSocket actor.
      */
     public WebSocket socket() {
         return WebSocket.Text.accept(

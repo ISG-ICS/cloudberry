@@ -24,13 +24,8 @@ public class PropertiesUtil {
     private static File configFile = new File("./conf/config.properties");
 
     public static void loadProperties() throws IOException {
-        Properties defaultProps = new Properties();
-        // sets default properties
-        defaultProps.setProperty("firstDate", "20180101");
-        defaultProps.setProperty("lastDate", "20181231");
-        defaultProps.setProperty("queryPeriod", "10");
 
-        Properties configProps = new Properties(defaultProps);
+        Properties configProps = new Properties();
 
         // loads properties from file
         InputStream inputStream = new FileInputStream(configFile);

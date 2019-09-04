@@ -1,0 +1,40 @@
+#container {
+    width: 100%;
+    height: 100%;
+}
+
+#search {
+    width: 100%;
+    top: 10px;
+    position: absolute;
+}
+
+#info {
+    left: 0px;
+    display: block;
+    position: relative;
+    margin: 0px auto;
+    width: 50%;
+    padding: 10px;
+    border: none;
+    border-radius: 3px;
+    font-size: 12px;
+    text-align: center;
+    color: #222;
+    background: #fff;
+}
+.bottomleft {
+    position: absolute;
+    bottom: 32px;
+    left: 24px;
+    font-style: italic;
+    font-size: 18px;
+}
+
+.bottomleft p {
+    margin: 0px 0px 25px;
+}
+
+html {
+    overflow-y: scroll;
+}

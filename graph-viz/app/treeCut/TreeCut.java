@@ -63,7 +63,7 @@ public class TreeCut {
      * @param externalCluster outside cluster corresponding to edge set with only one node inside screen
      * @param internalCluster inside screen clusters
      */
-    public void treeCut(Clustering clustering, double lowerLongitude,
+    public void execute(Clustering clustering, double lowerLongitude,
                         double upperLongitude, double lowerLatitude,
                         double upperLatitude, int zoom,
                         HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
