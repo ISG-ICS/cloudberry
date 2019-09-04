@@ -5,19 +5,30 @@ import models.Cluster;
 import models.Edge;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Implementation of tree cut algorithm
  * screen: |    ·A______________·B----------|---·E
  *         |     \                          |
- *         |      \                         |
+ *         |      \     .F------------------|---.H
  *         |       \                        |
  *         |        ·C____________·D--------|---·G
  *         |                                |
  *
- * A B C D E G are the clusters, A B C D inside screen, E G outside screen
+ * A B C D E G are the clusters, A B C D F inside screen, E G H outside screen
  * A-C, A-B, C-D are three edges that have both their two ends inside screen
- * B-E, D-G are two edges that has only one of their ends inside the screen, for B-E is B inside, for D-G is D inside
+ * B-E, D-G, F-H are two edges that has only one of their ends inside the screen, for B-E is B inside, for D-G is D inside
+ *
+ * assume A, B, C, D, E, F, G, H has their parent cluster as  A(W), B(X), C(W), D(Y), E(Z), F(X), G(Y), H(V)
+ * lowerLongitude, upperLongitude, lowerLatitude, upperLatitude form the bounding box of the user screen
+ *
+ * For this screen: data structures in this algorithm have the following value:
+ * externalCluster: [E, G, H]
+ * internalCluster: [A, B, C, D]
+ * externalAncestorToChildren: [X->(E), Y->(G), V->(H)]
+ * internalAncestor: [W, X, Y, Z]
+ * externalChildToAncestor: [E -> E, G -> G, H->V]
  */
 public class TreeCut {
 
@@ -74,8 +85,8 @@ public class TreeCut {
                 return false;
             });
             // elevate all remaining clusters to a higher level
-            externalAncestorToChildren = elevateExternalHierarchy();
-            internalAncestor = elevateInternalHierarchy();
+            elevateExternalHierarchy();
+            elevateInternalHierarchy();
         }
         updateEdgeSet(clustering, lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet);
     }
@@ -84,42 +95,29 @@ public class TreeCut {
     /**
      * Elevates the hierarchy of internal clusters.
      *
-     * @return elevated cluster
      */
-    private HashSet<Cluster> elevateInternalHierarchy() {
-        HashSet<Cluster> tempInternalHierarchy = new HashSet<>();
-        for (Cluster ancestor : internalAncestor) {
-            if (ancestor.parent != null) {
-                tempInternalHierarchy.add(ancestor.parent);
-            }
-        }
-        return tempInternalHierarchy;
+    private void elevateInternalHierarchy() {
+        internalAncestor = internalAncestor.stream().map(ancestor -> ancestor.parent).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
     }
 
     /**
      * Elevates the hierarchy of external clusters
      *
-     * @return elevated cluster
      */
     // TODO not creating new instance
-    private HashMap<Cluster, ArrayList<Cluster>> elevateExternalHierarchy() {
-        HashMap<Cluster, ArrayList<Cluster>> tempExternalHierarchy = new HashMap<>();
-        for (Map.Entry<Cluster, ArrayList<Cluster>> ancestorToChildren : externalAncestorToChildren.entrySet()) {
+    private void elevateExternalHierarchy() {
+        externalAncestorToChildren = externalAncestorToChildren.entrySet().stream().filter(ancestorToChildren -> {
             Cluster ancestor = ancestorToChildren.getKey();
-            if (ancestor.parent != null) {
-                if (!tempExternalHierarchy.containsKey(ancestor.parent)) {
-                    tempExternalHierarchy.put(ancestor.parent, new ArrayList<>());
-                }
-                tempExternalHierarchy.get(ancestor.parent).addAll(ancestorToChildren.getValue());
-            }
-            // has arrived highest level
-            else {
-                // use level 1 to make the elevation
+            if (ancestor.parent == null) {
                 int elevateLevel = ancestorToChildren.getValue().get(0).getZoom() - 1;
                 updateExternalClusterMap(ancestorToChildren, elevateLevel);
+                return false;
             }
-        }
-        return tempExternalHierarchy;
+            return true;
+        }).collect(Collectors.toMap(e -> e.getKey().parent, Map.Entry::getValue, (prev, next) -> {
+            prev.addAll(next);
+            return prev;
+        }, HashMap::new));
     }
 
     /**
@@ -151,7 +149,8 @@ public class TreeCut {
             // has arrived highest level
             else {
                 // use level 1 (self) to make the elevation
-                externalChildToAncestor.put(externalChild, externalChild);
+                // ancestor is null to indicate the finally the cluster is mapped to itself
+                externalChildToAncestor.put(externalChild, null);
             }
         }
 
@@ -166,7 +165,8 @@ public class TreeCut {
     private void updateExternalClusterMap(Map.Entry<Cluster, ArrayList<Cluster>> entry, int elevateLevel) {
         Cluster ancestor;
         for (Cluster child : entry.getValue()) {
-            ancestor = child;
+            // ancestor is null if the finally the cluster is mapped to itself
+            ancestor = elevateLevel == 0 ? null : child;
             for (int i = 0; i < elevateLevel; i++) {
                 ancestor = ancestor.parent;
             }
@@ -177,13 +177,13 @@ public class TreeCut {
     /**
      * add the results to the returning edge set
      *
-     * @param clustering     hierarchical structure from HGC algorithm
-     * @param lowerLongitude lowerLongitude of user screen
-     * @param upperLongitude upperLongitude of user screen
-     * @param lowerLatitude  lowerLatitude of user screen
-     * @param upperLatitude  upperLatitude of user screen
-     * @param zoom           zoom level of user screen
-     * @param edges          edge set to be returned
+     * @param clustering      hierarchical structure from HGC algorithm
+     * @param lowerLongitude  lowerLongitude of user screen
+     * @param upperLongitude  upperLongitude of user screen
+     * @param lowerLatitude   lowerLatitude of user screen
+     * @param upperLatitude   upperLatitude of user screen
+     * @param zoom            zoom level of user screen
+     * @param edges           edge set to be returned
      * @param externalEdgeSet edge set with only one node inside screen
      */
     private void updateEdgeSet(Clustering clustering, double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom, HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet) {
@@ -200,10 +200,12 @@ public class TreeCut {
                 insideLng = fromLongitude;
                 insideLat = fromLatitude;
                 elevatedCluster = externalChildToAncestor.get(toCluster);
+                if(elevatedCluster == null) elevatedCluster = toCluster;
             } else {
                 insideLng = Clustering.xLng(toCluster.getX());
                 insideLat = Clustering.yLat(toCluster.getY());
                 elevatedCluster = externalChildToAncestor.get(fromCluster);
+                if(elevatedCluster == null) elevatedCluster = fromCluster;
             }
             outsideLng = Clustering.xLng(elevatedCluster.getX());
             outsideLat = Clustering.yLat(elevatedCluster.getY());
