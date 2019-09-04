@@ -7,7 +7,6 @@ const map = new mapboxgl.Map({
     maxZoom: 17,
     minZoom: 0
 });
-
 // use timestamp to label every sending request
 let current_timestamp;
 let socket;
@@ -30,35 +29,12 @@ function getScreenStatus() {
     };
 }
 
+let x;
 map.on("moveend", () => {
-    let status = getScreenStatus();
-    if (document.getElementById("point").checked === true) {
-        renderClusterPoints(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    } else {
-        removeClusterLayer();
-    }
-    if (document.getElementById("edge").checked === true) {
-        renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    } else {
-        removeEdgeClusterLayer();
-    }
+    statusChange("move");
 });
-
 map.on('zoomend', () => {
-    let status = getScreenStatus();
-    if (zoomLevel !== status['currentZoom']) {
-        if (document.getElementById("point").checked === true) {
-            renderClusterPoints(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-        } else {
-            removeClusterLayer();
-        }
-        if (document.getElementById("edge").checked === true) {
-            renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-        } else {
-            removeEdgeClusterLayer();
-        }
-        zoomLevel = status['currentZoom'];
-    }
+    statusChange("zoom");
 });
 
 function getClusteringAlgorithm() {
@@ -78,18 +54,26 @@ function getChoice(elementId) {
     return choices[document.getElementById(elementId).checked];
 }
 
-function renderClusterEdges(minLng, minLat, maxLng, maxLat, zoom) {
+function sendEdgesRequest(minLng, minLat, maxLng, maxLat, zoom) {
+    sendingRequest(minLng, minLat, maxLng, maxLat, zoom, 2);
+}
+
+function sendClusterRequest(minLng, minLat, maxLng, maxLat, zoom) {
+    let clustering_control = getChoice("cluster");
+    if (clustering_control === 0) {
+        zoom = 18;
+    }
+    sendingRequest(minLng, minLat, maxLng, maxLat, zoom, 1);
+}
+
+function sendingRequest(minLng, minLat, maxLng, maxLat, zoom, option) {
     if (socket === undefined) {
         return;
     }
-    let clusteringAlgorithm = getClusteringAlgorithm();
-    let clustering_control = getChoice("drawPoints");
+    const clusteringAlgorithm = getClusteringAlgorithm();
+    let clustering_control = getChoice("cluster");
     let bundling_control = getChoice("bundle");
     let cut_control = getChoice("tree_cut");
-    if (clustering_control === 0 && cut_control === 1) {
-        alert("Please select tree cut with drawPoints.");
-        $('#tree_cut').prop('checked', false);
-    }
     const sendingObj = {
         query: query,
         lowerLongitude: minLng,
@@ -102,7 +86,7 @@ function renderClusterEdges(minLng, minLat, maxLng, maxLat, zoom) {
         clustering: clustering_control,
         zoom: zoom,
         timestamp: current_timestamp,
-        option: 2
+        option: option
     };
     const sendingJSON = JSON.stringify(sendingObj);
     socket.send(sendingJSON);
@@ -126,48 +110,9 @@ function receiveClusterEdges(data) {
     map.addLayer(iconLayer);
 }
 
-function updatePointsStats(json) {
-    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
-    document.getElementById('pointsCnt').innerHTML = "Points Count: " + json['pointsCnt'];
-    document.getElementById('clustersCnt').innerHTML = "Clusters Count: " + json['clustersCnt'];
-}
-
-function updateEdgesStats(json) {
-    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
-    document.getElementById('edgesCnt').innerHTML = "Edges Count: " + json['edgesCnt'];
-    document.getElementById('bundledEdgesCnt').innerHTML = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
-}
-
-function renderClusterPoints(minLng, minLat, maxLng, maxLat, zoom) {
-    if (socket === undefined) {
-        return;
-    }
-    const clusteringAlgorithm = getClusteringAlgorithm();
-    let clustering_control = getChoice("drawPoints");
-    if (clustering_control === 0) {
-        zoom = 18;
-    }
-    const sendingObj = {
-        query: query,
-        lowerLongitude: minLng,
-        upperLongitude: maxLng,
-        lowerLatitude: minLat,
-        upperLatitude: maxLat,
-        clusteringAlgorithm: clusteringAlgorithm,
-        clustering: clustering_control,
-        zoom: zoom,
-        timestamp: current_timestamp,
-        bundling: 0,
-        treeCut: 0,
-        option: 1
-    };
-    const sendingJSON = JSON.stringify(sendingObj);
-    socket.send(sendingJSON);
-}
-
 function receiveClusterPoints(data) {
     const iconLayer = new MapboxLayer({
-        id: 'drawPoints',
+        id: 'cluster',
         type: ScatterplotLayer,
         data: data,
         pickable: true,
@@ -185,6 +130,17 @@ function receiveClusterPoints(data) {
     map.addLayer(iconLayer);
 }
 
+function updatePointsStats(json) {
+    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
+    document.getElementById('pointsCnt').innerHTML = "Points Count: " + json['pointsCnt'];
+    document.getElementById('clustersCnt').innerHTML = "Clusters Count: " + json['clustersCnt'];
+}
+
+function updateEdgesStats(json) {
+    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
+    document.getElementById('edgesCnt').innerHTML = "Edges Count: " + json['edgesCnt'];
+    document.getElementById('bundledEdgesCnt').innerHTML = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
+}
 
 function removeEdgeClusterLayer() {
     if (map.getLayer('edgeCluster') !== undefined) {
@@ -193,8 +149,8 @@ function removeEdgeClusterLayer() {
 }
 
 function removeClusterLayer() {
-    if (map.getLayer('drawPoints') !== undefined) {
-        map.removeLayer('drawPoints');
+    if (map.getLayer('cluster') !== undefined) {
+        map.removeLayer('cluster');
     }
 }
 
@@ -206,14 +162,16 @@ function removeLayer() {
 function drawGraph() {
     removeLayer();
     query = document.getElementById("keyword-textbox").value;
-
     socket = new WebSocket("ws://localhost:9000/replies");
 
     socket.onopen = function (e) {
         current_timestamp = Date.now();
         const clusteringAlgorithm = getClusteringAlgorithm();
         const sendingObj = {
-            query: query, clusteringAlgorithm: clusteringAlgorithm, timestamp: current_timestamp, option: 0
+            query: query,
+            clusteringAlgorithm: clusteringAlgorithm,
+            timestamp: current_timestamp,
+            option: 0
         };
         const sendingJSON = JSON.stringify(sendingObj);
         socket.send(sendingJSON);
@@ -221,10 +179,10 @@ function drawGraph() {
     };
 
     socket.onmessage = function (event) {
-        let status = getScreenStatus();
         let json = JSON.parse(event.data);
         let option = json['option'];
         let timestamp = json['timestamp'];
+        // deal with package that has wrong timestamp (outdated packages)
         if (timestamp !== current_timestamp.toString()) {
             console.log('data is dropped');
             return;
@@ -244,10 +202,7 @@ function drawGraph() {
                 const sendingJSON = JSON.stringify(sendingObj);
                 socket.send(sendingJSON);
             }
-            renderClusterPoints(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-            if (document.getElementById("edge").checked === true) {
-                renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-            }
+            statusChange("incremental");
         } else if (option === 1) {
             updatePointsStats(json);
             data = JSON.parse(json['data']);
@@ -258,79 +213,59 @@ function drawGraph() {
             receiveClusterEdges(data);
         }
     };
-
-    socket.onclose = function (event) {
-        cancelKeepAlive();
-    }
 }
 
-function edge_change() {
+function statusChange(changeEvent) {
     let status = getScreenStatus();
-    if (document.getElementById("edge").checked === true) {
-        renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    } else {
-        if (document.getElementById("bundle").checked === true) {
+    let pointStatus = getChoice("point");
+    let clusterStatus = getChoice("cluster");
+    let edgeStatus = getChoice("edge");
+    let bundleStatus = getChoice("bundle");
+    let treeCutStatus = getChoice("tree_cut");
+    let pointDraw = 0;
+    let edgeDraw = 0;
+    if (changeEvent === 'point' || changeEvent === 'cluster' || changeEvent === 'tree_cut' || changeEvent === 'incremental') {
+        if (clusterStatus && !pointStatus) {
+            alert("Please check cluster with points.");
+            $('#cluster').prop('checked', false);
+            clusterStatus = 0;
+        }
+        if (!clusterStatus && treeCutStatus) {
+            alert("Please select tree cut with cluster and edge.");
+            $('#tree_cut').prop('checked', false);
+        }
+        if (clusterStatus || pointStatus) pointDraw = 1;
+        else removeClusterLayer();
+        if (edgeStatus) edgeDraw = 1;
+    }
+    if (changeEvent === 'edge' || changeEvent === 'bundle' || changeEvent === 'tree_cut' || changeEvent === 'incremental') {
+        if (bundleStatus && !edgeStatus) {
+            alert("Please check bundle with edge.");
             $('#bundle').prop('checked', false);
+            bundleStatus = 0;
         }
-        removeEdgeClusterLayer();
-    }
-}
-
-function bundle_change() {
-    let status = getScreenStatus();
-    if (document.getElementById("edge").checked === false) {
-        $('#bundle').prop('checked', false);
-        alert("Please check with edge.");
-        return;
-    }
-    if (document.getElementById("bundle").checked === true) {
-        renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    } else {
-        if (document.getElementById("edge").checked === false) {
-            removeEdgeClusterLayer();
-        } else {
-            renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
+        if (!edgeStatus && treeCutStatus) {
+            alert("Please select tree cut with cluster and edge.");
+            $('#tree_cut').prop('checked', false);
+            treeCutStatus = 0;
         }
+        if (bundleStatus || edgeStatus || treeCutStatus) edgeDraw = 1;
+        else removeEdgeClusterLayer();
     }
-}
-
-function point_change() {
-    let status = getScreenStatus();
-    if (document.getElementById("point").checked === true) {
-        renderClusterPoints(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    } else {
-        removeClusterLayer();
-        $('#drawPoints').prop('checked', false);
+    if (changeEvent === 'move' || (changeEvent === 'zoom' && zoomLevel !== status['currentZoom'])) {
+        if (pointStatus) pointDraw = 1;
+        if (edgeStatus) edgeDraw = 1;
+        zoomLevel = status['currentZoom'];
     }
-}
-
-function cluster_change() {
-    let status = getScreenStatus();
-    if (document.getElementById("drawPoints").checked === true) {
-        document.getElementById("point").checked = true;
-    } else {
-        removeClusterLayer();
-    }
-    if (document.getElementById("point").checked === true) {
-        renderClusterPoints(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    }
-    if (document.getElementById("edge").checked === true) {
-        renderClusterEdges(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
-    }
+    if (pointDraw) sendClusterRequest(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
+    if (edgeDraw) sendEdgesRequest(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
 }
 
 // send heartbeat package to keep the connection alive
 function keepAlive() {
-    // console.log("send heartbeat pack.");
     const timeout = 20000;
     if (socket.readyState === WebSocket.OPEN) {
         socket.send('');
     }
     timerId = setTimeout(keepAlive, timeout);
-}
-
-function cancelKeepAlive() {
-    if (timerId) {
-        clearTimeout(timerId);
-    }
 }

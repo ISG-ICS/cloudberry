@@ -21,31 +21,31 @@
                     id="keyword-textbox" placeholder="Search keywords e.g hurricane">
                     <div class="col-sm-1" style="padding: 0 5px 0 15px">
                         <div class="form-check" style="margin: 10px 0 0 0">
-                            <input type="checkbox" class="form-check-input" id="edge" onchange="edge_change()">
+                            <input type="checkbox" class="form-check-input" id="edge" onchange="statusChange('edge')">
                             <label class="form-check-label" for="edge" >Edge</label>
                         </div>
                     </div>
                     <div class="col-sm-1" style="padding: 0 5px">
                         <div class="form-check" style="margin: 10px 0 0 0">
-                            <input type="checkbox" class="form-check-input" id="bundle" onchange="bundle_change()">
+                            <input type="checkbox" class="form-check-input" id="bundle" onchange="statusChange('bundle')">
                             <label class="form-check-label" for="bundle" >Bundle</label>
                         </div>
                     </div>
                     <div class="col-sm-1" style="padding: 0 5px">
                         <div class="form-check" style="margin: 10px 0 0 0">
-                            <input type="checkbox" class="form-check-input" id="point" onchange="point_change()" checked>
+                            <input type="checkbox" class="form-check-input" id="point" onchange="statusChange('point')" checked>
                             <label class="form-check-label" for="point" >Point</label>
                         </div>
                     </div>
                     <div class="col-sm-1" style="padding: 0 5px">
                         <div class="form-check" style="margin: 10px 0 0 0">
-                            <input type="checkbox" class="form-check-input" id="drawPoints" onchange="cluster_change()" checked>
-                            <label class="form-check-label" for="drawPoints" >Cluster</label>
+                            <input type="checkbox" class="form-check-input" id="cluster" onchange="statusChange('cluster')" checked>
+                            <label class="form-check-label" for="cluster" >Cluster</label>
                         </div>
                     </div>
                     <div class="col-sm-1" style="padding: 0 5px">
                         <div class="form-check" style="margin: 10px 0 0 0">
-                            <input type="checkbox" class="form-check-input" id="tree_cut" onchange="bundle_change()" checked>
+                            <input type="checkbox" class="form-check-input" id="tree_cut" onchange="statusChange('tree_cut')" checked>
                             <label class="form-check-label" for="tree_cut" >Tree cut</label>
                         </div>
                     </div>

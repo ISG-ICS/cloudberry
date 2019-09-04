@@ -114,7 +114,6 @@ public class GraphController extends Controller {
             resultSet.close();
         }
         state.close();
-        conn.close();
     }
 
     private void loadData(ResultSet resultSet) throws SQLException {
