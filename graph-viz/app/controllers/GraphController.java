@@ -36,6 +36,8 @@ public class GraphController extends Controller {
     private Kmeans kmeans;
     // Incremental edge data
     private Set<Edge> edgeSet = new HashSet<>();
+    private List<Point> totalPoints = new ArrayList<>();
+    private List<Point> batchPoints = new ArrayList<>();
     private ObjectMapper objectMapper = new ObjectMapper();
     private ObjectNode dataNode;
     private Parser parser = new Parser();
@@ -99,23 +101,24 @@ public class GraphController extends Controller {
         }
         bindFields(end);
         if (resultSet != null) {
+            loadData(resultSet);
             if (parser.getClusteringAlgorithm() == 0) {
-                loadHGC(resultSet);
+                loadHGC();
             } else if (parser.getClusteringAlgorithm() == 1) {
-                loadIKmeans(resultSet);
+                loadIKmeans();
             } else if (parser.getClusteringAlgorithm() == 2) {
                 bindFields(PropertiesUtil.lastDate);
                 state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, PropertiesUtil.firstDate, PropertiesUtil.lastDate);
-                resultSet = state.executeQuery();
-                loadKmeans(resultSet);
+                loadData(state.executeQuery());
+                loadKmeans();
             }
             resultSet.close();
         }
         state.close();
     }
 
-    private List<Point> getKmeansData(ResultSet resultSet) throws SQLException {
-        List<Point> points = new ArrayList<>();
+    private void loadData(ResultSet resultSet) throws SQLException {
+        batchPoints.clear();
         while (resultSet.next()) {
             resultSetSize++;
             double fromLongitude = resultSet.getDouble("from_longitude");
@@ -124,49 +127,36 @@ public class GraphController extends Controller {
             double toLatitude = resultSet.getDouble("to_latitude");
             Edge currentEdge = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
             if (edgeSet.contains(currentEdge)) continue;
-            points.add(new Point(fromLongitude, fromLatitude));
-            points.add(new Point(toLongitude, toLatitude));
+            totalPoints.add(new Point(fromLongitude, fromLatitude));
+            totalPoints.add(new Point(toLongitude, toLatitude));
+            batchPoints.add(new Point(fromLongitude, fromLatitude));
+            batchPoints.add(new Point(toLongitude, toLatitude));
             edgeSet.add(currentEdge);
         }
-        return points;
     }
 
-    private void loadKmeans(ResultSet resultSet) throws SQLException {
-        List<Point> points = getKmeansData(resultSet);
+    private void loadKmeans() {
         if (kmeans == null) {
             kmeans = new Kmeans(17);
         }
-        kmeans.execute(points);
+        kmeans.execute(totalPoints);
     }
 
-    private void loadIKmeans(ResultSet resultSet) throws SQLException {
-        List<Point> points = getKmeansData(resultSet);
+    private void loadIKmeans() {
         if (iKmeans == null) {
             iKmeans = new IKmeans(17);
-            iKmeans.setDataSet(points);
+            iKmeans.setDataSet(batchPoints);
             iKmeans.updateK();
             if (iKmeans.getDataSetLength() != 0) {
                 iKmeans.init();
             }
         }
-        iKmeans.execute(points);
+        iKmeans.execute(batchPoints);
     }
 
-    private void loadHGC(ResultSet resultSet) throws SQLException {
-        ArrayList<Cluster> points = new ArrayList<>();
-        while (resultSet.next()) {
-            resultSetSize++;
-            double fromLongitude = resultSet.getDouble("from_longitude");
-            double fromLatitude = resultSet.getDouble("from_latitude");
-            double toLongitude = resultSet.getDouble("to_longitude");
-            double toLatitude = resultSet.getDouble("to_latitude");
-            Edge currentEdge = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
-            if (edgeSet.contains(currentEdge)) continue;
-            points.add(new Cluster(fromLongitude, fromLatitude));
-            points.add(new Cluster(toLongitude, toLatitude));
-            edgeSet.add(currentEdge);
-        }
-        clustering.load(points);
+    private void loadHGC() {
+        System.out.println(batchPoints.size());
+        clustering.load(batchPoints);
     }
 
     private static Calendar getCalendar(String date) {
@@ -195,30 +185,28 @@ public class GraphController extends Controller {
         int pointsCnt;
         int clustersCnt;
         ArrayNode arrayNode = objectMapper.createArrayNode();
-        if (parser.getClusteringAlgorithm() == 0) {
-            ArrayList<Cluster> points = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, 18);
-            ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, parser.getZoom());
-            pointsCnt = points.size();
-            clustersCnt = clusters.size();
-            for (Cluster cluster : clusters) {
-                ObjectNode objectNode = objectMapper.createObjectNode();
-                objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.getY()));
-                objectNode.put("size", cluster.getNumPoints());
-                arrayNode.add(objectNode);
+        System.out.println(parser.getClustering());
+
+        if (parser.getClustering() == 0) {
+            pointsCnt = totalPoints.size();
+            clustersCnt = totalPoints.size();
+            for (Point point : totalPoints) {
+                arrayNode.addObject().put("size", 1).putArray("coordinates").add(point.getX()).add(point.getY());
             }
-        } else if (parser.getClusteringAlgorithm() == 1) {
-            pointsCnt = iKmeans.getPointsCnt();
-            if (parser.getClustering() == 0) {
-                clustersCnt = pointsCnt;
-                for (int i = 0; i < iKmeans.getK(); i++) {
-                    for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
-                        ObjectNode objectNode = objectMapper.createObjectNode();
-                        objectNode.putArray("coordinates").add(iKmeans.getAllClusters().get(i).get(j).getX()).add(iKmeans.getAllClusters().get(i).get(j).getY());
-                        objectNode.put("size", 1);
-                        arrayNode.add(objectNode);
-                    }
+        } else {
+            if (parser.getClusteringAlgorithm() == 0) {
+                ArrayList<Cluster> points = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, 18);
+                ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, parser.getZoom());
+                pointsCnt = points.size();
+                clustersCnt = clusters.size();
+                for (Cluster cluster : clusters) {
+                    ObjectNode objectNode = objectMapper.createObjectNode();
+                    objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.getY()));
+                    objectNode.put("size", cluster.getNumPoints());
+                    arrayNode.add(objectNode);
                 }
-            } else {
+            } else if (parser.getClusteringAlgorithm() == 1) {
+                pointsCnt = iKmeans.getPointsCnt();
                 clustersCnt = iKmeans.getK();
                 for (int i = 0; i < iKmeans.getK(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
@@ -226,18 +214,8 @@ public class GraphController extends Controller {
                     objectNode.put("size", iKmeans.getAllClusters().get(i).size());
                     arrayNode.add(objectNode);
                 }
-            }
-        } else {
-            pointsCnt = kmeans.getDataSetLength();
-            if (parser.getClustering() == 0) {
-                clustersCnt = pointsCnt;
-                for (int i = 0; i < kmeans.getDataSetLength(); i++) {
-                    ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(kmeans.getDataSet().get(i).getX()).add(kmeans.getDataSet().get(i).getY());
-                    objectNode.put("size", 1);
-                    arrayNode.add(objectNode);
-                }
             } else {
+                pointsCnt = kmeans.getDataSetLength();
                 clustersCnt = kmeans.getK();
                 for (int i = 0; i < kmeans.getK(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
@@ -310,12 +288,12 @@ public class GraphController extends Controller {
             boolean toWithinRange = parser.getLowerLongitude() <= toLongitude && toLongitude <= parser.getUpperLongitude()
                     && parser.getLowerLatitude() <= toLatitude && toLatitude <= parser.getUpperLatitude();
             if (fromWithinRange && toWithinRange) {
-                putEdgesIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
+                putEdgeIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
                 internalCluster.add(fromCluster);
                 internalCluster.add(toCluster);
             } else if (fromWithinRange || toWithinRange) {
                 if (parser.getTreeCutting() == 0) {
-                    putEdgesIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
+                    putEdgeIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
                 } else {
                     if (fromWithinRange) {
                         externalCluster.add(toCluster);
@@ -329,7 +307,7 @@ public class GraphController extends Controller {
         }
     }
 
-    private void putEdgesIntoMap(HashMap<Edge, Integer> edges, double fromLongitude, double fromLatitude, double toLongitude, double toLatitude) {
+    private void putEdgeIntoMap(HashMap<Edge, Integer> edges, double fromLongitude, double fromLatitude, double toLongitude, double toLatitude) {
         Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
         if (edges.containsKey(e)) {
             edges.put(e, edges.get(e) + 1);
@@ -358,7 +336,7 @@ public class GraphController extends Controller {
                 models.Point toPoint = new models.Point(toLongitude, toLatitude);
                 int fromCluster = parents.get(fromPoint);
                 int toCluster = parents.get(toPoint);
-                putEdgesIntoMap(edges, center.get(fromCluster).getX(), center.get(fromCluster).getY(), center.get(toCluster).getX(), center.get(toCluster).getY());
+                putEdgeIntoMap(edges, center.get(fromCluster).getX(), center.get(fromCluster).getY(), center.get(toCluster).getX(), center.get(toCluster).getY());
             }
         }
         dataNode.put("edgesCnt", edges.size());

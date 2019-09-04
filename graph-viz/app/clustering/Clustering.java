@@ -2,9 +2,11 @@ package clustering;
 
 import models.Cluster;
 import models.KdTree;
+import models.Point;
 import models.Rectangle;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Clustering {
 
@@ -55,8 +57,8 @@ public class Clustering {
      *
      * @param points input of points
      */
-    public void load(ArrayList<Cluster> points) {
-        for (Cluster point : points) {
+    public void load(List<Point> points) {
+        for (Point point : points) {
             insert(new Cluster(lngX(point.getX()), latY(point.getY()), null, 1));
         }
     }

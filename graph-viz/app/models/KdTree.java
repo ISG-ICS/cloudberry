@@ -112,22 +112,10 @@ public class KdTree {
 
         // point at root initially
         Node n = root;
-        // split the tree
-        split(p, n);
-    }
-
-    // TODO revert split method
-    private void split(Cluster p, Node n) {
-        boolean flag;
         // go to the left if point left to vertical point or below a horizontal point
         while (n != null) {
             // if we are at a vertical node
-            if (n.vertical()) {
-                flag = p.getX() < n.getPoint().getX();
-            } else {
-                flag = p.getY() < n.getPoint().getY();
-            }
-            if (flag) {
+            if (compare(p, n)) {
                 // if the left point is null then create new node and set it
                 if (n.getLeft() == null) {
                     Rectangle rect;
@@ -183,23 +171,20 @@ public class KdTree {
             return false;
         }
 
-        Cluster nPoint = node.getPoint();
-        if (nPoint.equals(point)) {
+        if (node.getPoint().equals(point)) {
             return true;
         }
 
-        boolean flag;
-        if (node.vertical()) {
-            flag = point.getX() < nPoint.getX();
-        } else {
-            flag = point.getY() < nPoint.getY();
-        }
-
-        if (flag) {
+        if (compare(point, node)) {
             return containsRecursive(node.getLeft(), point);
         } else {
             return containsRecursive(node.getRight(), point);
         }
+    }
+
+    private boolean compare(Cluster p, Node n) {
+        if (n.vertical()) return p.getX() < n.getPoint().getX();
+        else return p.getY() < n.getPoint().getY();
     }
 
     /**
@@ -216,18 +201,10 @@ public class KdTree {
         if (node == null) {
             return null;
         }
-        Cluster nPoint = node.getPoint();
         if (node.getPoint().equals(point)) {
             return node.getPoint();
         }
-        boolean flag;
-        if (node.vertical()) {
-            flag = point.getX() < nPoint.getX();
-        } else {
-            flag = point.getY() < nPoint.getY();
-        }
-
-        if (flag) {
+        if (compare(point, node)) {
             return findPointRecursive(node.getLeft(), point);
         } else {
             return findPointRecursive(node.getRight(), point);
