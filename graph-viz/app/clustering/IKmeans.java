@@ -116,19 +116,6 @@ public class IKmeans extends Kmeans {
     }
 
     @Override
-    public ArrayNode getClustersJson() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ArrayNode arrayNode = objectMapper.createArrayNode();
-        for (int i = 0; i < getK(); i++) {
-            ObjectNode objectNode = objectMapper.createObjectNode();
-            objectNode.putArray("coordinates").add(getCenters().get(i).getX()).add(getCenters().get(i).getY());
-            objectNode.put("size", getAllClusters().get(i).size());
-            arrayNode.add(objectNode);
-        }
-        return arrayNode;
-    }
-
-    @Override
     public HashMap<Point, Integer> getClustersMap() {
         HashMap<Point, Integer> clustersSizes = new HashMap<>();
         for (int i = 0; i < getK(); i++) {

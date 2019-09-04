@@ -86,11 +86,9 @@ public class Clustering {
                 point.setZoom(z + 1);
                 // choose the closest cluster
                 double minDis = 1e9;
-                for(int i = 0; i < neighbors.size(); i++) {
-                    Cluster c = neighbors.get(i);
-                    if (c.getX() == point.getX() && c.getY() == point.getY()) continue;
+                for (Cluster c : neighbors) {
                     double dis = c.distanceTo(point);
-                    if(dis < minDis) {
+                    if (dis < minDis) {
                         minDis = dis;
                         neighbor = c;
                     }

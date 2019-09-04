@@ -3,6 +3,7 @@ package controllers;
 import clustering.IKmeans;
 import clustering.Kmeans;
 import clustering.Clustering;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -42,7 +43,6 @@ public class GraphController extends Controller {
     // the batch points
     private List<Point> batchPoints = new ArrayList<>();
     private ObjectMapper objectMapper = new ObjectMapper();
-    private ObjectNode dataNode;
 
     private Parser parser = new Parser();
     private Response response = new Response();
@@ -63,7 +63,6 @@ public class GraphController extends Controller {
         if (query.isEmpty()) {
             return;
         }
-        dataNode = objectMapper.createObjectNode();
         // Parse the request message with JSON structure
         parser.parse(query);
         // Option indicates the request type
@@ -91,9 +90,13 @@ public class GraphController extends Controller {
                 System.err.println("Internal error: no option included");
                 break;
         }
-        dataNode.put("option", parser.getOption());
-        dataNode.put("timestamp", parser.getTimestamp());
-        actor.returnData(dataNode.toString());
+        response.setOption(parser.getOption());
+        response.setTimestamp(parser.getTimestamp());
+        try {
+            actor.returnData(objectMapper.writeValueAsString(response));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
     private void doQuery(String start, String end) throws SQLException {
@@ -162,48 +165,34 @@ public class GraphController extends Controller {
     }
 
     private void bindFields(String end) {
-        dataNode.put("date", end);
+        response.setDate(end);
         Calendar endCalendar = getCalendar(end);
         if (!endCalendar.before(PropertiesUtil.lastDateCalender)) {
-            dataNode.put("flag", finished);
+            response.setFlag(finished);
         } else {
-            dataNode.put("flag", unfinished);
+            response.setFlag(unfinished);
         }
     }
 
     private void drawPoints() {
-        int pointsCnt;
-        int clustersCnt;
-        ArrayNode arrayNode = objectMapper.createArrayNode();
-
+        HashMap<Point, Integer> pointsMap = new HashMap<>();
         if (parser.getClustering() == 0) {
-            pointsCnt = totalPoints.size();
-            clustersCnt = totalPoints.size();
             for (Point point : totalPoints) {
-                arrayNode.addObject().put("size", 1).putArray("coordinates").add(point.getX()).add(point.getY());
+                putPointIntoMap(pointsMap, point, 1);
             }
         } else {
             if (parser.getClusteringAlgorithm() == 0) {
-                ArrayList<Cluster> points = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, 18);
                 ArrayList<Cluster> clusters = this.clustering.getClusters(new double[]{parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude()}, parser.getZoom());
-                pointsCnt = points.size();
-                clustersCnt = clusters.size();
                 for (Cluster cluster : clusters) {
-                    ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(Clustering.xLng(cluster.getX())).add(Clustering.yLat(cluster.getY()));
-                    objectNode.put("size", cluster.getNumPoints());
-                    arrayNode.add(objectNode);
+                    putPointIntoMap(pointsMap, new Point(Clustering.xLng(cluster.getX()), Clustering.yLat(cluster.getY())), cluster.getNumPoints());
                 }
             } else {
-                pointsCnt = kmeans.getDataSetLength();
-                clustersCnt = kmeans.getK();
-                arrayNode = kmeans.getClustersJson();
+                pointsMap = kmeans.getClustersMap();
             }
         }
-        dataNode.put("data", arrayNode.toString());
-        dataNode.put("repliesCnt", getTotalEdgesSize());
-        dataNode.put("pointsCnt", pointsCnt);
-        dataNode.put("clustersCnt", clustersCnt);
+        response.setPoints(pointsMap);
+        response.setPointsCnt(totalPoints.size());
+        response.setRepliesCnt(getTotalEdgesSize());
     }
 
     private void drawEdges() {
@@ -227,13 +216,13 @@ public class GraphController extends Controller {
                 }
             }
         }
-        dataNode.put("edgesCnt", edges.size());
+        response.setEdgesCnt(edges.size());
         if (parser.getBundling() == 0) {
             noBundling(edges);
         } else {
             runFDEB(edges);
         }
-        dataNode.put("repliesCnt", getTotalEdgesSize());
+        response.setRepliesCnt(getTotalEdgesSize());
     }
 
     private int getTotalEdgesSize() {
@@ -295,7 +284,14 @@ public class GraphController extends Controller {
         }
     }
 
-    // TODO remove duplicate code in runFDEB and noBundling
+    private void putPointIntoMap(HashMap<Point, Integer> points, Point point, int weight) {
+        if (points.containsKey(point)) {
+            points.put(point, points.get(point) + weight);
+        } else {
+            points.put(point, weight);
+        }
+    }
+
     private void runFDEB(HashMap<Edge, Integer> edges) {
         ArrayList<Edge> dataEdges = new ArrayList<>();
         ArrayList<Integer> closeEdgeList = new ArrayList<>();
@@ -310,31 +306,19 @@ public class GraphController extends Controller {
         forceBundling.setS(parser.getZoom());
         ArrayList<Path> pathResult = forceBundling.forceBundle();
         int isolatedEdgesCnt = forceBundling.getIsolatedEdgesCnt();
-        ArrayNode pathJson = objectMapper.createArrayNode();
+        HashMap<Edge, Integer> edgesData = new HashMap<>();
         for (int i = 0; i < pathResult.size(); i++) {
             Path path = pathResult.get(i);
             for (int j = 0; j < path.getPath().size() - 1; j++) {
-                ObjectNode lineNode = objectMapper.createObjectNode();
-                lineNode.putArray("from").add(path.getPath().get(j).getX()).add(path.getPath().get(j).getY());
-                lineNode.putArray("to").add(path.getPath().get(j + 1).getX()).add(path.getPath().get(j + 1).getY());
-                lineNode.put("width", closeEdgeList.get(i));
-                pathJson.add(lineNode);
+                putEdgeIntoMap(edgesData, new Edge(path.getPath().get(j), path.getPath().get(j + 1)), closeEdgeList.get(i));
             }
         }
-        dataNode.put("data", pathJson.toString());
-        dataNode.put("isolatedEdgesCnt", isolatedEdgesCnt);
+        response.setEdges(edgesData);
+        response.setIsolatedEdgesCnt(isolatedEdgesCnt);
     }
 
     private void noBundling(HashMap<Edge, Integer> edges) {
-        ArrayNode arrayNode = objectMapper.createArrayNode();
-        for (Map.Entry<Edge, Integer> entry : edges.entrySet()) {
-            ObjectNode lineNode = objectMapper.createObjectNode();
-            lineNode.putArray("from").add(entry.getKey().getFromX()).add(entry.getKey().getFromY());
-            lineNode.putArray("to").add(entry.getKey().getToX()).add(entry.getKey().getToY());
-            lineNode.put("width", entry.getValue());
-            arrayNode.add(lineNode);
-        }
-        dataNode.put("data", arrayNode.toString());
-        dataNode.put("isolatedEdgesCnt", edges.size());
+        response.setEdges(edges);
+        response.setIsolatedEdgesCnt(edges.size());
     }
 }

@@ -3,6 +3,7 @@ package clustering;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import models.Cluster;
 import models.Point;
 
 import java.util.*;
@@ -29,14 +30,6 @@ public class Kmeans {
             k = 1;
         }
         this.k = k;
-    }
-
-    public List<Point> getDataSet() {
-        return dataSet;
-    }
-
-    public HashMap<Point, Integer> getParents() {
-        return parents;
     }
 
     public List<Point> getCenters() {
@@ -268,18 +261,6 @@ public class Kmeans {
 
     public Point getParent(Point point) {
         return centers.get(parents.get(point));
-    }
-
-    public ArrayNode getClustersJson() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ArrayNode arrayNode = objectMapper.createArrayNode();
-        for (int i = 0; i < getK(); i++) {
-            ObjectNode objectNode = objectMapper.createObjectNode();
-            objectNode.putArray("coordinates").add(getCenters().get(i).getX()).add(getCenters().get(i).getY());
-            objectNode.put("size", getClusters().get(i).size());
-            arrayNode.add(objectNode);
-        }
-        return arrayNode;
     }
 
     public HashMap<Point, Integer> getClustersMap() {
