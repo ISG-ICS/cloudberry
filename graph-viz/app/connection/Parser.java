@@ -1,4 +1,4 @@
-    package connection;
+package connection;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,19 +6,28 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 
 public class Parser {
+    // option indicates the request type
     private int option;
+    // the four coordinates corresponding to the current window
     private double lowerLongitude = 0;
     private double upperLongitude = 0;
     private double lowerLatitude = 0;
     private double upperLatitude = 0;
+    // 0: display points, 1: display clusters
     private int clustering = 0;
+    // 0: HGC, 1: IKmeans, 2: Kmeans
     private int clusteringAlgorithm = 0;
+    // 0: no bundling, 1: do FDEB
     private int bundling = 0;
+    // the current timestamp
     private String timestamp = null;
+    // the current zoom level
     private int zoom = 0;
+    // 0: no treeCutting, 1: do treeCutting
     private int treeCutting = 0;
+    // the query keyword
     private String query = "";
-
+    // the end date of each slice
     private String endDate = null;
 
     public int getOption() {
@@ -73,6 +82,10 @@ public class Parser {
         return query;
     }
 
+    /**
+     * parse the JSON sent from front end into variables
+     * @param query the JSON sent from front end
+     */
     public void parse(String query) {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode = null;
