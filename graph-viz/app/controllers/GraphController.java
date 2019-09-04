@@ -155,7 +155,6 @@ public class GraphController extends Controller {
     }
 
     private void loadHGC() {
-        System.out.println(batchPoints.size());
         clustering.load(batchPoints);
     }
 
@@ -185,7 +184,6 @@ public class GraphController extends Controller {
         int pointsCnt;
         int clustersCnt;
         ArrayNode arrayNode = objectMapper.createArrayNode();
-        System.out.println(parser.getClustering());
 
         if (parser.getClustering() == 0) {
             pointsCnt = totalPoints.size();
