@@ -255,8 +255,6 @@ public class GraphController extends Controller {
     }
 
     private void drawEdges() {
-        int edgesCnt;
-        int repliesCnt = resultSetSize;
         if (parser.getClusteringAlgorithm() == 0) {
             HashMap<Edge, Integer> edges = new HashMap<>();
             if (parser.getClustering() == 0) {
@@ -271,41 +269,39 @@ public class GraphController extends Controller {
                 HashSet<Edge> externalEdgeSet = new HashSet<>();
                 HashSet<Cluster> externalCluster = new HashSet<>();
                 HashSet<Cluster> internalCluster = new HashSet<>();
-                generateExternalEdgeSet(parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
+                generateExternalEdgeSet(parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 TreeCut treeCutInstance = new TreeCut();
-                System.out.println(parser.getTreeCutting());
                 if (parser.getTreeCutting() == 1) {
-                    treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getLowerLatitude(), parser.getUpperLongitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
+                    treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 } else {
                     treeCutInstance.nonTreeCut(this.clustering, parser.getZoom(), edges, externalEdgeSet);
                 }
             }
-            edgesCnt = edges.size();
-            dataNode.put("edgesCnt", edgesCnt);
+            dataNode.put("edgesCnt", edges.size());
             if (parser.getBundling() == 0) {
                 noBundling(edges);
             } else {
-                runFDEB(parser.getZoom(), edges);
+                runFDEB(edges);
             }
         } else if (parser.getClusteringAlgorithm() == 1) {
-            getKmeansEdges(parser.getZoom(), parser.getBundling(), parser.getBundling(), iKmeans.getParents(), iKmeans.getCenters());
+            drawKmeansEdges(iKmeans.getParents(), iKmeans.getCenters());
         } else {
-            getKmeansEdges(parser.getZoom(), parser.getBundling(), parser.getClustering(), kmeans.getParents(), kmeans.getCenters());
+            drawKmeansEdges(kmeans.getParents(), kmeans.getCenters());
         }
-        dataNode.put("repliesCnt", repliesCnt);
+        dataNode.put("repliesCnt", resultSetSize);
     }
 
     private void generateExternalEdgeSet(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom,
                                          HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
                                          HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
         for (Edge edge : edgeSet) {
-            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), zoom);
-            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), zoom);
+            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), parser.getZoom());
+            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), parser.getZoom());
             double fromLongitude = Clustering.xLng(fromCluster.getX());
             double fromLatitude = Clustering.yLat(fromCluster.getY());
             double toLongitude = Clustering.xLng(toCluster.getX());
             double toLatitude = Clustering.yLat(toCluster.getY());
-            boolean fromWithinRange = lowerLongitude <= fromLongitude && fromLongitude <= upperLongitude
+            boolean fromWithinRange = parser.getLowerLongitude() <= fromLongitude && fromLongitude <= upperLongitude
                     && lowerLatitude <= fromLatitude && fromLatitude <= upperLatitude;
             boolean toWithinRange = lowerLongitude <= toLongitude && toLongitude <= upperLongitude
                     && lowerLatitude <= toLatitude && toLatitude <= upperLatitude;
@@ -330,9 +326,9 @@ public class GraphController extends Controller {
     }
 
 
-    private void getKmeansEdges(int zoom, int bundling, int clustering, HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
+    private void drawKmeansEdges(HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
-        if (clustering == 0) {
+        if (parser.getClustering() == 0) {
             for (Edge edge : edgeSet) {
                 if (edges.containsKey(edge)) {
                     edges.put(edge, edges.get(edge) + 1);
@@ -361,14 +357,14 @@ public class GraphController extends Controller {
             }
         }
         dataNode.put("edgesCnt", edges.size());
-        if (bundling == 0) {
+        if (parser.getBundling() == 0) {
             noBundling(edges);
         } else {
-            runFDEB(zoom, edges);
+            runFDEB(edges);
         }
     }
 
-    private void runFDEB(int zoom, HashMap<Edge, Integer> edges) {
+    private void runFDEB(HashMap<Edge, Integer> edges) {
         ArrayList<Point> dataNodes = new ArrayList<>();
         ArrayList<EdgeVector> dataEdges = new ArrayList<>();
         ArrayList<Integer> closeEdgeList = new ArrayList<>();
@@ -382,7 +378,7 @@ public class GraphController extends Controller {
             closeEdgeList.add(entry.getValue());
         }
         ForceBundling forceBundling = new ForceBundling(dataNodes, dataEdges);
-        forceBundling.setS(zoom);
+        forceBundling.setS(parser.getZoom());
         ArrayList<Path> pathResult = forceBundling.forceBundle();
         int isolatedEdgesCnt = forceBundling.getIsolatedEdgesCnt();
         ArrayNode pathJson = objectMapper.createArrayNode();
