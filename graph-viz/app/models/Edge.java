@@ -18,9 +18,9 @@ public class Edge {
     // to Point of edge
     private Point to;
 
-    public Edge(double fromX, double fromY, double toX, double toY) {
-        this.from = new Point(fromX, fromY);
-        this.to = new Point(toX, toY);
+    public Edge(Point from, Point to) {
+        this.from = from;
+        this.to = to;
     }
 
     public double getFromX() {

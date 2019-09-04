@@ -3,6 +3,7 @@ package treeCut;
 import clustering.Clustering;
 import models.Cluster;
 import models.Edge;
+import models.Point;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -210,7 +211,7 @@ public class TreeCut {
             }
             outsideLng = Clustering.xLng(elevatedCluster.getX());
             outsideLat = Clustering.yLat(elevatedCluster.getY());
-            Edge e = new Edge(insideLng, insideLat, outsideLng, outsideLat);
+            Edge e = new Edge(new Point(insideLng, insideLat), new Point(outsideLng, outsideLat));
             if (edges.containsKey(e)) {
                 edges.put(e, edges.get(e) + 1);
             } else {

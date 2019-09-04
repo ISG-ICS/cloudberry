@@ -84,24 +84,18 @@ public class Clustering {
             } else {
                 Cluster neighbor = null;
                 point.setZoom(z + 1);
-                int totNumOfPoints = 0;
-                for (int i = 0; i < neighbors.size(); i++) {
-                    neighbor = neighbors.get(i);
-                    if (neighbor.getX() != point.getX() || neighbor.getY() != point.getY()) continue;
-                    totNumOfPoints += neighbor.getNumPoints();
-                }
-                double rand = Math.random();
-                for (int i = 0; i < neighbors.size(); i++) {
-                    neighbor = neighbors.get(i);
-                    if (neighbor.getX() != point.getX() || neighbor.getY() != point.getY()) continue;
-                    double probability = neighbor.getNumPoints() * 1.0 / totNumOfPoints;
-                    if (rand < probability) {
-                        break;
-                    } else {
-                        rand -= probability;
+                // choose the closest cluster
+                double minDis = 1e9;
+                for(int i = 0; i < neighbors.size(); i++) {
+                    Cluster c = neighbors.get(i);
+                    if (c.getX() == point.getX() && c.getY() == point.getY()) continue;
+                    double dis = c.distanceTo(point);
+                    if(dis < minDis) {
+                        minDis = dis;
+                        neighbor = c;
                     }
                 }
-                // let this drawPoints be its parent
+                // let this cluster be its parent
                 point.parent = neighbor;
                 // update its parents
                 while (neighbor != null) {

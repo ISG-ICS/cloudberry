@@ -103,7 +103,7 @@ public class ForceBundling {
      * @return distance of two points.
      */
     private double euclideanDistance(Point p, Point q) {
-        return Math.sqrt(Math.pow(p.getX() - q.getX(), 2) + Math.pow(p.getY() - q.getY(), 2));
+        return p.distanceTo(q);
     }
 
     /**
