@@ -1,5 +1,8 @@
 package clustering;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.Point;
 
 import java.util.*;
@@ -261,5 +264,17 @@ public class Kmeans {
             clusters = initCluster();
             lastSquaredErrorSum = currentSquaredErrorSum;
         }
+    }
+
+    public ArrayNode getClustersJson() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ArrayNode arrayNode = objectMapper.createArrayNode();
+        for (int i = 0; i < getK(); i++) {
+            ObjectNode objectNode = objectMapper.createObjectNode();
+            objectNode.putArray("coordinates").add(getCenters().get(i).getX()).add(getCenters().get(i).getY());
+            objectNode.put("size", getClusters().get(i).size());
+            arrayNode.add(objectNode);
+        }
+        return arrayNode;
     }
 }

@@ -206,21 +206,11 @@ public class GraphController extends Controller {
             } else if (parser.getClusteringAlgorithm() == 1) {
                 pointsCnt = iKmeans.getPointsCnt();
                 clustersCnt = iKmeans.getK();
-                for (int i = 0; i < iKmeans.getK(); i++) {
-                    ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(iKmeans.getCenters().get(i).getX()).add(iKmeans.getCenters().get(i).getY());
-                    objectNode.put("size", iKmeans.getAllClusters().get(i).size());
-                    arrayNode.add(objectNode);
-                }
+                arrayNode = iKmeans.getClustersJson();
             } else {
                 pointsCnt = kmeans.getDataSetLength();
                 clustersCnt = kmeans.getK();
-                for (int i = 0; i < kmeans.getK(); i++) {
-                    ObjectNode objectNode = objectMapper.createObjectNode();
-                    objectNode.putArray("coordinates").add(kmeans.getCenters().get(i).getX()).add(kmeans.getCenters().get(i).getY());
-                    objectNode.put("size", kmeans.getClusters().get(i).size());
-                    arrayNode.add(objectNode);
-                }
+                arrayNode = kmeans.getClustersJson();
             }
         }
         dataNode.put("data", arrayNode.toString());

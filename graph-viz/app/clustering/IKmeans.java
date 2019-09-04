@@ -1,5 +1,8 @@
 package clustering;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.Point;
 
 import java.util.ArrayList;
@@ -109,5 +112,18 @@ public class IKmeans extends Kmeans {
         clusters.clear();
         clusters = initCluster();
         pointsCnt += data.size();
+    }
+
+    @Override
+    public ArrayNode getClustersJson() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ArrayNode arrayNode = objectMapper.createArrayNode();
+        for (int i = 0; i < getK(); i++) {
+            ObjectNode objectNode = objectMapper.createObjectNode();
+            objectNode.putArray("coordinates").add(getCenters().get(i).getX()).add(getCenters().get(i).getY());
+            objectNode.put("size", getAllClusters().get(i).size());
+            arrayNode.add(objectNode);
+        }
+        return arrayNode;
     }
 }
