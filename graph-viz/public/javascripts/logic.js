@@ -8,7 +8,7 @@ const map = new mapboxgl.Map({
     minZoom: 0
 });
 // use timestamp to label every sending request
-let current_timestamp;
+let currentTimestamp;
 let socket;
 // zoom level after last time
 let zoomLevel = Math.floor(map.getZoom());
@@ -59,8 +59,8 @@ function sendEdgesRequest(minLng, minLat, maxLng, maxLat, zoom) {
 }
 
 function sendClusterRequest(minLng, minLat, maxLng, maxLat, zoom) {
-    let clustering_control = getChoice("cluster");
-    if (clustering_control === 0) {
+    let clusteringControl = getChoice("cluster");
+    if (clusteringControl === 0) {
         zoom = 18;
     }
     sendingRequest(minLng, minLat, maxLng, maxLat, zoom, 1);
@@ -71,9 +71,9 @@ function sendingRequest(minLng, minLat, maxLng, maxLat, zoom, option) {
         return;
     }
     const clusteringAlgorithm = getClusteringAlgorithm();
-    let clustering_control = getChoice("cluster");
-    let bundling_control = getChoice("bundle");
-    let cut_control = getChoice("tree_cut");
+    let clusteringControl = getChoice("cluster");
+    let bundlingControl = getChoice("bundle");
+    let cutControl = getChoice("treeCut");
     const sendingObj = {
         query: query,
         lowerLongitude: minLng,
@@ -81,11 +81,11 @@ function sendingRequest(minLng, minLat, maxLng, maxLat, zoom, option) {
         lowerLatitude: minLat,
         upperLatitude: maxLat,
         clusteringAlgorithm: clusteringAlgorithm,
-        bundling: bundling_control,
-        treeCut: cut_control,
-        clustering: clustering_control,
+        bundling: bundlingControl,
+        treeCut: cutControl,
+        clustering: clusteringControl,
         zoom: zoom,
-        timestamp: current_timestamp,
+        timestamp: currentTimestamp,
         option: option
     };
     const sendingJSON = JSON.stringify(sendingObj);
@@ -165,12 +165,12 @@ function drawGraph() {
     socket = new WebSocket("ws://localhost:9000/replies");
 
     socket.onopen = function (e) {
-        current_timestamp = Date.now();
+        currentTimestamp = Date.now();
         const clusteringAlgorithm = getClusteringAlgorithm();
         const sendingObj = {
             query: query,
             clusteringAlgorithm: clusteringAlgorithm,
-            timestamp: current_timestamp,
+            timestamp: currentTimestamp,
             option: 0
         };
         const sendingJSON = JSON.stringify(sendingObj);
@@ -183,7 +183,7 @@ function drawGraph() {
         let option = json['option'];
         let timestamp = json['timestamp'];
         // deal with package that has wrong timestamp (outdated packages)
-        if (timestamp !== current_timestamp.toString()) {
+        if (timestamp !== currentTimestamp.toString()) {
             console.log('data is dropped');
             return;
         }
@@ -196,7 +196,7 @@ function drawGraph() {
                     query: query,
                     clusteringAlgorithm: clusteringAlgorithm,
                     date: date,
-                    timestamp: current_timestamp,
+                    timestamp: currentTimestamp,
                     option: 0
                 };
                 const sendingJSON = JSON.stringify(sendingObj);
@@ -221,10 +221,10 @@ function statusChange(changeEvent) {
     let clusterStatus = getChoice("cluster");
     let edgeStatus = getChoice("edge");
     let bundleStatus = getChoice("bundle");
-    let treeCutStatus = getChoice("tree_cut");
+    let treeCutStatus = getChoice("treeCut");
     let pointDraw = 0;
     let edgeDraw = 0;
-    if (changeEvent === 'point' || changeEvent === 'cluster' || changeEvent === 'tree_cut' || changeEvent === 'incremental') {
+    if (changeEvent === 'point' || changeEvent === 'cluster' || changeEvent === 'treeCut' || changeEvent === 'incremental') {
         if (clusterStatus && !pointStatus) {
             alert("Please check cluster with points.");
             $('#cluster').prop('checked', false);
@@ -232,13 +232,13 @@ function statusChange(changeEvent) {
         }
         if (!clusterStatus && treeCutStatus) {
             alert("Please select tree cut with cluster and edge.");
-            $('#tree_cut').prop('checked', false);
+            $('#treeCut').prop('checked', false);
         }
         if (clusterStatus || pointStatus) pointDraw = 1;
         else removeClusterLayer();
         if (edgeStatus) edgeDraw = 1;
     }
-    if (changeEvent === 'edge' || changeEvent === 'bundle' || changeEvent === 'tree_cut' || changeEvent === 'incremental') {
+    if (changeEvent === 'edge' || changeEvent === 'bundle' || changeEvent === 'treeCut' || changeEvent === 'incremental') {
         if (bundleStatus && !edgeStatus) {
             alert("Please check bundle with edge.");
             $('#bundle').prop('checked', false);
@@ -246,7 +246,7 @@ function statusChange(changeEvent) {
         }
         if (!edgeStatus && treeCutStatus) {
             alert("Please select tree cut with cluster and edge.");
-            $('#tree_cut').prop('checked', false);
+            $('#treeCut').prop('checked', false);
             treeCutStatus = 0;
         }
         if (bundleStatus || edgeStatus || treeCutStatus) edgeDraw = 1;
