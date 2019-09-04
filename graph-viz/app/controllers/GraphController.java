@@ -206,8 +206,8 @@ public class GraphController extends Controller {
                 arrayNode.add(objectNode);
             }
         } else if (parser.getClusteringAlgorithm() == 1) {
+            pointsCnt = iKmeans.getPointsCnt();
             if (parser.getClustering() == 0) {
-                pointsCnt = iKmeans.getPointsCnt();
                 clustersCnt = pointsCnt;
                 for (int i = 0; i < iKmeans.getK(); i++) {
                     for (int j = 0; j < iKmeans.getAllClusters().get(i).size(); j++) {
@@ -218,7 +218,6 @@ public class GraphController extends Controller {
                     }
                 }
             } else {
-                pointsCnt = iKmeans.getPointsCnt();
                 clustersCnt = iKmeans.getK();
                 for (int i = 0; i < iKmeans.getK(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
@@ -228,8 +227,8 @@ public class GraphController extends Controller {
                 }
             }
         } else {
+            pointsCnt = kmeans.getDataSetLength();
             if (parser.getClustering() == 0) {
-                pointsCnt = kmeans.getDataSetLength();
                 clustersCnt = pointsCnt;
                 for (int i = 0; i < kmeans.getDataSetLength(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
@@ -238,7 +237,6 @@ public class GraphController extends Controller {
                     arrayNode.add(objectNode);
                 }
             } else {
-                pointsCnt = kmeans.getDataSetLength();
                 clustersCnt = kmeans.getK();
                 for (int i = 0; i < kmeans.getK(); i++) {
                     ObjectNode objectNode = objectMapper.createObjectNode();
@@ -269,7 +267,7 @@ public class GraphController extends Controller {
                 HashSet<Edge> externalEdgeSet = new HashSet<>();
                 HashSet<Cluster> externalCluster = new HashSet<>();
                 HashSet<Cluster> internalCluster = new HashSet<>();
-                generateExternalEdgeSet(parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
+                generateExternalEdgeSet(edges, externalEdgeSet, externalCluster, internalCluster);
                 TreeCut treeCutInstance = new TreeCut();
                 if (parser.getTreeCutting() == 1) {
                     treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
@@ -291,8 +289,7 @@ public class GraphController extends Controller {
         dataNode.put("repliesCnt", resultSetSize);
     }
 
-    private void generateExternalEdgeSet(double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom,
-                                         HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
+    private void generateExternalEdgeSet(HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
                                          HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
         for (Edge edge : edgeSet) {
             Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), parser.getZoom());
@@ -301,10 +298,10 @@ public class GraphController extends Controller {
             double fromLatitude = Clustering.yLat(fromCluster.getY());
             double toLongitude = Clustering.xLng(toCluster.getX());
             double toLatitude = Clustering.yLat(toCluster.getY());
-            boolean fromWithinRange = parser.getLowerLongitude() <= fromLongitude && fromLongitude <= upperLongitude
-                    && lowerLatitude <= fromLatitude && fromLatitude <= upperLatitude;
-            boolean toWithinRange = lowerLongitude <= toLongitude && toLongitude <= upperLongitude
-                    && lowerLatitude <= toLatitude && toLatitude <= upperLatitude;
+            boolean fromWithinRange = parser.getLowerLongitude() <= fromLongitude && fromLongitude <= parser.getUpperLongitude()
+                    && parser.getLowerLatitude() <= fromLatitude && fromLatitude <= parser.getUpperLatitude();
+            boolean toWithinRange = parser.getLowerLongitude()  <= toLongitude && toLongitude <= parser.getUpperLongitude()
+                    && parser.getLowerLatitude() <= toLatitude && toLatitude <= parser.getUpperLatitude();
             if (fromWithinRange && toWithinRange) {
                 Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
                 if (edges.containsKey(e)) {
@@ -324,7 +321,6 @@ public class GraphController extends Controller {
             }
         }
     }
-
 
     private void drawKmeansEdges(HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
