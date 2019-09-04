@@ -35,14 +35,13 @@ public class GraphController extends Controller {
     private IKmeans iKmeans;
     private Kmeans kmeans;
     // Incremental edge data
-    private Set<Edge> edgeSet = new HashSet<>();
+    private HashMap<Edge, Integer> totalEdges = new HashMap<>();
     private List<Point> totalPoints = new ArrayList<>();
     private List<Point> batchPoints = new ArrayList<>();
     private ObjectMapper objectMapper = new ObjectMapper();
     private ObjectNode dataNode;
     private Parser parser = new Parser();
     // Size of resultSet
-    private int resultSetSize = 0;
 
     /**
      * Dispatcher for the request message.
@@ -115,23 +114,20 @@ public class GraphController extends Controller {
             resultSet.close();
         }
         state.close();
+        conn.close();
     }
 
     private void loadData(ResultSet resultSet) throws SQLException {
         batchPoints.clear();
         while (resultSet.next()) {
-            resultSetSize++;
-            double fromLongitude = resultSet.getDouble("from_longitude");
-            double fromLatitude = resultSet.getDouble("from_latitude");
-            double toLongitude = resultSet.getDouble("to_longitude");
-            double toLatitude = resultSet.getDouble("to_latitude");
-            Edge currentEdge = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
-            if (edgeSet.contains(currentEdge)) continue;
-            totalPoints.add(new Point(fromLongitude, fromLatitude));
-            totalPoints.add(new Point(toLongitude, toLatitude));
-            batchPoints.add(new Point(fromLongitude, fromLatitude));
-            batchPoints.add(new Point(toLongitude, toLatitude));
-            edgeSet.add(currentEdge);
+            Point from = new Point(resultSet.getDouble("from_longitude"), resultSet.getDouble("from_latitude"));
+            Point to = new Point(resultSet.getDouble("to_longitude"), resultSet.getDouble("to_latitude"));
+            Edge currentEdge = new Edge(from, to);
+            putEdgeIntoMap(totalEdges, currentEdge, 1);
+            totalPoints.add(from);
+            totalPoints.add(to);
+            batchPoints.add(from);
+            batchPoints.add(to);
         }
     }
 
@@ -214,23 +210,17 @@ public class GraphController extends Controller {
             }
         }
         dataNode.put("data", arrayNode.toString());
-        dataNode.put("repliesCnt", resultSetSize);
+        dataNode.put("repliesCnt", getTotalEdgesSize());
         dataNode.put("pointsCnt", pointsCnt);
         dataNode.put("clustersCnt", clustersCnt);
     }
 
     private void drawEdges() {
-        if (parser.getClusteringAlgorithm() == 0) {
-            HashMap<Edge, Integer> edges = new HashMap<>();
-            if (parser.getClustering() == 0) {
-                for (Edge edge : edgeSet) {
-                    if (edges.containsKey(edge)) {
-                        edges.put(edge, edges.get(edge) + 1);
-                    } else {
-                        edges.put(edge, 1);
-                    }
-                }
-            } else {
+        HashMap<Edge, Integer> edges = new HashMap<>();
+        if (parser.getClustering() == 0) {
+            edges = totalEdges;
+        } else {
+            if (parser.getClusteringAlgorithm() == 0) {
                 HashSet<Edge> externalEdgeSet = new HashSet<>();
                 HashSet<Cluster> externalCluster = new HashSet<>();
                 HashSet<Cluster> internalCluster = new HashSet<>();
@@ -239,32 +229,41 @@ public class GraphController extends Controller {
                 if (parser.getTreeCutting() == 1) {
                     treeCutInstance.execute(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 }
-            }
-            dataNode.put("edgesCnt", edges.size());
-            if (parser.getBundling() == 0) {
-                noBundling(edges);
+            } else if (parser.getClusteringAlgorithm() == 1) {
+                edges = getKmeansEdges(iKmeans.getParents(), iKmeans.getCenters());
             } else {
-                runFDEB(edges);
+                edges = getKmeansEdges(kmeans.getParents(), kmeans.getCenters());
             }
-        } else if (parser.getClusteringAlgorithm() == 1) {
-            drawKmeansEdges(iKmeans.getParents(), iKmeans.getCenters());
-        } else {
-            drawKmeansEdges(kmeans.getParents(), kmeans.getCenters());
         }
-        dataNode.put("repliesCnt", resultSetSize);
+        dataNode.put("edgesCnt", edges.size());
+        if (parser.getBundling() == 0) {
+            noBundling(edges);
+        } else {
+            runFDEB(edges);
+        }
+        dataNode.put("repliesCnt", getTotalEdgesSize());
+    }
+
+    private int getTotalEdgesSize() {
+        int tot = 0;
+        for (Edge edge : totalEdges.keySet()) {
+            tot += totalEdges.get(edge);
+        }
+        return tot;
     }
 
     /**
      * prepares external egde set for tree cut.
-     * @param edges the returning edge set, if tree cut is enabled, it contains only the internal edges.
-     *              Otherwise, it contains all the edges.
+     *
+     * @param edges           the returning edge set, if tree cut is enabled, it contains only the internal edges.
+     *                        Otherwise, it contains all the edges.
      * @param externalEdgeSet the returning external edge set
      * @param externalCluster outside cluster corresponding to edge set with only one node inside screen
      * @param internalCluster inside screen clusters
      */
     private void generateEdgeSet(HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
                                  HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
-        for (Edge edge : edgeSet) {
+        for (Edge edge : totalEdges.keySet()) {
             Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), parser.getZoom());
             Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), parser.getZoom());
             double fromLongitude = Clustering.xLng(fromCluster.getX());
@@ -275,13 +274,14 @@ public class GraphController extends Controller {
                     && parser.getLowerLatitude() <= fromLatitude && fromLatitude <= parser.getUpperLatitude();
             boolean toWithinRange = parser.getLowerLongitude() <= toLongitude && toLongitude <= parser.getUpperLongitude()
                     && parser.getLowerLatitude() <= toLatitude && toLatitude <= parser.getUpperLatitude();
+            Edge e = new Edge(new Point(fromLongitude, fromLatitude), new Point(toLongitude, toLatitude));
             if (fromWithinRange && toWithinRange) {
-                putEdgeIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
+                putEdgeIntoMap(edges, e, totalEdges.get(edge));
                 internalCluster.add(fromCluster);
                 internalCluster.add(toCluster);
             } else if (fromWithinRange || toWithinRange) {
                 if (parser.getTreeCutting() == 0) {
-                    putEdgeIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
+                    putEdgeIntoMap(edges, e, totalEdges.get(edge));
                 } else {
                     if (fromWithinRange) {
                         externalCluster.add(toCluster);
@@ -295,44 +295,25 @@ public class GraphController extends Controller {
         }
     }
 
-    private void putEdgeIntoMap(HashMap<Edge, Integer> edges, double fromLongitude, double fromLatitude, double toLongitude, double toLatitude) {
-        Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
-        if (edges.containsKey(e)) {
-            edges.put(e, edges.get(e) + 1);
+    private void putEdgeIntoMap(HashMap<Edge, Integer> edges, Edge edge, int weight) {
+        if (edges.containsKey(edge)) {
+            edges.put(edge, edges.get(edge) + weight);
         } else {
-            edges.put(e, 1);
+            edges.put(edge, weight);
         }
     }
 
-    private void drawKmeansEdges(HashMap<models.Point, Integer> parents, List<Point> center) {
+    private HashMap<Edge, Integer> getKmeansEdges(HashMap<models.Point, Integer> parents, List<Point> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
-        if (parser.getClustering() == 0) {
-            for (Edge edge : edgeSet) {
-                if (edges.containsKey(edge)) {
-                    edges.put(edge, edges.get(edge) + 1);
-                } else {
-                    edges.put(edge, 1);
-                }
-            }
-        } else {
-            for (Edge edge : edgeSet) {
-                double fromLongitude = edge.getFromX();
-                double fromLatitude = edge.getFromY();
-                double toLongitude = edge.getToX();
-                double toLatitude = edge.getToY();
-                models.Point fromPoint = new models.Point(fromLongitude, fromLatitude);
-                models.Point toPoint = new models.Point(toLongitude, toLatitude);
-                int fromCluster = parents.get(fromPoint);
-                int toCluster = parents.get(toPoint);
-                putEdgeIntoMap(edges, center.get(fromCluster).getX(), center.get(fromCluster).getY(), center.get(toCluster).getX(), center.get(toCluster).getY());
-            }
+        for (Edge edge : totalEdges.keySet()) {
+            models.Point fromPoint = new models.Point(edge.getFromX(), edge.getFromY());
+            models.Point toPoint = new models.Point(edge.getToX(), edge.getToY());
+            int fromCluster = parents.get(fromPoint);
+            int toCluster = parents.get(toPoint);
+            Edge e = new Edge(center.get(fromCluster), center.get(toCluster));
+            putEdgeIntoMap(edges, e, totalEdges.get(edge));
         }
-        dataNode.put("edgesCnt", edges.size());
-        if (parser.getBundling() == 0) {
-            noBundling(edges);
-        } else {
-            runFDEB(edges);
-        }
+        return edges;
     }
 
     private void runFDEB(HashMap<Edge, Integer> edges) {
@@ -350,22 +331,15 @@ public class GraphController extends Controller {
         ArrayList<Path> pathResult = forceBundling.forceBundle();
         int isolatedEdgesCnt = forceBundling.getIsolatedEdgesCnt();
         ArrayNode pathJson = objectMapper.createArrayNode();
-        int edgeNum = 0;
-        for (Path path : pathResult) {
+        for (int i = 0; i < pathResult.size(); i++) {
+            Path path = pathResult.get(i);
             for (int j = 0; j < path.getPath().size() - 1; j++) {
                 ObjectNode lineNode = objectMapper.createObjectNode();
-                ArrayNode fromArray = objectMapper.createArrayNode();
-                fromArray.add(path.getPath().get(j).getX());
-                fromArray.add(path.getPath().get(j).getY());
-                ArrayNode toArray = objectMapper.createArrayNode();
-                toArray.add(path.getPath().get(j + 1).getX());
-                toArray.add(path.getPath().get(j + 1).getY());
-                lineNode.putArray("from").addAll(fromArray);
-                lineNode.putArray("to").addAll(toArray);
-                lineNode.put("width", closeEdgeList.get(edgeNum));
+                lineNode.putArray("from").add(path.getPath().get(j).getX()).add(path.getPath().get(j).getY());
+                lineNode.putArray("to").add(path.getPath().get(j + 1).getX()).add(path.getPath().get(j + 1).getY());
+                lineNode.put("width", closeEdgeList.get(i));
                 pathJson.add(lineNode);
             }
-            edgeNum++;
         }
         dataNode.put("data", pathJson.toString());
         dataNode.put("isolatedEdgesCnt", isolatedEdgesCnt);
