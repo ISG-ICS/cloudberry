@@ -111,10 +111,10 @@ public class GraphController extends Controller {
             if (parser.getClusteringAlgorithm() == 0) {
                 loadHGC();
             } else if (parser.getClusteringAlgorithm() == 1) {
-                kmeans = new IKmeans(K);
+                if (kmeans == null) kmeans = new IKmeans(K);
                 loadKmeans();
             } else if (parser.getClusteringAlgorithm() == 2) {
-                kmeans = new Kmeans(K);
+                if (kmeans == null) kmeans = new Kmeans(K);
                 bindFields(PropertiesUtil.lastDate);
                 state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, PropertiesUtil.firstDate, PropertiesUtil.lastDate);
                 loadData(state.executeQuery());
@@ -141,11 +141,6 @@ public class GraphController extends Controller {
 
     private void loadKmeans() {
         if (kmeans instanceof IKmeans) {
-            kmeans.setDataSet(batchPoints);
-            ((IKmeans) kmeans).updateK();
-            if (kmeans.getDataSetLength() != 0) {
-                kmeans.init();
-            }
             kmeans.execute(batchPoints);
         } else {
             kmeans.execute(totalPoints);
@@ -226,7 +221,10 @@ public class GraphController extends Controller {
                     treeCutInstance.execute(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 }
             } else {
-                edges = getKmeansEdges(kmeans.getParents(), kmeans.getCenters());
+                for (Edge edge : totalEdges.keySet()) {
+                    Edge e = new Edge(kmeans.getParent(edge.getFromPoint()), kmeans.getParent(edge.getToPoint()));
+                    putEdgeIntoMap(edges, e, totalEdges.get(edge));
+                }
             }
         }
         dataNode.put("edgesCnt", edges.size());
@@ -295,19 +293,6 @@ public class GraphController extends Controller {
         } else {
             edges.put(edge, weight);
         }
-    }
-
-    private HashMap<Edge, Integer> getKmeansEdges(HashMap<models.Point, Integer> parents, List<Point> center) {
-        HashMap<Edge, Integer> edges = new HashMap<>();
-        for (Edge edge : totalEdges.keySet()) {
-            models.Point fromPoint = new models.Point(edge.getFromX(), edge.getFromY());
-            models.Point toPoint = new models.Point(edge.getToX(), edge.getToY());
-            int fromCluster = parents.get(fromPoint);
-            int toCluster = parents.get(toPoint);
-            Edge e = new Edge(center.get(fromCluster), center.get(toCluster));
-            putEdgeIntoMap(edges, e, totalEdges.get(edge));
-        }
-        return edges;
     }
 
     // TODO remove duplicate code in runFDEB and noBundling

@@ -80,7 +80,7 @@ public class Kmeans {
         if (dataSet == null || dataSet.size() == 0) {
             return;
         }
-        centers = initCenters(dataSetLength, dataSet);
+        centers = initCenters();
         clusters = initCluster();
         lastSquaredErrorSum = 0;
     }
@@ -90,17 +90,17 @@ public class Kmeans {
      *
      * @return the list of centers
      */
-    List<Point> initCenters(int dataSetLength, List<Point> dataSet) {
+    List<Point> initCenters() {
         List<Point> center = new ArrayList<>();
         int[] randoms = new int[k];
         boolean flag;
-        int temp = (int) (Math.random() * dataSetLength);
+        int temp = (int) (Math.random() * getDataSetLength());
         randoms[0] = temp;
         center.add(dataSet.get(randoms[0]));
         for (int i = 1; i < k; i++) {
             flag = true;
             while (flag) {
-                temp = (int) (Math.random() * dataSetLength);
+                temp = (int) (Math.random() * getDataSetLength());
                 int j = 0;
                 while (j < i) {
                     if (temp == randoms[j]) {
@@ -264,6 +264,10 @@ public class Kmeans {
             clusters = initCluster();
             lastSquaredErrorSum = currentSquaredErrorSum;
         }
+    }
+
+    public Point getParent(Point point) {
+        return centers.get(parents.get(point));
     }
 
     public ArrayNode getClustersJson() {

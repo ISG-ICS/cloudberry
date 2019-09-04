@@ -33,18 +33,10 @@ public class IKmeans extends Kmeans {
         return pointsCnt;
     }
 
-    /**
-     * Update k according the new batch size
-     */
-    public void updateK() {
-        int dataSetLength = getDataSetLength();
-        if (k > dataSetLength) {
-            k = dataSetLength;
-            setK(dataSetLength);
-        } else if (k == 0) {
-            k = dataSetLength;
-            setK(dataSetLength);
-        }
+    @Override
+    public void setDataSet(List<Point> dataSet) {
+        this.dataSet = dataSet;
+        pointsCnt += dataSet.size();
     }
 
     /**
@@ -55,7 +47,7 @@ public class IKmeans extends Kmeans {
         for (int i = 0; i < k; i++) {
             allClusters.add(new ArrayList<>());
         }
-        centers = initCenters(getDataSetLength(), dataSet);
+        centers = initCenters();
         clusters = initCluster();
     }
 
@@ -65,7 +57,7 @@ public class IKmeans extends Kmeans {
     @Override
     void clusterSet() {
         int minLocation;
-        for (int i = 0; i < getDataSetLength(); i++) {
+        for (int i = 0; i < dataSet.size(); i++) {
             minLocation = assignPoint(i);
             Point point = new Point(dataSet.get(i).getX(), dataSet.get(i).getY());
             parents.put(point, minLocation); // Map each point to the cluster it belongs to
@@ -97,13 +89,22 @@ public class IKmeans extends Kmeans {
      * @param data the new batch of data
      */
     public void execute(List<Point> data) {
+        boolean isFirst = dataSet == null;
         setDataSet(data);
-        if (getDataSetLength() == 0) {
-            return;
-        } else if (k == 0) {
-            updateK();
-            init();
+        if (isFirst) {
+            if (k > dataSet.size()) {
+                k = dataSet.size();
+            }
+            if (k != 0) {
+                init();
+            }
+        } else {
+            if (k == 0 && dataSet.size() > 0) {
+                k = dataSet.size();
+                init();
+            }
         }
+        if (k == 0) return;
         clusterSet();
         setNewCenter();
         for (int j = 0; j < getK(); j++) {
@@ -111,7 +112,6 @@ public class IKmeans extends Kmeans {
         }
         clusters.clear();
         clusters = initCluster();
-        pointsCnt += data.size();
     }
 
     @Override
