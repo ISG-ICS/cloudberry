@@ -1,24 +1,28 @@
 package controllers;
 
+import actors.WebSocketActor;
+import clustering.Clustering;
 import clustering.IKmeans;
 import clustering.Kmeans;
-import clustering.Clustering;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import connection.Parser;
 import connection.Response;
 import edgeBundling.ForceBundling;
-import models.*;
-import play.mvc.*;
-import actors.WebSocketActor;
+import models.Cluster;
+import models.Edge;
+import models.Path;
+import models.Point;
+import play.mvc.Controller;
 import treeCut.TreeCut;
 import utils.DatabaseUtils;
 import utils.IncrementalQuery;
 import utils.PropertiesUtil;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 
