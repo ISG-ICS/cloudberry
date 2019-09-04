@@ -314,7 +314,7 @@ public class GraphController extends Controller {
         }
     }
 
-    private void drawKmeansEdges(HashMap<models.Point, Integer> parents, ArrayList<Point> center) {
+    private void drawKmeansEdges(HashMap<models.Point, Integer> parents, List<Point> center) {
         HashMap<Edge, Integer> edges = new HashMap<>();
         if (parser.getClustering() == 0) {
             for (Edge edge : edgeSet) {

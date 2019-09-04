@@ -10,7 +10,7 @@ import java.util.*;
 public class Kmeans {
     int k; // the number of clusters desired
     List<Point> dataSet; // the dataset for clustering
-    ArrayList<Point> centers; // the list of centers of clusters
+    List<Point> centers; // the list of centers of clusters
     List<List<Point>> clusters; // the list of clusters for the whole dataset
     HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
     private double lastSquaredErrorSum;
@@ -36,7 +36,7 @@ public class Kmeans {
         return parents;
     }
 
-    public ArrayList<Point> getCenters() {
+    public List<Point> getCenters() {
         return centers;
     }
 
@@ -87,8 +87,8 @@ public class Kmeans {
      *
      * @return the list of centers
      */
-    ArrayList<Point> initCenters(int dataSetLength, List<Point> dataSet) {
-        ArrayList<Point> center = new ArrayList<>();
+    List<Point> initCenters(int dataSetLength, List<Point> dataSet) {
+        List<Point> center = new ArrayList<>();
         int[] randoms = new int[k];
         boolean flag;
         int temp = (int) (Math.random() * dataSetLength);
