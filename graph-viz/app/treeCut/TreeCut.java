@@ -159,7 +159,7 @@ public class TreeCut {
     }
 
     /**
-     * add the mapping results to the externalChildToAncestor
+     * add the mapping results to the external child to ancestor
      *
      * @param entry        external child to ancestor entry
      * @param elevateLevel the level that the clusters to be elevated
