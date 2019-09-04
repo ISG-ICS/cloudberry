@@ -70,9 +70,10 @@ public class TreeCut {
                         HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
                         HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
 
-        // initialize the hierarchy
-        addExternalClusterHierarchy(externalCluster);
-        addInternalClusterHierarchy(internalCluster);
+        // initialize the external ancestor
+        addExternalAncestorToChildren(externalCluster);
+        // initialize the internal ancestor
+        addInternalAncestor(internalCluster);
         while (externalAncestorToChildren.size() != 0) {
             // Find clusters has common ancestor with internal clusters at this level and remove
             externalAncestorToChildren.entrySet().removeIf(clusterEntry -> {
@@ -81,38 +82,37 @@ public class TreeCut {
                     int level = clusterEntry.getKey().getZoom();
                     // use a level lower of ancestor to be mapped to
                     int elevateLevel = clusterEntry.getValue().get(0).getZoom() - level - 1;
-                    updateExternalClusterMap(clusterEntry, elevateLevel);
+                    updateExternalChildToAncestor(clusterEntry, elevateLevel);
                     return true;
                 }
                 return false;
             });
             // elevate all remaining clusters to a higher level
-            elevateExternalHierarchy();
-            elevateInternalHierarchy();
+            elevateExternalAncestorToChildren();
+            elevateInternalAncestor();
         }
         updateEdgeSet(clustering, lowerLongitude, upperLongitude, lowerLatitude, upperLatitude, zoom, edges, externalEdgeSet);
     }
 
 
     /**
-     * Elevates the hierarchy of internal clusters.
+     * Elevates the internal ancestor
      *
      */
-    private void elevateInternalHierarchy() {
+    private void elevateInternalAncestor() {
         internalAncestor = internalAncestor.stream().map(ancestor -> ancestor.parent).filter(Objects::nonNull).collect(Collectors.toCollection(HashSet::new));
     }
 
     /**
-     * Elevates the hierarchy of external clusters
+     * Elevates external ancestor to children
      *
      */
-    // TODO not creating new instance
-    private void elevateExternalHierarchy() {
+    private void elevateExternalAncestorToChildren() {
         externalAncestorToChildren = externalAncestorToChildren.entrySet().stream().filter(ancestorToChildren -> {
             Cluster ancestor = ancestorToChildren.getKey();
             if (ancestor.parent == null) {
                 int elevateLevel = ancestorToChildren.getValue().get(0).getZoom() - 1;
-                updateExternalClusterMap(ancestorToChildren, elevateLevel);
+                updateExternalChildToAncestor(ancestorToChildren, elevateLevel);
                 return false;
             }
             return true;
@@ -123,11 +123,11 @@ public class TreeCut {
     }
 
     /**
-     * Initializes the hierarchy of internal clusters.
+     * Initializes the internal ancestor
      *
      * @param internalCluster original internal cluster
      */
-    private void addInternalClusterHierarchy(HashSet<Cluster> internalCluster) {
+    private void addInternalAncestor(HashSet<Cluster> internalCluster) {
         for (Cluster ancestor : internalCluster) {
             if (ancestor.parent != null) {
                 internalAncestor.add(ancestor.parent);
@@ -136,11 +136,11 @@ public class TreeCut {
     }
 
     /**
-     * Initializes the hierarchy of external clusters.
+     * Initializes the external ancestor to children
      *
      * @param externalCluster original external cluster
      */
-    private void addExternalClusterHierarchy(HashSet<Cluster> externalCluster) {
+    private void addExternalAncestorToChildren(HashSet<Cluster> externalCluster) {
         for (Cluster externalChild : externalCluster) {
             if (externalChild.parent != null) {
                 if (!externalAncestorToChildren.containsKey(externalChild.parent)) {
@@ -159,12 +159,12 @@ public class TreeCut {
     }
 
     /**
-     * add the mapping results to the externalCLusterMap
+     * add the mapping results to the externalChildToAncestor
      *
-     * @param entry        external hierarchy map entry
+     * @param entry        external child to ancestor entry
      * @param elevateLevel the level that the clusters to be elevated
      */
-    private void updateExternalClusterMap(Map.Entry<Cluster, ArrayList<Cluster>> entry, int elevateLevel) {
+    private void updateExternalChildToAncestor(Map.Entry<Cluster, ArrayList<Cluster>> entry, int elevateLevel) {
         Cluster ancestor;
         for (Cluster child : entry.getValue()) {
             // ancestor is null if the finally the cluster is mapped to itself
