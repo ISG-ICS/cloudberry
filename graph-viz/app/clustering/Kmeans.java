@@ -93,6 +93,7 @@ public class Kmeans {
         boolean flag;
         int temp = (int) (Math.random() * dataSetLength);
         randoms[0] = temp;
+        center.add(dataSet.get(randoms[0]));
         for (int i = 1; i < k; i++) {
             flag = true;
             while (flag) {
@@ -109,8 +110,6 @@ public class Kmeans {
                 }
             }
             randoms[i] = temp;
-        }
-        for (int i = 0; i < k; i++) {
             center.add(dataSet.get(randoms[i]));
         }
         return center;
