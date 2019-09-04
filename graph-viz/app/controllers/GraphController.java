@@ -174,6 +174,9 @@ public class GraphController extends Controller {
         }
     }
 
+    /**
+     * draw points
+     */
     private void drawPoints() {
         HashMap<Point, Integer> pointsMap = new HashMap<>();
         if (parser.getClustering() == 0) {
@@ -195,6 +198,9 @@ public class GraphController extends Controller {
         response.setRepliesCnt(getTotalEdgesSize());
     }
 
+    /**
+     * draw edges
+     */
     private void drawEdges() {
         HashMap<Edge, Integer> edges = new HashMap<>();
         if (parser.getClustering() == 0) {
@@ -225,6 +231,10 @@ public class GraphController extends Controller {
         response.setRepliesCnt(getTotalEdgesSize());
     }
 
+    /**
+     * get the number of total edges
+     * @return the number of total edges
+     */
     private int getTotalEdgesSize() {
         int tot = 0;
         for (Edge edge : totalEdges.keySet()) {
@@ -276,6 +286,12 @@ public class GraphController extends Controller {
         }
     }
 
+    /**
+     * put edge into map
+     * @param edges map of edges and width
+     * @param edge edge
+     * @param weight weight
+     */
     private void putEdgeIntoMap(HashMap<Edge, Integer> edges, Edge edge, int weight) {
         if (edges.containsKey(edge)) {
             edges.put(edge, edges.get(edge) + weight);
@@ -284,6 +300,12 @@ public class GraphController extends Controller {
         }
     }
 
+    /**
+     * put point into map
+     * @param points map of points and width
+     * @param point point
+     * @param weight weight
+     */
     private void putPointIntoMap(HashMap<Point, Integer> points, Point point, int weight) {
         if (points.containsKey(point)) {
             points.put(point, points.get(point) + weight);
@@ -292,11 +314,16 @@ public class GraphController extends Controller {
         }
     }
 
+    /**
+     * run FDEB
+     * @param edges input edges
+     */
     private void runFDEB(HashMap<Edge, Integer> edges) {
         ArrayList<Edge> dataEdges = new ArrayList<>();
         ArrayList<Integer> closeEdgeList = new ArrayList<>();
         for (Map.Entry<Edge, Integer> entry : edges.entrySet()) {
             Edge edge = entry.getKey();
+            // remove short edges
             if (Math.pow(edge.length(), 2) <= 0.001)
                 continue;
             dataEdges.add(edge);
@@ -317,6 +344,10 @@ public class GraphController extends Controller {
         response.setIsolatedEdgesCnt(isolatedEdgesCnt);
     }
 
+    /**
+     * show edges without bundling
+     * @param edges input edges
+     */
     private void noBundling(HashMap<Edge, Integer> edges) {
         response.setEdges(edges);
         response.setIsolatedEdgesCnt(edges.size());
