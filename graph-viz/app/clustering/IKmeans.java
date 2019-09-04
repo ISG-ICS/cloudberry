@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import models.Point;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -125,5 +126,14 @@ public class IKmeans extends Kmeans {
             arrayNode.add(objectNode);
         }
         return arrayNode;
+    }
+
+    @Override
+    public HashMap<Point, Integer> getClustersMap() {
+        HashMap<Point, Integer> clustersSizes = new HashMap<>();
+        for (int i = 0; i < getK(); i++) {
+            clustersSizes.put(getCenters().get(i), getAllClusters().get(i).size());
+        }
+        return clustersSizes;
     }
 }
