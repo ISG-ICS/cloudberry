@@ -267,12 +267,10 @@ public class GraphController extends Controller {
                 HashSet<Edge> externalEdgeSet = new HashSet<>();
                 HashSet<Cluster> externalCluster = new HashSet<>();
                 HashSet<Cluster> internalCluster = new HashSet<>();
-                generateExternalEdgeSet(edges, externalEdgeSet, externalCluster, internalCluster);
+                generateEdgeSet(edges, externalEdgeSet, externalCluster, internalCluster);
                 TreeCut treeCutInstance = new TreeCut();
                 if (parser.getTreeCutting() == 1) {
                     treeCutInstance.treeCut(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
-                } else {
-                    treeCutInstance.nonTreeCut(this.clustering, parser.getZoom(), edges, externalEdgeSet);
                 }
             }
             dataNode.put("edgesCnt", edges.size());
@@ -289,8 +287,8 @@ public class GraphController extends Controller {
         dataNode.put("repliesCnt", resultSetSize);
     }
 
-    private void generateExternalEdgeSet(HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
-                                         HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
+    private void generateEdgeSet(HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
+                                 HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
         for (Edge edge : edgeSet) {
             Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), parser.getZoom());
             Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), parser.getZoom());
@@ -300,25 +298,34 @@ public class GraphController extends Controller {
             double toLatitude = Clustering.yLat(toCluster.getY());
             boolean fromWithinRange = parser.getLowerLongitude() <= fromLongitude && fromLongitude <= parser.getUpperLongitude()
                     && parser.getLowerLatitude() <= fromLatitude && fromLatitude <= parser.getUpperLatitude();
-            boolean toWithinRange = parser.getLowerLongitude()  <= toLongitude && toLongitude <= parser.getUpperLongitude()
+            boolean toWithinRange = parser.getLowerLongitude() <= toLongitude && toLongitude <= parser.getUpperLongitude()
                     && parser.getLowerLatitude() <= toLatitude && toLatitude <= parser.getUpperLatitude();
             if (fromWithinRange && toWithinRange) {
-                Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
-                if (edges.containsKey(e)) {
-                    edges.put(e, edges.get(e) + 1);
-                } else {
-                    edges.put(e, 1);
-                }
+                putEdgesIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
                 internalCluster.add(fromCluster);
                 internalCluster.add(toCluster);
             } else if (fromWithinRange || toWithinRange) {
-                if (fromWithinRange) {
-                    externalCluster.add(toCluster);
+                if (parser.getTreeCutting() == 0) {
+                    putEdgesIntoMap(edges, fromLongitude, fromLatitude, toLongitude, toLatitude);
                 } else {
-                    externalCluster.add(fromCluster);
+                    if (fromWithinRange) {
+                        externalCluster.add(toCluster);
+                    } else {
+                        externalCluster.add(fromCluster);
+                    }
+                    externalEdgeSet.add(edge);
                 }
-                externalEdgeSet.add(edge);
+
             }
+        }
+    }
+
+    private void putEdgesIntoMap(HashMap<Edge, Integer> edges, double fromLongitude, double fromLatitude, double toLongitude, double toLatitude) {
+        Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
+        if (edges.containsKey(e)) {
+            edges.put(e, edges.get(e) + 1);
+        } else {
+            edges.put(e, 1);
         }
     }
 
@@ -342,14 +349,7 @@ public class GraphController extends Controller {
                 models.Point toPoint = new models.Point(toLongitude, toLatitude);
                 int fromCluster = parents.get(fromPoint);
                 int toCluster = parents.get(toPoint);
-                Edge e = new Edge(center.get(fromCluster).getX(), center.get(fromCluster).getY(),
-                        center.get(toCluster).getX(), center.get(toCluster).getY()
-                );
-                if (edges.containsKey(e)) {
-                    edges.put(e, edges.get(e) + 1);
-                } else {
-                    edges.put(e, 1);
-                }
+                putEdgesIntoMap(edges, center.get(fromCluster).getX(), center.get(fromCluster).getY(), center.get(toCluster).getX(), center.get(toCluster).getY());
             }
         }
         dataNode.put("edgesCnt", edges.size());

@@ -8,7 +8,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Implementation of tree cut algorithm
+ * Implementation of tree cut algorithm.
+ *
  * screen: |    ·A______________·B----------|---·E
  *         |     \                          |
  *         |      \     .F------------------|---.H
@@ -40,7 +41,7 @@ public class TreeCut {
     private HashSet<Cluster> internalAncestor;
 
     /**
-     * Constructor for TreeCut
+     * Constructor for TreeCut.
      */
     public TreeCut() {
         externalChildToAncestor = new HashMap<>();
@@ -210,32 +211,6 @@ public class TreeCut {
             outsideLng = Clustering.xLng(elevatedCluster.getX());
             outsideLat = Clustering.yLat(elevatedCluster.getY());
             Edge e = new Edge(insideLng, insideLat, outsideLng, outsideLat);
-            if (edges.containsKey(e)) {
-                edges.put(e, edges.get(e) + 1);
-            } else {
-                edges.put(e, 1);
-            }
-        }
-    }
-
-
-    /**
-     * Not applying tree cut algorithm
-     *
-     * @param clustering      hierarchical structure from HGC algorithm
-     * @param zoom            zoom level of user screen
-     * @param edges           edge set to be returned
-     * @param externalEdgeSet edge set with only one node inside screen
-     */
-    public void nonTreeCut(Clustering clustering, int zoom, HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet) {
-        for (Edge edge : externalEdgeSet) {
-            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), zoom);
-            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), zoom);
-            double fromLongitude = Clustering.xLng(fromCluster.getX());
-            double fromLatitude = Clustering.yLat(fromCluster.getY());
-            double toLongitude = Clustering.xLng(toCluster.getX());
-            double toLatitude = Clustering.yLat(toCluster.getY());
-            Edge e = new Edge(fromLongitude, fromLatitude, toLongitude, toLatitude);
             if (edges.containsKey(e)) {
                 edges.put(e, edges.get(e) + 1);
             } else {
