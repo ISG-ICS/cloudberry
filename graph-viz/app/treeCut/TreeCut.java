@@ -191,8 +191,8 @@ public class TreeCut {
     private void updateEdgeSet(Clustering clustering, double lowerLongitude, double upperLongitude, double lowerLatitude, double upperLatitude, int zoom, HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet) {
         for (Edge edge : externalEdgeSet) {
             // add the edge in the edge set
-            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), zoom);
-            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), zoom);
+            Cluster fromCluster = clustering.parentCluster(new Cluster(new Point(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY()))), zoom);
+            Cluster toCluster = clustering.parentCluster(new Cluster(new Point(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY()))), zoom);
             double fromLongitude = Clustering.xLng(fromCluster.getX());
             double fromLatitude = Clustering.yLat(fromCluster.getY());
             double insideLat, insideLng, outsideLat, outsideLng;

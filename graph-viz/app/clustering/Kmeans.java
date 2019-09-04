@@ -71,7 +71,7 @@ public class Kmeans {
     /**
      * Initialization of the whole K-Means process
      */
-    void init() {
+    public void init() {
         I = 0;
         int dataSetLength = getDataSetLength();
         if (k > dataSetLength) {

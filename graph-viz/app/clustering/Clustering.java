@@ -59,7 +59,7 @@ public class Clustering {
      */
     public void load(List<Point> points) {
         for (Point point : points) {
-            insert(new Cluster(lngX(point.getX()), latY(point.getY()), null, 1));
+            insert(new Cluster(new Point(lngX(point.getX()), latY(point.getY()))));
         }
     }
 
@@ -72,10 +72,10 @@ public class Clustering {
         trees[maxZoom + 1].insert(point);
         for (int z = maxZoom; z >= minZoom; z--) {
             // search if there are any neighbor near this point
-            ArrayList<Cluster> neighbors = trees[z].rangeRadius(point.getX(), point.getY(), getZoomRadius(z));
+            ArrayList<Cluster> neighbors = trees[z].rangeRadius(point, getZoomRadius(z));
             // if no, insert it into kd-tree
             if (neighbors.isEmpty()) {
-                Cluster c = new Cluster(point.getX(), point.getY());
+                Cluster c = new Cluster(point);
                 c.setZoom(z);
                 point.parent = c;
                 trees[z].insert(c);

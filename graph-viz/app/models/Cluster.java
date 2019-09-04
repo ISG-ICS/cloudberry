@@ -23,15 +23,17 @@ public class Cluster extends Point {
         this.numPoints = numPoints;
     }
 
-    public Cluster(double x, double y) {
-        super(x, y);
+    public Cluster(Point point) {
+        this.setX(point.getX());
+        this.setY(point.getY());
         this.numPoints = 1;
         this.parent = null;
         this.zoom = Integer.MAX_VALUE;
     }
 
-    public Cluster(double x, double y, Cluster parent, int numPoints) {
-        super(x, y);
+    public Cluster(Point point, Cluster parent, int numPoints) {
+        this.setX(point.getX());
+        this.setY(point.getY());
         this.parent = parent;
         this.numPoints = numPoints;
         this.zoom = Integer.MAX_VALUE;

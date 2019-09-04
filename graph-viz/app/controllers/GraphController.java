@@ -6,6 +6,8 @@ import clustering.Clustering;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import connection.Parser;
+import connection.Response;
 import edgeBundling.ForceBundling;
 import models.*;
 import play.mvc.*;
@@ -32,15 +34,20 @@ public class GraphController extends Controller {
     private static final String unfinished = "N";
     // hierarchical structure for HGC algorithm
     private Clustering clustering = new Clustering(0, 17);
-    private IKmeans iKmeans;
     private Kmeans kmeans;
     // Incremental edge data
     private HashMap<Edge, Integer> totalEdges = new HashMap<>();
+    // total raw data points, to minimize the overhead of calculating total points from the clusters
     private List<Point> totalPoints = new ArrayList<>();
+    // the batch points
     private List<Point> batchPoints = new ArrayList<>();
     private ObjectMapper objectMapper = new ObjectMapper();
     private ObjectNode dataNode;
+
     private Parser parser = new Parser();
+    private Response response = new Response();
+
+    private final int K = 17;
     // Size of resultSet
 
     /**
@@ -53,7 +60,7 @@ public class GraphController extends Controller {
         // Heartbeat package handler
         // WebSocket will automatically close after several seconds
         // To keep the state, maintain WebSocket connection is a must
-        if (query.equals("")) {
+        if (query.isEmpty()) {
             return;
         }
         dataNode = objectMapper.createObjectNode();
@@ -61,7 +68,7 @@ public class GraphController extends Controller {
         parser.parse(query);
         // Option indicates the request type
         // 1: incremental data query
-        // 2: point and drawPoints
+        // 2: point and cluster
         // 3: edge and bundled edge and tree cut
         // others: invalid
         switch (parser.getOption()) {
@@ -104,8 +111,10 @@ public class GraphController extends Controller {
             if (parser.getClusteringAlgorithm() == 0) {
                 loadHGC();
             } else if (parser.getClusteringAlgorithm() == 1) {
-                loadIKmeans();
+                kmeans = new IKmeans(K);
+                loadKmeans();
             } else if (parser.getClusteringAlgorithm() == 2) {
+                kmeans = new Kmeans(K);
                 bindFields(PropertiesUtil.lastDate);
                 state = DatabaseUtils.prepareStatement(parser.getQuery(), conn, PropertiesUtil.firstDate, PropertiesUtil.lastDate);
                 loadData(state.executeQuery());
@@ -131,22 +140,16 @@ public class GraphController extends Controller {
     }
 
     private void loadKmeans() {
-        if (kmeans == null) {
-            kmeans = new Kmeans(17);
-        }
-        kmeans.execute(totalPoints);
-    }
-
-    private void loadIKmeans() {
-        if (iKmeans == null) {
-            iKmeans = new IKmeans(17);
-            iKmeans.setDataSet(batchPoints);
-            iKmeans.updateK();
-            if (iKmeans.getDataSetLength() != 0) {
-                iKmeans.init();
+        if (kmeans instanceof IKmeans) {
+            kmeans.setDataSet(batchPoints);
+            ((IKmeans) kmeans).updateK();
+            if (kmeans.getDataSetLength() != 0) {
+                kmeans.init();
             }
+            kmeans.execute(batchPoints);
+        } else {
+            kmeans.execute(totalPoints);
         }
-        iKmeans.execute(batchPoints);
     }
 
     private void loadHGC() {
@@ -167,10 +170,8 @@ public class GraphController extends Controller {
         dataNode.put("date", end);
         Calendar endCalendar = getCalendar(end);
         if (!endCalendar.before(PropertiesUtil.lastDateCalender)) {
-            System.out.println(finished + end);
             dataNode.put("flag", finished);
         } else {
-            System.out.println(unfinished + end);
             dataNode.put("flag", unfinished);
         }
     }
@@ -198,10 +199,6 @@ public class GraphController extends Controller {
                     objectNode.put("size", cluster.getNumPoints());
                     arrayNode.add(objectNode);
                 }
-            } else if (parser.getClusteringAlgorithm() == 1) {
-                pointsCnt = iKmeans.getPointsCnt();
-                clustersCnt = iKmeans.getK();
-                arrayNode = iKmeans.getClustersJson();
             } else {
                 pointsCnt = kmeans.getDataSetLength();
                 clustersCnt = kmeans.getK();
@@ -228,8 +225,6 @@ public class GraphController extends Controller {
                 if (parser.getTreeCutting() == 1) {
                     treeCutInstance.execute(this.clustering, parser.getLowerLongitude(), parser.getUpperLongitude(), parser.getLowerLatitude(), parser.getUpperLatitude(), parser.getZoom(), edges, externalEdgeSet, externalCluster, internalCluster);
                 }
-            } else if (parser.getClusteringAlgorithm() == 1) {
-                edges = getKmeansEdges(iKmeans.getParents(), iKmeans.getCenters());
             } else {
                 edges = getKmeansEdges(kmeans.getParents(), kmeans.getCenters());
             }
@@ -263,8 +258,8 @@ public class GraphController extends Controller {
     private void generateEdgeSet(HashMap<Edge, Integer> edges, HashSet<Edge> externalEdgeSet,
                                  HashSet<Cluster> externalCluster, HashSet<Cluster> internalCluster) {
         for (Edge edge : totalEdges.keySet()) {
-            Cluster fromCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY())), parser.getZoom());
-            Cluster toCluster = clustering.parentCluster(new Cluster(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY())), parser.getZoom());
+            Cluster fromCluster = clustering.parentCluster(new Cluster(new Point(Clustering.lngX(edge.getFromX()), Clustering.latY(edge.getFromY()))), parser.getZoom());
+            Cluster toCluster = clustering.parentCluster(new Cluster(new Point(Clustering.lngX(edge.getToX()), Clustering.latY(edge.getToY()))), parser.getZoom());
             double fromLongitude = Clustering.xLng(fromCluster.getX());
             double fromLatitude = Clustering.yLat(fromCluster.getY());
             double toLongitude = Clustering.xLng(toCluster.getX());
@@ -315,6 +310,7 @@ public class GraphController extends Controller {
         return edges;
     }
 
+    // TODO remove duplicate code in runFDEB and noBundling
     private void runFDEB(HashMap<Edge, Integer> edges) {
         ArrayList<Edge> dataEdges = new ArrayList<>();
         ArrayList<Integer> closeEdgeList = new ArrayList<>();

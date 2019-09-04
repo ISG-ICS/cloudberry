@@ -249,34 +249,32 @@ public class KdTree {
     /**
      * find all the drawPoints in certain circle
      *
-     * @param x getX coordinate of center of circle
-     * @param y getY coordinate of center of circle
      * @param r radius of circle
      * @return array of drawPoints
      */
-    public ArrayList<Cluster> rangeRadius(double x, double y, double r) {
+    public ArrayList<Cluster> rangeRadius(Point point, double r) {
         ArrayList<Cluster> pointsInRange = new ArrayList<>();
-        rangeRadiusRecursive(pointsInRange, x, y, r, root);
+        rangeRadiusRecursive(pointsInRange, point, r, root);
         return pointsInRange;
     }
 
-    private void rangeRadiusRecursive(ArrayList<Cluster> rangeList, double x, double y, double r, Node n) {
+    private void rangeRadiusRecursive(ArrayList<Cluster> rangeList, Point point, double r, Node n) {
         if (n == null) {
             return;
         }
         Cluster p = n.getPoint();
-        if (p.distanceTo(new Cluster(x, y)) <= r) {
+        if (p.distanceTo(new Cluster(point)) <= r) {
             rangeList.add(p);
         }
         double pointCoord = p.getY();
-        double circleMin = y - r;
-        double circleMax = y + r;
+        double circleMin = point.getY() - r;
+        double circleMax = point.getY() + r;
         if (n.vertical()) {
             pointCoord = p.getX();
-            circleMin = x - r;
-            circleMax = x + r;
+            circleMin = p.getX() - r;
+            circleMax = p.getX() + r;
         }
-        if (pointCoord > circleMin) rangeRadiusRecursive(rangeList, x, y, r, n.getLeft());
-        if (pointCoord <= circleMax) rangeRadiusRecursive(rangeList, x, y, r, n.getRight());
+        if (pointCoord > circleMin) rangeRadiusRecursive(rangeList, point, r, n.getLeft());
+        if (pointCoord <= circleMax) rangeRadiusRecursive(rangeList, point, r, n.getRight());
     }
 }

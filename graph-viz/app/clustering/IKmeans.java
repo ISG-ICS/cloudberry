@@ -11,7 +11,6 @@ import java.util.List;
 /**
  * Incremental K-Means Algorithm
  */
-// TODO extend Kmeans
 public class IKmeans extends Kmeans {
     private List<List<Point>> allClusters; // the list of clusters for all accumulated data
     private int pointsCnt; // the count of points in all accumulated data
@@ -29,7 +28,8 @@ public class IKmeans extends Kmeans {
         return allClusters;
     }
 
-    public int getPointsCnt() {
+    @Override
+    public int getDataSetLength() {
         return pointsCnt;
     }
 

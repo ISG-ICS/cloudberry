@@ -1,4 +1,4 @@
-    package controllers;
+    package connection;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,35 +21,35 @@ public class Parser {
 
     private String endDate = null;
 
-    int getOption() {
+    public int getOption() {
         return option;
     }
 
-    double getLowerLongitude() {
+    public double getLowerLongitude() {
         return lowerLongitude;
     }
 
-    double getUpperLongitude() {
+    public double getUpperLongitude() {
         return upperLongitude;
     }
 
-    double getLowerLatitude() {
+    public double getLowerLatitude() {
         return lowerLatitude;
     }
 
-    double getUpperLatitude() {
+    public double getUpperLatitude() {
         return upperLatitude;
     }
 
-    int getClustering() {
+    public int getClustering() {
         return clustering;
     }
 
-    int getClusteringAlgorithm() {
+    public int getClusteringAlgorithm() {
         return clusteringAlgorithm;
     }
 
-    int getBundling() {
+    public int getBundling() {
         return bundling;
     }
 
@@ -61,11 +61,11 @@ public class Parser {
         return zoom;
     }
 
-    int getTreeCutting() {
+    public int getTreeCutting() {
         return treeCutting;
     }
 
-    String getEndDate() {
+    public String getEndDate() {
         return endDate;
     }
 
