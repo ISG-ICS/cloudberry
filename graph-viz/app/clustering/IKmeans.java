@@ -10,7 +10,7 @@ import java.util.List;
  * Incremental K-Means Algorithm
  */
 public class IKmeans extends Kmeans {
-    private List<List<Point>> batchClusters;
+    private List<List<Point>> allClusters; // the list of clusters for all accumulated data
     private int pointsCnt; // the count of points in all accumulated data
 
     /**
@@ -20,6 +20,10 @@ public class IKmeans extends Kmeans {
      */
     public IKmeans(int k) {
         super(k);
+    }
+
+    public List<List<Point>> getAllClusters() {
+        return allClusters;
     }
 
     @Override
@@ -37,12 +41,12 @@ public class IKmeans extends Kmeans {
      * Initialization of the whole I-KMeans process
      */
     public void init() {
-        clusters = new ArrayList<>();
+        allClusters = new ArrayList<>();
         for (int i = 0; i < k; i++) {
-            clusters.add(new ArrayList<>());
+            allClusters.add(new ArrayList<>());
         }
         centers = initCenters();
-        batchClusters = initCluster();
+        clusters = initCluster();
     }
 
     /**
@@ -64,14 +68,14 @@ public class IKmeans extends Kmeans {
     @Override
     void setNewCenter() {
         for (int i = 0; i < k; i++) {
-            int n = batchClusters.get(i).size();
+            int n = clusters.get(i).size();
             if (n != 0) {
                 Point newCenter = initNewCenter(i, n);
                 // Calculate the average coordinate of all points in the cluster
-                newCenter.setX(newCenter.getX() + centers.get(i).getX() * clusters.get(i).size());
-                newCenter.setX(newCenter.getX() / (n + clusters.get(i).size()));
-                newCenter.setY(newCenter.getY() + centers.get(i).getY() * clusters.get(i).size());
-                newCenter.setY(newCenter.getY() / (n + clusters.get(i).size()));
+                newCenter.setX(newCenter.getX() + centers.get(i).getX() * allClusters.get(i).size());
+                newCenter.setX(newCenter.getX() / (n + allClusters.get(i).size()));
+                newCenter.setY(newCenter.getY() + centers.get(i).getY() * allClusters.get(i).size());
+                newCenter.setY(newCenter.getY() / (n + allClusters.get(i).size()));
                 centers.set(i, newCenter);
             }
         }
@@ -102,9 +106,18 @@ public class IKmeans extends Kmeans {
         clusterSet();
         setNewCenter();
         for (int j = 0; j < getK(); j++) {
-            clusters.get(j).addAll(batchClusters.get(j));
+            allClusters.get(j).addAll(clusters.get(j));
         }
-        batchClusters.clear();
-        batchClusters = initCluster();
+        clusters.clear();
+        clusters = initCluster();
+    }
+
+    @Override
+    public HashMap<Point, Integer> getClustersMap() {
+        HashMap<Point, Integer> clustersSizes = new HashMap<>();
+        for (int i = 0; i < getK(); i++) {
+            clustersSizes.put(getCenters().get(i), getAllClusters().get(i).size());
+        }
+        return clustersSizes;
     }
 }
