@@ -115,7 +115,7 @@ public class KdTree {
         // go to the left if point left to vertical point or below a horizontal point
         while (n != null) {
             // if we are at a vertical node
-            if (compare(p, n)) {
+            if (isSmaller(p, n)) {
                 // if the left point is null then create new node and set it
                 if (n.getLeft() == null) {
                     Rectangle rect;
@@ -175,14 +175,20 @@ public class KdTree {
             return true;
         }
 
-        if (compare(point, node)) {
+        if (isSmaller(point, node)) {
             return containsRecursive(node.getLeft(), point);
         } else {
             return containsRecursive(node.getRight(), point);
         }
     }
 
-    private boolean compare(Cluster p, Node n) {
+    /**
+     * check if the cluster is smaller than node
+     * @param p cluster
+     * @param n node
+     * @return if the cluster is smaller than node
+     */
+    private boolean isSmaller(Cluster p, Node n) {
         if (n.vertical()) return p.getX() < n.getPoint().getX();
         else return p.getY() < n.getPoint().getY();
     }
@@ -204,7 +210,7 @@ public class KdTree {
         if (node.getPoint().equals(point)) {
             return node.getPoint();
         }
-        if (compare(point, node)) {
+        if (isSmaller(point, node)) {
             return findPointRecursive(node.getLeft(), point);
         } else {
             return findPointRecursive(node.getRight(), point);

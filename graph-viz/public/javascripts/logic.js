@@ -1,7 +1,7 @@
 /* specify mapbox token */
 mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
 
-/* mapbox object */
+/* mapbox object with default configuration */
 const map = new mapboxgl.Map({
     container: 'map',
     style: 'mapbox://styles/mapbox/light-v9',
@@ -75,10 +75,12 @@ function getChoice(elementId) {
     };
     return choices[document.getElementById(elementId).checked];
 }
+
 /**
  * send the edge (bundle, tree cut) request to the middle layer
  */
 function sendEdgesRequest() {
+    // with the date and zoom level unspecified
     sendingRequest(undefined, undefined, 2);
 }
 
@@ -92,6 +94,7 @@ function sendClusterRequest() {
     if (clusteringControl === 0) {
         zoom = 18;
     }
+    /// with the date unspecified
     sendingRequest(zoom, undefined, 1);
 }
 
@@ -158,7 +161,7 @@ function receiveEdges(data) {
  * @param data received cluster data
  */
 function receiveClusterPoints(data) {
-    const iconLayer = new MapboxLayer({
+    const clusterLayer = new MapboxLayer({
         id: 'cluster',
         type: ScatterplotLayer,
         data: data,
@@ -174,27 +177,27 @@ function receiveClusterPoints(data) {
         getFillColor: d => [57, 73, 171],
     });
     removeClusterLayer();
-    map.addLayer(iconLayer);
+    map.addLayer(clusterLayer);
 }
 
 /**
- *
- * @param json
+ * Updating the statistics data of points
+ * @param pointsJson the json containing points data
  */
-function updatePointsStats(json) {
-    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
-    document.getElementById('pointsCnt').innerHTML = "Points Count: " + json['pointsCnt'];
-    document.getElementById('clustersCnt').innerHTML = "Clusters Count: " + json['clustersCnt'];
+function updatePointsStats(pointsJson) {
+    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + pointsJson['repliesCnt'] + " / 15722639";
+    document.getElementById('pointsCnt').innerHTML = "Points Count: " + pointsJson['pointsCnt'];
+    document.getElementById('clustersCnt').innerHTML = "Clusters Count: " + pointsJson['clustersCnt'];
 }
 
 /**
- *
- * @param json
+ * Updating the statistics data of edges
+ * @param edgesJson the json containing edges data
  */
-function updateEdgesStats(json) {
-    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + json['repliesCnt'] + " / 15722639";
-    document.getElementById('edgesCnt').innerHTML = "Edges Count: " + json['edgesCnt'];
-    document.getElementById('bundledEdgesCnt').innerHTML = "Bundled Edges Count: " + (json['edgesCnt'] - json['isolatedEdgesCnt']);
+function updateEdgesStats(edgesJson) {
+    document.getElementById('repliesCnt').innerHTML = "Reply Tweets Count: " + edgesJson['repliesCnt'] + " / 15722639";
+    document.getElementById('edgesCnt').innerHTML = "Edges Count: " + edgesJson['edgesCnt'];
+    document.getElementById('bundledEdgesCnt').innerHTML = "Bundled Edges Count: " + (edgesJson['edgesCnt'] - edgesJson['isolatedEdgesCnt']);
 }
 
 /**
@@ -236,6 +239,7 @@ function drawGraph() {
      */
     socket.onopen = function () {
         currentTimestamp = Date.now();
+        // with the date and zoom level unspecified
         sendingRequest(undefined, undefined, 0);
         keepAlive();
     };
@@ -255,26 +259,27 @@ function drawGraph() {
         }
         // incremental response result
         if (option === 0) {
-            let stopStatus = json['flag'];
-            let date = json['date'];
             // not finished, continue sending request
-            if (stopStatus !== 'Y') {
-                sendingRequest(undefined, date, 0);
+            if (json['flag'] !== 'Y') {
+                // with the zoom level unspecified
+                sendingRequest(undefined, json['date'], 0);
             }
             statusChange("incremental");
         }
-        // cluster response result
-        else if (option === 1) {
-            updatePointsStats(json);
-            data = JSON.parse(json['data']);
-            receiveClusterPoints(data);
-        }
-        // edge response result
         else {
-            updateEdgesStats(json);
-            data = JSON.parse(json['data']);
-            receiveEdges(data);
+            let data = JSON.parse(json['data']);
+            // cluster response result
+            if (option === 1) {
+                updatePointsStats(json);
+                receiveClusterPoints(data);
+            }
+            // edge response result
+            else {
+                updateEdgesStats(json);
+                receiveEdges(data);
+            }
         }
+
     };
 }
 
@@ -339,7 +344,9 @@ function statusChange(changeEvent) {
     if (edgeDraw) sendEdgesRequest(status['minLng'], status['minLat'], status['maxLng'], status['maxLat'], status['currentZoom']);
 }
 
-// send heartbeat package to keep the connection alive
+/**
+ * send heartbeat package to keep the connection alive
+ */
 function keepAlive() {
     const timeout = 20000;
     if (socket.readyState === WebSocket.OPEN) {
