@@ -1,0 +1,190 @@
+@()
+
+
+
+@defining(play.core.PlayVersion.current) { version =>
+
+    <html>
+
+        <title>Reply Tweets Deck.GL</title>
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+
+        <style type="text/css">
+                #container {
+                    width: 100%;
+                    height: 100%;
+                }
+
+                #search {
+                    width: 100%;
+                    top: 10px;
+                    position: absolute;
+                }
+
+                #info {
+                    left: 0px;
+                    display: block;
+                    position: relative;
+                    margin: 0px auto;
+                    width: 50%;
+                    padding: 10px;
+                    border: none;
+                    border-radius: 3px;
+                    font-size: 12px;
+                    text-align: center;
+                    color: #222;
+                    background: #fff;
+                }
+        </style>
+
+        <body style="line-height: 0;">
+            <div id="map" style="width: 100vw;
+                height: 100vh"></div>
+            <div id="search">
+                <div class="row"></div>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <input type="text" style="width: 40%"
+                    class="form-control col-sm-4 ng-pristine ng-untouched ng-empty ng-invalid ng-invalid-required"
+                    id="keyword-textbox" placeholder="Search keywords e.g hurricane">
+                    <div class="col-sm-1"></div>
+                    <button type="submit" onclick="bundleGraph()" class=" btn btn-primary" id="button">
+                        Bundling</button></span>
+                </div>
+            </div>
+        </body>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+        <link href='assets/lib/bootstrap/css/bootstrap.css' rel='stylesheet' />
+
+        <script src="/assets/javascripts/deckgl.min.js"></script>
+        <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.js'></script>
+        <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.50.0/mapbox-gl.css' rel='stylesheet' />
+
+        <script>
+                const {MapboxLayer} = deck;
+
+                mapboxgl.accessToken = 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw';
+                const map = new mapboxgl.Map({
+                    container: 'map',
+                    style: 'mapbox://styles/mapbox/light-v9',
+                    center: [-96.35, 39.5],
+                    zoom: 3.7,
+                    maxZoom: 5,
+                    minZoom: 2
+                });
+                var query = "";
+                var current_timestamp;
+                var layer_id_list = [];
+                var layer_data_amount = [];
+                var cnt = 0;
+
+                function add_id_2_list(id, num) {
+                    layer_id_list.push(id);
+                    layer_data_amount.push(num);
+                    cnt++;
+                }
+
+                function remove_all_layers() {
+                    for (var i = layer_id_list.length - 1; i >= 0 ; i--) {
+                        map.removeLayer(layer_id_list[i]);
+                    }
+                    layer_id_list = [];
+                    layer_data_amount = [];
+                    cnt = 0;
+                }
+
+                function removeSingleLayer() {
+                    if (map.getLayer('arc') !== undefined) {
+                        map.removeLayer('arc');
+                    }
+                }
+
+                function bundleGraph() {
+                    removeSingleLayer();
+
+                    if (cnt !== 0) {
+                        remove_all_layers();
+                    }
+
+                    query = document.getElementById("keyword-textbox").value;
+                    var bounds = map.getBounds();
+                    var ne = bounds.getNorthEast();
+                    var sw = bounds.getSouthWest();
+                    var ne_lng = ne.lng;
+                    var ne_lat = ne.lat;
+                    var sw_lng = sw.lng;
+                    var sw_lat = sw.lat;
+
+                    let socket = new WebSocket("ws://localhost:9000/bundle");
+                    socket.onopen = function (e) {
+                        current_timestamp = Date.now();
+                        const sendingObj = {
+                            query: query, lowerLongitude: sw_lng, upperLongitude: ne_lng,
+                            lowerLatitude: sw_lat, upperLatitude: ne_lat, timestamp: current_timestamp
+                        };
+                        const sendingJSON = JSON.stringify(sendingObj);
+                        socket.send(sendingJSON);
+                    };
+
+                    socket.onmessage = function (event) {
+                        var meta = event.data;
+                        // console.log(meta);
+                        var json = JSON.parse(meta);
+                        var status = json['flag'];
+                        // console.log(status);
+                        var date = json['date'];
+                        var data = json['data'];
+                        var timestamp = json['timestamp'];
+                        console.log(meta);
+                        console.log('timestamp' + timestamp);
+                        console.log('current_timestamp' + current_timestamp);
+                        if(timestamp !== current_timestamp.toString()){
+                            console.log('data is dropped');
+                            return;
+                        }
+                        console.log('edge number' + data.length);
+                        var layer;
+                        if (status === 'C') {
+                            layer = new MapboxLayer({
+                                id: 'arc' + cnt,
+                                type: LineLayer,
+                                data: data,
+                                getSourcePosition: d => d.from,
+                                getTargetPosition: d => d.to,
+                                getStrokeWidth: d => Math.min(15, Math.ceil(Math.pow(d.width, 1 / 3))),
+                                getColor: [177, 0, 38]
+                            });
+                            add_id_2_list('arc' + cnt, data.length);
+                        } else if (status === 'Y') {
+                            socket.close();
+                            return;
+                        } else {
+                            removeSingleLayer();
+                            layer = new MapboxLayer({
+                                id: 'arc',
+                                type: LineLayer,
+                                data: data,
+                                getSourcePosition: d => d.from,
+                                getTargetPosition: d => d.to,
+                                getStrokeWidth: d => Math.min(15, Math.ceil(Math.pow(d.width, 1 / 3))),
+                                getColor: [177, 0, 38]
+                            });
+                        }
+                        map.addLayer(layer);
+                        if (status !== 'Y') {
+                            // console.log('send once');
+                            const sendingObj = {
+                                query: query, lowerLongitude: sw_lng, upperLongitude: ne_lng,
+                                lowerLatitude: sw_lat, upperLatitude: ne_lat, date: date, timestamp: current_timestamp
+                            };
+                            const sendingJSON = JSON.stringify(sendingObj);
+                            socket.send(sendingJSON);
+                        }
+                    };
+                }
+        </script>
+
+    </html>
+
+}
