@@ -129,26 +129,18 @@ public class Clustering {
         double minLatitude = Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, bbox[1]));
         double maxLongitude = bbox[2] == MAX_LONGITUDE ? MAX_LONGITUDE : ((bbox[2] + MAX_LONGITUDE) % (MAX_LONGITUDE * 2) + (MAX_LONGITUDE * 2)) % (MAX_LONGITUDE * 2) - MAX_LONGITUDE;
         double maxLatitude = Math.max(-MAX_LATITUDE, Math.min(MAX_LATITUDE, bbox[3]));
+        // if the range of longitude is larger than 360, set the range to be [-180, 180]
         if (bbox[2] - bbox[0] >= MAX_LONGITUDE * 2) {
             minLongitude = -MAX_LONGITUDE;
             maxLongitude = MAX_LONGITUDE;
+            // if the range of longitude is negative, set the range to be [-180, max longitude] and [min longitude, 180]
         } else if (minLongitude > maxLongitude) {
             ArrayList<Cluster> results = getClusters(new double[]{minLongitude, minLatitude, MAX_LONGITUDE, maxLatitude}, zoom);
             results.addAll(getClusters(new double[]{-MAX_LONGITUDE, minLatitude, maxLongitude, maxLatitude}, zoom));
             return results;
         }
         KdTree kdTree = trees[limitZoom(zoom)];
-        ArrayList<Cluster> neighbors = kdTree.range(new Rectangle(lngX(minLongitude), latY(maxLatitude), lngX(maxLongitude), latY(minLatitude)));
-        ArrayList<Cluster> clusters = new ArrayList<>();
-        for (int i = 0; i < neighbors.size(); i++) {
-            Cluster neighbor = neighbors.get(i);
-            if (neighbor.getNumPoints() > 0) {
-                clusters.add(neighbor);
-            } else {
-                clusters.add(neighbor);
-            }
-        }
-        return clusters;
+        return kdTree.range(new Rectangle(lngX(minLongitude), latY(maxLatitude), lngX(maxLongitude), latY(minLatitude)));
     }
 
     private int limitZoom(int z) {
