@@ -28,6 +28,8 @@ public class Kmeans {
             k = 1;
         }
         this.k = k;
+        centers = new ArrayList<>();
+        clusters = new ArrayList<>();
     }
 
     public List<Point> getCenters() {
@@ -71,8 +73,8 @@ public class Kmeans {
         if (dataSet == null || dataSet.size() == 0) {
             return;
         }
-        centers = initCenters();
-        clusters = initCluster();
+        initCenters();
+        initCluster();
         lastSquaredErrorSum = 0;
     }
 
@@ -81,13 +83,13 @@ public class Kmeans {
      *
      * @return the list of centers
      */
-    List<Point> initCenters() {
-        List<Point> center = new ArrayList<>();
+    void initCenters() {
+        centers.clear();
         int[] randoms = new int[k];
         boolean flag;
         int temp = (int) (Math.random() * getDataSetLength());
         randoms[0] = temp;
-        center.add(dataSet.get(randoms[0]));
+        centers.add(dataSet.get(randoms[0]));
         for (int i = 1; i < k; i++) {
             flag = true;
             while (flag) {
@@ -104,9 +106,8 @@ public class Kmeans {
                 }
             }
             randoms[i] = temp;
-            center.add(dataSet.get(randoms[i]));
+            centers.add(dataSet.get(randoms[i]));
         }
-        return center;
     }
 
     /**
@@ -114,13 +115,12 @@ public class Kmeans {
      *
      * @return a set of k empty clusters
      */
-    List<List<Point>> initCluster() {
-        List<List<Point>> cluster = new ArrayList<>();
+    void initCluster() {
+        clusters.clear();
         for (int i = 0; i < k; i++) {
-            cluster.add(new ArrayList<>());
+            clusters.add(new ArrayList<>());
         }
 
-        return cluster;
     }
 
     /**
@@ -131,13 +131,8 @@ public class Kmeans {
      * @return the computed distance
      */
     private double distance(Point element, Point center) {
-        double distance;
-        double x = element.getX() - center.getX();
-        double y = element.getY() - center.getY();
-        double z = x * x + y * y;
-        distance = Math.sqrt(z);
 
-        return distance;
+        return element.distanceTo(center);
     }
 
     /**
@@ -151,6 +146,7 @@ public class Kmeans {
 
     /**
      * Add each point to its closest cluster
+     *
      * @param pointIdx point index
      * @return closest cluster index
      */
@@ -216,7 +212,8 @@ public class Kmeans {
 
     /**
      * Initialize the new position for the cluster
-     * @param clusterIdx the index of the cluster
+     *
+     * @param clusterIdx  the index of the cluster
      * @param clusterSize the size of the cluster
      * @return the initialized position for the cluster
      */
@@ -252,7 +249,7 @@ public class Kmeans {
             setNewCenter();
             I++;
             clusters.clear();
-            clusters = initCluster();
+            initCluster();
             lastSquaredErrorSum = currentSquaredErrorSum;
         }
     }
