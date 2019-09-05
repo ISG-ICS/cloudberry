@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
+/**
+ * this class is for GraphController to parse requests sent from frontend
+ */
 public class Parser {
     // option indicates the request type
     private int option;
