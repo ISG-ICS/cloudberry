@@ -8,17 +8,29 @@ import models.Point;
 
 import java.util.HashMap;
 
+/**
+ * this class is for GraphController to send responses to frontend
+ */
 public class Response {
-
+    // option indicates the request type
     private int option;
+    // the timestamp when opening the socket connection
     private String timestamp;
+    // flag indicates whether the incremental query is finished
     private String flag;
+    // the number of edges on the screen
     private int edgesCnt;
+    // the number of reply tweets corresponding to a keyword
     private int repliesCnt;
+    // the data of points or edges, for drawing graph in frontend
     private String data;
+    // the number of edges on the screen that are not bundled
     private int isolatedEdgesCnt;
+    // the end date of the current slice
     private String date;
+    // the number of points (or points in clusters) on the screen
     private int pointsCnt;
+    // the number of clusters on the screen
     private int clustersCnt;
 
     public int getOption() {
@@ -101,6 +113,10 @@ public class Response {
         this.isolatedEdgesCnt = isolatedEdgesCnt;
     }
 
+    /**
+     * set data as edges in JSON format
+     * @param edges edges stored in HashMap
+     */
     public void setEdges(HashMap<Edge, Integer> edges) {
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode arrayNode = objectMapper.createArrayNode();
@@ -114,6 +130,10 @@ public class Response {
         setData(arrayNode.toString());
     }
 
+    /**
+     * set data as points in JSON format
+     * @param points points stored in HashMap
+     */
     public void setPoints(HashMap<Point, Integer> points) {
         ObjectMapper objectMapper = new ObjectMapper();
         ArrayNode arrayNode = objectMapper.createArrayNode();
