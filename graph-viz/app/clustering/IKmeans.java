@@ -45,8 +45,8 @@ public class IKmeans extends Kmeans {
         for (int i = 0; i < k; i++) {
             allClusters.add(new ArrayList<>());
         }
-        centers = initCenters();
-        clusters = initCluster();
+        initCenters();
+        initCluster();
     }
 
     /**
@@ -109,7 +109,7 @@ public class IKmeans extends Kmeans {
             allClusters.get(j).addAll(clusters.get(j));
         }
         clusters.clear();
-        clusters = initCluster();
+        initCluster();
     }
 
     @Override
