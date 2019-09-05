@@ -19,7 +19,7 @@ public class Parser {
     private int clusteringAlgorithm = 0;
     // 0: no bundling, 1: do FDEB
     private int bundling = 0;
-    // the current timestamp
+    // the timestamp when opening the socket
     private String timestamp = null;
     // the current zoom level
     private int zoom = 0;
@@ -27,7 +27,7 @@ public class Parser {
     private int treeCutting = 0;
     // the query keyword
     private String query = "";
-    // the end date of each slice
+    // the end date of the last slice, also the start date of the current slice
     private String endDate = null;
 
     public int getOption() {
@@ -83,8 +83,8 @@ public class Parser {
     }
 
     /**
-     * parse the JSON sent from front end into variables
-     * @param query the JSON sent from front end
+     * parse the JSON sent from frontend into variables in backend
+     * @param query the JSON sent from frontend
      */
     public void parse(String query) {
         ObjectMapper objectMapper = new ObjectMapper();
