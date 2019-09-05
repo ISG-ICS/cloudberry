@@ -10,8 +10,10 @@ import java.util.List;
  * Incremental K-Means Algorithm
  */
 public class IKmeans extends Kmeans {
-    private List<List<Point>> allClusters; // the list of clusters for all accumulated data
-    private int pointsCnt; // the count of points in all accumulated data
+    // the list of clusters for all accumulated data
+    private List<List<Point>> allClusters;
+    // the count of points in all accumulated data
+    private int pointsCnt;
 
     /**
      * Constructor for k
@@ -22,7 +24,7 @@ public class IKmeans extends Kmeans {
         super(k);
     }
 
-    public List<List<Point>> getAllClusters() {
+    private List<List<Point>> getAllClusters() {
         return allClusters;
     }
 
@@ -40,6 +42,7 @@ public class IKmeans extends Kmeans {
     /**
      * Initialization of the whole I-KMeans process
      */
+    @Override
     public void init() {
         allClusters = new ArrayList<>();
         for (int i = 0; i < k; i++) {
@@ -86,6 +89,7 @@ public class IKmeans extends Kmeans {
      *
      * @param data the new batch of data
      */
+    @Override
     public void execute(List<Point> data) {
         boolean isFirst = dataSet == null;
         setDataSet(data);
@@ -108,10 +112,13 @@ public class IKmeans extends Kmeans {
         for (int j = 0; j < getK(); j++) {
             allClusters.get(j).addAll(clusters.get(j));
         }
-        clusters.clear();
         initCluster();
     }
 
+    /**
+     * Get the map containing the accumulated clusters and their sizes
+     * @return the map containing the accumulated clusters and their sizes
+     */
     @Override
     public HashMap<Point, Integer> getClustersMap() {
         HashMap<Point, Integer> clustersSizes = new HashMap<>();

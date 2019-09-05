@@ -10,13 +10,20 @@ import java.util.List;
  * K-Means algorithm
  */
 public class Kmeans {
-    int k; // the number of clusters desired
-    List<Point> dataSet; // the dataset for clustering
-    List<Point> centers; // the list of centers of clusters
-    List<List<Point>> clusters; // the list of clusters for the whole dataset
-    HashMap<Point, Integer> parents = new HashMap<>(); // map of points and its cluster
+    // the number of clusters desired
+    int k;
+    // the dataset for clustering
+    List<Point> dataSet;
+    // the list of centers of clusters
+    List<Point> centers;
+    // the list of clusters for the whole dataset
+    List<List<Point>> clusters;
+    // map of points and its cluster
+    HashMap<Point, Integer> parents;
+    // the last squared error sum for determining the algorithm's termination
     private double lastSquaredErrorSum;
-    private int I; // the number of iterations
+    // the number of iterations
+    private int I;
 
     /**
      * Constructor for k
@@ -30,6 +37,7 @@ public class Kmeans {
         this.k = k;
         centers = new ArrayList<>();
         clusters = new ArrayList<>();
+        parents = new HashMap<>();
     }
 
     public List<Point> getCenters() {
@@ -66,22 +74,13 @@ public class Kmeans {
      */
     public void init() {
         I = 0;
-        int dataSetLength = getDataSetLength();
-        if (k > dataSetLength) {
-            k = dataSetLength;
-        }
-        if (dataSet == null || dataSet.size() == 0) {
-            return;
-        }
+        lastSquaredErrorSum = 0;
         initCenters();
         initCluster();
-        lastSquaredErrorSum = 0;
     }
 
     /**
      * Initialize the list of centers corresponding to each cluster
-     *
-     * @return the list of centers
      */
     void initCenters() {
         centers.clear();
@@ -112,8 +111,6 @@ public class Kmeans {
 
     /**
      * Initialize the set of clusters
-     *
-     * @return a set of k empty clusters
      */
     void initCluster() {
         clusters.clear();
@@ -231,10 +228,13 @@ public class Kmeans {
      */
     public void execute(List<Point> dataSet) {
         setDataSet(dataSet);
-        init();
+        if (k > getDataSetLength()) {
+            k = getDataSetLength();
+        }
         if (dataSet == null || dataSet.size() == 0) {
             return;
         }
+        init();
         // iterate until no change in the sum of squared errors
         double currentSquaredErrorSum;
         while (true) {
@@ -248,16 +248,24 @@ public class Kmeans {
             }
             setNewCenter();
             I++;
-            clusters.clear();
             initCluster();
             lastSquaredErrorSum = currentSquaredErrorSum;
         }
     }
 
+    /**
+     * Get the cluster to which a point belongs
+     * @param point a given point
+     * @return the cluster to which the point belongs
+     */
     public Point getParent(Point point) {
         return centers.get(parents.get(point));
     }
 
+    /**
+     * Get the map containing the clusters and their sizes
+     * @return the map containing the clusters and their sizes
+     */
     public HashMap<Point, Integer> getClustersMap() {
         HashMap<Point, Integer> clustersSizes = new HashMap<>();
         for (int i = 0; i < getK(); i++) {
