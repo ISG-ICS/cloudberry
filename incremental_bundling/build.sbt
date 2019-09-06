@@ -12,5 +12,3 @@ libraryDependencies += guice
 libraryDependencies += javaJdbc
 libraryDependencies += "org.postgresql" % "postgresql" % "42.1.4"
 libraryDependencies ++= graphVizDependencies
-
-enablePlugins(JavaAppPackaging)

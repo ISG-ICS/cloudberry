@@ -18,8 +18,8 @@ def detail_error_detect(data, label):
 
 def key_error_detect(data):
     global status
-    has_from_coordinate = detail_error_detect(data[0], 'from_coordinate')
-    has_to_coordinate = detail_error_detect(data[0], 'to_coordinate')
+    has_from_coordinate = detail_error_detect(data, 'from_coordinate')
+    has_to_coordinate = detail_error_detect(data, 'to_coordinate')
     if has_from_coordinate and has_to_coordinate:
         status = 1
     elif has_from_coordinate and not has_to_coordinate:
@@ -89,20 +89,18 @@ def create_csv_from_json(json_file):
             data[0]['ds_tweet_reply_graph']['from_text'] = data[0]['ds_tweet_reply_graph']['from_text'].replace(
                 "\n", " ")
             data[0]['ds_tweet_reply_graph']['from_text'] = data[0]['ds_tweet_reply_graph']['from_text'].replace("|",
-                                                                                                                "")
+                                                                                                                " ")
             data[0]['ds_tweet_reply_graph']['to_text'] = data[0]['ds_tweet_reply_graph']['to_text'].replace("\n",
                                                                                                             " ")
-            data[0]['ds_tweet_reply_graph']['to_text'] = data[0]['ds_tweet_reply_graph']['to_text'].replace("|", "")
+            data[0]['ds_tweet_reply_graph']['to_text'] = data[0]['ds_tweet_reply_graph']['to_text'].replace("|", " ")
 
             # form a line of data[0]
             data_line = [data[0]['ds_tweet_reply_graph']['tweet_from'],
-                         data[0]['ds_tweet_reply_graph']['from_user'],
                          data[0]['ds_tweet_reply_graph']['from_create_at'],
                          data[0]['ds_tweet_reply_graph']['from_text'],
                          source[0],
                          source[1],
                          data[0]['ds_tweet_reply_graph']['tweet_to'],
-                         data[0]['ds_tweet_reply_graph']['to_user'],
                          data[0]['ds_tweet_reply_graph']['to_create_at'],
                          data[0]['ds_tweet_reply_graph']['to_text'],
                          target[0],
