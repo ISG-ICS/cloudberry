@@ -238,7 +238,7 @@ public final class Guardian implements Runnable {
         System.out.println("    [touchCloudberry]    queryURL: " + cloudberryServerURL);
         System.out.println("    [touchCloudberry]    queryJSON:" + queryJSON);
         final CloudberryWSClient cloudberryWSClient = new CloudberryWSClient(cloudberryServerURL);
-        boolean success = cloudberryWSClient.connect();
+        boolean success = cloudberryWSClient.establishConnection();
         if (!success) {
             System.err.println("    [touchCloudberry] failed! ==> Can not establish connection.");
             sendEmail("Cannot connect to Cloudberry.",

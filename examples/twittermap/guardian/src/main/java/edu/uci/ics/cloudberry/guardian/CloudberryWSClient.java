@@ -4,11 +4,11 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 @ClientEndpoint
-public class CloudberryWSClient {
+public class CloudberryWSClient implements Callable {
     private String serverURL = null;
     private Session userSession = null;
     private int countRetry = 0;
@@ -20,7 +20,35 @@ public class CloudberryWSClient {
         this.countRetry = 0;
     }
 
-    public boolean connect() {
+    public Boolean call() {
+        return this.connect();
+    }
+
+    public boolean establishConnection() {
+        // use executor to run connect function (call function) in case the establishing is blocked for too long
+        ExecutorService executor = Executors.newCachedThreadPool();
+        Future<Boolean> future = executor.submit(this);
+        Boolean success = false;
+        try {
+            success = future.get(20, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+            System.err.println("        [CloudberryWSClient] establishing websocket connection timeout!");
+            return false;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            System.err.println("        [CloudberryWSClient] establishing websocket connection interrupted!");
+            return false;
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            System.err.println("        [CloudberryWSClient] establishing websocket connection failed!");
+            return false;
+        }
+
+        return success;
+    }
+
+    private boolean connect() {
 
         if (countRetry > 5) {
             return false;
