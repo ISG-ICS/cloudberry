@@ -8,6 +8,9 @@ asterixdbConfig:
 cloudberryConfig:
   queryURL: ws://localhost:9000/ws
   ingestionCheck: true
+  retryTimes: 5
+  retryDelay: 3
+  overallTimeout: 180
 
 twittermapConfig:
   url: http://localhost:9001

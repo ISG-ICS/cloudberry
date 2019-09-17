@@ -10,13 +10,19 @@ import java.util.concurrent.*;
 @ClientEndpoint
 public class CloudberryWSClient implements Callable {
     private String serverURL = null;
+    private int retryTimes = 0;
+    private int retryDelay = 0;
+    private int overallTimeout = 0;
     private Session userSession = null;
     private int countRetry = 0;
     private boolean syncWating = false;
     private String messageBuffer = null;
 
-    public CloudberryWSClient(String serverURL) {
+    public CloudberryWSClient(String serverURL, int retryTimes, int retryDelay, int overallTimeout) {
         this.serverURL = serverURL;
+        this.retryTimes = retryTimes;
+        this.retryDelay = retryDelay;
+        this.overallTimeout = overallTimeout;
         this.countRetry = 0;
     }
 
@@ -30,10 +36,10 @@ public class CloudberryWSClient implements Callable {
         Future<Boolean> future = executor.submit(this);
         Boolean success = false;
         try {
-            success = future.get(20, TimeUnit.SECONDS);
+            success = future.get(overallTimeout, TimeUnit.SECONDS);
         } catch (TimeoutException e) {
             e.printStackTrace();
-            System.err.println("        [CloudberryWSClient] establishing websocket connection timeout!");
+            System.err.println("        [CloudberryWSClient] establishing websocket connection timeout! (" + overallTimeout + " seconds)");
             return false;
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -50,7 +56,7 @@ public class CloudberryWSClient implements Callable {
 
     private boolean connect() {
 
-        if (countRetry > 5) {
+        if (countRetry > retryTimes) {
             return false;
         }
 
@@ -64,8 +70,8 @@ public class CloudberryWSClient implements Callable {
             System.out.println("        [CloudberryWSClient] exception:");
             e.printStackTrace();
             try {
-                System.out.println("        [CloudberryWSClient] will retry in 3 seconds.");
-                TimeUnit.SECONDS.sleep(3);
+                System.out.println("        [CloudberryWSClient] will retry in " + retryDelay + " seconds.");
+                TimeUnit.SECONDS.sleep(retryDelay);
                 this.countRetry ++;
                 return connect();
             } catch (InterruptedException e1) {
@@ -115,8 +121,8 @@ public class CloudberryWSClient implements Callable {
     public void onError(Throwable t) {
         this.userSession = null;
         try {
-            System.out.println("        [CloudberryWSClient] will retry in 3 seconds.");
-            TimeUnit.SECONDS.sleep(3);
+            System.out.println("        [CloudberryWSClient] will retry in " + retryDelay + " seconds.");
+            TimeUnit.SECONDS.sleep(retryDelay);
             connect();
         } catch (InterruptedException e1) {
             e1.printStackTrace();
