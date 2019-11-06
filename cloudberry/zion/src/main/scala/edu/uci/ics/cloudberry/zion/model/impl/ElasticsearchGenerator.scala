@@ -20,6 +20,8 @@ trait ElasticImpl {
       case None => throw new QueryParsingException(s"No implementation is provided for aggregate function ${aggregate.name}")
     }
   }
+
+  val round: String
 }
 
 object ElasticImpl extends ElasticImpl {
@@ -30,6 +32,8 @@ object ElasticImpl extends ElasticImpl {
     Avg -> "avg",
     Sum -> "sum"
   )
+
+  val round: String = "Math.round"
 }
 
 
@@ -228,6 +232,8 @@ class ElasticsearchGenerator extends IQLGenerator {
         val groupStr = new mutable.StringBuilder()
         val isLookUp = group.lookups.nonEmpty
         var groupAsArray = Json.arr()
+        var aggrAsMap = Json.obj()
+        var aggrFuncCounter = 0
         for (i <- group.bys.indices) {
           val by = group.bys(i)
           val fieldExpr = exprMap(by.field.name)
@@ -238,9 +244,30 @@ class ElasticsearchGenerator extends IQLGenerator {
             groupStr.append(s"""{"$as": {""")
           else
             groupStr.append(s""","aggs": {"$as": {""")
-          parseGroupByFunc(by, fieldExpr.refExpr, groupStr, isLookUp, selectOpt)
+
+          if (unnest.nonEmpty && selectOpt.nonEmpty) {
+            val select = selectOpt.get
+            val orderStr = if (select.order.head == SortOrder.DSC) "desc" else "asc"
+            groupStr.append(s""" "terms": {"field": "${fieldExpr.refExpr}.keyword", "size": ${select.limit}, "order": {"_count": "$orderStr"}} """)
+          } else {
+            parseGroupByFunc(by, fieldExpr.refExpr, groupStr, isLookUp)
+          }
         }
-        groupStr.append("}" * group.bys.length * 2)
+        for (i <- group.aggregates.indices) {
+          val aggr = group.aggregates(i)
+          val fieldExpr = exprMap(aggr.field.name)
+          val as = aggr.as.name
+          val func = aggr.func
+
+          aggrAsMap += (typeImpl.getAggregateStr(func) -> JsString(as))
+
+          if (!func.equals(Count)) {
+            groupStr.append(s""","aggs": {"$as": {""")
+            parseAggrFunc(aggr, fieldExpr.refExpr, groupStr)
+            aggrFuncCounter += 1
+          }
+        }
+        groupStr.append("}" * (group.bys.length + aggrFuncCounter) * 2)
         shallowQueryAfterAppend += ("aggs" -> Json.parse(groupStr.toString))
 
         if (group.lookups.nonEmpty) {
@@ -251,7 +278,8 @@ class ElasticsearchGenerator extends IQLGenerator {
           queryArray = queryArray :+ Json.obj("index" -> selectDataset)
           queryArray = queryArray :+ shallowQueryAfterAppend
           val body = group.lookups.head
-          val joinQuery = Json.parse(s"""{"_source": "${body.selectValues.head.name}", "size": $MAX_RESULT_WINDOW, "sort": {"${body.lookupKeys.head.name}": { "order": "asc" }}, "query": {"bool": {"must": {"terms": { "${body.lookupKeys.head.name}" : ${joinTermsFilter.mkString("[", ",", "]")} } } } } }""").as[JsObject]
+          val valueFilter = if (joinTermsFilter.isEmpty) "" else s""", "query": {"bool": {"must": {"terms": { "${body.lookupKeys.head.name}" : ${joinTermsFilter.mkString("[", ",", "]")} } } } }"""
+          val joinQuery = Json.parse(s"""{"_source": "${body.selectValues.head.name}", "size": $MAX_RESULT_WINDOW, "sort": {"${body.lookupKeys.head.name}": { "order": "asc" }} ${valueFilter} }""").as[JsObject]
           queryArray = queryArray :+ Json.obj("index" -> JsString(body.dataset.toLowerCase())) // The name of dataset in Elasticsearch must be in lowercase.
           queryArray = queryArray :+ joinQuery
 
@@ -260,14 +288,17 @@ class ElasticsearchGenerator extends IQLGenerator {
           multiSearchQuery += ("groupAsList" -> groupAsArray)
           multiSearchQuery += ("joinSelectField" -> JsString(body.selectValues.head.name))
           multiSearchQuery += ("joinTermsFilter" -> Json.toJson(joinTermsFilter))
-
           return (ParsedResult(Seq.empty, exprMap), multiSearchQuery)
         }
+        joinTermsFilter = Seq[Int]()
         shallowQueryAfterAppend += ("groupAsList" -> groupAsArray)
+        shallowQueryAfterAppend += ("aggrAsMap" -> aggrAsMap)
         (ParsedResult(Seq.empty, exprMap), shallowQueryAfterAppend)
 
-      case None =>
+      case None => {
+        joinTermsFilter = Seq[Int]()
         (ParsedResult(Seq.empty, exprMap), shallowQueryAfterAppend)
+      }
     }
   }
 
@@ -313,7 +344,7 @@ class ElasticsearchGenerator extends IQLGenerator {
         val as = aggr.as.name
         val funcName = typeImpl.getAggregateStr(aggr.func)
         val aggregatedJson = Json.parse(s"""{"func": "$funcName", "as": "$as"}""")
-        globalAggr.aggregate.func match {
+        aggr.func match {
           case Count => {
             shallowQueryAfterSelect += {"aggregation" -> aggregatedJson}
             if (field != "*") {
@@ -423,11 +454,11 @@ class ElasticsearchGenerator extends IQLGenerator {
     }
   }
 
-  private def parseGroupByFunc(by: ByStatement, fieldExpr: String, groupStr: StringBuilder, isLookUp: Boolean, selectOpt: Option[SelectStatement]): Unit = {
+  private def parseGroupByFunc(by: ByStatement, fieldExpr: String, groupStr: StringBuilder, isLookUp: Boolean): Unit = {
     by.funcOpt match {
       case Some(func) =>
         func match {
-          case bin: Bin => ???
+          case bin: Bin => groupStr.append(s""" "terms": { "field": "${fieldExpr}", "size": $MAX_RESULT_WINDOW, "script": {"source": "${typeImpl.round}(_value/${bin.scale})*${bin.scale}"} } """.stripMargin)
           case interval: Interval =>
             val duration = parseIntervalDuration(interval)
             groupStr.append(s""" "date_histogram": {"field": "${fieldExpr}", "interval": "$duration"} """.stripMargin)
@@ -440,13 +471,21 @@ class ElasticsearchGenerator extends IQLGenerator {
               groupStr.append(s""" "terms": {"field": "${field}", "size": $MAX_RESULT_WINDOW} """.stripMargin)
             }
           }
-          // TODO: Parsing response of Sum, Avg, Max, Min aggregation query will be implemented in later PR.
+          case GeoCellTenth => ??? // Elasticsearch adapter does not support geo cell functions because Elasticsearch does not support geo-location data binning operations.
+          case GeoCellHundredth => ???
+          case GeoCellThousandth => ???
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
         }
-      case None => {
-        val orderStr = if (selectOpt.get.order.head == SortOrder.DSC) "desc" else "asc"
-        groupStr.append(s""" "terms": {"field": "${fieldExpr}.keyword", "size": ${selectOpt.get.limit}, "order": {"_count": "$orderStr"}} """)
+      case None => { // No by function in group by query
+        groupStr.append(s""" "terms": {"field": "${fieldExpr}", "size": $MAX_RESULT_WINDOW} """.stripMargin)
       }
+    }
+  }
+
+  private def parseAggrFunc(aggr: AggregateStatement, fieldExpr: String, groupStr: StringBuilder): Unit = {
+    aggr.func match {
+      case Max | Min | Sum | Avg => groupStr.append(s""" "${typeImpl.getAggregateStr(aggr.func)}": {"field": "${fieldExpr}"} """.stripMargin)
+      case _ => throw new QueryParsingException("This aggregation function is not supported in group by query.")
     }
   }
 }
