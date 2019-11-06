@@ -471,7 +471,7 @@ class ElasticsearchGenerator extends IQLGenerator {
               groupStr.append(s""" "terms": {"field": "${field}", "size": $MAX_RESULT_WINDOW} """.stripMargin)
             }
           }
-          case GeoCellTenth => ??? // Elasticsearch adapter does not support geo cell functions.
+          case GeoCellTenth => ??? // Elasticsearch adapter does not support geo cell functions because Elasticsearch does not support geo-location data binning operations.
           case GeoCellHundredth => ???
           case GeoCellThousandth => ???
           case _ => throw new QueryParsingException(s"unknown function: ${func.name}")
