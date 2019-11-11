@@ -1,5 +1,11 @@
 package edu.uci.ics.cloudberry.noah.adm;
 
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
+import static edu.uci.ics.cloudberry.noah.adm.ADM.ADMDateFormat;
+import static edu.uci.ics.cloudberry.noah.adm.ADM.ADMTimeFormat;
+
 public class User {
 
     public static final String ID = "id";
@@ -25,6 +31,27 @@ public class User {
         ADM.keyValueToSbWithComma(sb, LANG, ADM.mkQuote(user.getLang()));
         ADM.keyValueToSbWithComma(sb, LOCATION, ADM.mkQuote(user.getLocation()));
         ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkDateConstructor(user.getCreatedAt()));
+        ADM.keyValueToSbWithComma(sb, DESCRIPTION, ADM.mkQuote(user.getDescription()));
+        ADM.keyValueToSbWithComma(sb, FOLLOWERS_COUNT, String.valueOf(user.getFollowersCount()));
+        ADM.keyValueToSbWithComma(sb, FRIENDS_COUNT, String.valueOf(user.getFriendsCount()));
+        ADM.keyValueToSb(sb, STATUS_COUNT, String.valueOf(user.getStatusesCount()));
+        sb.append("}");
+
+        return sb.toString();
+    }
+
+    public static String toJSON(twitter4j.User user) {
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        ADM.keyValueToSbWithComma(sb, ID, String.valueOf(user.getId()));
+        ADM.keyValueToSbWithComma(sb, NAME, ADM.mkQuote(user.getName()));
+        ADM.keyValueToSbWithComma(sb, SCREEN_NAME, ADM.mkQuote(user.getScreenName()));
+        ADM.keyValueToSbWithComma(sb, PROFILE_IMAGE_URL, ADM.mkQuote(user.getProfileImageURL()));
+        ADM.keyValueToSbWithComma(sb, LANG, ADM.mkQuote(user.getLang()));
+        ADM.keyValueToSbWithComma(sb, LOCATION, ADM.mkQuote(user.getLocation()));
+
+        ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkQuote(ADM.mkJSONDateTimeConstructor(user.getCreatedAt())));
         ADM.keyValueToSbWithComma(sb, DESCRIPTION, ADM.mkQuote(user.getDescription()));
         ADM.keyValueToSbWithComma(sb, FOLLOWERS_COUNT, String.valueOf(user.getFollowersCount()));
         ADM.keyValueToSbWithComma(sb, FRIENDS_COUNT, String.valueOf(user.getFriendsCount()));
