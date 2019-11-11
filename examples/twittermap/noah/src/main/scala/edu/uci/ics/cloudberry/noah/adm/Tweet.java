@@ -3,6 +3,13 @@ package edu.uci.ics.cloudberry.noah.adm;
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis;
 import twitter4j.GeoLocation;
 import twitter4j.Status;
+import twitter4j.HashtagEntity;
+import twitter4j.UserMentionEntity;
+
+import java.text.SimpleDateFormat;
+import java.util.Locale;
+
+import static edu.uci.ics.cloudberry.noah.adm.ADM.*;
 
 public class Tweet {
     public static String CREATE_AT = "create_at";
@@ -20,6 +27,45 @@ public class Tweet {
     public static String USER_MENTION = "user_mentions";
     public static String USER = "user";
     public static String PLACE = "place";
+
+    public static String toJSON(Status status, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException{
+        String geoTags = geoTag(status, gnosis, requireGeoField);
+        if (geoTags == null && requireGeoField)
+            return "";
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+
+        ADM.keyValueToSbWithComma(sb, CREATE_AT, ADM.mkQuote(ADM.mkJSONDateTimeConstructor(status.getCreatedAt())));
+        ADM.keyValueToSbWithComma(sb, ID, String.valueOf(status.getId()));
+        ADM.keyValueToSbWithComma(sb, TEXT, ADM.mkQuote(status.getText()));
+        ADM.keyValueToSbWithComma(sb, IN_REPLY_TO_STATUS, String.valueOf(status.getInReplyToStatusId()));
+        ADM.keyValueToSbWithComma(sb, IN_REPLY_TO_USER, String.valueOf(status.getInReplyToUserId()));
+        ADM.keyValueToSbWithComma(sb, FAVORITE_COUNT, String.valueOf(status.getFavoriteCount()));
+        ADM.keyValueToSbWithComma(sb, RETWEET_COUNT, String.valueOf(status.getRetweetCount()));
+        ADM.keyValueToSbWithComma(sb, LANG, ADM.mkQuote(status.getLang()));
+        ADM.keyValueToSbWithComma(sb, IS_RETWEET, String.valueOf(status.isRetweet()));
+
+        if (status.getHashtagEntities().length > 0) {
+            ADM.keyValueToSbWithComma(sb, HASHTAG, mkStringSet(status.getHashtagEntities()));
+        }
+        if (status.getUserMentionEntities().length > 0) {
+            ADM.keyValueToSbWithComma(sb, USER_MENTION, mkStringSet(status.getUserMentionEntities()));
+        }
+        if (status.getPlace() != null) {
+            ADM.keyValueToSbWithComma(sb, PLACE, Place.toADM(status.getPlace()));
+        }
+        if (status.getGeoLocation() != null) {
+            ADM.keyValueToSbWithComma(sb, GEO_COORDINATE, ADM.mkQuote(mkPoint(status.getGeoLocation())));
+        } else if (status.getPlace() != null && status.getPlace().getPlaceType().equals("poi")) {
+            ADM.keyValueToSbWithComma(sb, GEO_COORDINATE, ADM.mkQuote(mkPoint(status.getPlace().getBoundingBoxCoordinates()[0][0])));
+        }
+        if(geoTags != null){
+            ADM.keyValueToSbWithComma(sb, GEO_TAG, geoTags);
+        }
+        ADM.keyValueToSb(sb, USER, User.toJSON(status.getUser()));
+        sb.append("}");
+        return sb.toString();
+    }
 
     public static String toADM(Status status, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException{
         String geoTags = geoTag(status, gnosis, requireGeoField);
@@ -57,6 +103,10 @@ public class Tweet {
         ADM.keyValueToSb(sb, USER, User.toADM(status.getUser()));
         sb.append("}");
         return sb.toString();
+    }
+
+    private static String mkPoint(GeoLocation geoLocation) {
+        return "point(" + geoLocation.getLongitude() + " " + geoLocation.getLatitude() + ")";
     }
 
     public static String geoTag(Status status, USGeoGnosis gnosis, boolean requireGeoField) throws UnknownPlaceException{
@@ -122,7 +172,7 @@ public class Tweet {
                 }
                 cityName = place.getFullName().substring(index + 1).trim();
                 info = gnosis.tagNeighborhood(cityName,
-                        ADM.coordinates2Rectangle(place.getBoundingBoxCoordinates()));
+                    ADM.coordinates2Rectangle(place.getBoundingBoxCoordinates()));
                 break;
             case "poi": // a point
                 double longitude = (place.getBoundingBoxCoordinates())[0][0].getLongitude();
@@ -139,6 +189,32 @@ public class Tweet {
         }
         sb.append(info.get().toString());
         return true;
+    }
+
+    private static String mkStringSet(HashtagEntity[] hashtagEntities) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < hashtagEntities.length; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(ADM.mkQuote(hashtagEntities[i].getText()));
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String mkStringSet(UserMentionEntity[] userMentionEntities) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (int i = 0; i < userMentionEntities.length; i++) {
+            if (i > 0) {
+                sb.append(',');
+            }
+            sb.append(userMentionEntities[i].getId());
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
 }
