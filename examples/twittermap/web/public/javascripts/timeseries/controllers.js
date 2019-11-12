@@ -14,6 +14,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     //Used to control behavior of time bar, time bar should start to draw diagram when received second result,
     //Otherwise there will be a blink line.
     $scope.timeseriesState = 0;
+    $scope.paused = true;
 
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
@@ -207,8 +208,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             // Set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function () {
               resetClink = 0;
-
-              if (playButton.text() === "Pause") {
+              if (!$scope.paused) {
                 document.getElementById("play-button").click();
               }
               onPlay = false;
@@ -220,7 +220,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function (event) {
               if (event.currentMapType !== "countmap") {
-                if (playButton.text() === "Pause") {
+                if (!$scope.paused) {
                   document.getElementById("play-button").click();
                 }
                 onPlay = false;
@@ -272,9 +272,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .xAxisLabel(startDate + "   to   " + endDate)
               .elasticY(true)
               .on("postRedraw", highlightChart)
-              .on("filtered", removeHighlight)
-              .yAxis().ticks(4);
-
+              .on("filtered", removeHighlight);
 
 
             // Time slider starts here
@@ -334,22 +332,27 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             }
 
             var playButton = d3version4.select("#play-button");
+            console.log($scope.paused)
 
             playButton
               .on("click", function () {
                 var button = d3version4.select(this);
                 onPlay = true;
-                if (button.text() == "Pause") {
+                if (!$scope.paused) {
                   clearInterval(timer);
                   //Enable sidebar when time slider on "pause" mode
                   document.getElementById("hamburgerButton").disabled = false;
                   button.text("Play");
+                  $scope.paused = true;
+                  console.log($scope.paused)
                 } else {
                   timer = setInterval(step, 800);
                   //Disable sidebar when time slider on "play" mode
                   document.getElementById("hamburgerButton").disabled = true;
                   $rootScope.$emit("CallCloseMethod", {});
                   button.text("Pause");
+                  $scope.paused = false;
+                  console.log($scope.paused)
                 }
               });
 
@@ -363,6 +366,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 //Enable sidebar when time slider done playing
                 document.getElementById("hamburgerButton").disabled = false;
                 onPlay = false;
+                $scope.paused = true;
+                console.log($scope.paused)
                 currentValue = x(brushInterval.start);
                 clearInterval(timer);
                 playButton.text("Play");
@@ -373,6 +378,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 //Enable sidebar when time slider done playing
                 document.getElementById("hamburgerButton").disabled = false;
                 onPlay = false;
+                $scope.paused = true;
+                console.log($scope.paused)
                 currentValue = 0;
                 clearInterval(timer);
                 playButton.text("Play");
