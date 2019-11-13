@@ -52,6 +52,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     timeSlider.id = "time-slider";
     stats.appendChild(timeSlider);
   
+    var playButtonForSlider = document.createElement("button");
+    playButtonForSlider.id = "play-button";
+    playButtonForSlider.innerHTML = "<i class='fa fa-play-circle-o' aria-hidden='true'></i>";
+    stats.appendChild(playButtonForSlider);
+    
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
@@ -256,8 +261,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .style("position", "absolute")
               .style("bottom", "95%")
               .style("left", "1%");
-
-
+            
+            
             var startDate = (minDate.getFullYear() + "-" + (minDate.getMonth() + 1));
             var endDate = (maxDate.getFullYear() + "-" + (maxDate.getMonth() + 1));
 
@@ -332,17 +337,22 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             }
 
             var playButton = d3version4.select("#play-button");
+            console.log(playButton);
             console.log($scope.paused)
 
             playButton
               .on("click", function () {
-                var button = d3version4.select(this);
+                console.log("xxx");
+                $( "#play-button").html(
+                  $( "#play-button").html() == 
+                  '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>' ? 
+                  '<i class="fa fa-play-circle-o" aria-hidden="true"></i>' : 
+                  '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>');
                 onPlay = true;
                 if (!$scope.paused) {
                   clearInterval(timer);
                   //Enable sidebar when time slider on "pause" mode
                   document.getElementById("hamburgerButton").disabled = false;
-                  button.text("Play");
                   $scope.paused = true;
                   console.log($scope.paused)
                 } else {
@@ -350,9 +360,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                   //Disable sidebar when time slider on "play" mode
                   document.getElementById("hamburgerButton").disabled = true;
                   $rootScope.$emit("CallCloseMethod", {});
-                  button.text("Pause");
                   $scope.paused = false;
-                  console.log($scope.paused)
                 }
               });
 
@@ -370,8 +378,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 console.log($scope.paused)
                 currentValue = x(brushInterval.start);
                 clearInterval(timer);
-                playButton.text("Play");
                 handle.attr("cx", x(brushInterval.start));
+                $("#play-button").html('<i class="fa fa-play-circle-o" aria-hidden="true"></i>');
                 requestFunc(brushInterval.start, brushInterval.end);
               }
               if (currentValue > targetValue) {
@@ -382,8 +390,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 console.log($scope.paused)
                 currentValue = 0;
                 clearInterval(timer);
-                playButton.text("Play");
                 handle.attr("cx", x(minDate));
+                $("#play-button").html('<i class="fa fa-play-circle-o" aria-hidden="true"></i>');
                 requestFunc(minDate, maxDate);
               }
             }

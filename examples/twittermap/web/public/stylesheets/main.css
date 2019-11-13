@@ -150,7 +150,7 @@ search-bar {
 
 #time-slider {
   position: absolute;
-  top: 0%; 
+  top: 5%; 
   left: 23%;
   z-index: 0.5;
   pointer-events: auto;
@@ -370,19 +370,21 @@ div[aria-expanded=false] .glyphicon-triangle-bottom {
 
 #play-button {
   position: absolute;
-  top: 76%;
-  left: 69.5%;
-  background: #337ab7;
-  padding-right: 26px;
-  border-radius: 3px;
+  top: -15%;
+  left: 27%;
+  background: none;
   border: none;
-  color: white;
-  margin: 0;
-  padding: 0 12px;
-  width: 60px;
+  color: #337ab7;
   cursor: pointer;
-  height: 30px;
+  height: 0px;
+  width: 0px;
   z-index: 10;
+  text-align: center;
+  /* padding-right: 0px; */
+  /* padding-top: 0px; */
+  padding: 0px;
+  /* padding-bottom: 0px; */
+  outline: none;
   }
 
 #play-button{
