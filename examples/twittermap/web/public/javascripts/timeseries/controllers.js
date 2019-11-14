@@ -14,7 +14,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     //Used to control behavior of time bar, time bar should start to draw diagram when received second result,
     //Otherwise there will be a blink line.
     $scope.timeseriesState = 0;
-    $scope.paused = true;
+    $scope.playButtonPaused = true;
 
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
@@ -51,11 +51,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     var timeSlider = document.createElement("div");
     timeSlider.id = "time-slider";
     stats.appendChild(timeSlider);
-  
-    var playButtonForSlider = document.createElement("button");
-    playButtonForSlider.id = "play-button";
-    playButtonForSlider.innerHTML = "<i class='fa fa-play-circle-o' aria-hidden='true'></i>";
-    stats.appendChild(playButtonForSlider);
     
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
@@ -213,7 +208,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             // Set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function () {
               resetClink = 0;
-              if (!$scope.paused) {
+              if (!$scope.playButtonPaused) {
                 document.getElementById("play-button").click();
               }
               onPlay = false;
@@ -225,7 +220,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function (event) {
               if (event.currentMapType !== "countmap") {
-                if (!$scope.paused) {
+                if (!$scope.playButtonPaused) {
                   document.getElementById("play-button").click();
                 }
                 onPlay = false;
@@ -261,8 +256,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .style("position", "absolute")
               .style("bottom", "95%")
               .style("left", "1%");
-            
-            
+
+
             var startDate = (minDate.getFullYear() + "-" + (minDate.getMonth() + 1));
             var endDate = (maxDate.getFullYear() + "-" + (maxDate.getMonth() + 1));
 
@@ -277,7 +272,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .xAxisLabel(startDate + "   to   " + endDate)
               .elasticY(true)
               .on("postRedraw", highlightChart)
-              .on("filtered", removeHighlight);
+              .on("filtered", removeHighlight)
+              .yAxis().ticks(4);;
 
 
             // Time slider starts here
@@ -337,30 +333,26 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             }
 
             var playButton = d3version4.select("#play-button");
-            console.log(playButton);
-            console.log($scope.paused)
 
             playButton
               .on("click", function () {
-                console.log("xxx");
-                $( "#play-button").html(
-                  $( "#play-button").html() == 
+                playButton.html(
+                  playButton.html() == 
                   '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>' ? 
                   '<i class="fa fa-play-circle-o" aria-hidden="true"></i>' : 
                   '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>');
                 onPlay = true;
-                if (!$scope.paused) {
+                if (!$scope.playButtonPaused) {
                   clearInterval(timer);
-                  //Enable sidebar when time slider on "pause" mode
+                  // Enable sidebar when time slider on "pause" mode
                   document.getElementById("hamburgerButton").disabled = false;
-                  $scope.paused = true;
-                  console.log($scope.paused)
+                  $scope.playButtonPaused = true;
                 } else {
                   timer = setInterval(step, 800);
-                  //Disable sidebar when time slider on "play" mode
+                  // Disable sidebar when time slider on "play" mode
                   document.getElementById("hamburgerButton").disabled = true;
                   $rootScope.$emit("CallCloseMethod", {});
-                  $scope.paused = false;
+                  $scope.playButtonPaused = false;
                 }
               });
 
@@ -371,28 +363,15 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 (12 * (maxDate.getFullYear() - minDate.getFullYear()));
               currentValue = currentValue + (targetValue / numberOfMonth);
               if (x.invert(currentValue) >= brushInterval.end) {
-                //Enable sidebar when time slider done playing
+                // Enable sidebar when time slider done playing
                 document.getElementById("hamburgerButton").disabled = false;
                 onPlay = false;
-                $scope.paused = true;
-                console.log($scope.paused)
+                $scope.playButtonPaused = true;
                 currentValue = x(brushInterval.start);
                 clearInterval(timer);
                 handle.attr("cx", x(brushInterval.start));
-                $("#play-button").html('<i class="fa fa-play-circle-o" aria-hidden="true"></i>');
+                playButton.html('<i class="fa fa-play-circle-o" aria-hidden="true"></i>');
                 requestFunc(brushInterval.start, brushInterval.end);
-              }
-              if (currentValue > targetValue) {
-                //Enable sidebar when time slider done playing
-                document.getElementById("hamburgerButton").disabled = false;
-                onPlay = false;
-                $scope.paused = true;
-                console.log($scope.paused)
-                currentValue = 0;
-                clearInterval(timer);
-                handle.attr("cx", x(minDate));
-                $("#play-button").html('<i class="fa fa-play-circle-o" aria-hidden="true"></i>');
-                requestFunc(minDate, maxDate);
               }
             }
 

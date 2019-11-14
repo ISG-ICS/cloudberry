@@ -370,8 +370,8 @@ div[aria-expanded=false] .glyphicon-triangle-bottom {
 
 #play-button {
   position: absolute;
-  top: -15%;
-  left: 27%;
+  top: -18%;
+  left: 10%;
   background: none;
   border: none;
   color: #337ab7;
@@ -380,10 +380,7 @@ div[aria-expanded=false] .glyphicon-triangle-bottom {
   width: 0px;
   z-index: 10;
   text-align: center;
-  /* padding-right: 0px; */
-  /* padding-top: 0px; */
   padding: 0px;
-  /* padding-bottom: 0px; */
   outline: none;
   }
 
