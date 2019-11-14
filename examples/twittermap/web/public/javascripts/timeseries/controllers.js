@@ -51,7 +51,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     var timeSlider = document.createElement("div");
     timeSlider.id = "time-slider";
     stats.appendChild(timeSlider);
-    
+
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
@@ -208,6 +208,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             // Set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function () {
               resetClink = 0;
+
               if (!$scope.playButtonPaused) {
                 document.getElementById("play-button").click();
               }
@@ -273,7 +274,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               .elasticY(true)
               .on("postRedraw", highlightChart)
               .on("filtered", removeHighlight)
-              .yAxis().ticks(4);;
+              .yAxis().ticks(4);
+
 
 
             // Time slider starts here
