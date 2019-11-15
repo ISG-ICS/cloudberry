@@ -206,10 +206,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var maxDate = cloudberry.parameters.timeInterval.end;
 
             // Set the times of resetClink to 0 if the keyword is change
-            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, moveSliderHandlerToFront);
-
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function() {
+              resetClink = 0;
+              moveSliderHandlerToFront();
+            });
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, moveSliderHandlerToFront);
-
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, moveSliderHandlerToFront);
             
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function (event) {
@@ -225,7 +226,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               }
             });
 
-            function moveSliderHandlerToFront(){
+            function moveSliderHandlerToFront() {
               if (!$scope.playButtonPaused) {
                 document.getElementById("play-button").click();
               }
