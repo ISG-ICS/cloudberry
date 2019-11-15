@@ -206,19 +206,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var maxDate = cloudberry.parameters.timeInterval.end;
 
             // Set the times of resetClink to 0 if the keyword is change
-            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function () {
-              resetClink = 0;
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, moveSliderHandlerToFront);
 
-              if (!$scope.playButtonPaused) {
-                document.getElementById("play-button").click();
-              }
-              onPlay = false;
-              requestFunc(brushInterval.start, brushInterval.end);
-              // Move the handle to the start when keyword changed
-              handle.attr("cx", x(brushInterval.start));
-              currentValue = x(brushInterval.start);
-            });
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, moveSliderHandlerToFront);
 
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, moveSliderHandlerToFront);
+            
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function (event) {
               if (event.currentMapType !== "countmap") {
                 if (!$scope.playButtonPaused) {
@@ -231,6 +224,16 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 currentValue = x(brushInterval.start);
               }
             });
+
+            function moveSliderHandlerToFront(){
+              if (!$scope.playButtonPaused) {
+                document.getElementById("play-button").click();
+              }
+              onPlay = false;
+              requestFunc(brushInterval.start, brushInterval.end);
+              handle.attr("cx", x(brushInterval.start));
+              currentValue = x(brushInterval.start);
+            }
 
             var brushInterval = {start: minDate, end: maxDate};
 
