@@ -10,11 +10,11 @@ This article gives a quick start guide to deploy an example earthquake web app o
 
 If you don't have an Oracle database installed already, these are example links to install Oracle  database on Mac OS and Linux:
 
-[How to install Oracle Database on Mac OS Sierra 10.12 or above]: https://medium.com/@mfofana/how-to-install-oracle-database-on-mac-os-sierra-10-12-or-above-c0b350fd2f2c
+[How to install Oracle Database on Mac OS Sierra 10.12 or above](https://medium.com/@mfofana/how-to-install-oracle-database-on-mac-os-sierra-10-12-or-above-c0b350fd2f2c)
 
-[How to Install Oracle Database 12c on CentOS 7]:https://www.howtoforge.com/tutorial/how-to-install-oracle-database-12c-on-centos-7/
+[How to Install Oracle Database 12c on CentOS 7](https://www.howtoforge.com/tutorial/how-to-install-oracle-database-12c-on-centos-7/)
 
-[Install Oracle Database 12c on Ubuntu 16.04]:https://medium.com/venturenxt/install-oracle-database-12c-on-ubuntu-16-04-c081d51c0f9d
+[Install Oracle Database 12c on Ubuntu 16.04](https://medium.com/venturenxt/install-oracle-database-12c-on-ubuntu-16-04-c081d51c0f9d)
 
 **Suppose your Oracle Database information are as follows:**
 
