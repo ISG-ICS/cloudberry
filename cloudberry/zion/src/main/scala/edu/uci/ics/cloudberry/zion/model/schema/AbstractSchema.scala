@@ -121,7 +121,7 @@ case class TimeField(override val name: String, override val isOptional: Boolean
 }
 
 object TimeField {
-  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+  val TimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ")
   val TimeFormatForSQL = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS")
 }
 
@@ -220,6 +220,7 @@ abstract class AbstractSchema(typeName: String,
   def getTypeName: String = typeName
   def copySchema: AbstractSchema
   def toUnresolved: UnresolvedSchema
+  def getPrimaryKey: Seq[Field] = primaryKey
 }
 
 case class Schema(typeName: String,

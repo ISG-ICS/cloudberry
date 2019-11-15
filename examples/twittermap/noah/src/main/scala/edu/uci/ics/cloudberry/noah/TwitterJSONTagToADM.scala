@@ -6,6 +6,7 @@ import java.util.concurrent.Executors
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.noah.adm.Tweet
 import edu.uci.ics.cloudberry.util.Profile._
+import twitter4j.TwitterObjectFactory
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -18,6 +19,7 @@ object TwitterJSONTagToADM {
   val shapeMap = mutable.Map.empty[TypeLevel, String]
   var threadNumber = 2
   var isDebug = false
+  val bufferSize = 100
 
   val usage =
     """
@@ -40,12 +42,9 @@ object TwitterJSONTagToADM {
 
   def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = {
     try {
-      val admJacksonJson = Tweet.toADM(ln, usGeoGnosis, true)
-      if (admJacksonJson.length > 0) {
-        println(admJacksonJson)
-      }
-    }
-    catch {
+      val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
+      if (adm.length > 0) println(adm)
+    } catch {
       case e: Throwable => {
         if (isDebug) {
           e.printStackTrace(System.err)
@@ -65,11 +64,12 @@ object TwitterJSONTagToADM {
     val thpool = Executors.newFixedThreadPool(threadNumber)
     implicit val ec: ExecutionContext = ExecutionContext.fromExecutor(thpool)
 
-    val buffer = new ArrayBuffer[String](threadNumber)
+    //We use a buffer to store a batch of records for multiple threads to process
+    val buffer = new ArrayBuffer[String](bufferSize)
 
     for (ln <- scala.io.Source.stdin.getLines()) {
       buffer += ln
-      if (buffer.size == threadNumber) {
+      if (buffer.size == bufferSize) {
         val f = Future.traverse(buffer) { tw => Future(tagOneTweet(tw, usGeoGnosis)) }
         Await.result(f, scala.concurrent.duration.Duration.Inf)
         buffer.clear()

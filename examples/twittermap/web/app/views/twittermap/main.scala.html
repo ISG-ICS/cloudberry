@@ -56,6 +56,10 @@
       heatmapUnitRadius: @TMAobject.heatmapUnitRadius,
       pinmapSamplingDayRange: @TMAobject.pinmapSamplingDayRange,
       pinmapSamplingLimit: @TMAobject.pinmapSamplingLimit,
+      liveTweetQueryInterval: @TMAobject.liveTweetQueryInterval,
+      liveTweetQueryOffset: @TMAobject.liveTweetQueryOffset,
+      liveTweetUpdateRate: @TMAobject.liveTweetUpdateRate,
+      enableLiveTweet: @TMAobject.enableLiveTweet,
       defaultMapType: "@TMAobject.defaultMapType"
     }
   </script>
@@ -65,6 +69,8 @@
   <script src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
   <script src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/hashmap/hashmap.js")'></script>
+  <script src = "http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+  <script> d3version4 = d3; window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
   <script src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
@@ -78,15 +84,17 @@
   <script src='@routes.Assets.versioned("javascripts/cache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/mapresultcache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/timeseriescache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/populationcache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/countmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/pinmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/heatmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/multilayer-manager.js")'></script>
-  <script src='@routes.Assets.versioned("javascripts/lib/QuadTree.js")'></script>
-  <script src='@routes.Assets.versioned("javascripts/lib/L.TileLayer.MaskCanvas.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/leaflet_canvas_layer.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/shader_code.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/webgl_point_layer.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/lib/leaflet-heat.js")'></script>
-  
+
   @if(isDrugMap) {
     <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
   }

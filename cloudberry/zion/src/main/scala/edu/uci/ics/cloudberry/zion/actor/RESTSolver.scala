@@ -5,7 +5,7 @@ import akka.util.Timeout
 import edu.uci.ics.cloudberry.zion.model.datastore.IPostTransform
 import edu.uci.ics.cloudberry.zion.model.impl.QueryPlanner
 import edu.uci.ics.cloudberry.zion.model.schema.Query
-import play.api.libs.json.JsArray
+import play.api.libs.json._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -25,10 +25,11 @@ class RESTSolver(val dataManager: ActorRef,
     case (queries: Seq[Query], transform: IPostTransform) =>
       val futureResult = Future.traverse(queries)(q => solveAQuery(q)).map(JsArray.apply)
       futureResult.map(result => (queries, result)).foreach { case (qs, r) =>
-        out ! transform.transform(r)
-        //Disabled this suggest views to avoid competing resources in DB with ongoing ProgressiveSolver.
-        //TODO Once we have view management mechanism, could use a common service to request a view creation.
-        //qs.foreach(suggestViews)
+        // handle average results
+        val avgHandledResult = r.value.map(rows => QueryPlanner.handleAvg(rows.as[JsArray]))
+        out ! transform.transform(Json.parse(Json.toJson(avgHandledResult).toString()))
+        // suggest view to QueryPlanner
+        qs.foreach(suggestViews)
       }
   }
 

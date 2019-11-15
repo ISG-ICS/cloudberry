@@ -1,41 +1,58 @@
 angular.module('cloudberry.util', ['cloudberry.common'])
-  .controller('SearchCtrl', function($scope, $window, cloudberry, cloudberryConfig, moduleManager) {
+  .controller('SearchCtrl', function($scope, $window, $location, cloudberry, cloudberryClient, cloudberryConfig, moduleManager) {
     var stopwordsMap = buildStopwordsMap();
-
-    $("#keyword-textbox").autocomplete({source:[]});
     //When user input keyword we will first send query to and get result to render auto-complete menu
     //The reason we do not use keydown, we wanna send query after user finish the input rather than start the input
-    $("#keyword-textbox").on("keyup",function(event){   
-      var q = $scope.keyword;
-      var hostName = "http://"+window.location.hostname+":5000";
-      var url = hostName+"/spoof?query="+q;
-      try{
-        $.ajax({url:url}).done(function(data){
-          data = JSON.parse(data);
-          var suggestion = [];
-          for(var i=0;i<data.topics.length;i++)
-          {
-            var value = String(data.topics[i].topic);
-            //Exclude hashtag topic and repetitive topic
-            if(value[0] !== "#" && !suggestion.includes(value)){
-              suggestion.push(value);
-            }
+    $("#keyword-textbox").autocomplete({source:[],disabled:true,delay:200});
+
+    var ACSocket;
+    cloudberryClient.newWebSocket("ws://"+window.location.host+"/autoComplete").done(function(pws) {
+      ACSocket = pws;
+
+      ACSocket.onmessage = function(event){
+        var suggestion = [];
+        var data = JSON.parse(event.data);
+        var topics = JSON.parse(data).topics;
+        for (var i = 0; i < topics.length; i ++) {
+          var value = String(topics[i].topic);
+          //Exclude hashtag topic and repetitive topic
+          if (value[0] !== "#" && !suggestion.includes(value)) {
+            suggestion.push(value);
           }
-          $("#keyword-textbox").autocomplete({source:suggestion});
-        });
+        }
+
+        $("#keyword-textbox").autocomplete({source:suggestion});
+        $("#keyword-textbox").autocomplete("enable");
+      };
+    });
+
+    $("#keyword-textbox").on("keyup", function(event) {
+      if (event.key !== "Enter") {
+        $("#keyword-textbox").autocomplete("enable");
       }
-      catch(err){}
+      else {
+        $("#keyword-textbox").autocomplete("close");
+        $("#keyword-textbox").autocomplete("disable");
+      }
+      var autoCompleteQuery = {
+        "keyword": $scope.keyword
+      };
+
+      if (ACSocket.readyState === ACSocket.OPEN && $scope.keyword) {
+        ACSocket.send(JSON.stringify(autoCompleteQuery));
+      }
     });
 
     //If keyword been selected and user pushed enter,then we perform search directly
     $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ){
       $scope.keyword = ui.item.value;
+      $("#keyword-textbox").autocomplete("close");  
       $scope.search();
       $scope.updateSearchBox($scope.keyword);
     });
 
     $scope.search = function() {
-      $("#keyword-textbox").autocomplete("close");
+      $("#keyword-textbox").autocomplete( "close" );
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
         //Splits out all individual words in the query keyword.
         var keywords = $scope.keyword.trim().split(/\s+/);
@@ -65,15 +82,29 @@ angular.module('cloudberry.util', ['cloudberry.common'])
         cloudberry.parameters.keywords = [];
       }
     };
+
     $scope.predefinedKeywords = cloudberryConfig.predefinedKeywords;
+
     $scope.updateSearchBox = function (keyword) {
       $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');
     };
+
     $scope.predefinedSearch = function (keyword) {
       $scope.keyword = keyword;
       $scope.search();
       $scope.updateSearchBox(keyword);
     };
+
+    // If url indicates keyword, search it immediately.
+    // e.g. url = http://localhost:9001/#?keyword=hurricane
+    var defaultKeyword = $location.search().keyword;
+    if (defaultKeyword) {
+      var onWSReady = function(event) {
+        $scope.predefinedSearch(defaultKeyword);
+        moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+      };
+      moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+    }
   })
   .directive('searchBar', function (cloudberryConfig) {
     if(cloudberryConfig.removeSearchBar) {

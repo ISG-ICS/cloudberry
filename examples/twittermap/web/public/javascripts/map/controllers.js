@@ -1,9 +1,29 @@
-angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache'])
+angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache', 'cloudberry.populationcache'])
   .controller('MapCtrl', function($scope, $http, cloudberry, leafletData,
-                                  cloudberryConfig, Cache, moduleManager) {
+                                  cloudberryConfig, Cache, PopulationCache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
-
+  
+    // add an alert window for gecko-based browsers like Firefox
+    // refer to Leaflet documentation: https://leafletjs.com/reference-1.0.2.html#browser
+    // L.Browser.gecko: true for gecko-based browsers like Firefox.
+    // L.Browser.gecko3d: true for gecko-based browsers supporting CSS transforms.
+    if (L.Browser.gecko || L.Browser.gecko3d) {
+      var alertDiv = document.getElementsByTagName("alert-bar")[0];
+      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
+      div.innerHTML = [
+        '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
+        '<p>TwitterMap currently doesn\'t support time series chart on Firefox.</p>',
+        '<p>To enable live tweets, make sure to go to <a href="about:config?filter=privacy.trackingprotection.enabled">about:config</a> and change the value of <code>privacy.trackingprotection.enabled</code> to false.</p>'
+      ].join('');
+      div.style.position = 'absolute';
+      div.style.top = '0%';
+      div.style.width = '100%';
+      div.style.zIndex = '9999';
+      div.style.fontSize = '23px';
+      alertDiv.appendChild(div);
+    }
+  
     // add an alert bar of IE
     if (L.Browser.ie) {
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
@@ -34,7 +54,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         type: 'xyz',
         options: {
           accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
-          id: 'jeremyli.p6f712pj'
+          id: 'jeremyli.p6f712pj',
+          minZoom: 2,
+          maxZoom: 16
         }
       },
       controls: {
@@ -132,6 +154,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       leafletData.getMap().then(function(map) {
         $scope.map = map;
         $scope.bounds = map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
@@ -297,7 +320,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
                 style: $scope.styles.cityStyle,
                 onEachFeature: onEachFeature
               });
-
               for (i = 0; i < $scope.geojsonData.city.features.length; i++) {
                 $scope.cityIdSet.add($scope.geojsonData.city.features[i].properties.cityID);
               }
@@ -345,7 +367,30 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             });
         }
     };
-    
+
+    // load population Json to get state and county polygons, store in countmap cache.
+    $scope.loadPopJsonFiles = function loadPopJsonFiles() {
+      $scope.popjsonData = {};
+      if (PopulationCache.statePopulationCached() === false){
+        $http.get("assets/data/allStatePopulation.json")
+        .success(function(data) {
+          PopulationCache.putPopValues(data, "state");
+        })
+        .error(function(data) {
+          console.error("Load state population data failure");
+        });
+      }
+      if (PopulationCache.countyPopulationCached() === false){
+        $http.get("assets/data/allCountyPopulation.json")
+        .success(function(data) {
+          PopulationCache.putPopValues(data, "county");
+        })
+        .error(function(data) {
+          console.error("Load county population data failure");
+        });
+      }
+    };
+
     // zoom in to fit the selected polygon
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent){
@@ -386,6 +431,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if ($scope.map) {
         $scope.status.zoomLevel = $scope.map.getZoom();
         $scope.bounds = $scope.map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         if ($scope.status.zoomLevel > 9) {
           $scope.resetGeoInfo("city");
           if ($scope.polygons.statePolygons) {
@@ -448,6 +494,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       // Original operations on dragend event
       if (!$scope.status.init) {
         $scope.bounds = $scope.map.getBounds();
+        cloudberry.parameters.bounds = $scope.bounds;
         var geoData;
         if ($scope.status.logicLevel === "state") {
           geoData = $scope.geojsonData.state;

@@ -43,6 +43,8 @@ class Cloudberry @Inject()(val wsClient: WSClient,
       case "postgresql" => (new PostgreSQLConn(config.PostgreSqlURL), PostgreSQLGenerator)
       case "aql" => (new AsterixAQLConn(config.AsterixURL, wsClient), AQLGenerator)
       case "sqlpp" => (new AsterixSQLPPConn(config.AsterixURL, wsClient), SQLPPGenerator)
+      case "oracle" => (new OracleConn(config.OracleURL), OracleGenerator)
+      case "elasticsearch" => (new ElasticsearchConn(config.ElasticsearchURL, wsClient), ElasticsearchGenerator)
       case _ => throw new IllegalArgumentException(s"unknown asterixdb.lang option:${config.AsterixLang}")
     }
 

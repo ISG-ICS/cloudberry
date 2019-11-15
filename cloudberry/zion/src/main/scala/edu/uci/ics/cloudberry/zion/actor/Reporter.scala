@@ -21,7 +21,7 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
 
   override def receive: Actor.Receive = commonReceive orElse {
     case result: PartialResult =>
-      queue.enqueue(result)
+       queue.enqueue(result)
     case TimeToReport => {
       if (queue.isEmpty) {
         timer.cancel()
@@ -55,7 +55,22 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       context.become(receive)
     case fin : Fin => {
       if (queue.nonEmpty) {
-        out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        /*
+          Logistic Here is when query finished, but there are still some results in queue
+          we return them altogher.
+        */
+        if(fin.returnDelta){
+          queue.dequeueAll(deltaResult=>
+            {
+              out ! Json.toJson(deltaResult.content)
+              true
+            }
+          )
+
+        }
+        else{
+          out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
+        }
         //TODO remove this special DONE message
         out ! fin.lastMsg // notifying the client the processing is done
       }
@@ -74,7 +89,7 @@ object Reporter {
 
   case class PartialResult(fromTS: Long, toTS: Long, progress: Double, content: JsValue)
 
-  case class Fin(lastMsg: JsValue)
+  case class Fin(lastMsg: JsValue, returnDelta: Boolean)
 
   implicit val partialResultWriter: Writes[PartialResult] = Json.writes[PartialResult]
 

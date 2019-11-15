@@ -1,10 +1,8 @@
 package db
 
 import edu.uci.ics.cloudberry.zion.model.datastore.IDataConn
-import edu.uci.ics.cloudberry.zion.model.impl.{DataSetInfo, MySQLConn, PostgreSQLConn, AsterixSQLPPConn}
-
+import edu.uci.ics.cloudberry.zion.model.impl.{AsterixSQLPPConn, DataSetInfo, MySQLConn, OracleConn, PostgreSQLConn, ElasticsearchConn}
 import scala.concurrent.{ExecutionContext, Future}
-
 private[db] class Migration_20160814() {
 
   import Migration_20160814._
@@ -38,6 +36,28 @@ private[db] class Migration_20160814() {
              |)
              |""".stripMargin
         }
+      case oracle: OracleConn =>
+          conn.postControl {
+            s"""
+               |declare
+               |  result1 number(8);
+               |begin
+               |
+               |  select count(*)into result1 from all_tables where owner = 'BERRY' and table_name = 'berry.meta';
+               |
+               |  if result1 = 0 then
+               |    execute immediate '
+               |    create table "berry.meta" (
+               |      "name" varchar(255) not null,
+               |      "schema" varchar2(4000) not null,
+               |      "dataInterval" varchar2(255) not null,
+               |      "stats" varchar (255) not null,
+               |      "stats.createTime" timestamp not null,
+               |      primary key ("name"))';
+               |  end if;
+               |end;
+               |/\n""".stripMargin
+          }
       case sqlpp: AsterixSQLPPConn =>
         conn.postControl {
           s"""
@@ -50,9 +70,39 @@ private[db] class Migration_20160814() {
              |create dataset $berryMeta(berry.metaType) if not exists primary key name;
        """.stripMargin
         }
+      case elasticsearch: ElasticsearchConn =>
+        /**
+          * In Elasticsearch, each index has a setting: max_result_window which limits the maximum number results for searches.
+          * Related documentation: https://www.elastic.co/guide/en/elasticsearch/reference/6.7/index-modules.html
+          */
+        val MAX_RESULT_WINDOW = 2147483647
+        conn.postControl {
+          s"""
+             |{"mappings" : {
+             |  "_doc" : {
+             |    "properties" : {
+             |      "dataInterval.start" : { "type" : "date", "format": "strict_date_time" },
+             |      "dataInterval.end": { "type" : "date", "format": "strict_date_time" },
+             |      "stats.createTime": { "type" : "date", "format": "strict_date_time" },
+             |      "stats.lastModifyTime": { "type" : "date", "format": "strict_date_time" },
+             |      "stats.lastReadTime": { "type" : "date", "format": "strict_date_time" }
+             |    }
+             |  }
+             |},
+             |"settings": {
+             |  "index": {
+             |    "max_result_window": $MAX_RESULT_WINDOW,
+             |    "number_of_shards" : 1,
+             |    "number_of_replicas" : 0
+             |  }
+             |},
+             |"method": "create",
+             |"dataset": "berry.meta"
+             |}
+           """.stripMargin
+        }
     }
   }
-
 }
 
 object Migration_20160814 {

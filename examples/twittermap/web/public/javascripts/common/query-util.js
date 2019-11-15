@@ -58,7 +58,7 @@ angular.module("cloudberry.common")
         return filter;
       },
 
-      byTimeRequest(parameters, geoIds) {
+      byGeoTimeRequest(parameters, geoIds) {
         return {
           dataset: parameters.dataset,
           filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
@@ -91,82 +91,6 @@ angular.module("cloudberry.common")
             }]
           }
         };
-      },
-
-      byGeoRequest(parameters, geoIds) {
-        if (cloudberryConfig.sentimentEnabled) {
-          return {
-            dataset: parameters.dataset,
-            append: [{
-              field: "text",
-              definition: cloudberryConfig.sentimentUDF,
-              type: "Number",
-              as: "sentimentScore"
-            }],
-            filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
-            group: {
-              by: [{
-                field: "geo",
-                apply: {
-                  name: "level",
-                  args: {
-                    level: parameters.geoLevel
-                  }
-                },
-                as: parameters.geoLevel
-              }],
-              aggregate: [{
-                field: "*",
-                apply: {
-                  name: "count"
-                },
-                as: "count"
-              }, {
-                field: "sentimentScore",
-                apply: {
-                  name: "sum"
-                },
-                as: "sentimentScoreSum"
-              }, {
-                field: "sentimentScore",
-                apply: {
-                  name: "count"
-                },
-                as: "sentimentScoreCount"
-              }],
-              lookup: [
-                cloudberryConfig.getPopulationTarget(parameters)
-              ]
-            }
-          };
-        } else {
-          return {
-            dataset: parameters.dataset,
-            filter: queryUtil.getFilter(parameters, queryUtil.defaultNonSamplingDayRange, geoIds),
-            group: {
-              by: [{
-                field: "geo",
-                apply: {
-                  name: "level",
-                  args: {
-                    level: parameters.geoLevel
-                  }
-                },
-                as: parameters.geoLevel
-              }],
-              aggregate: [{
-                field: "*",
-                apply: {
-                  name: "count"
-                },
-                as: "count"
-              }],
-              lookup: [
-                cloudberryConfig.getPopulationTarget(parameters)
-              ]
-            }
-          };
-        }
       },
 
       getTimeBarRequest(parameters, geoIds) {
@@ -274,13 +198,39 @@ angular.module("cloudberry.common")
       },
 
       // Generate latest 10 sample tweet JSON request
-      getSampleTweetsRequest(parameters) {
+      getSampleTweetsRequest(parameters, timeLowerBound, timeUpperBound, sampleSize = queryUtil.defaultSamplingSize) {
+        var spatialField = queryUtil.getLevel(parameters.geoLevel);
+        var keywords = [];
+        for(var i = 0; i < parameters.keywords.length; i++){
+          keywords.push(parameters.keywords[i].replace("\"", "").trim());
+        }
+        var geoIds = parameters.geoIds;
+        var filter = [
+          {
+            field: "create_at",
+            relation: "inRange",
+            values: [timeLowerBound, timeUpperBound]
+          }, {
+            field: "text",
+            relation: "contains",
+            values: keywords
+          }
+        ];
+        if (geoIds.length <= 2000){
+          filter.push(
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: geoIds
+            }
+          );
+        }
         return {
           dataset: parameters.dataset,
-          filter: queryUtil.getFilter(parameters, queryUtil.defaultSamplingDayRange, parameters.geoIds),
+          filter,
           select: {
             order: ["-create_at"],
-            limit: queryUtil.defaultSamplingSize,
+            limit: sampleSize,
             offset: 0,
             field: ["create_at", "id", "user.id"]
           }
