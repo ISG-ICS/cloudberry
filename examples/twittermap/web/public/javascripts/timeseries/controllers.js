@@ -114,7 +114,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
   })
   .directive('timeSeries', function (cloudberry, moduleManager,$rootScope) {
-    var onPlay = false;
     var margin = {
       top: 10,
       right: 30,
@@ -134,7 +133,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
-              if (!onPlay) {
+              if ($scope.playButtonPaused) {
                 ndx.remove();
                 ndx.add($scope.empty);
                 dc.redrawAll();
@@ -218,7 +217,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 if (!$scope.playButtonPaused) {
                   document.getElementById("play-button").click();
                 }
-                onPlay = false;
                 requestFunc(brushInterval.start, brushInterval.end);
                 // Move the handle to the start when map type changed
                 handle.attr("cx", x(brushInterval.start));
@@ -230,7 +228,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               if (!$scope.playButtonPaused) {
                 document.getElementById("play-button").click();
               }
-              onPlay = false;
               requestFunc(brushInterval.start, brushInterval.end);
               handle.attr("cx", x(brushInterval.start));
               currentValue = x(brushInterval.start);
@@ -347,7 +344,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                   '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>' ? 
                   '<i class="fa fa-play-circle-o" aria-hidden="true"></i>' : 
                   '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>');
-                onPlay = true;
                 if (!$scope.playButtonPaused) {
                   clearInterval(timer);
                   // Enable sidebar when time slider on "pause" mode
@@ -371,7 +367,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               if (x.invert(currentValue) >= brushInterval.end) {
                 // Enable sidebar when time slider done playing
                 document.getElementById("hamburgerButton").disabled = false;
-                onPlay = false;
                 $scope.playButtonPaused = true;
                 currentValue = x(brushInterval.start);
                 clearInterval(timer);
