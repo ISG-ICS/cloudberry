@@ -14,10 +14,13 @@
 			body{margin:0;padding:0;font-size:12px;font-family:"";color:#ffffff; background:#36a5bc}
 	</style>
 	<script>
-		var COLUDBERRYURL = "ws://localhost:9000/ws";
-		//var COLUDBERRYURL = "ws://128.195.52.124:9000/ws";
+		/**
+		* Modify this cloudberryHost if your cloudberry is not localhost machine
+		*/
+		var cloudberryHost = "localhost";
+		var COLUDBERRYURL = "ws://" + cloudberryHost + ":9000/ws";
 		//Cloudberry Drum time
-		var sliceMillis= 2000;//ms
+		var sliceMillis= 500;//ms
 		var MAX_TIMESERIALS =10;
 		var ws = new Array(MAX_TIMESERIALS);
 
@@ -34,7 +37,6 @@
 		var data2 = [];
 		var chart2 = null;
 		var name;
-
 
 		InitWebSocket();
 		function InitWebSocket()
@@ -308,7 +310,6 @@
 				chart : {
 					renderTo : container,
 					type : 'line',
-					//margin:[100,100,100,150]//up,right,down,left
 					marginBottom : 100,
 					marginTop : 100,
 				},
@@ -535,7 +536,6 @@
 									<option value="month">Month</option>
 									<option value="day" selected>Day</option>
 									<option value="hour">Hour</option>
-									<option value="minute">Minute</option>								
 							</select>  
 						Aggregation Function:<select name="aggregationfunction" id="aggregationfunction">
 									<option value="sum">sum</option>
@@ -549,7 +549,7 @@
 					<td style="width: 40%; align: center">
 						Start Date:<input id="start" type="text" value="2000-01-01"
 							   required="required">
-						End Date:<input id="end" type="text"  value="2001-01-01"
+						End Date:<input id="end" type="text"  value="2000-03-10"
 							required="required"><br>
 					</td>
 					<td style="width: 20%; align: center">

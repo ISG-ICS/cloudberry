@@ -26,50 +26,19 @@ If you don't have an Oracle database installed already, these are example links 
 ## Create Tables and generate synthetic data
 
 #### Start SQLPlus command line tool
-```bash
+```plsql
 $ sqlplus
-
-SQL*Plus: Release 12.2.0.1.0 Production on Thu Nov 14 21:21:06 2019
-
-Copyright (c) 1982, 2016, Oracle.  All rights reserved.
-
-Enter user-name: berry
-Enter password: orcl
-
-Last Successful login time: Thu Nov 14 2019 17:24:53 -08:00
-
-Connected to:
-Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
 ```
 
 #### Connect to Oracle database
-```sql
+```plsql
 SQL> connect berry@orcl
-Enter password: 
-
-Connected.
 ```
 
 #### Run `earhtquake-data.sql` **(it will take 2-3 mins)**
-```sql
+```plsql
 SQL> @/home/oracle/earthquake-data.sql
-
-Table altered.
-
-
-Table dropped.
-
-
-Table created.
-
-
-Table altered.
-
-
-PL/SQL procedure successfully completed.
 ```
-
-
 
 ## Configure and start Cloudberry
 
@@ -77,11 +46,11 @@ PL/SQL procedure successfully completed.
 
 Modify `cloudberry/cloudberry/neo/conf/application.conf`
 
-Comment `asterixdb.lang = SQLPP`
-
-Uncomment `asterixdb.lang = oracle`
-
-Uncomment `oracledb.url = "jdbc:oracle:thin:berry/orcl@localhost:1521:orcl"`
+```bash
+#asterixdb.lang = SQLPP # comment this line
+asterixdb.lang = oracle # uncomment this line
+oracledb.url = "jdbc:oracle:thin:berry/orcl@localhost:1521:orcl" # uncomment this line with url of your oracle
+```
 
 (*Note: please replace username, password, hostname, port and sid with your information*)
 
@@ -93,11 +62,15 @@ $ sbt compile
 $ sbt "project neo" "run"
 ```
 
+## Register Dataset to Cloudberry
 
+```bash
+$ curl -X POST -H "Content-Type: application/json" -d @register-data.json http://localhost:9000/admin/register
+```
 
 ## Start earthquake web application
 
-Open a browser (e.g. Chrome) to access `cloudeberry/example/EarthquakeWeb/TestCloudberry.html` to see the EathquakeWeb frontend.
+Open a browser (e.g. Chrome) to access `cloudeberry/example/EarthquakeWeb/EarthquakeApp.html` to see the EathquakeWeb frontend.
 
 
 
