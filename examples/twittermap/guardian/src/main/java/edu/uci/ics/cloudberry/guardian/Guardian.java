@@ -46,6 +46,9 @@ public final class Guardian implements Runnable {
     private String asterixDBQueryURL;
     private String cloudberryServerURL;
     private boolean ingestionCheck;
+    private int retryTimes;
+    private int retryDelay;
+    private int overallTimeout;
     private String twittermapURL;
     private String publisherEmail;
     private String publisherEmailPrefix;
@@ -62,6 +65,12 @@ public final class Guardian implements Runnable {
                 .getOrDefault("queryURL", GuardianConfig.DEFAULT_CLOUDBERRY_QUERY_URL);
         this.ingestionCheck = Boolean.valueOf(guardianConfig.getCloudberryConfig()
                 .getOrDefault("ingestionCheck", GuardianConfig.DEFAULT_CLOUDBERRY_INGESTION_CHECK));
+        this.retryTimes = Integer.valueOf(guardianConfig.getCloudberryConfig()
+                .getOrDefault("retryTimes", GuardianConfig.DEFAULT_CLOUDBERRY_RETRY_TIMES));
+        this.retryDelay = Integer.valueOf(guardianConfig.getCloudberryConfig()
+                .getOrDefault("retryDelay", GuardianConfig.DEFAULT_CLOUDBERRY_RETRY_DELAY));
+        this.overallTimeout = Integer.valueOf(guardianConfig.getCloudberryConfig()
+                .getOrDefault("overallTimeout", GuardianConfig.DEFAULT_CLOUDBERRY_OVERALL_TIMEOUT));
         this.twittermapURL = guardianConfig.getTwittermapConfig()
                 .getOrDefault("url", GuardianConfig.DEFAULT_TWITTERMAP_URL);
         this.publisherEmail = guardianConfig.getNotificationConfig().getPublisherEmail();
@@ -237,8 +246,8 @@ public final class Guardian implements Runnable {
         System.out.println("    [touchCloudberry] touching Cloudberry ... ...");
         System.out.println("    [touchCloudberry]    queryURL: " + cloudberryServerURL);
         System.out.println("    [touchCloudberry]    queryJSON:" + queryJSON);
-        final CloudberryWSClient cloudberryWSClient = new CloudberryWSClient(cloudberryServerURL);
-        boolean success = cloudberryWSClient.connect();
+        final CloudberryWSClient cloudberryWSClient = new CloudberryWSClient(cloudberryServerURL, retryTimes, retryDelay, overallTimeout);
+        boolean success = cloudberryWSClient.establishConnection();
         if (!success) {
             System.err.println("    [touchCloudberry] failed! ==> Can not establish connection.");
             sendEmail("Cannot connect to Cloudberry.",
