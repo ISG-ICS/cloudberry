@@ -18,12 +18,12 @@
 
 import sys
 
-print("[info]Checking Python interpreter version...\n[info]Make sure to use Python 3.0+")
 if sys.version_info.major >= 3:
-    print("[info]Passed!")
+	print("[info] Checked Python interpreter version...\n[info]Make sure to use Python 3.0+")
+    print("[info] Passed!")
     from urllib import request
 else:
-    raise Exception("[error]Must be using Python 3.0+")
+    raise Exception("[error] Must be using Python 3.0+")
 
 COUNTER = 0
 BUFFER_SIZE_LIMIT = 40000
