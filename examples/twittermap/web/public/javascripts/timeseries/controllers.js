@@ -129,7 +129,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       link: function ($scope, $element, $attrs) {
         var chart = d3.select($element[0]);
         $scope.$watch('resultArray', function (newVal, oldVal) {
-          if ($scope.timeseriesState >= 0) {
+           if ($scope.timeseriesState >= 1) {
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
