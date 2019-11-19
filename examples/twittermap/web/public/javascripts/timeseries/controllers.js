@@ -218,7 +218,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 if (!$scope.playButtonPaused) {
                   document.getElementById("play-button").click();
                 };
-                requestFunc(brushInterval.start, brushInterval.end);
                 // Move the handle to the start when map type changed
                 handle.attr("cx", x(brushInterval.start));
                 currentValue = x(brushInterval.start);
@@ -229,10 +228,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               if (!$scope.playButtonPaused) {
                 document.getElementById("play-button").click();
               }
-              requestFunc(brushInterval.start, brushInterval.end);
               handle.attr("cx", x(brushInterval.start));
               currentValue = x(brushInterval.start);
-            }
+            };
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -253,6 +251,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 timeSeries.filterAll();
                 dc.redrawAll();
                 requestFunc(minDate, maxDate);
+                brushInterval.start = minDate;
+                brushInterval.end = maxDate;
                 moveSliderHandlerToFront();
               })
               .style("position", "absolute")
