@@ -129,7 +129,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       link: function ($scope, $element, $attrs) {
         var chart = d3.select($element[0]);
         $scope.$watch('resultArray', function (newVal, oldVal) {
-          if ($scope.timeseriesState >= 2) {
+          if ($scope.timeseriesState >= 0) {
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
@@ -203,6 +203,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var minDate = cloudberry.startDate;
             var maxDate = cloudberry.parameters.timeInterval.end;
+            var brushInterval = {start: minDate, end: maxDate};
 
             // Set the times of resetClink to 0 if the keyword is change
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function() {
@@ -216,7 +217,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               if (event.currentMapType !== "countmap") {
                 if (!$scope.playButtonPaused) {
                   document.getElementById("play-button").click();
-                }
+                };
                 requestFunc(brushInterval.start, brushInterval.end);
                 // Move the handle to the start when map type changed
                 handle.attr("cx", x(brushInterval.start));
@@ -232,8 +233,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
               handle.attr("cx", x(brushInterval.start));
               currentValue = x(brushInterval.start);
             }
-
-            var brushInterval = {start: minDate, end: maxDate};
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -254,6 +253,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 timeSeries.filterAll();
                 dc.redrawAll();
                 requestFunc(minDate, maxDate);
+                moveSliderHandlerToFront();
               })
               .style("position", "absolute")
               .style("bottom", "95%")
