@@ -4,25 +4,59 @@ import javax.websocket.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 
 @ClientEndpoint
-public class CloudberryWSClient {
+public class CloudberryWSClient implements Callable {
     private String serverURL = null;
+    private int retryTimes = 0;
+    private int retryDelay = 0;
+    private int overallTimeout = 0;
     private Session userSession = null;
     private int countRetry = 0;
     private boolean syncWating = false;
     private String messageBuffer = null;
 
-    public CloudberryWSClient(String serverURL) {
+    public CloudberryWSClient(String serverURL, int retryTimes, int retryDelay, int overallTimeout) {
         this.serverURL = serverURL;
+        this.retryTimes = retryTimes;
+        this.retryDelay = retryDelay;
+        this.overallTimeout = overallTimeout;
         this.countRetry = 0;
     }
 
-    public boolean connect() {
+    public Boolean call() {
+        return this.connect();
+    }
 
-        if (countRetry > 5) {
+    public boolean establishConnection() {
+        // use executor to run connect function (call function) in case the establishing is blocked for too long
+        ExecutorService executor = Executors.newCachedThreadPool();
+        Future<Boolean> future = executor.submit(this);
+        Boolean success = false;
+        try {
+            success = future.get(overallTimeout, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+            System.err.println("        [CloudberryWSClient] establishing websocket connection timeout! (" + overallTimeout + " seconds)");
+            return false;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            System.err.println("        [CloudberryWSClient] establishing websocket connection interrupted!");
+            return false;
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+            System.err.println("        [CloudberryWSClient] establishing websocket connection failed!");
+            return false;
+        }
+
+        return success;
+    }
+
+    private boolean connect() {
+
+        if (countRetry > retryTimes) {
             return false;
         }
 
@@ -36,8 +70,8 @@ public class CloudberryWSClient {
             System.out.println("        [CloudberryWSClient] exception:");
             e.printStackTrace();
             try {
-                System.out.println("        [CloudberryWSClient] will retry in 3 seconds.");
-                TimeUnit.SECONDS.sleep(3);
+                System.out.println("        [CloudberryWSClient] will retry in " + retryDelay + " seconds.");
+                TimeUnit.SECONDS.sleep(retryDelay);
                 this.countRetry ++;
                 return connect();
             } catch (InterruptedException e1) {
@@ -87,8 +121,8 @@ public class CloudberryWSClient {
     public void onError(Throwable t) {
         this.userSession = null;
         try {
-            System.out.println("        [CloudberryWSClient] will retry in 3 seconds.");
-            TimeUnit.SECONDS.sleep(3);
+            System.out.println("        [CloudberryWSClient] will retry in " + retryDelay + " seconds.");
+            TimeUnit.SECONDS.sleep(retryDelay);
             connect();
         } catch (InterruptedException e1) {
             e1.printStackTrace();
