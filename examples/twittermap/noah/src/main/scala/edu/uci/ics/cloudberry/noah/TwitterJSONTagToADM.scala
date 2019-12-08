@@ -21,7 +21,7 @@ object TwitterJSONTagToADM {
   var isDebug = false
   val bufferSize = 100
   var file = "ADM" // By default, generate ADM file.
-  var counter = 1
+
   val usage =
     """
       |Usage: USHierarchyBuilder -state /path/to/state.json -county /path/to/county.json -city /path/to/city.json
@@ -42,7 +42,7 @@ object TwitterJSONTagToADM {
     }
   }
 
-  def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = synchronized {
+  def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = {
     try {
       if (file.equals("ADM")) {
         val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
@@ -50,9 +50,7 @@ object TwitterJSONTagToADM {
       } else {
         val json = Tweet.toJSON(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
         if (json.length > 0) {
-          val indexStr = s"""{ "index": {"_id": "$counter" } }"""
-          counter += 1
-          println(indexStr + "\n" + json)
+          println("""{ "index": {} }""" + "\n" + json)
         }
       }
     } catch {
