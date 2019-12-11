@@ -17,7 +17,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         doGet_start = timeit.default_timer()
         request_path = self.path
 
-##  Note: comment out 'print' lines when doing tests        
+##  Note: comment out 'print' lines when testing query time        
 ##        print("\n----- Request Start ----->\n")
 ##        print("Request path:", request_path)
 ##        print("Request headers:", self.headers)
@@ -33,7 +33,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         print('Query Time: ', stop - start) 
         
 
-## COUNT THE DATA with another query (quicker than count locally)
+## Count the data with another query (quicker than count locally)
         q = request_path.split('+')
         q[1] = ('count%28%2A%29')
         count = '+'.join(q)
@@ -60,7 +60,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         else:
             batchsize = math.floor(count/max_point)
             newlist = []
-            for i in range(0,len(data),batchsize):
+            for i in range(0, len(data), batchsize):
                 newlist.append(data[i])
 
             json_dict["results"][0]["series"][0]["values"] = newlist
@@ -74,7 +74,6 @@ class RequestHandler(BaseHTTPRequestHandler):
         doGet_end = timeit.default_timer()
         print("doGet Time: ",doGet_end-doGet_start)
         
-    
     do_PUT = do_POST
     do_DELETE = do_GET
         
@@ -83,7 +82,6 @@ def main():
     print('Listening on localhost:%s' % port)
     server = HTTPServer(('', port), RequestHandler)
     server.serve_forever()
-
         
 if __name__ == "__main__":
 ## command line parser

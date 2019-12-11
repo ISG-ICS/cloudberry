@@ -20,7 +20,5 @@ while True:
 
     client.write_points(json)
 
-
-
     sleep(2)
     print("write temp: {}".format(json[0]['fields']['degrees']))

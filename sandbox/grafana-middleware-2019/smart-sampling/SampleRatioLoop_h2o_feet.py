@@ -17,7 +17,6 @@ time                level description    location     water_level
 
 '''
 
-
 import requests
 import json
 import numpy
@@ -32,8 +31,6 @@ from tslearn.preprocessing import TimeSeriesResampler
 
 
 dbname = "NOAA_water_database"
-
-
 
 def plot(sample_fit, sampled_data, lst2):
     ##plot three data sets.

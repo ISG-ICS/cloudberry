@@ -9,7 +9,7 @@ import requests
 import gzip
 import json
 import math
-import QueryInfo as qi
+from utils import QueryInfo as qi
 import timeit
 
 class RequestHandler(BaseHTTPRequestHandler):
