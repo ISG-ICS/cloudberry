@@ -77,7 +77,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
       }
     }
     val filterPath =
-      aggregation match {
+      aggregation match { // Match global aggregation function
         case "" => {
           if (method.equals("search"))
             if ((jsonQuery \ "groupAsList").getOrElse(JsNull) == JsNull) "?filter_path=hits.hits._source" else "?filter_path=aggregations"
@@ -85,16 +85,17 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
             ""
         }
         case "count" => "?filter_path=hits.total"
-        case "min" | "max" => {
+        case "min" | "max" | "avg" | "sum" => {
           val asField = (jsonQuery \ "aggregation" \ "as").get.toString().stripPrefix("\"").stripSuffix("\"")
-          s"""?size=0&filter_path=aggregations.$asField.value_as_string"""
+          s"""?size=0&filter_path=aggregations.$asField"""
         }
-        case _ => ???
+        case _ => ??? // No other global aggregation function implemented
       }
     jsonQuery -= "method"
     jsonQuery -= "dataset"
     jsonQuery -= "aggregation"
     jsonQuery -= "groupAsList"
+    jsonQuery -= "aggrAsMap"
     jsonQuery -= "selectFields"
     jsonQuery -= "joinTermsFilter"
 
@@ -128,17 +129,21 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
     val jsonAggregation = (jsonQuery \ "aggregation" \ "func").getOrElse(JsNull)
     val aggregation = if (jsonAggregation != JsNull) jsonAggregation.toString().stripPrefix("\"").stripSuffix("\"") else ""
     val jsonGroupAsList = (jsonQuery \ "groupAsList").getOrElse(JsNull)
+    val jsonAggrAsMap = (jsonQuery \ "aggrAsMap").getOrElse(JsNull)
     val joinSelectField = (jsonQuery \ "joinSelectField").getOrElse(JsNull)
 
     if (jsonGroupAsList != JsNull) {
-      return parseGroupByQueryResponse(response, jsonQuery, jsonGroupAsList, joinSelectField)
+      return parseGroupByQueryResponse(response, jsonQuery, jsonGroupAsList, jsonAggrAsMap, joinSelectField)
     }
-    return parseNonGroupByResponse(response, jsonQuery, aggregation)
+    parseNonGroupByResponse(response, jsonQuery, aggregation)
   }
 
-  private def parseGroupByQueryResponse(response: JsValue, jsonQuery: JsObject, jsonGroupAsList: JsValue, joinSelectField: JsValue): JsArray = {
+  private def parseGroupByQueryResponse(response: JsValue, jsonQuery: JsObject, jsonGroupAsList: JsValue, jsonAggrAsMap: JsValue, joinSelectField: JsValue): JsArray = {
     var resArray = Json.arr()
     val groupAsList = jsonGroupAsList.as[Seq[String]]
+    val aggrAsMap = jsonAggrAsMap.as[JsObject]
+    val isCount = aggrAsMap.keys.contains("count")
+    val aggrKey = aggrAsMap.keys.last
 
     if (joinSelectField != JsNull) { // JOIN query with aggregation
       val sortedJoinTermsFilter = (jsonQuery \ "joinTermsFilter").get.as[Seq[Int]].sorted
@@ -149,12 +154,10 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
 
       for (bucket <- buckets) {
         val key = (bucket \ "key").get.as[Int]
-        val count = (bucket \ "doc_count").get.as[Int]
         val keyIndex = binarySearch(sortedJoinTermsFilter, key)
         val joinValue = (joinBucket(keyIndex) \ "_source" \ joinSelectFieldString).get.as[Int]
-
         var tmp_json = Json.obj(groupAsList.head -> JsNumber(key))
-        tmp_json += ("count" -> JsNumber(count)) // TODO: Sum, Avg, Max, Min funtions will be implemented in later PR.
+        tmp_json = addValueToJson(tmp_json, bucket, aggrAsMap, isCount, aggrKey)
         tmp_json += (joinSelectFieldString -> JsNumber(joinValue))
         resArray = resArray.append(tmp_json)
       }
@@ -164,20 +167,18 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
       for (bucket <- buckets) {
         val keyValue = if (bucket.keys.contains("key_as_string")) (bucket \ "key_as_string").get else (bucket \ "key").get
         val jsLiquid = (bucket \ groupAsList.last \ "buckets").getOrElse(JsNull)
+        var tmp_json = Json.obj(groupAsList.head -> keyValue)
         if (jsLiquid != JsNull) {
           val liquid = jsLiquid.as[Seq[JsObject]]
           for (drop <- liquid) {
-            var tmp_json = Json.obj()
-            tmp_json += (groupAsList.head -> keyValue)
             tmp_json += (groupAsList.last -> JsString((drop \ "key_as_string").get.as[String]))
-            tmp_json += ("count" -> JsNumber((drop \ "doc_count").get.as[Int])) // TODO: Sum, Avg, Max, Min functions will be implemented in later PR.
+            tmp_json = addValueToJson(tmp_json, drop, aggrAsMap, isCount, aggrKey)
             resArray = resArray.append(tmp_json)
+            tmp_json = Json.obj(groupAsList.head -> keyValue)
           }
         }
         else {
-          var tmp_json = Json.obj()
-          tmp_json += (groupAsList.head -> keyValue)
-          tmp_json += ("count" -> JsNumber((bucket \ "doc_count").get.as[Int]))
+          tmp_json = addValueToJson(tmp_json, bucket, aggrAsMap, isCount, aggrKey)
           resArray = resArray.append(tmp_json)
         }
       }
@@ -198,12 +199,12 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
           val returnArray = sourceArray.map(doc => doc.value("_source"))
           return Json.toJson(returnArray)
         }
-        return Json.arr()
+        Json.arr()
       }
       case "count" => {
         val asField = (jsonQuery \ "aggregation" \ "as").get.toString().stripPrefix("\"").stripSuffix("\"")
         val count = (response.asInstanceOf[JsObject] \ "hits" \ "total").get.as[JsNumber]
-        return Json.arr(Json.obj(asField -> count))
+        Json.arr(Json.obj(asField -> count))
       }
       case "min" | "max" | "avg" | "sum" => {
         val asField = (jsonQuery \ "aggregation" \ "as").get.toString().stripPrefix("\"").stripSuffix("\"")
@@ -216,7 +217,7 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
             return Json.arr(jsonObjRes)
           }
         }
-        return Json.arr()
+        Json.arr()
       }
       case _ => ???
     }
@@ -263,6 +264,17 @@ class ElasticsearchConn(url: String, wSClient: WSClient)(implicit ec: ExecutionC
       }
     }
     -1
+  }
+
+  private def addValueToJson(jsonObj: JsObject, bucket: JsObject, aggrAsMap: JsObject, isCount: Boolean, aggrKey: String): JsObject = {
+    var res = jsonObj // In Scala, function arguments are immutable.
+    if (isCount) {
+      res += ("count" -> JsNumber((bucket \ "doc_count").get.as[Int]))
+    } else {
+      val value = (bucket \ aggrKey \ "value").get.as[Double]
+      res += ((aggrAsMap \ aggrKey).get.as[String] -> JsNumber(value))
+    }
+    res
   }
 }
 
