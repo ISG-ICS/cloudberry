@@ -110,7 +110,7 @@ angular.module("cloudberry.map")
         var heatTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
         // Partial heatmap cache hit case
-        if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {   
+        if (!heatMapResultCache.cacheIsDone(cloudberry.parameters.timeInterval)) {
           cloudberryClient.send(heatJson, function(id, resultSet, resultTimeInterval) {
             if(angular.isArray(resultSet)) {
               cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
@@ -144,7 +144,7 @@ angular.module("cloudberry.map")
             resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
             TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
               cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
-            }
+          }
         }, "heatTime");
       }
     }
@@ -156,8 +156,8 @@ angular.module("cloudberry.map")
     }
 
     function heatMapKeywordEventHandler(event) {
-      heatMapCommonEventHandler(event);
       heatMapResultCache.emptyStore();
+      heatMapCommonEventHandler(event);
     }
 
     function cleanHeatMap() {
