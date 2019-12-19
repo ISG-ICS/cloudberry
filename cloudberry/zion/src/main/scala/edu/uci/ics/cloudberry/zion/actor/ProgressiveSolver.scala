@@ -151,7 +151,7 @@ class ProgressiveSolver(val dataManager: ActorRef,
         val timeInterval = Json.obj(
           "timeInterval" -> Json.obj(
             "start" -> JsNumber(curInterval.getStart().getMillis()),
-            "end" -> JsNumber(boundary.getEnd().getMillis())
+            "end" -> JsNumber(curInterval.getEnd().getMillis())
         ))
         // for query with slicing request, add current timeInterval information in its query results.
         val infoValue = queryGroup.postTransform.transform(JsArray(avgHandledResults))

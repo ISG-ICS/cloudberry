@@ -6,6 +6,7 @@ angular.module('cloudberry.heatmapcache', ['cloudberry.common'])
   var store = [];
   // To check if time range in query changed (new query?)
   var endDate = new Date();
+  var endDateAssigned = false;
   // Deducts -1 to create a default value that can't exist
   endDate.setDate(endDate.getDate() - 1);
   var currentTimeRange = {
@@ -44,7 +45,10 @@ angular.module('cloudberry.heatmapcache', ['cloudberry.common'])
     for (var i = 0; i < mapResult.length; i++) {
       store.push(mapResult[i])
     }
-    currentTimeRange.end = new Date(timeInterval.end);
+    if (!endDateAssigned){
+      currentTimeRange.end = new Date(timeInterval.end);
+      endDateAssigned = true;
+    }
     currentTimeRange.start = new Date(timeInterval.start);
   };
 });
