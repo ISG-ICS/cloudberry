@@ -1,0 +1,15 @@
+{
+  "dataset":"EARTHQUAKEDATA",
+  "schema":{
+  	"typeName":"EARTHQUAKEDATA",
+    "dimension":[
+      {"name":"DEVID","isOptional":false,"datatype":"String"},
+      {"name":"OBSDATE","isOptional":false,"datatype":"Time"}
+    ],
+    "measurement":[
+      {"name":"OBSVALUE","isOptional":false,"datatype":"Number"}
+    ],
+    "primaryKey":["DEVID", "OBSDATE"],
+    "timeField":"OBSDATE"
+  }
+}

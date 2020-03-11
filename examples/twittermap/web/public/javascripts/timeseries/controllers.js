@@ -14,6 +14,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     //Used to control behavior of time bar, time bar should start to draw diagram when received second result,
     //Otherwise there will be a blink line.
     $scope.timeseriesState = 0;
+    $scope.playButtonPaused = true;
 
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
@@ -50,7 +51,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     var timeSlider = document.createElement("div");
     timeSlider.id = "time-slider";
     stats.appendChild(timeSlider);
-  
+
     // TODO - get rid of this watch by doing work inside the callback function through cloudberryClient.send()
     $scope.$watch(
       function() {
@@ -113,7 +114,6 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
   })
   .directive('timeSeries', function (cloudberry, moduleManager,$rootScope) {
-    var onPlay = false;
     var margin = {
       top: 10,
       right: 30,
@@ -129,11 +129,11 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       link: function ($scope, $element, $attrs) {
         var chart = d3.select($element[0]);
         $scope.$watch('resultArray', function (newVal, oldVal) {
-          if ($scope.timeseriesState >= 2) {
+           if ($scope.timeseriesState >= 1) {
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
-              if (!onPlay) {
+              if ($scope.playButtonPaused) {
                 ndx.remove();
                 ndx.add($scope.empty);
                 dc.redrawAll();
@@ -203,35 +203,34 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             var minDate = cloudberry.startDate;
             var maxDate = cloudberry.parameters.timeInterval.end;
+            var brushInterval = {start: minDate, end: maxDate};
 
             // Set the times of resetClink to 0 if the keyword is change
-            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function () {
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, function() {
               resetClink = 0;
-
-              if (playButton.text() === "Pause") {
-                document.getElementById("play-button").click();
-              }
-              onPlay = false;
-              requestFunc(brushInterval.start, brushInterval.end);
-              // Move the handle to the start when keyword changed
-              handle.attr("cx", x(brushInterval.start));
-              currentValue = x(brushInterval.start);
+              moveSliderHandlerToFront();
             });
-
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, moveSliderHandlerToFront);
+            moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, moveSliderHandlerToFront);
+            
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function (event) {
               if (event.currentMapType !== "countmap") {
-                if (playButton.text() === "Pause") {
+                if (!$scope.playButtonPaused) {
                   document.getElementById("play-button").click();
-                }
-                onPlay = false;
-                requestFunc(brushInterval.start, brushInterval.end);
+                };
                 // Move the handle to the start when map type changed
                 handle.attr("cx", x(brushInterval.start));
                 currentValue = x(brushInterval.start);
               }
             });
 
-            var brushInterval = {start: minDate, end: maxDate};
+            function moveSliderHandlerToFront() {
+              if (!$scope.playButtonPaused) {
+                document.getElementById("play-button").click();
+              }
+              handle.attr("cx", x(brushInterval.start));
+              currentValue = x(brushInterval.start);
+            };
 
             timeBrush.on('brushend', function (e) {
               var extent = timeBrush.extent();
@@ -252,6 +251,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 timeSeries.filterAll();
                 dc.redrawAll();
                 requestFunc(minDate, maxDate);
+                brushInterval.start = minDate;
+                brushInterval.end = maxDate;
+                moveSliderHandlerToFront();
               })
               .style("position", "absolute")
               .style("bottom", "95%")
@@ -337,19 +339,22 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
 
             playButton
               .on("click", function () {
-                var button = d3version4.select(this);
-                onPlay = true;
-                if (button.text() == "Pause") {
+                playButton.html(
+                  playButton.html() == 
+                  '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>' ? 
+                  '<i class="fa fa-play-circle-o" aria-hidden="true"></i>' : 
+                  '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>');
+                if (!$scope.playButtonPaused) {
                   clearInterval(timer);
-                  //Enable sidebar when time slider on "pause" mode
+                  // Enable sidebar when time slider on "pause" mode
                   document.getElementById("hamburgerButton").disabled = false;
-                  button.text("Play");
+                  $scope.playButtonPaused = true;
                 } else {
                   timer = setInterval(step, 800);
-                  //Disable sidebar when time slider on "play" mode
+                  // Disable sidebar when time slider on "play" mode
                   document.getElementById("hamburgerButton").disabled = true;
                   $rootScope.$emit("CallCloseMethod", {});
-                  button.text("Pause");
+                  $scope.playButtonPaused = false;
                 }
               });
 
@@ -360,24 +365,14 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
                 (12 * (maxDate.getFullYear() - minDate.getFullYear()));
               currentValue = currentValue + (targetValue / numberOfMonth);
               if (x.invert(currentValue) >= brushInterval.end) {
-                //Enable sidebar when time slider done playing
+                // Enable sidebar when time slider done playing
                 document.getElementById("hamburgerButton").disabled = false;
-                onPlay = false;
+                $scope.playButtonPaused = true;
                 currentValue = x(brushInterval.start);
                 clearInterval(timer);
-                playButton.text("Play");
                 handle.attr("cx", x(brushInterval.start));
+                playButton.html('<i class="fa fa-play-circle-o" aria-hidden="true"></i>');
                 requestFunc(brushInterval.start, brushInterval.end);
-              }
-              if (currentValue > targetValue) {
-                //Enable sidebar when time slider done playing
-                document.getElementById("hamburgerButton").disabled = false;
-                onPlay = false;
-                currentValue = 0;
-                clearInterval(timer);
-                playButton.text("Play");
-                handle.attr("cx", x(minDate));
-                requestFunc(minDate, maxDate);
               }
             }
 
