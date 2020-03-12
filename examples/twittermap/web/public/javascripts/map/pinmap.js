@@ -296,6 +296,14 @@ angular.module("cloudberry.map")
                 //userName missing in this Tweet.
             }
 
+            var userId = "";
+            try {
+              userId = tweetJSON["user.id"];
+            }
+            catch (e){
+              //userId missing in this Tweet.
+            }
+
             var userPhotoUrl = "";
             try {
                 userPhotoUrl = tweetJSON["user.profile_image_url"];
@@ -323,7 +331,7 @@ angular.module("cloudberry.map")
 
             var tweetLink = "";
             try {
-                tweetLink = "https://twitter.com/" + userName + "/status/" + tweetid;
+                tweetLink = "https://twitter.com/" + userId + "/status/" + tweetid;
             }
             catch (e){
                 //tweetLink missing in this Tweet.
@@ -402,7 +410,7 @@ angular.module("cloudberry.map")
                 order: ["-create_at"],
                 limit: 1,
                 offset: 0,
-                field: ["id","text","user.id","create_at","user.name","user.profile_image_url"]
+                field: ["id","text","user.id","create_at","user.name","user.id","user.profile_image_url"]
               }
             };
 
