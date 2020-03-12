@@ -89,21 +89,44 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       $('.search-keyword-btn').html(keyword + ' <span class="caret"></span>');
     };
 
-    $scope.predefinedSearch = function (keyword) {
+    $scope.defaultKeywordSearch = function (keyword) {
       $scope.keyword = keyword;
       $scope.search();
       $scope.updateSearchBox(keyword);
     };
 
-    // If url indicates keyword, search it immediately.
+    // If config file specifies a defaultKeyword, search it immediately;
+    // If url parameter specifies a keyword, also search it immediately;
+    // If both exist, url parameter overwrites config file
     // e.g. url = http://localhost:9001/#?keyword=hurricane
-    var defaultKeyword = $location.search().keyword;
+    var defaultKeyword = $location.search().keyword? $location.search().keyword: cloudberryConfig.defaultKeyword;
     if (defaultKeyword) {
-      var onWSReady = function(event) {
-        $scope.predefinedSearch(defaultKeyword);
-        moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+      // needs to wait the 3 websocket channels are all ready before sending the default keyword query.
+      $scope.votesForDefaultKeywordQuery = 0; // issue the query only when votes == 3
+      $scope.voteForDefaultKeywordQuery = function() {
+        $scope.votesForDefaultKeywordQuery ++;
+        if ($scope.votesForDefaultKeywordQuery === 3) {
+          $scope.defaultKeywordSearch(defaultKeyword);
+        }
       };
-      moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
+      // listener on main WebSocket
+      $scope.onWSReady = function (event) {
+        moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_READY, $scope.onWSReady);
+        $scope.voteForDefaultKeywordQuery();
+      };
+      moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, $scope.onWSReady);
+      // listener on WebSocket of "CheckQuerySolvableByView"
+      $scope.onWSCheckQuerySolvableByViewReady = function (event) {
+        moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, $scope.onWSCheckQuerySolvableByViewReady);
+        $scope.voteForDefaultKeywordQuery();
+      };
+      moduleManager.subscribeEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, $scope.onWSCheckQuerySolvableByViewReady);
+      // listener on WebSocket of "Live Tweets"
+      $scope.onWSLiveTweetsReady = function (event) {
+        moduleManager.unsubscribeEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, $scope.onWSLiveTweetsReady);
+        $scope.voteForDefaultKeywordQuery();
+      };
+      moduleManager.subscribeEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, $scope.onWSLiveTweetsReady);
     }
   })
   .directive('searchBar', function (cloudberryConfig) {
@@ -115,7 +138,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
           '<div class="btn-group search-keyword-btn-group col-lg-12">',
             '<button type="button" data-toggle="dropdown" class="btn btn-primary search-keyword-btn dropdown-toggle">Keywords <span class="caret"></span></button>',
             '<ul class="dropdown-menu" aria-labelledby="dropdownMenu1">',
-              '<li ng-repeat="keyword in predefinedKeywords"><a href="#" ng-click="predefinedSearch(keyword)">{{ keyword }}</a></li>',
+              '<li ng-repeat="keyword in predefinedKeywords"><a href="#" ng-click="defaultKeywordSearch(keyword)">{{ keyword }}</a></li>',
             '</ul>',
           '</div>'
         ].join('')

@@ -83,6 +83,8 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     cloudberryClient.newWebSocket(cloudberryConfig.checkQuerySolvableByView).done(function(pws) {
       wsCheckQuerySolvableByView = pws;
 
+      moduleManager.publishEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, {});
+
       // When receiving messages from websocket, check its queryID and result.
       // If queryID is matched and result is true, enable the sidebar button and clear timer.
       wsCheckQuerySolvableByView.onmessage = function(event) {
@@ -118,9 +120,22 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       });
     }
 
+    // WebSocket for Live Tweets
     var LTSocket;
     cloudberryClient.newWebSocket("ws://"+window.location.host+"/liveTweets").done(function(pws) {
       LTSocket = pws;
+
+      /* fetchTweetFromAPI sends a query to twittermap server through websocket
+       * to fetch recent tweets for liveTweet feature
+       * @param msg{Object}, msg is the query send to twittermap server
+       */
+      $scope.fetchTweetFromAPI = function (query) {
+        if(LTSocket.readyState === LTSocket.OPEN){
+          LTSocket.send(query);
+        }
+      }
+
+      moduleManager.publishEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, {});
 
       LTSocket.onmessage = function(event){
         let tweets = JSON.parse(event.data);
@@ -136,16 +151,6 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
           drawTweets(liveTweetsQueue.pop());
         }
       };
-
-      /* fetchTweetFromAPI sends a query to twittermap server through websocket
-       * to fetch recent tweets for liveTweet feature
-       * @param msg{Object}, msg is the query send to twittermap server
-       */
-      $scope.fetchTweetFromAPI = function (query) {
-        if(LTSocket.readyState === LTSocket.OPEN){
-          LTSocket.send(query);
-        }
-      }
     });
     
     function sendLiveTweetsQuery(sampleTweetSize) {
