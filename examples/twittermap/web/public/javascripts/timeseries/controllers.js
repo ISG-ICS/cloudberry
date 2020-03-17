@@ -113,7 +113,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     moduleManager.subscribeEvent(moduleManager.EVENT.WS_READY, onWSReady);
 
   })
-  .directive('timeSeries', function (cloudberry, moduleManager,$rootScope) {
+  .directive('timeSeries', function (cloudberry, cloudberryConfig, moduleManager,$rootScope) {
     var margin = {
       top: 10,
       right: 30,
@@ -144,14 +144,38 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             }
 
             $scope.ndx = crossfilter(newVal);
-            var timeDimension = $scope.ndx.dimension(function (d) {
-              return d3.time.week(d.time);
-            });
+            var timeDimension;
+            switch (cloudberryConfig.timeSeriesGroupBy) {
+              case "day":
+                timeDimension = $scope.ndx.dimension(function (d) {
+                  return d3.time.day(d.time);
+                });
+                break;
+              case "week":
+              default:
+                timeDimension = $scope.ndx.dimension(function (d) {
+                  return d3.time.week(d.time);
+                });
+                break;
+            }
+
             var timeGroup = timeDimension.group().reduceSum(function (d) {
               return d.count;
             });
 
-            var timeSeries = dc.lineChart(chart[0][0]);
+            var timeSeries;
+            console.log("cloudberryConfig.timeSeriesChartType = " + cloudberryConfig.timeSeriesChartType);
+            switch (cloudberryConfig.timeSeriesChartType) {
+              case "bar":
+                console.log("timeSeries = bar");
+                timeSeries = dc.barChart(chart[0][0]);
+                break;
+              case "line":
+              default:
+                console.log("timeSeries = line");
+                timeSeries = dc.lineChart(chart[0][0]);
+                break;
+            }
             var timeBrush = timeSeries.brush();
             var resetClink = 0;
 
@@ -212,7 +236,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             });
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, moveSliderHandlerToFront);
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, moveSliderHandlerToFront);
-            
+
             moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_MAP_TYPE, function (event) {
               if (event.currentMapType !== "countmap") {
                 if (!$scope.playButtonPaused) {
@@ -263,21 +287,37 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             var startDate = (minDate.getFullYear() + "-" + (minDate.getMonth() + 1));
             var endDate = (maxDate.getFullYear() + "-" + (maxDate.getMonth() + 1));
 
-            timeSeries
-              .width(width)
-              .height(height)
-              .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
-              .dimension(timeDimension)
-              .group(timeGroup)
-              .x(d3.time.scale().domain([minDate, maxDate]))
-              .xUnits(d3.time.days)
-              .xAxisLabel(startDate + "   to   " + endDate)
-              .elasticY(true)
-              .on("postRedraw", highlightChart)
-              .on("filtered", removeHighlight)
-              .yAxis().ticks(4);
-
-
+            switch (cloudberryConfig.timeSeriesChartType) {
+              case "bar":
+                timeSeries
+                  .width(width)
+                  .height(height)
+                  .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
+                  .dimension(timeDimension)
+                  .group(timeGroup)
+                  .x(d3.time.scale().domain([minDate, maxDate]))
+                  .xUnits(d3.time.days)
+                  .xAxisLabel(startDate + "   to   " + endDate)
+                  .elasticY(true)
+                  .yAxis().ticks(4);
+                break;
+              case "line":
+              default:
+                timeSeries
+                  .width(width)
+                  .height(height)
+                  .margins({top: margin.top, right: margin.right, bottom: margin.bottom, left: margin.left})
+                  .dimension(timeDimension)
+                  .group(timeGroup)
+                  .x(d3.time.scale().domain([minDate, maxDate]))
+                  .xUnits(d3.time.days)
+                  .xAxisLabel(startDate + "   to   " + endDate)
+                  .elasticY(true)
+                  .on("postRedraw", highlightChart)
+                  .on("filtered", removeHighlight)
+                  .yAxis().ticks(4);
+                break;
+            }
 
             // Time slider starts here
             var currentValue = 0;
@@ -340,9 +380,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             playButton
               .on("click", function () {
                 playButton.html(
-                  playButton.html() == 
-                  '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>' ? 
-                  '<i class="fa fa-play-circle-o" aria-hidden="true"></i>' : 
+                  playButton.html() ==
+                  '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>' ?
+                  '<i class="fa fa-play-circle-o" aria-hidden="true"></i>' :
                   '<i class="fa fa-pause-circle-o" aria-hidden="true"></i>');
                 if (!$scope.playButtonPaused) {
                   clearInterval(timer);
