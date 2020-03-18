@@ -368,7 +368,7 @@ angular.module("cloudberry.map")
                     + "\n <a href=\""
                     + tweetLink
                     + "\" target=\"_blank\"> "
-                    + tweetLink
+                    + "link to original tweet"
                     + "</a>"
                     + "  </div>\n	"
                     + "</div>\n";
