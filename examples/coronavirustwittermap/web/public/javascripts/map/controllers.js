@@ -274,6 +274,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           console.error("Load state data failure");
         });
       }
+      else {
+        $scope.polygons.statePolygons.onEachFeature = onEachFeature;
+        $scope.polygons.statePolygons.eachLayer(function(layer) {onEachFeature(null, layer)});
+      }
       if (typeof($scope.polygons.countyPolygons) === "undefined" || $scope.polygons.countyPolygons == null){
         $http.get("assets/data/county.json")
         .success(function(data) {
@@ -290,6 +294,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         .error(function(data) {
           console.error("Load county data failure");
         });
+      }
+      else {
+        $scope.polygons.countyPolygons.onEachFeature = onEachFeature;
+        $scope.polygons.countyPolygons.eachLayer(function(layer) {onEachFeature(null, layer)});
       }
     };
 
