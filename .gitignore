@@ -45,3 +45,7 @@ server.pid
 
 .DS_Store
 .idea/
+
+examples/coronavirustwittermap/coronavirus_cases/**/*.pickle
+examples/coronavirustwittermap/coronavirus_cases/**/*.csv
+examples/coronavirustwittermap/coronavirus_cases/**/*.shelve
