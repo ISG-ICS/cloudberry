@@ -701,7 +701,7 @@ angular.module('cloudberry.map')
         if (cloudberry.parameters.maptype == 'countmap'){
           if (newResult['countmapMapResult'] !== oldValue['countmapMapResult']) {
             $scope.result = newResult['countmapMapResult'];
-            if (Object.keys($scope.result).length !== 0) {
+            if ($scope.result && Object.keys($scope.result).length !== 0) {
               $scope.status.init = false;
               drawCountMap($scope.result);
             } else {
