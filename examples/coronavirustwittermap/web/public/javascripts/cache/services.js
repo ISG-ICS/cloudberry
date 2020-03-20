@@ -62,7 +62,6 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                 var result = cachedCityPolygonTree.search(item);
                 data_response = turf.featureCollection(result);
                 RequestPolygonWithPrefetch = currentRequestPolygon;
-                console.log(data_response);
                 deferred.resolve(data_response);
                 return deferred.promise();
 
@@ -87,7 +86,6 @@ angular.module('cloudberry.cache', ['leaflet-directive', 'cloudberry.common'])
                                 cachedRegion = turf.union(RequestPolygonWithPrefetch, cachedRegion);
 
                             previousRequestCentroid = centroidRequestPoly;
-                            console.log(data_response);
                             deferred.resolve(data_response);
                         });
                     }).error(function (data) {

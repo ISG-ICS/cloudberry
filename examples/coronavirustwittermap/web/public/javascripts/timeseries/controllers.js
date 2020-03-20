@@ -164,15 +164,12 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             });
 
             var timeSeries;
-            console.log("cloudberryConfig.timeSeriesChartType = " + cloudberryConfig.timeSeriesChartType);
             switch (cloudberryConfig.timeSeriesChartType) {
               case "bar":
-                console.log("timeSeries = bar");
                 timeSeries = dc.barChart(chart[0][0]);
                 break;
               case "line":
               default:
-                console.log("timeSeries = line");
                 timeSeries = dc.lineChart(chart[0][0]);
                 break;
             }

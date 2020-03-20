@@ -403,7 +403,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     $scope.zoomToFeature = function zoomToFeature(leafletEvent) {
       if (leafletEvent){
         $scope.map.closePopup();
-        $scope.map.fitBounds(leafletEvent.target.getBounds());
+        $scope.map.fitBounds(leafletEvent.target.getBounds(), {animate: true});
       }
 
     };
