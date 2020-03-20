@@ -61,21 +61,23 @@
           <hashtag id="hashtag" class="tab-pane"></hashtag>
           <tweet id="tweet" class="tab-pane active"></tweet>
           <div id="about" class="tab-pane">
-            <h1> About </h1>
-            <p><b>TwitterMap</b> is a research prototype powered by <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a>
+            <h3> About </h3>
+            <p> <b>CoronaVirusTwitterMap</b> is a system powered by <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a>
               and <a href="https://asterixdb.apache.org/">Apache AsterixDB</a> to support
-              interactive analytics and visualization of large amounts of tweets. </p>
-            <p> Basic Information: </p>
-            <ul>
-              <li>Data set: Tweets</li>
-              <li>Number of records: > 1.3 billions </li>
-              <li>Collection period: From 2015-11-23 </li>
-              <li>Total data size: > 2TB </li>
-              <li>The live tweets is appending to db at the speed of ~20 tweets/sec </li>
-              <li><a href="https://github.com/ISG-ICS/cloudberry">Source code</a></li>
-            </ul>
-            <p>Here is the small cluster where the server runs! </p>
-            <img src='@routes.Assets.versioned("images/nuc.cluster.jpg")' width="256" height="192"><br>
+              interactive analytics and visualization of large amounts of Covid-19 related twitter data and case numbers. </p>
+
+            <h4> Contributors </h4>
+            <p> <a href="https://qiushibai.wordpress.com/">Qiushi Bai (PhD student)</a>, <a href="https://www.linkedin.com/in/yicong-huang/">Yicong Huang (PhD student)</a>, <a href="https://chenli.ics.uci.edu/">Chen Li (professor)</a></p>
+
+            <h4> Twitter data </h4>
+            <p> We've been collecting Covid-19 related tweets through <a href="https://developer.twitter.com/en/docs/tweets/filter-realtime/overview">TwitterAPI</a> since January 2020, and live tweets are appending to the database in a realtime manner. </p>
+
+            <h4> Case Numbers </h4>
+            <p> We are using the <a href="https://github.com/CSSEGISandData/COVID-19">2019 Novel Coronavirus COVID-19 (2019-nCoV) Data Repository by Johns Hopkins CSSE</a> to show the case numbers. </p>
+
+            <h4> Cloudberry </h4>
+            <p> <a href="http://cloudberry.ics.uci.edu/">Cloudberry</a> is a general-purpose middleware system to support visualization on large amounts of data. </p>
+
             <p>For questions and comments, please contact <b>
                 <a href="mailto:&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;">
                   &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;</a></b></p>
