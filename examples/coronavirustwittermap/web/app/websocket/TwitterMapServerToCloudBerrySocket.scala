@@ -40,6 +40,9 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
 
   def sendMessage(str: String): Unit = {
     try {
+      clientLogger.info("XXX"+ str)
+      clientLogger.info("YYY"+ session.toString())
+      clientLogger.info("ZZZ"+ session.getRemote.toString())
       session.getRemote.sendString(str)
     }
     catch {
