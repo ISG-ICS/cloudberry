@@ -1,12 +1,13 @@
+#!/usr/bin/env python
 import csv
 import json
 import os
 import pickle
 import shelve
+import sys
+import urllib.request
 from collections import defaultdict
 from typing import Dict, List, Union
-
-import wget as wget
 
 
 class Bidict(dict):
@@ -24,7 +25,7 @@ class Bidict(dict):
         dict.__delitem__(self, key)
 
 
-def read_id_json(target='state') -> Dict[Union[str, int], Union[str, int]]:
+def read_ids_from_json(target='state') -> Dict[Union[str, int], Union[str, int]]:
     """
     Read from state/county json, or from a pickle cache if read before.
     return data structure is as followed:
@@ -50,7 +51,7 @@ def read_id_json(target='state') -> Dict[Union[str, int], Union[str, int]]:
         return ids
 
 
-def get_latest_csvs(file_names: List[str]):
+def download_latest_csvs(file_names: List[str]):
     """
     Re-download the latest csv from JHU dataset, see https://github.com/CSSEGISandData/COVID-19 for more details
     :param file_names: list of csv file names
@@ -62,9 +63,9 @@ def get_latest_csvs(file_names: List[str]):
         except:
             pass
         print(f"---- DOWNLOADING {os.path.join('temp', file_name)}")
-        wget.download(
-            f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/"
-            f"csse_covid_19_time_series/{file_name}", out=os.path.join('temp', file_name))
+        url = f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/" \
+              f"csse_covid_19_data/csse_covid_19_time_series/{file_name}"
+        urllib.request.urlretrieve(url, os.path.join('temp', file_name))
 
 
 def _construct_default_dict():
@@ -91,7 +92,7 @@ def get_cases_by_date(file_names: List[str], state_ids: Dict[Union[str, int], Un
     :param file_names: list of csv file names
     :param state_ids: Bidict for state id-name mapping
     """
-    get_latest_csvs(file_names)
+    download_latest_csvs(file_names)
 
     cases_by_date = defaultdict(_construct_default_dict)
     for file_name in file_names:
@@ -119,16 +120,18 @@ def get_latest_date(cases_by_date: Dict[str, Dict[int, Dict[str, int]]]):
 
 
 def write_to_csv(cases_by_date: Dict[str, Dict[int, Dict[str, int]]], target='state',
-                 out=None) -> None:
+                 out='') -> None:
     """
     Write csv file to disk. can specify the target and output path
     :param cases_by_date: returned structure as described in get_cases_by_date(2)
     :param target: 'state' or 'county'
     :param out: output csv file path, by default is f'{target}_cases.csv'
     """
-    if out is None:
+    print(f"---- WRITING {target}_cases TO DISK")
+    if not out:
         out = f'{target}_cases.csv'
-    print(f"---- WRITING {target}_cases TO DISK {out}")
+    print(f"USING OUT PATH {out}")
+
     with open(out, 'w', newline='\n') as f:
         writer = csv.DictWriter(f, [f'{target}_id', 'last_update', 'confirmed', 'recovered', 'death'])
         writer.writeheader()
@@ -161,12 +164,10 @@ def update_cache(cases_by_date: Dict[str, Dict[int, Dict[str, int]]], target='st
 
 
 if __name__ == "__main__":
-    file_names = ["time_series_19-covid-Confirmed.csv", "time_series_19-covid-Recovered.csv",
-                  "time_series_19-covid-Deaths.csv"]
+    data_source_file_names = ["time_series_19-covid-Confirmed.csv", "time_series_19-covid-Recovered.csv",
+                              "time_series_19-covid-Deaths.csv"]
 
-    state_ids = read_id_json('state')
-    state_cases_by_date = get_cases_by_date(file_names, state_ids)
-
+    state_ids = read_ids_from_json('state')
+    state_cases_by_date = get_cases_by_date(data_source_file_names, state_ids)
     update_cache(state_cases_by_date, 'state')
-
-    write_to_csv(state_cases_by_date, 'state')
+    write_to_csv(state_cases_by_date, 'state', sys.argv[1] if len(sys.argv) > 1 else '')
