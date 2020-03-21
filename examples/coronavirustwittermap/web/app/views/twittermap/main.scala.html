@@ -29,13 +29,7 @@
       @if(TMAobject.endDate.isDefined) {
       endDate: new Date("@TMAobject.endDate.get"),
       }
-      @if(isDrugMap) {
-      mapLegend: "$",
-      sumText : "dollars",
-      } else {
-      mapLegend: "Count:",
       sumText : "tweets",
-      }
       removeSearchBar: @TMAobject.removeSearchBar,
       predefinedKeywords: @Html(Json.stringify(Json.toJson(TMAobject.predefinedKeywords))),
       defaultKeyword: "@TMAobject.defaultKeyword",
@@ -63,7 +57,9 @@
       enableLiveTweet: @TMAobject.enableLiveTweet,
       defaultMapType: "@TMAobject.defaultMapType",
       timeSeriesChartType: "@TMAobject.timeSeriesChartType",
-      timeSeriesGroupBy: "@TMAobject.timeSeriesGroupBy"
+      timeSeriesGroupBy: "@TMAobject.timeSeriesGroupBy",
+      popupWindowChartType: "@TMAobject.popupWindowChartType",
+      popupWindowGroupBy: "@TMAobject.popupWindowGroupBy"
     }
   </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>

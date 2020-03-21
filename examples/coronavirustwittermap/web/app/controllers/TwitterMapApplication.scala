@@ -67,6 +67,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val useDirectSource : Boolean = config.getBoolean("useDirectSource").getOrElse(true)
   val timeSeriesChartType: String = config.getString("timeSeries.chartType").getOrElse("line")
   val timeSeriesGroupBy: String = config.getString("timeSeries.groupBy").getOrElse("week")
+  val popupWindowChartType: String = config.getString("popupWindow.chartType").getOrElse("line")
+  val popupWindowGroupBy: String = config.getString("popupWindow.groupBy").getOrElse("month")
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
