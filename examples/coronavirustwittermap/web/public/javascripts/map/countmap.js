@@ -61,11 +61,10 @@ angular.module('cloudberry.map')
     function getPopupContent() {
       // get chart data for the polygon
       var geoIDChartData = $scope.chartDataMap.get($scope.selectedGeoID);
-      $scope.chartData = (geoIDChartData && geoIDChartData.length !== 0) ? chartUtil.preProcessByDayResult(geoIDChartData) : [];
+      $scope.chartData = (geoIDChartData && geoIDChartData.length !== 0) ? chartUtil.preProcessByDayResult(geoIDChartData, cloudberryConfig.popupWindowGroupBy) : [];
 
       // get the count info of polygon
       var placeName = $scope.selectedPlace.properties.name;
-      var infoPromp = $scope.infoPromp;
       var logicLevel = $scope.status.logicLevel;
       var count = sum($scope.chartData, "y");
 
@@ -90,15 +89,15 @@ angular.module('cloudberry.map')
       if($scope.chartData.length === 0) {
         content = "<div id=\"popup-info\" style=\"margin-bottom: 0\">" +
           "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
-          "<div id=\"popup-count\" style=\"margin-bottom: 0\">"+infoPromp+"<b> "+count+"</b></div>" +
+          "<div id=\"popup-count\" style=\"margin-bottom: 0\">Tweet count:<b> "+count+"</b></div>" +
           "</div>"+
-          "<canvas id=\"myChart\" height=\"0\" ></canvas>";
+          "<canvas id=\"tweetChart\" height=\"0\" ></canvas>";
       }else {
         content = "<div id=\"popup-info\">" +
           "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
-          "<div id=\"popup-count\">"+infoPromp+"<b> "+count+"</b></div>" +
+          "<div id=\"popup-count\">Tweet count:<b> "+count+"</b></div>" +
           "</div>"+
-          "<canvas id=\"myChart\"></canvas>";
+          "<canvas id=\"tweetChart\"></canvas>";
       }
       return content;
     }
@@ -123,7 +122,7 @@ angular.module('cloudberry.map')
       if($scope.popUp && $scope.popUp._isOpen
         && ($scope.geoIdsNotInCache.length === 0 || $scope.geoIdsNotInCache.includes($scope.selectedGeoID))){
         $scope.popUp.setContent(getPopupContent());
-        chartUtil.drawChart($scope.chartData, "myChart", true, true);
+        chartUtil.drawChart($scope.chartData, "tweetChart", true, "Tweet count", true, cloudberryConfig.popupWindowGroupBy);
       }
     }
 
@@ -329,7 +328,7 @@ angular.module('cloudberry.map')
             $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
             
             addPopupEvent();
-            chartUtil.drawChart($scope.chartData, "myChart", true, true);
+            chartUtil.drawChart($scope.chartData, "tweetChart", true, "Tweet count", true, cloudberryConfig.popupWindowGroupBy);
           }
         }
       }
@@ -714,11 +713,6 @@ angular.module('cloudberry.map')
           }
           if(newResult['doSentiment'] !== oldValue['doSentiment']) {
             $scope.doSentiment = newResult['doSentiment'];
-            if($scope.doSentiment) {
-              $scope.infoPromp = "Score";  // change the info promp
-            } else {
-              $scope.infoPromp = config.mapLegend;
-            }
             drawCountMap($scope.result);
           }
         }

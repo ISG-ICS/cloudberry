@@ -65,40 +65,64 @@ angular.module("cloudberry.common")
 
 
     // Preprocess query result to chart data could be used by chart.js
-    // The `queryResult` is group by day, after prepocess it change to group by month.
-    preProcessByDayResult(queryResult) {
-      // group by year
-      var groupsByYear = queryResult.reduce(function (previousVal, currentVal) {
-        var yearNum = currentVal.day.split(("-"))[0];
-        (previousVal[yearNum])? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {year: yearNum, data: [currentVal]};
-        return previousVal;
-      }, {});
-      var resultByYear = Object.keys(groupsByYear).map(function(k) { return groupsByYear[k];});
+    // The `queryResult` is group by day, pre-process it into given groupBy result.
+    preProcessByDayResult(queryResult, groupBy) {
+      switch (groupBy) {
+        case "day":
+          // replace key name "day" with "x" and value name "count" with "y"
+          let resultByDay = [];
+          queryResult.forEach(function (element) {
+            resultByDay.push({x: new Date(element.day), y: element.count});
+          });
+          // sort the date
+          resultByDay.sort(function(previousVal, currentVal) {
+            return previousVal.x - currentVal.x;
+          });
+          return resultByDay;
+        case "week":
+          // TODO
+        case "month":
+        default:
+          // group by year
+          var groupsByYear = queryResult.reduce(function (previousVal, currentVal) {
+              var yearNum = currentVal.day.split(("-"))[0];
+              (previousVal[yearNum]) ? previousVal[yearNum].data.push(currentVal) : previousVal[yearNum] = {
+                year: yearNum,
+                data: [currentVal]
+              };
+              return previousVal;
+            }, {});
+            var resultByYear = Object.keys(groupsByYear).map(function (k) {
+              return groupsByYear[k];
+            });
 
-      // sum up the result for every month
-      var resultByMonth = [];
-      var hasCountMonth = [];
-      for (var i = 0; i < resultByYear.length; i++){
-        var groupsByMonthOneYear = resultByYear[i].data.reduce(function (previousVal, currentVal) {
-          var monthNum = currentVal.day.split(("-"))[1];
-          if (previousVal[monthNum]) {
-            previousVal[monthNum].y += currentVal.count;
-          } else {
-            var thisMonth = new Date(resultByYear[i].year,monthNum-1);
-            previousVal[monthNum] = { y: currentVal.count, x: thisMonth};
-            hasCountMonth.push(thisMonth);
-          }
-          return previousVal;
-        }, {});
-        var resultByMonthOneYear = Object.keys(groupsByMonthOneYear).map(function(key){ return groupsByMonthOneYear[key]; });
-        resultByMonth = resultByMonth.concat(resultByMonthOneYear);
+            // sum up the result for every month
+            var resultByMonth = [];
+            var hasCountMonth = [];
+            for (var i = 0; i < resultByYear.length; i++) {
+              var groupsByMonthOneYear = resultByYear[i].data.reduce(function (previousVal, currentVal) {
+                var monthNum = currentVal.day.split(("-"))[1];
+                if (previousVal[monthNum]) {
+                  previousVal[monthNum].y += currentVal.count;
+                } else {
+                  var thisMonth = new Date(resultByYear[i].year, monthNum - 1);
+                  previousVal[monthNum] = {y: currentVal.count, x: thisMonth};
+                  hasCountMonth.push(thisMonth);
+                }
+                return previousVal;
+              }, {});
+              var resultByMonthOneYear = Object.keys(groupsByMonthOneYear).map(function (key) {
+                return groupsByMonthOneYear[key];
+              });
+              resultByMonth = resultByMonth.concat(resultByMonthOneYear);
+            }
+            return this.complementData(resultByMonth, hasCountMonth);
       }
-      return this.complementData(resultByMonth, hasCountMonth);
     },
 
 
     // Configure the chart: whether show the lable/grid or not in chart.
-    chartConfig(chartData, displayLable, displayGrid) {
+    chartConfig(chartData, displayLable, yLabel, displayGrid, groupBy) {
       return {
         type: "line",
         data:{
@@ -118,11 +142,12 @@ angular.module("cloudberry.common")
             xAxes: [{
               type: "time",
               time: {
-                unit:"month"
+                unit: groupBy,
+                round: groupBy
               },
               scaleLabel: {
                 display: displayLable,
-                labelString: "Date"
+                labelString: "Time by " + groupBy
               },
               gridLines:{
                 display: displayGrid
@@ -131,7 +156,7 @@ angular.module("cloudberry.common")
             yAxes: [{
               scaleLabel: {
                 display: displayLable,
-                labelString: "Count"
+                labelString: yLabel
               },
               ticks: {
                 beginAtZero: true,
@@ -148,10 +173,10 @@ angular.module("cloudberry.common")
 
 
     //draw tendency chart using chart.js
-    drawChart(chartData, chartElementId, displayLable, displayGrid) {
+    drawChart(chartData, chartElementId, displayLable, yLabel, displayGrid, groupBy) {
       if (chartData.length !== 0 && document.getElementById(chartElementId)) {
         var ctx = document.getElementById(chartElementId).getContext("2d");
-        var myChart = new Chart(ctx, chartUtil.chartConfig(chartData, displayLable, displayGrid));
+        new Chart(ctx, chartUtil.chartConfig(chartData, displayLable, yLabel, displayGrid, groupBy));
       }
     },
     };
