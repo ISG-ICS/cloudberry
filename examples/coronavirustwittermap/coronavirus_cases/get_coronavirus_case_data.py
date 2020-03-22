@@ -7,6 +7,7 @@ import shelve
 import sys
 import urllib.request
 from collections import defaultdict
+from datetime import datetime
 from typing import Dict, List, Union
 
 
@@ -106,8 +107,10 @@ def get_cases_by_date(file_names: List[str], state_ids: Dict[Union[str, int], Un
                 if row['Country/Region'] == 'US':
                     for date in dates:
                         state_id = state_ids.get(row['Province/State'].lower())
+
+                        date_str = datetime.strptime(date, "%m/%d/%y").strftime('%Y-%m-%dT%H:%M:%SZ')
                         if state_id is not None:
-                            cases_by_date[date][state_id][key_name] = row[date]
+                            cases_by_date[date_str][state_id][key_name] = row[date]
 
     return cases_by_date
 
@@ -117,8 +120,8 @@ def get_latest_date(cases_by_date: Dict[str, Dict[int, Dict[str, int]]]):
     find latest date in the dataset
     :param cases_by_date: returned structure as described in get_cases_by_date(2)
     """
-    dates = list(cases_by_date.keys())
-    return max(dates, key=lambda x: (int(x.split('/')[2]), int(x.split('/')[0]), int(x.split('/')[1])))
+    dates = [datetime.strptime(date_str, '%Y-%m-%dT%H:%M:%SZ') for date_str in cases_by_date.keys()]
+    return max(dates).strftime('%Y-%m-%dT%H:%M:%SZ') if dates else ''
 
 
 def write_to_csv(cases_by_date: Dict[str, Dict[int, Dict[str, int]]], target='state',
@@ -157,9 +160,8 @@ def update_cache(cases_by_date: Dict[str, Dict[int, Dict[str, int]]], target='st
     print(f"---- UPDATING CACHE FOR {target}")
     new_latest_date = get_latest_date(cases_by_date)
     with shelve.open(os.path.join('cache', f'last_updated_{target}_cache.shelve')) as cache:
-        dates = list(cache.keys())
-        latest_date = max(dates, key=lambda x: (int(x.split('/')[2]), int(x.split('/')[0]), int(x.split('/')[1])),
-                          default=None)
+        latest_date = get_latest_date(cache)
+
         if new_latest_date != latest_date:
             cache[new_latest_date] = cases_by_date
         print(f"NOW CACHE HAS DATA FOR {list(cache.keys())}")
