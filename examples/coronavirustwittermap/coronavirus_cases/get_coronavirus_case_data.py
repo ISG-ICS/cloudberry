@@ -105,7 +105,9 @@ def get_cases_by_date(file_names: List[str], state_ids: Dict[Union[str, int], Un
             for row in csv_reader:
                 if row['Country/Region'] == 'US':
                     for date in dates:
-                        cases_by_date[date][state_ids.get(row['Province/State'].lower())][key_name] = row[date]
+                        state_id = state_ids.get(row['Province/State'].lower())
+                        if state_id is not None:
+                            cases_by_date[date][state_id][key_name] = row[date]
 
     return cases_by_date
 
