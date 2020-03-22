@@ -1,4 +1,5 @@
 ### Quick Start
+- You need Python@3.6+ to run this script.
 
 - To run it:
 
