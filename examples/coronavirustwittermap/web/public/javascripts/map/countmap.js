@@ -1,11 +1,18 @@
 angular.module('cloudberry.map')
   .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig,
-                                       TimeSeriesCache, PopulationCache, moduleManager, cloudberryClient, queryUtil, chartUtil) {
+                                       TimeSeriesCache, PopulationCache, caseDataCache, moduleManager, cloudberryClient, queryUtil, chartUtil) {
 
     // Array to store the data for chart
     $scope.chartData = [];
     // Map to store the chart data for every polygon
     $scope.chartDataMap = new HashMap();
+    // Array of 3 arrays to store data for case chart
+    // [[confirmed], [recovered], [death]]
+    // each sub-array contains a list of by day case numbers
+    // e.g. [confirmed] = [{day: "1/22/20", count: 0}, {day: "1/23/20", count: 2}, ...]
+    $scope.caseChartData = [];
+    // confirmed - red, recovered - green, death - black
+    $scope.caseChartDataColors = ['red', 'green', 'black'];
     // The popup window shown now
     $scope.popUp = null;
     $scope.checkIfQueryIsRequested = false;
@@ -58,6 +65,15 @@ angular.module('cloudberry.map')
       return normalizedCountText;
     }
 
+    // get last element's prop1 sorted by prop0 in an array of objects,
+    function last(items, prop0, prop1) {
+      // sort the items by prop0 descending
+      items.sort(function(previousVal, currentVal) {
+        return currentVal[prop0] - previousVal[prop0];
+      });
+      return items[0][prop1];
+    }
+
     function getPopupContent() {
       // get chart data for the polygon
       var geoIDChartData = $scope.chartDataMap.get($scope.selectedGeoID);
@@ -86,19 +102,43 @@ angular.module('cloudberry.map')
 
       // Generate the html in pop up window
       var content;
-      if($scope.chartData.length === 0) {
+      if ($scope.chartData.length === 0) {
         content = "<div id=\"popup-info\" style=\"margin-bottom: 0\">" +
           "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
           "<div id=\"popup-count\" style=\"margin-bottom: 0\">Tweet count:<b> "+count+"</b></div>" +
           "</div>"+
           "<canvas id=\"tweetChart\" height=\"0\" ></canvas>";
-      }else {
+      } else {
         content = "<div id=\"popup-info\">" +
           "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
           "<div id=\"popup-count\">Tweet count:<b> "+count+"</b></div>" +
           "</div>"+
           "<canvas id=\"tweetChart\"></canvas>";
       }
+
+      // get case numbers chart data for polygon, not support city level
+      if ($scope.status.logicLevel !== "city") {
+        var geoIDCaseChartData = caseDataCache.getGeoIdCaseData(logicLevel, $scope.selectedGeoID);
+        if (geoIDCaseChartData && geoIDCaseChartData.length > 0) {
+          $scope.caseChartData[0] = chartUtil.preProcessByDayResult(geoIDCaseChartData[0], cloudberryConfig.popupWindowGroupBy);
+          $scope.caseChartData[1] = chartUtil.preProcessByDayResult(geoIDCaseChartData[1], cloudberryConfig.popupWindowGroupBy);
+          $scope.caseChartData[2] = chartUtil.preProcessByDayResult(geoIDCaseChartData[2], cloudberryConfig.popupWindowGroupBy);
+          var confirmedCaseCount = last($scope.caseChartData[0], "x", "y");
+          var recoveredCaseCount = last($scope.caseChartData[1], "x", "y");
+          var deathCaseCount = last($scope.caseChartData[2], "x", "y");
+
+          // Concatenate case chart data
+          if ($scope.caseChartData.length > 0 && $scope.caseChartData[0].length > 0) {
+            content += "<div id=\"popup-info\">" +
+              "<div id=\"popup-count\"><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed: <b> " + confirmedCaseCount + "</b></font>" +
+              "<font color=\"" + $scope.caseChartDataColors[1] + "\">  Recovered: <b> " + recoveredCaseCount + "</b></font>" +
+              "<font color=\"" + $scope.caseChartDataColors[2] + "\">  Death: <b>" + deathCaseCount + "</b></font></div>" +
+              "</div>" +
+              "<canvas id=\"caseChart\"></canvas>";
+          }
+        }
+      }
+
       return content;
     }
 
@@ -123,6 +163,7 @@ angular.module('cloudberry.map')
         && ($scope.geoIdsNotInCache.length === 0 || $scope.geoIdsNotInCache.includes($scope.selectedGeoID))){
         $scope.popUp.setContent(getPopupContent());
         chartUtil.drawChart($scope.chartData, "tweetChart", true, "Tweet count", true, cloudberryConfig.popupWindowGroupBy);
+        chartUtil.drawMultiLineChart($scope.caseChartData, $scope.caseChartDataColors, "caseChart", true, "Case count", true, cloudberryConfig.popupWindowGroupBy);
       }
     }
 
@@ -283,6 +324,8 @@ angular.module('cloudberry.map')
     // clear countmap specific data
     function cleanCountMap() {
 
+      $scope.map.off("mousemove");
+
       function removeMapControl(name){
         var ctrlClass = $("."+name);
         if (ctrlClass) {
@@ -323,12 +366,22 @@ angular.module('cloudberry.map')
 
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
-            $scope.popUp = L.popup({autoPan:false});
+            $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
             layer.bindPopup($scope.popUp).openPopup();
-            $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
-            
+            // only reposition the popup window for state level
+            if ($scope.status.logicLevel === "state") {
+              // make sure the popup window is left to the mouse position by 1/5 window width
+              var windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
+              var windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
+              $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.map.getBounds().getSouthWest().lat + windowLatHeight / 3.5, $scope.mouseLng - windowLngWidth / 7]);
+            }
+            else {
+              $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
+            }
+
             addPopupEvent();
             chartUtil.drawChart($scope.chartData, "tweetChart", true, "Tweet count", true, cloudberryConfig.popupWindowGroupBy);
+            chartUtil.drawMultiLineChart($scope.caseChartData, $scope.caseChartDataColors, "caseChart", true, "Case count", true, cloudberryConfig.popupWindowGroupBy);
           }
         }
       }
@@ -380,6 +433,7 @@ angular.module('cloudberry.map')
 
       $scope.loadGeoJsonFiles(onEachFeature);
       $scope.loadPopJsonFiles();
+      $scope.loadCaseCsvFiles();
 
       $scope.$parent.onEachFeature = onEachFeature;
 
@@ -401,6 +455,11 @@ angular.module('cloudberry.map')
           normalizedCountMin = 0,
           intervals = colors.length - 1,
           difference = 0;
+
+      $scope.map.on("mousemove", function(event) {
+        $scope.mouseLat = event.latlng.lat;
+        $scope.mouseLng = event.latlng.lng;
+      });
 
       function getSentimentColor(d) {
         if( d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3
