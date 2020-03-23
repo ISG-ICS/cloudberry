@@ -64,12 +64,34 @@ angular.module("cloudberry.common")
         return this.complementData(chartData, hasCountMonth);
       },
 
+      fillEmptyDayPoints(queryResult) {
+        // build hash map of day -> count from queryResult
+        const map = new HashMap();
+        queryResult.forEach(function (element) {
+          var day = new Date(element.day);
+          map.set(new Date(day.getFullYear(), day.getMonth(), day.getDate()), element.count);
+        });
+        // loop day by day through query time interval
+        var minDate = new Date(cloudberry.parameters.timeInterval.start);
+        minDate = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+        var maxDate = new Date(cloudberry.parameters.timeInterval.end);
+        maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
+        for (var d = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+             d < new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
+             d.setDate(d.getDate() + 1)) {
+          if (map.get(d) === undefined) {
+            queryResult.push({day: new Date(d), count: 0});
+          }
+        }
+        return queryResult;
+      },
 
       // Preprocess query result to chart data could be used by chart.js
       // The `queryResult` is group by day, pre-process it into given groupBy result.
       preProcessByDayResult(queryResult, groupBy) {
         switch (groupBy) {
           case "day":
+            queryResult = this.fillEmptyDayPoints(queryResult);
             // replace key name "day" with "x" and value name "count" with "y"
             let resultByDay = [];
             queryResult.forEach(function (element) {
@@ -121,6 +143,19 @@ angular.module("cloudberry.common")
         }
       },
 
+      // filter out chartData that before given start, to reduce the long prefix of 0's in trend chart
+      filterChartData(chartData, start) {
+        var result = [];
+        for (var i = 0; i < chartData.length; i ++) {
+          if (chartData[i].x > start) {
+            result.push(chartData[i]);
+          }
+        }
+        result.sort(function (previousVal, currentVal) {
+          return previousVal.x - currentVal.x;
+        });
+        return result;
+      },
 
       // Configure the chart: whether show the lable/grid or not in chart.
       chartConfig(chartData, displayLable, yLabel, displayGrid, groupBy) {
@@ -158,7 +193,7 @@ angular.module("cloudberry.common")
                   round: groupBy
                 },
                 scaleLabel: {
-                  display: displayLable,
+                  display: false,
                   labelString: "Time by " + groupBy
                 },
                 gridLines: {
@@ -233,7 +268,7 @@ angular.module("cloudberry.common")
                   round: groupBy
                 },
                 scaleLabel: {
-                  display: displayLable,
+                  display: false,
                   labelString: "Time by " + groupBy
                 },
                 gridLines: {

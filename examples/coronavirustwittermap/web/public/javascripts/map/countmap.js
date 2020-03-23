@@ -155,21 +155,28 @@ angular.module('cloudberry.map')
 
       // Generate the html in pop up window
       // 0) header: State/County/City name
-      var content = "<div id=\"popup-statename\">" + logicLevel + ": " + placeName + "</div>";
+      var content = "<div id=\"popup-statename\">" + placeName + "</div>";
 
       // 1) population
       if (population) {
-        content += "<div class=\"popup-count\"> Population: <b>" + numberWithCommas(population) + "</b></div>";
+        content += "<div id=\"popup-count\"> Population: <b>" + numberWithCommas(population) + "</b></div>";
       }
 
       // 2) case number trend chart
       // get case numbers chart data for polygon, not support city level
+      // reduce long prefix of 0's in case trend chart
+      var caseStart = cloudberry.parameters.timeInterval.start;
+      caseStart = new Date(Math.max(new Date("2020-01-22 00:00:00").getTime(), caseStart.getTime()));
       if ($scope.status.logicLevel !== "city") {
-        var geoIDCaseChartData = caseDataCache.getGeoIdCaseData(logicLevel, $scope.selectedGeoID);
+        var caseEnd = cloudberry.parameters.timeInterval.end;
+        var geoIDCaseChartData = caseDataCache.getGeoIdCaseData(logicLevel, $scope.selectedGeoID, caseStart, caseEnd);
         if (geoIDCaseChartData && geoIDCaseChartData.length > 0) {
           $scope.caseChartData[0] = chartUtil.preProcessByDayResult(geoIDCaseChartData[0], cloudberryConfig.popupWindowGroupBy);
           $scope.caseChartData[1] = chartUtil.preProcessByDayResult(geoIDCaseChartData[1], cloudberryConfig.popupWindowGroupBy);
           $scope.caseChartData[2] = chartUtil.preProcessByDayResult(geoIDCaseChartData[2], cloudberryConfig.popupWindowGroupBy);
+          $scope.caseChartData[0] = chartUtil.filterChartData($scope.caseChartData[0], caseStart);
+          $scope.caseChartData[1] = chartUtil.filterChartData($scope.caseChartData[1], caseStart);
+          $scope.caseChartData[2] = chartUtil.filterChartData($scope.caseChartData[2], caseStart);
           var confirmedCaseCount = last($scope.caseChartData[0], "x", "y");
           var recoveredCaseCount = last($scope.caseChartData[1], "x", "y");
           var deathCaseCount = last($scope.caseChartData[2], "x", "y");
@@ -180,18 +187,25 @@ angular.module('cloudberry.map')
               "<div id=\"popup-count\">" +
               "  <table style=\"width:100%\">" +
               "    <tr>" +
+              "      <th></th>" +
               "      <th><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed</font></th>" +
               "      <th><font color=\"" + $scope.caseChartDataColors[1] + "\">Recovered</font></th>" +
-              "      <th><font color=\"" + $scope.caseChartDataColors[2] + "\">Death</font></th>" +
+              "      <th><font color=\"" + $scope.caseChartDataColors[2] + "\">Deaths</font></th>" +
               "    </tr>" +
               "    <tr>" +
-              "      <td><font color=\"" + $scope.caseChartDataColors[0] + "\"><b>" + numberWithCommas(confirmedCaseCount) + "</b></font></td>" +
-              "      <td><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(recoveredCaseCount) + "</b></font></td>" +
-              "      <td><font color=\"" + $scope.caseChartDataColors[2] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
+              "      <td>Case count:</td>" +
+              "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[0] + "\"><b>" + numberWithCommas(confirmedCaseCount) + "</b></font></td>" +
+              "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(recoveredCaseCount) + "</b></font></td>" +
+              "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[2] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
+              "    </tr>" +
+              "    <tr>" +
+              "      <td align=\"right\" colspan=\"4\"><a href=\"https://github.com/CSSEGISandData/COVID-19\" target=\"_blank\">Data Source</a></td>" +
               "    </tr>" +
               " </table>" +
               "</div>" +
               "<canvas id=\"caseChart\"></canvas>";
+
+            $scope.chartData = chartUtil.filterChartData($scope.chartData, caseStart);
           }
         }
       }
@@ -448,7 +462,6 @@ angular.module('cloudberry.map')
               const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
               const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
               const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
-              console.log("[popup position] = [" + popupLng + ", " + popupLat + ']');
               $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
             }
             else {
