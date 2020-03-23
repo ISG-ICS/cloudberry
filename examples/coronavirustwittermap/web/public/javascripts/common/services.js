@@ -1,8 +1,9 @@
 angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.timeseriescache'])
   .factory('cloudberryConfig', function(){
     return {
-      ws: "ws://" + location.host + "/ws",
-      checkQuerySolvableByView: "ws://" + location.host + "/checkQuerySolvableByView",
+      ws: config.cloudberryWS,
+      host:config.cloudberryHost,
+      port:config.cloudberryPort,
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
@@ -58,7 +59,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
     var defaultPinmapSamplingDayRange = parseInt(config.pinmapSamplingDayRange);
     var defaultPinmapLimit = parseInt(config.pinmapSamplingLimit);
-    var ws = new WebSocket(cloudberryConfig.ws);
+    var ws = new WebSocket(cloudberryConfig.ws + cloudberryConfig.host + ":" + cloudberryConfig.port + "/ws");
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
     var geoIdsNotInCache = [];
@@ -435,7 +436,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
               ws.send(batchWithPartialGeoRequest);
             }
             break;
-            
+
           case 'heatmap':
             var heatJson = (JSON.stringify({
               dataset: parameters.dataset,
@@ -486,7 +487,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
             ws.send(pointsJson);
             handleByTimeRequest(parameters, "pointsTime");
             break;
-          
+
           default:
             // unrecognized map type
             break;

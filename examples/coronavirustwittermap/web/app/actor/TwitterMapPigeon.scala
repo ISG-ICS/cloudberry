@@ -16,14 +16,14 @@ import scala.concurrent.ExecutionContext
   *  and transfer cloudberry request/response through websocket connection.
   *
   * @param factory Factory of WebSocketClient
-  * @param cloudberryWS Websocket url of cloudberry
+  * @param cloudberryWebsocketURL Websocket url of cloudberry
   * @param out ActorRef in akka flow representing frontend client
   * @param maxTextMessageSize Max size of text messages transmit in ws.
   * @param ec implicit execution context
   * @param materializer implicit materializer
   */
 class TwitterMapPigeon (val factory: WebSocketFactory,
-                        val cloudberryWS: String,
+                        val cloudberryWebsocketURL: String,
                         val out: ActorRef,
                         val maxTextMessageSize: Int)
                        (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
@@ -35,7 +35,7 @@ class TwitterMapPigeon (val factory: WebSocketFactory,
   override def preStart(): Unit = {
     super.preStart
     client.start()
-    client.connect(socket, new URI(cloudberryWS))
+    client.connect(socket, new URI(cloudberryWebsocketURL))
   }
 
   override def postStop(): Unit = {
@@ -61,6 +61,6 @@ class TwitterMapPigeon (val factory: WebSocketFactory,
 }
 
 object TwitterMapPigeon {
-  def props(factory: WebSocketFactory, cloudberryWS: String, out: ActorRef, maxTextMessageSize: Int)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWS, out, maxTextMessageSize))
+  def props(factory: WebSocketFactory, cloudberryWebsocketURL: String, out: ActorRef, maxTextMessageSize: Int)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWebsocketURL, out, maxTextMessageSize))
 }
