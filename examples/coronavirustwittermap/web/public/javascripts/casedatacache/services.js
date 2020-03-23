@@ -34,18 +34,23 @@ angular.module('cloudberry.casedatacache', [])
      * Return geoId's case data.
      */
     this.getGeoIdCaseData = function (geoLevel, geoId, start, end) {
-      var cases = caseDataStore[geoLevel].get(geoId);
-      // filter the data with start and end
-      var result = [[], [], []];
-      for (var k = 0; k < 3; k ++) {
-        var data = cases[k];
-        for (var i = 0; i < data.length; i++) {
-          if (data[i].day >= start && data[i].day <= end) {
-            result[k].push(data[i]);
+      if (caseDataCached[geoLevel]) {
+        var cases = caseDataStore[geoLevel].get(geoId);
+        // filter the data with start and end
+        var result = [[], [], []];
+        for (var k = 0; k < 3; k++) {
+          var data = cases[k];
+          for (var i = 0; i < data.length; i++) {
+            if (data[i].day >= start && data[i].day <= end) {
+              result[k].push(data[i]);
+            }
           }
         }
+        return result;
       }
-      return result;
+      else {
+        return undefined;
+      }
     };
 
     /**
