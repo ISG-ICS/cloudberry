@@ -37,7 +37,7 @@ angular.module('cloudberry.casedatacache', [])
       var cases = caseDataStore[geoLevel].get(geoId);
       // filter the data with start and end
       var result = [[], [], []];
-      for (var k = 0; k < 2; k ++) {
+      for (var k = 0; k < 3; k ++) {
         var data = cases[k];
         for (var i = 0; i < data.length; i++) {
           if (data[i].day >= start && data[i].day <= end) {

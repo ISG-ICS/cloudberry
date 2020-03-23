@@ -75,7 +75,8 @@ angular.module("cloudberry.common")
         var minDate = new Date(cloudberry.parameters.timeInterval.start);
         minDate = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
         var maxDate = new Date(cloudberry.parameters.timeInterval.end);
-        maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
+        // do not fill 0 to the last day of the time interval
+        maxDate = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()-1);
         for (var d = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
              d < new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
              d.setDate(d.getDate() + 1)) {
