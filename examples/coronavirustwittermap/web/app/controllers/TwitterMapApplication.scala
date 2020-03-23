@@ -35,6 +35,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val applicationName: String = config.getString("app.name").getOrElse("TwitterMap")
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
+  val stateCasesPath: String = config.getString("state.cases.path").getOrElse("/public/data/stateCases.csv")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
@@ -260,6 +261,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def getCityPop(cityIds: String) = Action {
     Ok(TwitterMapApplication.findCityPop(cityIds, citiesPopulation))
+  }
+
+  def getStateCases = Action {
+    Ok.sendFile(environment.getFile(stateCasesPath), inline=true)
   }
 }
 
