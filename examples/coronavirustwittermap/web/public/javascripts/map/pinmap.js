@@ -1,6 +1,6 @@
 angular.module("cloudberry.map")
-    .controller("pinMapCtrl", function ($scope, $http, cloudberry, cloudberryConfig,
-                                        TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
+    .controller("pinMapCtrl", function($scope, $http, cloudberry, cloudberryConfig,
+                                       TimeSeriesCache, moduleManager, cloudberryClient, queryUtil) {
         // set map styles for pinmap
         function setPinMapStyle() {
             $scope.setStyles({
@@ -49,7 +49,7 @@ angular.module("cloudberry.map")
                     color: "#666",
                     fillOpacity: 0
                 },
-                colors: ["#ffffff", "#92d1e1", "#4393c3", "#2166ac", "#f4a582", "#d6604d", "#b2182b"],
+                colors: [ "#ffffff", "#92d1e1", "#4393c3", "#2166ac", "#f4a582", "#d6604d", "#b2182b"],
                 sentimentColors: ["#ff0000", "#C0C0C0", "#00ff00"]
             });
         }
@@ -57,7 +57,7 @@ angular.module("cloudberry.map")
         // Send pinmap query to cloudberry
         function sendPinmapQuery() {
 
-            if (typeof (cloudberry.parameters.keywords) === "undefined"
+            if (typeof(cloudberry.parameters.keywords) === "undefined"
                 || cloudberry.parameters.keywords === null
                 || cloudberry.parameters.keywords.length === 0) {
                 return;
@@ -82,8 +82,8 @@ angular.module("cloudberry.map")
                 }
             };
 
-            cloudberryClient.send(pinsJson, function (id, resultSet, resultTimeInterval) {
-                if (angular.isArray(resultSet)) {
+            cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval){
+                if(angular.isArray(resultSet)) {
                     cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
                     cloudberry.pinmapMapResult = resultSet[0];
                 }
@@ -93,7 +93,7 @@ angular.module("cloudberry.map")
         // send time series query to Cloudberry
         function sendPinmapTimeQuery() {
 
-            if (typeof (cloudberry.parameters.keywords) === "undefined"
+            if (typeof(cloudberry.parameters.keywords) === "undefined"
                 || cloudberry.parameters.keywords === null
                 || cloudberry.parameters.keywords.length === 0) {
                 return;
@@ -106,13 +106,13 @@ angular.module("cloudberry.map")
             var pinsTimeJson = queryUtil.getTimeBarRequest(cloudberry.parameters, $scope.geoIdsNotInTimeSeriesCache);
 
             // Complete time series cache hit case - exclude time series request
-            if ($scope.geoIdsNotInTimeSeriesCache.length === 0) {
+            if($scope.geoIdsNotInTimeSeriesCache.length === 0) {
                 cloudberry.commonTimeSeriesResult = TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, cloudberry.parameters.timeInterval);
             }
             // Partial time series cache hit case
             else {
-                cloudberryClient.send(pinsTimeJson, function (id, resultSet, resultTimeInterval) {
-                    if (angular.isArray(resultSet)) {
+                cloudberryClient.send(pinsTimeJson, function(id, resultSet, resultTimeInterval){
+                    if(angular.isArray(resultSet)) {
                         var requestTimeRange = {
                             start: new Date(resultTimeInterval.start),
                             end: new Date(resultTimeInterval.end)
@@ -126,7 +126,7 @@ angular.module("cloudberry.map")
                             TimeSeriesCache.getTimeSeriesValues(cloudberry.parameters.geoIds, cloudberry.parameters.geoLevel, requestTimeRange));
                     }
                     // When the query is executed completely, we update the time series cache.
-                    if ((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
+                    if((cloudberryConfig.querySliceMills > 0 && !angular.isArray(resultSet) &&
                         resultSet["key"] === "done") || cloudberryConfig.querySliceMills <= 0) {
                         TimeSeriesCache.putTimeSeriesValues($scope.geoIdsNotInTimeSeriesCache,
                             cloudberry.timeSeriesQueryResult, cloudberry.parameters.timeInterval);
@@ -180,7 +180,7 @@ angular.module("cloudberry.map")
         function cleanPinmapLayer() {
             $scope.points = [];
             $scope.pointIDs = [];
-            if ($scope.pointsLayer != null) {
+            if($scope.pointsLayer != null) {
                 $scope.map.removeLayer($scope.pointsLayer);
                 $scope.pointsLayer = null;
             }
@@ -265,7 +265,6 @@ angular.module("cloudberry.map")
                 // register listener to "mousemove" event on map
                 $scope.map.on("mousemove", onMapMouseMove);
                 $scope.timer = null;
-
                 // if user mouses over one place for 300ms, fire a "mouseintent" event.
                 function onMapMouseMove(e) {
                     $scope.currentMousePosition = e;
@@ -273,7 +272,7 @@ angular.module("cloudberry.map")
                         clearTimeout($scope.timer);
                         $scope.timer = null;
                     }
-                    $scope.timer = setTimeout(L.Util.bind(function () {
+                    $scope.timer = setTimeout(L.Util.bind(function() {
                         this.fire("mouseintent", e);
                         $scope.timer = null;
                     }, this), 300);
@@ -284,35 +283,40 @@ angular.module("cloudberry.map")
                     var tweetid = "";
                     try {
                         tweetid = tweetJSON["id"];
-                    } catch (e) {
+                    }
+                    catch (e){
                         //tweetid missing in this Tweet.
                     }
 
                     var userName = "";
                     try {
                         userName = tweetJSON["user.name"];
-                    } catch (e) {
+                    }
+                    catch (e){
                         //userName missing in this Tweet.
                     }
 
                     var userId = "";
                     try {
                         userId = tweetJSON["user.id"];
-                    } catch (e) {
+                    }
+                    catch (e){
                         //userId missing in this Tweet.
                     }
 
                     var userPhotoUrl = "";
                     try {
                         userPhotoUrl = tweetJSON["user.profile_image_url"];
-                    } catch (e) {
+                    }
+                    catch (e){
                         //user.profile_image_url missing in this Tweet.
                     }
 
                     var tweetText = "";
                     try {
                         tweetText = tweetJSON.text;
-                    } catch (e) {
+                    }
+                    catch (e){
                         //Text missing in this Tweet.
                     }
 
@@ -320,14 +324,16 @@ angular.module("cloudberry.map")
                     try {
                         var createdAt = new Date(tweetJSON["create_at"]);
                         tweetTime = createdAt.toISOString();
-                    } catch (e) {
+                    }
+                    catch (e){
                         //Time missing in this Tweet.
                     }
 
                     var tweetLink = "";
                     try {
                         tweetLink = "https://twitter.com/" + userId + "/status/" + tweetid;
-                    } catch (e) {
+                    }
+                    catch (e){
                         //tweetLink missing in this Tweet.
                     }
 
@@ -339,7 +345,8 @@ angular.module("cloudberry.map")
                             + "<div>"
                             + "Fail to get Tweets data."
                             + "</div>\n";
-                    } else {
+                    }
+                    else {
                         //presents all the information.
                         tweetTemplate = "\n"
                             + "<div class=\"tweet\">\n "
@@ -385,31 +392,31 @@ angular.module("cloudberry.map")
                         cleanPinmapMarker();
                         // (2) create a new Marker to highlight the point.
                         $scope.currentMarker = L.circleMarker(e.latlng, {
-                            radius: 6,
-                            color: "#0d3e99",
-                            weight: 3,
-                            fillColor: "#b8e3ff",
-                            fillOpacity: 1.0
+                            radius : 6,
+                            color : "#0d3e99",
+                            weight : 3,
+                            fillColor : "#b8e3ff",
+                            fillOpacity : 1.0
                         }).addTo($scope.map);
 
                         var pinJson = {
-                            dataset: "twitter.ds_tweet",
+                            dataset:"twitter.ds_tweet",
                             filter: [{
                                 field: "id",
                                 relation: "=",
                                 values: "" + pointID
                             }],
-                            select: {
+                            select:{
                                 order: ["-create_at"],
                                 limit: 1,
                                 offset: 0,
-                                field: ["id", "text", "user.id", "create_at", "user.name", "user.id", "user.profile_image_url"]
+                                field: ["id","text","user.id","create_at","user.name","user.id","user.profile_image_url"]
                             }
                         };
 
-                        cloudberryClient.send(pinJson, function (id, resultSet, resultTimeInterval) {
+                        cloudberryClient.send(pinJson, function(id, resultSet, resultTimeInterval) {
                             var tweetContent = translateTweetDataToShow(resultSet[0][0]);
-                            $scope.popUpTweet = L.popup({maxWidth: 300, minWidth: 300, maxHight: 300});
+                            $scope.popUpTweet = L.popup({maxWidth:300, minWidth:300, maxHight:300});
                             $scope.popUpTweet.setContent(tweetContent);
                             // in case the results comes late, only show the popup if mouse position is still at the point
                             if ($scope.currentMarker &&
@@ -428,12 +435,14 @@ angular.module("cloudberry.map")
                 for (var i = 0; i < result.length; i++) {
                     if (result[i].hasOwnProperty("coordinate")) {
                         $scope.points.push([result[i].coordinate[1], result[i].coordinate[0], result[i].id]);
-                    } else if (result[i].hasOwnProperty("place.bounding_box")) {
+                    }
+                    else if (result[i].hasOwnProperty("place.bounding_box")) {
                         $scope.points.push([$scope.rangeRandom(result[i].id, result[i]["place.bounding_box"][0][1], result[i]["place.bounding_box"][1][1]), $scope.rangeRandom(result[i].id + 79, result[i]["place.bounding_box"][0][0], result[i]["place.bounding_box"][1][0]), result[i].id]); // 79 is a magic number to avoid using the same seed for generating both the longitude and latitude.
                     }
                 }
                 $scope.pointsLayer.appendData($scope.points);
-            } else {
+            }
+            else {
                 $scope.points = [];
                 $scope.pointsLayer.setData($scope.points);
             }
@@ -457,7 +466,8 @@ angular.module("cloudberry.map")
                 $scope.resetPolygonLayers();
                 setInfoControlPinMap();
                 sendPinmapQuery();
-            } else if (event.previousMapType === "pinmap") {
+            }
+            else if (event.previousMapType === "pinmap") {
                 cleanPinMap();
             }
         }
@@ -467,19 +477,19 @@ angular.module("cloudberry.map")
         // TODO - get rid of this watch by doing work inside the callback function in sendPinmapQuery()
         // monitor the pinmap related variables, update the pinmap if necessary
         $scope.$watch(
-            function () {
+            function() {
                 return cloudberry.pinmapMapResult;
             },
 
-      function(newResult) {
-        if (cloudberry.parameters.maptype === "pinmap"){
-          $scope.result = newResult;
-          if ($scope.result && Object.keys($scope.result).length !== 0) {
-            $scope.status.init = false;
-            drawPinMap($scope.result);
-          }
-        }
-      }
-    );
+            function(newResult) {
+                if (cloudberry.parameters.maptype === "pinmap"){
+                    $scope.result = newResult;
+                    if ($scope.result && Object.keys($scope.result).length !== 0) {
+                        $scope.status.init = false;
+                        drawPinMap($scope.result);
+                    }
+                }
+            }
+        );
 
     });
