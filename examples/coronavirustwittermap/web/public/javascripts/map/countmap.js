@@ -74,7 +74,60 @@ angular.module('cloudberry.map')
       return items[0][prop1];
     }
 
+    // find the left boundary longitude value of a geometry object
+    function leftLng(geometry) {
+      if (geometry.type === "Polygon") { // [[[lng, lat]]]
+        const west = geometry.coordinates[0].reduce(function (previousVal, currentVal) {
+          return previousVal[0] > currentVal[0]? previousVal: currentVal;
+        });
+        return west[0];
+      }
+      if (geometry.type === "MultiPolygon") { // [[[[lng, lat]]]]
+        let westLng = -180;
+        for (let i = 0; i < geometry.coordinates.length; i ++) {
+          let west_i = geometry.coordinates[i][0].reduce(function (previousVal, currentVal) {
+            return previousVal[0] > currentVal[0]? previousVal: currentVal;
+          });
+          westLng = Math.max(westLng, west_i[0]);
+        }
+        return westLng;
+      }
+    }
+
+    // find the center latitude value of a geometry object
+    function centerLat(geometry) {
+      if (geometry.type === "Polygon") { // [[[lng, lat]]]
+        const north = geometry.coordinates[0].reduce(function (previousVal, currentVal) {
+          return previousVal[1] > currentVal[1]? previousVal: currentVal;
+        });
+        const south = geometry.coordinates[0].reduce(function (previousVal, currentVal) {
+          return previousVal[1] < currentVal[1]? previousVal: currentVal;
+        });
+        return (north[1] + south[1]) / 2;
+      }
+      if (geometry.type === "MultiPolygon") { // [[[[lng, lat]]]]
+        let northLat = -90;
+        let southLat = 90;
+        for (let i = 0; i < geometry.coordinates.length; i ++) {
+          let north_i = geometry.coordinates[i][0].reduce(function (previousVal, currentVal) {
+            return previousVal[1] > currentVal[1]? previousVal: currentVal;
+          });
+          let south_i = geometry.coordinates[i][0].reduce(function (previousVal, currentVal) {
+            return previousVal[1] < currentVal[1]? previousVal: currentVal;
+          });
+          northLat = Math.max(northLat, north_i[1]);
+          southLat = Math.min(southLat, south_i[1]);
+        }
+        return (northLat + southLat) / 2;
+      }
+    }
+
     function getPopupContent() {
+
+      function numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+
       // get chart data for the polygon
       var geoIDChartData = $scope.chartDataMap.get($scope.selectedGeoID);
       $scope.chartData = (geoIDChartData && geoIDChartData.length !== 0) ? chartUtil.preProcessByDayResult(geoIDChartData, cloudberryConfig.popupWindowGroupBy) : [];
@@ -101,21 +154,15 @@ angular.module('cloudberry.map')
       }
 
       // Generate the html in pop up window
-      var content;
-      if ($scope.chartData.length === 0) {
-        content = "<div id=\"popup-info\" style=\"margin-bottom: 0\">" +
-          "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
-          "<div id=\"popup-count\" style=\"margin-bottom: 0\">Tweet count:<b> "+count+"</b></div>" +
-          "</div>"+
-          "<canvas id=\"tweetChart\" height=\"0\" ></canvas>";
-      } else {
-        content = "<div id=\"popup-info\">" +
-          "<div id=\"popup-statename\">"+logicLevel+": "+placeName+"</div>" +
-          "<div id=\"popup-count\">Tweet count:<b> "+count+"</b></div>" +
-          "</div>"+
-          "<canvas id=\"tweetChart\"></canvas>";
+      // 0) header: State/County/City name
+      var content = "<div id=\"popup-statename\">" + logicLevel + ": " + placeName + "</div>";
+
+      // 1) population
+      if (population) {
+        content += "<div class=\"popup-count\"> Population: <b>" + numberWithCommas(population) + "</b></div>";
       }
 
+      // 2) case number trend chart
       // get case numbers chart data for polygon, not support city level
       if ($scope.status.logicLevel !== "city") {
         var geoIDCaseChartData = caseDataCache.getGeoIdCaseData(logicLevel, $scope.selectedGeoID);
@@ -130,14 +177,36 @@ angular.module('cloudberry.map')
           // Concatenate case chart data
           if ($scope.caseChartData.length > 0 && $scope.caseChartData[0].length > 0) {
             content += "<div id=\"popup-info\">" +
-              "<div id=\"popup-count\"><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed: <b> " + confirmedCaseCount + "</b></font>" +
-              "<font color=\"" + $scope.caseChartDataColors[1] + "\">  Recovered: <b> " + recoveredCaseCount + "</b></font>" +
-              "<font color=\"" + $scope.caseChartDataColors[2] + "\">  Death: <b>" + deathCaseCount + "</b></font></div>" +
+              "<div id=\"popup-count\">" +
+              "  <table style=\"width:100%\">" +
+              "    <tr>" +
+              "      <th><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed</font></th>" +
+              "      <th><font color=\"" + $scope.caseChartDataColors[1] + "\">Recovered</font></th>" +
+              "      <th><font color=\"" + $scope.caseChartDataColors[2] + "\">Death</font></th>" +
+              "    </tr>" +
+              "    <tr>" +
+              "      <td><font color=\"" + $scope.caseChartDataColors[0] + "\"><b>" + numberWithCommas(confirmedCaseCount) + "</b></font></td>" +
+              "      <td><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(recoveredCaseCount) + "</b></font></td>" +
+              "      <td><font color=\"" + $scope.caseChartDataColors[2] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
+              "    </tr>" +
+              " </table>" +
               "</div>" +
               "<canvas id=\"caseChart\"></canvas>";
           }
         }
       }
+
+      // 3) tweet count trend chart
+      if ($scope.chartData.length === 0) {
+        content += "<div class=\"popup-count\" style=\"margin-bottom: 0\">Tweet count: <b>" + numberWithCommas(count) + "</b></div>" +
+          "<canvas id=\"tweetChart\" height=\"0\" ></canvas>";
+      } else {
+        content += "<div id=\"popup-count\">Tweet count: <b>" + numberWithCommas(count) + "</b></div>" +
+          "<canvas id=\"tweetChart\"></canvas>";
+      }
+
+      // 4) wrap div
+      content = "<div id=\"popup-info\">" + content + "</div>";
 
       return content;
     }
@@ -324,8 +393,6 @@ angular.module('cloudberry.map')
     // clear countmap specific data
     function cleanCountMap() {
 
-      $scope.map.off("mousemove");
-
       function removeMapControl(name){
         var ctrlClass = $("."+name);
         if (ctrlClass) {
@@ -368,12 +435,21 @@ angular.module('cloudberry.map')
           if ($scope.checkIfQueryIsRequested === true) {
             $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
             layer.bindPopup($scope.popUp).openPopup();
-            // only reposition the popup window for state level
+            // only reposition the popup window for state level (only state level has case number trend chart)
             if ($scope.status.logicLevel === "state") {
-              // make sure the popup window is left to the mouse position by 1/5 window width
-              var windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
-              var windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
-              $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.map.getBounds().getSouthWest().lat + windowLatHeight / 3.5, $scope.mouseLng - windowLngWidth / 7]);
+              // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
+              const popupPixelWidth = 500; // default pixel width of popup in leaflet
+              const popupPixelHeight = 600; // estimate the pixel height of popup
+              const windowPixelWidth = window.innerWidth;
+              const windowPixelHeight = window.innerHeight;
+              const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
+              const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
+              const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
+              const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
+              const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
+              const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
+              console.log("[popup position] = [" + popupLng + ", " + popupLat + ']');
+              $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
             }
             else {
               $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
@@ -455,11 +531,6 @@ angular.module('cloudberry.map')
           normalizedCountMin = 0,
           intervals = colors.length - 1,
           difference = 0;
-
-      $scope.map.on("mousemove", function(event) {
-        $scope.mouseLat = event.latlng.lat;
-        $scope.mouseLng = event.latlng.lng;
-      });
 
       function getSentimentColor(d) {
         if( d < cloudberryConfig.sentimentUpperBound / 3) {    // 1/3

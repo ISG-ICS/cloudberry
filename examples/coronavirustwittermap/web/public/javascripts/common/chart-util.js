@@ -7,6 +7,7 @@ angular.module("cloudberry.common")
   .service("chartUtil", function (cloudberry) {
 
     var chartUtil = {
+
       // Return difference of two arrays, the arrays must has no duplicate
       arrayDiff(newArray, oldArray) {
         var diffArray = [], difference = [];
@@ -123,6 +124,17 @@ angular.module("cloudberry.common")
 
       // Configure the chart: whether show the lable/grid or not in chart.
       chartConfig(chartData, displayLable, yLabel, displayGrid, groupBy) {
+        function addCommas(nStr) {
+          nStr += '';
+          x = nStr.split('.');
+          x1 = x[0];
+          x2 = x.length > 1 ? '.' + x[1] : '';
+          var rgx = /(\d+)(\d{3})/;
+          while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + ',' + '$2');
+          }
+          return x1 + x2;
+        }
         return {
           type: "line",
           data: {
@@ -160,7 +172,8 @@ angular.module("cloudberry.common")
                 },
                 ticks: {
                   beginAtZero: true,
-                  suggestedMax: 4
+                  suggestedMax: 4,
+                  callback: addCommas
                 },
                 gridLines: {
                   display: displayGrid
@@ -191,6 +204,17 @@ angular.module("cloudberry.common")
             borderWidth: 0.8,
             pointRadius: 1.5
           })
+        }
+        function addCommas(nStr) {
+          nStr += '';
+          x = nStr.split('.');
+          x1 = x[0];
+          x2 = x.length > 1 ? '.' + x[1] : '';
+          var rgx = /(\d+)(\d{3})/;
+          while (rgx.test(x1)) {
+            x1 = x1.replace(rgx, '$1' + ',' + '$2');
+          }
+          return x1 + x2;
         }
         return {
           type: "line",
@@ -223,7 +247,8 @@ angular.module("cloudberry.common")
                 },
                 ticks: {
                   beginAtZero: true,
-                  suggestedMax: 4
+                  suggestedMax: 4,
+                  callback: addCommas
                 },
                 gridLines: {
                   display: displayGrid
