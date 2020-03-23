@@ -6,14 +6,14 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $("#keyword-textbox").autocomplete({source:[],disabled:true,delay:200});
 
     var ACSocket;
-    cloudberryClient.newWebSocket("ws://"+window.location.host+"/autoComplete").done(function(pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/autoComplete").done(function (pws) {
       ACSocket = pws;
 
-      ACSocket.onmessage = function(event){
+      ACSocket.onmessage = function (event) {
         var suggestion = [];
         var data = JSON.parse(event.data);
         var topics = JSON.parse(data).topics;
-        for (var i = 0; i < topics.length; i ++) {
+        for (var i = 0; i < topics.length; i++) {
           var value = String(topics[i].topic);
           //Exclude hashtag topic and repetitive topic
           if (value[0] !== "#" && !suggestion.includes(value)) {
@@ -46,7 +46,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     //If keyword been selected and user pushed enter,then we perform search directly
     $( "#keyword-textbox" ).on( "autocompleteselect", function( event, ui ){
       $scope.keyword = ui.item.value;
-      $("#keyword-textbox").autocomplete("close");  
+      $("#keyword-textbox").autocomplete("close");
       $scope.search();
       $scope.updateSearchBox($scope.keyword);
     });
@@ -167,8 +167,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       function() {
         return cloudberry.errorMessage;
       },
-  
-      function(newMsg) {
+
+        function(newMsg) {
         if (newMsg) $window.alert(newMsg);
         cloudberry.errorMessage = null;
       }

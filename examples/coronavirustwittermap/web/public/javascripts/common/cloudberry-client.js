@@ -149,7 +149,7 @@ angular.module("cloudberry.common")
     };
 
     // Create a native websocket connection used by this client's send interface
-    var wsConnection = this.newWebSocket(cloudberryConfig.ws);
+    var wsConnection = this.newWebSocket(cloudberryConfig.ws + window.location.host  + "/ws");
 
     wsConnection.done(function (pws) {
       ws = pws;
