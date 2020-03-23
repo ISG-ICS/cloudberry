@@ -402,7 +402,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     // load case data csv to get state and county case data, store in case data cache.
     $scope.loadCaseCsvFiles = function () {
       if (caseDataCache.stateCaseDataCached() === false) {
-        $http.get("assets/data/stateCases.csv")
+        $http.get("/stateCases")
           .success(function(csv) {
             caseDataCache.loadCsvToCaseDataStore(csv, "state");
           })
