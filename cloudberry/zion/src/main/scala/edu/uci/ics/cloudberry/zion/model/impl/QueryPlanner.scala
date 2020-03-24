@@ -2,19 +2,25 @@ package edu.uci.ics.cloudberry.zion.model.impl
 
 import java.security.MessageDigest
 
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.{DateTime, Interval}
 import play.api.libs.json._
 
-class QueryPlanner {
+class QueryPlanner (val config: Config) {
 
   import QueryPlanner._
 
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): (Seq[Query], IMerger) = {
 
-    //TODO currently only get the best one
-    val bestView = selectBestView(findMatchedViews(query, source, views))
-    splitQuery(query, source, bestView)
+    config.viewMaintenaceEnable match {
+      case true =>
+        //TODO currently only get the best one
+        val bestView = selectBestView(findMatchedViews(query, source, views))
+        splitQuery(query, source, bestView)
+      case false =>
+        (Seq(query), Unioner)
+    }
   }
 
   // Return whether there is matched views for a query, and it is used by the ViewStatusClient
@@ -28,19 +34,23 @@ class QueryPlanner {
   }
 
   def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
-    //TODO currently only suggest the keyword subset views
-    if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {
-      Seq.empty[CreateView]
-    } else {
-      val keywordFilters = query.filter.filter(f => f.field.dataType == DataType.Text)
-      keywordFilters.flatMap { kwFilter =>
-        kwFilter.values.map { wordAny =>
-          val word = wordAny.asInstanceOf[String]
-          val wordFilter = FilterStatement(kwFilter.field, None, Relation.contains, Seq(word))
-          val wordQuery = Query(query.dataset, Seq.empty, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
-          CreateView(getViewKey(query.dataset, word), wordQuery)
+    config.viewMaintenaceEnable match {
+      case true =>
+        //TODO currently only suggest the keyword subset views
+        if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {
+          Seq.empty[CreateView]
+        } else {
+          val keywordFilters = query.filter.filter(f => f.field.dataType == DataType.Text)
+          keywordFilters.flatMap { kwFilter =>
+            kwFilter.values.map { wordAny =>
+              val word = wordAny.asInstanceOf[String]
+              val wordFilter = FilterStatement(kwFilter.field, None, Relation.contains, Seq(word))
+              val wordQuery = Query(query.dataset, Seq.empty, Seq.empty, Seq(wordFilter), Seq.empty, None, None)
+              CreateView(getViewKey(query.dataset, word), wordQuery)
+            }
+          }
         }
-      }
+      case false => Seq.empty[CreateView]
     }
   }
 
