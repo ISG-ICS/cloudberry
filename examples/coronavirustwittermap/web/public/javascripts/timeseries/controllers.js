@@ -15,6 +15,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     //Otherwise there will be a blink line.
     $scope.timeseriesState = 0;
     $scope.playButtonPaused = true;
+    $scope.redrawTimeSeries = true;
 
     for (var date = new Date(); date >= cloudberry.startDate; date.setDate(date.getDate()-1)) {
       $scope.empty.push({'time': new Date(date), 'count': 0});
@@ -89,15 +90,21 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       }
     };
 
-    function eventHandler(){
+    function eventHandler() {
       //reset time series state
       $scope.timeseriesState = 1;
+      $scope.redrawTimeSeries = true;
+    }
+
+    function timeSeriesEventHandler() {
+      $scope.timeseriesState = 1;
+      $scope.redrawTimeSeries = false;
     }
 
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_REGION_BY_DRAG, eventHandler);
     moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_SEARCH_KEYWORD, eventHandler);
-    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, eventHandler);
+    moduleManager.subscribeEvent(moduleManager.EVENT.CHANGE_TIME_SERIES_RANGE, timeSeriesEventHandler);
 
     $scope.sendTotalCountQuery = function() {
       cloudberryClient.send($scope.totalCountJson, function(id, resultSet, resultTimeInterval){
@@ -133,7 +140,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
-              if ($scope.playButtonPaused) {
+              if ($scope.playButtonPaused && $scope.redrawTimeSeries) {
                 ndx.remove();
                 ndx.add($scope.empty);
                 dc.redrawAll();
