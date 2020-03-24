@@ -11,6 +11,7 @@ GET        /liveTweets                          controllers.TwitterMapApplicatio
 GET        /autoComplete                        controllers.TwitterMapApplication.autoComplete
 GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
 GET        /cityPopulation/:cityIds             controllers.TwitterMapApplication.getCityPop(cityIds: String)
+GET        /stateCases                          controllers.TwitterMapApplication.getStateCases
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)

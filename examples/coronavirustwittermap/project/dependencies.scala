@@ -49,7 +49,9 @@ object Dependencies {
     "org.webjars" % "jquery-ui-themes" % "1.12.1",
     // Added twitter4j for twittermap
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
-    "org.twitter4j" % "twitter4j-core" % twitter4jVersion
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
+    // case number module
+    "org.webjars.bower" % "jquery-csv" % "0.8.3"
 
   ) ++ testDeps
 }
