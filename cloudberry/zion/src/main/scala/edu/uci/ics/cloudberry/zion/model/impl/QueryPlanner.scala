@@ -13,7 +13,7 @@ class QueryPlanner (val config: Config) {
 
   def makePlan(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): (Seq[Query], IMerger) = {
 
-    config.viewMaintenaceEnable match {
+    config.viewMaintenanceEnable match {
       case true =>
         //TODO currently only get the best one
         val bestView = selectBestView(findMatchedViews(query, source, views))
@@ -34,7 +34,7 @@ class QueryPlanner (val config: Config) {
   }
 
   def suggestNewView(query: Query, source: DataSetInfo, views: Seq[DataSetInfo]): Seq[CreateView] = {
-    config.viewMaintenaceEnable match {
+    config.viewMaintenanceEnable match {
       case true =>
         //TODO currently only suggest the keyword subset views
         if (views.exists(v => v.createQueryOpt.exists(vq => vq.canSolve(query, source.schema)))) {

@@ -22,7 +22,7 @@ class Config(config: Configuration) {
 
   val UserTimeOut = config.getString("actor.user.timeout").map(parseTimePair).getOrElse(60 seconds)
 
-  val viewMaintenaceEnable = config.getBoolean("view.enable").getOrElse(true)
+  val viewMaintenanceEnable = config.getBoolean("view.enable").getOrElse(true)
 
   val ViewUpdateInterval = config.getString("view.update.interval").map(parseTimePair).getOrElse(60 minutes)
 
