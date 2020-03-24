@@ -39,6 +39,9 @@
 
   <script>
     var config= {
+      cloudberryWS: "@TMAobject.cloudberryWS",
+      cloudberryHost: "@TMAobject.cloudberryHost",
+      cloudberryPort: "@TMAobject.cloudberryPort",
       sentimentEnabled: @TMAobject.sentimentEnabled,
       sentimentUDF: "@TMAobject.sentimentUDF",
       startDate: new Date("@TMAobject.startDate"),
@@ -83,9 +86,11 @@
   <script src='@routes.Assets.versioned("lib/leaflet/leaflet.js")'></script>
   <script src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
   <script src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/jquery-csv/src/jquery.csv.js")'></script>
   <script src='@routes.Assets.versioned("lib/hashmap/hashmap.js")'></script>
-  <script src = "http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
-  <script> d3version4 = d3; window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
+  <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+  <script> d3version4 = d3;
+  window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
   <script src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
@@ -100,6 +105,7 @@
   <script src='@routes.Assets.versioned("javascripts/mapresultcache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/timeseriescache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/populationcache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/casedatacache/services.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/countmap.js")'></script>
   <script src='@routes.Assets.versioned("javascripts/map/pinmap.js")'></script>
