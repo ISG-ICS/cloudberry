@@ -140,7 +140,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
             $scope.queried = true;
             var ndx = $scope.ndx;
             if (ndx) {
-              if ($scope.playButtonPaused & $scope.redrawTimeSeries) {
+              if ($scope.playButtonPaused && $scope.redrawTimeSeries) {
                 ndx.remove();
                 ndx.add($scope.empty);
                 dc.redrawAll();
