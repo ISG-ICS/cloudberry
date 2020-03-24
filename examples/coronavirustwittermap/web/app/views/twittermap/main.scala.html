@@ -1,4 +1,6 @@
+
 @import controllers.TwitterMapApplication.DBType
+
 @(title: String, TMAobject: TwitterMapApplication, isDrugMap: Boolean)(body: Html)
 
 @import play.api.libs.json.Json
@@ -8,6 +10,20 @@
 
 <head>
   <title>@title</title>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=@TMAobject.gtagId"></script>
+  <script>
+          window.dataLayer = window.dataLayer || [];
+
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+
+          gtag('js', new Date());
+
+          gtag('config', '@TMAobject.gtagId');
+  </script>
   <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
 
   <link rel='shortcut icon' type='image/png' href='@routes.Assets.versioned("images/berry-icon.png")'>
