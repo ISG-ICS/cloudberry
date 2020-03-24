@@ -166,7 +166,7 @@ angular.module('cloudberry.map')
       // get case numbers chart data for polygon, not support city level
       // reduce long prefix of 0's in case trend chart
       var caseStart = cloudberry.parameters.timeInterval.start;
-      caseStart = new Date(Math.max(new Date("2020-01-22 00:00:00").getTime(), caseStart.getTime()));
+      caseStart = new Date(Math.max(new Date("01/22/2020 00:00:00").getTime(), caseStart.getTime()));
       if ($scope.status.logicLevel !== "city") {
         var caseEnd = cloudberry.parameters.timeInterval.end;
         var geoIDCaseChartData = caseDataCache.getGeoIdCaseData(logicLevel, $scope.selectedGeoID, caseStart, caseEnd);
