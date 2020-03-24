@@ -35,19 +35,21 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val applicationName: String = config.getString("app.name").getOrElse("TwitterMap")
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
+  val stateCasesPath: String = config.getString("state.cases.path").getOrElse("/public/data/stateCases.csv")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
-  val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
-  val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
+  val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
+  val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
+  val cloudberryPort: String = config.getString("cloudberry.port").getOrElse("9000")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
   val defaultKeyword: String = config.getString("defaultKeyword").getOrElse(null)
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
-  val endDate : Option[String] = config.getString("endDate")
+  val endDate: Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val citiesPopulation: List[JsValue] = TwitterMapApplication.loadCityPop(environment.getFile(USCityPopDataPath))
-  val cacheThreshold : Option[String] = config.getString("cacheThreshold")
+  val cacheThreshold: Option[String] = config.getString("cacheThreshold")
   val querySliceMills: Option[String] = config.getString("querySliceMills")
   val heatmapSamplingDayRange: String = config.getString("heatmap.samplingDayRange").getOrElse("30")
   val heatmapSamplingLimit: String = config.getString("heatmap.samplingLimit").getOrElse("5000")
@@ -101,14 +103,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/ws", out, maxTextMessageSize)
     }
   }
 
   // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
   def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/checkQuerySolvableByView", out, maxTextMessageSize)
     }
   }
 
@@ -259,6 +261,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def getCityPop(cityIds: String) = Action {
     Ok(TwitterMapApplication.findCityPop(cityIds, citiesPopulation))
+  }
+
+  def getStateCases = Action {
+    Ok.sendFile(environment.getFile(stateCasesPath), inline=true)
   }
 }
 

@@ -1,6 +1,6 @@
-angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache', 'cloudberry.populationcache'])
+angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','cloudberry.cache', 'cloudberry.populationcache', 'cloudberry.casedatacache'])
   .controller('MapCtrl', function($scope, $http, cloudberry, leafletData,
-                                  cloudberryConfig, Cache, PopulationCache, moduleManager) {
+                                  cloudberryConfig, Cache, PopulationCache, caseDataCache, moduleManager) {
 
     cloudberry.parameters.maptype = config.defaultMapType;
   
@@ -376,7 +376,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         }
     };
 
-    // load population Json to get state and county polygons, store in countmap cache.
+    // load population Json to get state and county populations, store in population cache.
     $scope.loadPopJsonFiles = function loadPopJsonFiles() {
       $scope.popjsonData = {};
       if (PopulationCache.statePopulationCached() === false){
@@ -396,6 +396,19 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         .error(function(data) {
           console.error("Load county population data failure");
         });
+      }
+    };
+
+    // load case data csv to get state and county case data, store in case data cache.
+    $scope.loadCaseCsvFiles = function () {
+      if (caseDataCache.stateCaseDataCached() === false) {
+        $http.get("/stateCases")
+          .success(function(csv) {
+            caseDataCache.loadCsvToCaseDataStore(csv, "state");
+          })
+          .error(function(csv) {
+            console.error("Loading stateCases.csv data failed.");
+          });
       }
     };
 
