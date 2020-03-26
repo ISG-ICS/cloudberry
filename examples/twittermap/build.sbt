@@ -34,3 +34,9 @@ lazy val noah = (project in file("noah")).
     //    mainClass := Somedd("edu.uci.ics.cloudberry.noah.TwitterJSONTagToADM"),
     libraryDependencies ++= noahDependencies
   ).dependsOn(gnosis, util)
+
+lazy val guardian = (project in file("guardian")).
+  settings(Commons.settings: _*).
+  settings(
+    libraryDependencies ++= guardianDependencies
+  )

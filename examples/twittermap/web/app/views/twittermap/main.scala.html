@@ -38,6 +38,7 @@
       }
       removeSearchBar: @TMAobject.removeSearchBar,
       predefinedKeywords: @Html(Json.stringify(Json.toJson(TMAobject.predefinedKeywords))),
+      defaultKeyword: "@TMAobject.defaultKeyword",
       @if(TMAobject.cacheThreshold.isDefined) {
       cacheThreshold: @TMAobject.cacheThreshold,
       } else {
@@ -60,7 +61,9 @@
       liveTweetQueryOffset: @TMAobject.liveTweetQueryOffset,
       liveTweetUpdateRate: @TMAobject.liveTweetUpdateRate,
       enableLiveTweet: @TMAobject.enableLiveTweet,
-      defaultMapType: "@TMAobject.defaultMapType"
+      defaultMapType: "@TMAobject.defaultMapType",
+      timeSeriesChartType: "@TMAobject.timeSeriesChartType",
+      timeSeriesGroupBy: "@TMAobject.timeSeriesGroupBy"
     }
   </script>
   <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
@@ -69,6 +72,8 @@
   <script src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
   <script src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/hashmap/hashmap.js")'></script>
+  <script src = "http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+  <script> d3version4 = d3; window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
   <script src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>

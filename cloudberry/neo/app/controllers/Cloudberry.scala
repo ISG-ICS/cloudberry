@@ -44,6 +44,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
       case "aql" => (new AsterixAQLConn(config.AsterixURL, wsClient), AQLGenerator)
       case "sqlpp" => (new AsterixSQLPPConn(config.AsterixURL, wsClient), SQLPPGenerator)
       case "oracle" => (new OracleConn(config.OracleURL), OracleGenerator)
+      case "elasticsearch" => (new ElasticsearchConn(config.ElasticsearchURL, wsClient), ElasticsearchGenerator)
       case _ => throw new IllegalArgumentException(s"unknown asterixdb.lang option:${config.AsterixLang}")
     }
 
@@ -85,14 +86,14 @@ class Cloudberry @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      RequestRouter.props(BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)
+      RequestRouter.props(BerryClient.props(new JSONParser(), manager, new QueryPlanner(config), config, out), config, request)
     }
   }
 
   // A WebSocket for checking whether a query is solvable by view
   def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      RequestRouter.props(ViewStatusClient.props(new JSONParser(), manager, new QueryPlanner(), config, out), config, request)
+      RequestRouter.props(ViewStatusClient.props(new JSONParser(), manager, new QueryPlanner(config), config, out), config, request)
     }
   }
 
@@ -107,7 +108,7 @@ class Cloudberry @Inject()(val wsClient: WSClient,
     val source = Source.single(request.body)
 
     val flow = Cloudberry.actorFlow[JsValue, JsValue]({ out =>
-      BerryClient.props(new JSONParser(), manager, new QueryPlanner(), config, out)
+      BerryClient.props(new JSONParser(), manager, new QueryPlanner(config), config, out)
     }, BerryClient.Done)
     val toStringFlow = Flow[JsValue].map(js => js.toString() + System.lineSeparator())
     Ok.chunked((source via flow) via toStringFlow)

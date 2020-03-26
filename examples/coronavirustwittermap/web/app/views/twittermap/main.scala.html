@@ -1,0 +1,147 @@
+
+@import controllers.TwitterMapApplication.DBType
+
+@(title: String, TMAobject: TwitterMapApplication, isDrugMap: Boolean)(body: Html)
+
+@import play.api.libs.json.Json
+
+<!DOCTYPE html>
+<html ng-app="cloudberry">
+
+<head>
+  <title>@title</title>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=@TMAobject.gtagId"></script>
+  <script>
+          window.dataLayer = window.dataLayer || [];
+
+          function gtag() {
+            dataLayer.push(arguments);
+          }
+
+          gtag('js', new Date());
+
+          gtag('config', '@TMAobject.gtagId');
+  </script>
+  <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link rel='shortcut icon' type='image/png' href='@routes.Assets.versioned("images/berry-icon.png")'>
+
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/leaflet/leaflet.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/dc.js/dc.min.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/jquery-ui/jquery-ui.css")'> 
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/font-awesome/css/font-awesome.min.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap-vertical-tabs/bootstrap.vertical-tabs.min.css")'>
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap-toggle/css/bootstrap-toggle.min.css")'>
+  <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
+
+  <script>
+    var config= {
+      cloudberryWS: "@TMAobject.cloudberryWS",
+      cloudberryHost: "@TMAobject.cloudberryHost",
+      cloudberryPort: "@TMAobject.cloudberryPort",
+      sentimentEnabled: @TMAobject.sentimentEnabled,
+      sentimentUDF: "@TMAobject.sentimentUDF",
+      startDate: new Date("@TMAobject.startDate"),
+      @if(TMAobject.endDate.isDefined) {
+      endDate: new Date("@TMAobject.endDate.get"),
+      }
+      sumText : "tweets",
+      removeSearchBar: @TMAobject.removeSearchBar,
+      predefinedKeywords: @Html(Json.stringify(Json.toJson(TMAobject.predefinedKeywords))),
+      defaultKeyword: "@TMAobject.defaultKeyword",
+      @if(TMAobject.cacheThreshold.isDefined) {
+      cacheThreshold: @TMAobject.cacheThreshold,
+      } else {
+      // The default caching threshold value
+      cacheThreshold: new String("30000"),
+      }
+      @if(TMAobject.querySliceMills.isDefined) {
+      querySliceMills: @TMAobject.querySliceMills,
+      } else {
+      // The default query slicing milliseconds value
+      querySliceMills: new String("2000"),
+      }
+      heatmapSamplingDayRange: @TMAobject.heatmapSamplingDayRange,
+      heatmapSamplingLimit: @TMAobject.heatmapSamplingLimit,
+      heatmapUnitIntensity: @TMAobject.heatmapUnitIntensity,
+      heatmapUnitRadius: @TMAobject.heatmapUnitRadius,
+      pinmapSamplingDayRange: @TMAobject.pinmapSamplingDayRange,
+      pinmapSamplingLimit: @TMAobject.pinmapSamplingLimit,
+      liveTweetQueryInterval: @TMAobject.liveTweetQueryInterval,
+      liveTweetQueryOffset: @TMAobject.liveTweetQueryOffset,
+      liveTweetUpdateRate: @TMAobject.liveTweetUpdateRate,
+      enableLiveTweet: @TMAobject.enableLiveTweet,
+      defaultMapType: "@TMAobject.defaultMapType",
+      timeSeriesChartType: "@TMAobject.timeSeriesChartType",
+      timeSeriesGroupBy: "@TMAobject.timeSeriesGroupBy",
+      popupWindowChartType: "@TMAobject.popupWindowChartType",
+      popupWindowGroupBy: "@TMAobject.popupWindowGroupBy"
+    }
+  </script>
+  <script src='@routes.Assets.versioned("lib/angularjs/angular.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/json-bigint/dist/json-bigint.js")'></script>
+  <script src='@routes.Assets.versioned("lib/leaflet/leaflet.js")'></script>
+  <script src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
+  <script src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/jquery-csv/src/jquery.csv.js")'></script>
+  <script src='@routes.Assets.versioned("lib/hashmap/hashmap.js")'></script>
+  <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+  <script> d3version4 = d3;
+  window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
+  <script src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/bootstrap-toggle/js/bootstrap-toggle.min.js")'></script>
+  <script src='@routes.Assets.versioned("lib/jquery-ui/jquery-ui.js")'></script>
+  <script src='@routes.Assets.versioned("lib/chart.js/dist/Chart.bundle.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/rbush.min.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/turf.min.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/app.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/cache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/mapresultcache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/timeseriescache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/populationcache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/casedatacache/services.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/map/controllers.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/map/countmap.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/map/pinmap.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/map/heatmap.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/map/multilayer-manager.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/leaflet_canvas_layer.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/shader_code.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/webgl_point_layer.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/lib/leaflet-heat.js")'></script>
+
+  @if(isDrugMap) {
+    <script src='@routes.Assets.versioned("javascripts/common/services-drug.js")'></script>
+  }
+  @TMAobject.sqlDB match {
+    case DBType.MySQL => {
+      <script src='@routes.Assets.versioned("javascripts/common/services-mysql.js")'></script>
+    }
+    case DBType.PostgreSQL => {
+      <script src='@routes.Assets.versioned("javascripts/common/services-postgresql.js")'></script>
+    }
+    case _ => {
+      <script src='@routes.Assets.versioned("javascripts/common/services.js")'></script>
+    }
+  }
+  <script src='@routes.Assets.versioned("javascripts/common/module-manager.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/common/cloudberry-client.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/common/query-util.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/common/chart-util.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/timeseries/controllers.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/sidebar/controllers.js")'></script>
+  <script src='@routes.Assets.versioned("javascripts/searchbar/controllers.js")'></script>
+  <script src='@routes.Assets.versioned("data/stopwords.js")'></script>
+
+</head>
+
+<body>
+@body
+</body>
+</html>

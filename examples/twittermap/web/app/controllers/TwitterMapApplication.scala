@@ -32,6 +32,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
                                      (implicit val materializer: Materializer,
                                       implicit val system: ActorSystem) extends Controller {
 
+  val applicationName: String = config.getString("app.name").getOrElse("TwitterMap")
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
@@ -41,6 +42,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
+  val defaultKeyword: String = config.getString("defaultKeyword").getOrElse(null)
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
   val endDate : Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
@@ -63,6 +65,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val liveTweetTokenSecret: String = config.getString("liveTweetTokenSecret").getOrElse(null)
   val enableLiveTweet : Boolean = config.getBoolean("enableLiveTweet").getOrElse(true)
   val useDirectSource : Boolean = config.getBoolean("useDirectSource").getOrElse(true)
+  val timeSeriesChartType: String = config.getString("timeSeries.chartType").getOrElse("line")
+  val timeSeriesGroupBy: String = config.getString("timeSeries.groupBy").getOrElse("week")
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
   val clientLogger = Logger("client")
@@ -81,7 +85,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     val remoteAddress = request.remoteAddress
     val userAgent = request.headers.get("user-agent").getOrElse("unknown")
     clientLogger.info(s"Connected: user_IP_address = $remoteAddress; user_agent = $userAgent")
-    Ok(views.html.twittermap.index("TwitterMap", this, false))
+    Ok(views.html.twittermap.index(applicationName, this, false))
   }
 
   def drugmap = Action {

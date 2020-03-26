@@ -5,77 +5,77 @@
 @import views.html.textarea
 
 @main("Cloudberry Admin") {
-<nav class="navbar navbar-default">
-    <div class="container-fluid">
-        <div class="navbar-header">
-            <a class="navbar-brand">Cloudberry Web Console</a>
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand">Cloudberry Web Console</a>
+            </div>
+            <div id="navbar" class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li class="active">
+                        <a data-toggle="tab" href="#metadata">Metadata</a>
+                    </li>
+                    <li>
+                        <a data-toggle="tab" href="#query">Query</a>
+                    </li>
+                </ul>
+            </div><!--/.nav-collapse -->
         </div>
-        <div id="navbar" class="navbar-collapse collapse">
-            <ul class="nav navbar-nav">
-                <li class="active">
-                    <a data-toggle="tab" href="#metadata">Metadata</a>
-                </li>
-                <li>
-                    <a data-toggle="tab" href="#query">Query</a>
-                </li>
-            </ul>
-        </div><!--/.nav-collapse -->
-    </div>
-</nav>
-<div class="tab-content">
-    <div id="metadata" class="tab-pane fade in active">
-        <h3>Registered Datasets</h3>
-        <div class="list-group">
+    </nav>
+    <div class="tab-content">
+        <div id="metadata" class="tab-pane fade in active">
+            <h3>Registered Datasets</h3>
+            <div class="list-group">
             @for(d <- datasets) {
-            <li class="list-group-item">
+                <li class="list-group-item">
                     <pre class="prettyprint">@{
                         Json.prettyPrint(d)
                     }</pre>
-            </li>
+                </li>
             }
-        </div>
+            </div>
 
-        <hr/>
+            <hr/>
 
-        <div class="well">
+            <div class="well">
             @helper.form(routes.Cloudberry.webRegister(), 'class -> "form-horizontal") {
 
-            @textarea(form("RegisterJSONString"), rows = "10", label = "Register Dataset JSON", placeholder = "copy DDL json to here")
+                @textarea(form("RegisterJSONString"), rows = "10", label = "Register Dataset JSON", placeholder = "copy DDL json to here")
 
-            <div class="form-group">
-                <div class="col-sm-offset-2 col-sm-10">
-                    <button id="submit" type="submit" value="Submit" class="btn btn-primary">Submit</button>
-                </div>
-            </div>
-            }
-        </div>
-    </div>
-    <div id="query" class="tab-pane fade">
-        <div class="row">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-5"><h3>Query</h3></div>
-            <div class="col-sm-5"><h3>Output</h3></div>
-            <div class="col-sm-1"></div>
-        </div>
-        <hr/>
-        <div class="row">
-            <div class="col-sm-1"></div>
-            <div class="col-sm-5">
-                <form id="query-form">
-                    <div class="form-group">
-                        <textarea rows="20" id="query-text" placeholder="Type your query ..." style="width:90%;"></textarea>
+                <div class="form-group">
+                    <div class="col-sm-offset-2 col-sm-10">
+                        <button id="submit" type="submit" value="Submit" class="btn btn-primary">Submit</button>
                     </div>
-                    <button id="submit-query" type="submit" value="Submit" class="btn btn-primary">Submit</button>
-                </form>
-            </div>
-            <div class="col-sm-5">
-                <div id="response">
-                    <pre class="prettyprint"></pre>
                 </div>
+            }
             </div>
-            <div class="col-sm-1"></div>
         </div>
-        <script>
+        <div id="query" class="tab-pane fade">
+            <div class="row">
+                <div class="col-sm-1"></div>
+                <div class="col-sm-5"><h3>Query</h3></div>
+                <div class="col-sm-5"><h3>Output</h3></div>
+                <div class="col-sm-1"></div>
+            </div>
+            <hr/>
+            <div class="row">
+                <div class="col-sm-1"></div>
+                <div class="col-sm-5">
+                    <form id="query-form">
+                        <div class="form-group">
+                            <textarea rows="20" id="query-text" placeholder="Type your query ..." style="width:90%;"></textarea>
+                        </div>
+                        <button id="submit-query" type="submit" value="Submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+                <div class="col-sm-5">
+                    <div id="response">
+                        <pre class="prettyprint"></pre>
+                    </div>
+                </div>
+                <div class="col-sm-1"></div>
+            </div>
+            <script>
                 var queryStart = 0;
                 var querySent = 0;
 
@@ -186,8 +186,8 @@
                     $('#query-form').submit(processForm);
                 })(jQuery);
             </script>
+        </div>
     </div>
-</div>
 
 
 }

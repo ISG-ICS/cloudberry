@@ -148,12 +148,22 @@ search-bar {
   width: 100%;
 }
 
+#time-slider {
+  position: absolute;
+  top: 5%; 
+  left: 23%;
+  z-index: 0.5;
+  pointer-events: auto;
+  display: inline-block;
+  opacity: 0.3;
+}
+
 time-series {
   z-index: 1;
   pointer-events: auto;
-  position: relative;
+  position: absolute;
   display: inline-block;
-  left: 4%;
+  left: 22%;
 }
 
 #count-div{
@@ -354,6 +364,71 @@ div[aria-expanded=true] .glyphicon-triangle-right {
 }
 div[aria-expanded=false] .glyphicon-triangle-bottom {
     display: none;
+}
+
+/* These styles are for map animation. */
+
+#play-button {
+  position: absolute;
+  top: -18%;
+  left: 10%;
+  background: none;
+  border: none;
+  color: #337ab7;
+  cursor: pointer;
+  height: 0px;
+  width: 0px;
+  z-index: 10;
+  text-align: center;
+  padding: 0px;
+  outline: none;
+  }
+
+#play-button{
+  display: none;
+}
+
+#play-button:disabled,
+button[disabled]{
+  background-color: #837f81;
+  color: white;
+}
+
+.ticks {
+  font-size: 10px;
+  }
+
+.track,
+.track-inset,
+.track-overlay {
+  stroke-linecap: round;
+}
+
+.track {
+  stroke: #000;
+  stroke-opacity: 0.3;
+  stroke-width: 10px;
+}
+
+.track-inset {
+  stroke: #dcdcdc;
+  stroke-width: 8px;
+}
+
+.track-overlay {
+  pointer-events: stroke;
+  stroke-width: 50px;
+  stroke: transparent;
+  cursor: crosshair;
+  z-index: 10;
+}
+
+.handle {
+  fill: #fff;
+  stroke: #000;
+  stroke-opacity: 0.5;
+  stroke-width: 1.25px;
+  opacity: 2;
 }
 
 /*These styles are solely for loading animation*/

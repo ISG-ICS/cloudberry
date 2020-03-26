@@ -255,7 +255,7 @@ angular.module("cloudberry.map")
 
       // initialize the points layer
       if (!$scope.pointsLayer) {
-       
+
         $scope.pointsLayer = new WebGLPointLayer();
         $scope.pointsLayer.setPointSize(3);
         $scope.pointsLayer.setPointColor(0, 0, 255);
@@ -296,6 +296,14 @@ angular.module("cloudberry.map")
                 //userName missing in this Tweet.
             }
 
+            var userId = "";
+            try {
+              userId = tweetJSON["user.id"];
+            }
+            catch (e){
+              //userId missing in this Tweet.
+            }
+
             var userPhotoUrl = "";
             try {
                 userPhotoUrl = tweetJSON["user.profile_image_url"];
@@ -323,7 +331,7 @@ angular.module("cloudberry.map")
 
             var tweetLink = "";
             try {
-                tweetLink = "https://twitter.com/" + userName + "/status/" + tweetid;
+                tweetLink = "https://twitter.com/" + userId + "/status/" + tweetid;
             }
             catch (e){
                 //tweetLink missing in this Tweet.
@@ -360,7 +368,7 @@ angular.module("cloudberry.map")
                     + "\n <a href=\""
                     + tweetLink
                     + "\" target=\"_blank\"> "
-                    + tweetLink
+                    + "link to original tweet"
                     + "</a>"
                     + "  </div>\n	"
                     + "</div>\n";
@@ -402,7 +410,7 @@ angular.module("cloudberry.map")
                 order: ["-create_at"],
                 limit: 1,
                 offset: 0,
-                field: ["id","text","user.id","create_at","user.name","user.profile_image_url"]
+                field: ["id","text","user.id","create_at","user.name","user.id","user.profile_image_url"]
               }
             };
 
@@ -452,6 +460,8 @@ angular.module("cloudberry.map")
     // clear the map when switch to other map
     function onMapTypeChange(event) {
       if (event.currentMapType === "pinmap") {
+        document.getElementById("time-slider").style.display = "none";
+        document.getElementById("play-button").style.display = "none";
         setPinMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlPinMap();

@@ -7,12 +7,15 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
       predefinedKeywords: config.predefinedKeywords,
+      defaultKeyword: config.defaultKeyword,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
       pinMapOneTweetLookUpResult: null,
+      timeSeriesChartType: config.timeSeriesChartType,
+      timeSeriesGroupBy: config.timeSeriesGroupBy,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":
