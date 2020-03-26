@@ -166,11 +166,7 @@ angular.module('cloudberry.map')
       // get case numbers chart data for polygon, not support city level
       // reduce long prefix of 0's in case trend chart
       var caseStart = cloudberry.parameters.timeInterval.start;
-      if ($scope.status.logicLevel === "state") {
-        caseStart = new Date(Math.max(new Date("01/22/2020 00:00:00").getTime(), caseStart.getTime()));
-      } else if ($scope.status.logicLevel === "county") {
-        caseStart = new Date(Math.max(new Date("03/22/2020 00:00:00").getTime(), caseStart.getTime()));
-      }
+      caseStart = new Date(Math.max(new Date("02/01/2020 00:00:00").getTime(), caseStart.getTime()));
 
       if ($scope.status.logicLevel !== "city") {
         var caseEnd = cloudberry.parameters.timeInterval.end;
@@ -204,7 +200,7 @@ angular.module('cloudberry.map')
               "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
               "    </tr>" +
               "    <tr>" +
-              "      <td align=\"right\" colspan=\"3\"><a href=\"https://coronavirus.1point3acres.com\" target=\"_blank\">Data Source</a></td>" +
+              "      <td align=\"right\" colspan=\"3\"><a href=\"https://coronavirus.1point3acres.com\" target=\"_blank\">Data Source: 1Point3Acres.com</a></td>" +
               "    </tr>" +
               " </table>" +
               "</div>";

@@ -62,7 +62,7 @@ angular.module('cloudberry.casedatacache', [])
      * @param geoLevel - state / county
      */
     this.loadCsvToCaseDataStore = function (csv, geoLevel) {
-      if (csv !== undefined) {
+      if (csv) {
         var data = $.csv.toArrays(csv);
         // skip header
         for (var i = 1; i < data.length; i ++) {
