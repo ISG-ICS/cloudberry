@@ -103,6 +103,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   }
 
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
+    println("==== [json request from frontend] ====")
+    println(request.rawQueryString)
     ActorFlow.actorRef { out =>
       TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/ws", out, maxTextMessageSize)
     }

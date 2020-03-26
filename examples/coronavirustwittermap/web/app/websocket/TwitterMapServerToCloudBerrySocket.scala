@@ -25,6 +25,8 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef) {
   @OnWebSocketMessage
   @throws[IOException]
   def onText(session: Session, message: String): Unit = {
+    println("==== [text message from Cloudberry] ====")
+    println(message)
     out ! renderResponse(message)
   }
 
