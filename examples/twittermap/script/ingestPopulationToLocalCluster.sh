@@ -22,8 +22,7 @@ set -o nounset                              # Treat unset variables as an error
 host=${1:-'http://localhost:19002/query/service'}
 nc=${2:-"asterix_nc1"}
 # ddl to register the twitter dataset
-cat <<EOF | curl -XPOST --data-binary @- $host 
-use twitter; 
+curl -XPOST $host --data-urlencode "statement=use twitter; 
 create type typeStatePopulation if not exists as open{ 
     name:string, 
     population:int64, 
@@ -52,41 +51,40 @@ create type typeCityPopulation if not exists as open{
 create dataset dsCityPopulation(typeCityPopulation) if not exists primary key cityID; 
 
 create feed StatePopulationFeed with { 
-    "adapter-name" : "socket_adapter", 
-    "sockets" : "${nc}:10003", 
-    "address-type" : "nc", 
-    "type-name" : "typeStatePopulation", 
-    "format" : "adm", 
-    "upsert-feed" : "false" 
+    \"adapter-name\" : \"socket_adapter\", 
+    \"sockets\" : \"${nc}:10003\", 
+    \"address-type\" : \"nc\", 
+    \"type-name\" : \"typeStatePopulation\", 
+    \"format\" : \"adm\", 
+    \"upsert-feed\" : \"false\" 
 }; 
 
 connect feed StatePopulationFeed to dataset dsStatePopulation; 
 start feed StatePopulationFeed; 
 
 create feed CountyPopulationFeed with { 
-    "adapter-name" : "socket_adapter", 
-    "sockets" : "${nc}:10004", 
-    "address-type" : "nc", 
-    "type-name" : "typeCountyPopulation", 
-    "format" : "adm", 
-    "upsert-feed" : "false" 
+    \"adapter-name\" : \"socket_adapter\", 
+    \"sockets\" : \"${nc}:10004\", 
+    \"address-type\" : \"nc\", 
+    \"type-name\" : \"typeCountyPopulation\", 
+    \"format\" : \"adm\", 
+    \"upsert-feed\" : \"false\" 
 }; 
 
 connect feed CountyPopulationFeed to dataset dsCountyPopulation; 
 start feed CountyPopulationFeed; 
 
 create feed CityPopulationFeed with { 
-    "adapter-name" : "socket_adapter", 
-    "sockets" : "${nc}:10005", 
-    "address-type" : "nc", 
-    "type-name" : "typeCityPopulation", 
-    "format" : "adm", 
-    "upsert-feed" : "false" 
+    \"adapter-name\" : \"socket_adapter\", 
+    \"sockets\" : \"${nc}:10005\", 
+    \"address-type\" : \"nc\", 
+    \"type-name\" : \"typeCityPopulation\", 
+    \"format\" : \"adm\", 
+    \"upsert-feed\" : \"false\" 
 }; 
 
 connect feed CityPopulationFeed to dataset dsCityPopulation; 
-start feed CityPopulationFeed; 
-EOF
+start feed CityPopulationFeed;"
 
 echo 'Created population datasets in AsterixDB.'
 #Serve socket feed using local file
@@ -99,12 +97,10 @@ echo 'Ingested county population dataset.'
 cat ./noah/src/main/resources/population/adm/allCityPopulation.adm | ./script/fileFeed.sh 127.0.0.1 10005
 echo 'Ingested city population dataset.'
 
-cat <<'EOF' | curl -XPOST --data-binary @- $host
-use twitter; 
+curl -XPOST $host --data-urlencode "statement=use twitter; 
 stop feed CityPopulationFeed; 
 drop feed CityPopulationFeed; 
 stop feed CountyPopulationFeed; 
 drop feed CountyPopulationFeed; 
 stop feed StatePopulationFeed; 
-drop feed StatePopulationFeed; 
-EOF
+drop feed StatePopulationFeed;"
