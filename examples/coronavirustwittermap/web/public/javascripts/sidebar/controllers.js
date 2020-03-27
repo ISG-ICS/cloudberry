@@ -67,7 +67,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       queryToCheck["transform"] = {
         wrap: {
           id: cloudberry.parameters.keywords.toString(),
-          category: "checkQuerySolvableByView"
+          category: "ws/checkQuerySolvableByView"
         }
       };
       $scope.nowQueryID = cloudberry.parameters.keywords.toString();
@@ -80,7 +80,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView;
-    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + '/checkQuerySolvableByView').done(function(pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + '/ws/checkQuerySolvableByView').done(function(pws) {
       wsCheckQuerySolvableByView = pws;
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, {});
@@ -122,7 +122,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // WebSocket for Live Tweets
     var LTSocket;
-    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/liveTweets").done(function (pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/ws/liveTweets").done(function (pws) {
         LTSocket = pws;
 
         /* fetchTweetFromAPI sends a query to twittermap server through websocket
