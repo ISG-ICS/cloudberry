@@ -42,12 +42,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val stateCasesPath: String = config.getString("state.cases.path").getOrElse("/public/data/stateCases.csv")
+  val countyCasesPath: String = config.getString("county.cases.path").getOrElse("/public/data/countyCases.csv")
   val gtagId : String = config.getString("gtag.id").getOrElse("")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
   val cloudberryPort: String = config.getString("cloudberry.port").getOrElse("9000")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
+  val appWS: String = config.getString("app.ws").getOrElse("ws://")
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
@@ -295,6 +297,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def getStateCases = Action {
     Ok.sendFile(environment.getFile(stateCasesPath), inline=true)
+  }
+
+  def getCountyCases = Action {
+    Ok.sendFile(environment.getFile(countyCasesPath), inline=true)
   }
 }
 
