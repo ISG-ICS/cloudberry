@@ -123,6 +123,8 @@ angular.module("cloudberry.common")
       function connect(url) {
 
         lws = new WebSocket(url);
+        // by default, binary messages are interpreted as array buffer
+        lws.binaryType = "arraybuffer";
 
         lws.onopen = function () {
           console.log("[cloudberry-client] connecting to [" + url + "] succeed!");
@@ -154,12 +156,82 @@ angular.module("cloudberry.common")
     wsConnection.done(function (pws) {
       ws = pws;
 
-      console.log("connection done.  ws = " + ws);
       moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
+
+      function parseBinary(binaryData) {
+        const longSize = 8;
+        const bigIntSize = 8;
+        const doubleSize = 8;
+
+        /**
+         * ---- header ----
+         *   id        category  start     end
+         * | VARCHAR | VARCHAR | 8 BYTES | 8 BYTES |
+         * ---- payload ----
+         *   id1       lng1      lat1      id2       lng2      lat2      ...
+         * | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | ...
+         *
+         * NOTE: VARCHAR = 1 BYTE of length + length BYTES of real UTF-8 characters
+         * */
+        let textDecoder = new TextDecoder();
+        let dv = new DataView(binaryData);
+        let offset = 0;
+        let result = {};
+
+        /** read header */
+        // read variable length id string
+        let idLength = dv.getInt8(offset);
+        offset += 1;
+        result.id = textDecoder.decode(new Uint8Array(binaryData.slice(offset, offset + idLength)));
+        offset += idLength;
+
+        // read variable length category string
+        let categoryLength = dv.getInt8(offset);
+        offset += 1;
+        result.category = textDecoder.decode(new Uint8Array(binaryData.slice(offset, offset + categoryLength)));
+        offset += categoryLength;
+
+        // read start long
+        let startLong = Number(dv.getBigInt64(offset));
+        offset += longSize;
+
+        // read end long
+        let endLong = Number(dv.getBigInt64(offset));
+        result.timeInterval = JSON.stringify({
+          start: new Date(startLong),
+          end: new Date(endLong)
+        });
+
+        /** read tuples */
+        const headerSize = 1 + idLength + 1 + categoryLength + longSize + longSize;
+        const tupleSize = bigIntSize + doubleSize + doubleSize;
+        let dataLength = (dv.byteLength - headerSize) / tupleSize;
+        let data = [];
+        for (let i = 0; i < dataLength; i++) {
+          // current record's starting offset
+          offset = headerSize + tupleSize * i;
+          let tuple = [];
+          tuple.push(dv.getBigInt64(offset)); // id
+          offset = offset + bigIntSize;
+          tuple.push(dv.getFloat64(offset)); // lng
+          offset = offset + doubleSize;
+          tuple.push(dv.getFloat64(offset)); // lat
+          data.push(tuple);
+        }
+        result.value = data;
+        return result;
+      }
 
       ws.onmessage = function (event) {
         $timeout(function () {
-          var result = JSONbig.parse(event.data);
+          // Binary message
+          if (event.data instanceof ArrayBuffer) {
+            var result = parseBinary(event.data);
+          }
+          // Text message
+          else {
+            var result = JSONbig.parse(event.data);
+          }
           var category = result.category;
           var id = result.id;
           var timeInterval = JSON.stringify({
