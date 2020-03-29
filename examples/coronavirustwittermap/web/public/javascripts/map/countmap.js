@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig,
+  .controller('countMapCtrl', function($scope, $compile, $timeout, cloudberry, cloudberryConfig,
                                        TimeSeriesCache, PopulationCache, caseDataCache, moduleManager, cloudberryClient, queryUtil, chartUtil) {
 
     // Array to store the data for chart
@@ -248,6 +248,32 @@ angular.module('cloudberry.map')
         chartUtil.drawChart($scope.chartData, "tweetChart", true, "Tweet count", true, cloudberryConfig.popupWindowGroupBy);
         chartUtil.drawMultiLineChart($scope.caseChartData, $scope.caseChartDataColors, "caseChart", true, "Case count", true, cloudberryConfig.popupWindowGroupBy);
       }
+    }
+
+    function numberWithCommas(x) {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+    function showCaseCount() {
+      $timeout(function() {
+        var lastDay = cloudberry.parameters.timeInterval.end;
+        var totalCount = caseDataCache.getDailyTotalCaseCount("state", cloudberry.parameters.geoIds, lastDay);
+        var content = "";
+        content += "<table style=\"width:100%\">" +
+        "<tr>" +
+        "  <td align=\"center\" colspan=\"2\">US COVID-19 Cases</td>" +
+        "</tr>" +
+        "<tr>" +
+        "  <th class=\"text-center\"><font color='red' size='3'>Confirmed</font></th>" +
+        "  <th class=\"text-center\"><font color='black' size='3'>Deaths</font></th>" +
+        "</tr>" +
+        "<tr>" +
+        "  <td align=\"center\"><font color='red' size='3'><b>" + numberWithCommas(totalCount[0]) + "</b></font></td>" +
+        "  <td align=\"center\"><font color='black' size='3'><b>" + numberWithCommas(totalCount[1]) + "</b></font></td>" +
+        "</td>" +
+        "</table>";
+        document.getElementById('count-window').innerHTML = content;
+      }, 1000);
     }
 
     // set map styles for countmap
@@ -695,15 +721,15 @@ angular.module('cloudberry.map')
 
       function initNormalize(div) {
         if($scope.doNormalization)
-          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
+          div.innerHTML += '<br><br><span align="center">Normalize </span><input id="toggle-normalize" checked type="checkbox" data-size="mini" data-width="25">';
         else
-          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
+          div.innerHTML += '<br><br><span align="center">Normalize </span><input id="toggle-normalize" type="checkbox" data-size="mini" data-width="25">';
       }
 
       function initNormalizeToggle() {
         var toggle = $('#toggle-normalize');
         toggle.bootstrapToggle({
-          on: "By Population"
+          on: "On"
         });
         if($scope.doSentiment){
           toggle.bootstrapToggle('off');
@@ -772,6 +798,7 @@ angular.module('cloudberry.map')
           div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
         // loop through our density intervals and generate a label with a colored square for each interval
         i = 1;
+        div.innerHTML += '<p align="center">Tweet count</p>'
         for (; i < grades.length; i++) {
           div.innerHTML +=
             '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
@@ -788,13 +815,11 @@ angular.module('cloudberry.map')
         } else {
           setCountLegend(div);
         }
+        initNormalize(div);
       }
 
-      // add legend
-      addMapControl('legend', 'topleft', initLegend, null);
-
-      // add toggle normalize
-      addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
+      // add legend and toggle normalize
+      addMapControl('legend', 'topleft', initLegend, initNormalizeToggle);
 
       // add toggle sentiment analysis
       if(cloudberryConfig.sentimentEnabled)
@@ -819,6 +844,7 @@ angular.module('cloudberry.map')
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();
+        showCaseCount();
         sendCountmapQuery();
       }
       else if (event.previousMapType === "countmap"){

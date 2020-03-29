@@ -53,6 +53,23 @@ angular.module('cloudberry.casedatacache', [])
       }
     };
 
+    this.getDailyTotalCaseCount = function (geoLevel, geoIds, date) {
+      var result = [0, 0];
+
+      if (caseDataCached[geoLevel]) {
+        for (let geoId of caseDataStore[geoLevel].keys()) {
+          var cases = caseDataStore[geoLevel].get(geoId);
+          for (var i = 0; i < cases[0].length; i++) {
+            if (cases[0][i].day.getDate() === date.getDate()) {
+              result[0] += cases[0][i].count;
+              result[1] += cases[1][i].count;
+            }
+          }
+        }
+      }
+      return result;
+    };
+
     /**
      * Parse csv to case data store
      * @param csv - [[state_id, last_update, confirmed, recovered, death]]
