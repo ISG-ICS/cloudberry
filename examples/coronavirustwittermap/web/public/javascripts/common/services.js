@@ -1,7 +1,7 @@
 angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.timeseriescache'])
   .factory('cloudberryConfig', function(){
     return {
-      ws: config.cloudberryWS,
+      ws: config.appWS,
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
