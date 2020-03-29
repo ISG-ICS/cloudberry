@@ -90,7 +90,7 @@ class AsterixSQLPPConn(url: String, wSClient: WSClient)(implicit ec: ExecutionCo
   }
 
   protected def params(query: String): Map[String, Seq[String]] = {
-    Map("statement" -> Seq(query), "mode" -> Seq("synchronous"), "include-results" -> Seq("true"))
+    Map("statement" -> Seq(query), "mode" -> Seq("immediate"), "include-results" -> Seq("true"))
   }
 }
 

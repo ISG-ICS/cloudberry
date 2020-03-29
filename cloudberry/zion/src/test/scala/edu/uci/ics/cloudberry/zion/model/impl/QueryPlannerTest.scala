@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.zion.model.impl
 
+import edu.uci.ics.cloudberry.zion.common.Config
 import edu.uci.ics.cloudberry.zion.model.schema._
 import org.joda.time.DateTime
 import org.specs2.mutable.Specification
@@ -16,7 +17,7 @@ class QueryPlannerTest extends Specification {
   val queryTag = new Query(TwitterDataSet, Seq.empty,  Seq.empty, filter, Seq(unnestHashTag), Some(groupTag), Some(selectTop10Tag))
   val querySample = new Query(TwitterDataSet, Seq.empty,  Seq.empty, filter, Seq.empty, None, Some(selectRecent))
 
-  val planner = new QueryPlanner
+  val planner = new QueryPlanner(Config.Default)
 
   val zikaFullStats = Stats(sourceInterval.getStart, sourceInterval.getEnd, sourceInterval.getEnd, 50)
   val zikaFullYearViewInfo = DataSetInfo("zika", Some(zikaCreateQuery), twitterSchema, sourceInterval, zikaFullStats)
