@@ -67,7 +67,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       queryToCheck["transform"] = {
         wrap: {
           id: cloudberry.parameters.keywords.toString(),
-          category: "ws/checkQuerySolvableByView"
+          category: "checkQuerySolvableByView"
         }
       };
       $scope.nowQueryID = cloudberry.parameters.keywords.toString();
