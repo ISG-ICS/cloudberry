@@ -43,6 +43,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
   val cloudberryPort: String = config.getString("cloudberry.port").getOrElse("9000")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
+  val appWS: String = config.getString("app.ws").getOrElse("ws://")
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
