@@ -414,7 +414,6 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       if (caseDataCache.countyCaseDataCached() === false) {
         $http.get("/countyCases")
           .success(function(csv) {
-            console.log(csv)
             caseDataCache.loadCsvToCaseDataStore(csv, "county");
           })
           .error(function(csv) {
