@@ -2,35 +2,42 @@ package actor
 
 import java.net.URI
 
+import actor.TwitterMapPigeon.cache
 import akka.actor._
 import akka.stream.Materializer
+import controllers.TwitterMapApplication
 import org.eclipse.jetty.websocket.client.WebSocketClient
+import org.joda.time.DateTime
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsError, JsObject, JsSuccess, JsValue, Json}
 import websocket.{TwitterMapServerToCloudBerrySocket, WebSocketFactory}
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext
 
 /**
   * A routing actor that servers for rendering user request into cloudberry request
-  *  and transfer cloudberry request/response through websocket connection.
+  * and transfer cloudberry request/response through websocket connection.
   *
-  * @param factory Factory of WebSocketClient
+  * @param factory                Factory of WebSocketClient
   * @param cloudberryWebsocketURL Websocket url of cloudberry
-  * @param out ActorRef in akka flow representing frontend client
-  * @param maxTextMessageSize Max size of text messages transmit in ws.
-  * @param ec implicit execution context
-  * @param materializer implicit materializer
+  * @param out                    ActorRef in akka flow representing frontend client
+  * @param maxTextMessageSize     Max size of text messages transmit in ws.
+  * @param ec                     implicit execution context
+  * @param materializer           implicit materializer
   */
-class TwitterMapPigeon (val factory: WebSocketFactory,
-                        val cloudberryWebsocketURL: String,
-                        val out: ActorRef,
-                        val maxTextMessageSize: Int)
-                       (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging {
+class TwitterMapPigeon(val factory: WebSocketFactory,
+                       val cloudberryWebsocketURL: String,
+                       val out: ActorRef,
+                       val maxTextMessageSize: Int)
+                      (implicit ec: ExecutionContext, implicit val materializer: Materializer) extends Actor with ActorLogging{
 
   private val client: WebSocketClient = factory.newClient(maxTextMessageSize)
   private val socket: TwitterMapServerToCloudBerrySocket = factory.newSocket(out)
   private val clientLogger = Logger("client")
+  private val centralCache = TwitterMapApplication.cache
+  private val maxCacheAge = 10//todo don't hardcode this
+
 
   override def preStart(): Unit = {
     super.preStart
@@ -43,24 +50,82 @@ class TwitterMapPigeon (val factory: WebSocketFactory,
     client.stop()
   }
 
+
+
+
   /**
     * Handles Websocket sending from frontend to twitterMap Server
     */
   override def receive: Receive = {
+
     case frontEndRequest: JsValue =>
       clientLogger.info("request from frontend: " + frontEndRequest.toString)
-      val cloudBerryRequest = renderRequest(frontEndRequest)
-      clientLogger.info("request to cloudberry: " + cloudBerryRequest.toString)
-      socket.sendMessage(cloudBerryRequest.toString)
+      val key = frontEndRequest.toString().replaceAll("[\\{|\\}|\\[|\\\"|:|\\]]", "")
+      if (centralCache.contains(key)) {
+        if((DateTime.now.getMinuteOfHour - centralCache(key)._1.getMinuteOfHour) < maxCacheAge){
+          val responses = centralCache(key)._2
+          for (response <- responses) {
+            socket.renderResponse(response)
+          }
+        }
+        else{
+          centralCache -= key
+          queryCloudberry(key, frontEndRequest)
+        }
+      }
+      else {
+        queryCloudberry(key, frontEndRequest)
+      }
     case e =>
       log.error("Unknown type of request " + e.toString)
   }
 
+  private def queryCloudberry(key: String, frontEndRequest: JsValue): Unit =
+  {
+    val transform = (frontEndRequest \ "transform").as[JsObject]
+    val wrap = (transform \ "wrap").as[JsObject]
+    val category = (wrap \ "category").as[String]
+    if (!category.equalsIgnoreCase("checkQuerySolvableByView") && !category.equalsIgnoreCase("totalCountResult")) {
+      cache(key) = (DateTime.now, List[String]())
+      val updatedWrap = wrap ++ Json.obj("id" -> key)
+      val updatedTransform = transform ++ Json.obj("wrap" -> updatedWrap)
+      val updatedQuery = frontEndRequest.as[JsObject] ++ Json.obj("transform" -> updatedTransform)
+      socket.sendMessage(updatedQuery.toString())
+    }
+    else {
+      socket.sendMessage(frontEndRequest.toString())
+    }
+  }
   //Logic of rendering cloudberry request goes here
   private def renderRequest(frontEndRequest: JsValue): JsValue = frontEndRequest
 }
 
 object TwitterMapPigeon {
+
+  private val cache = new mutable.HashMap[String, (DateTime, List[String])]()
+  def addToCache(response: String): Unit ={
+    val json = Json.parse(response)
+    val id = (json \ "id").as[String]
+    val updatedId = json.as[JsObject] ++ Json.obj("id" -> "defaultID")
+    val updatedResponse = json.as[JsObject] ++ updatedId
+    cache(id) =  (cache(id)._1, cache(id)._2 :+ updatedResponse.toString())
+
+    (json \ "value" \ "key").validate[String] match{
+      case JsSuccess(value, _) => {
+        if (value.contains("done")) {
+          TwitterMapApplication.addToCache(id, cache(id))
+          cache -= id
+        }
+      }
+      case e: JsError => None
+
+    }
+
+
+
+  }
+
   def props(factory: WebSocketFactory, cloudberryWebsocketURL: String, out: ActorRef, maxTextMessageSize: Int)
            (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWebsocketURL, out, maxTextMessageSize))
+
 }

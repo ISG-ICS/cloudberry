@@ -6,7 +6,7 @@ import javax.inject.{Inject, Singleton}
 import actor.TwitterMapPigeon
 import akka.actor._
 import akka.stream.Materializer
-import model.{Migration_20170428}
+import model.Migration_20170428
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.ActorFlow
@@ -19,6 +19,10 @@ import twitter4j._
 import websocket.WebSocketFactory
 import java.net.{HttpURLConnection, URL, URLEncoder}
 
+import org.joda.time.DateTime
+
+import scala.collection.concurrent.TrieMap
+import scala.collection.{concurrent, mutable}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
@@ -36,7 +40,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val stateCasesPath: String = config.getString("state.cases.path").getOrElse("/public/data/stateCases.csv")
-  val gtagId : String = config.getString("gtag.id").getOrElse("")
+  val gtagId: String = config.getString("gtag.id").getOrElse("")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
@@ -59,24 +63,25 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val pinmapSamplingDayRange: String = config.getString("pinmap.samplingDayRange").getOrElse("30")
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
-  val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
-  val liveTweetQueryOffset : Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
+  val liveTweetQueryInterval: Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
+  val liveTweetQueryOffset: Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
   val liveTweetUpdateRate: Int = config.getInt("liveTweetUpdateRate").getOrElse(2)
   val liveTweetConsumerKey: String = config.getString("liveTweetConsumerKey").getOrElse(null)
   val liveTweetConsumerSecret: String = config.getString("liveTweetConsumerSecret").getOrElse(null)
   val liveTweetToken: String = config.getString("liveTweetToken").getOrElse(null)
   val liveTweetTokenSecret: String = config.getString("liveTweetTokenSecret").getOrElse(null)
-  val enableLiveTweet : Boolean = config.getBoolean("enableLiveTweet").getOrElse(true)
-  val useDirectSource : Boolean = config.getBoolean("useDirectSource").getOrElse(true)
+  val enableLiveTweet: Boolean = config.getBoolean("enableLiveTweet").getOrElse(true)
+  val useDirectSource: Boolean = config.getBoolean("useDirectSource").getOrElse(true)
   val timeSeriesChartType: String = config.getString("timeSeries.chartType").getOrElse("line")
   val timeSeriesGroupBy: String = config.getString("timeSeries.groupBy").getOrElse("week")
   val popupWindowChartType: String = config.getString("popupWindow.chartType").getOrElse("line")
   val popupWindowGroupBy: String = config.getString("popupWindow.groupBy").getOrElse("month")
   val webSocketFactory = new WebSocketFactory()
-  val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5* 1024* 1024)
+  val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5 * 1024 * 1024)
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
+
   val sqlDB: DBType.Value = DBType.withName(config.getString("sqlDB").getOrElse("Default"))
 
   val register = sqlDB match {
@@ -102,6 +107,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       Ok(views.html.twittermap.index("DrugMap", this, true))
   }
 
+
   def ws = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
       TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/ws", out, maxTextMessageSize)
@@ -115,7 +121,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     }
   }
 
-
   object LiveTweetActor {
     def props(out: ActorRef) = Props(new LiveTweetActor(out))
   }
@@ -127,11 +132,13 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
         val queryWords = (msg \\ "keyword").head.as[String]
 
         //If useDirectSource set to false, we just use traditional search API to provide sample tweets
-        if(!useDirectSource){
-          val location = Array{(msg \\ "location").head.as[Array[Double]]}
-          val locs = Array(Array(location.head(1),location.head(0)),Array(location.head(3),location.head(2)))
-          val center = Array((locs(0)(0) + locs(1)(0))/2.00,(locs(0)(1)+locs(1)(1))/2.00)
-          val centerLoc = new GeoLocation(center(1),center(0))
+        if (!useDirectSource) {
+          val location = Array {
+            (msg \\ "location").head.as[Array[Double]]
+          }
+          val locs = Array(Array(location.head(1), location.head(0)), Array(location.head(3), location.head(2)))
+          val center = Array((locs(0)(0) + locs(1)(0)) / 2.00, (locs(0)(1) + locs(1)(1)) / 2.00)
+          val centerLoc = new GeoLocation(center(1), center(0))
           val unit = Query.Unit.km
           /*
           Note: Twitter Search API does not support bounding box, the Geo information can only be specified
@@ -162,35 +169,35 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
           query.setQuery(queryWords)
           query.setCount(desiredTweetAmount)
           query.setResultType(resultType)
-          query.setGeoCode(centerLoc,radius,unit)
+          query.setGeoCode(centerLoc, radius, unit)
           val tweetsResult = twitterAPI.search(query).getTweets
-          for(i <- 0 to tweetsResult.size()-1){
+          for (i <- 0 to tweetsResult.size() - 1) {
             val status = tweetsResult.get(i)
-            if (status.isRetweet == false){
+            if (status.isRetweet == false) {
               tweetArray = tweetArray :+ (Json.obj("id" -> status.getId.toString))
             }
 
           }
         }
-        else{
+        else {
           //Thi url is used by twitter lastest timeline page to get the lastest tweets from their server
-          val url = "https://twitter.com/i/search/timeline?f=tweets&vertical=news&q="+queryWords+"%20near%3A\"United%20States\"%20within%3A8000mi&l=en&src=typd"
+          val url = "https://twitter.com/i/search/timeline?f=tweets&vertical=news&q=" + queryWords + "%20near%3A\"United%20States\"%20within%3A8000mi&l=en&src=typd"
           val connection = (new URL(url)).openConnection.asInstanceOf[HttpURLConnection]
           connection.setRequestMethod("GET")
           //This header must be added, otherwise we will get empty response
-          connection.setRequestProperty("user-agent","Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36")
+          connection.setRequestProperty("user-agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/72.0.3626.121 Safari/537.36")
           val inputStream = connection.getInputStream
           val pattern = new Regex("""dataitemid(\d+)""")
           var htmlContent = Source.fromInputStream(inputStream).mkString
           htmlContent = htmlContent.replaceAll("""[\p{Punct}&&[^.]]""", "")
-          for(m <- pattern.findAllIn(htmlContent)) {
+          for (m <- pattern.findAllIn(htmlContent)) {
             val idString = m.replaceAll("dataitemid", "")
             tweetArray = tweetArray :+ (Json.obj("id" -> idString))
           }
         }
 
-        out!tweetArray
-      case msg:Any =>
+        out ! tweetArray
+      case msg: Any =>
         Logger.info("Invalid input for LiveTweet")
     }
   }
@@ -199,7 +206,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     def props(out: ActorRef) = Props(new autoCompleteActor(out))
   }
 
-  class autoCompleteActor(out:ActorRef) extends Actor {
+  class autoCompleteActor(out: ActorRef) extends Actor {
     override def receive = {
       case msg: JsValue =>
         try {
@@ -228,9 +235,9 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     * @return A list of topics object in JsValue
     *
     */
-  def autoComplete = WebSocket.accept[JsValue,JsValue]{ request =>
-    ActorFlow.actorRef{
-      out=>autoCompleteActor.props(out)
+  def autoComplete = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef {
+      out => autoCompleteActor.props(out)
     }
   }
 
@@ -242,8 +249,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     * @return A list of tweet object in JsValue
     *
     */
-  def liveTweets = WebSocket.accept[JsValue,JsValue] { request =>
-    ActorFlow.actorRef{ out =>
+  def liveTweets = WebSocket.accept[JsValue, JsValue] { request =>
+    ActorFlow.actorRef { out =>
       LiveTweetActor.props(out)
     }
   }
@@ -265,8 +272,9 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   }
 
   def getStateCases = Action {
-    Ok.sendFile(environment.getFile(stateCasesPath), inline=true)
+    Ok.sendFile(environment.getFile(stateCasesPath), inline = true)
   }
+
 }
 
 object TwitterMapApplication {
@@ -278,6 +286,8 @@ object TwitterMapApplication {
   val MultiPolygon = "MultiPolygon"
   val CentroidLatitude = "centroidLatitude"
   val CentroidLongitude = "centroidLongitude"
+  val cache = TrieMap.empty[String, (DateTime, List[String])]
+  val maxCacheSize = 500 //todo don't hardcode this
 
   val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
 
@@ -328,6 +338,18 @@ object TwitterMapApplication {
     val json = Json.parse(stream)
     stream.close()
     (json).as[List[JsObject]]
+  }
+
+  def addToCache(key: String, responses: (DateTime, List[String])): Unit = {
+    if(cache.size >= maxCacheSize + 1){
+      cache.drop(1)
+    }
+    if(cache.contains(key)){
+      if(cache(key)._1.isBefore(responses._1)){
+        return
+      }
+    }
+    cache(key) = responses
   }
 
   /** Use binary search twice to find two breakpoints (startIndex and endIndex) to take out all cities whose longitude are in the range,
@@ -381,27 +403,27 @@ object TwitterMapApplication {
 
   /** Find cities' population whose cityID are in cityIDs.
     *
-    * @param cityIds List of cities in current boundary in String
+    * @param cityIds          List of cities in current boundary in String
     * @param citiesPopulation List of all cities' population data
     * @return List of cities population which centroids is in current boundary
     */
   def findCityPop(cityIds: String, citiesPopulation: List[JsValue]): JsArray = {
-    val cityIdsList : List[Int] = cityIds.split(",").map(_.toInt).toList
-    val incCityIdsList = cityIdsList.sortWith(_<_)
+    val cityIdsList: List[Int] = cityIds.split(",").map(_.toInt).toList
+    val incCityIdsList = cityIdsList.sortWith(_ < _)
     sortedListBinarySearch(citiesPopulation, 0, 29833, incCityIdsList, 0, Json.arr())
   }
 
   /**
     * Find the population data data for each geoId in from the sorted geoIds list.
     *
-    * @param sortedCityIds Sorted list of cities in current boundary
+    * @param sortedCityIds    Sorted list of cities in current boundary
     * @param citiesPopulation List of all cities' population data
     * @return List of cities in sortedCityIds' population data
     */
   def sortedListBinarySearch(citiesPopulation: List[JsValue], startIndex: Int, endIndex: Int,
                              sortedCityIds: List[Int], sortedCityIndex: Int, resultArr: JsArray): JsArray = {
     if (startIndex == endIndex) {
-        resultArr
+      resultArr
     } else {
       val thisIndex = (startIndex + endIndex) / 2
       val thisCityId = (citiesPopulation(thisIndex) \ "cityID").as[Int]
@@ -410,9 +432,9 @@ object TwitterMapApplication {
       } else if (thisCityId < sortedCityIds(sortedCityIndex)) {
         sortedListBinarySearch(citiesPopulation, thisIndex + 1, endIndex, sortedCityIds, sortedCityIndex, resultArr)
       } else { // Current cityId sortedCityIds(sortedCityIndex) is find in citiesPopulation
-        val currPop : JsValue = JsObject(Seq("cityID" -> JsNumber(thisCityId),
-                                             "population" -> JsNumber((citiesPopulation(thisIndex) \ "population").as[Int])
-                                            ))
+        val currPop: JsValue = JsObject(Seq("cityID" -> JsNumber(thisCityId),
+          "population" -> JsNumber((citiesPopulation(thisIndex) \ "population").as[Int])
+        ))
         if (sortedCityIndex < sortedCityIds.length - 1) {
           sortedListBinarySearch(citiesPopulation, thisIndex + 1, 29833, sortedCityIds, sortedCityIndex + 1, resultArr :+ currPop)
         } else {
@@ -426,4 +448,11 @@ object TwitterMapApplication {
     val MySQL, PostgreSQL, Default = Value
   }
 
+  object FunctionConverter {
+    implicit def scalaFunctionToJava[From, To](function: (From) => To): java.util.function.Function[From, To] = {
+      new java.util.function.Function[From, To] {
+        override def apply(input: From): To = function(input)
+      }
+    }
+  }
 }

@@ -55,7 +55,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         options: {
           accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
           id: 'jeremyli.p6f712pj',
-          minZoom: 2,
+          minZoom: 4,
           maxZoom: 16
         }
       },
