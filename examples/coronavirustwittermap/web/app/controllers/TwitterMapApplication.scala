@@ -9,7 +9,7 @@ import akka.stream.Materializer
 import model.Migration_20170428
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
-import play.api.libs.streams.ActorFlow
+import play.api.libs.streams.{ActorFlow, AkkaStreams}
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
@@ -22,10 +22,15 @@ import java.net.{HttpURLConnection, URL, URLEncoder}
 import org.joda.time.DateTime
 
 import scala.collection.concurrent.TrieMap
-import scala.collection.{concurrent, mutable}
+import akka.stream.scaladsl.Flow
+import akka.util.ByteString
+import play.api.http.websocket.{BinaryMessage, CloseCodes, CloseMessage, Message, TextMessage}
+import play.api.mvc.WebSocket.MessageFlowTransformer
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 
@@ -41,11 +46,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val stateCasesPath: String = config.getString("state.cases.path").getOrElse("/public/data/stateCases.csv")
   val gtagId: String = config.getString("gtag.id").getOrElse("")
+  val countyCasesPath: String = config.getString("county.cases.path").getOrElse("/public/data/countyCases.csv")
+  val gtagId: String = config.getString("gtag.id").getOrElse("")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
   val cloudberryPort: String = config.getString("cloudberry.port").getOrElse("9000")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
+  val appWS: String = config.getString("app.ws").getOrElse("ws://")
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
@@ -62,6 +70,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val heatmapUnitRadius: String = config.getString("heatmap.unitRadius").getOrElse("15")
   val pinmapSamplingDayRange: String = config.getString("pinmap.samplingDayRange").getOrElse("30")
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
+  val pinmapBinaryTransfer: Boolean = config.getBoolean("pinmap.binaryTransfer").getOrElse(false)
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
   val liveTweetQueryInterval: Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
   val liveTweetQueryOffset: Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
@@ -107,17 +116,39 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       Ok(views.html.twittermap.index("DrugMap", this, true))
   }
 
+  type WSMessage = Either[JsValue, Array[Byte]]
 
-  def ws = WebSocket.accept[JsValue, JsValue] { request =>
+  implicit val mixedMessageFlowTransformer: MessageFlowTransformer[JsValue, WSMessage] = {
+    def closeOnException[T](block: => T) = try {
+      Left(block)
+    } catch {
+      case NonFatal(e) => Right(CloseMessage(Some(CloseCodes.Unacceptable),
+        "Unable to parse json message"))
+    }
+
+    new MessageFlowTransformer[JsValue, WSMessage] {
+      def transform(flow: Flow[JsValue, WSMessage, _]) = {
+        AkkaStreams.bypassWith[Message, JsValue, Message](Flow[Message].collect {
+          case BinaryMessage(data) => closeOnException(Json.parse(data.iterator.asInputStream))
+          case TextMessage(text) => closeOnException(Json.parse(text))
+        })(flow map {
+          case Right(data) => BinaryMessage.apply(ByteString.apply(data))
+          case Left(json) => TextMessage(Json.stringify(json))
+        })
+      }
+    }
+  }
+
+  def ws = WebSocket.accept[JsValue, WSMessage] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/ws", out, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/ws", out, config, maxTextMessageSize)
     }
   }
 
   // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
-  def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
+  def checkQuerySolvableByView = WebSocket.accept[JsValue, WSMessage] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/checkQuerySolvableByView", out, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/checkQuerySolvableByView", out, config, maxTextMessageSize)
     }
   }
 
@@ -275,6 +306,9 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     Ok.sendFile(environment.getFile(stateCasesPath), inline = true)
   }
 
+  def getCountyCases = Action {
+    Ok.sendFile(environment.getFile(countyCasesPath), inline = true)
+  }
 }
 
 object TwitterMapApplication {
@@ -341,11 +375,11 @@ object TwitterMapApplication {
   }
 
   def addToCache(key: String, responses: (DateTime, List[String])): Unit = {
-    if(cache.size >= maxCacheSize + 1){
+    if (cache.size >= maxCacheSize + 1) {
       cache.drop(1)
     }
-    if(cache.contains(key)){
-      if(cache(key)._1.isBefore(responses._1)){
+    if (cache.contains(key)) {
+      if (cache(key)._1.isBefore(responses._1)) {
         return
       }
     }

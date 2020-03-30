@@ -410,6 +410,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
             console.error("Loading stateCases.csv data failed.");
           });
       }
+
+      if (caseDataCache.countyCaseDataCached() === false) {
+        $http.get("/countyCases")
+          .success(function(csv) {
+            caseDataCache.loadCsvToCaseDataStore(csv, "county");
+          })
+          .error(function(csv) {
+            console.error("Loading countyCases.csv data failed.");
+          });
+      }
     };
 
     // zoom in to fit the selected polygon
