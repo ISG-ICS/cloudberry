@@ -47,7 +47,6 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val stateCasesPath: String = config.getString("state.cases.path").getOrElse("/public/data/stateCases.csv")
   val gtagId: String = config.getString("gtag.id").getOrElse("")
   val countyCasesPath: String = config.getString("county.cases.path").getOrElse("/public/data/countyCases.csv")
-  val gtagId: String = config.getString("gtag.id").getOrElse("")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")

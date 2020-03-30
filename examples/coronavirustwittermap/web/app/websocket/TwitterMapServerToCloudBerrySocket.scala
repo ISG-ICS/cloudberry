@@ -65,7 +65,7 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
     }
   }
 
-  private def renderResponse(response: String): Unit = {
+  def renderResponse(response: String): Unit = {
     //Logic of rendering cloudberry response goes here
     val json = Json.parse(response)
 
