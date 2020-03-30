@@ -62,10 +62,16 @@ angular.module('cloudberry.casedatacache', [])
       if (caseDataCached[geoLevel]) {
         for (let geoId of caseDataStore[geoLevel].keys()) {
           var cases = caseDataStore[geoLevel].get(geoId);
-          for (var i = 0; i < cases[0].length; i++) {
-            if (cases[0][i].day.getDate() === date.getDate()) {
-              result[0] += cases[0][i].count;
-              result[1] += cases[1][i].count;
+
+          if (cases[0][cases[0].length - 1].day.getDate() <= date.getDate()) {
+            result[0] += cases[0][cases[0].length - 1].count;
+            result[1] += cases[1][cases[0].length - 1].count;
+          } else {
+            for (var i = 0; i < cases[0].length; i++) {
+              if (cases[0][i].day.getDate() === date.getDate()) {
+                result[0] += cases[0][i].count;
+                result[1] += cases[1][i].count;
+              }
             }
           }
         }
