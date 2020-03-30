@@ -83,18 +83,19 @@ angular.module("cloudberry.map")
             };
 
             cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval) {
-                if (angular.isArray(resultSet)) {
-                    if (cloudberryConfig.pinMapBinaryTransfer) {
-                        cloudberry.pinmapMapResult = resultSet;
-                    }
-                    else {
-                        cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
-                        cloudberry.pinmapMapResult = resultSet[0];
-                    }
-                    if (resultSet.length > 0) {
-                        $scope.result = cloudberry.pinmapMapResult;
-                        $scope.status.init = false;
-                        drawPinMap($scope.result);
+                if (cloudberry.parameters.maptype === "pinmap") {
+                    if (angular.isArray(resultSet)) {
+                        if (cloudberryConfig.pinMapBinaryTransfer) {
+                            cloudberry.pinmapMapResult = resultSet;
+                        } else {
+                            cloudberry.commonTweetResult = resultSet[0].slice(0, queryUtil.defaultSamplingSize - 1);
+                            cloudberry.pinmapMapResult = resultSet[0];
+                        }
+                        if (resultSet.length > 0) {
+                            $scope.result = cloudberry.pinmapMapResult;
+                            $scope.status.init = false;
+                            drawPinMap($scope.result);
+                        }
                     }
                 }
             }, "pinMapResult");
