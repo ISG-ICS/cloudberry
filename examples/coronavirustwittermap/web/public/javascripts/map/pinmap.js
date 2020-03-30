@@ -71,10 +71,10 @@ angular.module("cloudberry.map")
                 dataset: cloudberry.parameters.dataset,
                 filter: queryUtil.getFilter(cloudberry.parameters, queryUtil.defaultPinmapSamplingDayRange, cloudberry.parameters.geoIds),
                 select: {
-                    order: ["-create_at"],
+                    order: [],
                     limit: queryUtil.defaultPinmapLimit,
                     offset: 0,
-                    field: ["id", "coordinate", "place.bounding_box", "create_at", "user.id"]
+                    field: ["id", "coordinate", "place.bounding_box"]
                 },
                 option: {
                     sliceMillis: cloudberryConfig.querySliceMills,
@@ -294,28 +294,12 @@ angular.module("cloudberry.map")
                         //tweetid missing in this Tweet.
                     }
 
-                    var userName = "";
-                    try {
-                        userName = tweetJSON["user.name"];
-                    }
-                    catch (e){
-                        //userName missing in this Tweet.
-                    }
-
                     var userId = "";
                     try {
                         userId = tweetJSON["user.id"];
                     }
                     catch (e){
                         //userId missing in this Tweet.
-                    }
-
-                    var userPhotoUrl = "";
-                    try {
-                        userPhotoUrl = tweetJSON["user.profile_image_url"];
-                    }
-                    catch (e){
-                        //user.profile_image_url missing in this Tweet.
                     }
 
                     var tweetText = "";
@@ -357,24 +341,16 @@ angular.module("cloudberry.map")
                         tweetTemplate = "\n"
                             + "<div class=\"tweet\">\n "
                             + "  <div class=\"tweet-body\">"
-                            + "    <div class=\"user-info\"> "
-                            + "      <img src=\""
-                            + userPhotoUrl
-                            + "\" onerror=\" this.src='/assets/images/default_pinicon.png'\" style=\"width: 32px; display: inline; \">\n"
-                            + "      <span class=\"name\" style='color: #0e90d2; font-weight: bold'> "
-                            + userName
-                            + "      </span> "
-                            + "    </div>\n	"
-                            + "    <span class=\"tweet-time\" style='color: darkgray'>"
-                            + tweetTime
-                            + "    <br></span>\n	 "
                             + "    <span class=\"tweet-text\" style='color: #0f0f0f'>"
                             + tweetText
                             + "    </span><br>\n	 "
+                            + "    <span class=\"tweet-time\" style='color: darkgray'>"
+                            + tweetTime
+                            + "    <br></span>\n	 "
                             + "\n <a href=\""
                             + tweetLink
                             + "\" target=\"_blank\"> "
-                            + "link to original tweet"
+                            + "[Tweet]"
                             + "</a>"
                             + "  </div>\n	"
                             + "</div>\n";
@@ -416,7 +392,7 @@ angular.module("cloudberry.map")
                                 order: ["-create_at"],
                                 limit: 1,
                                 offset: 0,
-                                field: ["id","text","user.id","create_at","user.name","user.id","user.profile_image_url"]
+                                field: ["id","text","user.id","create_at"]
                             }
                         };
 

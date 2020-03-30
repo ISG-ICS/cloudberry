@@ -6,13 +6,13 @@ angular.module('cloudberry.map')
     $scope.chartData = [];
     // Map to store the chart data for every polygon
     $scope.chartDataMap = new HashMap();
-    // Array of 3 arrays to store data for case chart
-    // [[confirmed], [recovered], [death]]
+    // Array of 2 arrays to store data for case chart
+    // [[confirmed], [death]]
     // each sub-array contains a list of by day case numbers
     // e.g. [confirmed] = [{day: "1/22/20", count: 0}, {day: "1/23/20", count: 2}, ...]
     $scope.caseChartData = [];
-    // confirmed - red, recovered - green, death - black
-    $scope.caseChartDataColors = ['red', 'green', 'black'];
+    // confirmed - red, death - black
+    $scope.caseChartDataColors = ['red', 'black'];
     // The popup window shown now
     $scope.popUp = null;
     $scope.checkIfQueryIsRequested = false;
@@ -166,44 +166,48 @@ angular.module('cloudberry.map')
       // get case numbers chart data for polygon, not support city level
       // reduce long prefix of 0's in case trend chart
       var caseStart = cloudberry.parameters.timeInterval.start;
-      caseStart = new Date(Math.max(new Date("01/22/2020 00:00:00").getTime(), caseStart.getTime()));
+      caseStart = new Date(Math.max(new Date("02/01/2020 00:00:00").getTime(), caseStart.getTime()));
+
       if ($scope.status.logicLevel !== "city") {
         var caseEnd = cloudberry.parameters.timeInterval.end;
         var geoIDCaseChartData = caseDataCache.getGeoIdCaseData(logicLevel, $scope.selectedGeoID, caseStart, caseEnd);
         if (geoIDCaseChartData && geoIDCaseChartData.length > 0) {
           $scope.caseChartData[0] = chartUtil.preProcessByDayResult(geoIDCaseChartData[0], cloudberryConfig.popupWindowGroupBy);
           $scope.caseChartData[1] = chartUtil.preProcessByDayResult(geoIDCaseChartData[1], cloudberryConfig.popupWindowGroupBy);
-          $scope.caseChartData[2] = chartUtil.preProcessByDayResult(geoIDCaseChartData[2], cloudberryConfig.popupWindowGroupBy);
           $scope.caseChartData[0] = chartUtil.filterChartData($scope.caseChartData[0], caseStart);
           $scope.caseChartData[1] = chartUtil.filterChartData($scope.caseChartData[1], caseStart);
-          $scope.caseChartData[2] = chartUtil.filterChartData($scope.caseChartData[2], caseStart);
-          var confirmedCaseCount = last($scope.caseChartData[0], "x", "y");
-          var recoveredCaseCount = last($scope.caseChartData[1], "x", "y");
-          var deathCaseCount = last($scope.caseChartData[2], "x", "y");
+          // If data doesn't exist, use default value 0
+          var confirmedCaseCount = 0;
+          var deathCaseCount = 0;
+          if ($scope.caseChartData[0].length > 0) {
+            confirmedCaseCount = last($scope.caseChartData[0], "x", "y");
+            deathCaseCount = last($scope.caseChartData[1], "x", "y");
+          }
 
           // Concatenate case chart data
-          if ($scope.caseChartData.length > 0 && $scope.caseChartData[0].length > 0) {
+          if ($scope.caseChartData.length > 0) {
             content += "<div id=\"popup-info\">" +
               "<div id=\"popup-count\">" +
               "  <table style=\"width:100%\">" +
               "    <tr>" +
               "      <th></th>" +
-              "      <th><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed</font></th>" +
-              "      <th><font color=\"" + $scope.caseChartDataColors[1] + "\">Recovered</font></th>" +
-              "      <th><font color=\"" + $scope.caseChartDataColors[2] + "\">Deaths</font></th>" +
+              "      <th class=\"text-center\"><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed</font></th>" +
+              "      <th class=\"text-center\"><font color=\"" + $scope.caseChartDataColors[1] + "\">Deaths</font></th>" +
               "    </tr>" +
               "    <tr>" +
               "      <td>Case count:</td>" +
               "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[0] + "\"><b>" + numberWithCommas(confirmedCaseCount) + "</b></font></td>" +
-              "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(recoveredCaseCount) + "</b></font></td>" +
-              "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[2] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
+              "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
               "    </tr>" +
               "    <tr>" +
-              "      <td align=\"right\" colspan=\"4\"><a href=\"https://github.com/CSSEGISandData/COVID-19\" target=\"_blank\">Data Source</a></td>" +
+              "      <td align=\"right\" colspan=\"3\"><a href=\"https://coronavirus.1point3acres.com\" target=\"_blank\">Data Source: 1Point3Acres.com</a></td>" +
               "    </tr>" +
               " </table>" +
-              "</div>" +
-              "<canvas id=\"caseChart\"></canvas>";
+              "</div>";
+              
+              if ($scope.caseChartData[0].length > 0) {
+                content += "<canvas id=\"caseChart\"></canvas>";
+              }
 
             $scope.chartData = chartUtil.filterChartData($scope.chartData, caseStart);
           }
