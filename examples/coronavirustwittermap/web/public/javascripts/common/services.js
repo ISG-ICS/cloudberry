@@ -13,6 +13,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
       pinMapOneTweetLookUpResult: null,
+      pinMapBinaryTransfer: config.pinMapBinaryTransfer,
       timeSeriesChartType: config.timeSeriesChartType,
       timeSeriesGroupBy: config.timeSeriesGroupBy,
       popupWindowChartType: config.popupWindowChartType,
