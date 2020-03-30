@@ -158,6 +158,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
+        if ($(window).width() <= 500) {
+          map.setView([$scope.lat, $scope.lng], 3);
+        }
       });
 
       //Reset Zoom Button
@@ -172,7 +175,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       var body = document.getElementsByTagName("search-bar")[0];
       body.appendChild(button);
       button.addEventListener ("click", function() {
-        $scope.map.setView([$scope.lat, $scope.lng], 4);
+        if ($(window).width() > 500) {
+          $scope.map.setView([$scope.lat, $scope.lng], 4);
+        } else {
+          $scope.map.setView([$scope.lat, $scope.lng], 3);
+        }
       });
 
       $scope.resetGeoInfo("state");

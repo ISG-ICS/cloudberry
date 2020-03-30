@@ -462,9 +462,11 @@ angular.module('cloudberry.map')
         if (cloudberry.parameters.maptype == 'countmap'){
           // highlight a polygon
           var layer = leafletEvent.target;
-          layer.setStyle($scope.styles.hoverStyle);
-          if (!L.Browser.ie && !L.Browser.opera) {
-            layer.bringToFront();
+          if ($(window).width() > 1024) {
+            layer.setStyle($scope.styles.hoverStyle);
+            if (!L.Browser.ie && !L.Browser.opera) {
+              layer.bringToFront();
+            }
           }
 
           // get selected geoID for the polygon
@@ -539,11 +541,18 @@ angular.module('cloudberry.map')
       // remove the highlight when mouseout
       // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
-        layer.on({
-          mouseover: highlightPopupInfo,
-          mouseout: resetHighlight,
-          click: $scope.zoomToFeature
-        });
+        if ($(window).width() > 500) {
+          layer.on({
+            mouseover: highlightPopupInfo,
+            mouseout: resetHighlight,
+            click: $scope.zoomToFeature
+          });
+        } else {
+          layer.on({
+            click: highlightPopupInfo,
+            dblclick: $scope.zoomToFeature
+          });
+        }
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);

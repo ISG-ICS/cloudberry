@@ -224,9 +224,15 @@ angular.module("cloudberry.map")
             // add feature to each polygon
             // when a user click on a polygon, the map will zoom in to fit that polygon in the view
             function onEachFeature(feature, layer) {
-                layer.on({
-                    click: $scope.zoomToFeature
-                });
+                if ($(window).width() > 500) {
+                    layer.on({
+                        click: $scope.zoomToFeature
+                    });
+                } else {
+                    layer.on({
+                        dblclick: $scope.zoomToFeature
+                    });
+                }
             }
 
             $scope.loadGeoJsonFiles(onEachFeature);
