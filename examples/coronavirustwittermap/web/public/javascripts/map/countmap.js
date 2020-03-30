@@ -480,21 +480,28 @@ angular.module('cloudberry.map')
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
             $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
+            if ($(window).width() <= 500) {
+              $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true, maxWidth: 200});
+            }
             layer.bindPopup($scope.popUp).openPopup();
             // only reposition the popup window for state level (only state level has case number trend chart)
             if ($scope.status.logicLevel === "state") {
-              // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
-              const popupPixelWidth = 500; // default pixel width of popup in leaflet
-              const popupPixelHeight = 600; // estimate the pixel height of popup
-              const windowPixelWidth = window.innerWidth;
-              const windowPixelHeight = window.innerHeight;
-              const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
-              const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
-              const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
-              const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
-              const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
-              const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
-              $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
+              if ($(window).width() <= 500) {
+                $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat, $scope.selectedPlace.properties.popUpLog]);
+              } else {
+                // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
+                const popupPixelWidth = 500; // default pixel width of popup in leaflet
+                const popupPixelHeight = 600; // estimate the pixel height of popup
+                const windowPixelWidth = window.innerWidth;
+                const windowPixelHeight = window.innerHeight;
+                const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
+                const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
+                const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
+                const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
+                const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
+                const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
+                $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
+              }
             }
             else {
               $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);

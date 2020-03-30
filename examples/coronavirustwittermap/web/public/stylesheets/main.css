@@ -489,23 +489,27 @@ button[disabled]{
 }
 
 @media (max-width:500px) {
-  #time-slider {
-    visibility: hidden;
-  }
+    .w3-teal {
+        visibility: hidden;
+    }
+    
+    #time-slider {
+        visibility: hidden;
+    }
 
-  time-series {
-    visibility: hidden;
-  }
+    time-series {
+        visibility: hidden;
+    }
 
-  #sidebar {
-    display: None;
-  }
+    #sidebar {
+        display: None;
+    }
 
-  .slide-up-down {
-    visibility: hidden;
-  }
+    .slide-up-down {
+        visibility: hidden;
+    }
 
-  #count-window {
-    visibility: hidden;
-  }
+    #count-window {
+        visibility: hidden;
+    }
 }
