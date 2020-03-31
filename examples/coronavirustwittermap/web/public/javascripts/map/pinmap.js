@@ -278,10 +278,12 @@ angular.module("cloudberry.map")
                         clearTimeout($scope.timer);
                         $scope.timer = null;
                     }
-                    $scope.timer = setTimeout(L.Util.bind(function() {
-                        this.fire("mouseintent", e);
-                        $scope.timer = null;
-                    }, this), 300);
+                    if ($(window).width() > 500) {
+                        $scope.timer = setTimeout(L.Util.bind(function() {
+                            this.fire("mouseintent", e);
+                            $scope.timer = null;
+                        }, this), 300);
+                    }
                 }
 
                 // translate individual tweet from JSON to html element
@@ -359,7 +361,12 @@ angular.module("cloudberry.map")
                     return tweetTemplate;
                 }
 
-                $scope.map.on("mouseintent", onMapMouseIntent);
+                if ($(window).width() > 500) {
+                    $scope.map.on("mouseintent", onMapMouseIntent);
+                } else {
+                    console.log($scope.map);
+                    $scope.map.on("click", onMapClick);
+                }
 
                 $scope.points = [];
 
@@ -407,6 +414,10 @@ angular.module("cloudberry.map")
                             }
                         }, "pinResult");
                     }
+                }
+
+                function onMapClick(e) {
+                    console.log(e);
                 }
             }
 
