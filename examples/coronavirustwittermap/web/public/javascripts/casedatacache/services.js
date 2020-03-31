@@ -44,7 +44,7 @@ angular.module('cloudberry.casedatacache', [])
         for (var k = 0; k < 2; k++) {
           var data = cases[k];
           for (var i = 0; i < data.length; i++) {
-            if (data[i].day >= start && data[i].day <= end) {
+            if (data[i].day.getDate() >= start.getDate() && data[i].day.getDate() <= end.getDate()) {
               result[k].push(data[i]);
             }
           }
@@ -54,6 +54,29 @@ angular.module('cloudberry.casedatacache', [])
       else {
         return undefined;
       }
+    };
+
+    this.getDailyTotalCaseCount = function (geoLevel, date) {
+      var result = [0, 0];
+
+      if (caseDataCached[geoLevel]) {
+        for (let geoId of caseDataStore[geoLevel].keys()) {
+          var cases = caseDataStore[geoLevel].get(geoId);
+
+          if (cases[0][cases[0].length - 1].day.getDate() <= date.getDate()) {
+            result[0] += cases[0][cases[0].length - 1].count;
+            result[1] += cases[1][cases[0].length - 1].count;
+          } else {
+            for (var i = 0; i < cases[0].length; i++) {
+              if (cases[0][i].day.getDate() === date.getDate()) {
+                result[0] += cases[0][i].count;
+                result[1] += cases[1][i].count;
+              }
+            }
+          }
+        }
+      }
+      return result;
     };
 
     /**
@@ -71,6 +94,7 @@ angular.module('cloudberry.casedatacache', [])
           if (tuple[0] === null || tuple[0] === "") continue;
           var geoId = Number(tuple[0]);
           var last_update = new Date(tuple[1]);
+          last_update = new Date(last_update.getTime() + (last_update.getTimezoneOffset() * 60000));
           var confirmed = Number(tuple[2]);
           var death = Number(tuple[4]);
           var cases = caseDataStore[geoLevel].get(geoId);
