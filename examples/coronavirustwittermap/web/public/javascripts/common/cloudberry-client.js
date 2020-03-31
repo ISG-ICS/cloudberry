@@ -163,6 +163,17 @@ angular.module("cloudberry.common")
         const bigIntSize = 8;
         const doubleSize = 8;
 
+        function getUint64(dataview, byteOffset, littleEndian) {
+          let lowWord = 0;
+          let highWord = 0;
+          lowWord = dataview.getUint32(byteOffset + (littleEndian ? 0 : 4), littleEndian);
+          highWord = dataview.getUint32(byteOffset + (littleEndian ? 4 : 0), littleEndian);
+          const result = new JSBI(2, false);
+          result.__setDigit(0, lowWord);
+          result.__setDigit(1, highWord);
+          return result;
+        }
+
         /**
          * ---- header ----
          *   id        category  start     end
@@ -192,11 +203,11 @@ angular.module("cloudberry.common")
         offset += categoryLength;
 
         // read start long
-        let startLong = Number(dv.getBigInt64(offset));
+        let startLong = Number(getUint64(dv, offset, false));
         offset += longSize;
 
         // read end long
-        let endLong = Number(dv.getBigInt64(offset));
+        let endLong = Number(getUint64(dv, offset, false));
         result.timeInterval = JSON.stringify({
           start: new Date(startLong),
           end: new Date(endLong)
@@ -211,7 +222,7 @@ angular.module("cloudberry.common")
           // current record's starting offset
           offset = headerSize + tupleSize * i;
           let tuple = [];
-          tuple.push(dv.getBigInt64(offset)); // id
+          tuple.push(getUint64(dv, offset, false)); // id
           offset = offset + bigIntSize;
           tuple.push(dv.getFloat64(offset)); // lng
           offset = offset + doubleSize;
