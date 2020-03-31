@@ -268,8 +268,12 @@ angular.module("cloudberry.map")
 
                 $scope.map.addLayer($scope.pointsLayer);
 
-                // register listener to "mousemove" event on map
-                $scope.map.on("mousemove", onMapMouseMove);
+                if ($(window).width() > 500) {
+                    // register listener to "mousemove" event on map
+                    $scope.map.on("mousemove", onMapMouseMove);
+                } else {
+                    $scope.map.on("click", onMapMouseClick);
+                }
                 $scope.timer = null;
                 // if user mouses over one place for 300ms, fire a "mouseintent" event.
                 function onMapMouseMove(e) {
@@ -278,12 +282,23 @@ angular.module("cloudberry.map")
                         clearTimeout($scope.timer);
                         $scope.timer = null;
                     }
-                    if ($(window).width() > 500) {
-                        $scope.timer = setTimeout(L.Util.bind(function() {
-                            this.fire("mouseintent", e);
-                            $scope.timer = null;
-                        }, this), 300);
+                    $scope.timer = setTimeout(L.Util.bind(function() {
+                        this.fire("mouseintent", e);
+                        $scope.timer = null;
+                    }, this), 300);
+                }
+
+                function onMapMouseClick(e) {
+                    console.log(e)
+                    $scope.currentMousePosition = e;
+                    if ($scope.timer != null) {
+                        clearTimeout($scope.timer);
+                        $scope.timer = null;
                     }
+                    $scope.timer = setTimeout(L.Util.bind(function() {
+                        this.fire("mouseintent", e);
+                        $scope.timer = null;
+                    }, this), 300);
                 }
 
                 // translate individual tweet from JSON to html element
@@ -361,12 +376,7 @@ angular.module("cloudberry.map")
                     return tweetTemplate;
                 }
 
-                if ($(window).width() > 500) {
-                    $scope.map.on("mouseintent", onMapMouseIntent);
-                } else {
-                    console.log($scope.map);
-                    $scope.map.on("click", onMapClick);
-                }
+                $scope.map.on("mouseintent", onMapMouseIntent);
 
                 $scope.points = [];
 

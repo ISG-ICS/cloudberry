@@ -30,6 +30,7 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         L.CanvasLayer.prototype.onAdd.call(this, map);
 
         map.on("mousemove", this._mousemove, this);
+        map.on("click", this._mousemove, this)
     },
 
 
