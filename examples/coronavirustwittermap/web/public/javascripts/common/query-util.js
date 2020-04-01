@@ -35,32 +35,37 @@ angular.module("cloudberry.common")
         queryStartDate.setDate(queryStartDate.getDate() - maxDay);
         queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
 
-        // if keywords only contains wildcard %, get rid of filter
+        var filter = [
+          {
+            field: "create_at",
+            relation: "inRange",
+            values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
+          }
+        ];
+
+        // if keywords only contains wildcard %, get rid of text filter
         if (keywords.length === 1 && keywords[0] === "%") {
-          var filter = [];
         }
         else {
-          var filter = [
+          filter.push(
             {
-              field: "create_at",
-              relation: "inRange",
-              values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
-            }, {
               field: "text",
               relation: "contains",
               values: keywords
             }
-          ];
-          if (geoIds.length <= 2000) {
-            filter.push(
-              {
-                field: "geo_tag." + spatialField,
-                relation: "in",
-                values: geoIds
-              }
-            );
-          }
+          );
         }
+
+        if (geoIds.length <= 2000) {
+          filter.push(
+            {
+              field: "geo_tag." + spatialField,
+              relation: "in",
+              values: geoIds
+            }
+          );
+        }
+
         return filter;
       },
 
