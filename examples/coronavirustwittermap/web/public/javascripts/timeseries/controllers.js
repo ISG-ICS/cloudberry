@@ -29,10 +29,13 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         angular.forEach(result, function (value, key) {
           key = new Date(value[granu]);
           value = +value.count;
-          $scope.currentTweetCount += value;
+          var newTweetCount = $scope.currentTweetCount + value;
+          console.log("new tweet count = " + newTweetCount);
+          if ($scope.totalCount > 0) {
+            $scope.currentTweetCount = Math.min(newTweetCount, $scope.totalCount);
+          }
           result_array.push({'time': key, 'count': value});
         });
-
       }
       return result_array;
     };
