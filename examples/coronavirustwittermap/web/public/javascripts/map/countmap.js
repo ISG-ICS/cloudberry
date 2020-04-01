@@ -261,7 +261,7 @@ angular.module('cloudberry.map')
     function showCaseCount() {
       $timeout(function() {
         var lastDay = cloudberry.parameters.timeInterval.end;
-        var totalCount = caseDataCache.getDailyTotalCaseCount("state", cloudberry.parameters.geoIds, lastDay);
+        var totalCount = caseDataCache.getDailyTotalCaseCount("state", lastDay);
         var content = "";
         content += "<table style=\"width:100%\">" +
         "<tr>" +
@@ -869,6 +869,7 @@ angular.module('cloudberry.map')
       }
       else if (event.previousMapType === "countmap"){
         cleanCountMap();
+        document.getElementById('count-window').innerHTML = "";
       }
     }
 
