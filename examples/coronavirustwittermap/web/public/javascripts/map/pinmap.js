@@ -469,6 +469,7 @@ angular.module("cloudberry.map")
                 sendPinmapQuery();
             }
             else if (event.previousMapType === "pinmap") {
+                $scope.addPolygonLayers();
                 cleanPinMap();
             }
         }

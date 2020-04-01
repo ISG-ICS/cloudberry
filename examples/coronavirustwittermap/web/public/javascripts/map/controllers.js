@@ -222,6 +222,31 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
     };
 
+    $scope.addPolygonLayers = function addPolygonLayers() {
+      $scope.status.zoomLevel = $scope.map.getZoom();
+      if ($scope.status.zoomLevel <= 5) {
+        if ($scope.polygons.statePolygons && !$scope.map.hasLayer($scope.polygons.statePolygons)) {
+          $scope.map.addLayer($scope.polygons.statePolygons);
+        }
+      } else {
+        if ($scope.status.zoomLevel <= 9) {
+          if ($scope.polygons.stateUpperPolygons && !$scope.map.hasLayer($scope.polygons.stateUpperPolygons)) {
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+          }
+          if ($scope.polygons.countyPolygons && !$scope.map.hasLayer($scope.polygons.countyPolygons)) {
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          }
+        } else {
+          if ($scope.polygons.countyUpperPolygons && !$scope.map.hasLayer($scope.polygons.countyUpperPolygons)) {
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+          }
+          if ($scope.polygons.cityPolygons && !$scope.map.hasLayer($scope.polygons.cityPolygons)) {
+            $scope.map.addLayer($scope.polygons.cityPolygons);
+          }
+        }
+      }
+    };
+
     // update the center and the boundary of the visible area of the map
     function setCenterAndBoundry(features) {
 
