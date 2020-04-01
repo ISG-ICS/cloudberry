@@ -60,11 +60,10 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
   override def receive: Receive = {
 
     case frontEndRequest: JsValue =>
-      clientLogger.info("request from frontend: " + frontEndRequest.toString)
       val key = frontEndRequest.toString().replaceAll("[\\{|\\}|\\[|\\\"|:|\\]]", "")
       if (centralCache.contains(key)) {
         if ((DateTime.now.getMinuteOfHour - centralCache(key)._1.getMinuteOfHour) < maxCacheAge) {
-          clientLogger.info("[Cache] Good! Request has been cached, returning responses from cache.")
+          clientLogger.info("[Cache] Good! Returning responses from cache for this request! \n" + frontEndRequest)
           val responses = centralCache(key)._2
           for (response <- responses) {
             socket.renderResponse(response)
@@ -87,7 +86,7 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
     val wrap = (transform \ "wrap").as[JsObject]
     val category = (wrap \ "category").as[String]
     if (!category.equalsIgnoreCase("checkQuerySolvableByView") && !category.equalsIgnoreCase("totalCountResult")) {
-      clientLogger.info("[Cache] Well, request has not been cached, we will add it to cache once we see the \"Done\" message.")
+      clientLogger.info("[Cache] Well, no cache for this request yet, but will cache it once got \"Done\" message. \n" + frontEndRequest)
       cache(key) = (DateTime.now, List[String]())
       cachedQueries(key) = frontEndRequest
       val updatedWrap = wrap ++ Json.obj("id" -> key)
