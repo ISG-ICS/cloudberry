@@ -204,6 +204,24 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
     };
 
+    $scope.deletePolygonLayers = function deletePolygonLayers() {
+      if ($scope.polygons.statePolygons && $scope.map.hasLayer($scope.polygons.statePolygons)) {
+        $scope.map.removeLayer($scope.polygons.statePolygons);
+      }
+      if ($scope.polygons.countyPolygons && $scope.map.hasLayer($scope.polygons.countyPolygons)) {
+        $scope.map.removeLayer($scope.polygons.countyPolygons);
+      }
+      if ($scope.polygons.cityPolygons && $scope.map.hasLayer($scope.polygons.cityPolygons)) {
+        $scope.map.removeLayer($scope.polygons.cityPolygons);
+      }
+      if ($scope.polygons.stateUpperPolygons && $scope.map.hasLayer($scope.polygons.stateUpperPolygons)) {
+        $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+      }
+      if ($scope.polygons.countyUpperPolygons && $scope.map.hasLayer($scope.polygons.countyUpperPolygons)) {
+        $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
+      }
+    };
+
     // update the center and the boundary of the visible area of the map
     function setCenterAndBoundry(features) {
 

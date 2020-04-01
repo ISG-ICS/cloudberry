@@ -259,6 +259,8 @@ angular.module("cloudberry.map")
         // function for drawing pinmap
         function drawPinMap(result) {
 
+            $scope.deletePolygonLayers();
+
             // initialize the points layer
             if (!$scope.pointsLayer) {
 
@@ -424,10 +426,6 @@ angular.module("cloudberry.map")
                             }
                         }, "pinResult");
                     }
-                }
-
-                function onMapClick(e) {
-                    console.log(e);
                 }
             }
 
