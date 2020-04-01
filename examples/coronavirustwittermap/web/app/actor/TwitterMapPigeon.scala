@@ -3,6 +3,7 @@ package actor
 import java.net.URI
 
 import actor.TwitterMapPigeon.cache
+import actor.TwitterMapPigeon.cachedQueries
 import akka.actor._
 import akka.stream.Materializer
 import controllers.TwitterMapApplication
@@ -63,6 +64,7 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
       val key = frontEndRequest.toString().replaceAll("[\\{|\\}|\\[|\\\"|:|\\]]", "")
       if (centralCache.contains(key)) {
         if ((DateTime.now.getMinuteOfHour - centralCache(key)._1.getMinuteOfHour) < maxCacheAge) {
+          clientLogger.info("[Cache] Good! Request has been cached, returning responses from cache.")
           val responses = centralCache(key)._2
           for (response <- responses) {
             socket.renderResponse(response)
@@ -85,7 +87,9 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
     val wrap = (transform \ "wrap").as[JsObject]
     val category = (wrap \ "category").as[String]
     if (!category.equalsIgnoreCase("checkQuerySolvableByView") && !category.equalsIgnoreCase("totalCountResult")) {
+      clientLogger.info("[Cache] Well, request has not been cached, we will add it to cache once we see the \"Done\" message.")
       cache(key) = (DateTime.now, List[String]())
+      cachedQueries(key) = frontEndRequest
       val updatedWrap = wrap ++ Json.obj("id" -> key)
       val updatedTransform = transform ++ Json.obj("wrap" -> updatedWrap)
       val updatedQuery = frontEndRequest.as[JsObject] ++ Json.obj("transform" -> updatedTransform)
@@ -101,7 +105,9 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
 }
 
 object TwitterMapPigeon {
+  private val clientLogger = Logger("client")
   private val cache = new mutable.HashMap[String, (DateTime, List[String])]()
+  private val cachedQueries = new mutable.HashMap[String, JsValue]()
 
   def addToCache(response: String): Unit = {
     val json = Json.parse(response)
@@ -113,8 +119,10 @@ object TwitterMapPigeon {
     (json \ "value" \ "key").validate[String] match {
       case JsSuccess(value, _) => {
         if (value.contains("done")) {
+          clientLogger.info("[Cache] Cool! We got the \"Done\" message for this request! \n" + cachedQueries(id))
           TwitterMapApplication.addToCache(id, cache(id))
           cache -= id
+          cachedQueries -= id
         }
       }
       case e: JsError => None

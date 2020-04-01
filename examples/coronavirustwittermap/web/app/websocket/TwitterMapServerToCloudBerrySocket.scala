@@ -33,15 +33,6 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
       case JsSuccess(category, _) => {
         if (!category.equalsIgnoreCase("checkQuerySolvableByView") && !category.equalsIgnoreCase("totalCountResult")) {
           TwitterMapPigeon.addToCache(message)
-          (json \ "value" \ "key").validate[String] match {
-            case JsSuccess(value, _) => {
-              if (value.contains("done")) {
-                clientLogger.info("\n RECEIVED DONE FOR QUERY "+message)
-              }
-            }
-            case e: JsError => None
-
-          }
           val updatedResponse = json.as[JsObject] ++ Json.obj("id" -> "defaultID")
           renderResponse(updatedResponse.toString())
         }
@@ -65,7 +56,6 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
   }
 
   def sendMessage(str: String): Unit = {
-    clientLogger.info("\n GETTING RESULT NOT FROM CACHE FOR QUERY "+str)
     try {
       session.getRemote.sendString(str)
     }
