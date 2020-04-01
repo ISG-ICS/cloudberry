@@ -21,7 +21,7 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
 
   override def receive: Actor.Receive = commonReceive orElse {
     case result: PartialResult =>
-       queue.enqueue(result)
+      queue.enqueue(result)
     case TimeToReport => {
       if (queue.isEmpty) {
         timer.cancel()
@@ -36,8 +36,8 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
   }
 
   private def hungry(since: DateTime): Actor.Receive = commonReceive orElse {
-    case r: PartialResult =>
-      out ! Json.toJson(r.content)
+    case result: PartialResult =>
+      out ! Json.toJson(result.content)
       val delay = new TInterval(since, DateTime.now())
       log.warning(s"delayed ${delay.toDurationMillis / 1000.0} seconds ")
       timer = context.system.scheduler.schedule(limit, limit, self, TimeToReport)
@@ -57,9 +57,9 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
       if (queue.nonEmpty) {
         /*
           Logistic Here is when query finished, but there are still some results in queue
-          we return them altogher.
+          we return them altogether.
         */
-        if(fin.returnDelta){
+        if (fin.returnDelta) {
           queue.dequeueAll(deltaResult=>
             {
               out ! Json.toJson(deltaResult.content)
@@ -68,12 +68,12 @@ class Reporter(out: ActorRef)(implicit val ec: ExecutionContext) extends Actor w
           )
 
         }
-        else{
+        else {
           out ! Json.toJson(queue.dequeueAll(_ => true).last.content)
         }
-        //TODO remove this special DONE message
-        out ! fin.lastMsg // notifying the client the processing is done
       }
+      // notifying the client the processing is done
+      out ! fin.lastMsg
       timer.cancel()
       context.become(receive)
     }
