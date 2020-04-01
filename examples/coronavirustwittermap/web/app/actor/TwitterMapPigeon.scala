@@ -63,6 +63,7 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
       val key = frontEndRequest.toString().replaceAll("[\\{|\\}|\\[|\\\"|:|\\]]", "")
       if (centralCache.contains(key)) {
         if ((DateTime.now.getMinuteOfHour - centralCache(key)._1.getMinuteOfHour) < maxCacheAge) {
+          clientLogger.info("\n GETTING RESULT FROM CACHE FOR QUERY "+frontEndRequest.toString())
           val responses = centralCache(key)._2
           for (response <- responses) {
             socket.renderResponse(response)
@@ -102,6 +103,7 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
 
 object TwitterMapPigeon {
   private val cache = new mutable.HashMap[String, (DateTime, List[String])]()
+  private val clientLogger = Logger("client")
 
   def addToCache(response: String): Unit = {
     val json = Json.parse(response)
@@ -109,19 +111,16 @@ object TwitterMapPigeon {
     val updatedId = json.as[JsObject] ++ Json.obj("id" -> "defaultID")
     val updatedResponse = json.as[JsObject] ++ updatedId
     cache(id) = (cache(id)._1, cache(id)._2 :+ updatedResponse.toString())
-
     (json \ "value" \ "key").validate[String] match {
       case JsSuccess(value, _) => {
         if (value.contains("done")) {
+          clientLogger.info("\n RECEIVED DONE FOR QUERY "+id)
           TwitterMapApplication.addToCache(id, cache(id))
           cache -= id
         }
       }
       case e: JsError => None
-
     }
-
-
   }
 
   def props(factory: WebSocketFactory, cloudberryWebsocketURL: String, out: ActorRef, config: Configuration, maxTextMessageSize: Int)

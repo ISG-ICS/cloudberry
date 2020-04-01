@@ -84,24 +84,24 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
                 /**
                   * 1) pinMapResult response from Cloudberry has format as follows,
                   * { id: "defaultID",
-                  * category: "pinMapResult",
-                  * value: [[
-                  * { id: 1236910669389131776, place.bounding_box: [[-120.582586,46.958017], [-120.49726,47.028542]] },
-                  * { id: 1236509727560880128, coordinate: [-121.944442,37.325656], place.bounding_box: [[...]]},
-                  * ... ...
-                  * ]]
+                  *   category: "pinMapResult",
+                  *   value: [[
+                  *     { id: 1236910669389131776, place.bounding_box: [[-120.582586,46.958017], [-120.49726,47.028542]] },
+                  *     { id: 1236509727560880128, coordinate: [-121.944442,37.325656], place.bounding_box: [[...]]},
+                  *     ... ...
+                  *   ]]
                   * }
                   *
                   * 2) transformed pinMapResult output has format as follows,
-                  * ---- header ----
-                  * id        category  start     end
+                  *  ---- header ----
+                  *    id        category  start     end
                   * | VARCHAR | VARCHAR | 8 BYTES | 8 BYTES |
-                  * ---- payload ----
-                  * id1       lng1      lat1      id2       lng2      lat2      ...
+                  *  ---- payload ----
+                  *   id1       lng1      lat1      id2       lng2      lat2      ...
                   * | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | ...
                   *
                   * NOTE: VARCHAR = 1 BYTE of length + length BYTES of real UTF-8 characters
-                  **/
+                  * */
                 val binaryMessageBuilder = new BinaryMessageBuilder(
                   (json \ "id").as[String],
                   (json \ "category").as[String],
