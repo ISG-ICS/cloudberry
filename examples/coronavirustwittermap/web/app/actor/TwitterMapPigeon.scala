@@ -2,19 +2,18 @@ package actor
 
 import java.net.URI
 
-import actor.TwitterMapPigeon.cache
-import actor.TwitterMapPigeon.cachedQueries
+import actor.TwitterMapPigeon.{cache, cachedQueries}
 import akka.actor._
 import akka.stream.Materializer
 import controllers.TwitterMapApplication
 import org.eclipse.jetty.websocket.client.WebSocketClient
 import org.joda.time.DateTime
-import play.api.libs.json.{JsError, JsObject, JsSuccess, Json}
+import play.api.libs.json.{JsArray, JsError, JsObject, JsResult, JsSuccess, JsValue, Json}
 import play.api.{Configuration, Logger}
-import play.api.libs.json.JsValue
 import websocket.{TwitterMapServerToCloudBerrySocket, WebSocketFactory}
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 
 /**
@@ -60,10 +59,42 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
   override def receive: Receive = {
 
     case frontEndRequest: JsValue =>
-      val key = frontEndRequest.toString().replaceAll("[\\{|\\}|\\[|\\\"|:|\\]]", "")
-      if (centralCache.contains(key)) {
-        if ((DateTime.now.getMinuteOfHour - centralCache(key)._1.getMinuteOfHour) < maxCacheAge) {
-          clientLogger.info("[Cache] Good! Returning responses from cache for this request! \n" + frontEndRequest)
+      //before replacing the key, remove the endDate to allow cached result to be retrieved if available
+      if((frontEndRequest \"transform" \ "wrap" \ "category").as[String].equalsIgnoreCase("checkQuerySolvableByView") || (frontEndRequest \"transform" \ "wrap" \ "category").as[String].equalsIgnoreCase("totalCountResult")) {
+        socket.sendMessage(frontEndRequest.toString())
+      }
+      else {
+        (frontEndRequest \ "filter").validate[JsArray] match {
+          case JsSuccess(filters, _) => {
+            for ((filter, i) <- filters.value.zipWithIndex) {
+              if ((filter \ "field").as[String].equalsIgnoreCase("create_at")) {
+                val value = (filter \ "values").as[ListBuffer[String]]
+                if ((DateTime.now.getMinuteOfHour - DateTime.parse(value(1)).getMinuteOfHour) < maxCacheAge) { //if the end date is within the last 10 minutes
+                  //then remove it from the query and check the cache
+                  value -= value(1)
+                  val updatedValue = filter.as[JsObject] ++ Json.obj("values" -> value)
+                  val updatedQuery = frontEndRequest.as[JsObject] ++ Json.obj("filter" -> filters.value.updated(i, updatedValue))
+                  prepareQuery(updatedQuery, frontEndRequest)
+                }
+                else
+                  prepareQuery(frontEndRequest, frontEndRequest)
+              }
+            }
+          }
+          case e: JsError => {
+            prepareQuery(frontEndRequest, frontEndRequest)
+          }
+        }
+      }
+    case e =>
+      log.error("Unknown type of request " + e.toString)
+  }
+  private def prepareQuery(filteredQuery: JsValue, query: JsValue){
+      //reformat the json query to be a string to store it as a key in the cache
+      val key = filteredQuery.toString().replaceAll("[\\{|\\}|\\[|\\\"|:|\\]]", "")
+      if (centralCache.contains(key)) {//check if the query is cached
+        if ((DateTime.now.getMinuteOfHour - centralCache(key)._1.getMinuteOfHour) < maxCacheAge) {//check the freshness of the cached query
+          clientLogger.info("[Cache] Good! Returning responses from cache for this request! \n" + query)
           val responses = centralCache(key)._2
           for (response <- responses) {
             socket.renderResponse(response)
@@ -71,21 +102,18 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
         }
         else {
           centralCache -= key
-          queryCloudberry(key, frontEndRequest)
+          queryCloudberry(key, query)
         }
       }
       else {
-        queryCloudberry(key, frontEndRequest)
+        queryCloudberry(key, query)
       }
-    case e =>
-      log.error("Unknown type of request " + e.toString)
   }
 
   private def queryCloudberry(key: String, frontEndRequest: JsValue): Unit = {
     val transform = (frontEndRequest \ "transform").as[JsObject]
     val wrap = (transform \ "wrap").as[JsObject]
     val category = (wrap \ "category").as[String]
-    if (!category.equalsIgnoreCase("checkQuerySolvableByView") && !category.equalsIgnoreCase("totalCountResult")) {
       clientLogger.info("[Cache] Well, no cache for this request yet, but will cache it once got \"Done\" message. \n" + frontEndRequest)
       cache(key) = (DateTime.now, List[String]())
       cachedQueries(key) = frontEndRequest
@@ -93,10 +121,7 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
       val updatedTransform = transform ++ Json.obj("wrap" -> updatedWrap)
       val updatedQuery = frontEndRequest.as[JsObject] ++ Json.obj("transform" -> updatedTransform)
       socket.sendMessage(updatedQuery.toString())
-    }
-    else {
-      socket.sendMessage(frontEndRequest.toString())
-    }
+
   }
 
   //Logic of rendering cloudberry request goes here
@@ -106,6 +131,9 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
 object TwitterMapPigeon {
   private val clientLogger = Logger("client")
   private val cache = new mutable.HashMap[String, (DateTime, List[String])]()
+  /**
+    * cachedQueries is added for debugging purposes to see the cached queries quickly
+    */
   private val cachedQueries = new mutable.HashMap[String, JsValue]()
 
   def addToCache(response: String): Unit = {
