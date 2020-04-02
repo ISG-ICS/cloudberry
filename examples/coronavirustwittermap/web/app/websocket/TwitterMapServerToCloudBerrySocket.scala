@@ -31,7 +31,9 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
     val json = Json.parse(message)
     (json \ "category").validate[String] match {
       case JsSuccess(category, _) => {
-        if (!category.equalsIgnoreCase("checkQuerySolvableByView") && !category.equalsIgnoreCase("totalCountResult")) {
+        if (!category.equalsIgnoreCase("checkQuerySolvableByView")
+          && !category.equalsIgnoreCase("totalCountResult") &&
+          !category.equalsIgnoreCase("pinResult")) {
           TwitterMapPigeon.addToCache(message)
           val updatedResponse = json.as[JsObject] ++ Json.obj("id" -> "defaultID")
           renderResponse(updatedResponse.toString())
