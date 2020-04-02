@@ -9,6 +9,8 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.empty = [];
     $scope.totalCount = 0;
     $scope.currentTweetCount = 0;
+    // to store current tweet count in the dark before showing it
+    $scope.currentTweetCountStage = 0;
     $scope.queried = false;
     $scope.sumText = config.sumText;
     //Used to control behavior of time bar, time bar should start to draw diagram when received second result,
@@ -29,10 +31,9 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
         angular.forEach(result, function (value, key) {
           key = new Date(value[granu]);
           value = +value.count;
-          var newTweetCount = $scope.currentTweetCount + value;
-          console.log("new tweet count = " + newTweetCount);
+          $scope.currentTweetCountStage = $scope.currentTweetCount + value;
           if ($scope.totalCount > 0) {
-            $scope.currentTweetCount = Math.min(newTweetCount, $scope.totalCount);
+            $scope.currentTweetCount = Math.min($scope.currentTweetCountStage, $scope.totalCount);
           }
           result_array.push({'time': key, 'count': value});
         });
@@ -112,6 +113,10 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
     $scope.sendTotalCountQuery = function() {
       cloudberryClient.send($scope.totalCountJson, function(id, resultSet, resultTimeInterval){
         $scope.totalCount = resultSet[0][0].count;
+        // correct current tweet count if have not done so
+        if ($scope.totalCount > 0 && $scope.currentTweetCount === 0) {
+          $scope.currentTweetCount = Math.min($scope.currentTweetCountStage, $scope.totalCount);
+        }
       }, "totalCountResult");
     };
 
