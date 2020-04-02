@@ -26,6 +26,7 @@ angular.module('cloudberry.timeseries', ['cloudberry.common'])
       // TODO make the pattern can be changed by the returned result parameters
       var result_array = [];
       $scope.currentTweetCount = 0;
+      $scope.currentTweetCountStage = 0;
       if (result && result[0]) {
         var granu = Object.keys(result[0])[0];
         angular.forEach(result, function (value, key) {
