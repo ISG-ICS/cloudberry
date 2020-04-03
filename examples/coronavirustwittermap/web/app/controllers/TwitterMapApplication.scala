@@ -87,6 +87,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val popupWindowGroupBy: String = config.getString("popupWindow.groupBy").getOrElse("month")
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5 * 1024 * 1024)
+
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
