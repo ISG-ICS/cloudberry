@@ -6,7 +6,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $("#keyword-textbox").autocomplete({source:[],disabled:true,delay:200});
 
     var ACSocket;
-    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/autoComplete").done(function (pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/ws/autoComplete").done(function (pws) {
       ACSocket = pws;
 
       ACSocket.onmessage = function (event) {
@@ -93,6 +93,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       $scope.keyword = keyword;
       $scope.search();
       $scope.updateSearchBox(keyword);
+      // do not show wildcard symbol in the search box
+      if (keyword === "%") $scope.keyword = "";
     };
 
     // If config file specifies a defaultKeyword, search it immediately;

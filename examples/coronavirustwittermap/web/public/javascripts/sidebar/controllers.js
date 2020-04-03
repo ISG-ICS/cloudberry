@@ -80,7 +80,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView;
-    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + '/checkQuerySolvableByView').done(function(pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + '/ws/checkQuerySolvableByView').done(function(pws) {
       wsCheckQuerySolvableByView = pws;
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, {});
@@ -122,7 +122,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // WebSocket for Live Tweets
     var LTSocket;
-    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/liveTweets").done(function (pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/ws/liveTweets").done(function (pws) {
         LTSocket = pws;
 
         /* fetchTweetFromAPI sends a query to twittermap server through websocket
@@ -133,7 +133,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             if (LTSocket.readyState === LTSocket.OPEN) {
                 LTSocket.send(query);
             }
-      }
+      };
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, {});
 
@@ -167,7 +167,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var timeLowerBound = tempDateTime.toISOString();
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       if (config.enableLiveTweet) {
-        $scope.fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
+        if (cloudberry.parameters.keywords.length === 1 && cloudberry.parameters.keywords[0] === "%") {
+          var queryKeyword = config.liveTweetDefaultKeyword;
+        }
+        else {
+          var queryKeyword = cloudberry.parameters.keywords.toString();
+        }
+        $scope.fetchTweetFromAPI(JSON.stringify({keyword: queryKeyword, location: centerCoordinate}));
         $scope.isSampleTweetsOutdated = false;
       }
       else {
