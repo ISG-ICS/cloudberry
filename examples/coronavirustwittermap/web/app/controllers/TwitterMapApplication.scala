@@ -68,6 +68,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
   val pinmapBinaryTransfer: Boolean = config.getBoolean("pinmap.binaryTransfer").getOrElse(false)
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
+  val liveTweetDefaultKeyword: String = config.getString("liveTweetDefaultKeyword").getOrElse(null)
   val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
   val liveTweetQueryOffset : Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
   val liveTweetUpdateRate: Int = config.getInt("liveTweetUpdateRate").getOrElse(2)

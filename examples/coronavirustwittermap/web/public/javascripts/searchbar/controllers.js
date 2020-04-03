@@ -93,6 +93,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       $scope.keyword = keyword;
       $scope.search();
       $scope.updateSearchBox(keyword);
+      // do not show wildcard symbol in the search box
+      if (keyword === "%") $scope.keyword = "";
     };
 
     // If config file specifies a defaultKeyword, search it immediately;

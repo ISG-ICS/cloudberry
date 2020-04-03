@@ -40,13 +40,23 @@ angular.module("cloudberry.common")
             field: "create_at",
             relation: "inRange",
             values: [queryStartDate.toISOString(), parameters.timeInterval.end.toISOString()]
-          }, {
-            field: "text",
-            relation: "contains",
-            values: keywords
           }
         ];
-        if (geoIds.length <= 2000){
+
+        // if keywords only contains wildcard %, get rid of text filter
+        if (keywords.length === 1 && keywords[0] === "%") {
+        }
+        else {
+          filter.push(
+            {
+              field: "text",
+              relation: "contains",
+              values: keywords
+            }
+          );
+        }
+
+        if (geoIds.length <= 2000) {
           filter.push(
             {
               field: "geo_tag." + spatialField,
@@ -55,6 +65,7 @@ angular.module("cloudberry.common")
             }
           );
         }
+
         return filter;
       },
 
