@@ -2,9 +2,11 @@ package websocket
 
 import java.io.IOException
 
+import actor.TwitterMapPigeon
 import akka.actor.ActorRef
 import org.eclipse.jetty.websocket.api.Session
 import org.eclipse.jetty.websocket.api.annotations._
+import play.api.libs.json.{JsError, JsObject, JsSuccess}
 import play.api.{Configuration, Logger}
 import play.api.libs.json.{JsValue, Json}
 import util.{BinaryMessageBuilder, Randomizer}
@@ -26,7 +28,23 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
   @OnWebSocketMessage
   @throws[IOException]
   def onText(session: Session, message: String): Unit = {
-    renderResponse(message)
+    val json = Json.parse(message)
+    (json \ "category").validate[String] match {
+      case JsSuccess(category, _) => {
+        if (!category.equalsIgnoreCase("checkQuerySolvableByView")
+          && !category.equalsIgnoreCase("totalCountResult") &&
+          !category.equalsIgnoreCase("pinResult")) {
+          TwitterMapPigeon.addToCache(message)
+          val updatedResponse = json.as[JsObject] ++ Json.obj("id" -> "defaultID")
+          renderResponse(updatedResponse.toString())
+        }
+        else {
+          renderResponse(message)
+        }
+      }
+      case e: JsError => renderResponse(message)
+
+    }
   }
 
   @OnWebSocketClose
@@ -49,7 +67,7 @@ class TwitterMapServerToCloudBerrySocket(out: ActorRef, config: Configuration) {
     }
   }
 
-  private def renderResponse(response: String): Unit = {
+  def renderResponse(response: String): Unit = {
     //Logic of rendering cloudberry response goes here
     val json = Json.parse(response)
 
