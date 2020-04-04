@@ -44,7 +44,7 @@ angular.module('cloudberry.casedatacache', [])
         for (var k = 0; k < 2; k++) {
           var data = cases[k];
           for (var i = 0; i < data.length; i++) {
-            if (data[i].day.getDate() >= start.getDate() && data[i].day.getDate() <= end.getDate()) {
+            if (data[i].day >= start && data[i].day <= end) {
               result[k].push(data[i]);
             }
           }
