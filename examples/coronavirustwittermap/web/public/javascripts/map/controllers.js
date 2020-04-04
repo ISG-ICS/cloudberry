@@ -141,7 +141,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         return navigator.userAgent.match(/IEMobile/i);
       },
       smallScreen: function() {
-        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || ($scope.isMobile.iPhone() && !$scope.isMobile.iPad()) || $scope.isMobile.Opera() || $scope.isMobile.Windows());
       },
       any: function() {
         return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.iPad() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
