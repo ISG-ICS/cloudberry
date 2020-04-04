@@ -34,4 +34,3 @@ class RESTSolver(val dataManager: ActorRef,
   }
 
 }
-
