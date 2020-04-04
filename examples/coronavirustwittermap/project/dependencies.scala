@@ -51,7 +51,9 @@ object Dependencies {
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
     "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
     // case number module
-    "org.webjars.bower" % "jquery-csv" % "0.8.3"
+    "org.webjars.bower" % "jquery-csv" % "0.8.3",
+    // handle big integers in javascript to support safari
+    "org.webjars.npm" % "jsbi" % "3.1.1"
 
   ) ++ testDeps
 }

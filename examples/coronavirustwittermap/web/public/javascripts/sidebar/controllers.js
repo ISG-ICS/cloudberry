@@ -133,7 +133,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
             if (LTSocket.readyState === LTSocket.OPEN) {
                 LTSocket.send(query);
             }
-      }
+      };
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, {});
 
@@ -167,7 +167,13 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       var timeLowerBound = tempDateTime.toISOString();
       var sampleTweetsRequest = queryUtil.getSampleTweetsRequest(cloudberry.parameters, timeLowerBound, timeUpperBound, sampleTweetSize);
       if (config.enableLiveTweet) {
-        $scope.fetchTweetFromAPI(JSON.stringify({keyword:cloudberry.parameters.keywords.toString(),location:centerCoordinate}));
+        if (cloudberry.parameters.keywords.length === 1 && cloudberry.parameters.keywords[0] === "%") {
+          var queryKeyword = config.liveTweetDefaultKeyword;
+        }
+        else {
+          var queryKeyword = cloudberry.parameters.keywords.toString();
+        }
+        $scope.fetchTweetFromAPI(JSON.stringify({keyword: queryKeyword, location: centerCoordinate}));
         $scope.isSampleTweetsOutdated = false;
       }
       else {
