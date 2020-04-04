@@ -488,28 +488,38 @@ button[disabled]{
   }
 }
 
-@media (max-width:500px) {
-    .w3-teal {
-        visibility: hidden;
-    }
+@media (max-width:1024px) {
+  .w3-teal {
+    visibility: hidden;
+  }
+
+  #sidebar {
+    display: None;
+  }
+}
+  
+@media (max-width:768px) {
+  .w3-teal {
+    visibility: hidden;
+  }
     
-    #time-slider {
-        visibility: hidden;
-    }
+  #time-slider {
+    visibility: hidden;
+  }
 
-    time-series {
-        visibility: hidden;
-    }
+  time-series {
+    visibility: hidden;
+  }
 
-    #sidebar {
-        display: None;
-    }
+  #sidebar {
+    display: None;
+  }
 
-    .slide-up-down {
-        visibility: hidden;
-    }
+  .slide-up-down {
+    visibility: hidden;
+  }
 
-    #count-window {
-        visibility: hidden;
-    }
+  #count-window {
+    visibility: hidden;
+  }
 }

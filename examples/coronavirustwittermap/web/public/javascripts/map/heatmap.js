@@ -139,7 +139,7 @@ angular.module("cloudberry.map")
     
     function setInfoControlHeatMap() {
       function onEachFeature(feature, layer) {
-        if ($(window).width() > 500) {
+        if (!$scope.isMobile.any()) {
           layer.on({
               click: $scope.zoomToFeature
           });

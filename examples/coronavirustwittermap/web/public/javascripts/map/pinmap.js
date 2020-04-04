@@ -224,7 +224,7 @@ angular.module("cloudberry.map")
             // add feature to each polygon
             // when a user click on a polygon, the map will zoom in to fit that polygon in the view
             function onEachFeature(feature, layer) {
-                if ($(window).width() > 500) {
+                if (!$scope.isMobile.any()) {
                     layer.on({
                         click: $scope.zoomToFeature
                     });
@@ -270,7 +270,7 @@ angular.module("cloudberry.map")
 
                 $scope.map.addLayer($scope.pointsLayer);
 
-                if ($(window).width() > 500) {
+                if (!$scope.isMobile.any()) {
                     // register listener to "mousemove" event on map
                     $scope.map.on("mousemove", onMapMouseMove);
                 } else {

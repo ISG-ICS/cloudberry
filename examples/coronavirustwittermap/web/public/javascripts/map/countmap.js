@@ -466,7 +466,7 @@ angular.module('cloudberry.map')
         if (cloudberry.parameters.maptype == 'countmap'){
           // highlight a polygon
           var layer = leafletEvent.target;
-          if ($(window).width() > 1024) {
+          if (!$scope.isMobile.any()) {
             layer.setStyle($scope.styles.hoverStyle);
             if (!L.Browser.ie && !L.Browser.opera) {
               layer.bringToFront();
@@ -480,13 +480,13 @@ angular.module('cloudberry.map')
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
             $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
-            if ($(window).width() <= 500) {
+            if ($scope.isMobile.smallScreen()) {
               $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true, maxWidth: 200});
             }
             layer.bindPopup($scope.popUp).openPopup();
             // only reposition the popup window for state level (only state level has case number trend chart)
             if ($scope.status.logicLevel === "state") {
-              if ($(window).width() <= 500) {
+              if ($scope.isMobile.any()) {
                 $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat, $scope.selectedPlace.properties.popUpLog]);
               } else {
                 // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
@@ -552,7 +552,7 @@ angular.module('cloudberry.map')
       // remove the highlight when mouseout
       // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
-        if ($(window).width() > 500) {
+        if (!$scope.isMobile.any()) {
           layer.on({
             mouseover: highlightPopupInfo,
             mouseout: resetHighlight,

@@ -119,6 +119,34 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       }
     });
+
+    // detect mobile browser
+    $scope.isMobile = {
+      Android: function() {
+        return navigator.userAgent.match(/Android/i);
+      },
+      BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+      },
+      iPhone: function() {
+        return navigator.userAgent.match(/iPhone|iPod/i);
+      },
+      iPad: function() {
+        return navigator.userAgent.match(/iPad/i);
+      },
+      Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+      },
+      Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i);
+      },
+      smallScreen: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      },
+      any: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.iPad() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      }
+    };
     
     // set map styles
     $scope.setStyles = function setStyles(styles) {
@@ -158,7 +186,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
-        if ($(window).width() <= 500) {
+        if ($scope.isMobile.smallScreen()) {
           map.setView([$scope.lat, $scope.lng], 3);
         }
       });
@@ -175,7 +203,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       var body = document.getElementsByTagName("search-bar")[0];
       body.appendChild(button);
       button.addEventListener ("click", function() {
-        if ($(window).width() > 500) {
+        if (!$scope.isMobile.smallScreen()) {
           $scope.map.setView([$scope.lat, $scope.lng], 4);
         } else {
           $scope.map.setView([$scope.lat, $scope.lng], 3);
