@@ -71,8 +71,9 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
   val pinmapBinaryTransfer: Boolean = config.getBoolean("pinmap.binaryTransfer").getOrElse(false)
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
-  val liveTweetQueryInterval: Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
-  val liveTweetQueryOffset: Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
+  val liveTweetDefaultKeyword: String = config.getString("liveTweetDefaultKeyword").getOrElse(null)
+  val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
+  val liveTweetQueryOffset : Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
   val liveTweetUpdateRate: Int = config.getInt("liveTweetUpdateRate").getOrElse(2)
   val liveTweetConsumerKey: String = config.getString("liveTweetConsumerKey").getOrElse(null)
   val liveTweetConsumerSecret: String = config.getString("liveTweetConsumerSecret").getOrElse(null)
@@ -86,6 +87,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val popupWindowGroupBy: String = config.getString("popupWindow.groupBy").getOrElse("month")
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5 * 1024 * 1024)
+
+
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
