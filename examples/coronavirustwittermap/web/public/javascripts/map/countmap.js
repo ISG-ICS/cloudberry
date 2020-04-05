@@ -479,16 +479,20 @@ angular.module('cloudberry.map')
 
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
-            $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
-            if ($scope.isMobile.smallScreen()) {
-              $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true, maxWidth: 200});
+            if ($scope.isMobile.any()) {
+              console.log($(window).width() * 0.6);
+              $scope.popUp = L.popup({autoPan:true, autoPanPaddingTopLeft: [100, 80], closeOnEscapeKey: true, maxWidth: $(window).width() * 0.6});
+            }
+            else {
+              $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
             }
             layer.bindPopup($scope.popUp).openPopup();
             // only reposition the popup window for state level (only state level has case number trend chart)
             if ($scope.status.logicLevel === "state") {
               if ($scope.isMobile.any()) {
                 $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat, $scope.selectedPlace.properties.popUpLog]);
-              } else {
+              }
+              else {
                 // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
                 const popupPixelWidth = 500; // default pixel width of popup in leaflet
                 const popupPixelHeight = 600; // estimate the pixel height of popup

@@ -148,6 +148,7 @@ angular.module("cloudberry.map")
 
         // Event handler for zoom event
         function onZoomPinmap(event) {
+            $scope.deletePolygonLayers();
             // if zoom in, send new query if points are not too many
             if (event.level > $scope.previousZoomLevel) {
                 if ($scope.currentPointsCount < $scope.maxPointsCount) {
@@ -166,6 +167,7 @@ angular.module("cloudberry.map")
 
         // Event handler for drag event
         function onDragPinmap(event) {
+            $scope.deletePolygonLayers();
             if ($scope.currentPointsCount < $scope.maxPointsCount) {
                 sendPinmapQuery();
             }
@@ -212,7 +214,11 @@ angular.module("cloudberry.map")
         }
 
         function cleanPinmapEventHandlers() {
-            $scope.map.off("mousemove");
+            if (!$scope.isMobile.any()) {
+                $scope.map.off("mousemove");
+            } else {
+                $scope.map.off("click");
+            }
 
             // Unsubscribe to moduleManager's events
             moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
@@ -311,7 +317,7 @@ angular.module("cloudberry.map")
                     $scope.timer = setTimeout(L.Util.bind(function() {
                         this.fire("mouseintent", e);
                         $scope.timer = null;
-                    }, this), 300);
+                    }, this), 0);
                 }
 
                 // translate individual tweet from JSON to html element

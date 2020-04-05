@@ -1,3 +1,27 @@
+var isMobile = {
+    Android: function() {
+      return navigator.userAgent.match(/Android/i);
+    },
+    BlackBerry: function() {
+      return navigator.userAgent.match(/BlackBerry/i);
+    },
+    iPhone: function() {
+      return navigator.userAgent.match(/iPhone|iPod/i);
+    },
+    iPad: function() {
+      return navigator.userAgent.match(/iPad/i);
+    },
+    Opera: function() {
+      return navigator.userAgent.match(/Opera Mini/i);
+    },
+    Windows: function() {
+      return navigator.userAgent.match(/IEMobile/i);
+    },
+    any: function() {
+      return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iPhone() || isMobile.iPad() || isMobile.Opera() || isMobile.Windows());
+    }
+};
+
 var WebGLPointLayer = L.CanvasLayer.extend({
 
     initialize: function(options) {
@@ -29,8 +53,12 @@ var WebGLPointLayer = L.CanvasLayer.extend({
         // Call onAdd() from the parent class
         L.CanvasLayer.prototype.onAdd.call(this, map);
 
-        map.on("mousemove", this._mousemove, this);
-        map.on("click", this._mousemove, this)
+        if (!isMobile.any()) {
+            map.on("mousemove", this._mousemove, this);
+        }
+        else {
+            map.on("click", this._mousemove, this);
+        }
     },
 
 
