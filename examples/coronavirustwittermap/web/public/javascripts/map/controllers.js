@@ -55,7 +55,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         options: {
           accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
           id: 'jeremyli.p6f712pj',
-          minZoom: 4,
+          minZoom: 2,
           maxZoom: 16
         }
       },
@@ -119,6 +119,34 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       }
     });
+
+    // detect mobile browser
+    $scope.isMobile = {
+      Android: function() {
+        return navigator.userAgent.match(/Android/i);
+      },
+      BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+      },
+      iPhone: function() {
+        return navigator.userAgent.match(/iPhone|iPod/i);
+      },
+      iPad: function() {
+        return navigator.userAgent.match(/iPad/i);
+      },
+      Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+      },
+      Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i);
+      },
+      smallScreen: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || ($scope.isMobile.iPhone() && !$scope.isMobile.iPad()) || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      },
+      any: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.iPad() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      }
+    };
     
     // set map styles
     $scope.setStyles = function setStyles(styles) {
@@ -158,6 +186,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
+        if ($scope.isMobile.smallScreen()) {
+          map.setView([$scope.lat, $scope.lng], 3);
+        }
       });
 
       //Reset Zoom Button
@@ -172,7 +203,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       var body = document.getElementsByTagName("search-bar")[0];
       body.appendChild(button);
       button.addEventListener ("click", function() {
-        $scope.map.setView([$scope.lat, $scope.lng], 4);
+        if (!$scope.isMobile.smallScreen()) {
+          $scope.map.setView([$scope.lat, $scope.lng], 4);
+        } else {
+          $scope.map.setView([$scope.lat, $scope.lng], 3);
+        }
       });
 
       $scope.resetGeoInfo("state");
@@ -194,6 +229,49 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
       if ($scope.polygons.countyUpperPolygons) {
         $scope.polygons.countyUpperPolygons.setStyle($scope.styles.countyUpperStyle);
+      }
+    };
+
+    $scope.deletePolygonLayers = function deletePolygonLayers() {
+      if ($scope.polygons.statePolygons && $scope.map.hasLayer($scope.polygons.statePolygons)) {
+        $scope.map.removeLayer($scope.polygons.statePolygons);
+      }
+      if ($scope.polygons.countyPolygons && $scope.map.hasLayer($scope.polygons.countyPolygons)) {
+        $scope.map.removeLayer($scope.polygons.countyPolygons);
+      }
+      if ($scope.polygons.cityPolygons && $scope.map.hasLayer($scope.polygons.cityPolygons)) {
+        $scope.map.removeLayer($scope.polygons.cityPolygons);
+      }
+      if ($scope.polygons.stateUpperPolygons && $scope.map.hasLayer($scope.polygons.stateUpperPolygons)) {
+        $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+      }
+      if ($scope.polygons.countyUpperPolygons && $scope.map.hasLayer($scope.polygons.countyUpperPolygons)) {
+        $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
+      }
+    };
+
+    $scope.addPolygonLayers = function addPolygonLayers() {
+      $scope.status.zoomLevel = $scope.map.getZoom();
+      if ($scope.status.zoomLevel <= 5) {
+        if ($scope.polygons.statePolygons && !$scope.map.hasLayer($scope.polygons.statePolygons)) {
+          $scope.map.addLayer($scope.polygons.statePolygons);
+        }
+      } else {
+        if ($scope.status.zoomLevel <= 9) {
+          if ($scope.polygons.stateUpperPolygons && !$scope.map.hasLayer($scope.polygons.stateUpperPolygons)) {
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+          }
+          if ($scope.polygons.countyPolygons && !$scope.map.hasLayer($scope.polygons.countyPolygons)) {
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          }
+        } else {
+          if ($scope.polygons.countyUpperPolygons && !$scope.map.hasLayer($scope.polygons.countyUpperPolygons)) {
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+          }
+          if ($scope.polygons.cityPolygons && !$scope.map.hasLayer($scope.polygons.cityPolygons)) {
+            $scope.map.addLayer($scope.polygons.cityPolygons);
+          }
+        }
       }
     };
 

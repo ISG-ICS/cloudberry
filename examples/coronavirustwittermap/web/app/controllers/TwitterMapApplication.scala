@@ -71,6 +71,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val pinmapSamplingDayRange: String = config.getString("pinmap.samplingDayRange").getOrElse("30")
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
   val pinmapBinaryTransfer: Boolean = config.getBoolean("pinmap.binaryTransfer").getOrElse(false)
+  val pinmapMobileSamplingLimit: String = config.getString("pinmap.mobile.samplingLimit").getOrElse("2000")
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
   val liveTweetDefaultKeyword: String = config.getString("liveTweetDefaultKeyword").getOrElse(null)
   val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
@@ -88,6 +89,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val popupWindowGroupBy: String = config.getString("popupWindow.groupBy").getOrElse("month")
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5 * 1024 * 1024)
+
 
   val clientLogger = Logger("client")
 
@@ -323,7 +325,7 @@ object TwitterMapApplication {
   val CentroidLatitude = "centroidLatitude"
   val CentroidLongitude = "centroidLongitude"
   val cache = TrieMap.empty[String, (DateTime, List[String])]
-  val maxCacheSize = 500 //todo don't hardcode this
+  val maxCacheSize = 100 //todo don't hardcode this
 
   val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
 
@@ -377,8 +379,8 @@ object TwitterMapApplication {
   }
 
   def addToCache(key: String, responses: (DateTime, List[String])): Unit = {
-    if (cache.size >= maxCacheSize + 1) {
-      cache.drop(1)
+    if (cache.size >= maxCacheSize) {
+      cache -= cache.dropRight(cache.size - 1).keySet.head
     }
     if (cache.contains(key)) {
       if (cache(key)._1.isBefore(responses._1)) {
