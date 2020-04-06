@@ -16,6 +16,7 @@ angular.module("cloudberry.common")
       defaultHeatmapLimit: parseInt(config.heatmapSamplingLimit),
       defaultPinmapSamplingDayRange: parseInt(config.pinmapSamplingDayRange),
       defaultPinmapLimit: parseInt(config.pinmapSamplingLimit),
+      defaultPinmapMobileSamplingLimit: parseInt(config.pinMapMobileSamplingLimit),
 
       getLevel(level){
         switch(level){

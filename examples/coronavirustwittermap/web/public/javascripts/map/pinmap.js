@@ -82,6 +82,11 @@ angular.module("cloudberry.map")
                 }
             };
 
+            // replace the "limit" parameter with mobile limit configuration
+            if ($scope.isMobile.any()) {
+                pinsJson.select.limit = queryUtil.defaultPinmapMobileSamplingLimit;
+            }
+
             cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval) {
                 if (cloudberry.parameters.maptype === "pinmap") {
                     if (angular.isArray(resultSet)) {
@@ -148,6 +153,7 @@ angular.module("cloudberry.map")
 
         // Event handler for zoom event
         function onZoomPinmap(event) {
+            $scope.deletePolygonLayers();
             // if zoom in, send new query if points are not too many
             if (event.level > $scope.previousZoomLevel) {
                 if ($scope.currentPointsCount < $scope.maxPointsCount) {
@@ -166,6 +172,7 @@ angular.module("cloudberry.map")
 
         // Event handler for drag event
         function onDragPinmap(event) {
+            $scope.deletePolygonLayers();
             if ($scope.currentPointsCount < $scope.maxPointsCount) {
                 sendPinmapQuery();
             }
@@ -212,7 +219,11 @@ angular.module("cloudberry.map")
         }
 
         function cleanPinmapEventHandlers() {
-            $scope.map.off("mousemove");
+            if (!$scope.isMobile.any()) {
+                $scope.map.off("mousemove");
+            } else {
+                $scope.map.off("click");
+            }
 
             // Unsubscribe to moduleManager's events
             moduleManager.unsubscribeEvent(moduleManager.EVENT.CHANGE_ZOOM_LEVEL, onZoomPinmap);
@@ -235,9 +246,15 @@ angular.module("cloudberry.map")
             // add feature to each polygon
             // when a user click on a polygon, the map will zoom in to fit that polygon in the view
             function onEachFeature(feature, layer) {
-                layer.on({
-                    click: $scope.zoomToFeature
-                });
+                if (!$scope.isMobile.any()) {
+                    layer.on({
+                        click: $scope.zoomToFeature
+                    });
+                } else {
+                    layer.on({
+                        dblclick: $scope.zoomToFeature
+                    });
+                }
             }
 
             $scope.loadGeoJsonFiles(onEachFeature);
@@ -264,6 +281,8 @@ angular.module("cloudberry.map")
         // function for drawing pinmap
         function drawPinMap(result) {
 
+            $scope.deletePolygonLayers();
+
             // initialize the points layer
             if (!$scope.pointsLayer) {
 
@@ -273,8 +292,12 @@ angular.module("cloudberry.map")
 
                 $scope.map.addLayer($scope.pointsLayer);
 
-                // register listener to "mousemove" event on map
-                $scope.map.on("mousemove", onMapMouseMove);
+                if (!$scope.isMobile.any()) {
+                    // register listener to "mousemove" event on map
+                    $scope.map.on("mousemove", onMapMouseMove);
+                } else {
+                    $scope.map.on("click", onMapMouseClick);
+                }
                 $scope.timer = null;
                 // if user mouses over one place for 300ms, fire a "mouseintent" event.
                 function onMapMouseMove(e) {
@@ -287,6 +310,19 @@ angular.module("cloudberry.map")
                         this.fire("mouseintent", e);
                         $scope.timer = null;
                     }, this), 300);
+                }
+
+                function onMapMouseClick(e) {
+                    console.log(e)
+                    $scope.currentMousePosition = e;
+                    if ($scope.timer != null) {
+                        clearTimeout($scope.timer);
+                        $scope.timer = null;
+                    }
+                    $scope.timer = setTimeout(L.Util.bind(function() {
+                        this.fire("mouseintent", e);
+                        $scope.timer = null;
+                    }, this), 0);
                 }
 
                 // translate individual tweet from JSON to html element
@@ -464,6 +500,7 @@ angular.module("cloudberry.map")
                 sendPinmapQuery();
             }
             else if (event.previousMapType === "pinmap") {
+                $scope.addPolygonLayers();
                 cleanPinMap();
             }
         }

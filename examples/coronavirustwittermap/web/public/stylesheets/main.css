@@ -63,8 +63,8 @@ search-bar {
 }
 
 .info {
-  padding: 6px 8px;
-  font: 14px/16px Arial, Helvetica, sans-serif;
+  padding: 3px 4px;
+  font: 12px/12px Arial, Helvetica, sans-serif;
   background: white;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
@@ -485,5 +485,41 @@ button[disabled]{
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width:1024px) {
+  .w3-teal {
+    visibility: hidden;
+  }
+
+  #sidebar {
+    display: None;
+  }
+}
+  
+@media (max-width:768px) {
+  .w3-teal {
+    visibility: hidden;
+  }
+    
+  #time-slider {
+    visibility: hidden;
+  }
+
+  time-series {
+    visibility: hidden;
+  }
+
+  #sidebar {
+    display: None;
+  }
+
+  .slide-up-down {
+    visibility: hidden;
+  }
+
+  #count-window {
+    visibility: hidden;
   }
 }
