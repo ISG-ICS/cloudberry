@@ -485,6 +485,9 @@ angular.module("cloudberry.map")
             setPinMapStyle();
             $scope.resetPolygonLayers();
             setInfoControlPinMap();
+            if (cloudberryConfig.pinmapAlertMessages && cloudberryConfig.pinmapAlertMessages.length > 0) {
+                $scope.alertMessage(cloudberryConfig.pinmapAlertMessages, 5);
+            }
         }
 
         // map type change handler
