@@ -82,6 +82,11 @@ angular.module("cloudberry.map")
                 }
             };
 
+            // replace the "limit" parameter with mobile limit configuration
+            if ($scope.isMobile.any()) {
+                pinsJson.select.limit = queryUtil.defaultPinmapMobileSamplingLimit;
+            }
+
             cloudberryClient.send(pinsJson, function(id, resultSet, resultTimeInterval) {
                 if (cloudberry.parameters.maptype === "pinmap") {
                     if (angular.isArray(resultSet)) {
