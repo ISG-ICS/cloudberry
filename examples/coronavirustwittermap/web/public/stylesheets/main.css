@@ -63,8 +63,8 @@ search-bar {
 }
 
 .info {
-  padding: 6px 8px;
-  font: 14px/16px Arial, Helvetica, sans-serif;
+  padding: 3px 4px;
+  font: 12px/12px Arial, Helvetica, sans-serif;
   background: white;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
@@ -183,10 +183,6 @@ time-series {
 
 #count-text{
   font-size: 13px;
-}
-
-.normalize p{
-  text-align: center;
 }
 
 /* style for auto-complete menu item*/
@@ -327,8 +323,8 @@ time-series {
 
 mapchoose {
   position: absolute;
-  left: 5%;
-  top: 1.5%;
+  left: 1%;
+  top: 47%;
   background-color: white;
   opacity: 0.8;
   border-radius: 10px;
@@ -341,12 +337,26 @@ mapchoose ul {
 }
 
 mapchoose li {
-  float: left;
-  display: inline;
+  display: block;
+  margin: 5px;
+  text-decoration: none;
+}
+
+mapchoose li:hover {
+  background-color: #DCDCDC;
 }
 
 mapchoose li #img1, #img2 {
-  border-right: 0.5px solid black;
+  border-bottom: 1px solid grey;
+}
+
+#count-window {
+  position: absolute;
+  top: 1%;
+  pointer-events: none;
+  width: 18%;
+  left: 4%;
+  text-align: center;
 }
 
 .input-group {
@@ -475,5 +485,41 @@ button[disabled]{
   }
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width:1024px) {
+  .w3-teal {
+    visibility: hidden;
+  }
+
+  #sidebar {
+    display: None;
+  }
+}
+  
+@media (max-width:768px) {
+  .w3-teal {
+    visibility: hidden;
+  }
+    
+  #time-slider {
+    visibility: hidden;
+  }
+
+  time-series {
+    visibility: hidden;
+  }
+
+  #sidebar {
+    display: None;
+  }
+
+  .slide-up-down {
+    visibility: hidden;
+  }
+
+  #count-window {
+    visibility: hidden;
   }
 }

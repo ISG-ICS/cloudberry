@@ -2,6 +2,7 @@ package websocket
 
 import akka.actor.ActorRef
 import org.eclipse.jetty.websocket.client.WebSocketClient
+import play.api.Configuration
 
 class WebSocketFactory {
 
@@ -12,5 +13,5 @@ class WebSocketFactory {
     socket
   }
 
-  def newSocket(out: ActorRef): TwitterMapServerToCloudBerrySocket = new TwitterMapServerToCloudBerrySocket(out)
+  def newSocket(out: ActorRef, config: Configuration): TwitterMapServerToCloudBerrySocket = new TwitterMapServerToCloudBerrySocket(out, config)
 }

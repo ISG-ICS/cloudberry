@@ -1,20 +1,21 @@
 angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.timeseriescache'])
   .factory('cloudberryConfig', function(){
     return {
-      ws: config.cloudberryWS,
-      host:config.cloudberryHost,
-      port:config.cloudberryPort,
+      ws: config.appWS,
       sentimentEnabled: config.sentimentEnabled,
       sentimentUDF: config.sentimentUDF,
       removeSearchBar: config.removeSearchBar,
       predefinedKeywords: config.predefinedKeywords,
       defaultKeyword: config.defaultKeyword,
+      hotTopics: config.hotTopics,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
       pinMapOneTweetLookUpResult: null,
+      pinMapBinaryTransfer: config.pinMapBinaryTransfer,
+      pinmapAlertMessages: config.pinmapAlertMessages,
       timeSeriesChartType: config.timeSeriesChartType,
       timeSeriesGroupBy: config.timeSeriesGroupBy,
       popupWindowChartType: config.popupWindowChartType,
@@ -59,7 +60,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
     var defaultHeatmapLimit = parseInt(config.heatmapSamplingLimit);
     var defaultPinmapSamplingDayRange = parseInt(config.pinmapSamplingDayRange);
     var defaultPinmapLimit = parseInt(config.pinmapSamplingLimit);
-    var ws = new WebSocket(cloudberryConfig.ws + cloudberryConfig.host + ":" + cloudberryConfig.port + "/ws");
+    var ws = new WebSocket(cloudberryConfig.ws + window.location.host + "/ws/main");
     // The MapResultCache.getGeoIdsNotInCache() method returns the geoIds
     // not in the cache for the current query.
     var geoIdsNotInCache = [];

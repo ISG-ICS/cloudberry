@@ -139,9 +139,15 @@ angular.module("cloudberry.map")
     
     function setInfoControlHeatMap() {
       function onEachFeature(feature, layer) {
-        layer.on({
-          click: $scope.zoomToFeature
-        });
+        if (!$scope.isMobile.any()) {
+          layer.on({
+              click: $scope.zoomToFeature
+          });
+        } else {
+            layer.on({
+                dblclick: $scope.zoomToFeature
+            });
+        }
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);

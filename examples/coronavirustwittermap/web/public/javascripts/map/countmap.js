@@ -1,5 +1,5 @@
 angular.module('cloudberry.map')
-  .controller('countMapCtrl', function($scope, $compile, cloudberry, cloudberryConfig,
+  .controller('countMapCtrl', function($scope, $compile, $timeout, cloudberry, cloudberryConfig,
                                        TimeSeriesCache, PopulationCache, caseDataCache, moduleManager, cloudberryClient, queryUtil, chartUtil) {
 
     // Array to store the data for chart
@@ -254,6 +254,32 @@ angular.module('cloudberry.map')
       }
     }
 
+    function numberWithCommas(x) {
+      return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+    function showCaseCount() {
+      $timeout(function() {
+        var lastDay = cloudberry.parameters.timeInterval.end;
+        var totalCount = caseDataCache.getDailyTotalCaseCount("state", lastDay);
+        var content = "";
+        content += "<table style=\"width:100%\">" +
+        "<tr>" +
+        "  <td align=\"center\" colspan=\"2\">US COVID-19 Cases</td>" +
+        "</tr>" +
+        "<tr>" +
+        "  <th class=\"text-center\"><font color='red' size='3'>Confirmed</font></th>" +
+        "  <th class=\"text-center\"><font color='black' size='3'>Deaths</font></th>" +
+        "</tr>" +
+        "<tr>" +
+        "  <td align=\"center\"><font color='red' size='3'><b>" + numberWithCommas(totalCount[0]) + "</b></font></td>" +
+        "  <td align=\"center\"><font color='black' size='3'><b>" + numberWithCommas(totalCount[1]) + "</b></font></td>" +
+        "</td>" +
+        "</table>";
+        document.getElementById('count-window').innerHTML = content;
+      }, 1000);
+    }
+
     // set map styles for countmap
     function setCountMapStyle() {
       $scope.setStyles({
@@ -440,9 +466,11 @@ angular.module('cloudberry.map')
         if (cloudberry.parameters.maptype == 'countmap'){
           // highlight a polygon
           var layer = leafletEvent.target;
-          layer.setStyle($scope.styles.hoverStyle);
-          if (!L.Browser.ie && !L.Browser.opera) {
-            layer.bringToFront();
+          if (!$scope.isMobile.any()) {
+            layer.setStyle($scope.styles.hoverStyle);
+            if (!L.Browser.ie && !L.Browser.opera) {
+              layer.bringToFront();
+            }
           }
 
           // get selected geoID for the polygon
@@ -451,22 +479,33 @@ angular.module('cloudberry.map')
 
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
-            $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
+            if ($scope.isMobile.any()) {
+              console.log($(window).width() * 0.6);
+              $scope.popUp = L.popup({autoPan:true, autoPanPaddingTopLeft: [100, 80], closeOnEscapeKey: true, maxWidth: $(window).width() * 0.6});
+            }
+            else {
+              $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
+            }
             layer.bindPopup($scope.popUp).openPopup();
             // only reposition the popup window for state level (only state level has case number trend chart)
             if ($scope.status.logicLevel === "state") {
-              // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
-              const popupPixelWidth = 500; // default pixel width of popup in leaflet
-              const popupPixelHeight = 600; // estimate the pixel height of popup
-              const windowPixelWidth = window.innerWidth;
-              const windowPixelHeight = window.innerHeight;
-              const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
-              const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
-              const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
-              const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
-              const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
-              const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
-              $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
+              if ($scope.isMobile.any()) {
+                $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat, $scope.selectedPlace.properties.popUpLog]);
+              }
+              else {
+                // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
+                const popupPixelWidth = 500; // default pixel width of popup in leaflet
+                const popupPixelHeight = 600; // estimate the pixel height of popup
+                const windowPixelWidth = window.innerWidth;
+                const windowPixelHeight = window.innerHeight;
+                const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
+                const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
+                const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
+                const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
+                const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
+                const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
+                $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
+              }
             }
             else {
               $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
@@ -517,11 +556,18 @@ angular.module('cloudberry.map')
       // remove the highlight when mouseout
       // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
-        layer.on({
-          mouseover: highlightPopupInfo,
-          mouseout: resetHighlight,
-          click: $scope.zoomToFeature
-        });
+        if (!$scope.isMobile.any()) {
+          layer.on({
+            mouseover: highlightPopupInfo,
+            mouseout: resetHighlight,
+            click: $scope.zoomToFeature
+          });
+        } else {
+          layer.on({
+            click: highlightPopupInfo,
+            dblclick: $scope.zoomToFeature
+          });
+        }
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
@@ -699,15 +745,15 @@ angular.module('cloudberry.map')
 
       function initNormalize(div) {
         if($scope.doNormalization)
-          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" checked type="checkbox">';
+          div.innerHTML += '<br><br><span align="center">Normalize </span><input id="toggle-normalize" checked type="checkbox" data-size="mini" data-width="25">';
         else
-          div.innerHTML = '<p>Normalize</p><input id="toggle-normalize" type="checkbox">';
+          div.innerHTML += '<br><br><span align="center">Normalize </span><input id="toggle-normalize" type="checkbox" data-size="mini" data-width="25">';
       }
 
       function initNormalizeToggle() {
         var toggle = $('#toggle-normalize');
         toggle.bootstrapToggle({
-          on: "By Population"
+          on: "On"
         });
         if($scope.doSentiment){
           toggle.bootstrapToggle('off');
@@ -776,6 +822,7 @@ angular.module('cloudberry.map')
           div.setAttribute("title", "# of Tweets per Million People");  // add tool-tips for the legend to explain the meaning of "M"
         // loop through our density intervals and generate a label with a colored square for each interval
         i = 1;
+        div.innerHTML += '<p align="center">Tweet count</p>'
         for (; i < grades.length; i++) {
           div.innerHTML +=
             '<i style="background:' + getColor(grades[i]) + '"></i>' + gName[i-1] + '&ndash;' + gName[i] + '<br>';
@@ -792,13 +839,11 @@ angular.module('cloudberry.map')
         } else {
           setCountLegend(div);
         }
+        initNormalize(div);
       }
 
-      // add legend
-      addMapControl('legend', 'topleft', initLegend, null);
-
-      // add toggle normalize
-      addMapControl('normalize', 'topleft', initNormalize, initNormalizeToggle);
+      // add legend and toggle normalize
+      addMapControl('legend', 'topleft', initLegend, initNormalizeToggle);
 
       // add toggle sentiment analysis
       if(cloudberryConfig.sentimentEnabled)
@@ -823,10 +868,12 @@ angular.module('cloudberry.map')
         setCountMapStyle();
         $scope.resetPolygonLayers();
         setInfoControlCountMap();
+        showCaseCount();
         sendCountmapQuery();
       }
       else if (event.previousMapType === "countmap"){
         cleanCountMap();
+        document.getElementById('count-window').innerHTML = "";
       }
     }
 
