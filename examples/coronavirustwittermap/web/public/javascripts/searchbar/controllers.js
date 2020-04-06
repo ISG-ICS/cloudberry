@@ -133,7 +133,8 @@ angular.module('cloudberry.util', ['cloudberry.common'])
 
     // If config file specifies a list of hotTopics, show them as a collapse-able list on the left
     $scope.hotTopics = cloudberryConfig.hotTopics;
-    if ($scope.hotTopics && $scope.hotTopics.length > 0) {
+    // Disable hot topics on mobile devices for now
+    if (!$scope.isMobile.any() && $scope.hotTopics && $scope.hotTopics.length > 0) {
 
       // add hot topics div
       $scope.hotTopicsDiv = document.createElement("div");
