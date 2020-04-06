@@ -134,6 +134,35 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     // If config file specifies a list of hotTopics, show them as a collapse-able list on the left
     $scope.hotTopics = cloudberryConfig.hotTopics;
     // Disable hot topics on mobile devices for now
+    // TODO - make this common isMobile function in common services
+    // detect mobile browser
+    $scope.isMobile = {
+      Android: function() {
+        return navigator.userAgent.match(/Android/i);
+      },
+      BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+      },
+      iPhone: function() {
+        return navigator.userAgent.match(/iPhone|iPod/i);
+      },
+      iPad: function() {
+        return navigator.userAgent.match(/iPad/i);
+      },
+      Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+      },
+      Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i);
+      },
+      smallScreen: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || ($scope.isMobile.iPhone() && !$scope.isMobile.iPad()) || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      },
+      any: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.iPad() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      }
+    };
+
     if (!$scope.isMobile.any() && $scope.hotTopics && $scope.hotTopics.length > 0) {
 
       // add hot topics div
