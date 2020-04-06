@@ -88,6 +88,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val webSocketFactory = new WebSocketFactory()
   val maxTextMessageSize: Int = config.getInt("maxTextMessageSize").getOrElse(5 * 1024 * 1024)
 
+
   val clientLogger = Logger("client")
 
   import TwitterMapApplication.DBType
@@ -322,7 +323,7 @@ object TwitterMapApplication {
   val CentroidLatitude = "centroidLatitude"
   val CentroidLongitude = "centroidLongitude"
   val cache = TrieMap.empty[String, (DateTime, List[String])]
-  val maxCacheSize = 500 //todo don't hardcode this
+  val maxCacheSize = 100 //todo don't hardcode this
 
   val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
 
@@ -376,8 +377,8 @@ object TwitterMapApplication {
   }
 
   def addToCache(key: String, responses: (DateTime, List[String])): Unit = {
-    if (cache.size >= maxCacheSize + 1) {
-      cache.drop(1)
+    if (cache.size >= maxCacheSize) {
+      cache -= cache.dropRight(cache.size - 1).keySet.head
     }
     if (cache.contains(key)) {
       if (cache(key)._1.isBefore(responses._1)) {
