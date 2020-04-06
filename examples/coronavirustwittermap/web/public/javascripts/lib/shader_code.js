@@ -26,7 +26,7 @@ var fragCode = `
             float border = 0.05;
             float radius = 0.5;
             vec4 color0 = vec4(0.0, 0.0, 0.0, 0.0);
-            vec4 color1 = abs(idx - u_selected)< 1e-4 ? vec4(1.0, 0.0, 0.0, 1.0) : vec4(u_color, 0.75);
+            vec4 color1 = abs(idx - u_selected)< 1e-4 ? vec4(u_color, 0.75) : vec4(u_color, 0.75);
 
             vec2 m = gl_PointCoord.xy - vec2(0.5, 0.5);
             float dist = radius - sqrt(m.x*m.x + m.y*m.y);
