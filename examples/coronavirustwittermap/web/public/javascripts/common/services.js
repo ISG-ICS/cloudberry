@@ -14,6 +14,7 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       querySliceMills: parseInt(config.querySliceMills),
       pinMapOneTweetLookUpResult: null,
       pinMapBinaryTransfer: config.pinMapBinaryTransfer,
+      pinmapAlertMessages: config.pinmapAlertMessages,
       timeSeriesChartType: config.timeSeriesChartType,
       timeSeriesGroupBy: config.timeSeriesGroupBy,
       popupWindowChartType: config.popupWindowChartType,

@@ -10,7 +10,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     // L.Browser.gecko3d: true for gecko-based browsers supporting CSS transforms.
     if (L.Browser.gecko || L.Browser.gecko3d) {
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
-      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
+      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible');
       div.innerHTML = [
         '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
         '<p>TwitterMap currently doesn\'t support time series chart on Firefox.</p>',
@@ -451,6 +451,28 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       randomizationSeed = seed;
       var ret = randomNorm((minV + maxV) / 2, (maxV - minV) / 16);
       return ret;
+    };
+
+    // show alert message for a given time duration
+    $scope.alertMessage = function(messages, seconds) {
+      var alertDiv = document.getElementsByTagName("alert-bar")[0];
+      var div = L.DomUtil.create('div', 'alert alert-info alert-dismissible');
+      var messagesArray = [];
+      for (var i = 0; i < messages.length; i ++) {
+        messagesArray.push('<p>' + messages[i] + '</p>');
+      }
+      div.innerHTML = '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' + messagesArray.join('');
+      div.style.position = 'absolute';
+      div.style.top = '0%';
+      div.style.width = '100%';
+      div.style.zIndex = '9999';
+      div.style.fontSize = '23px';
+      alertDiv.appendChild(div);
+      if (seconds > 0) {
+        $("alert-bar").fadeTo(seconds * 1000, 500).slideUp(500, function () {
+          $("alert-bar").slideUp(500);
+        });
+      }
     };
 
     $scope.onEachFeature = null;
