@@ -480,7 +480,6 @@ angular.module('cloudberry.map')
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
             if ($scope.isMobile.any()) {
-              console.log($(window).width() * 0.6);
               $scope.popUp = L.popup({autoPan:true, autoPanPaddingTopLeft: [100, 80], closeOnEscapeKey: true, maxWidth: $(window).width() * 0.6});
             }
             else {
@@ -872,6 +871,7 @@ angular.module('cloudberry.map')
         sendCountmapQuery();
       }
       else if (event.previousMapType === "countmap"){
+        $scope.map.closePopup();
         cleanCountMap();
         document.getElementById('count-window').innerHTML = "";
       }
