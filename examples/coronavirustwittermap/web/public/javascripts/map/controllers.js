@@ -574,7 +574,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.stateUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
           }
-          $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+          if (cloudberry.parameters.maptype !== "pinmap") {
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+          }
           $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
             {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
         } else if ($scope.status.zoomLevel > 5) {
@@ -592,8 +594,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
-          $scope.map.addLayer($scope.polygons.stateUpperPolygons);
-          $scope.map.addLayer($scope.polygons.countyPolygons);
+          if (cloudberry.parameters.maptype !== "pinmap") {
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          }
         } else if ($scope.status.zoomLevel <= 5) {
           $scope.resetGeoInfo("state");
           if (!$scope.status.init) {
@@ -612,7 +616,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
-          if ($scope.polygons.statePolygons) {
+          if ($scope.polygons.statePolygons && cloudberry.parameters.maptype !== "pinmap") {
             $scope.map.addLayer($scope.polygons.statePolygons);
           }
         }
