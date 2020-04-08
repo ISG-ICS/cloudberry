@@ -813,7 +813,7 @@ angular.module('cloudberry.map')
       }
 
       function setCountLegend(div) {
-        div.style.margin = "20% 0 0 0";
+        div.style.margin = "30% 0 0 0";
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
         var gName  = getGradesNames(grades);
