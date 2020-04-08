@@ -11,7 +11,7 @@
 
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-      <level>INFO</level>
+      <level>ERROR</level>
     </filter>
     <encoder>
       <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
@@ -26,12 +26,12 @@
   </appender>
 
   <!-- additivity=false ensures client log data only goes to the client log -->
-  <logger name="client" level="INFO" additivity="false">
+  <logger name="client" level="ERROR" additivity="false">
     <appender-ref ref="CLIENT_FILE" />
   </logger>
-  <logger name="play" level="INFO" />
-  <logger name="application" level="DEBUG" />
-  <logger name="akka" level="DEBUG" />
+  <logger name="play" level="ERROR" />
+  <logger name="application" level="ERROR" />
+  <logger name="akka" level="ERROR" />
 
   <!-- Off these ones as they are annoying, and anyway we manage configuration ourself -->
   <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF" />
@@ -41,7 +41,7 @@
   <logger name="io.netty" level="OFF"/>
   <logger name="org.asynchttpclient" level="OFF"/>
 
-  <root level="DEBUG">
+  <root level="ERROR">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="FILE" />
   </root>
