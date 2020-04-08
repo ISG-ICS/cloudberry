@@ -486,7 +486,7 @@ angular.module("cloudberry.map")
             $scope.resetPolygonLayers();
             setInfoControlPinMap();
             if (cloudberryConfig.pinmapAlertMessages && cloudberryConfig.pinmapAlertMessages.length > 0) {
-                $scope.alertMessage(cloudberryConfig.pinmapAlertMessages, 0);
+                $scope.alertMessage(cloudberryConfig.pinmapAlertMessages, 15);
             }
         }
 
