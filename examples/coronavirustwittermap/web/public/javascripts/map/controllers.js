@@ -539,7 +539,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       for (var i = 0; i < messages.length; i ++) {
         messagesArray.push('<p>' + messages[i] + '</p>');
       }
-      div.innerHTML = '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>' + messagesArray.join('');
+      div.innerHTML = '<a href="#" class="close fade show" data-dismiss="alert" aria-label="close">&times;</a>' + messagesArray.join('');
       div.style.position = 'absolute';
       div.style.top = '0%';
       div.style.width = '100%';
@@ -547,9 +547,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       div.style.fontSize = '23px';
       alertDiv.appendChild(div);
       if (seconds > 0) {
-        $("alert-bar").fadeTo(seconds * 1000, 500).slideUp(500, function () {
-          $("alert-bar").slideUp(500);
-        });
+        setTimeout(function() {
+          $(".alert").alert('close');
+        }, seconds * 1000);
       }
     };
 
