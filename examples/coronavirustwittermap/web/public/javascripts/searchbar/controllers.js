@@ -163,7 +163,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       }
     };
 
-    if (!$scope.isMobile.any() && $scope.hotTopics && $scope.hotTopics.length > 0) {
+    if (!$scope.isMobile.smallScreen() && $scope.hotTopics && $scope.hotTopics.length > 0) {
 
       // add hot topics div
       $scope.hotTopicsDiv = document.createElement("div");
@@ -200,6 +200,51 @@ angular.module('cloudberry.util', ['cloudberry.common'])
           $scope.defaultKeywordSearch(topic);
         });
         a.innerHTML = "<font size='4'><u> # " + topic + "</u></font>";
+        item.appendChild(a);
+        listGroup.appendChild(item);
+      }
+      $scope.hotTopicsDiv.appendChild(collapseButton);
+      collapseDiv.appendChild(listGroup);
+      $scope.hotTopicsDiv.appendChild(collapseDiv);
+      document.body.appendChild($scope.hotTopicsDiv);
+    }
+    if ($scope.isMobile.smallScreen() && $scope.hotTopics && $scope.hotTopics.length > 0) {
+
+      // add hot topics div
+      $scope.hotTopicsDiv = document.createElement("div");
+      $scope.hotTopicsDiv.style.position = 'absolute';
+      $scope.hotTopicsDiv.style.top = '12%';
+      $scope.hotTopicsDiv.style.left = '2%';
+
+      // add collapse button
+      let collapseButton = document.createElement("a");
+      collapseButton.innerHTML = "<h4>Hot Topics</h4>";
+      collapseButton.setAttribute("role", "button");
+      collapseButton.setAttribute("data-toggle", "collapse");
+      collapseButton.href = "#hotTopicsList";
+      collapseButton.setAttribute("aria-expanded", "true");
+      collapseButton.setAttribute("aria-controls", "hotTopicsList");
+
+      // add collapse div
+      let collapseDiv = document.createElement("div");
+      collapseDiv.className = "collapse";
+      collapseDiv.id = "hotTopicsList";
+      // add list group
+      let listGroup = document.createElement("ul");
+      listGroup.className = "list-group";
+      // add list group items
+      for (let i = 0; i < $scope.hotTopics.length; i ++) {
+        let topic = $scope.hotTopics[i];
+        let item = document.createElement("li");
+        item.className = "list-group-item";
+        item.style.borderColor = "transparent";
+        item.style.backgroundColor = "transparent";
+        let a = document.createElement("a");
+        a.href = "#";
+        a.addEventListener("click", function(event) {
+          $scope.defaultKeywordSearch(topic);
+        });
+        a.innerHTML = "<font size='2'><u> # " + topic + "</u></font>";
         item.appendChild(a);
         listGroup.appendChild(item);
       }

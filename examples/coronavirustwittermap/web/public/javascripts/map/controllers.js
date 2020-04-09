@@ -198,7 +198,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       button.title = "Reset";
       button.href = "#";
       button.style.position = 'inherit';
-      button.style.top = '150%';
+      button.style.top = '160%';
       button.style.left = '-53%';
       var body = document.getElementsByTagName("search-bar")[0];
       body.appendChild(button);
@@ -574,9 +574,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.stateUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
           }
-          $scope.map.addLayer($scope.polygons.countyUpperPolygons);
-          $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
-            {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+          if (cloudberry.parameters.maptype !== "pinmap") {
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+            $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
+              {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+          }
         } else if ($scope.status.zoomLevel > 5) {
           $scope.resetGeoInfo("county");
           if (!$scope.status.init) {
@@ -592,8 +594,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
-          $scope.map.addLayer($scope.polygons.stateUpperPolygons);
-          $scope.map.addLayer($scope.polygons.countyPolygons);
+          if (cloudberry.parameters.maptype !== "pinmap") {
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          }
         } else if ($scope.status.zoomLevel <= 5) {
           $scope.resetGeoInfo("state");
           if (!$scope.status.init) {
@@ -612,7 +616,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
-          if ($scope.polygons.statePolygons) {
+          if ($scope.polygons.statePolygons && cloudberry.parameters.maptype !== "pinmap") {
             $scope.map.addLayer($scope.polygons.statePolygons);
           }
         }

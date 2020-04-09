@@ -153,7 +153,6 @@ angular.module("cloudberry.map")
 
         // Event handler for zoom event
         function onZoomPinmap(event) {
-            $scope.deletePolygonLayers();
             // if zoom in, send new query if points are not too many
             if (event.level > $scope.previousZoomLevel) {
                 if ($scope.currentPointsCount < $scope.maxPointsCount) {
@@ -168,15 +167,18 @@ angular.module("cloudberry.map")
             }
             $scope.previousZoomLevel = event.level;
             sendPinmapTimeQuery();
+
+            $scope.deletePolygonLayers();
         }
 
         // Event handler for drag event
         function onDragPinmap(event) {
-            $scope.deletePolygonLayers();
             if ($scope.currentPointsCount < $scope.maxPointsCount) {
                 sendPinmapQuery();
             }
             sendPinmapTimeQuery();
+
+            $scope.deletePolygonLayers();
         }
 
         // Event handler for search keyword event
@@ -186,6 +188,8 @@ angular.module("cloudberry.map")
             $scope.currentKeywordMinZoomLevel = $scope.status.zoomLevel;
             sendPinmapQuery();
             sendPinmapTimeQuery();
+
+            $scope.deletePolygonLayers();
         }
 
         // Event handler for time series range event
@@ -193,6 +197,8 @@ angular.module("cloudberry.map")
             drawPinMap([]);
             sendPinmapQuery();
             sendPinmapTimeQuery();
+
+            $scope.deletePolygonLayers();
         }
 
         function cleanPinmapLayer() {
@@ -313,7 +319,6 @@ angular.module("cloudberry.map")
                 }
 
                 function onMapMouseClick(e) {
-                    console.log(e)
                     $scope.currentMousePosition = e;
                     if ($scope.timer != null) {
                         clearTimeout($scope.timer);
