@@ -466,9 +466,11 @@ angular.module('cloudberry.map')
         if (cloudberry.parameters.maptype == 'countmap'){
           // highlight a polygon
           var layer = leafletEvent.target;
-          layer.setStyle($scope.styles.hoverStyle);
-          if (!L.Browser.ie && !L.Browser.opera) {
-            layer.bringToFront();
+          if (!$scope.isMobile.any()) {
+            layer.setStyle($scope.styles.hoverStyle);
+            if (!L.Browser.ie && !L.Browser.opera) {
+              layer.bringToFront();
+            }
           }
 
           // get selected geoID for the polygon
@@ -477,22 +479,32 @@ angular.module('cloudberry.map')
 
           // bind a pop up window
           if ($scope.checkIfQueryIsRequested === true) {
-            $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
+            if ($scope.isMobile.any()) {
+              $scope.popUp = L.popup({autoPan:true, autoPanPaddingTopLeft: [100, 80], closeOnEscapeKey: true, maxWidth: $(window).width() * 0.6});
+            }
+            else {
+              $scope.popUp = L.popup({autoPan:false, closeOnEscapeKey: true});
+            }
             layer.bindPopup($scope.popUp).openPopup();
             // only reposition the popup window for state level (only state level has case number trend chart)
             if ($scope.status.logicLevel === "state") {
-              // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
-              const popupPixelWidth = 500; // default pixel width of popup in leaflet
-              const popupPixelHeight = 600; // estimate the pixel height of popup
-              const windowPixelWidth = window.innerWidth;
-              const windowPixelHeight = window.innerHeight;
-              const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
-              const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
-              const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
-              const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
-              const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
-              const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
-              $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
+              if ($scope.isMobile.any()) {
+                $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat, $scope.selectedPlace.properties.popUpLog]);
+              }
+              else {
+                // position popup window left to the polygon's left boundary by 1/2 popup width, down to the polygon's center by 1/2 popup height
+                const popupPixelWidth = 500; // default pixel width of popup in leaflet
+                const popupPixelHeight = 600; // estimate the pixel height of popup
+                const windowPixelWidth = window.innerWidth;
+                const windowPixelHeight = window.innerHeight;
+                const windowLngWidth = $scope.map.getBounds().getEast() - $scope.map.getBounds().getWest();
+                const windowLatHeight = $scope.map.getBounds().getNorth() - $scope.map.getBounds().getSouth();
+                const polygonLngLeft = leftLng($scope.selectedPlace.geometry);
+                const polygonLatCenter = centerLat($scope.selectedPlace.geometry);
+                const popupLat = polygonLatCenter - popupPixelHeight * windowLatHeight / windowPixelHeight / 2;
+                const popupLng = polygonLngLeft - popupPixelWidth * windowLngWidth / windowPixelWidth / 2;
+                $scope.popUp.setContent(getPopupContent()).setLatLng([popupLat, popupLng]);
+              }
             }
             else {
               $scope.popUp.setContent(getPopupContent()).setLatLng([$scope.selectedPlace.properties.popUpLat,$scope.selectedPlace.properties.popUpLog]);
@@ -543,11 +555,18 @@ angular.module('cloudberry.map')
       // remove the highlight when mouseout
       // zoom in to fit the polygon when the polygon is clicked
       function onEachFeature(feature, layer) {
-        layer.on({
-          mouseover: highlightPopupInfo,
-          mouseout: resetHighlight,
-          click: $scope.zoomToFeature
-        });
+        if (!$scope.isMobile.any()) {
+          layer.on({
+            mouseover: highlightPopupInfo,
+            mouseout: resetHighlight,
+            click: $scope.zoomToFeature
+          });
+        } else {
+          layer.on({
+            click: highlightPopupInfo,
+            dblclick: $scope.zoomToFeature
+          });
+        }
       }
 
       $scope.loadGeoJsonFiles(onEachFeature);
@@ -794,7 +813,7 @@ angular.module('cloudberry.map')
       }
 
       function setCountLegend(div) {
-        div.style.margin = "20% 0 0 0";
+        div.style.margin = "30% 0 0 0";
         var grades = new Array(colors.length -1); //[1, 10, 100, 1000, 10000, 100000]
         setGrades(grades);
         var gName  = getGradesNames(grades);
@@ -852,6 +871,7 @@ angular.module('cloudberry.map')
         sendCountmapQuery();
       }
       else if (event.previousMapType === "countmap"){
+        $scope.map.closePopup();
         cleanCountMap();
         document.getElementById('count-window').innerHTML = "";
       }

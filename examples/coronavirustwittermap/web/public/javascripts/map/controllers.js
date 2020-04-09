@@ -10,7 +10,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     // L.Browser.gecko3d: true for gecko-based browsers supporting CSS transforms.
     if (L.Browser.gecko || L.Browser.gecko3d) {
       var alertDiv = document.getElementsByTagName("alert-bar")[0];
-      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible')
+      var div = L.DomUtil.create('div', 'alert alert-warning alert-dismissible');
       div.innerHTML = [
         '<a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>',
         '<p>TwitterMap currently doesn\'t support time series chart on Firefox.</p>',
@@ -55,7 +55,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         options: {
           accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
           id: 'jeremyli.p6f712pj',
-          minZoom: 4,
+          minZoom: 2,
           maxZoom: 16
         }
       },
@@ -119,6 +119,34 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         sentimentColors: ['#ff0000', '#C0C0C0', '#00ff00']
       }
     });
+
+    // detect mobile browser
+    $scope.isMobile = {
+      Android: function() {
+        return navigator.userAgent.match(/Android/i);
+      },
+      BlackBerry: function() {
+        return navigator.userAgent.match(/BlackBerry/i);
+      },
+      iPhone: function() {
+        return navigator.userAgent.match(/iPhone|iPod/i);
+      },
+      iPad: function() {
+        return navigator.userAgent.match(/iPad/i);
+      },
+      Opera: function() {
+        return navigator.userAgent.match(/Opera Mini/i);
+      },
+      Windows: function() {
+        return navigator.userAgent.match(/IEMobile/i);
+      },
+      smallScreen: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || ($scope.isMobile.iPhone() && !$scope.isMobile.iPad()) || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      },
+      any: function() {
+        return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.iPad() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+      }
+    };
     
     // set map styles
     $scope.setStyles = function setStyles(styles) {
@@ -158,6 +186,9 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
         //making attribution control to false to remove the default leaflet sign in the bottom of map
         map.attributionControl.setPrefix(false);
         map.setView([$scope.lat, $scope.lng],$scope.zoom);
+        if ($scope.isMobile.smallScreen()) {
+          map.setView([$scope.lat, $scope.lng], 3);
+        }
       });
 
       //Reset Zoom Button
@@ -167,12 +198,16 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       button.title = "Reset";
       button.href = "#";
       button.style.position = 'inherit';
-      button.style.top = '150%';
+      button.style.top = '160%';
       button.style.left = '-53%';
       var body = document.getElementsByTagName("search-bar")[0];
       body.appendChild(button);
       button.addEventListener ("click", function() {
-        $scope.map.setView([$scope.lat, $scope.lng], 4);
+        if (!$scope.isMobile.smallScreen()) {
+          $scope.map.setView([$scope.lat, $scope.lng], 4);
+        } else {
+          $scope.map.setView([$scope.lat, $scope.lng], 3);
+        }
       });
 
       $scope.resetGeoInfo("state");
@@ -194,6 +229,49 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       }
       if ($scope.polygons.countyUpperPolygons) {
         $scope.polygons.countyUpperPolygons.setStyle($scope.styles.countyUpperStyle);
+      }
+    };
+
+    $scope.deletePolygonLayers = function deletePolygonLayers() {
+      if ($scope.polygons.statePolygons && $scope.map.hasLayer($scope.polygons.statePolygons)) {
+        $scope.map.removeLayer($scope.polygons.statePolygons);
+      }
+      if ($scope.polygons.countyPolygons && $scope.map.hasLayer($scope.polygons.countyPolygons)) {
+        $scope.map.removeLayer($scope.polygons.countyPolygons);
+      }
+      if ($scope.polygons.cityPolygons && $scope.map.hasLayer($scope.polygons.cityPolygons)) {
+        $scope.map.removeLayer($scope.polygons.cityPolygons);
+      }
+      if ($scope.polygons.stateUpperPolygons && $scope.map.hasLayer($scope.polygons.stateUpperPolygons)) {
+        $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
+      }
+      if ($scope.polygons.countyUpperPolygons && $scope.map.hasLayer($scope.polygons.countyUpperPolygons)) {
+        $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
+      }
+    };
+
+    $scope.addPolygonLayers = function addPolygonLayers() {
+      $scope.status.zoomLevel = $scope.map.getZoom();
+      if ($scope.status.zoomLevel <= 5) {
+        if ($scope.polygons.statePolygons && !$scope.map.hasLayer($scope.polygons.statePolygons)) {
+          $scope.map.addLayer($scope.polygons.statePolygons);
+        }
+      } else {
+        if ($scope.status.zoomLevel <= 9) {
+          if ($scope.polygons.stateUpperPolygons && !$scope.map.hasLayer($scope.polygons.stateUpperPolygons)) {
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+          }
+          if ($scope.polygons.countyPolygons && !$scope.map.hasLayer($scope.polygons.countyPolygons)) {
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          }
+        } else {
+          if ($scope.polygons.countyUpperPolygons && !$scope.map.hasLayer($scope.polygons.countyUpperPolygons)) {
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+          }
+          if ($scope.polygons.cityPolygons && !$scope.map.hasLayer($scope.polygons.cityPolygons)) {
+            $scope.map.addLayer($scope.polygons.cityPolygons);
+          }
+        }
       }
     };
 
@@ -453,6 +531,28 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
       return ret;
     };
 
+    // show alert message for a given time duration
+    $scope.alertMessage = function(messages, seconds) {
+      var alertDiv = document.getElementsByTagName("alert-bar")[0];
+      var div = L.DomUtil.create('div', 'alert alert-info alert-dismissible');
+      var messagesArray = [];
+      for (var i = 0; i < messages.length; i ++) {
+        messagesArray.push('<p>' + messages[i] + '</p>');
+      }
+      div.innerHTML = '<a href="#" class="close fade show" data-dismiss="alert" aria-label="close">&times;</a>' + messagesArray.join('');
+      div.style.position = 'absolute';
+      div.style.top = '0%';
+      div.style.width = '100%';
+      div.style.zIndex = '9999';
+      div.style.fontSize = '23px';
+      alertDiv.appendChild(div);
+      if (seconds > 0) {
+        setTimeout(function() {
+          $(".alert").alert('close');
+        }, seconds * 1000);
+      }
+    };
+
     $scope.onEachFeature = null;
 
     // Listens to Leaflet's zoomend event and publish it to moduleManager
@@ -474,9 +574,11 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.stateUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.stateUpperPolygons);
           }
-          $scope.map.addLayer($scope.polygons.countyUpperPolygons);
-          $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
-            {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+          if (cloudberry.parameters.maptype !== "pinmap") {
+            $scope.map.addLayer($scope.polygons.countyUpperPolygons);
+            $scope.loadCityJsonByBound($scope.onEachFeature, moduleManager.EVENT.CHANGE_ZOOM_LEVEL,
+              {level: $scope.map.getZoom(), bounds: $scope.map.getBounds()});
+          }
         } else if ($scope.status.zoomLevel > 5) {
           $scope.resetGeoInfo("county");
           if (!$scope.status.init) {
@@ -492,8 +594,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
-          $scope.map.addLayer($scope.polygons.stateUpperPolygons);
-          $scope.map.addLayer($scope.polygons.countyPolygons);
+          if (cloudberry.parameters.maptype !== "pinmap") {
+            $scope.map.addLayer($scope.polygons.stateUpperPolygons);
+            $scope.map.addLayer($scope.polygons.countyPolygons);
+          }
         } else if ($scope.status.zoomLevel <= 5) {
           $scope.resetGeoInfo("state");
           if (!$scope.status.init) {
@@ -512,7 +616,7 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
           if ($scope.polygons.countyUpperPolygons) {
             $scope.map.removeLayer($scope.polygons.countyUpperPolygons);
           }
-          if ($scope.polygons.statePolygons) {
+          if ($scope.polygons.statePolygons && cloudberry.parameters.maptype !== "pinmap") {
             $scope.map.addLayer($scope.polygons.statePolygons);
           }
         }

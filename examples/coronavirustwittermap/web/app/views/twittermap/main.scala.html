@@ -50,6 +50,7 @@
       removeSearchBar: @TMAobject.removeSearchBar,
       predefinedKeywords: @Html(Json.stringify(Json.toJson(TMAobject.predefinedKeywords))),
       defaultKeyword: "@TMAobject.defaultKeyword",
+      hotTopics: @Html(Json.stringify(Json.toJson(TMAobject.hotTopics))),
       @if(TMAobject.cacheThreshold.isDefined) {
       cacheThreshold: @TMAobject.cacheThreshold,
       } else {
@@ -69,6 +70,8 @@
       pinmapSamplingDayRange: @TMAobject.pinmapSamplingDayRange,
       pinmapSamplingLimit: @TMAobject.pinmapSamplingLimit,
       pinMapBinaryTransfer: @TMAobject.pinmapBinaryTransfer,
+      pinMapMobileSamplingLimit: @TMAobject.pinmapMobileSamplingLimit,
+      pinmapAlertMessages: @Html(Json.stringify(Json.toJson(TMAobject.pinmapAlertMessages))),
       liveTweetDefaultKeyword: "@TMAobject.liveTweetDefaultKeyword",
       liveTweetQueryInterval: @TMAobject.liveTweetQueryInterval,
       liveTweetQueryOffset: @TMAobject.liveTweetQueryOffset,
