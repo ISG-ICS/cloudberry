@@ -81,7 +81,7 @@ angular.module('cloudberry.casedatacache', [])
 
     /**
      * Parse csv to case data store
-     * @param csv - [[state_id, last_update, confirmed, new_confirmed, deaths, new_deaths, fatality_rate]]
+     * @param csv - [[state_id, last_update, confirmed, deaths]]
      * @param geoLevel - state / county
      */
     this.loadCsvToCaseDataStore = function (csv, geoLevel) {
@@ -96,7 +96,7 @@ angular.module('cloudberry.casedatacache', [])
           var last_update = new Date(tuple[1]);
           last_update = new Date(last_update.getTime() + (last_update.getTimezoneOffset() * 60000));
           var confirmed = Number(tuple[2]);
-          var death = Number(tuple[4]);
+          var death = Number(tuple[3]);
           var cases = caseDataStore[geoLevel].get(geoId);
           // cases array of this geoId exists
           if (cases) {
