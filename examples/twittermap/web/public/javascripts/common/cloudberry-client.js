@@ -123,6 +123,8 @@ angular.module("cloudberry.common")
       function connect(url) {
 
         lws = new WebSocket(url);
+        // by default, binary messages are interpreted as array buffer
+        lws.binaryType = "arraybuffer";
 
         lws.onopen = function () {
           console.log("[cloudberry-client] connecting to [" + url + "] succeed!");
@@ -154,15 +156,97 @@ angular.module("cloudberry.common")
     wsConnection.done(function (pws) {
       ws = pws;
 
-      console.log("connection done.  ws = " + ws);
       moduleManager.publishEvent(moduleManager.EVENT.WS_READY, {});
+
+      function parseBinary(binaryData) {
+        const longSize = 8;
+        const bigIntSize = 8;
+        const doubleSize = 8;
+
+        function getUint64(dataview, byteOffset, littleEndian) {
+          let lowWord = 0;
+          let highWord = 0;
+          lowWord = dataview.getUint32(byteOffset + (littleEndian ? 0 : 4), littleEndian);
+          highWord = dataview.getUint32(byteOffset + (littleEndian ? 4 : 0), littleEndian);
+          const result = new JSBI(2, false);
+          result.__setDigit(0, lowWord);
+          result.__setDigit(1, highWord);
+          return result;
+        }
+
+        /**
+         * ---- header ----
+         *   id        category  start     end
+         * | VARCHAR | VARCHAR | 8 BYTES | 8 BYTES |
+         * ---- payload ----
+         *   id1       lng1      lat1      id2       lng2      lat2      ...
+         * | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | 8 BYTES | ...
+         *
+         * NOTE: VARCHAR = 1 BYTE of length + length BYTES of real UTF-8 characters
+         * */
+        let textDecoder = new TextDecoder();
+        let dv = new DataView(binaryData);
+        let offset = 0;
+        let result = {};
+
+        /** read header */
+        // read variable length id string
+        let idLength = dv.getInt8(offset);
+        offset += 1;
+        result.id = textDecoder.decode(new Uint8Array(binaryData.slice(offset, offset + idLength)));
+        offset += idLength;
+
+        // read variable length category string
+        let categoryLength = dv.getInt8(offset);
+        offset += 1;
+        result.category = textDecoder.decode(new Uint8Array(binaryData.slice(offset, offset + categoryLength)));
+        offset += categoryLength;
+
+        // read start long
+        let startLong = Number(getUint64(dv, offset, false));
+        offset += longSize;
+
+        // read end long
+        let endLong = Number(getUint64(dv, offset, false));
+        result.timeInterval = JSON.stringify({
+          start: new Date(startLong),
+          end: new Date(endLong)
+        });
+
+        /** read tuples */
+        const headerSize = 1 + idLength + 1 + categoryLength + longSize + longSize;
+        const tupleSize = bigIntSize + doubleSize + doubleSize;
+        let dataLength = (dv.byteLength - headerSize) / tupleSize;
+        let data = [];
+        for (let i = 0; i < dataLength; i++) {
+          // current record's starting offset
+          offset = headerSize + tupleSize * i;
+          let tuple = [];
+          tuple.push(getUint64(dv, offset, false)); // id
+          offset = offset + bigIntSize;
+          tuple.push(dv.getFloat64(offset)); // lng
+          offset = offset + doubleSize;
+          tuple.push(dv.getFloat64(offset)); // lat
+          data.push(tuple);
+        }
+        result.value = data;
+        return result;
+      }
 
       ws.onmessage = function (event) {
         $timeout(function () {
-          var result = JSONbig.parse(event.data);
-          var category = result.category;
-          var id = result.id;
-          var timeInterval = JSON.stringify({
+          // Binary message
+          let result;
+          if (event.data instanceof ArrayBuffer) {
+            result = parseBinary(event.data);
+          }
+          // Text message
+          else {
+            result = JSONbig.parse(event.data);
+          }
+          const category = result.category;
+          const id = result.id;
+          let timeInterval = JSON.stringify({
             start: new Date(cloudberry.parameters.timeInterval.start.getTime()),
             end: new Date(cloudberry.parameters.timeInterval.end.getTime())
           });

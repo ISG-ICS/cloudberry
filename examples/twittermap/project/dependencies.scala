@@ -85,7 +85,9 @@ object Dependencies {
     "org.webjars" % "jquery-ui-themes" % "1.12.1",
     // Added twitter4j for twittermap
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
-    "org.twitter4j" % "twitter4j-core" % twitter4jVersion
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
+    // handle big integers in javascript to support safari
+    "org.webjars.npm" % "jsbi" % "3.1.1"
 
   ) ++ testDeps
 }

@@ -9,7 +9,7 @@ import akka.stream.Materializer
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
-import play.api.libs.streams.ActorFlow
+import play.api.libs.streams.{ActorFlow, AkkaStreams}
 import play.api.libs.ws.WSClient
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
@@ -19,9 +19,15 @@ import twitter4j._
 import websocket.WebSocketFactory
 import java.net.{HttpURLConnection, URL, URLEncoder}
 
+import akka.stream.scaladsl.Flow
+import akka.util.ByteString
+import play.api.http.websocket.{BinaryMessage, CloseCodes, CloseMessage, Message, TextMessage}
+import play.api.mvc.WebSocket.MessageFlowTransformer
+
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
+import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 
@@ -55,6 +61,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val heatmapUnitRadius: String = config.getString("heatmap.unitRadius").getOrElse("15")
   val pinmapSamplingDayRange: String = config.getString("pinmap.samplingDayRange").getOrElse("30")
   val pinmapSamplingLimit: String = config.getString("pinmap.samplingLimit").getOrElse("5000")
+  val pinmapBinaryTransfer: Boolean = config.getBoolean("pinmap.binaryTransfer").getOrElse(false)
   val defaultMapType: String = config.getString("defaultMapType").getOrElse("countmap")
   val liveTweetQueryInterval : Int = config.getInt("liveTweetQueryInterval").getOrElse(60)
   val liveTweetQueryOffset : Int = config.getInt("liveTweetQueryOffset").getOrElse(30)
@@ -97,16 +104,39 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
       Ok(views.html.twittermap.index("DrugMap", this, true))
   }
 
-  def ws = WebSocket.accept[JsValue, JsValue] { request =>
+  type WSMessage = Either[JsValue, Array[Byte]]
+
+  implicit val mixedMessageFlowTransformer: MessageFlowTransformer[JsValue, WSMessage] = {
+    def closeOnException[T](block: => T) = try {
+      Left(block)
+    } catch {
+      case NonFatal(e) => Right(CloseMessage(Some(CloseCodes.Unacceptable),
+        "Unable to parse json message"))
+    }
+
+    new MessageFlowTransformer[JsValue, WSMessage] {
+      def transform(flow: Flow[JsValue, WSMessage, _]) = {
+        AkkaStreams.bypassWith[Message, JsValue, Message](Flow[Message].collect {
+          case BinaryMessage(data) => closeOnException(Json.parse(data.iterator.asInputStream))
+          case TextMessage(text) => closeOnException(Json.parse(text))
+        })(flow map {
+          case Right(data) => BinaryMessage.apply(ByteString.apply(data))
+          case Left(json) => TextMessage(Json.stringify(json))
+        })
+      }
+    }
+  }
+
+  def ws = WebSocket.accept[JsValue, WSMessage] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, config, maxTextMessageSize)
     }
   }
 
   // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
   def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, config, maxTextMessageSize)
     }
   }
 
@@ -223,7 +253,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     * @return A list of topics object in JsValue
     *
     */
-  def autoComplete = WebSocket.accept[JsValue,JsValue]{ request =>
+  def autoComplete = WebSocket.accept[JsValue, JsValue]{ request =>
     ActorFlow.actorRef{
       out=>autoCompleteActor.props(out)
     }
@@ -237,7 +267,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
     * @return A list of tweet object in JsValue
     *
     */
-  def liveTweets = WebSocket.accept[JsValue,JsValue] { request =>
+  def liveTweets = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef{ out =>
       LiveTweetActor.props(out)
     }
