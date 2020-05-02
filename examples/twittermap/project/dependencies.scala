@@ -90,4 +90,12 @@ object Dependencies {
     "org.webjars.npm" % "jsbi" % "3.1.1"
 
   ) ++ testDeps
+
+  val datatoolsDependencies: Seq[ModuleID] = Seq(
+    ws,
+    "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
+    "com.twitter" % "hbc-core" % "2.2.0",
+    "org.kohsuke.args4j" % "args4j-maven-plugin" % "2.33"
+  ) ++ testDeps
 }
