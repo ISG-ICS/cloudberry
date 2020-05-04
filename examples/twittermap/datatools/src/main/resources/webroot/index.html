@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Twitter Ingestion Server Console</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/js/bootstrap.min.js"></script>
+    <script src="https://cdn.rawgit.com/google/code-prettify/master/loader/run_prettify.js"></script>
+</head>
+<body>
+<nav class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <div class="navbar-brand">Twitter Ingestion Server Console</div>
+        </div>
+    </div>
+</nav>
+<div class="row">
+    <div class="col-sm-1"></div>
+    <div class="col-sm-5"><h3>Statistics</h3></div>
+    <div class="col-sm-5"><h3>Realtime Samples</h3></div>
+    <div class="col-sm-1"></div>
+</div>
+<hr/>
+<div class="row">
+    <div class="col-sm-1"></div>
+    <div class="col-sm-5">
+        <h2 id="startTime"> <small> first started.</small></h2>
+        <hr/>
+        <h2 id="counter"> <small> tweets ingested totally.</small></h2>
+        <hr/>
+        <h2 id="averageRate"> <small> tweets/second on average.</small></h2>
+        <hr/>
+        <h2 id="instantRate"> <small> tweets/second now.</small></h2>
+    </div>
+    <div class="col-sm-5">
+        <div id="response">
+            <pre class="prettyprint"></pre>
+        </div>
+    </div>
+    <div class="col-sm-1"></div>
+</div>
+<script>
+  /** Websocket to receive realtime stream of ingestion */
+  const url = "ws://" + location.host + "/proxy";
+
+  console.log("connecting to [" + url + "] ...");
+  $('#response pre').html("<h6>connecting to [" + url + "] ...</h6>");
+
+  const ws = new WebSocket(url);
+
+  ws.onopen = function () {
+    console.log("connecting to [" + url + "] succeed!");
+    $('#response pre').html("<h6>[Good!] Connection is ready!</h6>");
+  };
+
+  ws.onerror = function (err) {
+    console.log("connecting to [" + url + "] fail!");
+    console.log(err);
+    $('#response pre').html("<h6>[Sorry!] Connection broken! Please refresh this page!</h6><p>" + err + "</p>");
+  };
+
+  let showing_tweets = [];
+  const showing_tweets_max_count = 2;
+
+  ws.onmessage = function (event) {
+
+    let tweet = JSON.parse(event.data);
+    showing_tweets.push(tweet);
+
+    // rotate showing tweets upper
+    if (showing_tweets.length >= showing_tweets_max_count) {
+    	showing_tweets.shift();
+	}
+
+    $('#response').empty();
+    for (let i = 0; i < showing_tweets.length; i ++) {
+		$('#response').append("<pre class=\"prettyprint lang-js\">" + JSON.stringify(showing_tweets[i], undefined, 4) + "</pre>");
+	}
+  };
+
+  /** Http Get every 1 second to get statistics of the ingestion */
+  const interval = 2000;  // 1000 = 1 second, 3000 = 3 seconds
+  function doAjax() {
+    $.ajax({
+      type: 'GET',
+      url: '/stats',
+      success: function (data) {
+        $('#startTime').html(data.startTime + "<small> first started.</small>");
+        $('#counter').html(data.counter + "<small> tweets ingested totally.</small>");
+        $('#averageRate').html(data.averageRate + "<small> tweets/second on average.</small>");
+        $('#instantRate').html(data.instantRate + "<small> tweets/second now.</small>");
+      },
+      complete: function (data) {
+        // Schedule the next
+        setTimeout(doAjax, interval);
+      }
+    });
+  }
+  setTimeout(doAjax, interval);
+
+</script>
+</body>
+</html>

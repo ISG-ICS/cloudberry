@@ -30,7 +30,7 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author Qiushi Bai, baiqiushi@gmail.com
  */
-public class TwitterIngestionWorker implements Runnable {
+public class TwitterIngestionWorker implements Runnable{
 
     /** stats */
     Date startTime;
@@ -44,22 +44,20 @@ public class TwitterIngestionWorker implements Runnable {
     TwitterIngestionConfig config;
     Client twitterClient;
     BufferedWriter fileWriter;
-    StringBuffer outStream;
     Date currentDate;
     SimpleDateFormat dateFormatter;
     SimpleDateFormat timeFormatter;
 
-    public TwitterIngestionWorker(TwitterIngestionConfig _config, StringBuffer _outStream) {
+    public TwitterIngestionWorker(TwitterIngestionConfig _config) {
         dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
         timeFormatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         config = _config;
-        outStream = _outStream;
         averageRate = 0;
         instantRate = 0;
     }
 
-    public Date getStartTime() {
-        return startTime;
+    public String getStartTime() {
+        return timeFormatter.format(startTime);
     }
 
     public long getCounter() {
@@ -121,7 +119,7 @@ public class TwitterIngestionWorker implements Runnable {
 
     @Override
     public void run() {
-        System.out.println("Twitter Ingestion Worker starts!");
+        System.err.println("Twitter Ingestion Worker starts!");
 
         try {
             fileWriter = getFileWriter(config.getOutputPath(), config.getFilePrefix());
@@ -135,27 +133,27 @@ public class TwitterIngestionWorker implements Runnable {
         StatusesFilterEndpoint endpoint = new StatusesFilterEndpoint();
 
         // add tracking keywords
-        if (config.getTrackKeywords().length != 0) {
-            System.out.print("Tracking keywords: ");
+        if (config.getTrackKeywords() != null) {
+            System.err.print("Tracking keywords: ");
             for (String keyword : config.getTrackKeywords()) {
-                System.out.print(keyword);
-                System.out.print(" ");
+                System.err.print(keyword);
+                System.err.print(" ");
             }
-            System.out.println();
+            System.err.println();
 
             endpoint.trackTerms(Lists.newArrayList(config.getTrackKeywords()));
         }
 
-        // add tracking location
-        if (config.getTrackLocation().length != 0) {
-            System.out.print("Tracking location:");
-            for (Location location : config.getTrackLocation()) {
-                System.out.print(location);
-                System.out.print(" ");
+        // add tracking locations
+        if (config.getTrackLocations() != null) {
+            System.err.print("Tracking locations:");
+            for (Location location : config.getTrackLocations()) {
+                System.err.print(location);
+                System.err.print(" ");
             }
-            System.out.println();
+            System.err.println();
 
-            endpoint.locations(Lists.newArrayList(config.getTrackLocation()));
+            endpoint.locations(Lists.newArrayList(config.getTrackLocations()));
         }
 
         // add OAuth keys
@@ -178,24 +176,23 @@ public class TwitterIngestionWorker implements Runnable {
             instantStart = System.currentTimeMillis();
 
             while (!twitterClient.isDone()) {
+
                 // get one tweet
-                String msg = queue.take();
+                String tweet = queue.take();
 
                 // count stats
                 counter ++;
                 instantCounter ++;
-                if (instantCounter == 10000) {
+                if (instantCounter == 100) {
                     instantStop = System.currentTimeMillis();
                     instantRate = (int) (instantCounter * 1000 / (instantStop - instantStart));
+                    instantStart = instantStop;
                     instantCounter = 0;
                 }
-                if (counter % 100000 == 0) {
+                if (counter % 10000 == 0) {
                     Date rightNow = new Date();
                     long totalSeconds = (rightNow.getTime() - startTime.getTime()) / 1000;
                     averageRate = (int) (counter / totalSeconds);
-                    String time = timeFormatter.format(rightNow);
-                    System.out.println("[" + time + "] Ingested " + counter + " tweets since " + timeFormatter.format(startTime));
-                    System.out.println("[" + time + "] Average rate: " + averageRate + " tweets/s.");
                 }
 
                 // if needs to rotate file, get new file writer
@@ -204,11 +201,10 @@ public class TwitterIngestionWorker implements Runnable {
                 }
 
                 // write to file
-                fileWriter.write(msg);
+                fileWriter.write(tweet);
 
-                // write to out stream
-                outStream.setLength(0);
-                outStream.append(msg);
+                // publish to TwitterIngestionServer
+                TwitterIngestionServer.publish(tweet);
             }
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();

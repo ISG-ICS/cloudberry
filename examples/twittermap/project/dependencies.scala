@@ -96,6 +96,11 @@ object Dependencies {
     "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
     "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
     "com.twitter" % "hbc-core" % "2.2.0",
-    "org.kohsuke.args4j" % "args4j-maven-plugin" % "2.33"
+    "commons-cli" % "commons-cli" % "1.4",
+    "org.eclipse.jetty" % "jetty-server" % "9.4.28.v20200408",
+    "org.eclipse.jetty" % "jetty-servlet" % "9.4.28.v20200408",
+    "org.eclipse.jetty.websocket" % "websocket-servlet" % "9.4.28.v20200408",
+    "org.eclipse.jetty.websocket" % "websocket-api" % "9.4.28.v20200408",
+    "org.eclipse.jetty.websocket" % "websocket-server" % "9.4.28.v20200408"
   ) ++ testDeps
 }
