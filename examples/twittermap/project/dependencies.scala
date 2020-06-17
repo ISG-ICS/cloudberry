@@ -101,6 +101,7 @@ object Dependencies {
     "org.eclipse.jetty" % "jetty-servlet" % "9.4.28.v20200408",
     "org.eclipse.jetty.websocket" % "websocket-servlet" % "9.4.28.v20200408",
     "org.eclipse.jetty.websocket" % "websocket-api" % "9.4.28.v20200408",
-    "org.eclipse.jetty.websocket" % "websocket-server" % "9.4.28.v20200408"
+    "org.eclipse.jetty.websocket" % "websocket-server" % "9.4.28.v20200408",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.1"
   ) ++ testDeps
 }

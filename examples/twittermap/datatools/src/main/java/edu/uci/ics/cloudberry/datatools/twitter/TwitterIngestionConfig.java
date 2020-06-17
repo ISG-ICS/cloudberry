@@ -130,7 +130,7 @@ public class TwitterIngestionConfig {
                 .longOpt("proxy-port")
                 .desc("Port to which the proxy server will listen to, " +
                         "the proxy server outputs real time ingested tweets to any connected websocket client. " +
-                        "(Default: 92617) Set -1 to disable this proxy server.")
+                        "(Default: 9088) Set -1 to disable this proxy server.")
                 .type(Integer.class)
                 .required(false)
                 .hasArg()

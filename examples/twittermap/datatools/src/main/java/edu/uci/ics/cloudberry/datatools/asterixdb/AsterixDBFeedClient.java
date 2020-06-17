@@ -1,10 +1,10 @@
-package edu.uci.ics.cloudberry.datatools.asterixdbutils;
+package edu.uci.ics.cloudberry.datatools.asterixdb;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
-public class AsterixDBSocketFeedAdapter {
+public class AsterixDBFeedClient {
     private OutputStream out = null;
     private int recordCount = 0;
 
@@ -16,7 +16,7 @@ public class AsterixDBSocketFeedAdapter {
 
     protected Socket socket;
 
-    public AsterixDBSocketFeedAdapter(String adapterUrl, int port, int batchSize, int waitMillSecPerRecord, int maxCount) {
+    public AsterixDBFeedClient(String adapterUrl, int port, int batchSize, int waitMillSecPerRecord, int maxCount) {
         this.adapterUrl = adapterUrl;
         this.port = port;
         this.maxCount = maxCount;

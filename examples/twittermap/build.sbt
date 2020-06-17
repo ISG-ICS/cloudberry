@@ -45,4 +45,4 @@ lazy val datatools = (project in file("datatools")).
   settings(Commons.settings: _*).
   settings(
     libraryDependencies ++= datatoolsDependencies
-  )
+  ).dependsOn(gnosis, util)
