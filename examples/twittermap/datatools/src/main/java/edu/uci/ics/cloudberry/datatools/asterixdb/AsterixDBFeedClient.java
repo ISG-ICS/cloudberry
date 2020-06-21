@@ -6,26 +6,21 @@ import java.net.Socket;
 
 public class AsterixDBFeedClient {
     private OutputStream out = null;
-    private int recordCount = 0;
+    private int counter = 0;
+    private long startTime = 0;
 
-    protected String adapterUrl;
+    protected String host;
     protected int port;
-    protected int waitMillSecond;
-    protected int batchSize;
-    protected int maxCount;
 
     protected Socket socket;
 
-    public AsterixDBFeedClient(String adapterUrl, int port, int batchSize, int waitMillSecPerRecord, int maxCount) {
-        this.adapterUrl = adapterUrl;
+    public AsterixDBFeedClient(String host, int port) {
+        this.host = host;
         this.port = port;
-        this.maxCount = maxCount;
-        this.waitMillSecond = waitMillSecPerRecord;
-        this.batchSize = batchSize;
     }
 
     public void initialize() throws IOException {
-        socket = new Socket(adapterUrl, port);
+        socket = new Socket(host, port);
         out = socket.getOutputStream();
     }
 
@@ -33,28 +28,26 @@ public class AsterixDBFeedClient {
         try {
             out.close();
             socket.close();
-            System.err.println("Socket " + adapterUrl + ":" + port + " - # of total ingested records: " + recordCount);
+            System.err.println("Socket feed to AsterixDB at " + host + ":" + port + " - Total # of ingested records: " + counter);
         } catch (IOException e) {
-            System.err.println("Problem in closing socket against host " + adapterUrl + " on the port " + port);
+            System.err.println("Problem in closing socket against host " + host + " on the port " + port);
             e.printStackTrace();
         }
     }
 
-    public void ingest(String record) throws IOException{
-        recordCount++;
-        if (recordCount % 10000 == 0) {
-            System.err.println("Socket " + adapterUrl + ":" + port + " - # of ingested records: " + recordCount);
+    public void ingest(String record) throws IOException {
+        // initialize timer when ingest the first record
+        if (counter == 0) startTime = System.currentTimeMillis();
+
+        counter ++;
+        // output statistics for every 10,000 records ingested
+        if (counter % 10000 == 0) {
+            System.err.println("Socket feed to AsterixDB at " + host + ":" + port + " - # of ingested records: " + counter);
+            long endTime = System.currentTimeMillis();
+            double rate = counter * 1000.0 / (endTime - startTime);
+            System.err.println("Average ingestion rate: " + rate + " records/second");
         }
         byte[] b = record.replaceAll("\\s+", " ").getBytes();
-        try {
-            out.write(b);
-            if (waitMillSecond >= 1 && recordCount % batchSize == 0) {
-                Thread.currentThread().sleep(waitMillSecond);
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        out.write(b);
     }
-
-
 }

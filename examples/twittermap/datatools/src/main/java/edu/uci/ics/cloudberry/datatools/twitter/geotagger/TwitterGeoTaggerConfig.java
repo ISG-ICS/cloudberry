@@ -43,21 +43,21 @@ public class TwitterGeoTaggerConfig {
     public static TwitterGeoTaggerConfig createFromCLIArgs(String[] args) {
         // define cli arguments options, consistent with members of this class
         final Options options = new Options();
-        final Option consumerKeyOpt = Option.builder("state")
+        final Option stateOpt = Option.builder("state")
                 .longOpt("state-json-file")
                 .desc("State Json file for geographical information of states in the U.S.")
                 .type(String.class)
                 .required()
                 .hasArg()
                 .build();
-        final Option consumerSecretOpt = Option.builder("county")
+        final Option countyOpt = Option.builder("county")
                 .longOpt("county-json-file")
                 .desc("County Json file for geographical information of counties in the U.S.")
                 .type(String.class)
                 .required()
                 .hasArg()
                 .build();
-        final Option tokenOpt = Option.builder("city")
+        final Option cityOpt = Option.builder("city")
                 .longOpt("city-json-file")
                 .desc("City Json file for geographical information of cities in the U.S.")
                 .type(String.class)
@@ -85,9 +85,9 @@ public class TwitterGeoTaggerConfig {
                 .required(false)
                 .hasArg(false)
                 .build();
-        options.addOption(consumerKeyOpt);
-        options.addOption(consumerSecretOpt);
-        options.addOption(tokenOpt);
+        options.addOption(stateOpt);
+        options.addOption(countyOpt);
+        options.addOption(cityOpt);
         options.addOption(threadOpt);
         options.addOption(bufferOpt);
         options.addOption(debugOpt);

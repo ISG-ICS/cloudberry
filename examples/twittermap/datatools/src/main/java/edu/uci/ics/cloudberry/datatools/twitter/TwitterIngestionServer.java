@@ -58,16 +58,16 @@ public class TwitterIngestionServer {
     }
 
     /**
-     * TwitterIngestionProxySocketCreator
+     * TwitterIngestionProxySocketServerCreator
      *
      * only used for jetty server websocket filter setup
      */
-    public static class TwitterIngestionProxySocketCreator implements WebSocketCreator
+    public static class TwitterIngestionProxySocketServerCreator implements WebSocketCreator
     {
         @Override
         public Object createWebSocket(ServletUpgradeRequest req, ServletUpgradeResponse resp)
         {
-            return new TwitterIngestionProxySocket();
+            return new TwitterIngestionProxySocketServer();
         }
     }
 
@@ -118,7 +118,7 @@ public class TwitterIngestionServer {
                 // Setup websocket filter to map TwitterIngestionProxySocket listen to "/proxy"
                 WebSocketUpgradeFilter wsfilter = WebSocketUpgradeFilter.configure(context);
                 wsfilter.getFactory().getPolicy().setIdleTimeout(5000);
-                wsfilter.addMapping(new ServletPathSpec("/proxy"), new TwitterIngestionProxySocketCreator());
+                wsfilter.addMapping(new ServletPathSpec("/proxy"), new TwitterIngestionProxySocketServerCreator());
 
                 // Setup stats http servlet
                 context.addServlet(TwitterIngestionStats.class, "/stats");

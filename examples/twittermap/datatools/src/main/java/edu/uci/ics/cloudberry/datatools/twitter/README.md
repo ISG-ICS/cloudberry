@@ -1,5 +1,5 @@
 # Twitter Ingestion Server
-A daemoon service which can ingest realtime tweets from [Twitter Filter Stream API](https://developer.twitter.com/en/docs/tweets/filter-realtime/api-reference/post-statuses-filter) into local gzip files in a daily rotation manner.
+A daemon service that can ingest real-time tweets from [Twitter Filter Stream API](https://developer.twitter.com/en/docs/tweets/filter-realtime/api-reference/post-statuses-filter) into local gzip files in a daily rotation manner.
 
 ## Prerequisite
 - Java 8

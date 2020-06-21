@@ -1,5 +1,5 @@
 # Twitter GeoTagger
-A Java script to geoTag Twitter JSON with {stateName, stateID, countyName, countyID, cityName, cityID}.
+A Java program to geoTag Twitter JSON with {stateName, stateID, countyName, countyID, cityName, cityID}.
 
 ## Prerequisite
 - Java 8
