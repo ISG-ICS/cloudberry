@@ -25,6 +25,7 @@ public interface AsterixDBAdapter {
     String STRING_SET = "string_set"; // list of quoted value
     String VALUE_SET = "value_set"; // list of no quoted value
     String BOUNDING_BOX = "bounding_box"; // special treatment to bounding_box column
+    String OBJECT = "object"; // just use ObjectMapper to write it to string
 
     String transform(String tweet) throws Exception;
 

@@ -16,10 +16,13 @@ public class AsterixDBAdapterForTwitter implements AsterixDBAdapter {
     // Map<String, String> - <columnName, dataType>
     public Map<String, Object> schema;
 
+    public ObjectMapper mapper; // used for transform OBJECT columns
+
     public AsterixDBAdapterForTwitter() {
 
         // Twitter uses UTC timezone
         tweetDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        mapper = new ObjectMapper();
 
         /**
          * Twitter JSON schema
@@ -91,10 +94,10 @@ public class AsterixDBAdapterForTwitter implements AsterixDBAdapter {
         schema.put("is_quote_status", VALUE);
 
         // quote_status Tweet Object
-        // TODO
+        // TODO - skip for now
 
         // retweeted_status Tweet Object
-        // TODO
+        // TODO - skip for now
 
         schema.put("quote_count", VALUE);
         schema.put("reply_count", VALUE);
@@ -103,10 +106,10 @@ public class AsterixDBAdapterForTwitter implements AsterixDBAdapter {
 
         // entities
         // https://developer.twitter.com/en/docs/tweets/data-dictionary/overview/entities-object
-        // TODO
+        schema.put("entities", OBJECT);
 
         // extended_entities
-        // TODO
+        schema.put("extended_entities", OBJECT);
 
         schema.put("favorited", VALUE);
         schema.put("retweeted", VALUE);
@@ -283,6 +286,9 @@ public class AsterixDBAdapterForTwitter implements AsterixDBAdapter {
                 sb.append('"').append(boundingBox.get("type")).append('"');
                 sb.append("}");
                 tuple.append(sb.toString());
+                break;
+            case "object":
+                tuple.append(mapper.writeValueAsString(value));
                 break;
             default:
                 System.err.println("key = " + key + ", type = " + type + ", value = " + value);
