@@ -13,7 +13,7 @@ angular.module('cloudberry.casedatacache', [])
     /**
      * Case data store
      *
-     * store hash map of geoID --> [[confirmed], [death]].
+     * store hash map of geoID --> [[confirmed], [death], [recovered]].
      * each sub-array contains a list of daily case numbers,
      * e.g. [confirmed] = [{day: "1/22/20", count: 0}, {day: "1/23/20", count: 2}, ...]
      *
@@ -37,11 +37,11 @@ angular.module('cloudberry.casedatacache', [])
       if (caseDataCached[geoLevel]) {
         var cases = caseDataStore[geoLevel].get(geoId);
         if (!cases) {
-          cases = [[], []]
+          cases = [[], [], []];
         }
         // filter the data with start and end
-        var result = [[], []];
-        for (var k = 0; k < 2; k++) {
+        var result = [[], [], []];
+        for (var k = 0; k < 3; k++) {
           var data = cases[k];
           for (var i = 0; i < data.length; i++) {
             if (data[i].day >= start && data[i].day <= end) {
@@ -57,7 +57,7 @@ angular.module('cloudberry.casedatacache', [])
     };
 
     this.getDailyTotalCaseCount = function (geoLevel, date) {
-      var result = [0, 0];
+      var result = [0, 0, 0];
 
       if (caseDataCached[geoLevel]) {
         for (let geoId of caseDataStore[geoLevel].keys()) {
@@ -66,11 +66,13 @@ angular.module('cloudberry.casedatacache', [])
           if (cases[0][cases[0].length - 1].day.getDate() <= date.getDate()) {
             result[0] += cases[0][cases[0].length - 1].count;
             result[1] += cases[1][cases[0].length - 1].count;
+            result[2] += cases[2][cases[0].length - 1].count;
           } else {
             for (var i = 0; i < cases[0].length; i++) {
               if (cases[0][i].day.getDate() === date.getDate()) {
                 result[0] += cases[0][i].count;
                 result[1] += cases[1][i].count;
+                result[2] += cases[2][i].count;
               }
             }
           }
@@ -81,7 +83,7 @@ angular.module('cloudberry.casedatacache', [])
 
     /**
      * Parse csv to case data store
-     * @param csv - [[state_id, last_update, confirmed, deaths]]
+     * @param csv - [[state_id, last_update, confirmed, deaths, recovered]]
      * @param geoLevel - state / county
      */
     this.loadCsvToCaseDataStore = function (csv, geoLevel) {
@@ -97,16 +99,19 @@ angular.module('cloudberry.casedatacache', [])
           last_update = new Date(last_update.getTime() + (last_update.getTimezoneOffset() * 60000));
           var confirmed = Number(tuple[2]);
           var death = Number(tuple[3]);
+          var recovered = Number(tuple[4]);
           var cases = caseDataStore[geoLevel].get(geoId);
           // cases array of this geoId exists
           if (cases) {
             cases[0].push({day: last_update, count: confirmed});
             cases[1].push({day: last_update, count: death});
+            cases[2].push({day: last_update, count: recovered});
           }
           else {
             cases = [
               [{day: last_update, count: confirmed}],
-              [{day: last_update, count: death}]
+              [{day: last_update, count: death}],
+              [{day: last_update, count: recovered}]
             ];
             caseDataStore[geoLevel].set(geoId, cases);
           }
