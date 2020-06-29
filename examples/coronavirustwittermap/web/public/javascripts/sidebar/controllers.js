@@ -111,7 +111,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
       $http.jsonp(url).success(function (data) {
         $(data.html).hide().prependTo("#tweet");
         window.setTimeout(function(){
-          $("#tweet").children().filter("twitter-widget").first().removeClass("twitter-tweet").hide(0,function(){
+          $("#tweet").children().first().removeClass("twitter-tweet").hide(0,function(){
             if ($("#loadingAnime").length !== 0) {
               $("#loadingAnime").remove();
             }
