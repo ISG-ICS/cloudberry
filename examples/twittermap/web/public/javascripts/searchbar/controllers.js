@@ -128,8 +128,87 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       };
       moduleManager.subscribeEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, $scope.onWSLiveTweetsReady);
     }
+
+     // If config file specifies a list of hotTopics, show them as a collapse-able list on the left
+        $scope.hotTopics = cloudberryConfig.hotTopics;
+        // Disable hot topics on mobile devices for now
+        // TODO - make this common isMobile function in common services
+        // detect mobile browser
+        $scope.isMobile = {
+          Android: function() {
+            return navigator.userAgent.match(/Android/i);
+          },
+          BlackBerry: function() {
+            return navigator.userAgent.match(/BlackBerry/i);
+          },
+          iPhone: function() {
+            return navigator.userAgent.match(/iPhone|iPod/i);
+          },
+          iPad: function() {
+            return navigator.userAgent.match(/iPad/i);
+          },
+          Opera: function() {
+            return navigator.userAgent.match(/Opera Mini/i);
+          },
+          Windows: function() {
+            return navigator.userAgent.match(/IEMobile/i);
+          },
+          smallScreen: function() {
+            return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || ($scope.isMobile.iPhone() && !$scope.isMobile.iPad()) || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+          },
+          any: function() {
+            return ($scope.isMobile.Android() || $scope.isMobile.BlackBerry() || $scope.isMobile.iPhone() || $scope.isMobile.iPad() || $scope.isMobile.Opera() || $scope.isMobile.Windows());
+          }
+        };
+
+        if (!$scope.isMobile.any() && $scope.hotTopics && $scope.hotTopics.length > 0) {
+
+          // add hot topics div
+          $scope.hotTopicsDiv = document.createElement("div");
+          $scope.hotTopicsDiv.style.position = 'absolute';
+          $scope.hotTopicsDiv.style.top = '40%';
+          $scope.hotTopicsDiv.style.left = '6%';
+
+          // add collapse button
+          let collapseButton = document.createElement("a");
+          collapseButton.innerHTML = "<h3>Hot Topics</h3>";
+          collapseButton.setAttribute("role", "button");
+          collapseButton.setAttribute("data-toggle", "collapse");
+          collapseButton.href = "#hotTopicsList";
+          collapseButton.setAttribute("aria-expanded", "true");
+          collapseButton.setAttribute("aria-controls", "hotTopicsList");
+
+          // add collapse div
+          let collapseDiv = document.createElement("div");
+          collapseDiv.className = "collapse in";
+          collapseDiv.id = "hotTopicsList";
+          // add list group
+          let listGroup = document.createElement("ul");
+          listGroup.className = "list-group";
+          // add list group items
+          for (let i = 0; i < $scope.hotTopics.length; i ++) {
+            let topic = $scope.hotTopics[i];
+            let item = document.createElement("li");
+            item.className = "list-group-item";
+            item.style.borderColor = "transparent";
+            item.style.backgroundColor = "transparent";
+            let a = document.createElement("a");
+            a.href = "#";
+            a.addEventListener("click", function(event) {
+              $scope.defaultKeywordSearch(topic);
+            });
+            a.innerHTML = "<font size='3'><u> # " + topic + "</u></font>";
+            item.appendChild(a);
+            listGroup.appendChild(item);
+          }
+          $scope.hotTopicsDiv.appendChild(collapseButton);
+          collapseDiv.appendChild(listGroup);
+          $scope.hotTopicsDiv.appendChild(collapseDiv);
+          document.body.appendChild($scope.hotTopicsDiv);
+        }
   })
   .directive('searchBar', function (cloudberryConfig) {
+  let searchPlaceholderKeyword = cloudberryConfig.searchPlaceholderKeyword;
     if(cloudberryConfig.removeSearchBar) {
       return {
         restrict: "E",
@@ -151,7 +230,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
           '<form class="form-inline" id="input-form" ng-submit="search()" >',
             '<div class="input-group col-lg-12">',
               '<label class="sr-only">Keywords</label>',
-              '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Search keywords, e.g. hurricane" ng-model="keyword" required/>',
+              '<input type="text" style="width: 97%" class="form-control " id="keyword-textbox" placeholder="Search keywords, e.g. '+searchPlaceholderKeyword+'" ng-model="keyword" required/>',
               '<span class="input-group-btn">',
                 '<button type="submit" class="btn btn-primary" id="submit-button">Submit</button>',
               '</span>',
