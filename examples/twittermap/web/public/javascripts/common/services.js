@@ -14,6 +14,9 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       cacheThreshold: parseInt(config.cacheThreshold),
       querySliceMills: parseInt(config.querySliceMills),
       pinMapOneTweetLookUpResult: null,
+      pinmapBinaryTransfer: config.pinmapBinaryTransfer,
+      timeSeriesChartType: config.timeSeriesChartType,
+      timeSeriesGroupBy: config.timeSeriesGroupBy,
       getPopulationTarget: function(parameters){
         switch (parameters.geoLevel) {
           case "state":

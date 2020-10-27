@@ -22,8 +22,7 @@ set -o nounset                              # Treat unset variables as an error
 # ddl to register the twitter dataset
 host=${1:-'http://localhost:19002/query/service'}
 nc=${2:-"asterix_nc1"}
-cat <<EOF | curl -XPOST --data-binary @- $host 
-create dataverse twitter if not exists; 
+curl -X POST $host --data-urlencode "statement=create dataverse twitter if not exists; 
 use twitter; 
 create type typeUser if not exists as open { 
     id: int64, 
@@ -73,22 +72,21 @@ create type typeTweet if not exists as open{
     geo_tag: typeGeoTag 
 }; 
 create dataset ds_tweet(typeTweet) if not exists primary key id 
-with filter on create_at with {"merge-policy":{"name":"prefix","parameters":{"max-mergable-component-size":134217728, "max-tolerance-component-count":5}}}; 
+with filter on create_at with {\"merge-policy\":{\"name\":\"prefix\",\"parameters\":{\"max-mergable-component-size\":134217728, \"max-tolerance-component-count\":5}}}; 
 
 create index text_idx if not exists on ds_tweet(text) type fulltext; 
 
 create feed TweetFeed with { 
-    "adapter-name" : "socket_adapter", 
-    "sockets" : "${nc}:10001", 
-    "address-type" : "nc", 
-    "type-name" : "typeTweet", 
-    "format" : "adm", 
-    "upsert-feed" : "false" 
+    \"adapter-name\" : \"socket_adapter\", 
+    \"sockets\" : \"${nc}:10001\", 
+    \"address-type\" : \"nc\", 
+    \"type-name\" : \"typeTweet\", 
+    \"format\" : \"adm\", 
+    \"upsert-feed\" : \"false\" 
 }; 
 
 connect feed TweetFeed to dataset ds_tweet; 
-start feed TweetFeed; 
-EOF
+start feed TweetFeed;"
 
 
 #[ -f ./script/sample.adm.gz ] || { echo "Downloading the data...";  ./script/getSampleTweetsFromGDrive.sh; }
@@ -97,8 +95,6 @@ echo "Start ingestion ..."
 gunzip -c ./script/sample.adm.gz | ./script/fileFeed.sh 127.0.0.1 10001
 echo "Ingested sample tweets."
 
-cat <<'EOF' | curl -XPOST --data-binary @- $host
-use twitter; 
+curl -X POST $host --data-urlencode "statement=use twitter; 
 stop feed TweetFeed; 
-drop feed TweetFeed; 
-EOF
+drop feed TweetFeed; "

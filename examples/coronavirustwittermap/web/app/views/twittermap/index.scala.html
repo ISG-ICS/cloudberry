@@ -1,0 +1,127 @@
+
+@import controllers.TwitterMapApplication.DBType
+@(title: String, TMAobject: TwitterMapApplication, isDrugMap: Boolean) @main(title, TMAobject, isDrugMap){
+<div xmlns="http://www.w3.org/1999/html" ng-controller="AppCtrl">
+
+  <div class="map-group">
+    <alert-bar></alert-bar>
+
+    <map lat="39.5" lng="-96.35" zoom="4"></map>
+
+    <div id="logo">
+    </div>
+    
+    <div id ='powerby'>
+      <div class="btn btn-info btn-xs">
+        <a href="http://cloudberry.ics.uci.edu/" target="_blank" title="A Distributed middleware by ICS, UCI" class="white"> Cloudberry</a>
+         |
+        <a href="https://forms.gle/soi8ccmiCWLWEYSx7" target="_blank" title="Please submit your feedback. Thank you!" class="white"> Feedback</a>
+         |
+        <a href="mailto:cloudberry.uci@@gmail.com?subject=CoronavirusTwitterMap" target="_blank" title="Send an email to us!" class="white"> Contact Us</a>
+      </div>
+   </div>
+
+    
+   </div>
+
+   <search-bar></search-bar>
+   <predefined-keywords></predefined-keywords>
+
+   <!-- button for hide and show the timebar -->
+  <div>
+    <button type="button" class="btn btn-default btn-lg slide-up-down">
+      <span id="downbutton" class="glyphicon glyphicon-menu-down" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div class="stats">
+    <time-series id="chart">
+      <button id="play-button"><i class="fa fa-play-circle-o" aria-hidden="true"></i></button>
+    </time-series>
+  </div>
+
+  <div id="count-window"></div>
+
+  <!-- button for hiding and showing the sidebar -->
+  <div ng-controller="SidebarCtrl">
+    <div class="w3-teal">
+      <button id="hamburgerButton" type="button" class="btn btn-default btn-sm" ng-click="openRightMenu()">
+        <span id="hamburger" class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+      </button>
+    </div>
+
+    <div id='sidebar' class="open">
+      <div class = "col-xs-2">
+        <a href="javascript:void(0)" class="closebtn" ng-click="closeRightMenu()">&times;</a>
+        <ul class="nav nav-tabs tabs-left">
+          <li role="presentation" ng-click="showTab('hashtagTab')"><a href="#hashtag" id="Hashtag" data-toggle="tab"><i class="fa fa-hashtag fa-2x" aria-hidden="true"></i></a></li>
+          <li role="presentation" ng-click="showTab('sampletweetTab')" class="active"><a href="#tweet" data-toggle="tab"><i class="fa fa-twitter fa-2x" aria-hidden="true"></i></a></li>
+          <li role="presentation" ng-click="showTab('aboutTab')"><a href="#about" data-toggle="tab"><i class="fa fa-info-circle fa-2x"></i></a></li>
+          <li><br/></li>
+        </ul>
+      </div>
+      <div class="col-xs-10">
+        <div class="tab-content">
+          <hashtag id="hashtag" class="tab-pane"></hashtag>
+          <tweet id="tweet" class="tab-pane active"></tweet>
+          <div id="about" class="tab-pane">
+            <h3> About </h3>
+            <p> <b>CoronaVirusTwitterMap</b> is a system powered by <a href="http://cloudberry.ics.uci.edu/" target="_blank">Cloudberry</a>
+              and <a href="https://asterixdb.apache.org/" target="_blank">Apache AsterixDB</a> to support
+              interactive analytics and visualization of large amounts of Covid-19 related twitter data and case numbers. </p>
+
+            <h4> Contributors </h4>
+            <p> <a href="#">Sadeem Alsudais (PhD student)</a>, <a href="https://qiushibai.wordpress.com/" target="_blank">Qiushi Bai (PhD student)</a>, <a href="https://www.linkedin.com/in/yicong-huang/" target="_blank">Yicong Huang (PhD student)</a>, <a href="https://chenli.ics.uci.edu/" target="_blank">Chen Li (Professor)</a>, <a href="https://www.linkedin.com/in/shiqi-wu-9b10a214a/" target="_blank">Shiqi Wu (Undergraduate)</a>, <a href="https://www.linkedin.com/in/tiancheng-zheng-575151178/" target="_blank">Tiancheng Joseph Zheng (Undergraduate)</a> </p>
+
+            <h4> Twitter data </h4>
+            <p> We've been collecting Covid-19 related tweets through <a href="https://developer.twitter.com/en/docs/tweets/filter-realtime/overview" target="_blank">TwitterAPI</a> since January 2020, and live tweets are appending to the database in a realtime manner. </p>
+
+            <h4> Case Numbers </h4>
+            <p> We are using the case numbers data from <a href="https://coronavirus.1point3acres.com/" target="_blank">1Point3Acres.com</a>. </p>
+
+            <h4> Cloudberry </h4>
+            <p> <a href="http://cloudberry.ics.uci.edu/" target="_blank">Cloudberry</a> is a general-purpose middleware system to support visualization on large amounts of data. </p>
+
+            <p>For questions and comments, please contact <b>
+                <a href="mailto:&#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;">
+                  &#105;&#099;&#115;&#045;&#099;&#108;&#111;&#117;&#100;&#098;&#101;&#114;&#114;&#121;&#064;&#117;&#099;&#105;&#046;&#101;&#100;&#117;</a></b></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <mapchoose>
+    <ul>
+      <li role="presentation"><img id="img1" name="img1" title="Count Map" src="/assets/images/aggregation_map.png" width="45" height="45" ></li>
+      <li role="presentation"><img id="img2" name="img2" title="Heat Map" src="/assets/images/heat_map_no_border.png" width="45" height="45" ></li>
+      <li role="presentation"><img id="img3" name="img3" title="Pin Map" src="/assets/images/point_map_no_border.png" width="45" height="45"></li>
+    </ul>
+  </mapchoose>
+
+  <div class = "exception-bar">
+    <exception-bar></exception-bar>
+  </div>
+
+</div>
+
+}
+
+<script>
+  // Function for the button that hiding and showing the timebar. 
+  // The button moves together with timebar and the arrow direction changes. 
+  $(document).ready(function() {
+    $(".slide-up-down").click(function() {
+      $(".stats").slideToggle();
+      if( $( '#downbutton' ).hasClass( 'glyphicon-menu-down' ) ) {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-down' ).addClass('glyphicon-menu-up');
+        $(this).animate({bottom: '5px'});
+      }
+      else {
+        $( '#downbutton' ).removeClass( 'glyphicon-menu-up').addClass( 'glyphicon-menu-down');
+        $(this).animate({bottom: '110px'}); 
+      }
+    });
+  });
+
+</script>
