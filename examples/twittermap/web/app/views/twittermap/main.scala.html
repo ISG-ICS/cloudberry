@@ -39,6 +39,8 @@
       removeSearchBar: @TMAobject.removeSearchBar,
       predefinedKeywords: @Html(Json.stringify(Json.toJson(TMAobject.predefinedKeywords))),
       defaultKeyword: "@TMAobject.defaultKeyword",
+      hotTopics: @Html(Json.stringify(Json.toJson(TMAobject.hotTopics))),
+      searchPlaceholderKeyword: @Html(Json.stringify(Json.toJson(TMAobject.searchPlaceholderKeyword))),
       @if(TMAobject.cacheThreshold.isDefined) {
       cacheThreshold: @TMAobject.cacheThreshold,
       } else {

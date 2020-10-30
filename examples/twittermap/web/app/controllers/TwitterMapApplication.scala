@@ -49,6 +49,8 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
   val predefinedKeywords: Seq[String] = config.getStringSeq("predefinedKeywords").getOrElse(Seq())
   val defaultKeyword: String = config.getString("defaultKeyword").getOrElse(null)
+  val hotTopics: Seq[String] = config.getStringSeq("hotTopics").getOrElse(Seq())
+  val searchPlaceholderKeyword: String = config.getString("searchPlaceholderKeyword").getOrElse(null)
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
   val endDate : Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
