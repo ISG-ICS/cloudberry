@@ -21,7 +21,10 @@ object Commons {
     assemblyMergeStrategy in assembly := {
       case PathList("org", "apache", "commons", "logging", xs@_*) => MergeStrategy.first
       case PathList("org", "apache", "commons", xs @_ *) => MergeStrategy.first
-      case "META-INF/io.netty.versions.properties" => MergeStrategy.last
+      //case "META-INF/io.netty.versions.properties" => MergeStrategy.last
+      case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+      case PathList("com", "sun", "activation", xs @_*) => MergeStrategy.first
+      case PathList("javax", "activation", xs @_*) => MergeStrategy.first
       case x =>
         val oldStrategy = (assemblyMergeStrategy in assembly).value
         oldStrategy(x)
