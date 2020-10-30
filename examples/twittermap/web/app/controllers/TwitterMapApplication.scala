@@ -21,9 +21,11 @@ import java.net.{HttpURLConnection, URL, URLEncoder}
 
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
+import org.joda.time.DateTime
 import play.api.http.websocket.{BinaryMessage, CloseCodes, CloseMessage, Message, TextMessage}
 import play.api.mvc.WebSocket.MessageFlowTransformer
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.io.Source
@@ -301,8 +303,22 @@ object TwitterMapApplication {
   val MultiPolygon = "MultiPolygon"
   val CentroidLatitude = "centroidLatitude"
   val CentroidLongitude = "centroidLongitude"
+  val cache = TrieMap.empty[String, (DateTime, List[String])]
+  val maxCacheSize = 100 //todo don't hardcode this
 
   val header = Json.parse("{\"type\": \"FeatureCollection\"}").as[JsObject]
+
+  def addToCache(key: String, responses: (DateTime, List[String])): Unit = {
+    if (cache.size >= maxCacheSize) {
+      cache -= cache.dropRight(cache.size - 1).keySet.head
+    }
+    if (cache.contains(key)) {
+      if (cache(key)._1.isBefore(responses._1)) {
+        return
+      }
+    }
+    cache(key) = responses
+  }
 
   def loadCity(file: File): List[JsValue] = {
     val stream = new FileInputStream(file)
