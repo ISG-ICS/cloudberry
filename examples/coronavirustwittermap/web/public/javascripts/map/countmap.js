@@ -193,13 +193,13 @@ angular.module('cloudberry.map')
             content += "<div id=\"popup-info\">" +
               "<div id=\"popup-count\">" +
               "  <table style=\"width:100%\">" +
-              "    <tr>" +
+              "    <tr style=\"display:none;\">" +
               "      <th></th>" +
               "      <th class=\"text-center\"><font color=\"" + $scope.caseChartDataColors[0] + "\">Confirmed</font></th>" +
               "      <th class=\"text-center\"><font color=\"" + $scope.caseChartDataColors[1] + "\">Deaths</font></th>" +
               "      <th class=\"text-center\"><font color=\"" + $scope.caseChartDataColors[2] + "\">Recovered</font></th>" +
               "    </tr>" +
-              "    <tr>" +
+              "    <tr style=\"display:none;\">" +
               "      <td>Case count:</td>" +
               "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[0] + "\"><b>" + numberWithCommas(confirmedCaseCount) + "</b></font></td>" +
               "      <td align=\"center\"><font color=\"" + $scope.caseChartDataColors[1] + "\"><b>" + numberWithCommas(deathCaseCount) + "</b></font></td>" +
@@ -270,15 +270,15 @@ angular.module('cloudberry.map')
         var totalCount = caseDataCache.getDailyTotalCaseCount("state", lastDay);
         var content = "";
         content += "<table style=\"width:100%\">" +
-        "<tr>" +
+        "  <tr style=\"display:none;\">" +
         "  <td align=\"center\" colspan=\"3\">US COVID-19 Cases</td>" +
         "</tr>" +
-        "<tr>" +
+        "  <tr style=\"display:none;\">" +
         "  <th class=\"text-center\"><font color='red' size='3'>Confirmed</font></th>" +
         "  <th class=\"text-center\"><font color='black' size='3'>Deaths</font></th>" +
         "  <th class=\"text-center\"><font color='green' size='3'>Recovered</font></th>" +
         "</tr>" +
-        "<tr>" +
+        "  <tr style=\"display:none;\">" +
         "  <td align=\"center\"><font color='red' size='3'><b>" + numberWithCommas(totalCount[0]) + "</b></font></td>" +
         "  <td align=\"center\"><font color='black' size='3'><b>" + numberWithCommas(totalCount[1]) + "</b></font></td>" +
         "  <td align=\"center\"><font color='green' size='3'><b>" + numberWithCommas(totalCount[2]) + "</b></font></td>" +
