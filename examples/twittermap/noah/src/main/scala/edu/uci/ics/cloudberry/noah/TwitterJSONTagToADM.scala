@@ -2,7 +2,7 @@ package edu.uci.ics.cloudberry.noah
 
 import java.io.File
 import java.util.concurrent.Executors
-
+import play.api.libs.json._
 import edu.uci.ics.cloudberry.gnosis._
 import edu.uci.ics.cloudberry.noah.adm.Tweet
 import edu.uci.ics.cloudberry.util.Profile._
@@ -20,6 +20,7 @@ object TwitterJSONTagToADM {
   var threadNumber = 2
   var isDebug = false
   val bufferSize = 100
+  var file = "ADM" // By default, generate ADM file.
 
   val usage =
     """
@@ -36,14 +37,22 @@ object TwitterJSONTagToADM {
       case "-city" :: value :: tail => shapeMap += CityLevel -> value; parseOption(tail)
       case "-thread" :: value :: tail => threadNumber = value.toInt; parseOption(tail)
       case "-debug" :: value :: tail => isDebug = true; parseOption(tail)
+      case "-fileFormat" :: value :: tail => file = value; parseOption(tail)
       case option :: tail => System.err.println("unknown option:" + option); System.err.println(usage); System.exit(1);
     }
   }
 
   def tagOneTweet(ln: String, usGeoGnosis: USGeoGnosis) = {
     try {
-      val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
-      if (adm.length > 0) println(adm)
+      if (file.equals("ADM")) {
+        val adm = Tweet.toADM(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
+        if (adm.length > 0) println(adm)
+      } else {
+        val json = Tweet.toJSON(TwitterObjectFactory.createStatus(ln), usGeoGnosis, true)
+        if (json.length > 0) {
+          println("""{ "index": {} }""" + "\n" + json)
+        }
+      }
     } catch {
       case e: Throwable => {
         if (isDebug) {

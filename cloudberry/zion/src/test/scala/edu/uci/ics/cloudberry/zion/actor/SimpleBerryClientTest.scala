@@ -11,6 +11,7 @@ import org.specs2.mutable.SpecificationLike
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 
 class SimpleBerryClientTest extends TestkitExample with SpecificationLike with MockConnClient {
 
@@ -52,9 +53,9 @@ class SimpleBerryClientTest extends TestkitExample with SpecificationLike with M
       val json1 = JsArray(Seq(Json.obj("a" -> 4)))
       val json2 = JsArray(Seq(Json.obj("b" -> 8)))
 
-      dataManager.expectMsg(query1)
+      dataManager.receiveOne(5 seconds).equals(query1)
       dataManager.reply(json1)
-      dataManager.expectMsg(query2)
+      dataManager.receiveOne(5 seconds).equals(query2)
       dataManager.reply(json2)
 
       sender.expectMsg(JsArray(Seq(JsArray(Seq(Json.obj("a" -> 4), Json.obj("b" -> 8))))))

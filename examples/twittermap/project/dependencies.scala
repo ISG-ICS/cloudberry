@@ -3,7 +3,7 @@ import play.sbt.PlayImport._
 
 object Dependencies {
   val playVersion = "2.5.0"
-  val twitter4jVersion = "4.0.3"
+  val twitter4jVersion = "4.0.7"
   val mockitoAll = "org.mockito" % "mockito-all" % "1.10.19" % Test
   val scalatest = "org.scalatest" %% "scalatest" % "2.2.6" % Test
   val easytest = "org.easytesting" % "fest-assert" % "1.4" % Test

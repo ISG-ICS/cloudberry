@@ -50,11 +50,10 @@ angular.module('cloudberry.map', ['leaflet-directive', 'cloudberry.common','clou
     angular.extend($scope, {
       tiles: {
         name: 'Mapbox',
-        url: 'https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}',
-        type: 'xyz',
+        url: 'https://api.mapbox.com/styles/v1/mapbox/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}',
         options: {
           accessToken: 'pk.eyJ1IjoiamVyZW15bGkiLCJhIjoiY2lrZ2U4MWI4MDA4bHVjajc1am1weTM2aSJ9.JHiBmawEKGsn3jiRK_d0Gw',
-          id: 'jeremyli.p6f712pj',
+          id: 'light-v9',
           minZoom: 2,
           maxZoom: 16
         }

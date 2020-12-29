@@ -8,6 +8,8 @@ angular.module('cloudberry.common', ['cloudberry.mapresultcache', 'cloudberry.ti
       removeSearchBar: config.removeSearchBar,
       predefinedKeywords: config.predefinedKeywords,
       defaultKeyword: config.defaultKeyword,
+      searchPlaceholderKeyword: config.searchPlaceholderKeyword,
+      hotTopics: config.hotTopics,
       normalizationUpscaleFactor: 1000 * 1000,
       normalizationUpscaleText: "/M",
       sentimentUpperBound: 4,
