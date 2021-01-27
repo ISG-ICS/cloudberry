@@ -9,6 +9,7 @@ public class TwitterGeoTaggerConfig {
     int threadNumber = 0;
     int bufferSize = 0;
     boolean debug = false;
+    boolean skipUntagged = false;
 
     public String getStateJsonFile() {
         return stateJsonFile;
@@ -32,6 +33,10 @@ public class TwitterGeoTaggerConfig {
 
     public boolean getDebug() {
         return debug;
+    }
+
+    public boolean getSkipUntagged() {
+        return skipUntagged;
     }
 
     /**
@@ -85,12 +90,20 @@ public class TwitterGeoTaggerConfig {
                 .required(false)
                 .hasArg(false)
                 .build();
+        final Option skipOpt = Option.builder("skip")
+                .longOpt("skip-untagged")
+                .desc("Skip tweets that can not be tagged, i.e. not out putting them to the stdout at all. (Default: false)")
+                .type(Boolean.class)
+                .required(false)
+                .hasArg(false)
+                .build();
         options.addOption(stateOpt);
         options.addOption(countyOpt);
         options.addOption(cityOpt);
         options.addOption(threadOpt);
         options.addOption(bufferOpt);
         options.addOption(debugOpt);
+        options.addOption(skipOpt);
 
         // parse args to generate a TwitterIngestionConfig object
         CommandLineParser parser = new DefaultParser();
@@ -104,6 +117,7 @@ public class TwitterGeoTaggerConfig {
             config.threadNumber = Integer.parseInt(cmd.getOptionValue("thread-number", "1"));
             config.bufferSize = Integer.parseInt(cmd.getOptionValue("buffer-size", "100"));
             config.debug = cmd.hasOption("debug");
+            config.skipUntagged = cmd.hasOption("skip");
             return config;
 
         } catch (ParseException e) {

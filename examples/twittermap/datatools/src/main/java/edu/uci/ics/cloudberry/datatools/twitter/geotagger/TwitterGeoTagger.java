@@ -1,5 +1,6 @@
 package edu.uci.ics.cloudberry.datatools.twitter.geotagger;
 
+import com.fasterxml.jackson.core.JsonParser;
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.uci.ics.cloudberry.util.Rectangle;
@@ -31,6 +32,7 @@ import java.util.concurrent.Future;
 public class TwitterGeoTagger {
 
     public static boolean DEBUG = false;
+    public static boolean SKIP_UNTAGGED = false;
 
     public static String GEO_TAG = "geo_tag";
     public static String STATE_ID = "stateID";
@@ -48,6 +50,7 @@ public class TwitterGeoTagger {
             return;
         }
         DEBUG = config.getDebug();
+        SKIP_UNTAGGED = config.getSkipUntagged();
 
         // new a USGeoGnosis object shared by all threads of TwitterGeoTagger to use.
         USGeoGnosis usGeoGnosis = USGeoGnosisLoader.loadUSGeoGnosis(config.getStateJsonFile(),
@@ -123,24 +126,31 @@ public class TwitterGeoTagger {
     public static boolean printTagOneTweet(USGeoGnosis usGeoGnosis, String tweetString) {
         try {
             ObjectMapper mapper = new ObjectMapper();
+            mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
             Map<String, Object> tweetObject;
 
             // (1) parse tweet string to tweet object (Map<String, Object>)
             tweetObject = mapper.readValue(tweetString, Map.class);
 
+            boolean tagged = false;
             // (2) add "geo_tag" object into tweet object
-            //  - try text match first
-            //  - then try exact point lookup
-            //  - otherwise, no geo_tag information will be added, the tweet being as before
-            if (!textMatchPlace(usGeoGnosis, tweetObject)) {
-                exactPointLookup(usGeoGnosis, tweetObject);
+            // (2.1) try text match first
+            if (!tagged) {
+                tagged = textMatchPlace(usGeoGnosis, tweetObject);
+            }
+            // (2.2) then try exact point lookup
+            if (!tagged) {
+                tagged = exactPointLookup(usGeoGnosis, tweetObject);
             }
 
-            // (3) write tweet object back to string
-            tweetString = mapper.writeValueAsString(tweetObject);
+            // print out the tweet if successfully tagged or SKIP_UNTAGGED flag is false
+            if (tagged || !SKIP_UNTAGGED) {
+                // (3) write tweet object back to string
+                tweetString = mapper.writeValueAsString(tweetObject);
 
-            // (4) print geo_tagged tweet to stdout
-            System.out.println(tweetString);
+                // (4) print geo_tagged tweet to stdout
+                System.out.println(tweetString);
+            }
 
         } catch (Exception e) {
             if (DEBUG) {
