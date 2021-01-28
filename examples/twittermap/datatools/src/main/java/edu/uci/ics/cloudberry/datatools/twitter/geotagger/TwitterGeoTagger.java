@@ -126,7 +126,6 @@ public class TwitterGeoTagger {
     public static boolean printTagOneTweet(USGeoGnosis usGeoGnosis, String tweetString) {
         try {
             ObjectMapper mapper = new ObjectMapper();
-            mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
             Map<String, Object> tweetObject;
 
             // (1) parse tweet string to tweet object (Map<String, Object>)
