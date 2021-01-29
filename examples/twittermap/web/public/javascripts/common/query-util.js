@@ -9,7 +9,11 @@ angular.module("cloudberry.common")
 
       startDate: config.startDate,
       endDate: config.endDate,
-      defaultNonSamplingDayRange: 1500,
+      // This means starting from the endDate in the application.conf,
+      // to how many days backward at most will be queried, except
+      // pinmap queries or heatmap queries (both have their own SamplingDayRange parameters).
+      // -1 means infinite.
+      defaultNonSamplingDayRange: -1,
       defaultSamplingDayRange: 1,
       defaultSamplingSize: 10,
       defaultHeatmapSamplingDayRange: parseInt(config.heatmapSamplingDayRange),
@@ -32,8 +36,13 @@ angular.module("cloudberry.common")
           keywords.push(parameters.keywords[i].replace("\"", "").trim());
         }
         var queryStartDate = new Date(parameters.timeInterval.end);
-        queryStartDate.setDate(queryStartDate.getDate() - maxDay);
-        queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+        if (maxDay > 0) {
+          queryStartDate.setDate(queryStartDate.getDate() - maxDay);
+          queryStartDate = parameters.timeInterval.start > queryStartDate ? parameters.timeInterval.start : queryStartDate;
+        }
+        else {
+          queryStartDate = parameters.timeInterval.start;
+        }
 
         var filter = [
           {
