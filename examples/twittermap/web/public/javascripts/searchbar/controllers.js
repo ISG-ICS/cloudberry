@@ -6,14 +6,14 @@ angular.module('cloudberry.util', ['cloudberry.common'])
     $("#keyword-textbox").autocomplete({source:[],disabled:true,delay:200});
 
     var ACSocket;
-    cloudberryClient.newWebSocket("ws://"+window.location.host+"/autoComplete").done(function(pws) {
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/autoComplete").done(function (pws) {
       ACSocket = pws;
 
-      ACSocket.onmessage = function(event){
+      ACSocket.onmessage = function (event) {
         var suggestion = [];
         var data = JSON.parse(event.data);
         var topics = JSON.parse(data).topics;
-        for (var i = 0; i < topics.length; i ++) {
+        for (var i = 0; i < topics.length; i++) {
           var value = String(topics[i].topic);
           //Exclude hashtag topic and repetitive topic
           if (value[0] !== "#" && !suggestion.includes(value)) {
@@ -56,7 +56,7 @@ angular.module('cloudberry.util', ['cloudberry.common'])
       if ($scope.keyword && $scope.keyword.trim().length > 0) {
         //Splits out all individual words in the query keyword.
         var keywords = $scope.keyword.trim().split(/\s+/);
-        var newKeywords = new Array();
+        var newKeywords = [];
 
         //Adds the stopword filtering feature and checks each token.
         for(var x=0; x<keywords.length; x++){

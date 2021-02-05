@@ -1,33 +1,33 @@
 package actor
 
-import java.net.URI
 import actor.TwitterMapPigeon.cache
 import akka.actor._
 import akka.stream.Materializer
 import controllers.TwitterMapApplication
 import org.eclipse.jetty.websocket.client.WebSocketClient
 import org.joda.time.DateTime
+import play.api.libs.json._
 import play.api.{Configuration, Logger}
-import play.api.libs.json.{JsArray, JsError, JsObject, JsSuccess, JsValue, Json}
 import websocket.{TwitterMapServerToCloudBerrySocket, WebSocketFactory}
 
+import java.net.URI
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 
 /**
-  * A routing actor that servers for rendering user request into cloudberry request
-  * and transfer cloudberry request/response through websocket connection.
-  *
-  * @param factory            Factory of WebSocketClient
-  * @param cloudberryWS       Websocket url of cloudberry
-  * @param out                ActorRef in akka flow representing frontend client
-  * @param maxTextMessageSize Max size of text messages transmit in ws.
-  * @param ec                 implicit execution context
-  * @param materializer       implicit materializer
-  */
+ * A routing actor that servers for rendering user request into cloudberry request
+ * and transfer cloudberry request/response through websocket connection.
+ *
+ * @param factory                Factory of WebSocketClient
+ * @param cloudberryWebsocketURL Websocket url of cloudberry
+ * @param out                    ActorRef in akka flow representing frontend client
+ * @param maxTextMessageSize     Max size of text messages transmit in ws.
+ * @param ec                     implicit execution context
+ * @param materializer           implicit materializer
+ */
 class TwitterMapPigeon(val factory: WebSocketFactory,
-                       val cloudberryWS: String,
+                       val cloudberryWebsocketURL: String,
                        val out: ActorRef,
                        val config: Configuration,
                        val maxTextMessageSize: Int)
@@ -42,7 +42,7 @@ class TwitterMapPigeon(val factory: WebSocketFactory,
   override def preStart(): Unit = {
     super.preStart
     client.start()
-    client.connect(socket, new URI(cloudberryWS))
+    client.connect(socket, new URI(cloudberryWebsocketURL))
   }
 
   override def postStop(): Unit = {
@@ -156,6 +156,6 @@ object TwitterMapPigeon {
 
   }
 
-  def props(factory: WebSocketFactory, cloudberryWS: String, out: ActorRef, config: Configuration, maxTextMessageSize: Int)
-           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWS, out, config, maxTextMessageSize))
+  def props(factory: WebSocketFactory, cloudberryWebsocketURL: String, out: ActorRef, config: Configuration, maxTextMessageSize: Int)
+           (implicit ec: ExecutionContext, materializer: Materializer) = Props(new TwitterMapPigeon(factory, cloudberryWebsocketURL, out, config, maxTextMessageSize))
 }

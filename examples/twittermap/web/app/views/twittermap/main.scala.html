@@ -15,14 +15,17 @@
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/leaflet/leaflet.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/dc.js/dc.min.css")'>
-  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/jquery-ui/jquery-ui.css")'> 
+  <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/jquery-ui/jquery-ui.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/font-awesome/css/font-awesome.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap-vertical-tabs/bootstrap.vertical-tabs.min.css")'>
   <link rel="stylesheet" media="screen" href='@routes.Assets.versioned("lib/bootstrap-toggle/css/bootstrap-toggle.min.css")'>
   <link rel='stylesheet' href='@routes.Assets.versioned("stylesheets/main.css")'>
 
   <script>
-    var config= {
+    var config = {
+      cloudberryWS: "@TMAobject.cloudberryWS",
+      cloudberryHost: "@TMAobject.cloudberryHost",
+      cloudberryPort: "@TMAobject.cloudberryPort",
       sentimentEnabled: @TMAobject.sentimentEnabled,
       sentimentUDF: "@TMAobject.sentimentUDF",
       startDate: new Date("@TMAobject.startDate"),
@@ -31,7 +34,7 @@
       }
       @if(isDrugMap) {
       mapLegend: "$",
-      sumText : "dollars",
+      sumText: "dollars",
       } else {
       mapLegend: "Count:",
       sumText : "tweets",
@@ -45,13 +48,13 @@
       cacheThreshold: @TMAobject.cacheThreshold,
       } else {
       // The default caching threshold value
-      cacheThreshold: new String("30000"),
+      cacheThreshold: String("30000"),
       }
       @if(TMAobject.querySliceMills.isDefined) {
       querySliceMills: @TMAobject.querySliceMills,
       } else {
       // The default query slicing milliseconds value
-      querySliceMills: new String("2000"),
+      querySliceMills: String("2000"),
       }
       heatmapSamplingDayRange: @TMAobject.heatmapSamplingDayRange,
       heatmapSamplingLimit: @TMAobject.heatmapSamplingLimit,
@@ -75,8 +78,9 @@
   <script src='@routes.Assets.versioned("lib/angular-leaflet-directive/angular-leaflet-directive.js")'></script>
   <script src='@routes.Assets.versioned("lib/jquery/jquery.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/hashmap/hashmap.js")'></script>
-  <script src = "http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
-  <script> d3version4 = d3; window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
+  <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+  <script> d3version4 = d3;
+  window.d3 = null; // Prevent d3v4 from being replaced by d3 below </script>
   <script src='@routes.Assets.versioned("lib/d3/d3.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/crossfilter/crossfilter.min.js")'></script>
   <script src='@routes.Assets.versioned("lib/dc.js/dc.min.js")'></script>
