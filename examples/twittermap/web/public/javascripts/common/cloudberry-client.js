@@ -97,7 +97,7 @@ angular.module("cloudberry.common")
      *   // Handle to the new websocket instance
      *   var ws;
      *   // Use this interface to create a new websocket instance
-     *   var wsConn = cloudberryClient.newWebSocket("ws://"+window.location.host+"/liveTweets");
+     *   var wsConn = cloudberryClient.newWebSocket("ws://"+window.location.host+"/ws/liveTweets");
      *   // Do anything to the websocket in the .done() callback function
      *   // This will make sure the instance you got is connected and referable
      *   wsConn.done(function(pws) {
@@ -151,7 +151,7 @@ angular.module("cloudberry.common")
     };
 
     // Create a native websocket connection used by this client's send interface
-    var wsConnection = this.newWebSocket(cloudberryConfig.ws + window.location.host + "/ws");
+    var wsConnection = this.newWebSocket(cloudberryConfig.ws + window.location.host + "/ws/main");
 
     wsConnection.done(function (pws) {
       ws = pws;

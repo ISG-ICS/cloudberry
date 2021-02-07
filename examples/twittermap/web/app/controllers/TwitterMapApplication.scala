@@ -15,8 +15,8 @@ import play.api.libs.ws.WSClient
 import play.api.mvc.WebSocket.MessageFlowTransformer
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
-import twitter4j.{TwitterFactory, _}
 import twitter4j.conf.ConfigurationBuilder
+import twitter4j.{TwitterFactory, _}
 import websocket.WebSocketFactory
 
 import java.io.{File, FileInputStream, IOException}
@@ -44,6 +44,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
   val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
   val cloudberryPort: String = config.getString("cloudberry.port").getOrElse("9000")
+  val appWS: String = config.getString("app.ws").getOrElse("ws://")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)

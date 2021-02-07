@@ -3,15 +3,15 @@
 # ~~~~
 
 # TwitterMap routes
-GET        /                                    controllers.TwitterMapApplication.index
-GET        /ws                                  controllers.TwitterMapApplication.ws
-GET        /drugmap                             controllers.TwitterMapApplication.drugmap
-GET        /checkQuerySolvableByView            controllers.TwitterMapApplication.checkQuerySolvableByView
-GET        /liveTweets                          controllers.TwitterMapApplication.liveTweets
-GET        /autoComplete                        controllers.TwitterMapApplication.autoComplete
-GET        /city/:neLat/:swLat/:neLng/:swLng    controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
-GET        /cityPopulation/:cityIds             controllers.TwitterMapApplication.getCityPop(cityIds: String)
+GET        /                                        controllers.TwitterMapApplication.index
+GET        /ws/main                                 controllers.TwitterMapApplication.ws
+GET        /drugmap                                 controllers.TwitterMapApplication.drugmap
+GET        /ws/checkQuerySolvableByView             controllers.TwitterMapApplication.checkQuerySolvableByView
+GET        /ws/liveTweets                           controllers.TwitterMapApplication.liveTweets
+GET        /ws/autoComplete                         controllers.TwitterMapApplication.autoComplete
+GET        /city/:neLat/:swLat/:neLng/:swLng        controllers.TwitterMapApplication.getCity(neLat: Double, swLat: Double, neLng: Double, swLng: Double)
+GET        /cityPopulation/:cityIds                 controllers.TwitterMapApplication.getCityPop(cityIds: String)
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file                        controllers.Assets.versioned(path="/public", file: Asset)
-GET        /favicon.ico                         controllers.Assets.at(path="/public/images", file="favicon.ico")
+GET        /assets/*file                            controllers.Assets.versioned(path="/public", file: Asset)
+GET        /favicon.ico                             controllers.Assets.at(path="/public/images", file="favicon.ico")
