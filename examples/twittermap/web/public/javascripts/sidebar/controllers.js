@@ -80,17 +80,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
     var wsCheckQuerySolvableByView;
-    cloudberryClient.newWebSocket(cloudberryConfig.checkQuerySolvableByView).done(function(pws) {
-      wsCheckQuerySolvableByView = pws;
+    cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + '/ws/checkQuerySolvableByView').done(function (pws) {
+        wsCheckQuerySolvableByView = pws;
 
-      moduleManager.publishEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, {});
+        moduleManager.publishEvent(moduleManager.EVENT.WS_CHECK_QUERY_SOLVABLE_BY_VIEW_READY, {});
 
-      // When receiving messages from websocket, check its queryID and result.
-      // If queryID is matched and result is true, enable the sidebar button and clear timer.
-      wsCheckQuerySolvableByView.onmessage = function(event) {
-        $timeout(function() {
-          var result = JSON.parse(event.data);
-          if (result.id === $scope.nowQueryID && result.value[0]) {
+        // When receiving messages from websocket, check its queryID and result.
+        // If queryID is matched and result is true, enable the sidebar button and clear timer.
+        wsCheckQuerySolvableByView.onmessage = function (event) {
+            $timeout(function () {
+                var result = JSON.parse(event.data);
+                if (result.id === $scope.nowQueryID && result.value[0]) {
             clearInterval($scope.timerCheckQuerySolvableByView);
             enableHashtagButton();
           }
@@ -122,17 +122,17 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
 
     // WebSocket for Live Tweets
     var LTSocket;
-    cloudberryClient.newWebSocket("ws://"+window.location.host+"/liveTweets").done(function(pws) {
-      LTSocket = pws;
+      cloudberryClient.newWebSocket(cloudberryConfig.ws + window.location.host + "/ws/liveTweets").done(function (pws) {
+          LTSocket = pws;
 
-      /* fetchTweetFromAPI sends a query to twittermap server through websocket
-       * to fetch recent tweets for liveTweet feature
-       * @param msg{Object}, msg is the query send to twittermap server
-       */
-      $scope.fetchTweetFromAPI = function (query) {
-        if(LTSocket.readyState === LTSocket.OPEN){
-          LTSocket.send(query);
-        }
+          /* fetchTweetFromAPI sends a query to twittermap server through websocket
+           * to fetch recent tweets for liveTweet feature
+           * @param msg{Object}, msg is the query send to twittermap server
+           */
+          $scope.fetchTweetFromAPI = function (query) {
+              if (LTSocket.readyState === LTSocket.OPEN) {
+                  LTSocket.send(query);
+              }
       }
 
       moduleManager.publishEvent(moduleManager.EVENT.WS_LIVE_TWEETS_READY, {});
@@ -221,7 +221,7 @@ angular.module("cloudberry.sidebar", ["cloudberry.common"])
     function cleanLiveTweets() {
       liveTweetsQueue = [];
       $("#tweet").html("");
-    };
+    }
 
     function handleSidebarQuery(){
       if ($scope.isHashTagOpen && $scope.isHashTagOutdated) {

@@ -1,30 +1,27 @@
 package controllers
 
-import java.io.{File, FileInputStream, IOException}
-
-import javax.inject.{Inject, Singleton}
 import actor.TwitterMapPigeon
 import akka.actor._
 import akka.stream.Materializer
+import akka.stream.scaladsl.Flow
+import akka.util.ByteString
 import model.{Migration_20170428, MySqlMigration_20170810, PostgreSqlMigration_20172829}
+import org.joda.time.DateTime
+import play.api.http.websocket._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.json.{JsValue, Json, _}
 import play.api.libs.streams.{ActorFlow, AkkaStreams}
 import play.api.libs.ws.WSClient
+import play.api.mvc.WebSocket.MessageFlowTransformer
 import play.api.mvc._
 import play.api.{Configuration, Environment, Logger}
-import twitter4j.TwitterFactory
 import twitter4j.conf.ConfigurationBuilder
-import twitter4j._
+import twitter4j.{TwitterFactory, _}
 import websocket.WebSocketFactory
+
+import java.io.{File, FileInputStream, IOException}
 import java.net.{HttpURLConnection, URL, URLEncoder}
-
-import akka.stream.scaladsl.Flow
-import akka.util.ByteString
-import org.joda.time.DateTime
-import play.api.http.websocket.{BinaryMessage, CloseCodes, CloseMessage, Message, TextMessage}
-import play.api.mvc.WebSocket.MessageFlowTransformer
-
+import javax.inject.{Inject, Singleton}
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -44,8 +41,10 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val USCityDataPath: String = config.getString("us.city.path").getOrElse("/public/data/city.sample.json")
   val USCityPopDataPath: String = config.getString("us.citypop.path").getOrElse("/public/data/allCityPopulation.json")
   val cloudberryRegisterURL: String = config.getString("cloudberry.register").getOrElse("http://localhost:9000/admin/register")
-  val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://localhost:9000/ws")
-  val cloudberryCheckQuerySolvableByView: String = config.getString("cloudberry.checkQuerySolvableByView").getOrElse("ws://localhost:9000/checkQuerySolvableByView")
+  val cloudberryWS: String = config.getString("cloudberry.ws").getOrElse("ws://")
+  val cloudberryHost: String = config.getString("cloudberry.host").getOrElse("localhost")
+  val cloudberryPort: String = config.getString("cloudberry.port").getOrElse("9000")
+  val appWS: String = config.getString("app.ws").getOrElse("ws://")
   val sentimentEnabled: Boolean = config.getBoolean("sentimentEnabled").getOrElse(false)
   val sentimentUDF: String = config.getString("sentimentUDF").getOrElse("twitter.`snlp#getSentimentScore`(text)")
   val removeSearchBar: Boolean = config.getBoolean("removeSearchBar").getOrElse(false)
@@ -54,7 +53,7 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
   val hotTopics: Seq[String] = config.getStringSeq("hotTopics").getOrElse(Seq())
   val searchPlaceholderKeyword: String = config.getString("searchPlaceholderKeyword").getOrElse(null)
   val startDate: String = config.getString("startDate").getOrElse("2015-11-22T00:00:00.000")
-  val endDate : Option[String] = config.getString("endDate")
+  val endDate: Option[String] = config.getString("endDate")
   val cities: List[JsValue] = TwitterMapApplication.loadCity(environment.getFile(USCityDataPath))
   val citiesPopulation: List[JsValue] = TwitterMapApplication.loadCityPop(environment.getFile(USCityPopDataPath))
   val cacheThreshold : Option[String] = config.getString("cacheThreshold")
@@ -133,14 +132,14 @@ class TwitterMapApplication @Inject()(val wsClient: WSClient,
 
   def ws = WebSocket.accept[JsValue, WSMessage] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryWS, out, config, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/ws", out, config, maxTextMessageSize)
     }
   }
 
   // A WebSocket that send query to Cloudberry, to check whether it is solvable by view
   def checkQuerySolvableByView = WebSocket.accept[JsValue, JsValue] { request =>
     ActorFlow.actorRef { out =>
-      TwitterMapPigeon.props(webSocketFactory, cloudberryCheckQuerySolvableByView, out, config, maxTextMessageSize)
+      TwitterMapPigeon.props(webSocketFactory, cloudberryWS + cloudberryHost + ":" + cloudberryPort + "/checkQuerySolvableByView", out, config, maxTextMessageSize)
     }
   }
 
