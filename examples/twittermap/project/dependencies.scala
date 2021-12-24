@@ -102,6 +102,7 @@ object Dependencies {
     "org.eclipse.jetty.websocket" % "websocket-servlet" % "9.4.28.v20200408",
     "org.eclipse.jetty.websocket" % "websocket-api" % "9.4.28.v20200408",
     "org.eclipse.jetty.websocket" % "websocket-server" % "9.4.28.v20200408",
-    "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.1"
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.1",
+    ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
   ) ++ testDeps
 }
