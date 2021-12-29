@@ -197,7 +197,7 @@ public class TwitterIngestionConfig {
             config.outputPath = cmd.getOptionValue("output-path", "./");
             // rotate mode
             if (cmd.hasOption("rotate-mode")) {
-                config.rotateMode = cmd.getOptionValues("rotate-mode");
+                config.rotateMode = cmd.getOptionValue("rotate-mode");
                 Set<String> candidateRotateModes = new HashSet<String>();
                 candidateRotateModes.add("daily");
                 candidateRotateModes.add("day");
