@@ -44,7 +44,7 @@ public class TwitterIngestionWorker implements Runnable{
     TwitterIngestionConfig config;
     Client twitterClient;
     BufferedWriter fileWriter;
-    Date currentDate;
+    Date currentFileDate;  // the creation date of the current output file
     SimpleDateFormat dateFormatter;
     SimpleDateFormat timeFormatter;
 
@@ -75,20 +75,45 @@ public class TwitterIngestionWorker implements Runnable{
     /**
      * Check if we need to rotate the output file
      *
-     * Note: currently only support daily rotation.
+     * Note: currently support daily, weekly, and monthly rotation.
      *
      * @return
      */
-    private boolean rotateFile() {
-        Date now = new Date();
-        Calendar current = Calendar.getInstance();
-        current.setTime(currentDate);
-        Calendar rightNow = Calendar.getInstance();
-        rightNow.setTime(now);
-        boolean sameDay = current.get(Calendar.YEAR) == rightNow.get(Calendar.YEAR)
-                && current.get(Calendar.MONTH) == rightNow.get(Calendar.MONTH)
-                && current.get(Calendar.DAY_OF_MONTH) == rightNow.get(Calendar.DAY_OF_MONTH);
-        return !sameDay;
+    private boolean rotateFile(String rotateMode) {
+        Calendar currentFileCalendar = Calendar.getInstance();
+        currentFileCalendar.setTime(currentFileDate);
+        Calendar rightNowCalendar = Calendar.getInstance();
+        rightNowCalendar.setTime(new Date());
+        boolean rotateFile = true;
+        switch (rotateMode.toLowerCase()) {
+            case "daily":
+            case "day":
+            case "d":
+                if (currentFileCalendar.get(Calendar.YEAR) == rightNowCalendar.get(Calendar.YEAR) && 
+                    currentFileCalendar.get(Calendar.MONTH) == rightNowCalendar.get(Calendar.MONTH) && 
+                    currentFileCalendar.get(Calendar.DAY_OF_MONTH) == rightNowCalendar.get(Calendar.DAY_OF_MONTH)) {
+                        rotateFile = false;
+                    }
+                break;
+            case "weekly":
+            case "week":
+            case "w":
+                if (currentFileCalendar.get(Calendar.YEAR) == rightNowCalendar.get(Calendar.YEAR) && 
+                    currentFileCalendar.get(Calendar.WEEK_OF_YEAR) == rightNowCalendar.get(Calendar.WEEK_OF_YEAR)) {
+                        rotateFile = false;
+                    }
+                break;
+            case "monthly":
+            case "month":
+            case "m":
+                if (currentFileCalendar.get(Calendar.YEAR) == rightNowCalendar.get(Calendar.YEAR) && 
+                    currentFileCalendar.get(Calendar.MONTH) == rightNowCalendar.get(Calendar.MONTH)) {
+                        rotateFile = false;
+                    }
+                break;
+        }
+        
+        return rotateFile;
     }
 
     /**
@@ -101,8 +126,8 @@ public class TwitterIngestionWorker implements Runnable{
      * @return
      */
     private BufferedWriter getFileWriter(String filePath, String prefix)  throws IOException {
-        currentDate = new Date();
-        String strDate = dateFormatter.format(currentDate);
+        currentFileDate = new Date();
+        String strDate = dateFormatter.format(currentFileDate);
         String fileName = prefix + "_" + strDate + ".gz";
         if (filePath.endsWith("/")) {
             fileName = filePath + fileName;
@@ -196,7 +221,16 @@ public class TwitterIngestionWorker implements Runnable{
                 }
 
                 // if needs to rotate file, get new file writer
-                if (rotateFile()) {
+                if (rotateFile(config.getRotateMode())) {
+                    // close current file writer
+                    if (fileWriter != null) {
+                        try {
+                            fileWriter.close();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    // get new file writer
                     fileWriter = getFileWriter(config.getOutputPath(), config.getFilePrefix());
                 }
 

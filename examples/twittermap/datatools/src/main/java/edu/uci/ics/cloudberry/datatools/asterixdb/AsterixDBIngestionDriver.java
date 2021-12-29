@@ -94,8 +94,12 @@ public class AsterixDBIngestionDriver {
         }
 
         // initialize AsterixDB adapter
-        // TODO - add configuration parameter to choose between ForTwitter and ForTwitterMap
-        asterixDBAdapter = new AsterixDBAdapterForTwitter();
+        if (config.getAdapterName().equalsIgnoreCase("twittermap")) {
+            asterixDBAdapter = new AsterixDBAdapterForTwitterMap();
+        }
+        else {
+            asterixDBAdapter = new AsterixDBAdapterForTwitter();
+        }
 
         // mode (1) - from Twitter ingestion proxy
         if (config.getFromProxy() != null) {

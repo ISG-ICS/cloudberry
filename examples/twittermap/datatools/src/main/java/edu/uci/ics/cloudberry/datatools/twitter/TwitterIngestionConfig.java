@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.datatools.twitter;
 
+import java.util.HashSet;
+import java.util.Set;
 import com.twitter.hbc.core.endpoint.Location;
 import org.apache.commons.cli.*;
 
@@ -18,6 +20,7 @@ public class TwitterIngestionConfig {
     // output
     private String filePrefix = null;
     private String outputPath = null;
+    private String rotateMode = null;
 
     // proxy
     private int proxyPort;
@@ -52,6 +55,10 @@ public class TwitterIngestionConfig {
 
     public String getOutputPath() {
         return outputPath;
+    }
+
+    public String getRotateMode() {
+        return rotateMode;
     }
 
     public int getProxyPort() {
@@ -126,6 +133,13 @@ public class TwitterIngestionConfig {
                 .required(false)
                 .hasArg()
                 .build();
+        final Option rotateModeOpt = Option.builder("rm")
+                .longOpt("rotate-mode")
+                .desc("Output file rotate mode, supported values: (1) daily/day/d - daily rotating; (2) weekly/week/w - weekly rotating; (3) monthly/month/m - monthly rotating. (Default: weekly)")
+                .type(String.class)
+                .required(false)
+                .hasArg()
+                .build();
         final Option proxyPortOpt = Option.builder("pp")
                 .longOpt("proxy-port")
                 .desc("Port to which the proxy server will listen to, " +
@@ -143,6 +157,7 @@ public class TwitterIngestionConfig {
         options.addOption(locationOpt);
         options.addOption(filePrefixOpt);
         options.addOption(outputPathOpt);
+        options.addOption(rotateModeOpt);
         options.addOption(proxyPortOpt);
 
         // parse args to generate a TwitterIngestionConfig object
@@ -180,6 +195,26 @@ public class TwitterIngestionConfig {
             // output
             config.filePrefix = cmd.getOptionValue("file-prefix", "Tweet");
             config.outputPath = cmd.getOptionValue("output-path", "./");
+            // rotate mode
+            if (cmd.hasOption("rotate-mode")) {
+                config.rotateMode = cmd.getOptionValues("rotate-mode");
+                Set<String> candidateRotateModes = new HashSet<String>();
+                candidateRotateModes.add("daily");
+                candidateRotateModes.add("day");
+                candidateRotateModes.add("d");
+                candidateRotateModes.add("weekly");
+                candidateRotateModes.add("week");
+                candidateRotateModes.add("w");
+                candidateRotateModes.add("monthly");
+                candidateRotateModes.add("month");
+                candidateRotateModes.add("m");
+                if (!candidateRotateModes.contains(config.rotateMode)) {
+                    throw new ParseException("The given rotate-mode [" + config.rotateMode + "] is not supported! Please give one of the three rotate-modes: daily, weekly, monthly.");
+                }
+            }
+            else{
+                config.rotateMode = "weekly";
+            }
             // proxy
             config.proxyPort = Integer.parseInt(cmd.getOptionValue("proxy-port", "9088"));
 
@@ -200,6 +235,7 @@ public class TwitterIngestionConfig {
                             "--locations=-170,30,-160,40,100,20,120,40 \\ \n" +
                             "-fp Twitter_hurricane \\ \n" +
                             "-op ./ \n" +
+                            "-rm weekly \n" +
                             "To get your own authentication keys, " +
                             "visit: https://developer.twitter.com/en/docs/basics/authentication/oauth-1-0a");
         }

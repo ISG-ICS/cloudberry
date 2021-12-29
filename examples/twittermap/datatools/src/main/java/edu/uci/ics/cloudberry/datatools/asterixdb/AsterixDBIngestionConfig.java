@@ -1,5 +1,7 @@
 package edu.uci.ics.cloudberry.datatools.asterixdb;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.cli.*;
 
 public class AsterixDBIngestionConfig {
@@ -15,6 +17,9 @@ public class AsterixDBIngestionConfig {
     // target AsterixDB
     private String host = null;
     private int port;
+
+    // AsterixDB adapter
+    private String adapterName = null;
 
     public String getFromProxy() {
         return fromProxy;
@@ -38,6 +43,10 @@ public class AsterixDBIngestionConfig {
 
     public int getPort() {
         return port;
+    }
+
+    public String getAdapterName() {
+        return adapterName;
     }
 
     public static AsterixDBIngestionConfig createFromCLIArgs(String[] args) {
@@ -85,12 +94,20 @@ public class AsterixDBIngestionConfig {
                 .required()
                 .hasArg()
                 .build();
+        final Option adapterNameOpt = Option.builder("an")
+                .longOpt("adapter-name")
+                .desc("AsterixDB adapter name using which to transform from JSON format to ADM format, two options: (1) twitter - for general Twitter data with maximized output columns; (2) twittermap - for TwitterMap application data with reduced output columns. (Default: twittermap)")
+                .type(String.class)
+                .required(false)
+                .hasArg()
+                .build();
         options.addOption(fromProxyOpt);
         options.addOption(stateOpt);
         options.addOption(countyOpt);
         options.addOption(cityOpt);
         options.addOption(hostOpt);
         options.addOption(portOpt);
+        options.addOption(adapterNameOpt);
 
         // parse args to generate a TwitterIngestionConfig object
         CommandLineParser parser = new DefaultParser();
@@ -113,6 +130,15 @@ public class AsterixDBIngestionConfig {
             // target AsterixDB
             config.host = cmd.getOptionValue("host");
             config.port = Integer.parseInt(cmd.getOptionValue("port"));
+
+            // AsterixDB adapter
+            config.adapterName = cmd.getOptionValue("adapter-name", "twittermap");
+            Set<String> candidateAdapterNames = new HashSet<String>();
+            candidateAdapterNames.add("twitter");
+            candidateAdapterNames.add("twittermap");
+            if (!candidateAdapterNames.contains(config.adapterName)) {
+                throw new ParseException("The given adapter-name [" + config.adapterName + "] is not supported! Please give one of the two adapter-names: twitter, twittermap.");
+            }
 
             return config;
 
