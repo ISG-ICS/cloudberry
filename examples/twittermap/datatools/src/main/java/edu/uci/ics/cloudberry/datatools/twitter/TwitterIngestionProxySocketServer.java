@@ -11,26 +11,27 @@ public class TwitterIngestionProxySocketServer {
     @OnWebSocketConnect
     public void onConnect(Session session)
     {
-        System.out.println("Socket Connected: " + session);
+        System.err.println("Socket Connected: " + session);
         sessionId = TwitterIngestionServer.subscribe(session.getRemote());
     }
 
     @OnWebSocketMessage
     public void onMessage(String message)
     {
-        System.out.println("Received TEXT message: " + message);
+        System.err.println("Received TEXT message: " + message);
     }
 
     @OnWebSocketClose
     public void onClose(int statusCode, String reason)
     {
-        System.out.println("Socket Closed: [" + statusCode + "] " + reason);
+        System.err.println("Socket Closed: [" + statusCode + "] " + reason);
         TwitterIngestionServer.unsubscribe(sessionId);
     }
 
     @OnWebSocketError
     public void onError(Throwable cause)
     {
+        System.err.println("Socket error:");
         cause.printStackTrace(System.err);
         TwitterIngestionServer.unsubscribe(sessionId);
     }

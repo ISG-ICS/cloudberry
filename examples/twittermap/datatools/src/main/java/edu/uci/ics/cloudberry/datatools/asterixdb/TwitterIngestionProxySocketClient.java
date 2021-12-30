@@ -11,25 +11,28 @@ public class TwitterIngestionProxySocketClient {
     @OnWebSocketClose
     public void onClose(int statusCode, String reason)
     {
-        System.out.println("Socket Closed: [" + statusCode + "] " + reason);
+        System.err.println("Socket Closed: [" + statusCode + "] " + reason);
     }
 
     @OnWebSocketConnect
     public void onConnect(Session session)
     {
-        System.out.println("Socket Connected: " + session);
+        System.err.println("Socket Connected: " + session);
         this.session = session;
     }
 
     @OnWebSocketMessage
     public void onMessage(String message)
     {
+        System.err.println("Message:");
+        System.err.println(message);
         AsterixDBIngestionDriver.tagAndIngestOneTweet(message);
     }
 
     @OnWebSocketError
     public void onError(Throwable cause)
     {
+        System.err.println("Socket error:");
         cause.printStackTrace(System.err);
     }
 }

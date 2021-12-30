@@ -3,13 +3,10 @@ package edu.uci.ics.cloudberry.datatools.asterixdb;
 import edu.uci.ics.cloudberry.datatools.twitter.geotagger.TwitterGeoTagger;
 import edu.uci.ics.cloudberry.datatools.twitter.geotagger.USGeoGnosisLoader;
 import edu.uci.ics.cloudberry.gnosis.USGeoGnosis;
-import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
-import org.eclipse.jetty.websocket.client.WebSocketClient;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URI;
 import java.util.Map;
 
 /**
@@ -29,6 +26,7 @@ import java.util.Map;
  */
 public class AsterixDBIngestionDriver {
 
+    public static ProxyIngestionWorker proxyIngestionWorker;
     public static AsterixDBFeedClient asterixDBFeedClient;
     public static AsterixDBAdapter asterixDBAdapter;
     public static USGeoGnosis usGeoGnosis;
@@ -114,19 +112,35 @@ public class AsterixDBIngestionDriver {
                 e.printStackTrace();
             }
 
-            // start a Twitter ingestion proxy socket client
-            WebSocketClient client = new WebSocketClient();
-            TwitterIngestionProxySocketClient socket = new TwitterIngestionProxySocketClient();
+            // start a Proxy Ingestion Worker to use a TwitterIngestProxySocketClient to get tweets from the Proxy Server
+            proxyIngestionWorker = new ProxyIngestionWorker(config);
+            Thread proxyIngestionWorkerThread = new Thread(proxyIngestionWorker);
+            // clean up when shutdown
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                if (proxyIngestionWorker != null) {
+                    proxyIngestionWorker.cleanUp();
+                }
+            }));
+            proxyIngestionWorkerThread.start();
             try {
-                client.start();
-                URI fromProxyUri = new URI(config.getFromProxy());
-                ClientUpgradeRequest request = new ClientUpgradeRequest();
-                client.connect(socket, fromProxyUri, request);
+                proxyIngestionWorkerThread.join();
             }
-            catch (Exception e) {
-                System.err.println("Establish connection to the source proxy socket [" + config.getFromProxy() + "] failed!");
-                e.printStackTrace();
+            catch(Exception e) {
+                e.printStackTrace(System.err);
             }
+
+            // WebSocketClient client = new WebSocketClient();
+            // TwitterIngestionProxySocketClient socket = new TwitterIngestionProxySocketClient();
+            // try {
+            //     client.start();
+            //     URI fromProxyUri = new URI(config.getFromProxy());
+            //     ClientUpgradeRequest request = new ClientUpgradeRequest();
+            //     client.connect(socket, fromProxyUri, request);
+            // }
+            // catch (Exception e) {
+            //     System.err.println("Establish connection to the source proxy socket [" + config.getFromProxy() + "] failed!");
+            //     e.printStackTrace();
+            // }
         }
         // mode (2) - from stdin
         else {

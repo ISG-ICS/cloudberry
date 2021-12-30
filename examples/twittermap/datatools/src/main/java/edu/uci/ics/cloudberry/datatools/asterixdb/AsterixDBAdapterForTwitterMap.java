@@ -18,15 +18,15 @@ import static edu.uci.ics.cloudberry.datatools.twitter.geotagger.TwitterGeoTagge
  */
 public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
 
-    public static String POINT = "point";
-    public static String RECTANGLE = "rectangle";
+    public String POINT = "point";
+    public String RECTANGLE = "rectangle";
 
     // Map<String, String> - <columnName, dataType>
-    public static Map<String, Object> schema;
-    public static Map<String, String> stringSetKeys;
-    public static Map<String, String> rename;
+    public Map<String, Object> schema;
+    public Map<String, String> stringSetKeys;
+    public Map<String, String> rename;
 
-    public static void initialize() {
+    public AsterixDBAdapterForTwitterMap() {
 
         // Twitter uses UTC timezone
         tweetDateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
