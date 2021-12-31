@@ -18,6 +18,7 @@ public interface AsterixDBAdapter {
     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
     SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSSZZZZ");
 
+    String DATE = "date";
     String DATETIME = "datetime";
     String INT64 = "int64";
     String STRING = "string"; // quoted value (suitable for string)

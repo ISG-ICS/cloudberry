@@ -59,7 +59,7 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
         place.put("country", STRING);
         place.put("country_code", STRING);
         place.put("full_name", STRING);
-        place.put("id", INT64);
+        place.put("id", STRING);
         place.put("name", STRING);
         place.put("place_type", STRING);
         place.put("bounding_box", RECTANGLE);
@@ -72,7 +72,7 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
         user.put("profile_image_url", STRING);
         user.put("lang", STRING);
         user.put("location", STRING);
-        user.put("created_at", DATETIME);
+        user.put("created_at", DATE);
         user.put("description", STRING);
         user.put("followers_count", INT64);
         user.put("friends_count", INT64);
@@ -132,6 +132,15 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
                         tuple.append(transformObject((Map<String, Object>) entry.getValue(), subSchema));
                         i ++;
                     }
+                    // object for this key is null
+                    else if (entry.getValue() == null) {
+                        if (i >= 1) {
+                            tuple.append(",");
+                        }
+                        transformKey(tuple, entry.getKey());
+                        tuple.append("null");
+                        i ++;
+                    }
                     else {
                         System.err.println("[AsterixDBAdapter] tuple does not match schema!");
                         //-DEBUG-//
@@ -152,7 +161,7 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
             }
         }
         tuple.append("}");
-        return tuple.toString();
+        return tuple.toString().replaceAll("\\s+", " ");
     }
 
     public void transformKey(StringBuilder tuple, String key) {
@@ -176,35 +185,50 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
                 tuple.append("date(\"" + dateFormat.format(date) + "\")");
                 break;
             case "datetime":
-                date = getDate((String) value);
+                date = AsterixDBAdapter.getDate((String) value);
                 tuple.append("datetime(\"" + dateFormat.format(date) + "T" + timeFormat.format(date) + "\")");
                 break;
             case "int64":
                 tuple.append( "int64(\"" + value + "\")");
                 break;
             case "string":
-                tuple.append('"').append(StringEscapeUtils.escapeJava((String)value)).append('"');
+                tuple.append('"').append(StringEscapeUtils.escapeJava((String)value).replaceAll("\\s+", " ")).append('"');
                 break;
             case "value":
                 tuple.append(value);
                 break;
             case "string_set":
-                List<Map<String, Object>> sets = (List<Map<String, Object>>) value;
-                if (sets == null) {
+                List<String> stringSets = (List<String>) value;
+                if (stringSets == null) {
                     tuple.append("null");
                     return;
                 }
-                String setKey = stringSetKeys.get(key);
                 StringBuilder sb = new StringBuilder();
-                sb.append("{{");
-                for (int i = 0; i < sets.size(); i++) {
-                    String setKeyValue = (String) sets.get(i).get(setKey);
+                sb.append("[");
+                for (int i = 0; i < stringSets.size(); i++) {
                     if (i > 0) {
                         sb.append(',');
                     }
-                    sb.append('"').append(StringEscapeUtils.escapeJava(setKeyValue)).append('"');
+                    sb.append('"').append(StringEscapeUtils.escapeJava(stringSets.get(i)).replaceAll("\\s+", " ")).append('"');
                 }
-                sb.append("}}");
+                sb.append("]");
+                tuple.append(sb.toString());
+                break;
+            case "value_set":
+                List<Object> valueSets = (List<Object>) value;
+                if (valueSets == null) {
+                    tuple.append("null");
+                    return;
+                }
+                sb = new StringBuilder();
+                sb.append("[");
+                for (int i = 0; i < valueSets.size(); i++) {
+                    if (i > 0) {
+                        sb.append(',');
+                    }
+                    sb.append(StringEscapeUtils.escapeJava(String.valueOf(valueSets.get(i))));
+                }
+                sb.append("]");
                 tuple.append(sb.toString());
                 break;
             case "point":

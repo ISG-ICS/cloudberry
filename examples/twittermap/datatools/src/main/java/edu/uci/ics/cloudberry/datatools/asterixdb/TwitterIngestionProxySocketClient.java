@@ -24,8 +24,6 @@ public class TwitterIngestionProxySocketClient {
     @OnWebSocketMessage
     public void onMessage(String message)
     {
-        System.err.println("Message:");
-        System.err.println(message);
         AsterixDBIngestionDriver.tagAndIngestOneTweet(message);
     }
 
