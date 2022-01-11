@@ -1,5 +1,7 @@
-package edu.uci.ics.cloudberry.datatools.asterixdb;
 
+
+import edu.uci.ics.cloudberry.datatools.asterixdb.AsterixDBAdapterForGeneralTwitter;
+import edu.uci.ics.cloudberry.datatools.asterixdb.AsterixDBAdapterForTwitterMap;
 import edu.uci.ics.cloudberry.datatools.twitter.geotagger.TwitterGeoTagger;
 import java.util.Map;
 
@@ -197,6 +199,107 @@ public class AsterixDBAdapterTest {
             "   \"lang\":\"en\",\n" +
             "   \"timestamp_ms\":\"1554134025718\"\n" +
             "}";
+    
+    String sampleTweet2 = "{\n" +
+            "   \"created_at\":\"Fri Dec 31 07:23:26 +0000 2021\",\n" + 
+            "   \"id\":1476816248449163280,\n" + 
+            "   \"id_str\":\"1476816248449163280\",\n" + 
+            "   \"text\":\"Just posted a video @ Waldoboro, Maine https:\\/\\/t.co\\/JCpqmYEziw\",\n" + 
+            "   \"source\":\"\u003ca href=\\\"http:\\/\\/instagram.com\\\" rel=\\\"nofollow\\\"\u003eInstagram\u003c\\/a\u003e\",\n" + 
+            "   \"truncated\":false,\n" + 
+            "   \"in_reply_to_status_id\":null,\n" + 
+            "   \"in_reply_to_status_id_str\":null,\n" + 
+            "   \"in_reply_to_user_id\":null,\n" + 
+            "   \"in_reply_to_user_id_str\":null,\n" + 
+            "   \"in_reply_to_screen_name\":null,\n" + 
+            "   \"user\":{\n" + 
+            "      \"id\":77455872,\n" + 
+            "      \"id_str\":\"77455872\",\n" + 
+            "      \"name\":\"Rachel Genthner\",\n" + 
+            "      \"screen_name\":\"Racheltgal\", \n" + 
+            "      \"location\":\"Waldoboro, Maine\",\n" + 
+            "      \"url\":\"http:\\/\\/www.facebook.com\\/racheltgal\",\n" + 
+            "      \"description\":\"love my sons take photogarphs of gods beauty wildlife and landscapes flying my drones Ham Radio\",\n" + 
+            "      \"translator_type\":\"none\",\n" + 
+            "      \"protected\":false,\n" + 
+            "      \"verified\":false,\n" + 
+            "      \"followers_count\":82,\n" + 
+            "      \"friends_count\":221,\n" + 
+            "      \"listed_count\":2,\n" + 
+            "      \"favourites_count\":2546,\n" + 
+            "      \"statuses_count\":1145,\n" + 
+            "      \"created_at\":\"Sat Sep 26 11:42:42 +0000 2009\",\n" + 
+            "      \"utc_offset\":null,\n" + 
+            "      \"time_zone\":null,\n" + 
+            "      \"geo_enabled\":true,\n" + 
+            "      \"lang\":null,\n" + 
+            "      \"contributors_enabled\":false,\n" + 
+            "      \"is_translator\":false,\n" + 
+            "      \"profile_background_color\":\"642D8B\",\n" + 
+            "      \"profile_background_image_url\":\"http:\\/\\/abs.twimg.com\\/images\\/themes\\/theme10\\/bg.gif\",\n" + 
+            "      \"profile_background_image_url_https\":\"https:\\/\\/abs.twimg.com\\/images\\/themes\\/theme10\\/bg.gif\",\n" + 
+            "      \"profile_background_tile\":true,\n" + 
+            "      \"profile_link_color\":\"FF0000\",\n" + 
+            "      \"profile_sidebar_border_color\":\"65B0DA\",\n" + 
+            "      \"profile_sidebar_fill_color\":\"7AC3EE\",\n" + 
+            "      \"profile_text_color\":\"3D1957\",\n" + 
+            "      \"profile_use_background_image\":true,\n" + 
+            "      \"profile_image_url\":\"http:\\/\\/pbs.twimg.com\\/profile_images\\/1155122265870217216\\/cgKcA1cg_normal.jpg\",\n" + 
+            "      \"profile_image_url_https\":\"https:\\/\\/pbs.twimg.com\\/profile_images\\/1155122265870217216\\/cgKcA1cg_normal.jpg\",\n" + 
+            "      \"profile_banner_url\":\"https:\\/\\/pbs.twimg.com\\/profile_banners\\/77455872\\/1586957059\",\n" + 
+            "      \"default_profile\":false,\n" + 
+            "      \"default_profile_image\":false,\n" + 
+            "      \"following\":null,\n" + 
+            "      \"follow_request_sent\":null,\n" + 
+            "      \"notifications\":null,\n" + 
+            "      \"withheld_in_countries\":[]\n" + 
+            "   },\n" + 
+            "   \"geo\":{\n" + 
+            "      \"type\":\"Point\",\n" + 
+            "      \"coordinates\":[44.09684,-69.37314]\n" + 
+            "   },\n" + 
+            "   \"coordinates\":{\n" + 
+            "      \"type\":\"Point\",\n" + 
+            "      \"coordinates\":[-69.37314,44.09684]\n" + 
+            "   },\n" + 
+            "   \"place\":{\n" + 
+            "      \"id\":\"463f5d9615d7d1be\",\n" + 
+            "      \"url\":\"https:\\/\\/api.twitter.com\\/1.1\\/geo\\/id\\/463f5d9615d7d1be.json\",\n" + 
+            "      \"place_type\":\"admin\",\n" + 
+            "      \"name\":\"Maine\",\n" + 
+            "      \"full_name\":\"Maine, USA\",\n" + 
+            "      \"country_code\":\"US\",\n" + 
+            "      \"country\":\"United States\",\n" + 
+            "      \"bounding_box\":{\n" + 
+            "         \"type\":\"Polygon\",\n" + 
+            "         \"coordinates\":[[[-71.084335,42.917127],[-71.084335,47.459687],[-66.885075,47.459687],[-66.885075,42.917127]]]\n" + 
+            "      },\n" + 
+            "      \"attributes\":{}\n" + 
+            "   },\n" + 
+            "   \"contributors\":null,\n" + 
+            "   \"is_quote_status\":false,\n" + 
+            "   \"quote_count\":0,\n" + 
+            "   \"reply_count\":0,\n" + 
+            "   \"retweet_count\":0,\n" + 
+            "   \"favorite_count\":0,\n" + 
+            "   \"entities\":{\n" + 
+            "      \"hashtags\":[],\n" + 
+            "      \"urls\":[{\n" + 
+            "         \"url\":\"https:\\/\\/t.co\\/JCpqmYEziw\",\n" + 
+            "         \"expanded_url\":\"https:\\/\\/www.instagram.com\\/p\\/CYI4FNMqSOCcq-j9hz5VaR6JESU87Hfy5ENDzE0\\/?utm_medium=twitter\",\n" + 
+            "         \"display_url\":\"instagram.com\\/p\\/CYI4FNMqSOCc\u2026\",\n" + 
+            "         \"indices\":[39,62]\n" + 
+            "      }],\n" + 
+            "      \"user_mentions\":[],\n" + 
+            "      \"symbols\":[]\n" + 
+            "   },\n" + 
+            "   \"favorited\":false,\n" + 
+            "   \"retweeted\":false,\n" + 
+            "   \"possibly_sensitive\":false,\n" + 
+            "   \"filter_level\":\"low\",\n" + 
+            "   \"lang\":\"en\",\n" + 
+            "   \"timestamp_ms\":\"1640935406206\"\n" + 
+            "}";
 
     public boolean testGeneralTwitter() throws Exception {
         Map<String, Object> tweetObject = TwitterGeoTagger.parseOneTweet(sampleTweet);
@@ -206,10 +309,10 @@ public class AsterixDBAdapterTest {
         return true;
     }
 
-    public boolean testTwitter() throws Exception {
-        Map<String, Object> tweetObject = TwitterGeoTagger.parseOneTweet(sampleTweet);
-        AsterixDBAdapterForTwitter asterixDBAdapterForTwitter = new AsterixDBAdapterForTwitter();
-        String asterixDBTuple = asterixDBAdapterForTwitter.transform(tweetObject);
+    public boolean testTwitterMap() throws Exception {
+        Map<String, Object> tweetObject = TwitterGeoTagger.parseOneTweet(sampleTweet2);
+        AsterixDBAdapterForTwitterMap asterixDBAdapterForTwitterMap = new AsterixDBAdapterForTwitterMap();
+        String asterixDBTuple = asterixDBAdapterForTwitterMap.transform(tweetObject);
         System.out.println(asterixDBTuple);
         return true;
     }
@@ -217,8 +320,8 @@ public class AsterixDBAdapterTest {
     public static void main(String[] args) {
         AsterixDBAdapterTest test = new AsterixDBAdapterTest();
         try {
-            test.testGeneralTwitter();
-            test.testTwitter();
+            //test.testGeneralTwitter();
+            test.testTwitterMap();
         } catch (Exception e) {
             e.printStackTrace();
         }

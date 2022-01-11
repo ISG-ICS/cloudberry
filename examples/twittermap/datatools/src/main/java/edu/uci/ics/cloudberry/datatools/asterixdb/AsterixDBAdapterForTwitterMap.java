@@ -44,8 +44,8 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
         rename.put("in_reply_to_status_id", "in_reply_to_status");
         schema.put("in_reply_to_user_id", INT64);
         rename.put("in_reply_to_user_id", "in_reply_to_user");
-        schema.put("favorite_count", INT64);
-        schema.put("retweet_count", INT64);
+        schema.put("favorite_count", VALUE);
+        schema.put("retweet_count", VALUE);
         schema.put("lang", STRING);
         schema.put("is_retweet", VALUE);
         schema.put("coordinates", POINT);
@@ -74,17 +74,17 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
         user.put("location", STRING);
         user.put("created_at", DATE);
         user.put("description", STRING);
-        user.put("followers_count", INT64);
-        user.put("friends_count", INT64);
-        user.put("statues_count", INT64);
+        user.put("followers_count", VALUE);
+        user.put("friends_count", VALUE);
+        user.put("statues_count", VALUE);
         schema.put("user", user);
 
         Map<String, String> geoTag = new HashMap<>();
-        geoTag.put("stateID", INT64);
+        geoTag.put("stateID", VALUE);
         geoTag.put("stateName", STRING);
-        geoTag.put("countyID", INT64);
+        geoTag.put("countyID", VALUE);
         geoTag.put("countyName", STRING);
-        geoTag.put("cityID", INT64);
+        geoTag.put("cityID", VALUE);
         geoTag.put("cityName", STRING);
         schema.put("geo_tag", geoTag);
     }
@@ -243,6 +243,7 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
                     return;
                 }
                 tuple.append("point(\"" + coordinate.get(0) + "," + coordinate.get(1) + "\")");
+                break;
             case "rectangle":
                 Map<String, Object> boundingBox = (Map<String, Object>) value;
                 if (boundingBox == null) {

@@ -46,8 +46,6 @@ public class AsterixDBIngestionDriver {
         Map<String, Object> tweetObject = TwitterGeoTagger.tagOneTweet(usGeoGnosis, tweet);
         try {
             String tweetADBObject = asterixDBAdapter.transform(tweetObject);
-            // TODO - for debug, to be removed.
-            System.err.print(tweetADBObject);
             asterixDBFeedClient.ingest(tweetADBObject);
         }
         catch (Exception e) {
