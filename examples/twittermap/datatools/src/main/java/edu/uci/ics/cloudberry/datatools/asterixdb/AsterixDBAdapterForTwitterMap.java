@@ -250,8 +250,9 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
                     tuple.append("null");
                     return;
                 }
+                // TODO - this logic was migrated from legacy code, should be revisited for newer version Twitter APIs.
                 List<List<List<Double>>> bbCoordinates = (List<List<List<Double>>>) boundingBox.get("coordinates");
-                if (bbCoordinates == null || bbCoordinates.size() != 1 || bbCoordinates.get(0).size() != 4) {
+                if (bbCoordinates == null || bbCoordinates.size() != 1 || (bbCoordinates.get(0).size() != 4 && bbCoordinates.get(0).size() != 2)) {
                     tuple.append("null");
                     return;
                 }

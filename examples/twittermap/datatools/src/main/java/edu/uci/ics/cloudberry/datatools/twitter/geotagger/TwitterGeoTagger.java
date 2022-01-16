@@ -170,8 +170,9 @@ public class TwitterGeoTagger {
 
     public static Rectangle boundingBox2Rectangle(List<List<Double>> boundingBox) {
 
+        // TODO - this logic was migrated from legacy code, should be revisited for newer version Twitter APIs.
         // compatible with historical tweets, it might have 4 long-lat coordinates, or 2 long-lat coordinates
-        if (boundingBox.size() != 4 || boundingBox.get(0).size() != 2) {
+        if (boundingBox.size() != 4 && boundingBox.get(0).size() != 2) {
             throw new IllegalArgumentException("unknown bounding_box");
         }
 
