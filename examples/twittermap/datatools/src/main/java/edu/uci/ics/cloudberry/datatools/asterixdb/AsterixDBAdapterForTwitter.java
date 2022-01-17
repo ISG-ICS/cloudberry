@@ -216,8 +216,8 @@ public class AsterixDBAdapterForTwitter implements AsterixDBAdapter {
         }
         switch (type) {
             case "datetime":
-                Date date = AsterixDBAdapter.getDate((String) value);
-                tuple.append("datetime(\"" + dateFormat.format(date) + "T" + timeFormat.format(date) + "\")");
+                Date date = getDate((String) value);
+                transformDateTimeColumn(tuple, date);
                 break;
             case "int64":
                 tuple.append( "int64(\"" + value + "\")");
@@ -294,5 +294,13 @@ public class AsterixDBAdapterForTwitter implements AsterixDBAdapter {
                 System.err.println("key = " + key + ", type = " + type + ", value = " + value);
                 throw new Exception("unknown data type");
         }
+    }
+
+    public synchronized static Date getDate(String dateString) throws Exception {
+        return tweetDateFormat.parse(dateString);
+    }
+
+    public synchronized static void transformDateTimeColumn(StringBuilder tuple, Date date) {
+        tuple.append("datetime(\"" + dateFormat.format(date) + "T" + timeFormat.format(date) + "\")");
     }
 }

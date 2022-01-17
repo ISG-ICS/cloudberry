@@ -31,8 +31,4 @@ public interface AsterixDBAdapter {
     String transform(String tweet) throws Exception;
 
     String transform(Map<String, Object> tuple) throws Exception;
-
-    static Date getDate(String dateString) throws Exception {
-        return tweetDateFormat.parse(dateString);
-    }
 }

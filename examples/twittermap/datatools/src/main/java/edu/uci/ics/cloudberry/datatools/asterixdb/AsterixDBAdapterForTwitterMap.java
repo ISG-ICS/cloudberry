@@ -182,11 +182,11 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
         switch (type) {
             case "date":
                 Date date = getDate((String) value);
-                tuple.append("date(\"" + dateFormat.format(date) + "\")");
+                transformDateColumn(tuple, date);
                 break;
             case "datetime":
-                date = AsterixDBAdapter.getDate((String) value);
-                tuple.append("datetime(\"" + dateFormat.format(date) + "T" + timeFormat.format(date) + "\")");
+                date = getDate((String) value);
+                transformDateTimeColumn(tuple, date);
                 break;
             case "int64":
                 tuple.append( "int64(\"" + value + "\")");
@@ -271,7 +271,15 @@ public class AsterixDBAdapterForTwitterMap implements AsterixDBAdapter {
         }
     }
 
-    public static Date getDate(String dateString) throws Exception {
+    public synchronized static Date getDate(String dateString) throws Exception {
         return tweetDateFormat.parse(dateString);
+    }
+
+    public synchronized static void transformDateColumn(StringBuilder tuple, Date date) {
+        tuple.append("date(\"" + dateFormat.format(date) + "\")");
+    }
+
+    public synchronized static void transformDateTimeColumn(StringBuilder tuple, Date date) {
+        tuple.append("datetime(\"" + dateFormat.format(date) + "T" + timeFormat.format(date) + "\")");
     }
 }

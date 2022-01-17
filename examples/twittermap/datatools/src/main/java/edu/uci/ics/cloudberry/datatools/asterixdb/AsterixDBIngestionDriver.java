@@ -143,6 +143,9 @@ public class AsterixDBIngestionDriver {
             // }
         }
         // mode (2) - from stdin
+        // TODO - for this mode, also support use USGeoGnosis to geotag each tweet and then ingest into AsterixDB, 
+        //        similar to mode (1), but also use multi-threading similar to TwitterGeoTagger. 
+        //        Then it can be used to for ingesting raw tweets from files into AsterixDB efficiently.
         else {
             counter = 0;
             startTime = System.currentTimeMillis();

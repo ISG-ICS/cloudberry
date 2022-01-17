@@ -25,9 +25,10 @@ object Commons {
       case PathList("com", "sun", "activation", xs @_*) => MergeStrategy.first
       case PathList("javax", "activation", xs @_*) => MergeStrategy.first
       case PathList("org", "seleniumhq", "selenium", xs @ _*) => MergeStrategy.first
-      case x =>
-        val oldStrategy = (assemblyMergeStrategy in assembly).value
-        oldStrategy(x)
+      case x => MergeStrategy.first
+      //case x => 
+      //  val oldStrategy = (assemblyMergeStrategy in assembly).value
+      //  oldStrategy(x)
     }
   )
 
