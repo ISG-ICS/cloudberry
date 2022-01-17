@@ -40,3 +40,9 @@ lazy val guardian = (project in file("guardian")).
   settings(
     libraryDependencies ++= guardianDependencies
   )
+
+lazy val datatools = (project in file("datatools")).
+  settings(Commons.settings: _*).
+  settings(
+    libraryDependencies ++= datatoolsDependencies
+  ).dependsOn(gnosis, util)

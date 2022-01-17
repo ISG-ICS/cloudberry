@@ -90,4 +90,19 @@ object Dependencies {
     "org.webjars.npm" % "jsbi" % "3.1.1"
 
   ) ++ testDeps
+
+  val datatoolsDependencies: Seq[ModuleID] = Seq(
+    ws,
+    "org.twitter4j" % "twitter4j-stream" % twitter4jVersion,
+    "org.twitter4j" % "twitter4j-core" % twitter4jVersion,
+    "com.twitter" % "hbc-core" % "2.2.0",
+    "commons-cli" % "commons-cli" % "1.4",
+    "org.eclipse.jetty" % "jetty-server" % "9.4.28.v20200408",
+    "org.eclipse.jetty" % "jetty-servlet" % "9.4.28.v20200408",
+    "org.eclipse.jetty.websocket" % "websocket-servlet" % "9.4.28.v20200408",
+    "org.eclipse.jetty.websocket" % "websocket-api" % "9.4.28.v20200408",
+    "org.eclipse.jetty.websocket" % "websocket-server" % "9.4.28.v20200408",
+    "com.fasterxml.jackson.core" % "jackson-databind" % "2.1.1",
+    ("org.apache.commons" % "commons-lang3" % "3.4").exclude("commons-logging", "commons-logging")
+  ) ++ testDeps
 }

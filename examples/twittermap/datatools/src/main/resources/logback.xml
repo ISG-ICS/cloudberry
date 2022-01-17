@@ -1,0 +1,4 @@
+<configuration>
+     <logger name="org.apache" level="ERROR"/>
+     <logger name="httpclient" level="ERROR"/>
+</configuration>
