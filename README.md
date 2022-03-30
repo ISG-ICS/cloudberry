@@ -8,7 +8,9 @@
 # About
 **Cloudberry** is a general-purpose middleware system to support visualization on large amounts of data. It communicates with backend data management systems via adapters. It supports various frontend interfaces by providing a RESTful interface.
 
-![cloudberry architecture](http://cloudberry.ics.uci.edu/wp-content/uploads/2019/08/cloudberry-overall-architecture.png)
+<p align="center">
+ <img src="https://github.com/ISG-ICS/cloudberry/blob/master/docs/cloudberry-overall-architecture.png" width="500">
+</p>
 
 **Twittermap** ([live demo](http://cloudberry.ics.uci.edu/apps/twittermap)) is an application that utilizes Cloudberry's RESTful API to support interactive analytics and visualization on more than **2 billion tweets (2TB)** with new data continuously being ingested.
 
