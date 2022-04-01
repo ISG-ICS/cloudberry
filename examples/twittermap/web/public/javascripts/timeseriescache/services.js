@@ -42,8 +42,6 @@ angular.module('cloudberry.timeseriescache', ['cloudberry.populationcache'])
                 timeseriesStore.clear();
                 currentKeywords = keywords.slice();
                 currentGeoLevel = geoLevel;
-                cachedTimeRange.start = new Date(timeInterval.start.getTime());
-                cachedTimeRange.end = new Date(timeInterval.end.getTime());
 
                 return geoIds;
             } else {
@@ -150,14 +148,14 @@ angular.module('cloudberry.timeseriescache', ['cloudberry.populationcache'])
         // TODO: combine geoIds and timeInterval dimensions in the time-series and map-result cache modules.
         this.putTimeSeriesValues = function (geoIds, timeseriesResult, timeInterval) {
             var store = this.arrayToStore(geoIds, timeseriesResult, currentGeoLevel);
-            if (timeseriesStore.count() === 0) {
-                timeseriesStore = store;
-            } else if (timeInterval.start.getTime() === cachedTimeRange.start.getTime() &&
-                       timeInterval.end.getTime() === cachedTimeRange.end.getTime()) {
+            if (timeInterval.start.getTime() < cachedTimeRange.start.getTime() ||
+                    timeInterval.end.getTime() > cachedTimeRange.end.getTime()) {
                 // Add to cache.
                 store.forEach(function(value, key) {
                     timeseriesStore.set(key, value);
                 });
+                cachedTimeRange.start = new Date(timeInterval.start.getTime());
+                cachedTimeRange.end = new Date(timeInterval.end.getTime());
             } else {
                 // Result is not added to cache because it has a shorter time interval than older cached results.
             }
